@@ -139,7 +139,7 @@ struct HomeView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 6))
 
                         Text("Reef")
-                            .font(.nunito(28, weight: .bold))
+                            .font(.dynaPuff(28, weight: .bold))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
 
                         Spacer()
@@ -156,7 +156,7 @@ struct HomeView: View {
                     } label: {
                         HStack {
                             Label(SidebarItem.courses.rawValue, systemImage: SidebarItem.courses.icon)
-                                .font(.nunito(16, weight: .medium))
+                                .font(.quicksand(16, weight: .medium))
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                             Spacer()
                             Image(systemName: isCoursesExpanded ? "chevron.down" : "chevron.right")
@@ -182,7 +182,7 @@ struct HomeView: View {
                             } label: {
                                 HStack {
                                     Label(course.name, systemImage: "folder.fill")
-                                        .font(.nunito(16, weight: .medium))
+                                        .font(.quicksand(16, weight: .medium))
                                         .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                                     Spacer()
                                     Image(systemName: selectedCourse?.id == course.id ? "chevron.down" : "chevron.right")
@@ -202,7 +202,7 @@ struct HomeView: View {
                                     } label: {
                                         HStack {
                                             Label(section.rawValue, systemImage: section.icon)
-                                                .font(.nunito(16, weight: .medium))
+                                                .font(.quicksand(16, weight: .medium))
                                                 .foregroundColor(selectedSection == section ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                                             Spacer()
                                         }
@@ -219,7 +219,7 @@ struct HomeView: View {
                             isAddingCourse = true
                         } label: {
                             Label("Add Course", systemImage: "plus.circle.fill")
-                                .font(.nunito(16, weight: .medium))
+                                .font(.quicksand(16, weight: .medium))
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         }
                         .buttonStyle(.plain)
@@ -233,7 +233,7 @@ struct HomeView: View {
                     } label: {
                         HStack {
                             Label(SidebarItem.myReef.rawValue, systemImage: SidebarItem.myReef.icon)
-                                .font(.nunito(16, weight: .medium))
+                                .font(.quicksand(16, weight: .medium))
                                 .foregroundColor(selectedItem == .myReef ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                             Spacer()
                         }
@@ -247,7 +247,7 @@ struct HomeView: View {
                     } label: {
                         HStack {
                             Label(SidebarItem.analytics.rawValue, systemImage: SidebarItem.analytics.icon)
-                                .font(.nunito(16, weight: .medium))
+                                .font(.quicksand(16, weight: .medium))
                                 .foregroundColor(selectedItem == .analytics ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                             Spacer()
                         }
@@ -261,7 +261,7 @@ struct HomeView: View {
                     } label: {
                         HStack {
                             Label(SidebarItem.tutors.rawValue, systemImage: SidebarItem.tutors.icon)
-                                .font(.nunito(16, weight: .medium))
+                                .font(.quicksand(16, weight: .medium))
                                 .foregroundColor(selectedItem == .tutors ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                             Spacer()
                         }
@@ -275,7 +275,7 @@ struct HomeView: View {
                     } label: {
                         HStack {
                             Label(SidebarItem.profile.rawValue, systemImage: SidebarItem.profile.icon)
-                                .font(.nunito(16, weight: .medium))
+                                .font(.quicksand(16, weight: .medium))
                                 .foregroundColor(selectedItem == .profile ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                             Spacer()
                         }
@@ -289,7 +289,7 @@ struct HomeView: View {
                     } label: {
                         HStack {
                             Label(SidebarItem.settings.rawValue, systemImage: SidebarItem.settings.icon)
-                                .font(.nunito(16, weight: .medium))
+                                .font(.quicksand(16, weight: .medium))
                                 .foregroundColor(selectedItem == .settings ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                             Spacer()
                         }
@@ -316,18 +316,18 @@ struct HomeView: View {
                         .frame(width: 44, height: 44)
                         .overlay(
                             Text(userInitials)
-                                .font(.nunito(16, weight: .semiBold))
+                                .font(.quicksand(16, weight: .semiBold))
                                 .foregroundColor(.white)
                         )
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(authManager.userName ?? "User")
-                            .font(.nunito(14, weight: .semiBold))
+                            .font(.quicksand(14, weight: .semiBold))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
 
                         if let email = authManager.userEmail {
                             Text(email)
-                                .font(.nunito(12, weight: .regular))
+                                .font(.quicksand(12, weight: .regular))
                                 .foregroundColor(Color.adaptiveSecondary(for: effectiveColorScheme))
                                 .lineLimit(1)
                         }
@@ -365,7 +365,7 @@ struct HomeView: View {
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Text(detailTitle)
-                                .font(.nunito(20, weight: .semiBold))
+                                .font(.quicksand(20, weight: .semiBold))
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         }
 
@@ -521,6 +521,11 @@ struct HomeView: View {
                 fileExtension: fileExtension,
                 course: course
             )
+
+            // Generate thumbnail for PDFs
+            if fileExtension.lowercased() == "pdf" {
+                assignment.thumbnailData = PDFThumbnailGenerator.generateThumbnailData(from: url)
+            }
 
             do {
                 _ = try FileStorageService.shared.copyFile(
