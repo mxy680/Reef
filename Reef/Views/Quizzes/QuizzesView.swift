@@ -74,7 +74,7 @@ enum QuizQuestionType: String, CaseIterable {
     case openEnded = "Open Ended"
 }
 
-// MARK: - Quiz Generation View (Placeholder)
+// MARK: - Quiz Generation View
 
 struct QuizGenerationView: View {
     let course: Course
