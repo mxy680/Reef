@@ -85,6 +85,16 @@ struct QuizGenerationView: View {
         themeManager.isDarkMode ? .dark : .light
     }
 
+    // Form state
+    @State private var topic: String = ""
+    @State private var difficulty: QuizDifficulty = .medium
+    @State private var selectedQuestionTypes: Set<QuizQuestionType> = Set(QuizQuestionType.allCases)
+    @State private var additionalNotes: String = ""
+
+    private var canGenerate: Bool {
+        !topic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !selectedQuestionTypes.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
