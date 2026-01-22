@@ -16,6 +16,19 @@ class Material {
     var course: Course?           // Relationship to parent course
     var extractedText: String?    // Full text content from PDF for search
     var isTextExtracted: Bool = false // Track if extraction was attempted
+    var extractionStatusRaw: String = ExtractionStatus.pending.rawValue
+    var extractionMethodRaw: String?
+    var ocrConfidence: Double?
+
+    var extractionStatus: ExtractionStatus {
+        get { ExtractionStatus(rawValue: extractionStatusRaw) ?? .pending }
+        set { extractionStatusRaw = newValue.rawValue }
+    }
+
+    var extractionMethod: ExtractionMethod? {
+        get { extractionMethodRaw.flatMap { ExtractionMethod(rawValue: $0) } }
+        set { extractionMethodRaw = newValue?.rawValue }
+    }
 
     var fileType: FileType {
         switch fileExtension.lowercased() {

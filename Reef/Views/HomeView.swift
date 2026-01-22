@@ -532,22 +532,22 @@ struct HomeView: View {
                 )
                 modelContext.insert(material)
 
-                // Extract text from PDFs in the background
-                if fileExtension.lowercased() == "pdf" {
-                    let materialID = material.id
-                    Task.detached {
-                        let fileURL = FileStorageService.shared.getFileURL(
-                            for: materialID,
-                            fileExtension: fileExtension
-                        )
-                        let extractedText = await PDFTextExtractor.shared.extractText(from: fileURL)
-                        await MainActor.run {
-                            material.extractedText = extractedText
-                            material.isTextExtracted = true
-                        }
+                // Extract text using OCR and embedded extraction
+                material.extractionStatus = .extracting
+                let materialID = material.id
+                Task.detached {
+                    let fileURL = FileStorageService.shared.getFileURL(
+                        for: materialID,
+                        fileExtension: fileExtension
+                    )
+                    let result = await DocumentTextExtractor.shared.extractText(from: fileURL)
+                    await MainActor.run {
+                        material.extractedText = result.text
+                        material.extractionMethod = result.method
+                        material.ocrConfidence = result.confidence
+                        material.extractionStatus = result.text != nil ? .completed : .failed
+                        material.isTextExtracted = true
                     }
-                } else {
-                    material.isTextExtracted = true
                 }
             } catch {
                 print("Failed to copy file: \(error)")
@@ -583,22 +583,22 @@ struct HomeView: View {
                 )
                 modelContext.insert(assignment)
 
-                // Extract text from PDFs in the background
-                if fileExtension.lowercased() == "pdf" {
-                    let assignmentID = assignment.id
-                    Task.detached {
-                        let fileURL = FileStorageService.shared.getFileURL(
-                            for: assignmentID,
-                            fileExtension: fileExtension
-                        )
-                        let extractedText = await PDFTextExtractor.shared.extractText(from: fileURL)
-                        await MainActor.run {
-                            assignment.extractedText = extractedText
-                            assignment.isTextExtracted = true
-                        }
+                // Extract text using OCR and embedded extraction
+                assignment.extractionStatus = .extracting
+                let assignmentID = assignment.id
+                Task.detached {
+                    let fileURL = FileStorageService.shared.getFileURL(
+                        for: assignmentID,
+                        fileExtension: fileExtension
+                    )
+                    let result = await DocumentTextExtractor.shared.extractText(from: fileURL)
+                    await MainActor.run {
+                        assignment.extractedText = result.text
+                        assignment.extractionMethod = result.method
+                        assignment.ocrConfidence = result.confidence
+                        assignment.extractionStatus = result.text != nil ? .completed : .failed
+                        assignment.isTextExtracted = true
                     }
-                } else {
-                    assignment.isTextExtracted = true
                 }
             } catch {
                 print("Failed to copy file: \(error)")
