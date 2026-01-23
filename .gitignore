@@ -20,3 +20,4 @@ Carthage/Build/
 # macOS
 .DS_Store
 docs/
+CLAUDE.md
