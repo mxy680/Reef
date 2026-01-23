@@ -16,6 +16,19 @@ struct CanvasView: View {
     // Drawing state
     @State private var selectedTool: CanvasTool = .pen
     @State private var selectedColor: Color = .inkBlack
+    @State private var penWidth: StrokeWidth = .medium
+    @State private var highlighterWidth: StrokeWidth = .medium
+    @State private var eraserSize: EraserSize = .medium
+
+    // Undo/Redo state
+    @State private var canUndo: Bool = false
+    @State private var canRedo: Bool = false
+
+    // Lasso selection state
+    @State private var hasSelection: Bool = false
+
+    // Reference to canvas for undo/redo
+    @State private var canvasViewRef: CanvasContainerView?
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
@@ -36,7 +49,14 @@ struct CanvasView: View {
                 fileType: note.fileType,
                 selectedTool: $selectedTool,
                 selectedColor: $selectedColor,
-                isDarkMode: themeManager.isDarkMode
+                penWidth: $penWidth,
+                highlighterWidth: $highlighterWidth,
+                eraserSize: $eraserSize,
+                isDarkMode: themeManager.isDarkMode,
+                onCanvasReady: { canvasViewRef = $0 },
+                onUndoStateChanged: { canUndo = $0 },
+                onRedoStateChanged: { canRedo = $0 },
+                onSelectionChanged: { hasSelection = $0 }
             )
 
             // Floating toolbar at bottom
@@ -45,8 +65,19 @@ struct CanvasView: View {
                 CanvasToolbar(
                     selectedTool: $selectedTool,
                     selectedColor: $selectedColor,
+                    penWidth: $penWidth,
+                    highlighterWidth: $highlighterWidth,
+                    eraserSize: $eraserSize,
                     colorScheme: effectiveColorScheme,
-                    onHomePressed: { dismiss() }
+                    canUndo: canUndo,
+                    canRedo: canRedo,
+                    hasSelection: hasSelection,
+                    onHomePressed: { dismiss() },
+                    onUndo: { canvasViewRef?.canvasView.undoManager?.undo() },
+                    onRedo: { canvasViewRef?.canvasView.undoManager?.redo() },
+                    onCut: { /* TODO: Implement cut */ },
+                    onCopy: { /* TODO: Implement copy */ },
+                    onDelete: { /* TODO: Implement delete */ }
                 )
                 .padding(.bottom, 24)
             }

@@ -16,12 +16,29 @@ struct DrawingOverlayView: UIViewRepresentable {
     let fileType: Note.FileType
     @Binding var selectedTool: CanvasTool
     @Binding var selectedColor: Color
+    @Binding var penWidth: StrokeWidth
+    @Binding var highlighterWidth: StrokeWidth
+    @Binding var eraserSize: EraserSize
     var isDarkMode: Bool = false
+    var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
+    var onUndoStateChanged: (Bool) -> Void = { _ in }
+    var onRedoStateChanged: (Bool) -> Void = { _ in }
+    var onSelectionChanged: (Bool) -> Void = { _ in }
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView(documentURL: documentURL, fileType: fileType, isDarkMode: isDarkMode)
         container.canvasView.delegate = context.coordinator
+        context.coordinator.container = container
+        context.coordinator.onUndoStateChanged = onUndoStateChanged
+        context.coordinator.onRedoStateChanged = onRedoStateChanged
+        context.coordinator.onSelectionChanged = onSelectionChanged
         updateTool(container.canvasView)
+
+        // Notify parent that canvas is ready
+        DispatchQueue.main.async {
+            onCanvasReady(container)
+        }
+
         return container
     }
 
@@ -33,9 +50,14 @@ struct DrawingOverlayView: UIViewRepresentable {
         switch selectedTool {
         case .pen:
             let uiColor = UIColor(selectedColor)
-            canvasView.tool = PKInkingTool(.pen, color: uiColor, width: 3)
+            canvasView.tool = PKInkingTool(.pen, color: uiColor, width: penWidth.rawValue)
+        case .highlighter:
+            let uiColor = UIColor(selectedColor).withAlphaComponent(0.3)
+            canvasView.tool = PKInkingTool(.marker, color: uiColor, width: highlighterWidth.rawValue * 3)
         case .eraser:
-            canvasView.tool = PKEraserTool(.vector)
+            canvasView.tool = PKEraserTool(.vector, width: eraserSize.rawValue)
+        case .lasso:
+            canvasView.tool = PKLassoTool()
         }
     }
 
@@ -44,8 +66,37 @@ struct DrawingOverlayView: UIViewRepresentable {
     }
 
     class Coordinator: NSObject, PKCanvasViewDelegate {
+        weak var container: CanvasContainerView?
+        var onUndoStateChanged: (Bool) -> Void = { _ in }
+        var onRedoStateChanged: (Bool) -> Void = { _ in }
+        var onSelectionChanged: (Bool) -> Void = { _ in }
+
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-            // Could be used for auto-save or undo/redo in the future
+            updateUndoRedoState(canvasView)
+        }
+
+        func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
+            checkSelectionState(canvasView)
+        }
+
+        func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
+            updateUndoRedoState(canvasView)
+            checkSelectionState(canvasView)
+        }
+
+        private func updateUndoRedoState(_ canvasView: PKCanvasView) {
+            DispatchQueue.main.async { [weak self] in
+                self?.onUndoStateChanged(canvasView.undoManager?.canUndo ?? false)
+                self?.onRedoStateChanged(canvasView.undoManager?.canRedo ?? false)
+            }
+        }
+
+        private func checkSelectionState(_ canvasView: PKCanvasView) {
+            DispatchQueue.main.async { [weak self] in
+                let hasContent = !canvasView.drawing.strokes.isEmpty
+                // Show selection options when lasso is active and there's content
+                self?.onSelectionChanged(hasContent && canvasView.tool is PKLassoTool)
+            }
         }
     }
 }
@@ -68,8 +119,8 @@ class CanvasContainerView: UIView {
     /// Deep Ocean (#0A1628) for document page background in dark mode
     private static let pageBackgroundDark = UIColor(red: 10/255, green: 22/255, blue: 40/255, alpha: 1)
 
-    /// Darker background for scroll area in dark mode (darker than the page)
-    private static let scrollBackgroundDark = UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    /// Lighter background for scroll area in dark mode (lighter than the page)
+    private static let scrollBackgroundDark = UIColor(red: 18/255, green: 32/255, blue: 52/255, alpha: 1)
 
     convenience init(documentURL: URL, fileType: Note.FileType, isDarkMode: Bool = false) {
         self.init(frame: .zero)
@@ -158,6 +209,17 @@ class CanvasContainerView: UIView {
         contentView.backgroundColor = pageBgColor
         documentImageView.backgroundColor = pageBgColor
 
+        // Adjust shadow for dark mode - use subtle glow effect
+        if isDarkMode {
+            contentView.layer.shadowColor = UIColor(white: 0.4, alpha: 1).cgColor
+            contentView.layer.shadowOpacity = 0.3
+            contentView.layer.shadowRadius = 16
+        } else {
+            contentView.layer.shadowColor = UIColor.black.cgColor
+            contentView.layer.shadowOpacity = 0.25
+            contentView.layer.shadowRadius = 12
+        }
+
         Task { [weak self] in
             let loadedImage: UIImage? = await {
                 switch fileType {
@@ -231,7 +293,7 @@ class CanvasContainerView: UIView {
             return image
         }
 
-        return UIImage(cgImage: cgImage)
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
     private var contentWidthConstraint: NSLayoutConstraint?
@@ -280,7 +342,10 @@ extension CanvasContainerView: UIScrollViewDelegate {
         documentURL: URL(fileURLWithPath: "/tmp/test.pdf"),
         fileType: .pdf,
         selectedTool: .constant(.pen),
-        selectedColor: .constant(.inkBlack)
+        selectedColor: .constant(.inkBlack),
+        penWidth: .constant(.medium),
+        highlighterWidth: .constant(.medium),
+        eraserSize: .constant(.medium)
     )
     .background(Color.gray.opacity(0.2))
 }
