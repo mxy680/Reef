@@ -9,30 +9,42 @@ import SwiftUI
 
 struct ContextualToolbar: View {
     let selectedTool: CanvasTool
-    @Binding var penWidth: StrokeWidth
-    @Binding var highlighterWidth: StrokeWidth
-    @Binding var eraserSize: EraserSize
-    @Binding var selectedColor: Color
+    @Binding var penWidth: CGFloat
+    @Binding var highlighterWidth: CGFloat
+    @Binding var eraserSize: CGFloat
+    @Binding var eraserType: EraserType
+    @Binding var selectedPenColor: Color
+    @Binding var selectedHighlighterColor: Color
     let colorScheme: ColorScheme
     let hasSelection: Bool
     let onCut: () -> Void
     let onCopy: () -> Void
     let onDelete: () -> Void
 
-    private let themeColors: [Color] = [
-        .inkBlack,
-        .vibrantTeal,
-        .oceanMid,
-        .deepSea
+    private var penColors: [Color] {
+        [
+            colorScheme == .dark ? .white : .black,
+            .vibrantTeal,
+            .oceanMid,
+            .deepSea
+        ]
+    }
+
+    private let highlighterColors: [Color] = [
+        Color(red: 1.0, green: 0.92, blue: 0.23),    // Yellow
+        Color(red: 1.0, green: 0.6, blue: 0.8),      // Pink
+        Color(red: 0.6, green: 0.9, blue: 0.6),      // Green
+        Color(red: 0.6, green: 0.8, blue: 1.0),      // Blue
+        Color(red: 1.0, green: 0.7, blue: 0.4)       // Orange
     ]
 
     var body: some View {
         Group {
             switch selectedTool {
             case .pen:
-                penHighlighterOptions(width: $penWidth)
+                penOptions
             case .highlighter:
-                penHighlighterOptions(width: $highlighterWidth)
+                highlighterOptions
             case .eraser:
                 eraserOptions
             case .lasso:
@@ -62,29 +74,15 @@ struct ContextualToolbar: View {
         )
     }
 
-    // MARK: - Pen/Highlighter Options
+    // MARK: - Pen Options
 
-    private func penHighlighterOptions(width: Binding<StrokeWidth>) -> some View {
+    private var penOptions: some View {
         HStack(spacing: 12) {
-            // Stroke width presets
-            ForEach(StrokeWidth.allCases, id: \.self) { strokeWidth in
-                Button {
-                    width.wrappedValue = strokeWidth
-                } label: {
-                    Circle()
-                        .fill(Color.adaptiveText(for: colorScheme))
-                        .frame(width: strokeWidth.displaySize, height: strokeWidth.displaySize)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .strokeBorder(
-                                    width.wrappedValue == strokeWidth ? Color.vibrantTeal : Color.clear,
-                                    lineWidth: 2
-                                )
-                        )
-                }
-                .buttonStyle(.plain)
-            }
+            // Thickness slider with preview
+            thicknessSlider(
+                value: $penWidth,
+                range: StrokeWidthRange.penMin...StrokeWidthRange.penMax
+            )
 
             // Divider
             Rectangle()
@@ -93,9 +91,9 @@ struct ContextualToolbar: View {
                 .padding(.horizontal, 4)
 
             // Color swatches
-            ForEach(themeColors, id: \.self) { color in
+            ForEach(penColors, id: \.self) { color in
                 Button {
-                    selectedColor = color
+                    selectedPenColor = color
                 } label: {
                     Circle()
                         .fill(color)
@@ -103,17 +101,68 @@ struct ContextualToolbar: View {
                         .overlay(
                             Circle()
                                 .strokeBorder(
-                                    selectedColor == color ? Color.white : Color.clear,
+                                    selectedPenColor == color ? Color.white : Color.clear,
                                     lineWidth: 2
                                 )
                         )
                         .shadow(
-                            color: selectedColor == color ? color.opacity(0.3) : Color.clear,
+                            color: selectedPenColor == color ? color.opacity(0.3) : Color.clear,
                             radius: 4
                         )
                 }
                 .buttonStyle(.plain)
             }
+
+            // Custom color picker
+            ColorPicker("", selection: $selectedPenColor, supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 28, height: 28)
+        }
+    }
+
+    // MARK: - Highlighter Options
+
+    private var highlighterOptions: some View {
+        HStack(spacing: 12) {
+            // Thickness slider with preview
+            thicknessSlider(
+                value: $highlighterWidth,
+                range: StrokeWidthRange.highlighterMin...StrokeWidthRange.highlighterMax
+            )
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            // Color swatches
+            ForEach(highlighterColors, id: \.self) { color in
+                Button {
+                    selectedHighlighterColor = color
+                } label: {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 28, height: 28)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(
+                                    selectedHighlighterColor == color ? Color.white : Color.clear,
+                                    lineWidth: 2
+                                )
+                        )
+                        .shadow(
+                            color: selectedHighlighterColor == color ? color.opacity(0.3) : Color.clear,
+                            radius: 4
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Custom color picker
+            ColorPicker("", selection: $selectedHighlighterColor, supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 28, height: 28)
         }
     }
 
@@ -121,24 +170,79 @@ struct ContextualToolbar: View {
 
     private var eraserOptions: some View {
         HStack(spacing: 12) {
-            ForEach(EraserSize.allCases, id: \.self) { size in
-                Button {
-                    eraserSize = size
-                } label: {
-                    Circle()
-                        .fill(Color.adaptiveText(for: colorScheme))
-                        .frame(width: size.displaySize, height: size.displaySize)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .strokeBorder(
-                                    eraserSize == size ? Color.vibrantTeal : Color.clear,
-                                    lineWidth: 2
-                                )
-                        )
+            // Stroke eraser button
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    eraserType = .stroke
                 }
-                .buttonStyle(.plain)
+            } label: {
+                Image(systemName: "eraser.line.dashed")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(eraserType == .stroke ? .vibrantTeal : Color.adaptiveText(for: colorScheme))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(eraserType == .stroke ? Color.vibrantTeal.opacity(0.15) : Color.clear)
+                    )
             }
+            .buttonStyle(.plain)
+
+            // Pixel eraser button
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    eraserType = .bitmap
+                }
+            } label: {
+                Image(systemName: "eraser")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(eraserType == .bitmap ? .vibrantTeal : Color.adaptiveText(for: colorScheme))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(eraserType == .bitmap ? Color.vibrantTeal.opacity(0.15) : Color.clear)
+                    )
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            thicknessSlider(
+                value: $eraserSize,
+                range: StrokeWidthRange.eraserMin...StrokeWidthRange.eraserMax
+            )
+            .opacity(eraserType == .bitmap ? 1.0 : 0.35)
+            .disabled(eraserType == .stroke)
+            .animation(.easeInOut(duration: 0.2), value: eraserType)
+        }
+    }
+
+    // MARK: - Thickness Slider
+
+    private func thicknessSlider(value: Binding<CGFloat>, range: ClosedRange<CGFloat>) -> some View {
+        HStack(spacing: 8) {
+            // Small size indicator
+            Circle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.5))
+                .frame(width: 4, height: 4)
+
+            // Slider
+            Slider(value: value, in: range)
+                .accentColor(.vibrantTeal)
+                .frame(width: 100)
+
+            // Large size indicator
+            Circle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.5))
+                .frame(width: 12, height: 12)
+
+            // Current size preview
+            Circle()
+                .fill(Color.adaptiveText(for: colorScheme))
+                .frame(width: min(value.wrappedValue, 16), height: min(value.wrappedValue, 16))
+                .frame(width: 20, height: 20)
         }
     }
 
@@ -174,10 +278,12 @@ struct ContextualToolbar: View {
     VStack(spacing: 20) {
         ContextualToolbar(
             selectedTool: .pen,
-            penWidth: .constant(.medium),
-            highlighterWidth: .constant(.medium),
-            eraserSize: .constant(.medium),
-            selectedColor: .constant(.inkBlack),
+            penWidth: .constant(StrokeWidthRange.penDefault),
+            highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
+            eraserSize: .constant(StrokeWidthRange.eraserDefault),
+            eraserType: .constant(.stroke),
+            selectedPenColor: .constant(.black),
+            selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
             colorScheme: .light,
             hasSelection: false,
             onCut: {},
@@ -187,10 +293,12 @@ struct ContextualToolbar: View {
 
         ContextualToolbar(
             selectedTool: .eraser,
-            penWidth: .constant(.medium),
-            highlighterWidth: .constant(.medium),
-            eraserSize: .constant(.medium),
-            selectedColor: .constant(.inkBlack),
+            penWidth: .constant(StrokeWidthRange.penDefault),
+            highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
+            eraserSize: .constant(StrokeWidthRange.eraserDefault),
+            eraserType: .constant(.bitmap),
+            selectedPenColor: .constant(.black),
+            selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
             colorScheme: .dark,
             hasSelection: false,
             onCut: {},

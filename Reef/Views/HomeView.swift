@@ -379,6 +379,16 @@ struct HomeView: View {
 
             Spacer()
 
+            // Dark mode toggle
+            Button {
+                themeManager.toggle()
+            } label: {
+                Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+            }
+            .buttonStyle(.plain)
+
             Button {
                 authManager.signOut()
             } label: {

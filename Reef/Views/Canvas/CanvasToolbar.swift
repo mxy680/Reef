@@ -16,44 +16,37 @@ enum CanvasTool: Equatable {
     case lasso
 }
 
-// MARK: - Stroke Width Presets
-
-enum StrokeWidth: CGFloat, CaseIterable {
-    case small = 2
-    case medium = 4
-    case thick = 8
-
-    var displaySize: CGFloat {
-        switch self {
-        case .small: return 6
-        case .medium: return 10
-        case .thick: return 14
-        }
-    }
+enum EraserType: String, CaseIterable {
+    case stroke = "Stroke"
+    case bitmap = "Pixel"
 }
 
-enum EraserSize: CGFloat, CaseIterable {
-    case small = 8
-    case medium = 16
-    case large = 32
+// MARK: - Stroke Width Constants
 
-    var displaySize: CGFloat {
-        switch self {
-        case .small: return 8
-        case .medium: return 12
-        case .large: return 16
-        }
-    }
+enum StrokeWidthRange {
+    static let penMin: CGFloat = 1
+    static let penMax: CGFloat = 24
+    static let penDefault: CGFloat = 4
+
+    static let highlighterMin: CGFloat = 4
+    static let highlighterMax: CGFloat = 24
+    static let highlighterDefault: CGFloat = 12
+
+    static let eraserMin: CGFloat = 8
+    static let eraserMax: CGFloat = 48
+    static let eraserDefault: CGFloat = 16
 }
 
 // MARK: - Canvas Toolbar
 
 struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
-    @Binding var selectedColor: Color
-    @Binding var penWidth: StrokeWidth
-    @Binding var highlighterWidth: StrokeWidth
-    @Binding var eraserSize: EraserSize
+    @Binding var selectedPenColor: Color
+    @Binding var selectedHighlighterColor: Color
+    @Binding var penWidth: CGFloat
+    @Binding var highlighterWidth: CGFloat
+    @Binding var eraserSize: CGFloat
+    @Binding var eraserType: EraserType
     let colorScheme: ColorScheme
     let canUndo: Bool
     let canRedo: Bool
@@ -64,6 +57,8 @@ struct CanvasToolbar: View {
     let onCut: () -> Void
     let onCopy: () -> Void
     let onDelete: () -> Void
+    let onAIPressed: () -> Void
+    let onToggleDarkMode: () -> Void
 
     private var showContextualToolbar: Bool {
         switch selectedTool {
@@ -83,7 +78,9 @@ struct CanvasToolbar: View {
                     penWidth: $penWidth,
                     highlighterWidth: $highlighterWidth,
                     eraserSize: $eraserSize,
-                    selectedColor: $selectedColor,
+                    eraserType: $eraserType,
+                    selectedPenColor: $selectedPenColor,
+                    selectedHighlighterColor: $selectedHighlighterColor,
                     colorScheme: colorScheme,
                     hasSelection: hasSelection,
                     onCut: onCut,
@@ -108,25 +105,6 @@ struct CanvasToolbar: View {
                 isSelected: false,
                 colorScheme: colorScheme,
                 action: onHomePressed
-            )
-
-            toolbarDivider
-
-            // Undo/Redo
-            ToolbarButton(
-                icon: "arrow.uturn.backward",
-                isSelected: false,
-                isDisabled: !canUndo,
-                colorScheme: colorScheme,
-                action: onUndo
-            )
-
-            ToolbarButton(
-                icon: "arrow.uturn.forward",
-                isSelected: false,
-                isDisabled: !canRedo,
-                colorScheme: colorScheme,
-                action: onRedo
             )
 
             toolbarDivider
@@ -158,6 +136,45 @@ struct CanvasToolbar: View {
                 isSelected: selectedTool == .lasso,
                 colorScheme: colorScheme,
                 action: { selectedTool = .lasso }
+            )
+
+            toolbarDivider
+
+            // Undo/Redo
+            ToolbarButton(
+                icon: "arrow.uturn.backward",
+                isSelected: false,
+                isDisabled: !canUndo,
+                colorScheme: colorScheme,
+                action: onUndo
+            )
+
+            ToolbarButton(
+                icon: "arrow.uturn.forward",
+                isSelected: false,
+                isDisabled: !canRedo,
+                colorScheme: colorScheme,
+                action: onRedo
+            )
+
+            toolbarDivider
+
+            // AI button
+            ToolbarButton(
+                icon: "sparkles",
+                isSelected: false,
+                colorScheme: colorScheme,
+                action: onAIPressed
+            )
+
+            toolbarDivider
+
+            // Dark mode toggle
+            ToolbarButton(
+                icon: colorScheme == .dark ? "sun.max.fill" : "moon.fill",
+                isSelected: false,
+                colorScheme: colorScheme,
+                action: onToggleDarkMode
             )
         }
         .padding(.horizontal, 12)
@@ -230,10 +247,12 @@ private struct ToolbarButton: View {
     VStack {
         CanvasToolbar(
             selectedTool: .constant(.pen),
-            selectedColor: .constant(.inkBlack),
-            penWidth: .constant(.medium),
-            highlighterWidth: .constant(.medium),
-            eraserSize: .constant(.medium),
+            selectedPenColor: .constant(.inkBlack),
+            selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
+            penWidth: .constant(StrokeWidthRange.penDefault),
+            highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
+            eraserSize: .constant(StrokeWidthRange.eraserDefault),
+            eraserType: .constant(.stroke),
             colorScheme: .light,
             canUndo: true,
             canRedo: false,
@@ -243,7 +262,9 @@ private struct ToolbarButton: View {
             onRedo: {},
             onCut: {},
             onCopy: {},
-            onDelete: {}
+            onDelete: {},
+            onAIPressed: {},
+            onToggleDarkMode: {}
         )
     }
     .padding()

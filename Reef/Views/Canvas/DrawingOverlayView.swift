@@ -15,10 +15,12 @@ struct DrawingOverlayView: UIViewRepresentable {
     let documentURL: URL
     let fileType: Note.FileType
     @Binding var selectedTool: CanvasTool
-    @Binding var selectedColor: Color
-    @Binding var penWidth: StrokeWidth
-    @Binding var highlighterWidth: StrokeWidth
-    @Binding var eraserSize: EraserSize
+    @Binding var selectedPenColor: Color
+    @Binding var selectedHighlighterColor: Color
+    @Binding var penWidth: CGFloat
+    @Binding var highlighterWidth: CGFloat
+    @Binding var eraserSize: CGFloat
+    @Binding var eraserType: EraserType
     var isDarkMode: Bool = false
     var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
     var onUndoStateChanged: (Bool) -> Void = { _ in }
@@ -32,11 +34,13 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.onUndoStateChanged = onUndoStateChanged
         context.coordinator.onRedoStateChanged = onRedoStateChanged
         context.coordinator.onSelectionChanged = onSelectionChanged
-        updateTool(container.canvasView)
 
-        // Notify parent that canvas is ready
+        // Set initial tool after a brief delay to ensure view is ready
+        let initialColor = UIColor(selectedPenColor)
+        let width = penWidth
         DispatchQueue.main.async {
-            onCanvasReady(container)
+            container.canvasView.tool = PKInkingTool(.pen, color: initialColor, width: width)
+            self.onCanvasReady(container)
         }
 
         return container
@@ -44,21 +48,35 @@ struct DrawingOverlayView: UIViewRepresentable {
 
     func updateUIView(_ container: CanvasContainerView, context: Context) {
         updateTool(container.canvasView)
+        container.updateDarkMode(isDarkMode)
     }
 
     private func updateTool(_ canvasView: PKCanvasView) {
         switch selectedTool {
         case .pen:
-            let uiColor = UIColor(selectedColor)
-            canvasView.tool = PKInkingTool(.pen, color: uiColor, width: penWidth.rawValue)
+            // Convert SwiftUI Color to UIColor using explicit RGB to avoid color scheme adaptation
+            let uiColor = uiColorFromSwiftUIColor(selectedPenColor)
+            canvasView.tool = PKInkingTool(.pen, color: uiColor, width: penWidth)
         case .highlighter:
-            let uiColor = UIColor(selectedColor).withAlphaComponent(0.3)
-            canvasView.tool = PKInkingTool(.marker, color: uiColor, width: highlighterWidth.rawValue * 3)
+            let uiColor = UIColor(selectedHighlighterColor).withAlphaComponent(0.3)
+            canvasView.tool = PKInkingTool(.marker, color: uiColor, width: highlighterWidth * 3)
         case .eraser:
-            canvasView.tool = PKEraserTool(.vector, width: eraserSize.rawValue)
+            switch eraserType {
+            case .stroke:
+                canvasView.tool = PKEraserTool(.vector)
+            case .bitmap:
+                canvasView.tool = PKEraserTool(.bitmap, width: eraserSize)
+            }
         case .lasso:
             canvasView.tool = PKLassoTool()
         }
+    }
+
+    /// Converts SwiftUI Color to UIColor
+    /// Since the canvas container has overrideUserInterfaceStyle = .light,
+    /// PencilKit won't invert colors and we can use UIColor directly
+    private func uiColorFromSwiftUIColor(_ color: Color) -> UIColor {
+        return UIColor(color)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -174,6 +192,10 @@ class CanvasContainerView: UIView {
         canvasView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(canvasView)
 
+        // Force light interface style to prevent PencilKit from inverting colors
+        // The app manages dark mode appearance manually via ThemeManager
+        self.overrideUserInterfaceStyle = .light
+
         // Layout constraints for scroll view
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: topAnchor),
@@ -199,17 +221,91 @@ class CanvasContainerView: UIView {
         ])
     }
 
+    func updateDarkMode(_ newDarkMode: Bool) {
+        guard newDarkMode != isDarkMode else { return }
+        isDarkMode = newDarkMode
+        animateThemeChange()
+    }
+
+    private func animateThemeChange() {
+        guard let url = documentURL, let fileType = fileType else { return }
+
+        let newScrollBg = isDarkMode ? Self.scrollBackgroundDark : Self.scrollBackgroundLight
+        let newPageBg: UIColor = isDarkMode ? Self.pageBackgroundDark : .white
+        let newShadowColor = isDarkMode ? UIColor(white: 0.4, alpha: 1).cgColor : UIColor.black.cgColor
+        let newShadowOpacity: Float = isDarkMode ? 0.3 : 0.25
+        let newShadowRadius: CGFloat = isDarkMode ? 16 : 12
+
+        // Animate background colors
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut) {
+            self.scrollView.backgroundColor = newScrollBg
+            self.contentView.backgroundColor = newPageBg
+            self.documentImageView.backgroundColor = newPageBg
+        }
+
+        // Animate shadow changes
+        let shadowColorAnim = CABasicAnimation(keyPath: "shadowColor")
+        shadowColorAnim.fromValue = contentView.layer.shadowColor
+        shadowColorAnim.toValue = newShadowColor
+        shadowColorAnim.duration = 0.3
+
+        let shadowOpacityAnim = CABasicAnimation(keyPath: "shadowOpacity")
+        shadowOpacityAnim.fromValue = contentView.layer.shadowOpacity
+        shadowOpacityAnim.toValue = newShadowOpacity
+        shadowOpacityAnim.duration = 0.3
+
+        let shadowRadiusAnim = CABasicAnimation(keyPath: "shadowRadius")
+        shadowRadiusAnim.fromValue = contentView.layer.shadowRadius
+        shadowRadiusAnim.toValue = newShadowRadius
+        shadowRadiusAnim.duration = 0.3
+
+        contentView.layer.add(shadowColorAnim, forKey: "shadowColor")
+        contentView.layer.add(shadowOpacityAnim, forKey: "shadowOpacity")
+        contentView.layer.add(shadowRadiusAnim, forKey: "shadowRadius")
+
+        contentView.layer.shadowColor = newShadowColor
+        contentView.layer.shadowOpacity = newShadowOpacity
+        contentView.layer.shadowRadius = newShadowRadius
+
+        // Load and crossfade to new document image
+        Task { [weak self] in
+            let loadedImage: UIImage? = await {
+                switch fileType {
+                case .pdf:
+                    return await self?.renderPDFToImage(url: url)
+                case .image:
+                    if let data = try? Data(contentsOf: url) {
+                        return UIImage(data: data)
+                    }
+                    return nil
+                case .document:
+                    return nil
+                }
+            }()
+
+            await MainActor.run { [weak self] in
+                guard let self = self, let image = loadedImage else { return }
+                UIView.transition(
+                    with: self.documentImageView,
+                    duration: 0.3,
+                    options: .transitionCrossDissolve
+                ) {
+                    self.documentImageView.image = image
+                }
+            }
+        }
+    }
+
     private func loadDocument() {
         guard let url = documentURL, let fileType = fileType else { return }
 
         // Update backgrounds based on dark mode
-        // Scroll area uses sage mist (light) or black (dark), page is white (light) or deep ocean (dark)
         scrollView.backgroundColor = isDarkMode ? Self.scrollBackgroundDark : Self.scrollBackgroundLight
         let pageBgColor: UIColor = isDarkMode ? Self.pageBackgroundDark : .white
         contentView.backgroundColor = pageBgColor
         documentImageView.backgroundColor = pageBgColor
 
-        // Adjust shadow for dark mode - use subtle glow effect
+        // Adjust shadow for dark mode
         if isDarkMode {
             contentView.layer.shadowColor = UIColor(white: 0.4, alpha: 1).cgColor
             contentView.layer.shadowOpacity = 0.3
@@ -342,10 +438,12 @@ extension CanvasContainerView: UIScrollViewDelegate {
         documentURL: URL(fileURLWithPath: "/tmp/test.pdf"),
         fileType: .pdf,
         selectedTool: .constant(.pen),
-        selectedColor: .constant(.inkBlack),
-        penWidth: .constant(.medium),
-        highlighterWidth: .constant(.medium),
-        eraserSize: .constant(.medium)
+        selectedPenColor: .constant(.black),
+        selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
+        penWidth: .constant(StrokeWidthRange.penDefault),
+        highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
+        eraserSize: .constant(StrokeWidthRange.eraserDefault),
+        eraserType: .constant(.stroke)
     )
     .background(Color.gray.opacity(0.2))
 }

@@ -15,10 +15,12 @@ struct CanvasView: View {
 
     // Drawing state
     @State private var selectedTool: CanvasTool = .pen
-    @State private var selectedColor: Color = .inkBlack
-    @State private var penWidth: StrokeWidth = .medium
-    @State private var highlighterWidth: StrokeWidth = .medium
-    @State private var eraserSize: EraserSize = .medium
+    @State private var selectedPenColor: Color = UserDefaults.standard.bool(forKey: "isDarkMode") ? .white : .black
+    @State private var selectedHighlighterColor: Color = Color(red: 1.0, green: 0.92, blue: 0.23) // Yellow
+    @State private var penWidth: CGFloat = StrokeWidthRange.penDefault
+    @State private var highlighterWidth: CGFloat = StrokeWidthRange.highlighterDefault
+    @State private var eraserSize: CGFloat = StrokeWidthRange.eraserDefault
+    @State private var eraserType: EraserType = .stroke
 
     // Undo/Redo state
     @State private var canUndo: Bool = false
@@ -48,10 +50,12 @@ struct CanvasView: View {
                 documentURL: fileURL,
                 fileType: note.fileType,
                 selectedTool: $selectedTool,
-                selectedColor: $selectedColor,
+                selectedPenColor: $selectedPenColor,
+                selectedHighlighterColor: $selectedHighlighterColor,
                 penWidth: $penWidth,
                 highlighterWidth: $highlighterWidth,
                 eraserSize: $eraserSize,
+                eraserType: $eraserType,
                 isDarkMode: themeManager.isDarkMode,
                 onCanvasReady: { canvasViewRef = $0 },
                 onUndoStateChanged: { canUndo = $0 },
@@ -64,10 +68,12 @@ struct CanvasView: View {
                 Spacer()
                 CanvasToolbar(
                     selectedTool: $selectedTool,
-                    selectedColor: $selectedColor,
+                    selectedPenColor: $selectedPenColor,
+                    selectedHighlighterColor: $selectedHighlighterColor,
                     penWidth: $penWidth,
                     highlighterWidth: $highlighterWidth,
                     eraserSize: $eraserSize,
+                    eraserType: $eraserType,
                     colorScheme: effectiveColorScheme,
                     canUndo: canUndo,
                     canRedo: canRedo,
@@ -77,18 +83,29 @@ struct CanvasView: View {
                     onRedo: { canvasViewRef?.canvasView.undoManager?.redo() },
                     onCut: { /* TODO: Implement cut */ },
                     onCopy: { /* TODO: Implement copy */ },
-                    onDelete: { /* TODO: Implement delete */ }
+                    onDelete: { /* TODO: Implement delete */ },
+                    onAIPressed: { /* TODO: Implement AI assistant */ },
+                    onToggleDarkMode: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            themeManager.toggle()
+                        }
+                        // Update pen color to match new theme
+                        selectedPenColor = themeManager.isDarkMode ? .white : .black
+                    }
                 )
                 .padding(.bottom, 24)
             }
         }
         .ignoresSafeArea()
         .background(themeManager.isDarkMode ? Color.black : Color(white: 0.96))
+        .preferredColorScheme(effectiveColorScheme)
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             columnVisibility = .detailOnly
             isViewingCanvas = true
+            // Set default pen color based on theme
+            selectedPenColor = themeManager.isDarkMode ? .white : .black
         }
         .onDisappear {
             columnVisibility = .all
