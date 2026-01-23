@@ -44,6 +44,22 @@ enum RecognitionLanguage: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum HandwritingModel: String, CaseIterable, Identifiable {
+    case gemini3Pro = "Gemini 3 Pro"
+    case gemini2Flash = "Gemini 2 Flash"
+    case gpt4Vision = "GPT-4 Vision"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .gemini3Pro: return "Gemini 3 Pro (Recommended)"
+        case .gemini2Flash: return "Gemini 2 Flash"
+        case .gpt4Vision: return "GPT-4 Vision"
+        }
+    }
+}
+
 enum DifficultyLevel: String, CaseIterable, Identifiable {
     case easy = "Easy"
     case medium = "Medium"
@@ -90,6 +106,7 @@ class PreferencesManager: ObservableObject {
     @AppStorage("pauseDetectionSensitivity") var pauseDetectionSensitivity: Double = 0.5
     @AppStorage("autoFeedbackEnabled") var autoFeedbackEnabled: Bool = true
     @AppStorage("feedbackDetailLevel") var feedbackDetailLevel: String = FeedbackDetailLevel.balanced.rawValue
+    @AppStorage("handwritingModel") var handwritingModel: String = HandwritingModel.gemini3Pro.rawValue
     @AppStorage("recognitionLanguage") var recognitionLanguage: String = RecognitionLanguage.english.rawValue
 
     // MARK: - Quiz Defaults

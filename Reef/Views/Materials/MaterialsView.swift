@@ -41,6 +41,8 @@ class ThumbnailCache {
 struct MaterialsView: View {
     let course: Course
     let onAddMaterial: () -> Void
+    @Binding var columnVisibility: NavigationSplitViewVisibility
+    @Binding var isViewingCanvas: Bool
     @Environment(\.modelContext) private var modelContext
     @StateObject private var themeManager = ThemeManager.shared
 
@@ -49,10 +51,6 @@ struct MaterialsView: View {
     @State private var debouncedSearchText: String = ""
     @State private var searchTask: Task<Void, Never>?
     @State private var sortNewestFirst: Bool = true
-
-    // Canvas navigation
-    @State private var selectedMaterial: Material?
-    @State private var isShowingCanvas: Bool = false
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
@@ -99,11 +97,6 @@ struct MaterialsView: View {
                 if !Task.isCancelled {
                     debouncedSearchText = newValue
                 }
-            }
-        }
-        .fullScreenCover(isPresented: $isShowingCanvas) {
-            if let material = selectedMaterial {
-                CanvasView(material: material)
             }
         }
     }
@@ -160,20 +153,20 @@ struct MaterialsView: View {
                 } else {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 24), count: 3), spacing: 24) {
                         ForEach(filteredMaterials) { material in
-                            DocumentGridItem(
-                                document: material,
-                                onDelete: { deleteMaterial(material) },
-                                onTap: {
-                                    print("🔵 Tapped on material: \(material.name)")
-                                    selectedMaterial = material
-                                    isShowingCanvas = true
-                                    print("🔵 isShowingCanvas set to true")
-                                },
-                                itemType: "Notes"
-                            )
+                            NavigationLink(value: material) {
+                                DocumentGridItem(
+                                    document: material,
+                                    onDelete: { deleteMaterial(material) },
+                                    itemType: "Notes"
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(32)
+                    .navigationDestination(for: Material.self) { material in
+                        CanvasView(material: material, columnVisibility: $columnVisibility, isViewingCanvas: $isViewingCanvas)
+                    }
                 }
             }
         }

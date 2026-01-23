@@ -69,7 +69,7 @@ extension Color {
     static let inkBlack = Color(hex: "040404")
 
     /// Backgrounds, cards, dividers, and neutral surfaces
-    static let sageMist = Color(hex: "D7D9CE")
+    static let sageMist = Color(hex: "E8EAE1")
 
     // MARK: - Card Colors
 
@@ -112,9 +112,12 @@ extension Color {
 
     // MARK: - Adaptive Colors
 
+    /// Light gray background for light mode (close to white)
+    static let lightGrayBackground = Color(white: 0.96)
+
     /// Adaptive background color
     static func adaptiveBackground(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? deepOcean : sageMist
+        scheme == .dark ? deepOcean : lightGrayBackground
     }
 
     /// Adaptive text color

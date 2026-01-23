@@ -67,7 +67,7 @@ struct SettingsView: View {
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(selectedTab == tab ? Color.vibrantTeal : Color.sageMist.opacity(effectiveColorScheme == .dark ? 0.2 : 1))
+                            .fill(selectedTab == tab ? Color.vibrantTeal : Color.lightGrayBackground.opacity(effectiveColorScheme == .dark ? 0.2 : 1))
                     )
                     .foregroundColor(selectedTab == tab ? .white : Color.adaptiveText(for: effectiveColorScheme))
                 }

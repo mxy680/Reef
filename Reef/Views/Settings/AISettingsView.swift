@@ -25,13 +25,12 @@ struct AISettingsView: View {
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         Spacer()
-                        Picker("Model", selection: $preferences.reasoningModel) {
-                            ForEach(ReasoningModel.allCases) { model in
-                                Text(model.displayName).tag(model.rawValue)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .tint(Color.vibrantTeal)
+                        styledPicker(
+                            selection: $preferences.reasoningModel,
+                            options: ReasoningModel.allCases,
+                            displayName: { $0.displayName },
+                            rawValue: { $0.rawValue }
+                        )
                     }
                 }
 
@@ -79,34 +78,30 @@ struct AISettingsView: View {
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         Spacer()
-                        Picker("Detail Level", selection: $preferences.feedbackDetailLevel) {
-                            ForEach(FeedbackDetailLevel.allCases) { level in
-                                Text(level.rawValue).tag(level.rawValue)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .tint(Color.vibrantTeal)
+                        styledPicker(
+                            selection: $preferences.feedbackDetailLevel,
+                            options: FeedbackDetailLevel.allCases,
+                            displayName: { $0.rawValue },
+                            rawValue: { $0.rawValue }
+                        )
                     }
                     .padding(.vertical, 4)
                 }
 
                 // Handwriting Recognition Section
                 settingsSection(title: "Handwriting Recognition") {
-                    // Model Info
+                    // Model Picker
                     HStack {
                         Text("Recognition Model")
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         Spacer()
-                        Text("Gemini 3 Pro")
-                            .font(.quicksand(14, weight: .medium))
-                            .foregroundColor(Color.oceanMid)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.oceanMid.opacity(0.1))
-                            )
+                        styledPicker(
+                            selection: $preferences.handwritingModel,
+                            options: HandwritingModel.allCases,
+                            displayName: { $0.displayName },
+                            rawValue: { $0.rawValue }
+                        )
                     }
                     .padding(.vertical, 4)
 
@@ -119,18 +114,17 @@ struct AISettingsView: View {
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         Spacer()
-                        Picker("Language", selection: $preferences.recognitionLanguage) {
-                            ForEach(RecognitionLanguage.allCases) { language in
-                                Text(language.rawValue).tag(language.rawValue)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .tint(Color.vibrantTeal)
+                        styledPicker(
+                            selection: $preferences.recognitionLanguage,
+                            options: RecognitionLanguage.allCases,
+                            displayName: { $0.rawValue },
+                            rawValue: { $0.rawValue }
+                        )
                     }
                     .padding(.vertical, 4)
                 }
 
-                Spacer(minLength: 40)
+                Spacer(minLength: 16)
             }
             .padding(24)
         }
@@ -162,6 +156,40 @@ struct AISettingsView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
             )
+        }
+    }
+
+    private func styledPicker<T: Hashable & Identifiable>(
+        selection: Binding<String>,
+        options: [T],
+        displayName: @escaping (T) -> String,
+        rawValue: @escaping (T) -> String
+    ) -> some View {
+        Menu {
+            ForEach(options) { option in
+                Button {
+                    selection.wrappedValue = rawValue(option)
+                } label: {
+                    HStack {
+                        Text(displayName(option))
+                        if selection.wrappedValue == rawValue(option) {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(options.first { rawValue($0) == selection.wrappedValue }.map { displayName($0) } ?? "Select")
+                    .font(.quicksand(14, weight: .medium))
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundColor(Color.vibrantTeal)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.vibrantTeal.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
 }

@@ -57,15 +57,7 @@ extension Assignment: DocumentItem {
 struct DocumentGridItem<T: DocumentItem>: View {
     let document: T
     let onDelete: () -> Void
-    let onTap: (() -> Void)?
     let itemType: String // "Material" or "Assignment"
-
-    init(document: T, onDelete: @escaping () -> Void, onTap: (() -> Void)? = nil, itemType: String) {
-        self.document = document
-        self.onDelete = onDelete
-        self.onTap = onTap
-        self.itemType = itemType
-    }
 
     @StateObject private var themeManager = ThemeManager.shared
     @State private var thumbnail: UIImage?
@@ -133,12 +125,12 @@ struct DocumentGridItem<T: DocumentItem>: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(document.name)
                         .font(.quicksand(15, weight: .semiBold))
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                        .foregroundColor(effectiveColorScheme == .dark ? .white : Color.inkBlack)
                         .lineLimit(1)
 
                     Text(document.dateAdded.formatted(date: .abbreviated, time: .omitted))
                         .font(.quicksand(13, weight: .regular))
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
+                        .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.6) : Color.inkBlack.opacity(0.5))
                 }
 
                 Spacer()
@@ -151,7 +143,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
                     } label: {
                         Image(systemName: "pencil")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(effectiveColorScheme == .dark ? .white : Color.oceanMid)
+                            .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.7) : Color.inkBlack.opacity(0.6))
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle())
                     }
@@ -162,7 +154,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
                     } label: {
                         Image(systemName: "trash")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.red)
+                            .foregroundColor(.red.opacity(0.7))
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle())
                     }
@@ -170,20 +162,12 @@ struct DocumentGridItem<T: DocumentItem>: View {
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(effectiveColorScheme == .dark ? Color.deepOcean : Color.sageMist)
+            .padding(.vertical, 10)
+            .background(effectiveColorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
         }
         .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.adaptiveText(for: effectiveColorScheme).opacity(0.15), lineWidth: 1)
-        )
         .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.08), radius: 8, x: 0, y: 4)
         .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.3 : 0.04), radius: 2, x: 0, y: 1)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onTap?()
-        }
         .onAppear {
             loadThumbnail()
         }
@@ -277,7 +261,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
         }
     }
 
-    private static func loadImageThumbnail(from url: URL, isDarkMode: Bool = false) -> UIImage? {
+    private nonisolated static func loadImageThumbnail(from url: URL, isDarkMode: Bool = false) -> UIImage? {
         guard let data = try? Data(contentsOf: url),
               let image = UIImage(data: data) else {
             return nil

@@ -75,13 +75,12 @@ struct StudySettingsView: View {
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         Spacer()
-                        Picker("Time Limit", selection: $preferences.quizDefaultTimeLimit) {
-                            ForEach(TimeLimitOption.allCases) { option in
-                                Text(option.rawValue).tag(option.rawValue)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .tint(Color.vibrantTeal)
+                        styledPicker(
+                            selection: $preferences.quizDefaultTimeLimit,
+                            options: TimeLimitOption.allCases,
+                            displayName: { $0.rawValue },
+                            rawValue: { $0.rawValue }
+                        )
                     }
                     .padding(.vertical, 4)
                 }
@@ -126,13 +125,12 @@ struct StudySettingsView: View {
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         Spacer()
-                        Picker("Time Limit", selection: $preferences.examDefaultTimeLimit) {
-                            ForEach(TimeLimitOption.allCases) { option in
-                                Text(option.rawValue).tag(option.rawValue)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .tint(Color.vibrantTeal)
+                        styledPicker(
+                            selection: $preferences.examDefaultTimeLimit,
+                            options: TimeLimitOption.allCases,
+                            displayName: { $0.rawValue },
+                            rawValue: { $0.rawValue }
+                        )
                     }
                     .padding(.vertical, 4)
 
@@ -190,7 +188,7 @@ struct StudySettingsView: View {
                     }
                 }
 
-                Spacer(minLength: 40)
+                Spacer(minLength: 16)
             }
             .padding(24)
         }
@@ -222,6 +220,10 @@ struct StudySettingsView: View {
         .background(
             RoundedRectangle(cornerRadius: 10)
                 .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.5) : Color.sageMist.opacity(0.7))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(effectiveColorScheme == .dark ? Color.clear : Color.oceanMid.opacity(0.3), lineWidth: 1)
         )
     }
 
@@ -257,6 +259,40 @@ struct StudySettingsView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
             )
+        }
+    }
+
+    private func styledPicker<T: Hashable & Identifiable>(
+        selection: Binding<String>,
+        options: [T],
+        displayName: @escaping (T) -> String,
+        rawValue: @escaping (T) -> String
+    ) -> some View {
+        Menu {
+            ForEach(options) { option in
+                Button {
+                    selection.wrappedValue = rawValue(option)
+                } label: {
+                    HStack {
+                        Text(displayName(option))
+                        if selection.wrappedValue == rawValue(option) {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(options.first { rawValue($0) == selection.wrappedValue }.map { displayName($0) } ?? "Select")
+                    .font(.quicksand(14, weight: .medium))
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundColor(Color.vibrantTeal)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.vibrantTeal.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
 }

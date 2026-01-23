@@ -39,11 +39,18 @@ struct PrivacySettingsView: View {
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                         }
                         Spacer()
-                        Button("Clear") {
+                        Button {
                             showClearCacheConfirmation = true
+                        } label: {
+                            Text("Clear")
+                                .font(.quicksand(14, weight: .semiBold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.vibrantTeal)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
-                        .font(.quicksand(14, weight: .semiBold))
-                        .foregroundColor(Color.vibrantTeal)
+                        .buttonStyle(.plain)
                     }
                     .padding(.vertical, 4)
 
@@ -56,11 +63,18 @@ struct PrivacySettingsView: View {
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         Spacer()
-                        Button("Clear") {
+                        Button {
                             showClearHistoryConfirmation = true
+                        } label: {
+                            Text("Clear")
+                                .font(.quicksand(14, weight: .semiBold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.vibrantTeal)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
-                        .font(.quicksand(14, weight: .semiBold))
-                        .foregroundColor(Color.vibrantTeal)
+                        .buttonStyle(.plain)
                     }
                     .padding(.vertical, 4)
 
@@ -115,11 +129,18 @@ struct PrivacySettingsView: View {
                                 ProgressView()
                                     .tint(Color.vibrantTeal)
                             } else {
-                                Button("Re-index") {
+                                Button {
                                     startReindexing()
+                                } label: {
+                                    Text("Re-index")
+                                        .font(.quicksand(14, weight: .semiBold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(Color.vibrantTeal)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
                                 }
-                                .font(.quicksand(14, weight: .semiBold))
-                                .foregroundColor(Color.vibrantTeal)
+                                .buttonStyle(.plain)
                             }
                         }
 
@@ -209,7 +230,7 @@ struct PrivacySettingsView: View {
                     .buttonStyle(.plain)
                 }
 
-                Spacer(minLength: 40)
+                Spacer(minLength: 16)
             }
             .padding(24)
         }

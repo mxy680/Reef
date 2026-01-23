@@ -43,7 +43,7 @@ struct FilterBar: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(effectiveColorScheme == .dark ? Color.deepOcean : Color.sageMist)
+            .background(effectiveColorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
@@ -88,5 +88,5 @@ struct FilterBar: View {
         FilterBar(searchText: .constant("Chapter"), sortNewestFirst: .constant(false))
         Spacer()
     }
-    .background(Color.sageMist)
+    .background(Color.lightGrayBackground)
 }

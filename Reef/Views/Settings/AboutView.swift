@@ -178,7 +178,7 @@ struct AboutView: View {
                 reefGraphic
                     .padding(.top, 16)
 
-                Spacer(minLength: 40)
+                Spacer(minLength: 16)
             }
             .padding(24)
         }

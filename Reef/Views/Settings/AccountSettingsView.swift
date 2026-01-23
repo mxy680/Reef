@@ -6,19 +6,26 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct AccountSettingsView: View {
     @ObservedObject var authManager: AuthenticationManager
     @StateObject private var themeManager = ThemeManager.shared
     @State private var showSignOutConfirmation = false
     @State private var showDeleteAccountConfirmation = false
+    @State private var isEditingName = false
+    @State private var editedName = ""
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var profileImage: Image?
+    @AppStorage("profileImageData") private var profileImageData: Data?
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
     }
 
     private var userInitials: String {
-        guard let name = authManager.userName else { return "?" }
+        let name = editedName.isEmpty ? (authManager.userName ?? "") : editedName
+        guard !name.isEmpty else { return "?" }
         let parts = name.split(separator: " ")
         if parts.count >= 2 {
             return "\(parts[0].prefix(1))\(parts[1].prefix(1))".uppercased()
@@ -31,15 +38,112 @@ struct AccountSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Profile Card
-                profileCard
+                // Profile Section
+                settingsSection(title: "Profile") {
+                    // Avatar Row
+                    HStack {
+                        Text("Photo")
+                            .font(.quicksand(16, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
 
-                // Profile Info Section
-                settingsSection(title: "Profile Info") {
-                    infoRow(label: "Name", value: authManager.userName ?? "Not set")
+                        Spacer()
+
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                            ZStack(alignment: .bottomTrailing) {
+                                if let profileImage = profileImage {
+                                    profileImage
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 60, height: 60)
+                                        .clipShape(Circle())
+                                } else {
+                                    Circle()
+                                        .fill(Color.vibrantTeal)
+                                        .frame(width: 60, height: 60)
+                                        .overlay(
+                                            Text(userInitials)
+                                                .font(.quicksand(20, weight: .bold))
+                                                .foregroundColor(.white)
+                                        )
+                                }
+
+                                // Pencil badge
+                                Circle()
+                                    .fill(Color.oceanMid)
+                                    .frame(width: 24, height: 24)
+                                    .overlay(
+                                        Image(systemName: "pencil")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.white)
+                                    )
+                                    .offset(x: 4, y: 4)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.vertical, 4)
+
                     Divider()
                         .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
-                    infoRow(label: "Email", value: authManager.userEmail ?? "Not set")
+
+                    // Name Row
+                    HStack {
+                        Text("Name")
+                            .font(.quicksand(16, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+
+                        Spacer()
+
+                        if isEditingName {
+                            TextField("Name", text: $editedName)
+                                .font(.quicksand(16, weight: .medium))
+                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                                .multilineTextAlignment(.trailing)
+                                .textFieldStyle(.plain)
+                                .onSubmit {
+                                    saveName()
+                                }
+
+                            Button {
+                                saveName()
+                            } label: {
+                                Text("Save")
+                                    .font(.quicksand(14, weight: .semiBold))
+                                    .foregroundColor(Color.vibrantTeal)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Text(authManager.userName ?? "Not set")
+                                .font(.quicksand(16, weight: .medium))
+                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+
+                            Button {
+                                editedName = authManager.userName ?? ""
+                                isEditingName = true
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.vibrantTeal)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 4)
+
+                    Divider()
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+
+                    // Email Row (read-only)
+                    HStack {
+                        Text("Email")
+                            .font(.quicksand(16, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                        Spacer()
+                        Text(authManager.userEmail ?? "Not set")
+                            .font(.quicksand(16, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.7))
+                    }
+                    .padding(.vertical, 4)
                 }
 
                 // Sign In Method Section
@@ -103,11 +207,24 @@ struct AccountSettingsView: View {
                     .buttonStyle(.plain)
                 }
 
-                Spacer(minLength: 40)
+                Spacer(minLength: 16)
             }
             .padding(24)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
+        .onAppear {
+            loadProfileImage()
+        }
+        .onChange(of: selectedPhotoItem) { _, newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                    profileImageData = data
+                    if let uiImage = UIImage(data: data) {
+                        profileImage = Image(uiImage: uiImage)
+                    }
+                }
+            }
+        }
         .alert("Sign Out", isPresented: $showSignOutConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Sign Out", role: .destructive) {
@@ -127,43 +244,21 @@ struct AccountSettingsView: View {
         }
     }
 
-    // MARK: - Profile Card
+    // MARK: - Helpers
 
-    private var profileCard: some View {
-        VStack(spacing: 16) {
-            // Avatar
-            Circle()
-                .fill(Color.vibrantTeal)
-                .frame(width: 80, height: 80)
-                .overlay(
-                    Text(userInitials)
-                        .font(.quicksand(28, weight: .bold))
-                        .foregroundColor(.white)
-                )
-
-            // Name and Email
-            VStack(spacing: 4) {
-                Text(authManager.userName ?? "User")
-                    .font(.quicksand(20, weight: .semiBold))
-                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-
-                if let email = authManager.userEmail {
-                    Text(email)
-                        .font(.quicksand(14, weight: .regular))
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.7))
-                }
-            }
+    private func saveName() {
+        if !editedName.isEmpty {
+            authManager.userName = editedName
+            KeychainService.save(editedName, for: .userName)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
-                .shadow(color: Color.black.opacity(0.05), radius: 8, y: 2)
-        )
+        isEditingName = false
     }
 
-    // MARK: - Helper Views
+    private func loadProfileImage() {
+        if let data = profileImageData, let uiImage = UIImage(data: data) {
+            profileImage = Image(uiImage: uiImage)
+        }
+    }
 
     private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -181,19 +276,6 @@ struct AccountSettingsView: View {
                     .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
             )
         }
-    }
-
-    private func infoRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.quicksand(16, weight: .medium))
-                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.7))
-            Spacer()
-            Text(value)
-                .font(.quicksand(16, weight: .medium))
-                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-        }
-        .padding(.vertical, 4)
     }
 }
 

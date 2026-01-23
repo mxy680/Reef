@@ -10,8 +10,8 @@ import CoreImage.CIFilterBuiltins
 
 struct PDFThumbnailGenerator {
 
-    /// Sage Mist background color (#D7D9CE) for light mode thumbnails
-    private static let sageMistColor = UIColor(red: 215/255, green: 217/255, blue: 206/255, alpha: 1)
+    /// Sage Mist background color (#E8EAE1) for light mode thumbnails
+    private static let sageMistColor = UIColor(red: 232/255, green: 234/255, blue: 225/255, alpha: 1)
 
     /// Deep Ocean background color (#0A1628) for dark mode thumbnails
     private static let deepOceanColor = UIColor(red: 10/255, green: 22/255, blue: 40/255, alpha: 1)
@@ -39,7 +39,7 @@ struct PDFThumbnailGenerator {
         }
     }
 
-    /// Generates a light mode thumbnail with Sage Mist background
+    /// Generates a light mode thumbnail with white document on sage mist background
     private static func generateLightModeThumbnail(page: PDFPage, size: CGSize) -> UIImage {
         let pageRect = page.bounds(for: .mediaBox)
 
@@ -57,12 +57,9 @@ struct PDFThumbnailGenerator {
 
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { context in
-            // Fill with Sage Mist background
-            sageMistColor.setFill()
+            // Fill with white background (document color)
+            UIColor.white.setFill()
             context.fill(CGRect(origin: .zero, size: size))
-
-            // Multiply blend: white → sage mist, black → black
-            context.cgContext.setBlendMode(.multiply)
 
             context.cgContext.translateBy(x: xOffset, y: scaledHeight - topCrop)
             context.cgContext.scaleBy(x: scale, y: -scale)
