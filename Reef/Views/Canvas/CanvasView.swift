@@ -106,6 +106,7 @@ struct CanvasView: View {
                         selectedPenColor = themeManager.isDarkMode ? .white : .black
                     },
                     canPaste: canPaste,
+                    hasSelection: hasSelection,
                     onCopy: { canvasViewRef?.canvasView.performCopy() },
                     onCut: { canvasViewRef?.canvasView.performCut() },
                     onDelete: { canvasViewRef?.canvasView.performDelete() },
