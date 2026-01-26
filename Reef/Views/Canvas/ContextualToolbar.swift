@@ -471,6 +471,25 @@ struct ContextualToolbar: View {
             colorScheme: .dark,
             onClose: {}
         )
+
+        ContextualToolbar(
+            selectedTool: .lasso,
+            penWidth: .constant(StrokeWidthRange.penDefault),
+            highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
+            eraserSize: .constant(StrokeWidthRange.eraserDefault),
+            eraserType: .constant(.stroke),
+            selectedPenColor: .constant(.black),
+            selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
+            customPenColors: .constant([]),
+            customHighlighterColors: .constant([]),
+            colorScheme: .light,
+            canPaste: true,
+            onCopy: {},
+            onCut: {},
+            onDelete: {},
+            onPaste: {},
+            onClose: {}
+        )
     }
     .padding()
     .background(Color.gray.opacity(0.3))
