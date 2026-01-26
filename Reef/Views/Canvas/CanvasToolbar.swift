@@ -337,7 +337,12 @@ private struct ToolbarButton: View {
             onUndo: {},
             onRedo: {},
             onAIPressed: {},
-            onToggleDarkMode: {}
+            onToggleDarkMode: {},
+            canPaste: false,
+            onCopy: {},
+            onCut: {},
+            onDelete: {},
+            onPaste: {}
         )
     }
     .padding()
