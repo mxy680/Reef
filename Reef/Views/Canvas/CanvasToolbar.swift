@@ -210,11 +210,11 @@ struct CanvasToolbar: View {
                 action: { selectTool(.eraser) }
             )
 
-            ToolbarButton(
-                icon: "lasso",
+            LassoButtonWithHint(
                 isSelected: selectedTool == .lasso,
                 colorScheme: colorScheme,
-                action: { selectTool(.lasso) }
+                showingHint: $showingLassoHint,
+                onSelect: { selectTool(.lasso) }
             )
 
             toolbarDivider
