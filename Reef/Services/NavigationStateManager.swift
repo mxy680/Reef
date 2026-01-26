@@ -7,11 +7,12 @@ import SwiftUI
 
 /// Persists navigation state across app restarts using AppStorage (UserDefaults).
 /// Stores sidebar selection, course/section, note selection, and canvas view state.
+/// Uses raw strings to avoid coupling to model types defined elsewhere.
 @MainActor
 class NavigationStateManager: ObservableObject {
     static let shared = NavigationStateManager()
 
-    // MARK: - Persisted State
+    // MARK: - Persisted State (raw strings for decoupling)
 
     @AppStorage("nav_sidebarItem") var selectedSidebarItemRaw: String?
     @AppStorage("nav_courseID") var selectedCourseID: String?
@@ -20,71 +21,6 @@ class NavigationStateManager: ObservableObject {
     @AppStorage("nav_isViewingCanvas") var isViewingCanvas: Bool = false
 
     private init() {}
-
-    // MARK: - Computed Properties
-
-    var selectedSidebarItem: SidebarItem? {
-        get {
-            guard let raw = selectedSidebarItemRaw else { return nil }
-            return SidebarItem(rawValue: raw)
-        }
-        set {
-            selectedSidebarItemRaw = newValue?.rawValue
-        }
-    }
-
-    var selectedSection: CourseSection? {
-        get {
-            guard let raw = selectedSectionRaw else { return nil }
-            return CourseSection(rawValue: raw)
-        }
-        set {
-            selectedSectionRaw = newValue?.rawValue
-        }
-    }
-
-    // MARK: - Save Methods
-
-    func saveSidebarItem(_ item: SidebarItem?) {
-        selectedSidebarItem = item
-    }
-
-    func saveCourse(_ course: Course?) {
-        selectedCourseID = course?.id.uuidString
-    }
-
-    func saveSection(_ section: CourseSection?) {
-        selectedSection = section
-    }
-
-    func saveNote(_ note: Note?) {
-        selectedNoteID = note?.id.uuidString
-    }
-
-    func saveCanvasState(_ isViewing: Bool) {
-        isViewingCanvas = isViewing
-    }
-
-    // MARK: - Restore Methods
-
-    /// Finds a Course from the persisted ID in the given collection.
-    func restoreCourse(from courses: [Course]) -> Course? {
-        guard let idString = selectedCourseID,
-              let uuid = UUID(uuidString: idString) else {
-            return nil
-        }
-        return courses.first { $0.id == uuid }
-    }
-
-    /// Finds a Note from the persisted ID within the given Course.
-    func restoreNote(from course: Course?) -> Note? {
-        guard let course = course,
-              let idString = selectedNoteID,
-              let uuid = UUID(uuidString: idString) else {
-            return nil
-        }
-        return course.notes.first { $0.id == uuid }
-    }
 
     // MARK: - Clear State
 
