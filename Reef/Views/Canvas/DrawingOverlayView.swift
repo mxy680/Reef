@@ -475,18 +475,19 @@ class CanvasContainerView: UIView {
         contentView.layer.shadowRadius = 12
         scrollView.addSubview(contentView)
 
-        // Configure background pattern view (behind document)
-        backgroundPatternView.translatesAutoresizingMaskIntoConstraints = false
-        backgroundPatternView.backgroundColor = .clear
-        backgroundPatternView.mode = backgroundMode
-        backgroundPatternView.isDarkMode = isDarkMode
-        contentView.addSubview(backgroundPatternView)
-
         // Configure document image view
         documentImageView.translatesAutoresizingMaskIntoConstraints = false
         documentImageView.contentMode = .scaleAspectFit
         documentImageView.backgroundColor = .white
         contentView.addSubview(documentImageView)
+
+        // Configure background pattern view (on top of document, below canvas)
+        backgroundPatternView.translatesAutoresizingMaskIntoConstraints = false
+        backgroundPatternView.backgroundColor = .clear
+        backgroundPatternView.isOpaque = false
+        backgroundPatternView.mode = backgroundMode
+        backgroundPatternView.isDarkMode = isDarkMode
+        contentView.addSubview(backgroundPatternView)
 
         // Configure canvas view (transparent overlay)
         canvasView.backgroundColor = .clear
