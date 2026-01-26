@@ -74,6 +74,8 @@ struct ContextualToolbar: View {
                     eraserOptions
                 case .lasso:
                     lassoOptions
+                case .diagram:
+                    diagramOptions
                 }
             }
 
@@ -337,6 +339,62 @@ struct ContextualToolbar: View {
         }
     }
 
+    // MARK: - Diagram Options
+
+    private var diagramOptions: some View {
+        HStack(spacing: 12) {
+            // Thickness slider with preview (uses pen width * 4)
+            thicknessSlider(
+                value: $penWidth,
+                range: StrokeWidthRange.penMin...StrokeWidthRange.penMax
+            )
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            // Color swatches (reuse pen colors)
+            ForEach(Array(allPenColors.enumerated()), id: \.offset) { index, color in
+                let isCustomColor = index >= defaultPenColors.count
+                let customIndex = index - defaultPenColors.count
+                let isRemoving = isCustomColor && removingPenColorIndex == customIndex
+
+                ColorSwatch(
+                    color: color,
+                    isSelected: selectedPenColor == color,
+                    isRemoving: isRemoving,
+                    onTap: { selectedPenColor = color },
+                    onLongPress: isCustomColor ? {
+                        removeCustomPenColor(at: customIndex)
+                    } : nil
+                )
+            }
+
+            // Add color button (if under max)
+            if customPenColors.count < Self.maxCustomColors {
+                ColorPicker("", selection: $penColorPickerColor, supportsOpacity: false)
+                    .labelsHidden()
+                    .frame(width: 28, height: 28)
+                    .overlay(
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
+                            .allowsHitTesting(false)
+                    )
+                    .onChange(of: penColorPickerColor) { _, newColor in
+                        if !allPenColors.contains(where: { colorsAreClose($0, newColor) }) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                customPenColors.append(newColor)
+                            }
+                            selectedPenColor = newColor
+                        }
+                    }
+            }
+        }
+    }
+
     // MARK: - Lasso Options
 
     @State private var showingTooltip: LassoAction? = nil
@@ -451,6 +509,20 @@ struct ContextualToolbar: View {
     VStack(spacing: 20) {
         ContextualToolbar(
             selectedTool: .pen,
+            penWidth: .constant(StrokeWidthRange.penDefault),
+            highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
+            eraserSize: .constant(StrokeWidthRange.eraserDefault),
+            eraserType: .constant(.stroke),
+            selectedPenColor: .constant(.black),
+            selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
+            customPenColors: .constant([]),
+            customHighlighterColors: .constant([]),
+            colorScheme: .light,
+            onClose: {}
+        )
+
+        ContextualToolbar(
+            selectedTool: .diagram,
             penWidth: .constant(StrokeWidthRange.penDefault),
             highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
             eraserSize: .constant(StrokeWidthRange.eraserDefault),

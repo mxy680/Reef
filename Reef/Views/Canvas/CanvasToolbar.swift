@@ -14,6 +14,7 @@ enum CanvasTool: Equatable {
     case highlighter
     case eraser
     case lasso
+    case diagram
 }
 
 enum EraserType: String, CaseIterable {
@@ -96,10 +97,11 @@ struct CanvasToolbar: View {
 
     @State private var contextualToolbarHidden: Bool = false
     @State private var backgroundModeSelected: Bool = false
+    @State private var aiModeSelected: Bool = false
 
     private var toolHasContextualMenu: Bool {
         switch selectedTool {
-        case .pen, .highlighter, .eraser:
+        case .pen, .highlighter, .eraser, .diagram:
             return true
         case .lasso:
             return false  // Use Apple's default popup menu
@@ -109,7 +111,7 @@ struct CanvasToolbar: View {
     private var showToolContextualToolbar: Bool {
         guard !backgroundModeSelected else { return false }
         switch selectedTool {
-        case .pen, .highlighter, .eraser:
+        case .pen, .highlighter, .eraser, .diagram:
             return !contextualToolbarHidden
         case .lasso:
             return false  // Use Apple's default popup menu
@@ -120,9 +122,14 @@ struct CanvasToolbar: View {
         backgroundModeSelected
     }
 
+    private var showAIToolbar: Bool {
+        aiModeSelected
+    }
+
     private func selectTool(_ tool: CanvasTool) {
-        // Deselect background mode when selecting a drawing tool
+        // Deselect background mode and AI mode when selecting a drawing tool
         backgroundModeSelected = false
+        aiModeSelected = false
 
         if selectedTool == tool && toolHasContextualMenu {
             contextualToolbarHidden.toggle()
@@ -137,9 +144,22 @@ struct CanvasToolbar: View {
             // Toggle off if already selected
             backgroundModeSelected = false
         } else {
-            // Select background mode, hide tool contextual toolbar
+            // Select background mode, hide tool contextual toolbar and AI toolbar
             backgroundModeSelected = true
             contextualToolbarHidden = true
+            aiModeSelected = false
+        }
+    }
+
+    private func selectAIMode() {
+        if aiModeSelected {
+            // Toggle off if already selected
+            aiModeSelected = false
+        } else {
+            // Select AI mode, hide other contextual toolbars
+            aiModeSelected = true
+            contextualToolbarHidden = true
+            backgroundModeSelected = false
         }
     }
 
@@ -181,14 +201,25 @@ struct CanvasToolbar: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
+            // AI toolbar tier
+            if showAIToolbar {
+                AIToolbar(
+                    colorScheme: colorScheme,
+                    onClose: { aiModeSelected = false }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             // Main toolbar
             mainToolbar
         }
         .animation(.easeOut(duration: 0.2), value: showToolContextualToolbar)
         .animation(.easeOut(duration: 0.2), value: showBackgroundModeToolbar)
+        .animation(.easeOut(duration: 0.2), value: showAIToolbar)
         .animation(.easeOut(duration: 0.2), value: selectedTool)
         .animation(.easeOut(duration: 0.2), value: contextualToolbarHidden)
         .animation(.easeOut(duration: 0.2), value: backgroundModeSelected)
+        .animation(.easeOut(duration: 0.2), value: aiModeSelected)
     }
 
     private var mainToolbar: some View {
@@ -206,28 +237,35 @@ struct CanvasToolbar: View {
             // Drawing tools
             ToolbarButton(
                 icon: "pencil.tip",
-                isSelected: selectedTool == .pen,
+                isSelected: selectedTool == .pen && !backgroundModeSelected,
                 colorScheme: colorScheme,
                 action: { selectTool(.pen) }
             )
 
             ToolbarButton(
+                icon: "skew",
+                isSelected: selectedTool == .diagram && !backgroundModeSelected,
+                colorScheme: colorScheme,
+                action: { selectTool(.diagram) }
+            )
+
+            ToolbarButton(
                 icon: "highlighter",
-                isSelected: selectedTool == .highlighter,
+                isSelected: selectedTool == .highlighter && !backgroundModeSelected,
                 colorScheme: colorScheme,
                 action: { selectTool(.highlighter) }
             )
 
             ToolbarButton(
                 icon: "eraser.fill",
-                isSelected: selectedTool == .eraser,
+                isSelected: selectedTool == .eraser && !backgroundModeSelected,
                 colorScheme: colorScheme,
                 action: { selectTool(.eraser) }
             )
 
             ToolbarButton(
                 icon: "lasso",
-                isSelected: selectedTool == .lasso,
+                isSelected: selectedTool == .lasso && !backgroundModeSelected,
                 colorScheme: colorScheme,
                 action: { selectTool(.lasso) }
             )
@@ -264,9 +302,9 @@ struct CanvasToolbar: View {
             // AI button
             ToolbarButton(
                 icon: "sparkles",
-                isSelected: false,
+                isSelected: aiModeSelected,
                 colorScheme: colorScheme,
-                action: onAIPressed
+                action: selectAIMode
             )
 
             toolbarDivider
@@ -461,6 +499,119 @@ private struct BackgroundModeToolbar: View {
                     y: 4
                 )
         )
+    }
+}
+
+// MARK: - AI Toolbar
+
+private struct AIToolbar: View {
+    let colorScheme: ColorScheme
+    var onClose: (() -> Void)? = nil
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Ask (Push to Talk) button
+            AIToolbarButton(
+                icon: "mic.fill",
+                label: "Ask",
+                colorScheme: colorScheme,
+                action: { /* No functionality yet */ }
+            )
+
+            // Hint button
+            AIToolbarButton(
+                icon: "lightbulb.fill",
+                label: "Hint",
+                colorScheme: colorScheme,
+                action: { /* No functionality yet */ }
+            )
+
+            // Improve button
+            AIToolbarButton(
+                icon: "wand.and.stars",
+                label: "Improve",
+                colorScheme: colorScheme,
+                action: { /* No functionality yet */ }
+            )
+
+            // Check button
+            AIToolbarButton(
+                icon: "checkmark.circle.fill",
+                label: "Check",
+                colorScheme: colorScheme,
+                action: { /* No functionality yet */ }
+            )
+
+            // Show Error button
+            AIToolbarButton(
+                icon: "exclamationmark.triangle.fill",
+                label: "Error",
+                colorScheme: colorScheme,
+                action: { /* No functionality yet */ }
+            )
+
+            if onClose != nil {
+                // Divider before close button
+                Rectangle()
+                    .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                    .frame(width: 1, height: 24)
+                    .padding(.leading, 12)
+                    .padding(.trailing, 8)
+
+                // Close button
+                Button {
+                    onClose?()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.6))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 48)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .strokeBorder(
+                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
+                            lineWidth: 1
+                        )
+                )
+                .shadow(
+                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
+                    radius: colorScheme == .dark ? 12 : 8,
+                    x: 0,
+                    y: 4
+                )
+        )
+    }
+}
+
+// MARK: - AI Toolbar Button
+
+private struct AIToolbarButton: View {
+    let icon: String
+    let label: String
+    let colorScheme: ColorScheme
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .medium))
+                Text(label)
+                    .font(.system(size: 10, weight: .medium))
+            }
+            .foregroundColor(Color.adaptiveText(for: colorScheme))
+            .frame(width: 52, height: 40)
+        }
+        .buttonStyle(.plain)
     }
 }
 
