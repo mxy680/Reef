@@ -54,8 +54,9 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.pauseSensitivity = pauseSensitivity
 
         // Wire up selection change callback
-        container.canvasView.onSelectionChanged = { [weak context] hasSelection in
-            context?.coordinator.onSelectionChanged(hasSelection)
+        let coordinator = context.coordinator
+        container.canvasView.onSelectionChanged = { hasSelection in
+            coordinator.onSelectionChanged(hasSelection)
         }
 
         // Set initial tool after a brief delay to ensure view is ready
