@@ -82,6 +82,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.pauseSensitivity = pauseSensitivity
         context.coordinator.onRecognitionResult = onRecognitionResult
+        context.coordinator.onSelectionChanged = onSelectionChanged
     }
 
     private func updateTool(_ canvasView: PKCanvasView) {
