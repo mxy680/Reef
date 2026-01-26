@@ -576,10 +576,63 @@ struct HomeView: View {
             Task.detached(priority: .background) {
                 await VectorMigrationService().migrateIfNeeded(courses: courses)
             }
+
+            // Restore navigation state (only once per session)
+            guard !hasRestoredState else { return }
+            hasRestoredState = true
+
+            // Restore sidebar item
+            if let rawItem = navStateManager.selectedSidebarItemRaw,
+               let item = SidebarItem(rawValue: rawItem) {
+                selectedItem = item
+            }
+
+            // Restore course
+            if let courseIDString = navStateManager.selectedCourseID,
+               let courseUUID = UUID(uuidString: courseIDString),
+               let course = courses.first(where: { $0.id == courseUUID }) {
+                selectedCourse = course
+                isCoursesExpanded = true
+
+                // Restore section
+                if let rawSection = navStateManager.selectedSectionRaw,
+                   let section = CourseSection(rawValue: rawSection) {
+                    selectedSection = section
+
+                    // Restore note if viewing canvas
+                    if navStateManager.isViewingCanvas,
+                       let noteIDString = navStateManager.selectedNoteID,
+                       let noteUUID = UUID(uuidString: noteIDString),
+                       let note = course.notes.first(where: { $0.id == noteUUID }) {
+                        selectedNote = note
+                        isViewingCanvas = true
+                    } else {
+                        // Note was deleted or not found - clear note state
+                        navStateManager.clearNoteState()
+                    }
+                }
+            } else if navStateManager.selectedCourseID != nil {
+                // Course was deleted - clear course state
+                navStateManager.clearCourseState()
+            }
         }
         .onChange(of: selectedNote) { _, newValue in
             // Don't change columnVisibility - keep home screen rendered behind canvas
             isViewingCanvas = newValue != nil
+        }
+        // Save navigation state on changes
+        .onChange(of: selectedItem) { _, newValue in
+            navStateManager.selectedSidebarItemRaw = newValue?.rawValue
+        }
+        .onChange(of: selectedCourse) { _, newValue in
+            navStateManager.selectedCourseID = newValue?.id.uuidString
+        }
+        .onChange(of: selectedSection) { _, newValue in
+            navStateManager.selectedSectionRaw = newValue?.rawValue
+        }
+        .onChange(of: selectedNote) { _, newValue in
+            navStateManager.selectedNoteID = newValue?.id.uuidString
+            navStateManager.isViewingCanvas = newValue != nil
         }
     }
 
