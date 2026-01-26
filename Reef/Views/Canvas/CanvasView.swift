@@ -30,6 +30,9 @@ struct CanvasView: View {
     @State private var canUndo: Bool = false
     @State private var canRedo: Bool = false
 
+    // Clipboard state
+    @State private var canPaste: Bool = false
+
     // Reference to canvas for undo/redo
     @State private var canvasViewRef: CanvasContainerView?
 
