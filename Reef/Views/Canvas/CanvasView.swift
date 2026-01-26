@@ -81,7 +81,6 @@ struct CanvasView: View {
                     colorScheme: effectiveColorScheme,
                     canUndo: canUndo,
                     canRedo: canRedo,
-                    canPaste: canPaste,
                     onHomePressed: {
                         if let onDismiss = onDismiss {
                             // Use parent-controlled animation
