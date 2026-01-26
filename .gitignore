@@ -22,5 +22,9 @@ Carthage/Build/
 docs/
 CLAUDE.md
 
+# Secrets
+Secrets.swift
+.env
+
 # Worktrees
 .worktrees/
