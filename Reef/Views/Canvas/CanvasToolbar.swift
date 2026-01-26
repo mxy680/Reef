@@ -133,6 +133,11 @@ struct CanvasToolbar: View {
                     customPenColors: $customPenColors,
                     customHighlighterColors: $customHighlighterColors,
                     colorScheme: colorScheme,
+                    canPaste: canPaste,
+                    onCopy: onCopy,
+                    onCut: onCut,
+                    onDelete: onDelete,
+                    onPaste: onPaste,
                     onClose: { contextualToolbarHidden = true }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
