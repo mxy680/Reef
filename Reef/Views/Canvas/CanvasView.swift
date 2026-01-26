@@ -117,11 +117,6 @@ struct CanvasView: View {
             }
             // Set default pen color based on theme
             selectedPenColor = themeManager.isDarkMode ? .white : .black
-            // Check initial clipboard state
-            updatePasteState()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
-            updatePasteState()
         }
         .onDisappear {
             // Only manage state if not controlled by parent
