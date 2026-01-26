@@ -37,18 +37,6 @@ struct CanvasView: View {
         themeManager.isDarkMode ? .dark : .light
     }
 
-    private func updatePasteState() {
-        UIPasteboard.general.detectPatterns(for: [.init(rawValue: "com.apple.pencilkit.drawing")]) { result in
-            DispatchQueue.main.async {
-                if case .success(let patterns) = result {
-                    canPaste = !patterns.isEmpty
-                } else {
-                    canPaste = false
-                }
-            }
-        }
-    }
-
     private var fileURL: URL {
         FileStorageService.shared.getFileURL(
             for: note.id,
