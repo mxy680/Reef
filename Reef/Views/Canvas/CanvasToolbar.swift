@@ -84,6 +84,13 @@ struct CanvasToolbar: View {
     let onAIPressed: () -> Void
     let onToggleDarkMode: () -> Void
 
+    // Lasso clipboard actions
+    let canPaste: Bool
+    let onCopy: () -> Void
+    let onCut: () -> Void
+    let onDelete: () -> Void
+    let onPaste: () -> Void
+
     @State private var contextualToolbarHidden: Bool = false
 
     private var toolHasContextualMenu: Bool {
