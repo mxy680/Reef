@@ -627,6 +627,11 @@ class CanvasContainerView: UIView {
     private func loadDocument() {
         guard let url = documentURL, let fileType = fileType else { return }
 
+        // Update background pattern view with current settings
+        backgroundPatternView.mode = backgroundMode
+        backgroundPatternView.opacity = backgroundOpacity
+        backgroundPatternView.isDarkMode = isDarkMode
+
         // Update backgrounds based on dark mode
         scrollView.backgroundColor = isDarkMode ? Self.scrollBackgroundDark : Self.scrollBackgroundLight
         let pageBgColor: UIColor = isDarkMode ? Self.pageBackgroundDark : .white
