@@ -754,10 +754,10 @@ class CanvasBackgroundPatternView: UIView {
     }
 
     /// Spacing between grid lines/dots in points
-    private let gridSpacing: CGFloat = 20
+    private let gridSpacing: CGFloat = 48
 
     /// Spacing between horizontal lines for lined paper
-    private let lineSpacing: CGFloat = 24
+    private let lineSpacing: CGFloat = 36
 
     /// Pattern color - subtle gray that doesn't interfere with content
     private var patternColor: UIColor {

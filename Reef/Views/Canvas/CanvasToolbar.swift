@@ -87,6 +87,7 @@ struct CanvasToolbar: View {
     let onToggleDarkMode: () -> Void
 
     @State private var contextualToolbarHidden: Bool = false
+    @State private var backgroundModeSelected: Bool = false
 
     private var toolHasContextualMenu: Bool {
         switch selectedTool {
@@ -97,7 +98,8 @@ struct CanvasToolbar: View {
         }
     }
 
-    private var showContextualToolbar: Bool {
+    private var showToolContextualToolbar: Bool {
+        guard !backgroundModeSelected else { return false }
         switch selectedTool {
         case .pen, .highlighter, .eraser:
             return !contextualToolbarHidden
@@ -106,7 +108,14 @@ struct CanvasToolbar: View {
         }
     }
 
+    private var showBackgroundModeToolbar: Bool {
+        backgroundModeSelected
+    }
+
     private func selectTool(_ tool: CanvasTool) {
+        // Deselect background mode when selecting a drawing tool
+        backgroundModeSelected = false
+
         if selectedTool == tool && toolHasContextualMenu {
             contextualToolbarHidden.toggle()
         } else {
@@ -115,10 +124,21 @@ struct CanvasToolbar: View {
         }
     }
 
+    private func selectBackgroundMode() {
+        if backgroundModeSelected {
+            // Toggle off if already selected
+            backgroundModeSelected = false
+        } else {
+            // Select background mode, hide tool contextual toolbar
+            backgroundModeSelected = true
+            contextualToolbarHidden = true
+        }
+    }
+
     var body: some View {
         VStack(spacing: 8) {
-            // Contextual tier
-            if showContextualToolbar {
+            // Tool contextual tier
+            if showToolContextualToolbar {
                 ContextualToolbar(
                     selectedTool: selectedTool,
                     penWidth: $penWidth,
@@ -135,12 +155,24 @@ struct CanvasToolbar: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
+            // Background mode contextual tier
+            if showBackgroundModeToolbar {
+                BackgroundModeToolbar(
+                    canvasBackgroundMode: $canvasBackgroundMode,
+                    colorScheme: colorScheme,
+                    onClose: { backgroundModeSelected = false }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             // Main toolbar
             mainToolbar
         }
-        .animation(.easeOut(duration: 0.2), value: showContextualToolbar)
+        .animation(.easeOut(duration: 0.2), value: showToolContextualToolbar)
+        .animation(.easeOut(duration: 0.2), value: showBackgroundModeToolbar)
         .animation(.easeOut(duration: 0.2), value: selectedTool)
         .animation(.easeOut(duration: 0.2), value: contextualToolbarHidden)
+        .animation(.easeOut(duration: 0.2), value: backgroundModeSelected)
     }
 
     private var mainToolbar: some View {
@@ -153,25 +185,13 @@ struct CanvasToolbar: View {
                 action: onHomePressed
             )
 
-            // Background mode menu
-            Menu {
-                ForEach(CanvasBackgroundMode.allCases, id: \.self) { mode in
-                    Button(action: { canvasBackgroundMode = mode }) {
-                        Label(mode.displayName, systemImage: mode.iconName)
-                    }
-                }
-            } label: {
-                Image(systemName: canvasBackgroundMode.iconName)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(canvasBackgroundMode != .normal ? .vibrantTeal : Color.adaptiveText(for: colorScheme))
-                    .frame(width: 44, height: 44)
-                    .background(
-                        canvasBackgroundMode != .normal ?
-                            Color.vibrantTeal.opacity(0.15) :
-                            Color.clear
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
+            // Background mode button
+            ToolbarButton(
+                icon: canvasBackgroundMode.iconName,
+                isSelected: backgroundModeSelected,
+                colorScheme: colorScheme,
+                action: selectBackgroundMode
+            )
 
             toolbarDivider
 
@@ -314,6 +334,77 @@ private struct ToolbarButton: View {
             return .vibrantTeal
         }
         return Color.adaptiveText(for: colorScheme)
+    }
+}
+
+// MARK: - Background Mode Toolbar
+
+private struct BackgroundModeToolbar: View {
+    @Binding var canvasBackgroundMode: CanvasBackgroundMode
+    let colorScheme: ColorScheme
+    var onClose: (() -> Void)? = nil
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(CanvasBackgroundMode.allCases, id: \.self) { mode in
+                Button {
+                    canvasBackgroundMode = mode
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: mode.iconName)
+                            .font(.system(size: 18, weight: .medium))
+                        Text(mode.displayName)
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .foregroundColor(canvasBackgroundMode == mode ? .vibrantTeal : Color.adaptiveText(for: colorScheme))
+                    .frame(width: 56, height: 40)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(canvasBackgroundMode == mode ? Color.vibrantTeal.opacity(0.15) : Color.clear)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if onClose != nil {
+                // Divider before close button
+                Rectangle()
+                    .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                    .frame(width: 1, height: 24)
+                    .padding(.leading, 12)
+                    .padding(.trailing, 8)
+
+                // Close button
+                Button {
+                    onClose?()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.6))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 48)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .strokeBorder(
+                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
+                            lineWidth: 1
+                        )
+                )
+                .shadow(
+                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
+                    radius: colorScheme == .dark ? 12 : 8,
+                    x: 0,
+                    y: 4
+                )
+        )
     }
 }
 
