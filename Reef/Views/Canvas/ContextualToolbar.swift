@@ -553,8 +553,8 @@ private struct LassoActionButton: View {
     let isEnabled: Bool
     var isDestructive: Bool = false
     let colorScheme: ColorScheme
-    @Binding var showingTooltip: ContextualToolbar.LassoAction?
-    let tooltipAction: ContextualToolbar.LassoAction?
+    @Binding var showingTooltip: LassoAction?
+    let tooltipAction: LassoAction?
     let action: () -> Void
 
     private var foregroundColor: Color {
