@@ -98,16 +98,14 @@ struct CanvasToolbar: View {
         case .pen, .highlighter, .eraser:
             return true
         case .lasso:
-            return false
+            return true
         }
     }
 
     private var showContextualToolbar: Bool {
         switch selectedTool {
-        case .pen, .highlighter, .eraser:
+        case .pen, .highlighter, .eraser, .lasso:
             return !contextualToolbarHidden
-        case .lasso:
-            return false
         }
     }
 
