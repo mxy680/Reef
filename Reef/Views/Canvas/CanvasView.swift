@@ -33,11 +33,7 @@ struct CanvasView: View {
     @State private var canUndo: Bool = false
     @State private var canRedo: Bool = false
 
-    // Lasso selection state
-    @State private var hasSelection: Bool = false
-    @State private var canPaste: Bool = false
-
-    // Reference to canvas for undo/redo and lasso operations
+    // Reference to canvas for undo/redo
     @State private var canvasViewRef: CanvasContainerView?
 
     // Drawing persistence
@@ -79,15 +75,7 @@ struct CanvasView: View {
                     }
                 },
                 onUndoStateChanged: { canUndo = $0 },
-                onRedoStateChanged: { canRedo = $0 },
-                onSelectionChanged: { hasSelection = $0 },
-                onDrawingChanged: { drawing in
-                    // Debounced auto-save on drawing change
-                    saveTask?.cancel()
-                    saveTask = Task {
-                        try? DrawingStorageService.shared.saveDrawing(drawing, for: note.id)
-                    }
-                }
+                onRedoStateChanged: { canRedo = $0 }
             )
 
             // Floating toolbar at bottom
@@ -127,13 +115,7 @@ struct CanvasView: View {
                         }
                         // Update pen color to match new theme
                         selectedPenColor = themeManager.isDarkMode ? .white : .black
-                    },
-                    canPaste: canvasViewRef?.canvasView.canPaste ?? false,
-                    hasSelection: hasSelection,
-                    onCopy: { canvasViewRef?.canvasView.copySelection() },
-                    onCut: { canvasViewRef?.canvasView.cutSelection() },
-                    onDelete: { canvasViewRef?.canvasView.deleteSelection() },
-                    onPaste: { canvasViewRef?.canvasView.pasteFromClipboard() }
+                    }
                 )
                 .padding(.bottom, 24)
             }
@@ -157,12 +139,6 @@ struct CanvasView: View {
             if onDismiss == nil {
                 columnVisibility = .all
                 isViewingCanvas = false
-            }
-
-            // Save drawing before leaving
-            saveTask?.cancel()
-            if let drawing = canvasViewRef?.canvasView.drawing {
-                try? DrawingStorageService.shared.saveDrawing(drawing, for: note.id)
             }
         }
     }

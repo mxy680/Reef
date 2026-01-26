@@ -42,7 +42,6 @@ struct DrawingOverlayView: UIViewRepresentable {
     var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
     var onUndoStateChanged: (Bool) -> Void = { _ in }
     var onRedoStateChanged: (Bool) -> Void = { _ in }
-    var onSelectionChanged: (Bool) -> Void = { _ in }
     var onRecognitionResult: (RecognitionResult) -> Void = { _ in }
     var onDrawingChanged: (PKDrawing) -> Void = { _ in }
 
@@ -56,12 +55,6 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.onDrawingChanged = onDrawingChanged
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.pauseSensitivity = pauseSensitivity
-
-        // Wire up selection change callback
-        let coordinator = context.coordinator
-        container.canvasView.onSelectionChanged = { hasSelection in
-            coordinator.onSelectionChanged(hasSelection)
-        }
 
         // Set initial tool after a brief delay to ensure view is ready
         let initialColor = UIColor(selectedPenColor)
@@ -88,8 +81,6 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.pauseSensitivity = pauseSensitivity
         context.coordinator.onRecognitionResult = onRecognitionResult
-        context.coordinator.onSelectionChanged = onSelectionChanged
-        context.coordinator.onDrawingChanged = onDrawingChanged
     }
 
     private func updateTool(_ canvasView: PKCanvasView) {
@@ -131,7 +122,6 @@ struct DrawingOverlayView: UIViewRepresentable {
         weak var container: CanvasContainerView?
         var onUndoStateChanged: (Bool) -> Void = { _ in }
         var onRedoStateChanged: (Bool) -> Void = { _ in }
-        var onSelectionChanged: (Bool) -> Void = { _ in }
         var onRecognitionResult: (RecognitionResult) -> Void = { _ in }
         var onDrawingChanged: (PKDrawing) -> Void = { _ in }
 

@@ -87,14 +87,6 @@ struct CanvasToolbar: View {
     let onAIPressed: () -> Void
     let onToggleDarkMode: () -> Void
 
-    // Lasso clipboard actions
-    let canPaste: Bool
-    let hasSelection: Bool
-    let onCopy: () -> Void
-    let onCut: () -> Void
-    let onDelete: () -> Void
-    let onPaste: () -> Void
-
     @State private var contextualToolbarHidden: Bool = false
     @State private var backgroundModeSelected: Bool = false
     @State private var aiModeSelected: Bool = false
@@ -178,12 +170,6 @@ struct CanvasToolbar: View {
                     customPenColors: $customPenColors,
                     customHighlighterColors: $customHighlighterColors,
                     colorScheme: colorScheme,
-                    canPaste: canPaste,
-                    hasSelection: hasSelection,
-                    onCopy: onCopy,
-                    onCut: onCut,
-                    onDelete: onDelete,
-                    onPaste: onPaste,
                     onClose: { contextualToolbarHidden = true }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -518,6 +504,14 @@ private struct AIToolbar: View {
                 action: { /* No functionality yet */ }
             )
 
+            // Simplify button
+            AIToolbarButton(
+                icon: "list.bullet",
+                label: "Simplify",
+                colorScheme: colorScheme,
+                action: { /* No functionality yet */ }
+            )
+
             // Hint button
             AIToolbarButton(
                 icon: "lightbulb.fill",
@@ -545,7 +539,23 @@ private struct AIToolbar: View {
             // Show Error button
             AIToolbarButton(
                 icon: "exclamationmark.triangle.fill",
-                label: "Error",
+                label: "Show",
+                colorScheme: colorScheme,
+                action: { /* No functionality yet */ }
+            )
+
+            // Stuck button
+            AIToolbarButton(
+                icon: "hand.raised.fill",
+                label: "Stuck",
+                colorScheme: colorScheme,
+                action: { /* No functionality yet */ }
+            )
+
+            // Recap button
+            AIToolbarButton(
+                icon: "arrow.counterclockwise",
+                label: "Recap",
                 colorScheme: colorScheme,
                 action: { /* No functionality yet */ }
             )
@@ -637,13 +647,7 @@ private struct AIToolbarButton: View {
             onUndo: {},
             onRedo: {},
             onAIPressed: {},
-            onToggleDarkMode: {},
-            canPaste: false,
-            hasSelection: false,
-            onCopy: {},
-            onCut: {},
-            onDelete: {},
-            onPaste: {}
+            onToggleDarkMode: {}
         )
     }
     .padding()
