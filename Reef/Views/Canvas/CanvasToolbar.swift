@@ -99,16 +99,20 @@ struct CanvasToolbar: View {
 
     private var toolHasContextualMenu: Bool {
         switch selectedTool {
-        case .pen, .highlighter, .eraser, .lasso:
+        case .pen, .highlighter, .eraser:
             return true
+        case .lasso:
+            return false  // Use Apple's default popup menu
         }
     }
 
     private var showToolContextualToolbar: Bool {
         guard !backgroundModeSelected else { return false }
         switch selectedTool {
-        case .pen, .highlighter, .eraser, .lasso:
+        case .pen, .highlighter, .eraser:
             return !contextualToolbarHidden
+        case .lasso:
+            return false  // Use Apple's default popup menu
         }
     }
 
