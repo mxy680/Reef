@@ -28,6 +28,7 @@ protocol DocumentItem: AnyObject {
     var fileTypeIcon: String { get }
     var documentFileType: DocumentFileType { get }
     var extractionStatus: ExtractionStatus { get }
+    var questionDetectionStatus: QuestionDetectionStatus { get }
 }
 
 // Conform Note to DocumentItem
@@ -99,8 +100,8 @@ struct DocumentGridItem<T: DocumentItem>: View {
                     .frame(height: 60)
                 }
 
-                // Extraction status indicator - pulsing teal dot when extracting
-                if document.extractionStatus == .extracting {
+                // Processing status indicator - pulsing teal dot when extracting or detecting questions
+                if document.extractionStatus == .extracting || document.questionDetectionStatus == .detecting {
                     Circle()
                         .fill(Color.vibrantTeal)
                         .frame(width: 10, height: 10)
@@ -125,7 +126,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
 
             // Separator between thumbnail and footer
             Rectangle()
-                .fill(Color.vibrantTeal.opacity(0.25))
+                .fill(Color.gray.opacity(0.25))
                 .frame(height: 1)
 
             // Name, date, and action icons footer
@@ -176,7 +177,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.vibrantTeal.opacity(0.25), lineWidth: 1)
+                .stroke(Color.gray.opacity(0.25), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.08), radius: 8, x: 0, y: 4)
         .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.3 : 0.04), radius: 2, x: 0, y: 1)
