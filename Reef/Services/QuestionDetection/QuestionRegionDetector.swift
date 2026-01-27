@@ -249,7 +249,7 @@ actor QuestionRegionDetector {
         - text: the text content
         - y: vertical position (higher y = higher on page)
 
-        Group these text observations into questions. A question typically starts with a number, letter, or word like "Question", "Problem", "Exercise", etc.
+        Your task is to identify ONLY the question prompts themselves - the text that asks the student to do something.
 
         \(isMultiPage ? "IMPORTANT: Questions may span multiple pages. If a question continues from one page to the next, include all its observations in the same group." : "")
 
@@ -268,10 +268,18 @@ actor QuestionRegionDetector {
         }
 
         Rules:
-        - Each observation should belong to exactly one question (or none if it's a header/footer/page number)
-        - questionId is the question number/letter (e.g., "1", "a", "2.1") or null if unclear
+        - ONLY include the question prompt text itself (e.g., "Find the derivative of f(x) = x^2")
+        - DO NOT include:
+          - General directions or instructions at the top of the page (e.g., "Show all work", "Answer all questions")
+          - Answer spaces, blank lines, or answer boxes
+          - Student answers or work
+          - Headers, footers, page numbers, or titles
+          - Answer keys or solutions
+        - A question typically starts with a number, letter, or word like "Question", "Problem", "Exercise"
+        - For problems with subparts (e.g., 1a, 1b or 1.1, 1.2): if there is introductory/context text before the first subpart that sets up the problem (e.g., "Consider the function f(x) = ..."), include that text with the FIRST subpart (part a or part 1)
+        - questionId is the question number/letter (e.g., "1", "1a", "2.1") or null if unclear
         - questionText is just the first line that starts the question
-        - observationIds are the ids of ALL text blocks belonging to that question (may span multiple pages)
+        - observationIds are the ids of ONLY the text blocks that contain the question prompt itself
         - If no questions are detected, return {"questions": []}
         """
 
