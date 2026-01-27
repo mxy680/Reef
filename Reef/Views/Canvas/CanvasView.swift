@@ -23,6 +23,7 @@ struct CanvasView: View {
     @State private var highlighterWidth: CGFloat = StrokeWidthRange.highlighterDefault
     @State private var eraserSize: CGFloat = StrokeWidthRange.eraserDefault
     @State private var eraserType: EraserType = .stroke
+    @State private var diagramWidth: CGFloat = StrokeWidthRange.diagramDefault
     @State private var customPenColors: [Color] = []
     @State private var customHighlighterColors: [Color] = []
     @State private var canvasBackgroundMode: CanvasBackgroundMode = .normal
@@ -63,6 +64,7 @@ struct CanvasView: View {
                 highlighterWidth: $highlighterWidth,
                 eraserSize: $eraserSize,
                 eraserType: $eraserType,
+                diagramWidth: $diagramWidth,
                 canvasBackgroundMode: canvasBackgroundMode,
                 canvasBackgroundOpacity: canvasBackgroundOpacity,
                 canvasBackgroundSpacing: canvasBackgroundSpacing,
@@ -89,6 +91,7 @@ struct CanvasView: View {
                     highlighterWidth: $highlighterWidth,
                     eraserSize: $eraserSize,
                     eraserType: $eraserType,
+                    diagramWidth: $diagramWidth,
                     customPenColors: $customPenColors,
                     customHighlighterColors: $customHighlighterColors,
                     canvasBackgroundMode: $canvasBackgroundMode,

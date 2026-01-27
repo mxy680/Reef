@@ -61,6 +61,10 @@ enum StrokeWidthRange {
     static let eraserMin: CGFloat = 8
     static let eraserMax: CGFloat = 48
     static let eraserDefault: CGFloat = 16
+
+    static let diagramMin: CGFloat = 4
+    static let diagramMax: CGFloat = 48
+    static let diagramDefault: CGFloat = 37
 }
 
 // MARK: - Canvas Toolbar
@@ -73,6 +77,7 @@ struct CanvasToolbar: View {
     @Binding var highlighterWidth: CGFloat
     @Binding var eraserSize: CGFloat
     @Binding var eraserType: EraserType
+    @Binding var diagramWidth: CGFloat
     @Binding var customPenColors: [Color]
     @Binding var customHighlighterColors: [Color]
     @Binding var canvasBackgroundMode: CanvasBackgroundMode
@@ -165,6 +170,7 @@ struct CanvasToolbar: View {
                     highlighterWidth: $highlighterWidth,
                     eraserSize: $eraserSize,
                     eraserType: $eraserType,
+                    diagramWidth: $diagramWidth,
                     selectedPenColor: $selectedPenColor,
                     selectedHighlighterColor: $selectedHighlighterColor,
                     customPenColors: $customPenColors,
@@ -636,6 +642,7 @@ private struct AIToolbarButton: View {
             highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
             eraserSize: .constant(StrokeWidthRange.eraserDefault),
             eraserType: .constant(.stroke),
+            diagramWidth: .constant(StrokeWidthRange.diagramDefault),
             customPenColors: .constant([]),
             customHighlighterColors: .constant([]),
             canvasBackgroundMode: .constant(.normal),

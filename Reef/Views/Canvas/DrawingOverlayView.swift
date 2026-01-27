@@ -33,6 +33,7 @@ struct DrawingOverlayView: UIViewRepresentable {
     @Binding var highlighterWidth: CGFloat
     @Binding var eraserSize: CGFloat
     @Binding var eraserType: EraserType
+    @Binding var diagramWidth: CGFloat
     var canvasBackgroundMode: CanvasBackgroundMode = .normal
     var canvasBackgroundOpacity: CGFloat = 0.15
     var canvasBackgroundSpacing: CGFloat = 48
@@ -103,7 +104,7 @@ struct DrawingOverlayView: UIViewRepresentable {
             canvasView.tool = PKLassoTool()
         case .diagram:
             let uiColor = uiColorFromSwiftUIColor(selectedPenColor)
-            canvasView.tool = PKInkingTool(.pen, color: uiColor, width: penWidth * 4)
+            canvasView.tool = PKInkingTool(.pen, color: uiColor, width: diagramWidth)
         }
     }
 
@@ -686,6 +687,7 @@ extension CanvasContainerView: UIScrollViewDelegate {
         highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
         eraserSize: .constant(StrokeWidthRange.eraserDefault),
         eraserType: .constant(.stroke),
+        diagramWidth: .constant(StrokeWidthRange.diagramDefault),
         canvasBackgroundMode: .grid
     )
     .background(Color.gray.opacity(0.2))

@@ -16,6 +16,7 @@ struct ContextualToolbar: View {
     @Binding var highlighterWidth: CGFloat
     @Binding var eraserSize: CGFloat
     @Binding var eraserType: EraserType
+    @Binding var diagramWidth: CGFloat
     @Binding var selectedPenColor: Color
     @Binding var selectedHighlighterColor: Color
     @Binding var customPenColors: [Color]
@@ -329,7 +330,19 @@ struct ContextualToolbar: View {
 
     private var diagramOptions: some View {
         HStack(spacing: 12) {
-            // Color swatches only (no thickness slider - uses penWidth * 2)
+            // Thickness slider
+            thicknessSlider(
+                value: $diagramWidth,
+                range: StrokeWidthRange.diagramMin...StrokeWidthRange.diagramMax
+            )
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            // Color swatches
             ForEach(Array(allPenColors.enumerated()), id: \.offset) { index, color in
                 let isCustomColor = index >= defaultPenColors.count
                 let customIndex = index - defaultPenColors.count
@@ -422,6 +435,7 @@ struct ContextualToolbar: View {
             highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
             eraserSize: .constant(StrokeWidthRange.eraserDefault),
             eraserType: .constant(.stroke),
+            diagramWidth: .constant(StrokeWidthRange.diagramDefault),
             selectedPenColor: .constant(.black),
             selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
             customPenColors: .constant([]),
@@ -436,6 +450,7 @@ struct ContextualToolbar: View {
             highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
             eraserSize: .constant(StrokeWidthRange.eraserDefault),
             eraserType: .constant(.stroke),
+            diagramWidth: .constant(StrokeWidthRange.diagramDefault),
             selectedPenColor: .constant(.black),
             selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
             customPenColors: .constant([]),
@@ -450,6 +465,7 @@ struct ContextualToolbar: View {
             highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
             eraserSize: .constant(StrokeWidthRange.eraserDefault),
             eraserType: .constant(.bitmap),
+            diagramWidth: .constant(StrokeWidthRange.diagramDefault),
             selectedPenColor: .constant(.black),
             selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
             customPenColors: .constant([]),
