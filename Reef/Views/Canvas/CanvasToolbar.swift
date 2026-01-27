@@ -91,10 +91,15 @@ struct CanvasToolbar: View {
     let onRedo: () -> Void
     let onAIPressed: () -> Void
     let onToggleDarkMode: () -> Void
+    var onAddPageAfterCurrent: () -> Void = {}
+    var onAddPageToEnd: () -> Void = {}
+    var onDeleteCurrentPage: () -> Void = {}
+    var onClearCurrentPage: () -> Void = {}
 
     @State private var contextualToolbarHidden: Bool = false
     @State private var backgroundModeSelected: Bool = false
     @State private var aiModeSelected: Bool = false
+    @State private var documentOperationsSelected: Bool = false
 
     private var toolHasContextualMenu: Bool {
         switch selectedTool {
@@ -123,10 +128,15 @@ struct CanvasToolbar: View {
         aiModeSelected
     }
 
+    private var showDocumentOperationsToolbar: Bool {
+        documentOperationsSelected
+    }
+
     private func selectTool(_ tool: CanvasTool) {
-        // Deselect background mode and AI mode when selecting a drawing tool
+        // Deselect other modes when selecting a drawing tool
         backgroundModeSelected = false
         aiModeSelected = false
+        documentOperationsSelected = false
 
         if selectedTool == tool && toolHasContextualMenu {
             contextualToolbarHidden.toggle()
@@ -141,10 +151,11 @@ struct CanvasToolbar: View {
             // Toggle off if already selected
             backgroundModeSelected = false
         } else {
-            // Select background mode, hide tool contextual toolbar and AI toolbar
+            // Select background mode, hide other toolbars
             backgroundModeSelected = true
             contextualToolbarHidden = true
             aiModeSelected = false
+            documentOperationsSelected = false
         }
     }
 
@@ -157,6 +168,20 @@ struct CanvasToolbar: View {
             aiModeSelected = true
             contextualToolbarHidden = true
             backgroundModeSelected = false
+            documentOperationsSelected = false
+        }
+    }
+
+    private func selectDocumentOperations() {
+        if documentOperationsSelected {
+            // Toggle off if already selected
+            documentOperationsSelected = false
+        } else {
+            // Select document operations, hide other toolbars
+            documentOperationsSelected = true
+            contextualToolbarHidden = true
+            backgroundModeSelected = false
+            aiModeSelected = false
         }
     }
 
@@ -202,16 +227,31 @@ struct CanvasToolbar: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
+            // Document operations toolbar tier
+            if showDocumentOperationsToolbar {
+                DocumentOperationsToolbar(
+                    colorScheme: colorScheme,
+                    onAddPageAfterCurrent: onAddPageAfterCurrent,
+                    onAddPageToEnd: onAddPageToEnd,
+                    onDeleteCurrentPage: onDeleteCurrentPage,
+                    onClearCurrentPage: onClearCurrentPage,
+                    onClose: { documentOperationsSelected = false }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             // Main toolbar
             mainToolbar
         }
         .animation(.easeOut(duration: 0.2), value: showToolContextualToolbar)
         .animation(.easeOut(duration: 0.2), value: showBackgroundModeToolbar)
         .animation(.easeOut(duration: 0.2), value: showAIToolbar)
+        .animation(.easeOut(duration: 0.2), value: showDocumentOperationsToolbar)
         .animation(.easeOut(duration: 0.2), value: selectedTool)
         .animation(.easeOut(duration: 0.2), value: contextualToolbarHidden)
         .animation(.easeOut(duration: 0.2), value: backgroundModeSelected)
         .animation(.easeOut(duration: 0.2), value: aiModeSelected)
+        .animation(.easeOut(duration: 0.2), value: documentOperationsSelected)
     }
 
     private var mainToolbar: some View {
@@ -268,6 +308,14 @@ struct CanvasToolbar: View {
                 isSelected: backgroundModeSelected,
                 colorScheme: colorScheme,
                 action: selectBackgroundMode
+            )
+
+            // Document operations button
+            ToolbarButton(
+                icon: "doc.badge.plus",
+                isSelected: documentOperationsSelected,
+                colorScheme: colorScheme,
+                action: selectDocumentOperations
             )
 
             toolbarDivider
@@ -629,6 +677,142 @@ private struct AIToolbarButton: View {
             .frame(width: 52, height: 40)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Document Operations Toolbar
+
+private struct DocumentOperationsToolbar: View {
+    let colorScheme: ColorScheme
+    let onAddPageAfterCurrent: () -> Void
+    let onAddPageToEnd: () -> Void
+    let onDeleteCurrentPage: () -> Void
+    let onClearCurrentPage: () -> Void
+    var onClose: (() -> Void)? = nil
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Add page after current
+            Button {
+                onAddPageAfterCurrent()
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "doc.badge.plus")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 24, height: 24)
+                    Text("Insert After")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundColor(Color.adaptiveText(for: colorScheme))
+                .frame(width: 72, height: 44)
+            }
+            .buttonStyle(.plain)
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 8)
+
+            // Add page to end
+            Button {
+                onAddPageToEnd()
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "doc.fill.badge.plus")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 24, height: 24)
+                    Text("Add to End")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundColor(Color.adaptiveText(for: colorScheme))
+                .frame(width: 72, height: 44)
+            }
+            .buttonStyle(.plain)
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 8)
+
+            // Clear current page
+            Button {
+                onClearCurrentPage()
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "eraser.line.dashed")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 24, height: 24)
+                    Text("Clear Page")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundColor(Color.adaptiveText(for: colorScheme))
+                .frame(width: 72, height: 44)
+            }
+            .buttonStyle(.plain)
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 8)
+
+            // Delete current page
+            Button {
+                onDeleteCurrentPage()
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 24, height: 24)
+                    Text("Delete Page")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundColor(.red.opacity(0.8))
+                .frame(width: 72, height: 44)
+            }
+            .buttonStyle(.plain)
+
+            if onClose != nil {
+                // Divider before close button
+                Rectangle()
+                    .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                    .frame(width: 1, height: 24)
+                    .padding(.leading, 12)
+                    .padding(.trailing, 8)
+
+                // Close button
+                Button {
+                    onClose?()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.6))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 48)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .strokeBorder(
+                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
+                            lineWidth: 1
+                        )
+                )
+                .shadow(
+                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
+                    radius: colorScheme == .dark ? 12 : 8,
+                    x: 0,
+                    y: 4
+                )
+        )
     }
 }
 

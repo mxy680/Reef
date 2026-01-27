@@ -55,6 +55,7 @@ struct CanvasView: View {
         ZStack {
             // Document with drawing canvas overlay
             DrawingOverlayView(
+                documentID: note.id,
                 documentURL: fileURL,
                 fileType: note.fileType,
                 selectedTool: $selectedTool,
@@ -71,10 +72,7 @@ struct CanvasView: View {
                 isDarkMode: themeManager.isDarkMode,
                 onCanvasReady: { container in
                     canvasViewRef = container
-                    // Load saved drawing after canvas is ready
-                    if let drawing = DrawingStorageService.shared.loadDrawing(for: note.id) {
-                        container.canvasView.drawing = drawing
-                    }
+                    // Drawings are now loaded automatically in CanvasContainerView.loadDocument()
                 },
                 onUndoStateChanged: { canUndo = $0 },
                 onRedoStateChanged: { canRedo = $0 }
@@ -118,6 +116,18 @@ struct CanvasView: View {
                         }
                         // Update pen color to match new theme
                         selectedPenColor = themeManager.isDarkMode ? .white : .black
+                    },
+                    onAddPageAfterCurrent: {
+                        canvasViewRef?.addPageAfterCurrent()
+                    },
+                    onAddPageToEnd: {
+                        canvasViewRef?.addPageToEnd()
+                    },
+                    onDeleteCurrentPage: {
+                        canvasViewRef?.deleteCurrentPage()
+                    },
+                    onClearCurrentPage: {
+                        canvasViewRef?.clearCurrentPage()
                     }
                 )
                 .padding(.bottom, 24)
