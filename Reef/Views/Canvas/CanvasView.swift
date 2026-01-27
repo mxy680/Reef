@@ -69,6 +69,7 @@ struct CanvasView: View {
                 canvasBackgroundOpacity: canvasBackgroundOpacity,
                 canvasBackgroundSpacing: canvasBackgroundSpacing,
                 isDarkMode: themeManager.isDarkMode,
+                questionRegions: note.questionRegions,
                 onCanvasReady: { container in
                     canvasViewRef = container
                     // Load saved drawing after canvas is ready
