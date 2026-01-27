@@ -232,7 +232,10 @@ actor QuestionRegionDetector {
         }
     }
 
-    private func callLLMForGrouping(_ observations: [TextObservation]) async throws -> [QuestionGrouping] {
+    private func callLLMForGrouping(_ observations: [TextObservation], retryCount: Int = 0) async throws -> [QuestionGrouping] {
+        let maxRetries = 3
+        let baseDelaySeconds: Double = 2.0
+
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         let observationsJSON = try encoder.encode(observations)
@@ -243,13 +246,15 @@ actor QuestionRegionDetector {
         let isMultiPage = pageNumbers.count > 1
 
         let prompt = """
-        You are analyzing OCR text from a homework/exam document. Each observation has:
+        You are analyzing OCR text from a homework/exam document to identify ONLY the question prompts themselves.
+
+        Each observation has:
         - id: unique identifier
         - page: page number (1-indexed)
         - text: the text content
         - y: vertical position (higher y = higher on page)
 
-        Group these text observations into questions. A question typically starts with a number, letter, or word like "Question", "Problem", "Exercise", etc.
+        Your task: Identify and group text that forms the QUESTION PROMPT ONLY - the part asking what to solve/answer.
 
         \(isMultiPage ? "IMPORTANT: Questions may span multiple pages. If a question continues from one page to the next, include all its observations in the same group." : "")
 
@@ -267,17 +272,46 @@ actor QuestionRegionDetector {
           ]
         }
 
+        INCLUDE in a question group:
+        - The question number/label (e.g., "1.", "Problem 2", "Question 3a")
+        - The question prompt text (what is being asked)
+        - Sub-parts of the same question (a, b, c, etc.)
+        - Mathematical expressions that are part of the question
+
+        EXCLUDE (do NOT include in any question group):
+        - Document titles (e.g., "Homework 1", "Math 101 Exam")
+        - Course names or headers
+        - General directions/instructions (e.g., "Show all work", "Answer all questions", "Due Friday")
+        - Answers or solutions (handwritten or printed)
+        - Blank space or workspace areas
+        - Page numbers
+        - Student name/date fields
+        - Point values (e.g., "(10 pts)")
+
         Rules:
-        - Each observation should belong to exactly one question (or none if it's a header/footer/page number)
         - questionId is the question number/letter (e.g., "1", "a", "2.1") or null if unclear
         - questionText is just the first line that starts the question
-        - observationIds are the ids of ALL text blocks belonging to that question (may span multiple pages)
+        - observationIds should ONLY include IDs of text that is part of the question prompt itself
         - If no questions are detected, return {"questions": []}
+        - When in doubt, exclude the observation - only include clear question prompts
         """
 
-        let response = try await GeminiService.shared.generateContent(prompt: prompt, jsonOutput: true)
-        let llmResponse = try JSONDecoder().decode(LLMResponse.self, from: Data(response.utf8))
-        return llmResponse.questions
+        do {
+            let response = try await GeminiService.shared.generateContent(prompt: prompt, jsonOutput: true)
+            let llmResponse = try JSONDecoder().decode(LLMResponse.self, from: Data(response.utf8))
+            return llmResponse.questions
+        } catch let error as GeminiService.GeminiError {
+            // Check if this is a rate limit error and we can retry
+            if case .apiError(let message) = error,
+               message.lowercased().contains("resource exhausted") || message.lowercased().contains("rate limit"),
+               retryCount < maxRetries {
+                let delay = baseDelaySeconds * pow(2.0, Double(retryCount))
+                print("[QuestionDetector] Rate limited, retrying in \(delay)s (attempt \(retryCount + 1)/\(maxRetries))")
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                return try await callLLMForGrouping(observations, retryCount: retryCount + 1)
+            }
+            throw error
+        }
     }
 
     /// Create QuestionRegion objects from LLM groupings
