@@ -108,8 +108,8 @@ struct CanvasView: View {
                             dismiss()
                         }
                     },
-                    onUndo: { canvasViewRef?.canvasView.undoManager?.undo() },
-                    onRedo: { canvasViewRef?.canvasView.undoManager?.redo() },
+                    onUndo: { canvasViewRef?.performUndo() },
+                    onRedo: { canvasViewRef?.performRedo() },
                     onAIPressed: { /* TODO: Implement AI assistant */ },
                     onToggleDarkMode: {
                         withAnimation(.easeInOut(duration: 0.3)) {

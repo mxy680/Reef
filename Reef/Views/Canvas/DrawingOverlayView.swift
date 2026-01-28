@@ -274,6 +274,11 @@ class CanvasContainerView: UIView {
     /// Separator views between pages
     private var separatorViews: [UIView] = []
 
+    /// Gesture recognizers for undo/redo
+    private var undoGestureRecognizer: UITapGestureRecognizer?
+    private var redoGestureRecognizer: UITapGestureRecognizer?
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .light)
+
     convenience init(documentID: UUID, documentURL: URL, fileType: Note.FileType, backgroundMode: CanvasBackgroundMode = .normal, backgroundOpacity: CGFloat = 0.15, backgroundSpacing: CGFloat = 48, isDarkMode: Bool = false, questionRegions: DocumentQuestionRegions? = nil) {
         self.init(frame: .zero)
         self.documentID = documentID
@@ -342,6 +347,62 @@ class CanvasContainerView: UIView {
             pagesStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             pagesStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
+
+        setupUndoRedoGestures()
+    }
+
+    private func setupUndoRedoGestures() {
+        hapticGenerator.prepare()
+
+        // Two-finger double tap for undo
+        let undoGesture = UITapGestureRecognizer(target: self, action: #selector(handleUndoGesture(_:)))
+        undoGesture.numberOfTapsRequired = 2
+        undoGesture.numberOfTouchesRequired = 2
+        addGestureRecognizer(undoGesture)
+        undoGestureRecognizer = undoGesture
+
+        // Two-finger triple tap for redo
+        let redoGesture = UITapGestureRecognizer(target: self, action: #selector(handleRedoGesture(_:)))
+        redoGesture.numberOfTapsRequired = 3
+        redoGesture.numberOfTouchesRequired = 2
+        addGestureRecognizer(redoGesture)
+        redoGestureRecognizer = redoGesture
+
+        // Undo gesture should wait for redo gesture to fail first
+        // (prevents undo from firing on the first two taps of a triple tap)
+        undoGesture.require(toFail: redoGesture)
+    }
+
+    @objc private func handleUndoGesture(_ gesture: UITapGestureRecognizer) {
+        guard gesture.state == .recognized else { return }
+        performUndo()
+    }
+
+    @objc private func handleRedoGesture(_ gesture: UITapGestureRecognizer) {
+        guard gesture.state == .recognized else { return }
+        performRedo()
+    }
+
+    func performUndo() {
+        guard currentVisiblePage < pageContainers.count else { return }
+        let canvas = pageContainers[currentVisiblePage].canvasView
+
+        if canvas.undoManager?.canUndo == true {
+            canvas.undoManager?.undo()
+            hapticGenerator.impactOccurred()
+            hapticGenerator.prepare()
+        }
+    }
+
+    func performRedo() {
+        guard currentVisiblePage < pageContainers.count else { return }
+        let canvas = pageContainers[currentVisiblePage].canvasView
+
+        if canvas.undoManager?.canRedo == true {
+            canvas.undoManager?.redo()
+            hapticGenerator.impactOccurred()
+            hapticGenerator.prepare()
+        }
     }
 
     func updateDarkMode(_ newDarkMode: Bool) {
