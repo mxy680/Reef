@@ -873,23 +873,27 @@ class CanvasContainerView: UIView {
         // Crop segments between consecutive regions so that images/diagrams
         // sitting between detected text regions are included with the preceding region.
         // Segment i spans from region[i]'s top down to region[i+1]'s top (Vision Y).
-        // The last segment spans only its own text bounding box.
-        let padding: CGFloat = 0.01
+        // The first segment's top and last segment's bottom use the group's union bounding
+        // box to avoid bleeding content from adjacent questions and to capture any trailing
+        // content below the last detected region.
+        let unionBox = group.unionBoundingBox
+        let unionTop = unionBox.origin.y + unionBox.height   // Vision top of union
+        let unionBottom = unionBox.origin.y                    // Vision bottom of union
         var croppedParts: [UIImage] = []
 
         for i in 0..<regions.count {
             let regionTop = regions[i].textBoundingBox.origin.y + regions[i].textBoundingBox.height
 
-            // Top of segment: slightly above this region's top edge
-            let segmentTop = min(regionTop + padding, 1.0)
+            // Top of segment: union top for first region, exact text top for others
+            let segmentTop: CGFloat = (i == 0) ? unionTop : regionTop
 
-            // Bottom of segment: top of next region, or bottom of this region if last
+            // Bottom of segment: next region's text top, or union bottom for last
             let segmentBottom: CGFloat
             if i < regions.count - 1 {
                 let nextTop = regions[i + 1].textBoundingBox.origin.y + regions[i + 1].textBoundingBox.height
                 segmentBottom = nextTop
             } else {
-                segmentBottom = max(regions[i].textBoundingBox.origin.y - padding, 0)
+                segmentBottom = unionBottom
             }
 
             guard segmentTop > segmentBottom else { continue }
