@@ -850,8 +850,8 @@ class CanvasContainerView: UIView {
     }
 
     /// Composes page image(s) for a question group. Single-region groups use the existing
-    /// single-crop path. Multi-region groups crop each sub-question as a full-width strip
-    /// (preserving original text size) and lay them out with spacing, adding pages as needed.
+    /// single-crop path. Multi-region groups crop **segments** between consecutive regions
+    /// (preserving images/diagrams between sub-questions) and lay them out with spacing.
     private func composeGroupImage(
         group: QuestionGroup,
         sourceImages: [UIImage],
@@ -870,15 +870,35 @@ class CanvasContainerView: UIView {
             return [composeQuestionPage(croppedQuestion: cropped, pageSize: pageSize)]
         }
 
-        // Crop each region as a full-width horizontal strip to preserve original text size
+        // Crop segments between consecutive regions so that images/diagrams
+        // sitting between detected text regions are included with the preceding region.
+        // Segment i spans from region[i]'s top down to region[i+1]'s top (Vision Y).
+        // The last segment spans only its own text bounding box.
         let padding: CGFloat = 0.01
-        let croppedParts: [UIImage] = regions.compactMap { region in
-            let box = region.textBoundingBox
-            let y = max(box.origin.y - padding, 0)
-            let maxY = min(box.origin.y + box.height + padding, 1)
-            let fullWidthBox = CGRect(x: 0, y: y, width: 1.0, height: maxY - y)
-            return cropImage(sourceImage, toRegion: fullWidthBox)
+        var croppedParts: [UIImage] = []
+
+        for i in 0..<regions.count {
+            let regionTop = regions[i].textBoundingBox.origin.y + regions[i].textBoundingBox.height
+
+            // Top of segment: slightly above this region's top edge
+            let segmentTop = min(regionTop + padding, 1.0)
+
+            // Bottom of segment: top of next region, or bottom of this region if last
+            let segmentBottom: CGFloat
+            if i < regions.count - 1 {
+                let nextTop = regions[i + 1].textBoundingBox.origin.y + regions[i + 1].textBoundingBox.height
+                segmentBottom = nextTop
+            } else {
+                segmentBottom = max(regions[i].textBoundingBox.origin.y - padding, 0)
+            }
+
+            guard segmentTop > segmentBottom else { continue }
+            let fullWidthBox = CGRect(x: 0, y: segmentBottom, width: 1.0, height: segmentTop - segmentBottom)
+            if let cropped = cropImage(sourceImage, toRegion: fullWidthBox) {
+                croppedParts.append(cropped)
+            }
         }
+
         guard !croppedParts.isEmpty else { return [createBlankPageImage()] }
         return composeQuestionPageFromParts(croppedParts: croppedParts, pageSize: pageSize)
     }
