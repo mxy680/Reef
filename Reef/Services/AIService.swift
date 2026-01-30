@@ -183,7 +183,7 @@ class AIService {
         #if DEBUG
         self.baseURL = "http://localhost:8000"
         #else
-        self.baseURL = "https://reef-server.vercel.app"
+        self.baseURL = "https://reef-production-08bd.up.railway.app"
         #endif
 
         let config = URLSessionConfiguration.default
