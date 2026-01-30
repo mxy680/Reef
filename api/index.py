@@ -16,7 +16,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lib.mock_responses import get_mock_embedding
-from lib.models import EmbedRequest, EmbedResponse
+from lib.models import (
+    EmbedRequest,
+    EmbedResponse,
+    ExtractQuestionsRequest,
+    ExtractQuestionsResponse,
+    QuestionData,
+)
 from lib.embedding import get_embedding_service
 
 app = FastAPI(
@@ -96,5 +102,75 @@ async def ai_embed(
 
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ai/extract-questions", response_model=ExtractQuestionsResponse)
+async def ai_extract_questions(
+    request_body: ExtractQuestionsRequest,
+    request: Request,
+):
+    """
+    Extract questions from a PDF document.
+
+    Takes a base64-encoded PDF and returns individual questions as separate PDFs.
+    Uses Marker for OCR/layout extraction and Gemini for question segmentation.
+    """
+    try:
+        from lib.question_extractor import QuestionExtractor
+        from lib.latex_compiler import LaTeXCompiler
+
+        # Initialize services
+        extractor = QuestionExtractor()
+        compiler = LaTeXCompiler()
+
+        # Extract questions from PDF
+        extracted_questions = await extractor.extract_questions(request_body.pdf_base64)
+
+        if not extracted_questions:
+            return ExtractQuestionsResponse(
+                questions=[],
+                note_id=request_body.note_id,
+                total_count=0
+            )
+
+        # Compile each question to PDF
+        compiled_questions = []
+        for eq in extracted_questions:
+            try:
+                compiled = compiler.compile_question(
+                    order_index=eq.order_index,
+                    question_number=eq.question_number,
+                    latex_content=eq.latex_content,
+                    has_images=eq.has_images,
+                    has_tables=eq.has_tables,
+                    image_paths=eq.image_paths if eq.image_paths else None
+                )
+                compiled_questions.append(QuestionData(
+                    order_index=compiled.order_index,
+                    question_number=compiled.question_number,
+                    pdf_base64=compiled.pdf_base64,
+                    has_images=compiled.has_images,
+                    has_tables=compiled.has_tables
+                ))
+            except Exception as compile_error:
+                # Log but continue with other questions
+                print(f"Failed to compile question {eq.question_number}: {compile_error}")
+                continue
+
+        return ExtractQuestionsResponse(
+            questions=compiled_questions,
+            note_id=request_body.note_id,
+            total_count=len(compiled_questions)
+        )
+
+    except ImportError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Required dependencies not available: {e}"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
