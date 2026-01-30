@@ -1,0 +1,6 @@
+[submodule "Reef-iOS"]
+	path = Reef-iOS
+	url = https://github.com/mxy680/Reef-iOS.git
+[submodule "Reef-Server"]
+	path = Reef-Server
+	url = https://github.com/mxy680/Reef-Server.git
