@@ -55,7 +55,7 @@ actor GeminiService {
         // In release, use production server
         self.apiMode = .server
         self.serverURL = ProcessInfo.processInfo.environment["REEF_SERVER_URL"]
-            ?? "https://reef-server.vercel.app"  // TODO: Update with actual production URL
+            ?? "https://reef-server.vercel.app"
         #endif
     }
 
