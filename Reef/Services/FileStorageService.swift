@@ -81,4 +81,55 @@ class FileStorageService {
         let fileURL = getFileURL(for: documentID, fileExtension: fileExtension)
         return fileManager.fileExists(atPath: fileURL.path)
     }
+
+    // MARK: - Question Files
+
+    private var questionsDirectory: URL {
+        appDocumentsDirectory.appendingPathComponent("Questions")
+    }
+
+    /// Gets the directory for a question set's files
+    func getQuestionSetDirectory(questionSetID: UUID) -> URL {
+        questionsDirectory.appendingPathComponent(questionSetID.uuidString)
+    }
+
+    /// Gets the URL for a specific question PDF file
+    func getQuestionFileURL(questionSetID: UUID, fileName: String) -> URL {
+        getQuestionSetDirectory(questionSetID: questionSetID)
+            .appendingPathComponent(fileName)
+    }
+
+    /// Saves question PDF data to storage
+    /// - Parameters:
+    ///   - data: The PDF data to save
+    ///   - questionSetID: The question set ID
+    ///   - fileName: The filename to use
+    /// - Returns: The URL where the file was saved
+    @discardableResult
+    func saveQuestionFile(data: Data, questionSetID: UUID, fileName: String) throws -> URL {
+        let directory = getQuestionSetDirectory(questionSetID: questionSetID)
+
+        // Create directory if needed
+        if !fileManager.fileExists(atPath: directory.path) {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+
+        let fileURL = directory.appendingPathComponent(fileName)
+
+        // Remove existing file if present
+        if fileManager.fileExists(atPath: fileURL.path) {
+            try fileManager.removeItem(at: fileURL)
+        }
+
+        try data.write(to: fileURL)
+        return fileURL
+    }
+
+    /// Deletes all files for a question set
+    func deleteQuestionSet(questionSetID: UUID) throws {
+        let directory = getQuestionSetDirectory(questionSetID: questionSetID)
+        if fileManager.fileExists(atPath: directory.path) {
+            try fileManager.removeItem(at: directory)
+        }
+    }
 }

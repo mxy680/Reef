@@ -14,6 +14,7 @@ struct CanvasView: View {
     var onDismiss: (() -> Void)? = nil
     @StateObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     // Drawing state
     @State private var selectedTool: CanvasTool = .pen
@@ -30,6 +31,11 @@ struct CanvasView: View {
     @State private var canvasBackgroundMode: CanvasBackgroundMode = .normal
     @State private var canvasBackgroundOpacity: CGFloat = 0.15
     @State private var canvasBackgroundSpacing: CGFloat = 48
+
+    // Assignment Mode state
+    @State private var assignmentModeState: AssignmentModeState = .inactive
+    @State private var questionSet: QuestionSet?
+    @State private var currentQuestionIndex: Int = 0
 
     // Reference to canvas
     @State private var canvasViewRef: CanvasContainerView?
@@ -48,13 +54,45 @@ struct CanvasView: View {
         )
     }
 
+    /// The URL to display - either original document or current question PDF
+    private var displayURL: URL {
+        if assignmentModeState.isActive,
+           let qs = questionSet,
+           currentQuestionIndex < qs.questions.count {
+            let sortedQuestions = qs.questions.sorted { $0.orderIndex < $1.orderIndex }
+            return sortedQuestions[currentQuestionIndex].fileURL
+        }
+        return fileURL
+    }
+
+    /// Current question for display (1-indexed)
+    private var currentQuestion: Int {
+        currentQuestionIndex + 1
+    }
+
+    /// Total number of questions
+    private var totalQuestions: Int {
+        questionSet?.questions.count ?? 0
+    }
+
+    /// Document ID for the current view - stable ID for each question to preserve drawings
+    private var currentDocumentID: UUID {
+        if assignmentModeState.isActive,
+           let qs = questionSet,
+           currentQuestionIndex < qs.questions.count {
+            let sortedQuestions = qs.questions.sorted { $0.orderIndex < $1.orderIndex }
+            return sortedQuestions[currentQuestionIndex].id
+        }
+        return note.id
+    }
+
     var body: some View {
         ZStack {
             // Document with drawing canvas overlay
             DrawingOverlayView(
-                documentID: note.id,
-                documentURL: fileURL,
-                fileType: note.fileType,
+                documentID: currentDocumentID,
+                documentURL: displayURL,
+                fileType: assignmentModeState.isActive ? .pdf : note.fileType,
                 selectedTool: $selectedTool,
                 selectedPenColor: $selectedPenColor,
                 selectedHighlighterColor: $selectedHighlighterColor,
@@ -121,7 +159,11 @@ struct CanvasView: View {
                     },
                     onClearCurrentPage: {
                         canvasViewRef?.clearCurrentPage()
-                    }
+                    },
+                    assignmentModeState: $assignmentModeState,
+                    onAssignmentModeToggle: toggleAssignmentMode,
+                    onPreviousQuestion: goToPreviousQuestion,
+                    onNextQuestion: goToNextQuestion
                 )
                 .padding(.bottom, 24)
             }
@@ -147,8 +189,101 @@ struct CanvasView: View {
                 isViewingCanvas = false
             }
         }
+        .task {
+            // Check if we have an existing question set for this note
+            loadExistingQuestionSet()
+        }
     }
 
+    // MARK: - Assignment Mode
+
+    private func loadExistingQuestionSet() {
+        if let existing = QuestionExtractionService.shared.getQuestionSet(
+            for: note.id,
+            modelContext: modelContext
+        ), existing.isReady {
+            questionSet = existing
+        }
+    }
+
+    private func toggleAssignmentMode() {
+        switch assignmentModeState {
+        case .inactive:
+            // Check if we have cached questions
+            if let qs = questionSet, qs.isReady {
+                // Use cached questions
+                currentQuestionIndex = 0
+                assignmentModeState = .active(
+                    currentQuestion: 1,
+                    totalQuestions: qs.questionCount
+                )
+            } else {
+                // Need to extract questions
+                extractQuestions()
+            }
+
+        case .loading:
+            // Can't toggle while loading
+            break
+
+        case .active:
+            // Return to normal mode
+            assignmentModeState = .inactive
+            currentQuestionIndex = 0
+        }
+    }
+
+    private func extractQuestions() {
+        assignmentModeState = .loading
+
+        Task {
+            do {
+                let qs = try await QuestionExtractionService.shared.extractQuestions(
+                    from: note,
+                    modelContext: modelContext
+                )
+
+                await MainActor.run {
+                    questionSet = qs
+                    currentQuestionIndex = 0
+
+                    if qs.questionCount > 0 {
+                        assignmentModeState = .active(
+                            currentQuestion: 1,
+                            totalQuestions: qs.questionCount
+                        )
+                    } else {
+                        // No questions found
+                        assignmentModeState = .inactive
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    print("Question extraction failed: \(error)")
+                    assignmentModeState = .inactive
+                }
+            }
+        }
+    }
+
+    private func goToPreviousQuestion() {
+        guard currentQuestionIndex > 0 else { return }
+        currentQuestionIndex -= 1
+        updateAssignmentModeState()
+    }
+
+    private func goToNextQuestion() {
+        guard currentQuestionIndex < totalQuestions - 1 else { return }
+        currentQuestionIndex += 1
+        updateAssignmentModeState()
+    }
+
+    private func updateAssignmentModeState() {
+        assignmentModeState = .active(
+            currentQuestion: currentQuestion,
+            totalQuestions: totalQuestions
+        )
+    }
 }
 
 // MARK: - PDF View
