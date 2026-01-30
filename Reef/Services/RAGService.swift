@@ -60,10 +60,8 @@ actor RAGService {
 
     /// Initialize the RAG system (call on app launch)
     func initialize() async throws {
-        // Initialize embedding service first (loads tokenizer + CoreML model)
-        try await EmbeddingService.shared.initialize()
-
-        // Then initialize vector store (checks embedding version and clears if changed)
+        // Initialize vector store (checks embedding version and clears if changed)
+        // Embedding service no longer needs initialization - uses server
         try await VectorStore.shared.initialize()
     }
 

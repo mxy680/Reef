@@ -2,8 +2,8 @@
 //  EmbeddingService.swift
 //  Reef
 //
-//  Provides sentence embeddings using MiniLM-L6-v2 via CoreML
-//  for high-quality on-device semantic search.
+//  Provides sentence embeddings via server-side MiniLM-L6-v2
+//  for high-quality semantic search.
 //
 
 import Foundation
@@ -14,23 +14,23 @@ enum EmbeddingError: Error, LocalizedError {
     case embeddingNotAvailable
     case emptyInput
     case embeddingFailed(String)
-    case notInitialized
+    case networkError(Error)
 
     var errorDescription: String? {
         switch self {
         case .embeddingNotAvailable:
-            return "Sentence embedding model is not available on this device"
+            return "Embedding service is not available"
         case .emptyInput:
             return "Cannot generate embedding for empty text"
         case .embeddingFailed(let reason):
             return "Failed to generate embedding: \(reason)"
-        case .notInitialized:
-            return "Embedding service not initialized - call initialize() first"
+        case .networkError(let error):
+            return "Network error during embedding: \(error.localizedDescription)"
         }
     }
 }
 
-/// Service for generating text embeddings using MiniLM-L6-v2
+/// Service for generating text embeddings using server-side MiniLM-L6-v2
 actor EmbeddingService {
     static let shared = EmbeddingService()
 
@@ -40,69 +40,32 @@ actor EmbeddingService {
     /// Embedding model version - increment when changing models to trigger re-indexing
     static let embeddingVersion = 2  // v1 = NLEmbedding (512d), v2 = MiniLM (384d)
 
-    /// The tokenizer
-    private let tokenizer = WordPieceTokenizer()
-
-    /// The MiniLM inference service
-    private let miniLM = MiniLMService()
-
-    /// Whether the service has been initialized
-    private var isInitialized = false
-
     private init() {}
-
-    // MARK: - Initialization
-
-    /// Initialize the embedding service (load tokenizer vocab and CoreML model)
-    func initialize() async throws {
-        guard !isInitialized else { return }
-
-        do {
-            // Load tokenizer vocabulary
-            try await tokenizer.loadVocabulary()
-
-            // Load CoreML model
-            try await miniLM.loadModel()
-
-            isInitialized = true
-            print("[EmbeddingService] Initialized with MiniLM-L6-v2 (v\(Self.embeddingVersion))")
-        } catch {
-            print("[EmbeddingService] Initialization failed: \(error)")
-            throw error
-        }
-    }
 
     // MARK: - Public API
 
-    /// Check if embedding is available (service is initialized)
+    /// Check if embedding is available (always true since we use server)
     func isAvailable() -> Bool {
-        return isInitialized
+        return true
     }
 
     /// Generate an embedding for a single text
     /// - Parameter text: The text to embed
     /// - Returns: A 384-dimensional normalized vector
     func embed(_ text: String) async throws -> [Float] {
-        guard isInitialized else {
-            throw EmbeddingError.notInitialized
-        }
-
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw EmbeddingError.emptyInput
         }
 
         do {
-            // Tokenize
-            let tokenized = try await tokenizer.tokenize(trimmed)
-
-            // Generate embedding
-            let embedding = try await miniLM.embed(
-                inputIds: tokenized.inputIds,
-                attentionMask: tokenized.attentionMask
-            )
-
+            let embeddings = try await AIService.shared.embed(texts: [trimmed])
+            guard let embedding = embeddings.first else {
+                throw EmbeddingError.embeddingFailed("No embedding returned from server")
+            }
             return embedding
+        } catch let error as AIServiceError {
+            throw EmbeddingError.networkError(error)
         } catch {
             throw EmbeddingError.embeddingFailed(error.localizedDescription)
         }
@@ -112,32 +75,41 @@ actor EmbeddingService {
     /// - Parameter texts: Array of texts to embed
     /// - Returns: Array of 384-dimensional normalized vectors
     func embedBatch(_ texts: [String]) async throws -> [[Float]] {
-        guard isInitialized else {
-            throw EmbeddingError.notInitialized
+        // Filter and track indices of non-empty texts
+        var nonEmptyTexts: [String] = []
+        var indexMap: [Int] = []  // Maps result index to original index
+
+        for (index, text) in texts.enumerated() {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                nonEmptyTexts.append(trimmed)
+                indexMap.append(index)
+            }
         }
 
-        var results: [[Float]] = []
-        results.reserveCapacity(texts.count)
+        // If all texts are empty, return zero vectors
+        if nonEmptyTexts.isEmpty {
+            return texts.map { _ in Array(repeating: 0.0, count: Self.embeddingDimension) }
+        }
 
-        for text in texts {
-            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty {
-                // Return zero vector for empty text
-                results.append(Array(repeating: 0.0, count: Self.embeddingDimension))
-                continue
-            }
+        // Get embeddings from server
+        let serverEmbeddings: [[Float]]
+        do {
+            serverEmbeddings = try await AIService.shared.embed(texts: nonEmptyTexts)
+        } catch let error as AIServiceError {
+            // On network error, return zero vectors
+            print("[EmbeddingService] Network error, returning zero vectors: \(error)")
+            return texts.map { _ in Array(repeating: 0.0, count: Self.embeddingDimension) }
+        } catch {
+            print("[EmbeddingService] Failed to embed batch: \(error)")
+            return texts.map { _ in Array(repeating: 0.0, count: Self.embeddingDimension) }
+        }
 
-            do {
-                let tokenized = try await tokenizer.tokenize(trimmed)
-                let embedding = try await miniLM.embed(
-                    inputIds: tokenized.inputIds,
-                    attentionMask: tokenized.attentionMask
-                )
-                results.append(embedding)
-            } catch {
-                // Return zero vector if embedding fails
-                print("[EmbeddingService] Failed to embed text: \(error)")
-                results.append(Array(repeating: 0.0, count: Self.embeddingDimension))
+        // Build result array with zero vectors for empty texts
+        var results: [[Float]] = texts.map { _ in Array(repeating: 0.0, count: Self.embeddingDimension) }
+        for (serverIndex, originalIndex) in indexMap.enumerated() {
+            if serverIndex < serverEmbeddings.count {
+                results[originalIndex] = serverEmbeddings[serverIndex]
             }
         }
 

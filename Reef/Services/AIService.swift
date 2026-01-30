@@ -126,6 +126,21 @@ struct AIChatResponse: Codable {
     let mode: String
 }
 
+// MARK: - Embed Models
+
+struct AIEmbedRequest: Codable {
+    let texts: [String]
+    let normalize: Bool
+}
+
+struct AIEmbedResponse: Codable {
+    let embeddings: [[Float]]
+    let model: String
+    let dimensions: Int
+    let count: Int
+    let mode: String
+}
+
 // MARK: - Error Types
 
 enum AIServiceError: Error, LocalizedError {
@@ -298,6 +313,34 @@ actor AIService {
             responseType: AIChatResponse.self,
             useMock: useMock
         )
+    }
+
+    // MARK: - Embeddings
+
+    /// Generate text embeddings using the server's MiniLM model
+    /// - Parameters:
+    ///   - texts: Array of texts to embed
+    ///   - normalize: Whether to L2-normalize the embeddings (default true)
+    ///   - useMock: Whether to use mock mode for testing
+    /// - Returns: Array of 384-dimensional embedding vectors
+    func embed(
+        texts: [String],
+        normalize: Bool = true,
+        useMock: Bool = false
+    ) async throws -> [[Float]] {
+        let request = AIEmbedRequest(
+            texts: texts,
+            normalize: normalize
+        )
+
+        let response = try await post(
+            endpoint: "/ai/embed",
+            body: request,
+            responseType: AIEmbedResponse.self,
+            useMock: useMock
+        )
+
+        return response.embeddings
     }
 
     // MARK: - Private Helpers
