@@ -41,8 +41,9 @@ For each question:
 4. Include any images using \\includegraphics{{image_name}}
 5. Format tables using the booktabs package (\\toprule, \\midrule, \\bottomrule)
 6. Format math expressions using proper LaTeX math mode ($ for inline, $$ or \\[ \\] for display)
-7. CRITICAL: After EACH sub-question (a), (b), (c), etc., add \\vspace{{5cm}} to provide space for student answers
+7. CRITICAL: After EVERY sub-question (a), (b), (c), etc., add \\vspace{{5cm}} to provide space for student answers - INCLUDING the last sub-question
 8. For sub-questions, use labels like (a), (b), (c) - NOT numbered lists like 1., 2., 3. Use \\textbf{{(a)}}, \\textbf{{(b)}}, etc. for sub-question labels
+9. For fill-in-the-blank lines, use \\underline{{\\hspace{{3cm}}}} instead of long underscores to prevent overflow
 
 Return a JSON array with objects containing:
 - "question_number": string (the question identifier)

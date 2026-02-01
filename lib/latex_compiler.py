@@ -28,8 +28,8 @@ class CompiledQuestion:
 LATEX_TEMPLATE = r"""
 \documentclass[12pt,letterpaper]{{article}}
 
-% Page setup - minimal margins for question display
-\usepackage[margin=0.75in]{{geometry}}
+% Page setup - generous margins to prevent overflow
+\usepackage[margin=1in]{{geometry}}
 
 % Math packages
 \usepackage{{amsmath}}
