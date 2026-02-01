@@ -44,6 +44,7 @@ For each question:
 7. CRITICAL: After EVERY sub-question (a), (b), (c), etc., add \\vspace{{5cm}} to provide space for student answers - INCLUDING the last sub-question
 8. For sub-questions, use labels like (a), (b), (c) - NOT numbered lists like 1., 2., 3. Use \\textbf{{(a)}}, \\textbf{{(b)}}, etc. for sub-question labels
 9. For fill-in-the-blank lines, use \\underline{{\\hspace{{3cm}}}} instead of long underscores to prevent overflow
+10. BEFORE each sub-question, add \\needspace{{6cm}} to prevent page breaks splitting a sub-question across pages
 
 Return a JSON array with objects containing:
 - "question_number": string (the question identifier)

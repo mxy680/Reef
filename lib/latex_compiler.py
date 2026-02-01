@@ -44,6 +44,9 @@ LATEX_TEMPLATE = r"""
 \usepackage{{booktabs}}
 \usepackage{{array}}
 
+% Prevent page breaks in middle of sub-questions
+\usepackage{{needspace}}
+
 % Font improvements
 \usepackage{{lmodern}}
 \usepackage[T1]{{fontenc}}
