@@ -32,6 +32,7 @@ class ExtractedQuestion:
 QUESTION_SEGMENTATION_PROMPT = """You are an expert at analyzing educational documents (exams, study guides, problem sets).
 
 Given the following markdown content extracted from a PDF, identify and segment individual questions.
+The output will be used as a worksheet where students write their answers, so ADD WHITESPACE after each sub-question.
 
 For each question:
 1. Identify the question number (e.g., "1", "2a", "Problem 3")
@@ -40,10 +41,11 @@ For each question:
 4. Include any images using \\includegraphics{{image_name}}
 5. Format tables using the booktabs package (\\toprule, \\midrule, \\bottomrule)
 6. Format math expressions using proper LaTeX math mode ($ for inline, $$ or \\[ \\] for display)
+7. CRITICAL: After EACH sub-question (a), (b), (c), etc., add \\vspace{{5cm}} to provide space for student answers
 
 Return a JSON array with objects containing:
 - "question_number": string (the question identifier)
-- "latex_content": string (the LaTeX content for this question)
+- "latex_content": string (the LaTeX content for this question, WITH \\vspace{{5cm}} after each sub-question)
 - "has_images": boolean (true if images are referenced)
 - "has_tables": boolean (true if tables are present)
 - "image_refs": array of strings (image filenames referenced)
@@ -53,6 +55,7 @@ IMPORTANT:
 - Each question should be self-contained
 - Preserve all mathematical notation accurately
 - Keep multi-part questions together
+- Add \\vspace{{5cm}} after EVERY sub-question for answer space
 
 Markdown content:
 {markdown_content}
