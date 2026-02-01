@@ -93,7 +93,7 @@ class LaTeXCompiler:
     def compile_latex(
         self,
         latex_content: str,
-        image_paths: Optional[list[str]] = None,
+        image_data: Optional[dict[str, str]] = None,
         work_dir: Optional[str] = None
     ) -> bytes:
         """
@@ -101,7 +101,7 @@ class LaTeXCompiler:
 
         Args:
             latex_content: The LaTeX document body (without preamble)
-            image_paths: List of paths to images to include
+            image_data: Dict of filename -> base64 encoded image data
             work_dir: Working directory for compilation (temp if not specified)
 
         Returns:
@@ -117,17 +117,18 @@ class LaTeXCompiler:
             cleanup = True
 
         try:
-            # Copy images to working directory if provided
+            # Write base64-encoded images to working directory
             images_dir = temp_dir / "images"
-            if image_paths:
+            if image_data:
                 images_dir.mkdir(exist_ok=True)
-                for img_path in image_paths:
-                    src = Path(img_path)
-                    if src.exists():
-                        shutil.copy(src, images_dir / src.name)
+                for img_name, img_b64 in image_data.items():
+                    img_bytes = base64.b64decode(img_b64)
+                    img_path = images_dir / img_name
+                    with open(img_path, "wb") as f:
+                        f.write(img_bytes)
 
             # Build full document
-            image_path_latex = str(images_dir) + "/" if image_paths else "./"
+            image_path_latex = str(images_dir) + "/" if image_data else "./"
             full_document = LATEX_TEMPLATE.format(
                 image_path=image_path_latex,
                 content=latex_content
@@ -181,7 +182,7 @@ class LaTeXCompiler:
         latex_content: str,
         has_images: bool,
         has_tables: bool,
-        image_paths: Optional[list[str]] = None
+        image_data: Optional[dict[str, str]] = None
     ) -> CompiledQuestion:
         """
         Compile a single question to PDF.
@@ -192,12 +193,12 @@ class LaTeXCompiler:
             latex_content: LaTeX content for the question
             has_images: Whether the question contains images
             has_tables: Whether the question contains tables
-            image_paths: Paths to image files
+            image_data: Dict of filename -> base64 encoded image data
 
         Returns:
             CompiledQuestion with base64-encoded PDF
         """
-        pdf_bytes = self.compile_latex(latex_content, image_paths)
+        pdf_bytes = self.compile_latex(latex_content, image_data)
         pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
         return CompiledQuestion(

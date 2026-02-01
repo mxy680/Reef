@@ -145,7 +145,7 @@ async def ai_extract_questions(
                     latex_content=eq.latex_content,
                     has_images=eq.has_images,
                     has_tables=eq.has_tables,
-                    image_paths=eq.image_paths if eq.image_paths else None
+                    image_data=eq.image_data if eq.image_data else None
                 )
                 compiled_questions.append(QuestionData(
                     order_index=compiled.order_index,

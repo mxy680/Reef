@@ -26,7 +26,7 @@ class ExtractedQuestion:
     latex_content: str
     has_images: bool
     has_tables: bool
-    image_paths: list[str]
+    image_data: dict[str, str]  # filename -> base64 encoded image data
 
 
 QUESTION_SEGMENTATION_PROMPT = """You are an expert at analyzing educational documents (exams, study guides, problem sets).
@@ -162,17 +162,20 @@ class QuestionExtractor:
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse Gemini response as JSON: {e}")
 
-        # Convert to ExtractedQuestion objects
+        # Convert to ExtractedQuestion objects (image_data populated later)
         questions = []
         for idx, q in enumerate(questions_data):
-            questions.append(ExtractedQuestion(
+            question = ExtractedQuestion(
                 order_index=idx,
                 question_number=q.get("question_number", str(idx + 1)),
                 latex_content=q.get("latex_content", ""),
                 has_images=q.get("has_images", False),
                 has_tables=q.get("has_tables", False),
-                image_paths=q.get("image_refs", [])
-            ))
+                image_data={}
+            )
+            # Store image refs temporarily as an attribute for later processing
+            question._image_refs = q.get("image_refs", [])
+            questions.append(question)
 
         return questions
 
@@ -200,18 +203,30 @@ class QuestionExtractor:
                 temp_dir
             )
 
+            # Build a map of image filename -> base64 data
+            # This must happen BEFORE temp_dir is deleted
+            images_dir = Path(temp_dir) / "images"
+            image_base64_map = {}
+            for img_path in image_paths:
+                img_file = Path(img_path)
+                if img_file.exists():
+                    with open(img_file, "rb") as f:
+                        image_base64_map[img_file.name] = base64.b64encode(f.read()).decode()
+
             # Get just the image filenames for Gemini
             image_refs = [Path(p).name for p in image_paths]
 
             # Segment with Gemini
             questions = self.segment_questions(markdown_content, image_refs)
 
-            # Update image paths to full paths
+            # Populate image_data with base64 encoded images for each question
             for q in questions:
-                q.image_paths = [
-                    str(Path(temp_dir) / "images" / name)
-                    for name in q.image_paths
-                    if (Path(temp_dir) / "images" / name).exists()
-                ]
+                image_refs_for_question = getattr(q, '_image_refs', [])
+                for img_name in image_refs_for_question:
+                    if img_name in image_base64_map:
+                        q.image_data[img_name] = image_base64_map[img_name]
+                # Clean up temporary attribute
+                if hasattr(q, '_image_refs'):
+                    delattr(q, '_image_refs')
 
             return questions
