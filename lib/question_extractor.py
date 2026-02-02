@@ -120,7 +120,12 @@ class QuestionExtractor:
         # Get cached Marker models (preloaded at startup)
         from api.index import get_marker_models
         models = get_marker_models()
-        converter = PdfConverter(artifact_dict=models)
+
+        # Disable LLM processors for faster processing
+        # The default Marker pipeline includes LLM-based processors that make
+        # extra API calls. We skip these since Gemini handles the heavy lifting.
+        config = {"use_llm": False}
+        converter = PdfConverter(artifact_dict=models, config=config)
 
         # Convert PDF to markdown
         rendered = converter(pdf_path)

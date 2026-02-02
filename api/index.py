@@ -7,10 +7,12 @@ Provides:
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, Query
+from fastapi import FastAPI, Request, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from typing import Optional
 import asyncio
+import time
 import os
 
 # Import lib modules
@@ -24,8 +26,10 @@ from lib.models import (
     ExtractQuestionsRequest,
     ExtractQuestionsResponse,
     QuestionData,
+    JobStatus,
 )
 from lib.embedding import get_embedding_service
+from lib import job_store
 
 # Cache for Marker models (loaded once at startup)
 _marker_models = None
@@ -223,3 +227,212 @@ async def ai_extract_questions(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# MARK: - Async Extraction Endpoints
+
+class SubmitExtractionRequest(BaseModel):
+    """Request body for submitting an extraction job."""
+    pdf_base64: str
+    note_id: str
+
+
+class SubmitExtractionResponse(BaseModel):
+    """Response from submitting an extraction job."""
+    job_id: str
+    status: str
+
+
+class JobStatusResponse(BaseModel):
+    """Response for job status check."""
+    job_id: str
+    status: str
+    error_message: Optional[str] = None
+
+
+async def process_extraction_job(job_id: str, pdf_base64: str, note_id: str):
+    """
+    Background task to process question extraction.
+
+    Updates job status as it progresses through the pipeline.
+    """
+    try:
+        # Mark as processing
+        job_store.update_job(job_id, status=JobStatus.PROCESSING)
+        print(f"[Job {job_id}] Starting extraction for note {note_id}")
+
+        from lib.question_extractor import QuestionExtractor
+        from lib.latex_compiler import LaTeXCompiler
+
+        # Initialize services
+        extractor = QuestionExtractor()
+        compiler = LaTeXCompiler()
+
+        # Extract questions from PDF
+        extracted_questions = await extractor.extract_questions(pdf_base64)
+        print(f"[Job {job_id}] Extracted {len(extracted_questions)} questions")
+
+        if not extracted_questions:
+            # No questions found - still a success
+            result = {
+                "questions": [],
+                "note_id": note_id,
+                "total_count": 0
+            }
+            job_store.update_job(
+                job_id,
+                status=JobStatus.COMPLETED,
+                result=result,
+                completed_at=time.time()
+            )
+            print(f"[Job {job_id}] Completed with 0 questions")
+            return
+
+        # Compile questions to PDF in parallel
+        async def compile_single(eq):
+            """Compile a single question in a thread pool."""
+            return await asyncio.to_thread(
+                compiler.compile_question,
+                order_index=eq.order_index,
+                question_number=eq.question_number,
+                latex_content=eq.latex_content,
+                has_images=eq.has_images,
+                has_tables=eq.has_tables,
+                image_data=eq.image_data if eq.image_data else None
+            )
+
+        # Run all compilations in parallel
+        compiled_results = await asyncio.gather(
+            *[compile_single(eq) for eq in extracted_questions],
+            return_exceptions=True
+        )
+
+        # Filter successful compilations
+        compiled_questions = []
+        for i, result in enumerate(compiled_results):
+            if isinstance(result, Exception):
+                print(f"[Job {job_id}] Failed to compile question {extracted_questions[i].question_number}: {result}")
+                continue
+            compiled_questions.append({
+                "order_index": result.order_index,
+                "question_number": result.question_number,
+                "pdf_base64": result.pdf_base64,
+                "has_images": result.has_images,
+                "has_tables": result.has_tables
+            })
+
+        # Store result
+        result = {
+            "questions": compiled_questions,
+            "note_id": note_id,
+            "total_count": len(compiled_questions)
+        }
+        job_store.update_job(
+            job_id,
+            status=JobStatus.COMPLETED,
+            result=result,
+            completed_at=time.time()
+        )
+        print(f"[Job {job_id}] Completed with {len(compiled_questions)} questions")
+
+    except Exception as e:
+        print(f"[Job {job_id}] Failed: {e}")
+        job_store.update_job(
+            job_id,
+            status=JobStatus.FAILED,
+            error_message=str(e),
+            completed_at=time.time()
+        )
+
+
+@app.post("/ai/extract-questions/submit", response_model=SubmitExtractionResponse)
+async def submit_extraction(
+    request_body: SubmitExtractionRequest,
+    background_tasks: BackgroundTasks,
+):
+    """
+    Submit a question extraction job for async processing.
+
+    Returns immediately with a job_id that can be used to poll for status.
+    """
+    # Create job
+    job_id = job_store.create_job(request_body.note_id)
+
+    # Queue background processing
+    background_tasks.add_task(
+        process_extraction_job,
+        job_id,
+        request_body.pdf_base64,
+        request_body.note_id
+    )
+
+    print(f"[Submit] Created job {job_id} for note {request_body.note_id}")
+
+    return SubmitExtractionResponse(
+        job_id=job_id,
+        status=JobStatus.PENDING.value
+    )
+
+
+@app.get("/ai/extract-questions/{job_id}/status", response_model=JobStatusResponse)
+async def get_extraction_status(job_id: str):
+    """
+    Get the status of an extraction job.
+
+    Poll this endpoint every 3-5 seconds until status is "completed" or "failed".
+    """
+    job = job_store.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    return JobStatusResponse(
+        job_id=job.job_id,
+        status=job.status.value,
+        error_message=job.error_message
+    )
+
+
+@app.get("/ai/extract-questions/{job_id}/results", response_model=ExtractQuestionsResponse)
+async def get_extraction_results(job_id: str):
+    """
+    Get the results of a completed extraction job.
+
+    Only call this after status endpoint returns "completed".
+    """
+    job = job_store.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    if job.status == JobStatus.PENDING or job.status == JobStatus.PROCESSING:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Job {job_id} is still {job.status.value}"
+        )
+
+    if job.status == JobStatus.FAILED:
+        raise HTTPException(
+            status_code=500,
+            detail=job.error_message or "Extraction failed"
+        )
+
+    if job.result is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Job completed but no result available"
+        )
+
+    # Convert stored dict to response model
+    return ExtractQuestionsResponse(
+        questions=[
+            QuestionData(
+                order_index=q["order_index"],
+                question_number=q["question_number"],
+                pdf_base64=q["pdf_base64"],
+                has_images=q["has_images"],
+                has_tables=q["has_tables"]
+            )
+            for q in job.result["questions"]
+        ],
+        note_id=job.result["note_id"],
+        total_count=job.result["total_count"]
+    )

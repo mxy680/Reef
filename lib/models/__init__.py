@@ -6,6 +6,7 @@ from .extract_questions import (
     ExtractQuestionsResponse,
     QuestionData,
 )
+from .extraction_job import ExtractionJob, JobStatus
 
 __all__ = [
     "EmbedRequest",
@@ -13,4 +14,6 @@ __all__ = [
     "ExtractQuestionsRequest",
     "ExtractQuestionsResponse",
     "QuestionData",
+    "ExtractionJob",
+    "JobStatus",
 ]
