@@ -29,6 +29,31 @@ struct ExtractQuestionsResponse: Codable {
     let total_count: Int
 }
 
+// MARK: - Async Job API Models
+
+struct SubmitExtractionRequest: Codable {
+    let pdf_base64: String
+    let note_id: String
+}
+
+struct SubmitExtractionResponse: Codable {
+    let job_id: String
+    let status: String
+}
+
+struct JobStatusResponse: Codable {
+    let job_id: String
+    let status: String
+    let error_message: String?
+}
+
+enum JobStatus: String {
+    case pending
+    case processing
+    case completed
+    case failed
+}
+
 // MARK: - Error Types
 
 enum QuestionExtractionError: Error, LocalizedError {
@@ -39,6 +64,9 @@ enum QuestionExtractionError: Error, LocalizedError {
     case noData
     case fileReadError(Error)
     case fileSaveError(Error)
+    case jobFailed(message: String)
+    case jobNotFound(jobID: String)
+    case cancelled
 
     var errorDescription: String? {
         switch self {
@@ -56,6 +84,12 @@ enum QuestionExtractionError: Error, LocalizedError {
             return "Failed to read PDF file: \(error.localizedDescription)"
         case .fileSaveError(let error):
             return "Failed to save question file: \(error.localizedDescription)"
+        case .jobFailed(let message):
+            return "Extraction failed: \(message)"
+        case .jobNotFound(let jobID):
+            return "Job not found: \(jobID)"
+        case .cancelled:
+            return "Extraction was cancelled"
         }
     }
 }
@@ -69,10 +103,14 @@ class QuestionExtractionService {
     private let baseURL = "https://reef-production-08bd.up.railway.app"
     private let session: URLSession
 
+    /// Polling interval for job status checks
+    private let pollingInterval: Duration = .seconds(3)
+
     private init() {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 120  // Extraction can take time
-        config.timeoutIntervalForResource = 300
+        // Shorter timeouts since we're using async jobs now
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
         self.session = URLSession(configuration: config)
     }
 
@@ -123,20 +161,27 @@ class QuestionExtractionService {
 
             let pdfBase64 = pdfData.base64EncodedString()
 
-            // Call extraction API
-            let response = try await callExtractionAPI(
+            // Use async job API for extraction
+            let response = try await extractQuestionsAsync(
                 pdfBase64: pdfBase64,
                 noteID: note.id.uuidString
             )
 
+            print("[QuestionExtractionService] API returned \(response.total_count) questions")
+
             // Save question PDFs and create Question entities
+            print("[QuestionExtractionService] Processing \(response.questions.count) questions...")
             for questionData in response.questions {
+                print("[QuestionExtractionService] Processing question \(questionData.question_number), order_index: \(questionData.order_index)")
                 let fileName = "question_\(questionData.order_index).pdf"
 
                 // Decode and save PDF
                 guard let pdfBytes = Data(base64Encoded: questionData.pdf_base64) else {
+                    print("[QuestionExtractionService] Failed to decode base64 for question \(questionData.question_number)")
+                    print("[QuestionExtractionService] Base64 length: \(questionData.pdf_base64.count), prefix: \(String(questionData.pdf_base64.prefix(100)))")
                     continue
                 }
+                print("[QuestionExtractionService] Decoded \(pdfBytes.count) bytes for question \(questionData.question_number)")
 
                 do {
                     try FileStorageService.shared.saveQuestionFile(
@@ -144,7 +189,9 @@ class QuestionExtractionService {
                         questionSetID: questionSet.id,
                         fileName: fileName
                     )
+                    print("[QuestionExtractionService] Saved file: \(fileName)")
                 } catch {
+                    print("[QuestionExtractionService] Failed to save file: \(error)")
                     throw QuestionExtractionError.fileSaveError(error)
                 }
 
@@ -158,11 +205,15 @@ class QuestionExtractionService {
                     hasTables: questionData.has_tables
                 )
                 modelContext.insert(question)
+                questionSet.questions.append(question)
+                print("[QuestionExtractionService] Created Question entity for \(questionData.question_number)")
             }
 
             // Update status
             questionSet.extractionStatus = .completed
             try modelContext.save()
+
+            print("[QuestionExtractionService] Saved \(questionSet.questions.count) questions to QuestionSet")
 
             return questionSet
 
@@ -191,19 +242,51 @@ class QuestionExtractionService {
         return questionSet.isReady
     }
 
-    // MARK: - Private Methods
+    // MARK: - Private Methods (Async Job API)
 
-    private func callExtractionAPI(
+    /// Extract questions using the async job API with polling
+    private func extractQuestionsAsync(
         pdfBase64: String,
         noteID: String
     ) async throws -> ExtractQuestionsResponse {
-        let urlString = baseURL + "/ai/extract-questions"
+        // Submit the job
+        let jobID = try await submitExtractionJob(pdfBase64: pdfBase64, noteID: noteID)
+        print("[QuestionExtractionService] Submitted job: \(jobID)")
+
+        // Poll until complete
+        while true {
+            try Task.checkCancellation()
+
+            let status = try await getJobStatus(jobID: jobID)
+            print("[QuestionExtractionService] Job \(jobID) status: \(status.status)")
+
+            switch JobStatus(rawValue: status.status) {
+            case .completed:
+                return try await getJobResults(jobID: jobID)
+
+            case .failed:
+                throw QuestionExtractionError.jobFailed(
+                    message: status.error_message ?? "Unknown error"
+                )
+
+            case .pending, .processing, .none:
+                try await Task.sleep(for: pollingInterval)
+            }
+        }
+    }
+
+    /// Submit a job for extraction (returns immediately)
+    private func submitExtractionJob(
+        pdfBase64: String,
+        noteID: String
+    ) async throws -> String {
+        let urlString = baseURL + "/ai/extract-questions/submit"
 
         guard let url = URL(string: urlString) else {
             throw QuestionExtractionError.invalidURL
         }
 
-        let request = ExtractQuestionsRequest(
+        let request = SubmitExtractionRequest(
             pdf_base64: pdfBase64,
             note_id: noteID
         )
@@ -227,13 +310,90 @@ class QuestionExtractionService {
         }
 
         guard httpResponse.statusCode == 200 else {
-            let message: String
-            if let errorDict = try? JSONDecoder().decode([String: String].self, from: data),
-               let detail = errorDict["detail"] {
-                message = detail
-            } else {
-                message = String(data: data, encoding: .utf8) ?? "Unknown error"
-            }
+            let message = parseErrorMessage(from: data)
+            throw QuestionExtractionError.serverError(
+                statusCode: httpResponse.statusCode,
+                message: message
+            )
+        }
+
+        do {
+            let submitResponse = try JSONDecoder().decode(SubmitExtractionResponse.self, from: data)
+            return submitResponse.job_id
+        } catch {
+            throw QuestionExtractionError.decodingError(error)
+        }
+    }
+
+    /// Check the status of a job
+    private func getJobStatus(jobID: String) async throws -> JobStatusResponse {
+        let urlString = baseURL + "/ai/extract-questions/\(jobID)/status"
+
+        guard let url = URL(string: urlString) else {
+            throw QuestionExtractionError.invalidURL
+        }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "GET"
+
+        let data: Data
+        let response: URLResponse
+
+        do {
+            (data, response) = try await session.data(for: urlRequest)
+        } catch {
+            throw QuestionExtractionError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw QuestionExtractionError.noData
+        }
+
+        if httpResponse.statusCode == 404 {
+            throw QuestionExtractionError.jobNotFound(jobID: jobID)
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let message = parseErrorMessage(from: data)
+            throw QuestionExtractionError.serverError(
+                statusCode: httpResponse.statusCode,
+                message: message
+            )
+        }
+
+        do {
+            return try JSONDecoder().decode(JobStatusResponse.self, from: data)
+        } catch {
+            throw QuestionExtractionError.decodingError(error)
+        }
+    }
+
+    /// Get the results of a completed job
+    private func getJobResults(jobID: String) async throws -> ExtractQuestionsResponse {
+        let urlString = baseURL + "/ai/extract-questions/\(jobID)/results"
+
+        guard let url = URL(string: urlString) else {
+            throw QuestionExtractionError.invalidURL
+        }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "GET"
+
+        let data: Data
+        let response: URLResponse
+
+        do {
+            (data, response) = try await session.data(for: urlRequest)
+        } catch {
+            throw QuestionExtractionError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw QuestionExtractionError.noData
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let message = parseErrorMessage(from: data)
             throw QuestionExtractionError.serverError(
                 statusCode: httpResponse.statusCode,
                 message: message
@@ -245,5 +405,14 @@ class QuestionExtractionService {
         } catch {
             throw QuestionExtractionError.decodingError(error)
         }
+    }
+
+    /// Parse error message from response data
+    private func parseErrorMessage(from data: Data) -> String {
+        if let errorDict = try? JSONDecoder().decode([String: String].self, from: data),
+           let detail = errorDict["detail"] {
+            return detail
+        }
+        return String(data: data, encoding: .utf8) ?? "Unknown error"
     }
 }

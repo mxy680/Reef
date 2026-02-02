@@ -24,6 +24,9 @@ class QuestionSet {
     var extractionStatusRaw: String = QuestionExtractionStatus.pending.rawValue
     var errorMessage: String?
 
+    /// Job ID for tracking in-progress extractions (for app restart recovery)
+    var extractionJobID: String?
+
     @Relationship(deleteRule: .cascade, inverse: \Question.questionSet)
     var questions: [Question] = []
 
