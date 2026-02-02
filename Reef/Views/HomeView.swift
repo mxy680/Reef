@@ -56,6 +56,8 @@ struct HomeView: View {
     @State private var isAddingCourse = false
     @State private var newCourseName = ""
     @State private var isShowingDocumentPicker = false
+    @State private var isShowingUploadOptions = false
+    @State private var pendingUploadURLs: [URL] = []
     @State private var isShowingGenerateExam = false
     @State private var isShowingQuizGeneration = false
     @State private var isShowingCourseMenu = false
@@ -561,7 +563,20 @@ struct HomeView: View {
         }
         .sheet(isPresented: $isShowingDocumentPicker) {
             DocumentPicker { urls in
-                addNotes(from: urls)
+                pendingUploadURLs = urls
+                isShowingUploadOptions = true
+            }
+        }
+        .overlay {
+            if isShowingUploadOptions && !pendingUploadURLs.isEmpty {
+                UploadOptionsSheet(
+                    isPresented: $isShowingUploadOptions,
+                    urls: pendingUploadURLs,
+                    onUpload: { assignmentModeEnabled in
+                        addNotes(from: pendingUploadURLs, isAssignment: assignmentModeEnabled)
+                        pendingUploadURLs = []
+                    }
+                )
             }
         }
         .sheet(isPresented: $isShowingQuizGeneration) {
@@ -629,6 +644,7 @@ struct HomeView: View {
             ))
             .zIndex(1)
         }
+
         }
         .onAppear {
             // Trigger vector index migration for existing documents
@@ -691,7 +707,23 @@ struct HomeView: View {
         }
     }
 
-    private func addNotes(from urls: [URL]) {
+    /// Navigate to a note by its ID (used by toast notifications)
+    private func navigateToNote(noteID: UUID) {
+        // Search through all courses to find the note
+        for course in courses {
+            if let note = course.notes.first(where: { $0.id == noteID }) {
+                // Found the note - navigate to it
+                note.lastOpenedAt = Date()
+                selectedCourse = course
+                selectedCourseSubPage = "notes"
+                selectedItem = nil
+                selectedNote = note
+                return
+            }
+        }
+    }
+
+    private func addNotes(from urls: [URL], isAssignment: Bool = false) {
         guard let course = selectedCourse else { return }
 
         for url in urls {
@@ -705,6 +737,12 @@ struct HomeView: View {
                 fileExtension: fileExtension,
                 course: course
             )
+
+            // Set assignment mode if enabled
+            note.isAssignment = isAssignment
+            if isAssignment {
+                note.assignmentStatus = .processing
+            }
 
             do {
                 _ = try FileStorageService.shared.copyFile(
@@ -752,9 +790,37 @@ struct HomeView: View {
                             print("Failed to index note for RAG: \(error)")
                         }
                     }
+
+                    // Extract questions if assignment mode is enabled
+                    if isAssignment {
+                        await extractQuestions(for: note, fileURL: fileURL)
+                    }
                 }
             } catch {
                 print("Failed to copy file: \(error)")
+            }
+        }
+    }
+
+    /// Extract questions from an assignment document
+    private func extractQuestions(for note: Note, fileURL: URL) async {
+        let noteID = note.id
+
+        do {
+            let extractedQuestions = try await QuestionExtractionService.shared.extractQuestions(
+                fileURL: fileURL,
+                noteID: noteID
+            )
+
+            await MainActor.run {
+                note.extractedQuestions = extractedQuestions
+                note.assignmentStatus = extractedQuestions.isEmpty ? .failed : .completed
+            }
+        } catch {
+            print("Failed to extract questions: \(error)")
+            await MainActor.run {
+                // Silent fallback - note remains usable as regular document
+                note.assignmentStatus = .failed
             }
         }
     }

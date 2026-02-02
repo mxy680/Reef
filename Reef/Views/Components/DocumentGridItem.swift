@@ -31,6 +31,7 @@ protocol DocumentItem: AnyObject {
     var isVectorIndexed: Bool { get }
     var isProcessingForAI: Bool { get }
     var isAIReady: Bool { get }
+    var isAssignmentProcessing: Bool { get }
 }
 
 // Conform Note to DocumentItem
@@ -58,6 +59,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
     @State private var isShowingDeleteConfirmation = false
     @State private var editedName = ""
     @State private var extractionPulseScale: CGFloat = 1.0
+    @State private var assignmentPulseScale: CGFloat = 1.0
     @State private var isPressed: Bool = false
 
     private var effectiveColorScheme: ColorScheme {
@@ -102,26 +104,48 @@ struct DocumentGridItem<T: DocumentItem>: View {
                     .frame(height: 60)
                 }
 
-                // Processing status indicator - pulsing yellow dot when processing for AI
-                if document.isProcessingForAI {
-                    Circle()
-                        .fill(Color.yellow)
-                        .frame(width: 10, height: 10)
-                        .scaleEffect(extractionPulseScale)
-                        .shadow(color: Color.yellow.opacity(0.5), radius: 4)
-                        .padding(8)
-                        .onAppear {
-                            withAnimation(
-                                .easeInOut(duration: 0.8)
-                                .repeatForever(autoreverses: true)
-                            ) {
-                                extractionPulseScale = 1.3
+                // Processing status indicators - positioned in overlay
+                VStack(alignment: .trailing, spacing: 4) {
+                    // Assignment processing indicator - pulsing blue dot
+                    if document.isAssignmentProcessing {
+                        Circle()
+                            .fill(Color.blue)
+                            .frame(width: 10, height: 10)
+                            .scaleEffect(assignmentPulseScale)
+                            .shadow(color: Color.blue.opacity(0.5), radius: 4)
+                            .onAppear {
+                                withAnimation(
+                                    .easeInOut(duration: 0.8)
+                                    .repeatForever(autoreverses: true)
+                                ) {
+                                    assignmentPulseScale = 1.3
+                                }
                             }
-                        }
-                        .onDisappear {
-                            extractionPulseScale = 1.0
-                        }
+                            .onDisappear {
+                                assignmentPulseScale = 1.0
+                            }
+                    }
+                    // AI processing indicator - pulsing yellow dot
+                    else if document.isProcessingForAI {
+                        Circle()
+                            .fill(Color.yellow)
+                            .frame(width: 10, height: 10)
+                            .scaleEffect(extractionPulseScale)
+                            .shadow(color: Color.yellow.opacity(0.5), radius: 4)
+                            .onAppear {
+                                withAnimation(
+                                    .easeInOut(duration: 0.8)
+                                    .repeatForever(autoreverses: true)
+                                ) {
+                                    extractionPulseScale = 1.3
+                                }
+                            }
+                            .onDisappear {
+                                extractionPulseScale = 1.0
+                            }
+                    }
                 }
+                .padding(8)
             }
             .frame(maxWidth: .infinity)
             .aspectRatio(9/10, contentMode: .fill)

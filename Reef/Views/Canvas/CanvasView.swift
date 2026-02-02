@@ -32,16 +32,15 @@ struct CanvasView: View {
     @State private var canvasBackgroundOpacity: CGFloat = 0.15
     @State private var canvasBackgroundSpacing: CGFloat = 48
 
-    // Assignment Mode state
-    @State private var assignmentModeState: AssignmentModeState = .inactive
-    @State private var questionSet: QuestionSet?
-    @State private var currentQuestionIndex: Int = 0
-
     // Reference to canvas
     @State private var canvasViewRef: CanvasContainerView?
 
     // Drawing persistence
     @State private var saveTask: Task<Void, Never>?
+
+    // Assignment mode state
+    @State private var viewMode: CanvasViewMode = .document
+    @State private var currentQuestionIndex: Int = 0
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
@@ -54,62 +53,79 @@ struct CanvasView: View {
         )
     }
 
-    /// The URL to display - either original document or current question PDF
-    private var displayURL: URL {
-        if assignmentModeState.isActive,
-           let qs = questionSet,
-           currentQuestionIndex < qs.questions.count {
-            let sortedQuestions = qs.questions.sorted { $0.orderIndex < $1.orderIndex }
-            return sortedQuestions[currentQuestionIndex].fileURL
-        }
-        return fileURL
+    /// Whether assignment mode is enabled for this note
+    private var isAssignmentEnabled: Bool {
+        note.isAssignment && note.isAssignmentReady
     }
 
-    /// Current question for display (1-indexed)
-    private var currentQuestion: Int {
-        currentQuestionIndex + 1
-    }
-
-    /// Total number of questions
+    /// Total number of extracted questions
     private var totalQuestions: Int {
-        questionSet?.questions.count ?? 0
-    }
-
-    /// Document ID for the current view - stable ID for each question to preserve drawings
-    private var currentDocumentID: UUID {
-        if assignmentModeState.isActive,
-           let qs = questionSet,
-           currentQuestionIndex < qs.questions.count {
-            let sortedQuestions = qs.questions.sorted { $0.orderIndex < $1.orderIndex }
-            return sortedQuestions[currentQuestionIndex].id
-        }
-        return note.id
+        note.extractedQuestions.count
     }
 
     var body: some View {
         ZStack {
-            // Document with drawing canvas overlay
-            DrawingOverlayView(
-                documentID: currentDocumentID,
-                documentURL: displayURL,
-                fileType: assignmentModeState.isActive ? .pdf : note.fileType,
-                selectedTool: $selectedTool,
-                selectedPenColor: $selectedPenColor,
-                selectedHighlighterColor: $selectedHighlighterColor,
-                penWidth: $penWidth,
-                highlighterWidth: $highlighterWidth,
-                eraserSize: $eraserSize,
-                eraserType: $eraserType,
-                diagramWidth: $diagramWidth,
-                diagramAutosnap: $diagramAutosnap,
-                canvasBackgroundMode: canvasBackgroundMode,
-                canvasBackgroundOpacity: canvasBackgroundOpacity,
-                canvasBackgroundSpacing: canvasBackgroundSpacing,
-                isDarkMode: themeManager.isDarkMode,
-                onCanvasReady: { container in
-                    canvasViewRef = container
-                }
-            )
+            // Content view - switches between document and assignment view
+            if viewMode == .assignment && isAssignmentEnabled {
+                // Assignment mode view
+                AssignmentView(
+                    note: note,
+                    currentIndex: currentQuestionIndex,
+                    selectedTool: $selectedTool,
+                    selectedPenColor: $selectedPenColor,
+                    selectedHighlighterColor: $selectedHighlighterColor,
+                    penWidth: $penWidth,
+                    highlighterWidth: $highlighterWidth,
+                    eraserSize: $eraserSize,
+                    eraserType: $eraserType,
+                    diagramWidth: $diagramWidth,
+                    diagramAutosnap: $diagramAutosnap,
+                    canvasBackgroundMode: canvasBackgroundMode,
+                    canvasBackgroundOpacity: canvasBackgroundOpacity,
+                    canvasBackgroundSpacing: canvasBackgroundSpacing,
+                    isDarkMode: themeManager.isDarkMode,
+                    onPreviousQuestion: {
+                        if currentQuestionIndex > 0 {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentQuestionIndex -= 1
+                            }
+                        }
+                    },
+                    onNextQuestion: {
+                        if currentQuestionIndex < totalQuestions - 1 {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentQuestionIndex += 1
+                            }
+                        }
+                    },
+                    onCanvasReady: { container in
+                        canvasViewRef = container
+                    }
+                )
+            } else {
+                // Document view (default)
+                DrawingOverlayView(
+                    documentID: note.id,
+                    documentURL: fileURL,
+                    fileType: note.fileType,
+                    selectedTool: $selectedTool,
+                    selectedPenColor: $selectedPenColor,
+                    selectedHighlighterColor: $selectedHighlighterColor,
+                    penWidth: $penWidth,
+                    highlighterWidth: $highlighterWidth,
+                    eraserSize: $eraserSize,
+                    eraserType: $eraserType,
+                    diagramWidth: $diagramWidth,
+                    diagramAutosnap: $diagramAutosnap,
+                    canvasBackgroundMode: canvasBackgroundMode,
+                    canvasBackgroundOpacity: canvasBackgroundOpacity,
+                    canvasBackgroundSpacing: canvasBackgroundSpacing,
+                    isDarkMode: themeManager.isDarkMode,
+                    onCanvasReady: { container in
+                        canvasViewRef = container
+                    }
+                )
+            }
 
             // Floating toolbar at bottom
             VStack {
@@ -160,10 +176,25 @@ struct CanvasView: View {
                     onClearCurrentPage: {
                         canvasViewRef?.clearCurrentPage()
                     },
-                    assignmentModeState: $assignmentModeState,
-                    onAssignmentModeToggle: toggleAssignmentMode,
-                    onPreviousQuestion: goToPreviousQuestion,
-                    onNextQuestion: goToNextQuestion
+                    isAssignmentEnabled: isAssignmentEnabled,
+                    viewMode: $viewMode,
+                    currentQuestionIndex: currentQuestionIndex,
+                    totalQuestions: totalQuestions,
+                    onPreviousQuestion: {
+                        if currentQuestionIndex > 0 {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentQuestionIndex -= 1
+                            }
+                        }
+                    },
+                    onNextQuestion: {
+                        if currentQuestionIndex < totalQuestions - 1 {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentQuestionIndex += 1
+                            }
+                        }
+                    },
+                    isAssignmentProcessing: note.isAssignmentProcessing
                 )
                 .padding(.bottom, 24)
             }
@@ -189,100 +220,6 @@ struct CanvasView: View {
                 isViewingCanvas = false
             }
         }
-        .task {
-            // Check if we have an existing question set for this note
-            loadExistingQuestionSet()
-        }
-    }
-
-    // MARK: - Assignment Mode
-
-    private func loadExistingQuestionSet() {
-        if let existing = QuestionExtractionService.shared.getQuestionSet(
-            for: note.id,
-            modelContext: modelContext
-        ), existing.isReady {
-            questionSet = existing
-        }
-    }
-
-    private func toggleAssignmentMode() {
-        switch assignmentModeState {
-        case .inactive:
-            // Check if we have cached questions
-            if let qs = questionSet, qs.isReady {
-                // Use cached questions
-                currentQuestionIndex = 0
-                assignmentModeState = .active(
-                    currentQuestion: 1,
-                    totalQuestions: qs.questionCount
-                )
-            } else {
-                // Need to extract questions
-                extractQuestions()
-            }
-
-        case .loading:
-            // Can't toggle while loading
-            break
-
-        case .active:
-            // Return to normal mode
-            assignmentModeState = .inactive
-            currentQuestionIndex = 0
-        }
-    }
-
-    private func extractQuestions() {
-        assignmentModeState = .loading
-
-        Task {
-            do {
-                let qs = try await QuestionExtractionService.shared.extractQuestions(
-                    from: note,
-                    modelContext: modelContext
-                )
-
-                await MainActor.run {
-                    questionSet = qs
-                    currentQuestionIndex = 0
-
-                    if qs.questionCount > 0 {
-                        assignmentModeState = .active(
-                            currentQuestion: 1,
-                            totalQuestions: qs.questionCount
-                        )
-                    } else {
-                        // No questions found
-                        assignmentModeState = .inactive
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    print("Question extraction failed: \(error)")
-                    assignmentModeState = .inactive
-                }
-            }
-        }
-    }
-
-    private func goToPreviousQuestion() {
-        guard currentQuestionIndex > 0 else { return }
-        currentQuestionIndex -= 1
-        updateAssignmentModeState()
-    }
-
-    private func goToNextQuestion() {
-        guard currentQuestionIndex < totalQuestions - 1 else { return }
-        currentQuestionIndex += 1
-        updateAssignmentModeState()
-    }
-
-    private func updateAssignmentModeState() {
-        assignmentModeState = .active(
-            currentQuestion: currentQuestion,
-            totalQuestions: totalQuestions
-        )
     }
 }
 

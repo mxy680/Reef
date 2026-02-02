@@ -6,6 +6,25 @@
 import Foundation
 import SwiftData
 
+// MARK: - Assignment Status
+
+/// Status of question extraction for assignment mode
+enum AssignmentStatus: String, Codable {
+    case none        // Not an assignment (assignment mode not enabled)
+    case processing  // Questions are being extracted
+    case completed   // Questions extracted successfully
+    case failed      // Extraction failed
+}
+
+// MARK: - Extracted Question
+
+/// Represents a single extracted question from an assignment
+struct ExtractedQuestion: Codable, Identifiable {
+    var id: UUID = UUID()
+    let questionNumber: Int
+    let pdfFileName: String  // Local filename for the question PDF
+}
+
 @Model
 class Note: Hashable {
     static func == (lhs: Note, rhs: Note) -> Bool {
@@ -30,6 +49,36 @@ class Note: Hashable {
     var ocrConfidence: Double?
     var isVectorIndexed: Bool = false
     var isAssignment: Bool = false
+
+    // Assignment mode properties
+    var assignmentStatusRaw: String = AssignmentStatus.none.rawValue
+    var extractedQuestionsData: Data?  // JSON-encoded [ExtractedQuestion]
+    var assignmentJobId: String?  // Server job ID for polling
+
+    var assignmentStatus: AssignmentStatus {
+        get { AssignmentStatus(rawValue: assignmentStatusRaw) ?? .none }
+        set { assignmentStatusRaw = newValue.rawValue }
+    }
+
+    var extractedQuestions: [ExtractedQuestion] {
+        get {
+            guard let data = extractedQuestionsData else { return [] }
+            return (try? JSONDecoder().decode([ExtractedQuestion].self, from: data)) ?? []
+        }
+        set {
+            extractedQuestionsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    /// True if assignment processing is in progress
+    var isAssignmentProcessing: Bool {
+        isAssignment && assignmentStatus == .processing
+    }
+
+    /// True if assignment is ready (questions extracted)
+    var isAssignmentReady: Bool {
+        isAssignment && assignmentStatus == .completed && !extractedQuestions.isEmpty
+    }
 
     var extractionStatus: ExtractionStatus {
         get { ExtractionStatus(rawValue: extractionStatusRaw) ?? .pending }

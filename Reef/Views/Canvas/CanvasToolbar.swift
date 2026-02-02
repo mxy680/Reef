@@ -47,24 +47,6 @@ enum CanvasBackgroundMode: String, CaseIterable {
     }
 }
 
-// MARK: - Assignment Mode State
-
-enum AssignmentModeState: Equatable {
-    case inactive
-    case loading
-    case active(currentQuestion: Int, totalQuestions: Int)
-
-    var isActive: Bool {
-        if case .active = self { return true }
-        return false
-    }
-
-    var isLoading: Bool {
-        if case .loading = self { return true }
-        return false
-    }
-}
-
 // MARK: - Stroke Width Constants
 
 enum StrokeWidthRange {
@@ -86,6 +68,27 @@ enum StrokeWidthRange {
 }
 
 // MARK: - Canvas Toolbar
+
+// MARK: - View Mode
+
+enum CanvasViewMode: String, CaseIterable {
+    case document
+    case assignment
+
+    var displayName: String {
+        switch self {
+        case .document: return "Doc"
+        case .assignment: return "Assign"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .document: return "doc.text"
+        case .assignment: return "list.number"
+        }
+    }
+}
 
 struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
@@ -112,11 +115,14 @@ struct CanvasToolbar: View {
     var onDeleteCurrentPage: () -> Void = {}
     var onClearCurrentPage: () -> Void = {}
 
-    // Assignment Mode
-    @Binding var assignmentModeState: AssignmentModeState
-    var onAssignmentModeToggle: () -> Void = {}
+    // Assignment mode properties
+    var isAssignmentEnabled: Bool = false
+    @Binding var viewMode: CanvasViewMode
+    var currentQuestionIndex: Int = 0
+    var totalQuestions: Int = 0
     var onPreviousQuestion: () -> Void = {}
     var onNextQuestion: () -> Void = {}
+    var isAssignmentProcessing: Bool = false
 
     @State private var contextualToolbarHidden: Bool = false
     @State private var backgroundModeSelected: Bool = false
@@ -142,6 +148,14 @@ struct CanvasToolbar: View {
         }
     }
 
+    private var paginationEnabled: Bool {
+        viewMode == .assignment && totalQuestions > 0 && !isAssignmentProcessing
+    }
+
+    private var isAssignmentReady: Bool {
+        isAssignmentEnabled && totalQuestions > 0 && !isAssignmentProcessing
+    }
+
     private var showBackgroundModeToolbar: Bool {
         backgroundModeSelected
     }
@@ -152,10 +166,6 @@ struct CanvasToolbar: View {
 
     private var showDocumentOperationsToolbar: Bool {
         documentOperationsSelected
-    }
-
-    private var showAssignmentModeToolbar: Bool {
-        assignmentModeState.isActive || assignmentModeState.isLoading
     }
 
     private func selectTool(_ tool: CanvasTool) {
@@ -267,18 +277,6 @@ struct CanvasToolbar: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
-            // Assignment mode toolbar tier
-            if showAssignmentModeToolbar {
-                AssignmentModeToolbar(
-                    state: assignmentModeState,
-                    colorScheme: colorScheme,
-                    onPrevious: onPreviousQuestion,
-                    onNext: onNextQuestion,
-                    onClose: onAssignmentModeToggle
-                )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
             // Main toolbar
             mainToolbar
         }
@@ -286,7 +284,6 @@ struct CanvasToolbar: View {
         .animation(.easeOut(duration: 0.2), value: showBackgroundModeToolbar)
         .animation(.easeOut(duration: 0.2), value: showAIToolbar)
         .animation(.easeOut(duration: 0.2), value: showDocumentOperationsToolbar)
-        .animation(.easeOut(duration: 0.2), value: showAssignmentModeToolbar)
         .animation(.easeOut(duration: 0.2), value: selectedTool)
         .animation(.easeOut(duration: 0.2), value: contextualToolbarHidden)
         .animation(.easeOut(duration: 0.2), value: backgroundModeSelected)
@@ -358,17 +355,75 @@ struct CanvasToolbar: View {
                 action: selectDocumentOperations
             )
 
-            toolbarDivider
+            // Assignment mode controls (only shown when assignment mode is enabled)
+            if isAssignmentEnabled {
+                toolbarDivider
 
-            // Assignment Mode toggle
-            ToolbarButton(
-                icon: "list.number",
-                isSelected: assignmentModeState.isActive,
-                isDisabled: false,
-                showProcessingIndicator: assignmentModeState.isLoading,
-                colorScheme: colorScheme,
-                action: onAssignmentModeToggle
-            )
+                // Doc/Assignment toggle
+                HStack(spacing: 2) {
+                    ForEach(CanvasViewMode.allCases, id: \.self) { mode in
+                        Button {
+                            viewMode = mode
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: mode.iconName)
+                                    .font(.system(size: 12, weight: .medium))
+                                Text(mode.displayName)
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundColor(viewMode == mode ? .white : Color.adaptiveText(for: colorScheme))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(viewMode == mode ? Color.vibrantTeal : Color.clear)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isAssignmentProcessing)
+                    }
+                }
+                .padding(.horizontal, 4)
+
+                // Pagination controls (always visible, disabled in document mode)
+                HStack(spacing: 4) {
+                    // Previous button
+                    Button {
+                        onPreviousQuestion()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(paginationEnabled && currentQuestionIndex > 0
+                                ? Color.adaptiveText(for: colorScheme)
+                                : Color.adaptiveText(for: colorScheme).opacity(0.3))
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!paginationEnabled || currentQuestionIndex == 0)
+
+                    // Position indicator
+                    Text("\(currentQuestionIndex + 1)/\(totalQuestions)")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(paginationEnabled
+                            ? Color.adaptiveText(for: colorScheme)
+                            : Color.adaptiveText(for: colorScheme).opacity(0.3))
+                        .frame(minWidth: 36)
+
+                    // Next button
+                    Button {
+                        onNextQuestion()
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(paginationEnabled && currentQuestionIndex < totalQuestions - 1
+                                ? Color.adaptiveText(for: colorScheme)
+                                : Color.adaptiveText(for: colorScheme).opacity(0.3))
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!paginationEnabled || currentQuestionIndex >= totalQuestions - 1)
+                }
+            }
 
             toolbarDivider
 
@@ -376,8 +431,9 @@ struct CanvasToolbar: View {
             ToolbarButton(
                 icon: "sparkles",
                 isSelected: aiModeSelected,
-                isDisabled: !isDocumentAIReady,
-                showProcessingIndicator: !isDocumentAIReady,
+                isDisabled: !isDocumentAIReady || (isAssignmentEnabled && !isAssignmentReady),
+                showProcessingIndicator: !isDocumentAIReady || isAssignmentProcessing,
+                processingIndicatorColor: isAssignmentProcessing ? .blue : .yellow,
                 colorScheme: colorScheme,
                 action: selectAIMode
             )
@@ -428,6 +484,7 @@ private struct ToolbarButton: View {
     let isSelected: Bool
     var isDisabled: Bool = false
     var showProcessingIndicator: Bool = false
+    var processingIndicatorColor: Color = .yellow
     let colorScheme: ColorScheme
     let action: () -> Void
 
@@ -447,13 +504,13 @@ private struct ToolbarButton: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                // Yellow pulsing indicator when processing
+                // Pulsing indicator when processing
                 if showProcessingIndicator {
                     Circle()
-                        .fill(Color.yellow)
+                        .fill(processingIndicatorColor)
                         .frame(width: 8, height: 8)
                         .scaleEffect(processingPulseScale)
-                        .shadow(color: Color.yellow.opacity(0.5), radius: 2)
+                        .shadow(color: processingIndicatorColor.opacity(0.5), radius: 2)
                         .offset(x: -4, y: 4)
                         .onAppear {
                             withAnimation(
@@ -759,120 +816,6 @@ private struct AIToolbarButton: View {
     }
 }
 
-// MARK: - Assignment Mode Toolbar
-
-private struct AssignmentModeToolbar: View {
-    let state: AssignmentModeState
-    let colorScheme: ColorScheme
-    let onPrevious: () -> Void
-    let onNext: () -> Void
-    let onClose: () -> Void
-
-    private var currentQuestion: Int {
-        if case .active(let current, _) = state {
-            return current
-        }
-        return 0
-    }
-
-    private var totalQuestions: Int {
-        if case .active(_, let total) = state {
-            return total
-        }
-        return 0
-    }
-
-    private var canGoPrevious: Bool {
-        currentQuestion > 1
-    }
-
-    private var canGoNext: Bool {
-        currentQuestion < totalQuestions
-    }
-
-    var body: some View {
-        HStack(spacing: 0) {
-            if state.isLoading {
-                // Loading state
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                    Text("Extracting questions...")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color.adaptiveText(for: colorScheme))
-                }
-                .padding(.horizontal, 16)
-            } else if case .active = state {
-                // Previous button
-                Button {
-                    onPrevious()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(canGoPrevious ? Color.adaptiveText(for: colorScheme) : Color.adaptiveText(for: colorScheme).opacity(0.3))
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .disabled(!canGoPrevious)
-
-                // Question counter
-                Text("Q\(currentQuestion)/\(totalQuestions)")
-                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme))
-                    .frame(minWidth: 80)
-
-                // Next button
-                Button {
-                    onNext()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(canGoNext ? Color.adaptiveText(for: colorScheme) : Color.adaptiveText(for: colorScheme).opacity(0.3))
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .disabled(!canGoNext)
-            }
-
-            // Close button
-            Rectangle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                .frame(width: 1, height: 24)
-                .padding(.leading, 12)
-                .padding(.trailing, 8)
-
-            Button {
-                onClose()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.6))
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 48)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .strokeBorder(
-                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
-                            lineWidth: 1
-                        )
-                )
-                .shadow(
-                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
-                    radius: colorScheme == .dark ? 12 : 8,
-                    x: 0,
-                    y: 4
-                )
-        )
-    }
-}
-
 // MARK: - Document Operations Toolbar
 
 private struct DocumentOperationsToolbar: View {
@@ -1031,7 +974,10 @@ private struct DocumentOperationsToolbar: View {
             onAIPressed: {},
             onToggleDarkMode: {},
             isDocumentAIReady: false,
-            assignmentModeState: .constant(.active(currentQuestion: 3, totalQuestions: 12))
+            isAssignmentEnabled: true,
+            viewMode: .constant(.document),
+            currentQuestionIndex: 2,
+            totalQuestions: 12
         )
     }
     .padding()
