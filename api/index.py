@@ -337,7 +337,7 @@ Rules:
 - Use the visible problem numbers/identifiers in the document for problem_number.
 - Only include annotations that belong to a specific numbered problem (question text, sub-parts, figures, formulas, tables, etc.).
 - Pay special attention to figures and pictures — always assign them to the problem they illustrate. Figures usually appear directly above or below the problem text they belong to.
-- Skip annotations that are general context: page headers, page footers, document titles, course info, general directions/instructions, or any content not tied to a specific problem.
+- Skip annotations that are general context: page headers, page footers, document titles, course info, general directions/instructions, answer keys/solutions sections, or any content not tied to a specific problem.
 - Not every annotation index needs to appear — omit ones that aren't part of a problem.
 - Use a short descriptive label for each group (e.g. "Problem 1", "Problem 2a-2c").
 - Order the problems by their appearance in the document.
@@ -394,11 +394,15 @@ async def ai_group_problems(
             page.save(buf, format="JPEG", quality=85)
             page_images.append(buf.getvalue())
 
-        # Call Gemini with annotated images and prompt
-        from lib.gemini_client import GeminiClient
+        # Call Gemini (via OpenRouter) with annotated images and prompt
+        from lib.openai_client import LLMClient
         prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
-        gemini = GeminiClient()
-        raw_response = gemini.generate(
+        llm_client = LLMClient(
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            model="google/gemini-3-flash-preview",
+            base_url="https://openrouter.ai/api/v1",
+        )
+        raw_response = llm_client.generate(
             prompt=prompt,
             images=page_images,
             response_schema=GroupProblemsResponse.model_json_schema(),
