@@ -316,9 +316,11 @@ You are analyzing scanned pages of a homework or assignment document.
 Each page has been annotated with numbered red bounding boxes (indices 1 through {total_annotations}).
 Each bounding box surrounds a detected layout element (text block, title, figure, table, formula, etc.).
 
-Your task: group these annotation indices into logical problem groups. Only include annotations that are part of a specific problem.
+Your task: identify EVERY numbered problem in the document and map each one to the annotation indices that contain it.
 
 Rules:
+- CRITICAL: You must find ALL numbered problems visible in the document. Read every page carefully and count every problem number you see. Do NOT skip any.
+- Multiple problems often share the same annotation index — this is normal when a single bounding box contains several questions. Create a separate problem group for each problem number, even if they all point to the same annotation index.
 - Use the visible problem numbers/identifiers in the document for problem_number.
 - Only include annotations that belong to a specific numbered problem (question text, sub-parts, figures, formulas, tables, etc.).
 - Pay special attention to figures and pictures — always assign them to the problem they illustrate. Figures usually appear directly above or below the problem text they belong to.
