@@ -43,3 +43,8 @@ class Question(BaseModel):
         ge=0,
         le=6,
     )
+
+
+class QuestionBatch(BaseModel):
+    """Multiple questions extracted from a single image containing several problems."""
+    questions: list[Question] = Field(..., description="All questions found in the image")

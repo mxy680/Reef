@@ -24,7 +24,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lib.mock_responses import get_mock_embedding
-from lib.models import EmbedRequest, EmbedResponse, ProblemGroup, GroupProblemsResponse, Question
+import re
+from collections import defaultdict
+from lib.models import EmbedRequest, EmbedResponse, ProblemGroup, GroupProblemsResponse, Question, QuestionBatch
 from lib.embedding import get_embedding_service
 from lib.question_to_latex import question_to_latex, _sanitize_text
 
@@ -584,31 +586,25 @@ async def ai_reconstruct(
                 print(f"  [reconstruct] Rescued orphan figure {idx} ({label}) -> {best_problem.label}")
 
         # For each problem, crop regions from high-res images
+        # Group problems by annotation indices to deduplicate LLM calls —
+        # when multiple problems share the same page crop (common when Surya
+        # detects one large text block), extract all of them in a single call.
 
-        async def reconstruct_problem(problem: ProblemGroup) -> tuple[str, str, dict[str, str]]:
-            """Crop merged page regions for a problem and send to LLM for LaTeX reconstruction.
+        PADDING = 10   # pixels of padding around merged crop at 96 DPI
+        ANN_SCALE = 2  # annotated pages are 2x scaled from 96 DPI
 
-            Instead of sending one crop per annotation, creates one merged crop per page
-            that encompasses all of the problem's annotations on that page. This preserves
-            the spatial relationship between text and figures. Individual figure annotations
-            are still cropped separately for the LaTeX compiler's \\includegraphics.
-            """
-            image_data: dict[str, str] = {}    # figure filename -> base64 (for compiler)
-            figure_filenames: list[str] = []   # ordered list of figure filenames
-            figure_mappings: list[str] = []    # "Annotation N → filename" for prompt
-
-            # Group annotations by page and compute merged bounding boxes
-            page_bboxes: dict[int, list[float]] = {}  # page_num -> [x1, y1, x2, y2] merged
-            PADDING = 10  # pixels of padding around merged crop at 96 DPI
-            ANN_SCALE = 2  # annotated pages are 2x scaled from 96 DPI
+        def _compute_crops(problem: ProblemGroup):
+            """Compute page crops and figure data for a problem's annotations."""
+            image_data: dict[str, str] = {}
+            figure_filenames: list[str] = []
+            figure_mappings: list[str] = []
+            page_bboxes: dict[int, list[float]] = {}
 
             for idx in problem.annotation_indices:
                 if idx not in bbox_index:
-                    print(f"  [reconstruct] {problem.label}: index {idx} not in bbox_index, skipping")
                     continue
                 page_num, bbox, label = bbox_index[idx]
 
-                # Extract individual figure crops from hires images for the compiler
                 if label in FIGURE_LABELS:
                     hires = hires_images[page_num]
                     x1 = max(0, int(bbox[0] * crop_scale))
@@ -622,9 +618,7 @@ async def ai_reconstruct(
                         image_data[fname] = base64.b64encode(buf.getvalue()).decode()
                         figure_filenames.append(fname)
                         figure_mappings.append(f"  - Red box #{idx} → {fname}")
-                        print(f"  [reconstruct] {problem.label}: index {idx} is {label} -> {fname}")
 
-                # Expand merged bbox for this page
                 if page_num not in page_bboxes:
                     page_bboxes[page_num] = [bbox[0], bbox[1], bbox[2], bbox[3]]
                 else:
@@ -634,7 +628,6 @@ async def ai_reconstruct(
                     mb[2] = max(mb[2], bbox[2])
                     mb[3] = max(mb[3], bbox[3])
 
-            # Create one merged crop per page from ANNOTATED pages (with red numbered boxes)
             page_crops: list[bytes] = []
             for page_num in sorted(page_bboxes.keys()):
                 mb = page_bboxes[page_num]
@@ -649,46 +642,107 @@ async def ai_reconstruct(
                 ann_page.crop((x1, y1, x2, y2)).save(buf, format="JPEG", quality=90)
                 page_crops.append(buf.getvalue())
 
-            print(f"  [reconstruct] {problem.label}: {len(page_crops)} page crops ({len(figure_filenames)} figures) from indices {problem.annotation_indices}")
+            return page_crops, image_data, figure_filenames, figure_mappings
+
+        async def reconstruct_group(problems: list[ProblemGroup]) -> list[tuple[str, str, dict, dict | None]]:
+            """Extract all questions sharing the same page regions in one LLM call."""
+            page_crops, image_data, figure_filenames, figure_mappings = _compute_crops(problems[0])
+
+            labels_str = ", ".join(p.label for p in problems)
+            print(f"  [reconstruct] Group [{labels_str}]: {len(page_crops)} page crops ({len(figure_filenames)} figures) from indices {problems[0].annotation_indices}")
 
             if not page_crops:
-                return (problem.label, "% No regions found for this problem", {}, None)
+                return [(p.label, "% No regions found", {}, None) for p in problems]
 
-            # Build extraction prompt with problem label and figure info
+            # Build extraction prompt
             extract_prompt = EXTRACT_QUESTION_PROMPT
-            extract_prompt += f"\n\n## Target Problem\nExtract ONLY **{problem.label}** from the image. The image may contain multiple problems — ignore all others and extract only the one specified."
+            if len(problems) == 1:
+                extract_prompt += f"\n\n## Target Problem\nExtract ONLY **{problems[0].label}** from the image."
+            else:
+                labels = [p.label for p in problems]
+                nums = [re.findall(r"\d+", l)[0] for l in labels if re.findall(r"\d+", l)]
+                extract_prompt += f"\n\n## Multiple Problems — CRITICAL\nThis image contains {len(labels)} SEPARATE numbered problems. Each one MUST be its own top-level Question object in the `questions` array.\n\nProblems to extract: {', '.join(labels)}\nExpected problem numbers: {', '.join(nums)}\n\nRules:\n- Return exactly {len(labels)} Question objects.\n- Each Question has its own `number` field matching the problem number shown in the document.\n- Do NOT nest different problem numbers as sub-parts of another question. Problem 9 is NOT a sub-part of Problem 8 — it is a separate question.\n- Only use `parts` for actual labeled sub-questions within a single problem (e.g. a, b, c)."
+
             if figure_filenames:
                 extract_prompt += "\n\nFigure files:\n" + "\n".join(figure_mappings)
                 extract_prompt += "\n\nUse these filenames in the figures lists."
 
-            # Single LLM call: structured extraction
-            raw_q = await asyncio.to_thread(
+            # Choose schema: single Question or QuestionBatch
+            if len(problems) == 1:
+                schema = Question.model_json_schema()
+            else:
+                schema = QuestionBatch.model_json_schema()
+
+            raw = await asyncio.to_thread(
                 llm_client.generate,
                 prompt=extract_prompt,
                 images=page_crops,
-                response_schema=Question.model_json_schema(),
+                response_schema=schema,
             )
-            question = Question.model_validate_json(raw_q)
 
-            # Strip hallucinated figure filenames the LLM invented
+            if len(problems) == 1:
+                questions = [Question.model_validate_json(raw)]
+            else:
+                batch = QuestionBatch.model_validate_json(raw)
+                questions = batch.questions
+
+            # Strip hallucinated figure filenames
             valid_figs = set(figure_filenames)
-            def _filter_figs(figs: list[str]) -> list[str]:
-                return [f for f in figs if f in valid_figs]
-            question.figures = _filter_figs(question.figures)
-            for part in question.parts:
-                part.figures = _filter_figs(part.figures)
-                for sub in part.parts:
-                    sub.figures = _filter_figs(sub.figures)
+            for q in questions:
+                q.figures = [f for f in q.figures if f in valid_figs]
+                for part in q.parts:
+                    part.figures = [f for f in part.figures if f in valid_figs]
+                    for sub in part.parts:
+                        sub.figures = [f for f in sub.figures if f in valid_figs]
 
-            latex = question_to_latex(question)
-            question_dict = question.model_dump()
-            print(f"  [reconstruct] {problem.label}: got {len(latex)} chars of LaTeX (structured)")
+            # Match extracted questions to problems by number
+            q_by_number: dict[int, list[Question]] = defaultdict(list)
+            for q in questions:
+                q_by_number[q.number].append(q)
 
-            return (problem.label, latex, image_data, question_dict)
+            out: list[tuple[str, str, dict, dict | None]] = []
+            for problem in problems:
+                nums = re.findall(r"\d+", problem.label)
+                matched = None
+                if nums:
+                    target = int(nums[0])
+                    candidates = q_by_number.get(target, [])
+                    if candidates:
+                        matched = candidates.pop(0)
 
-        # Run all problems in parallel
-        tasks = [reconstruct_problem(p) for p in group_result.problems]
-        results = await asyncio.gather(*tasks)
+                if matched is None:
+                    # Fallback: take any remaining question
+                    for remaining in q_by_number.values():
+                        if remaining:
+                            matched = remaining.pop(0)
+                            break
+
+                if matched:
+                    latex = question_to_latex(matched)
+                    print(f"  [reconstruct] {problem.label}: got {len(latex)} chars of LaTeX (structured)")
+                    out.append((problem.label, latex, image_data, matched.model_dump()))
+                else:
+                    print(f"  [reconstruct] {problem.label}: no matching question in batch extraction")
+                    out.append((problem.label, "% Extraction failed", {}, None))
+
+            return out
+
+        # Group problems by annotation indices (same indices = same crop)
+        crop_groups: dict[tuple, list[ProblemGroup]] = defaultdict(list)
+        for p in group_result.problems:
+            key = tuple(sorted(p.annotation_indices))
+            crop_groups[key].append(p)
+
+        # Run one extraction per unique crop group in parallel
+        group_tasks = [reconstruct_group(probs) for probs in crop_groups.values()]
+        group_results_nested = await asyncio.gather(*group_tasks)
+
+        # Flatten and reorder to match original problem order
+        results_by_label: dict[str, tuple] = {}
+        for group_list in group_results_nested:
+            for r in group_list:
+                results_by_label[r[0]] = r
+        results = [results_by_label[p.label] for p in group_result.problems]
 
         # Save structured questions (always available now)
         questions = [q for _, _, _, q in results if q is not None]
