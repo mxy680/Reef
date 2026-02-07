@@ -44,6 +44,9 @@ LATEX_TEMPLATE = r"""
 \usepackage{{booktabs}}
 \usepackage{{array}}
 
+% Colors
+\usepackage{{xcolor}}
+
 % Prevent page breaks in middle of sub-questions
 \usepackage{{needspace}}
 
@@ -57,6 +60,9 @@ LATEX_TEMPLATE = r"""
 
 % Captions outside floats
 \usepackage{{caption}}
+
+% Indentation for nested sub-parts
+\usepackage{{changepage}}
 
 % Font improvements
 \usepackage{{lmodern}}

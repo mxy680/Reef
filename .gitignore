@@ -54,3 +54,9 @@ Thumbs.db
 # Generated extraction outputs
 documents/extractions/
 documents/extracted_*.pdf
+
+# Pipeline data
+data/
+
+# Claude
+CLAUDE.md

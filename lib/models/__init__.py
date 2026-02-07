@@ -1,19 +1,14 @@
 """Pydantic models for API endpoints."""
 
 from .embed import EmbedRequest, EmbedResponse
-from .extract_questions import (
-    ExtractQuestionsRequest,
-    ExtractQuestionsResponse,
-    QuestionData,
-)
-from .extraction_job import ExtractionJob, JobStatus
+from .group_problems import ProblemGroup, GroupProblemsResponse
+from .question import Part, Question
 
 __all__ = [
     "EmbedRequest",
     "EmbedResponse",
-    "ExtractQuestionsRequest",
-    "ExtractQuestionsResponse",
-    "QuestionData",
-    "ExtractionJob",
-    "JobStatus",
+    "ProblemGroup",
+    "GroupProblemsResponse",
+    "Part",
+    "Question",
 ]

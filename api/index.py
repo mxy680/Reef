@@ -1,45 +1,73 @@
 """
-Reef Server - FastAPI application for text embeddings.
+Reef Server - FastAPI application for text embeddings and document analysis.
 
 Provides:
 - Text embeddings using MiniLM-L6-v2
-- Mock mode for testing
+- PDF layout annotation using Surya
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, Request, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
-import asyncio
-import time
+from fastapi.responses import StreamingResponse
+import json
 import os
+import io
+import asyncio
+import base64
+from pathlib import Path
+from datetime import datetime
 
 # Import lib modules
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lib.mock_responses import get_mock_embedding
-from lib.models import (
-    EmbedRequest,
-    EmbedResponse,
-    ExtractQuestionsRequest,
-    ExtractQuestionsResponse,
-    QuestionData,
-    JobStatus,
-)
+from lib.models import EmbedRequest, EmbedResponse, ProblemGroup, GroupProblemsResponse, Question
 from lib.embedding import get_embedding_service
-from lib import job_store
+from lib.question_to_latex import question_to_latex, _sanitize_text
 
-# Cache for Marker models (loaded once at startup)
-_marker_models = None
+# Surya imports
+from surya.foundation import FoundationPredictor
+from surya.layout import LayoutPredictor
+from surya.settings import settings
+from PIL import Image, ImageDraw, ImageFont
+import fitz  # PyMuPDF
+
+# Global model cache
+_layout_predictor = None
+_foundation_predictor = None
+
+# Color palette for different layout types (RGB tuples)
+LAYOUT_COLORS = {
+    "Text": (52, 152, 219),        # Blue
+    "Title": (231, 76, 60),         # Red
+    "Section-header": (155, 89, 182), # Purple
+    "List-item": (46, 204, 113),    # Green
+    "Table": (243, 156, 18),        # Orange
+    "Figure": (233, 30, 99),        # Pink
+    "Caption": (0, 188, 212),       # Cyan
+    "Page-header": (121, 85, 72),   # Brown
+    "Page-footer": (96, 125, 139),  # Gray
+    "Footnote": (255, 87, 34),      # Deep Orange
+    "Formula": (103, 58, 183),      # Deep Purple
+    "Picture": (233, 30, 99),       # Pink (same as Figure)
+    "TextInlineMath": (103, 58, 183), # Deep Purple
+    "SectionHeader": (155, 89, 182),  # Purple (alt name)
+}
+
+def get_layout_predictor():
+    """Get or create the layout predictor singleton."""
+    global _layout_predictor, _foundation_predictor
+    if _layout_predictor is None:
+        _foundation_predictor = FoundationPredictor(checkpoint=settings.LAYOUT_MODEL_CHECKPOINT)
+        _layout_predictor = LayoutPredictor(_foundation_predictor)
+    return _layout_predictor
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Preload ML models at startup to avoid cold start delays."""
-    global _marker_models
-
+    """Preload ML models at startup."""
     print("[Startup] Preloading models...")
 
     # Preload embedding model
@@ -47,25 +75,12 @@ async def lifespan(app: FastAPI):
     embedding_service = get_embedding_service()
     embedding_service._load_model()
 
-    # Preload Marker models
-    print("[Startup] Loading Marker models...")
-    from marker.models import create_model_dict
-    _marker_models = create_model_dict()
-
-    print("[Startup] All models loaded!")
+    # Surya models load lazily on first /ai/annotate request
+    print("[Startup] Ready! (Surya models load on first use)")
 
     yield
 
     print("[Shutdown] Cleaning up...")
-
-
-def get_marker_models():
-    """Get cached Marker models."""
-    global _marker_models
-    if _marker_models is None:
-        from marker.models import create_model_dict
-        _marker_models = create_model_dict()
-    return _marker_models
 
 
 app = FastAPI(
@@ -150,289 +165,607 @@ async def ai_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/ai/extract-questions", response_model=ExtractQuestionsResponse)
-async def ai_extract_questions(
-    request_body: ExtractQuestionsRequest,
-    request: Request,
+def annotate_page(img: Image.Image, layout_result, scale: int = 2, start_index: int = 1) -> tuple[Image.Image, int]:
+    """Annotate a single page image with layout detection results.
+
+    Returns the annotated image and the next index to use.
+    """
+    # Scale up for better output quality
+    img = img.resize((img.width * scale, img.height * scale), Image.LANCZOS)
+
+    # Convert to RGBA for transparency support
+    img = img.convert("RGBA")
+
+    # Create overlay for semi-transparent fills
+    overlay = Image.new("RGBA", img.size, (255, 255, 255, 0))
+    overlay_draw = ImageDraw.Draw(overlay)
+
+    # Main draw for outlines and text
+    draw = ImageDraw.Draw(img)
+
+    # Try to load a font, fall back to default
+    try:
+        font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 24)
+    except:
+        font = ImageFont.load_default()
+
+    # All annotations in red
+    rgb = (220, 53, 69)  # Red color
+
+    current_index = start_index
+    for block in layout_result.bboxes:
+        # Scale bbox coordinates to match scaled image
+        bbox = block.bbox
+        x1 = int(bbox[0] * scale)
+        y1 = int(bbox[1] * scale)
+        x2 = int(bbox[2] * scale)
+        y2 = int(bbox[3] * scale)
+
+        # Draw semi-transparent fill on overlay
+        fill_color = (*rgb, 40)  # 40/255 alpha
+        overlay_draw.rectangle([(x1, y1), (x2, y2)], fill=fill_color)
+
+        # Draw thick outline
+        for i in range(3):
+            draw.rectangle(
+                [(x1 - i, y1 - i), (x2 + i, y2 + i)],
+                outline=rgb,
+                width=2
+            )
+
+        # Draw index label
+        label = str(current_index)
+        label_y = max(y1 - 32, 5)  # Don't go above image
+        text_bbox = draw.textbbox((x1, label_y), label, font=font)
+        padding = 6
+        label_rect = (text_bbox[0] - padding, text_bbox[1] - padding,
+                     text_bbox[2] + padding, text_bbox[3] + padding)
+        draw.rectangle(label_rect, fill=rgb)
+        draw.text((x1, label_y), label, fill="white", font=font)
+
+        current_index += 1
+
+    # Composite the overlay onto the image
+    img = Image.alpha_composite(img, overlay)
+
+    # Convert back to RGB
+    return img.convert("RGB"), current_index
+
+
+@app.post("/ai/annotate")
+async def ai_annotate(
+    pdf: UploadFile = File(..., description="PDF file to annotate"),
 ):
     """
-    Extract questions from a PDF document.
+    Annotate all pages of a PDF with layout detection using Surya.
 
-    Takes a base64-encoded PDF and returns individual questions as separate PDFs.
-    Uses Marker for OCR/layout extraction and Gemini for question segmentation.
+    Draws colored bounding boxes around detected layout elements:
+    - Text blocks (blue)
+    - Titles (red)
+    - Tables (orange)
+    - Figures (pink)
+    - And more...
+
+    Returns the annotated PDF with all pages.
     """
     try:
-        from lib.question_extractor import QuestionExtractor
-        from lib.latex_compiler import LaTeXCompiler
+        # Read PDF content
+        pdf_bytes = await pdf.read()
 
-        # Initialize services
-        extractor = QuestionExtractor()
-        compiler = LaTeXCompiler()
+        # Open PDF with PyMuPDF
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        num_pages = len(doc)
 
-        # Extract questions from PDF
-        extracted_questions = await extractor.extract_questions(request_body.pdf_base64)
+        # Convert all pages to images at 96 DPI (what Surya expects)
+        images = []
+        mat = fitz.Matrix(96/72, 96/72)
+        for page_num in range(num_pages):
+            pdf_page = doc[page_num]
+            pix = pdf_page.get_pixmap(matrix=mat)
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            images.append(img)
+        doc.close()
 
-        if not extracted_questions:
-            return ExtractQuestionsResponse(
-                questions=[],
-                note_id=request_body.note_id,
-                total_count=0
+        # Run Surya layout detection on all pages
+        layout_predictor = get_layout_predictor()
+        layout_results = layout_predictor(images)
+
+        # Annotate each page with continuous indexing
+        annotated_pages = []
+        current_index = 1
+        for img, layout_result in zip(images, layout_results):
+            annotated, current_index = annotate_page(img, layout_result, scale=2, start_index=current_index)
+            annotated_pages.append(annotated)
+
+        # Save to /data/annotations directory as PDF
+        annotations_dir = Path(__file__).parent.parent / "data" / "annotations"
+        annotations_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate filename from original PDF name
+        base_name = Path(pdf.filename).stem if pdf.filename else "document"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_filename = f"{base_name}_annotated_{timestamp}.pdf"
+        output_path = annotations_dir / output_filename
+
+        # Save all pages as PDF
+        if annotated_pages:
+            annotated_pages[0].save(
+                output_path,
+                "PDF",
+                save_all=True,
+                append_images=annotated_pages[1:] if len(annotated_pages) > 1 else [],
+                resolution=150,
             )
 
-        # Compile questions to PDF in parallel
-        async def compile_single(eq):
-            """Compile a single question in a thread pool."""
-            return await asyncio.to_thread(
-                compiler.compile_question,
-                order_index=eq.order_index,
-                question_number=eq.question_number,
-                latex_content=eq.latex_content,
-                has_images=eq.has_images,
-                has_tables=eq.has_tables,
-                image_data=eq.image_data if eq.image_data else None
+        # Return the PDF
+        output = io.BytesIO()
+        if annotated_pages:
+            annotated_pages[0].save(
+                output,
+                "PDF",
+                save_all=True,
+                append_images=annotated_pages[1:] if len(annotated_pages) > 1 else [],
+                resolution=150,
             )
+        output.seek(0)
 
-        # Run all compilations in parallel
-        compiled_results = await asyncio.gather(
-            *[compile_single(eq) for eq in extracted_questions],
-            return_exceptions=True
+        return StreamingResponse(
+            output,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"inline; filename={output_filename}",
+                "X-Saved-Path": str(output_path),
+                "X-Page-Count": str(num_pages),
+            }
         )
 
-        # Filter successful compilations
-        compiled_questions = []
-        for i, result in enumerate(compiled_results):
-            if isinstance(result, Exception):
-                print(f"Failed to compile question {extracted_questions[i].question_number}: {result}")
-                continue
-            compiled_questions.append(QuestionData(
-                order_index=result.order_index,
-                question_number=result.question_number,
-                pdf_base64=result.pdf_base64,
-                has_images=result.has_images,
-                has_tables=result.has_tables
-            ))
-
-        return ExtractQuestionsResponse(
-            questions=compiled_questions,
-            note_id=request_body.note_id,
-            total_count=len(compiled_questions)
-        )
-
-    except ImportError as e:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Required dependencies not available: {e}"
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# MARK: - Async Extraction Endpoints
+GROUP_PROBLEMS_PROMPT = """\
+You are analyzing scanned pages of a homework or assignment document.
 
-class SubmitExtractionRequest(BaseModel):
-    """Request body for submitting an extraction job."""
-    pdf_base64: str
-    note_id: str
+Each page has been annotated with numbered red bounding boxes (indices 1 through {total_annotations}).
+Each bounding box surrounds a detected layout element (text block, title, figure, table, formula, etc.).
 
+Your task: group these annotation indices into logical problem groups. Only include annotations that are part of a specific problem.
 
-class SubmitExtractionResponse(BaseModel):
-    """Response from submitting an extraction job."""
-    job_id: str
-    status: str
+Rules:
+- Use the visible problem numbers/identifiers in the document for problem_number.
+- Only include annotations that belong to a specific numbered problem (question text, sub-parts, figures, formulas, tables, etc.).
+- Pay special attention to figures and pictures — always assign them to the problem they illustrate. Figures usually appear directly above or below the problem text they belong to.
+- Skip annotations that are general context: page headers, page footers, document titles, course info, general directions/instructions, or any content not tied to a specific problem.
+- Not every annotation index needs to appear — omit ones that aren't part of a problem.
+- Use a short descriptive label for each group (e.g. "Problem 1", "Problem 2a-2c").
+- Order the problems by their appearance in the document.
 
-
-class JobStatusResponse(BaseModel):
-    """Response for job status check."""
-    job_id: str
-    status: str
-    error_message: Optional[str] = None
-
-
-async def process_extraction_job(job_id: str, pdf_base64: str, note_id: str):
-    """
-    Background task to process question extraction.
-
-    Updates job status as it progresses through the pipeline.
-    """
-    try:
-        # Mark as processing
-        job_store.update_job(job_id, status=JobStatus.PROCESSING)
-        print(f"[Job {job_id}] Starting extraction for note {note_id}")
-
-        from lib.question_extractor import QuestionExtractor
-        from lib.latex_compiler import LaTeXCompiler
-
-        # Initialize services
-        extractor = QuestionExtractor()
-        compiler = LaTeXCompiler()
-
-        # Extract questions from PDF
-        extracted_questions = await extractor.extract_questions(pdf_base64)
-        print(f"[Job {job_id}] Extracted {len(extracted_questions)} questions")
-
-        if not extracted_questions:
-            # No questions found - still a success
-            result = {
-                "questions": [],
-                "note_id": note_id,
-                "total_count": 0
-            }
-            job_store.update_job(
-                job_id,
-                status=JobStatus.COMPLETED,
-                result=result,
-                completed_at=time.time()
-            )
-            print(f"[Job {job_id}] Completed with 0 questions")
-            return
-
-        # Compile questions to PDF in parallel
-        async def compile_single(eq):
-            """Compile a single question in a thread pool."""
-            return await asyncio.to_thread(
-                compiler.compile_question,
-                order_index=eq.order_index,
-                question_number=eq.question_number,
-                latex_content=eq.latex_content,
-                has_images=eq.has_images,
-                has_tables=eq.has_tables,
-                image_data=eq.image_data if eq.image_data else None
-            )
-
-        # Run all compilations in parallel
-        compiled_results = await asyncio.gather(
-            *[compile_single(eq) for eq in extracted_questions],
-            return_exceptions=True
-        )
-
-        # Filter successful compilations
-        compiled_questions = []
-        for i, result in enumerate(compiled_results):
-            if isinstance(result, Exception):
-                print(f"[Job {job_id}] Failed to compile question {extracted_questions[i].question_number}: {result}")
-                continue
-            compiled_questions.append({
-                "order_index": result.order_index,
-                "question_number": result.question_number,
-                "pdf_base64": result.pdf_base64,
-                "has_images": result.has_images,
-                "has_tables": result.has_tables
-            })
-
-        # Store result
-        result = {
-            "questions": compiled_questions,
-            "note_id": note_id,
-            "total_count": len(compiled_questions)
-        }
-        job_store.update_job(
-            job_id,
-            status=JobStatus.COMPLETED,
-            result=result,
-            completed_at=time.time()
-        )
-        print(f"[Job {job_id}] Completed with {len(compiled_questions)} questions")
-
-    except Exception as e:
-        print(f"[Job {job_id}] Failed: {e}")
-        job_store.update_job(
-            job_id,
-            status=JobStatus.FAILED,
-            error_message=str(e),
-            completed_at=time.time()
-        )
+Return a JSON object matching the provided schema.
+"""
 
 
-@app.post("/ai/extract-questions/submit", response_model=SubmitExtractionResponse)
-async def submit_extraction(
-    request_body: SubmitExtractionRequest,
-    background_tasks: BackgroundTasks,
+@app.post("/ai/group-problems")
+async def ai_group_problems(
+    pdf: UploadFile = File(..., description="PDF file to annotate and group"),
 ):
     """
-    Submit a question extraction job for async processing.
+    Annotate a PDF with numbered bounding boxes, then use Gemini to group
+    annotations into logical problem groups.
 
-    Returns immediately with a job_id that can be used to poll for status.
+    Returns JSON with problem groups and their annotation indices.
     """
-    # Create job
-    job_id = job_store.create_job(request_body.note_id)
+    try:
+        # Read PDF content
+        pdf_bytes = await pdf.read()
 
-    # Queue background processing
-    background_tasks.add_task(
-        process_extraction_job,
-        job_id,
-        request_body.pdf_base64,
-        request_body.note_id
-    )
+        # Open PDF with PyMuPDF
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        num_pages = len(doc)
 
-    print(f"[Submit] Created job {job_id} for note {request_body.note_id}")
+        # Convert all pages to images at 96 DPI (what Surya expects)
+        images = []
+        mat = fitz.Matrix(96/72, 96/72)
+        for page_num in range(num_pages):
+            pdf_page = doc[page_num]
+            pix = pdf_page.get_pixmap(matrix=mat)
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            images.append(img)
+        doc.close()
 
-    return SubmitExtractionResponse(
-        job_id=job_id,
-        status=JobStatus.PENDING.value
-    )
+        # Run Surya layout detection on all pages
+        layout_predictor = get_layout_predictor()
+        layout_results = layout_predictor(images)
 
+        # Annotate each page with continuous indexing
+        annotated_pages = []
+        current_index = 1
+        for img, layout_result in zip(images, layout_results):
+            annotated, current_index = annotate_page(img, layout_result, scale=2, start_index=current_index)
+            annotated_pages.append(annotated)
 
-@app.get("/ai/extract-questions/{job_id}/status", response_model=JobStatusResponse)
-async def get_extraction_status(job_id: str):
-    """
-    Get the status of an extraction job.
+        total_annotations = current_index - 1
 
-    Poll this endpoint every 3-5 seconds until status is "completed" or "failed".
-    """
-    job = job_store.get_job(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        # Convert annotated pages to JPEG bytes for Gemini
+        page_images: list[bytes] = []
+        for page in annotated_pages:
+            buf = io.BytesIO()
+            page.save(buf, format="JPEG", quality=85)
+            page_images.append(buf.getvalue())
 
-    return JobStatusResponse(
-        job_id=job.job_id,
-        status=job.status.value,
-        error_message=job.error_message
-    )
-
-
-@app.get("/ai/extract-questions/{job_id}/results", response_model=ExtractQuestionsResponse)
-async def get_extraction_results(job_id: str):
-    """
-    Get the results of a completed extraction job.
-
-    Only call this after status endpoint returns "completed".
-    """
-    job = job_store.get_job(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-
-    if job.status == JobStatus.PENDING or job.status == JobStatus.PROCESSING:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Job {job_id} is still {job.status.value}"
+        # Call Gemini with annotated images and prompt
+        from lib.gemini_client import GeminiClient
+        prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
+        gemini = GeminiClient()
+        raw_response = gemini.generate(
+            prompt=prompt,
+            images=page_images,
+            response_schema=GroupProblemsResponse.model_json_schema(),
         )
 
-    if job.status == JobStatus.FAILED:
-        raise HTTPException(
-            status_code=500,
-            detail=job.error_message or "Extraction failed"
-        )
+        # Parse and validate response
+        result = GroupProblemsResponse.model_validate_json(raw_response)
 
-    if job.result is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Job completed but no result available"
-        )
+        # Override computed fields with known values
+        result.total_annotations = total_annotations
+        result.total_problems = len(result.problems)
+        result.page_count = num_pages
 
-    # Convert stored dict to response model
-    return ExtractQuestionsResponse(
-        questions=[
-            QuestionData(
-                order_index=q["order_index"],
-                question_number=q["question_number"],
-                pdf_base64=q["pdf_base64"],
-                has_images=q["has_images"],
-                has_tables=q["has_tables"]
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+EXTRACT_QUESTION_PROMPT = """\
+You are extracting structured question data from scanned homework/exam images.
+Extract the content exactly as shown — do NOT solve problems, fill in blanks, or interpret the content.
+
+The images have red numbered annotation boxes overlaid — ignore them.
+
+## Structure
+- number: The problem number as shown in the document.
+- text: The question stem / preamble. For simple questions with no parts, all content goes here.
+- figures: List of figure filenames that belong to the stem (from the list below, if any).
+- parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a → i, ii, iii).
+  - If a question has unlabeled bullet points or numbered sub-items, use sequential letters (a, b, c...) as labels.
+  - IMPORTANT: If a part contains multiple questions that each need a separate answer (e.g. Q1, Q2, Q3... or bullet points asking different things), extract each as a nested sub-part — do NOT combine them into a single \\begin{itemize} list. Each question that needs its own answer space must be its own part.
+
+## CRITICAL: All text fields must be valid LaTeX body content
+
+Every `text` field will be compiled by a LaTeX engine. You are responsible for producing text that compiles without errors.
+
+Rules:
+- Escape LaTeX special characters in prose: write \\& not &, \\% not %, \\# not #, \\$ not $ (when not math).
+- Inline math: $...$ delimiters. Display math: \\[...\\].
+- All LaTeX commands (\\Delta, \\sigma, \\rightarrow, \\text{}, \\frac{}{}, etc.) MUST be inside math delimiters.
+- Degree symbols: $^\\circ$ (e.g. $100^\\circ$C). Never use raw ° or \\degree.
+- Subscripts/superscripts: always in math mode ($H_2O$, $x^2$, $q_{\\text{rxn}}$).
+- Bold text: use \\textbf{...}, NOT markdown **bold**.
+- Itemized lists: use \\begin{itemize} \\item ... \\end{itemize}.
+- Tables: use \\begin{tabular}{...} with proper & column separators and \\\\ row endings.
+- NO Unicode symbols — use LaTeX equivalents (\\rightarrow not →, \\neq not ≠, \\leq not ≤, etc.).
+- NO markdown syntax whatsoever.
+- Combine all text for a section into a single string — do NOT split into separate blocks.
+
+## Figures
+- Figures are a list of filenames, NOT inline content.
+- Place figure filenames at the level where they appear (question-level or part-level).
+
+## Tables that define sub-questions
+When a problem contains a table whose rows correspond to the labeled sub-parts (e.g. a table with rows a, b, c showing function pairs or data), preserve the table as a \\begin{tabular} in the stem text. The parts should then have EMPTY text (just the label and answer space) since the table already presents the content. Do NOT flatten table rows into separate part text fields — this loses the tabular formatting.
+
+## Answer space
+Estimate answer_space_cm at the most specific level (deepest part > parent part > question):
+- 1.0: multiple choice / true-false / short factual
+- 2.0: one-line calculation or brief explanation
+- 3.0: standard calculation or paragraph
+- 4.0: multi-step derivation or proof
+- 6.0: long proof, graph to sketch, or multi-part calculation
+"""
+
+
+@app.post("/ai/reconstruct")
+async def ai_reconstruct(
+    pdf: UploadFile = File(..., description="PDF file to reconstruct"),
+    debug: bool = Query(default=False, description="Save intermediate files to data/"),
+):
+    """
+    Reconstruct a homework PDF into cleanly typeset LaTeX.
+
+    Pipeline:
+    1. Annotate PDF pages with Surya layout detection
+    2. Group annotations into problems via Gemini
+    3. Crop each problem's regions from original pages
+    4. Send cropped regions to Gemini in parallel for LaTeX reconstruction
+    5. Compile each problem's LaTeX to PDF via tectonic
+    6. Merge all per-problem PDFs into one final PDF
+    """
+    try:
+        # Read PDF content
+        pdf_bytes = await pdf.read()
+        base_name = Path(pdf.filename).stem if pdf.filename else "document"
+        data_dir = Path(__file__).parent.parent / "data"
+
+        # Open PDF with PyMuPDF
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        num_pages = len(doc)
+
+        # Render pages at 96 DPI for Surya layout detection
+        SURYA_DPI = 96
+        CROP_DPI = 288  # 3x for readable crops
+        crop_scale = CROP_DPI / SURYA_DPI  # = 3.0
+
+        surya_images = []
+        hires_images = []
+        surya_mat = fitz.Matrix(SURYA_DPI/72, SURYA_DPI/72)
+        hires_mat = fitz.Matrix(CROP_DPI/72, CROP_DPI/72)
+        for page_num in range(num_pages):
+            pdf_page = doc[page_num]
+            # 96 DPI for Surya
+            pix = pdf_page.get_pixmap(matrix=surya_mat)
+            surya_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
+            # 288 DPI for cropping
+            pix = pdf_page.get_pixmap(matrix=hires_mat)
+            hires_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
+        doc.close()
+
+        # Run Surya layout detection on 96 DPI images
+        layout_predictor = get_layout_predictor()
+        layout_results = layout_predictor(surya_images)
+
+        # Annotate each page with continuous indexing
+        annotated_pages = []
+        current_index = 1
+        for img, layout_result in zip(surya_images, layout_results):
+            annotated, current_index = annotate_page(img, layout_result, scale=2, start_index=current_index)
+            annotated_pages.append(annotated)
+
+        total_annotations = current_index - 1
+
+        # Convert annotated pages to JPEG bytes for Gemini
+        page_images: list[bytes] = []
+        for page in annotated_pages:
+            buf = io.BytesIO()
+            page.save(buf, format="JPEG", quality=85)
+            page_images.append(buf.getvalue())
+
+        # Debug: save annotated pages as PDF
+        if debug:
+            annotations_dir = data_dir / "annotations"
+            annotations_dir.mkdir(parents=True, exist_ok=True)
+            annotated_pages[0].save(
+                annotations_dir / f"{base_name}.pdf",
+                "PDF",
+                save_all=True,
+                append_images=annotated_pages[1:] if len(annotated_pages) > 1 else [],
+                resolution=150,
             )
-            for q in job.result["questions"]
-        ],
-        note_id=job.result["note_id"],
-        total_count=job.result["total_count"]
-    )
+
+        # Call Gemini 2.0 Flash (via OpenRouter) to group annotations into problems
+        from lib.openai_client import LLMClient
+        prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
+        llm_client = LLMClient(
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            model="google/gemini-3-flash-preview",
+            base_url="https://openrouter.ai/api/v1",
+        )
+        raw_response = llm_client.generate(
+            prompt=prompt,
+            images=page_images,
+            response_schema=GroupProblemsResponse.model_json_schema(),
+        )
+        group_result = GroupProblemsResponse.model_validate_json(raw_response)
+
+        # Sort problems by first annotation index to preserve document order
+        group_result.problems.sort(key=lambda p: min(p.annotation_indices) if p.annotation_indices else float('inf'))
+
+        # Debug: save labels (problem groupings) as JSON
+        if debug:
+            labels_dir = data_dir / "labels"
+            labels_dir.mkdir(parents=True, exist_ok=True)
+            (labels_dir / f"{base_name}.json").write_text(
+                group_result.model_dump_json(indent=2)
+            )
+
+        # Build bbox index: annotation_index -> (page_number, bbox, label)
+        bbox_index: dict[int, tuple[int, list[float], str]] = {}
+        ann_idx = 1
+        for page_num, layout_result in enumerate(layout_results):
+            for block in layout_result.bboxes:
+                bbox_index[ann_idx] = (page_num, list(block.bbox), block.label)
+                ann_idx += 1
+
+        # Rescue orphaned figure annotations
+        FIGURE_LABELS = {"Picture", "Figure"}
+        assigned = set()
+        for p in group_result.problems:
+            assigned.update(p.annotation_indices)
+
+        for idx, (page_num, bbox, label) in bbox_index.items():
+            if idx not in assigned and label in FIGURE_LABELS:
+                best_problem = min(
+                    group_result.problems,
+                    key=lambda p: min(abs(idx - i) for i in p.annotation_indices)
+                )
+                best_problem.annotation_indices.append(idx)
+                best_problem.annotation_indices.sort()
+                print(f"  [reconstruct] Rescued orphan figure {idx} ({label}) -> {best_problem.label}")
+
+        # For each problem, crop regions from high-res images
+
+        async def reconstruct_problem(problem: ProblemGroup) -> tuple[str, str, dict[str, str]]:
+            """Crop merged page regions for a problem and send to LLM for LaTeX reconstruction.
+
+            Instead of sending one crop per annotation, creates one merged crop per page
+            that encompasses all of the problem's annotations on that page. This preserves
+            the spatial relationship between text and figures. Individual figure annotations
+            are still cropped separately for the LaTeX compiler's \\includegraphics.
+            """
+            image_data: dict[str, str] = {}    # figure filename -> base64 (for compiler)
+            figure_filenames: list[str] = []   # ordered list of figure filenames
+            figure_mappings: list[str] = []    # "Annotation N → filename" for prompt
+
+            # Group annotations by page and compute merged bounding boxes
+            page_bboxes: dict[int, list[float]] = {}  # page_num -> [x1, y1, x2, y2] merged
+            PADDING = 10  # pixels of padding around merged crop at 96 DPI
+            ANN_SCALE = 2  # annotated pages are 2x scaled from 96 DPI
+
+            for idx in problem.annotation_indices:
+                if idx not in bbox_index:
+                    print(f"  [reconstruct] {problem.label}: index {idx} not in bbox_index, skipping")
+                    continue
+                page_num, bbox, label = bbox_index[idx]
+
+                # Extract individual figure crops from hires images for the compiler
+                if label in FIGURE_LABELS:
+                    hires = hires_images[page_num]
+                    x1 = max(0, int(bbox[0] * crop_scale))
+                    y1 = max(0, int(bbox[1] * crop_scale))
+                    x2 = min(hires.width, int(bbox[2] * crop_scale))
+                    y2 = min(hires.height, int(bbox[3] * crop_scale))
+                    if x2 > x1 and y2 > y1:
+                        buf = io.BytesIO()
+                        hires.crop((x1, y1, x2, y2)).save(buf, format="JPEG", quality=90)
+                        fname = f"figure_{idx}.jpg"
+                        image_data[fname] = base64.b64encode(buf.getvalue()).decode()
+                        figure_filenames.append(fname)
+                        figure_mappings.append(f"  - Red box #{idx} → {fname}")
+                        print(f"  [reconstruct] {problem.label}: index {idx} is {label} -> {fname}")
+
+                # Expand merged bbox for this page
+                if page_num not in page_bboxes:
+                    page_bboxes[page_num] = [bbox[0], bbox[1], bbox[2], bbox[3]]
+                else:
+                    mb = page_bboxes[page_num]
+                    mb[0] = min(mb[0], bbox[0])
+                    mb[1] = min(mb[1], bbox[1])
+                    mb[2] = max(mb[2], bbox[2])
+                    mb[3] = max(mb[3], bbox[3])
+
+            # Create one merged crop per page from ANNOTATED pages (with red numbered boxes)
+            page_crops: list[bytes] = []
+            for page_num in sorted(page_bboxes.keys()):
+                mb = page_bboxes[page_num]
+                ann_page = annotated_pages[page_num]
+                x1 = max(0, int((mb[0] - PADDING) * ANN_SCALE))
+                y1 = max(0, int((mb[1] - PADDING) * ANN_SCALE))
+                x2 = min(ann_page.width, int((mb[2] + PADDING) * ANN_SCALE))
+                y2 = min(ann_page.height, int((mb[3] + PADDING) * ANN_SCALE))
+                if x2 <= x1 or y2 <= y1:
+                    continue
+                buf = io.BytesIO()
+                ann_page.crop((x1, y1, x2, y2)).save(buf, format="JPEG", quality=90)
+                page_crops.append(buf.getvalue())
+
+            print(f"  [reconstruct] {problem.label}: {len(page_crops)} page crops ({len(figure_filenames)} figures) from indices {problem.annotation_indices}")
+
+            if not page_crops:
+                return (problem.label, "% No regions found for this problem", {}, None)
+
+            # Build extraction prompt with figure info
+            extract_prompt = EXTRACT_QUESTION_PROMPT
+            if figure_filenames:
+                extract_prompt += "\n\nFigure files:\n" + "\n".join(figure_mappings)
+                extract_prompt += "\n\nUse these filenames in the figures lists."
+
+            # Single LLM call: structured extraction
+            raw_q = await asyncio.to_thread(
+                llm_client.generate,
+                prompt=extract_prompt,
+                images=page_crops,
+                response_schema=Question.model_json_schema(),
+            )
+            question = Question.model_validate_json(raw_q)
+
+            # Strip hallucinated figure filenames the LLM invented
+            valid_figs = set(figure_filenames)
+            def _filter_figs(figs: list[str]) -> list[str]:
+                return [f for f in figs if f in valid_figs]
+            question.figures = _filter_figs(question.figures)
+            for part in question.parts:
+                part.figures = _filter_figs(part.figures)
+                for sub in part.parts:
+                    sub.figures = _filter_figs(sub.figures)
+
+            latex = question_to_latex(question)
+            question_dict = question.model_dump()
+            print(f"  [reconstruct] {problem.label}: got {len(latex)} chars of LaTeX (structured)")
+
+            return (problem.label, latex, image_data, question_dict)
+
+        # Run all problems in parallel
+        tasks = [reconstruct_problem(p) for p in group_result.problems]
+        results = await asyncio.gather(*tasks)
+
+        # Save structured questions (always available now)
+        questions = [q for _, _, _, q in results if q is not None]
+        if questions:
+            structured_dir = data_dir / "structured"
+            structured_dir.mkdir(parents=True, exist_ok=True)
+            (structured_dir / f"{base_name}.json").write_text(
+                json.dumps(questions, indent=2)
+            )
+            print(f"  [extract] Saved {len(questions)} structured questions to data/structured/{base_name}.json")
+
+        # Compile each LaTeX result to PDF in parallel
+        from lib.latex_compiler import LaTeXCompiler
+        compiler = LaTeXCompiler()
+
+        async def compile_problem(problem_num: int, label: str, latex: str, image_data: dict[str, str]) -> tuple[str, bytes | None]:
+            """Compile a single problem's LaTeX to PDF."""
+            header = f"Problem {problem_num}"
+            content = f"\\textbf{{\\large {header}}}\n\n{latex}"
+            print(f"  [compile] {label}: {len(latex)} chars, images={list(image_data.keys()) or 'none'}")
+            try:
+                pdf_bytes = await asyncio.to_thread(
+                    compiler.compile_latex, content, image_data=image_data or None
+                )
+                return (label, pdf_bytes)
+            except Exception as e:
+                print(f"  [compile] {label}: FAILED — {e}")
+                fallback = f"\\textbf{{\\large {header}}}\n\n\\textit{{LaTeX compilation failed for this problem.}}"
+                pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fallback)
+                return (label, pdf_bytes)
+
+        compile_tasks = [compile_problem(i + 1, label, latex, image_data) for i, (p, (label, latex, image_data, _)) in enumerate(zip(group_result.problems, results))]
+        compiled = await asyncio.gather(*compile_tasks)
+
+        # Merge all per-problem PDFs into one
+        merged = fitz.open()
+        for label, problem_pdf_bytes in compiled:
+            sub_doc = fitz.open(stream=problem_pdf_bytes, filetype="pdf")
+            merged.insert_pdf(sub_doc)
+            sub_doc.close()
+
+        merged_bytes = merged.tobytes()
+        merged.close()
+
+        # Debug: save reconstructed PDF
+        output_filename = f"{base_name}.pdf"
+        if debug:
+            reconstructions_dir = data_dir / "reconstructions"
+            reconstructions_dir.mkdir(parents=True, exist_ok=True)
+            output_path = reconstructions_dir / output_filename
+            output_path.write_bytes(merged_bytes)
+
+        # Return the merged PDF
+        output = io.BytesIO(merged_bytes)
+
+        return StreamingResponse(
+            output,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"inline; filename={output_filename}",
+                "X-Problem-Count": str(len(group_result.problems)),
+                "X-Page-Count": str(num_pages),
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
