@@ -449,11 +449,13 @@ When a problem contains a table whose rows correspond to the labeled sub-parts (
 ## Referenced data (tables, models, formulas)
 The images may include multiple pages. Some pages contain reference material (data tables, models, formulas, definitions) that problems refer to by name (e.g. "Table 1", "the model", "the equation above").
 
-CRITICAL: If a problem references a table, model, dataset, or formula that appears elsewhere in the images, you MUST reproduce that referenced content in the question's `text` field as a LaTeX table or equation so the question is self-contained. The student will only see the extracted question — they will NOT have access to the original document pages.
+The student will only see the extracted question — they will NOT have access to the original document pages. Each question must be self-contained.
 
-This applies to EVERY question that references the data — not just the first one. If problems 1 through 7 all reference "Table 1", then ALL seven questions must include Table 1 in their text field. Repetition is required because each question is displayed independently.
+**Tables:** If a table image file is provided (e.g. table_5.jpg), reference it in the question's `figures` list. Do NOT reproduce tables as \\begin{tabular} — the image preserves visual content (structural formulas, drawings) that cannot be represented in LaTeX.
 
-Example: If a problem says "Refer to Table 1" and Table 1 shows data with columns Name, Formula, and \\% Composition, reproduce the full table in the question text using \\begin{tabular}.
+**Models, equations, formulas:** Reproduce these in the question's `text` field as LaTeX so the question is self-contained.
+
+This applies to EVERY question that references the data — not just the first one. If problems 1 through 7 all reference "Table 1", ALL seven must include the table image in their figures list.
 
 ## Answer space
 Estimate answer_space_cm at the most specific level (deepest part > parent part > question):
@@ -656,6 +658,24 @@ async def ai_reconstruct(
             # (page 1 typically has models, tables, reference data)
             if problem_pages and 0 not in problem_pages:
                 problem_pages.add(0)
+
+            # Crop tables from relevant pages as images
+            # (tables may contain drawings/structural formulas that can't be
+            # reproduced as LaTeX, so we embed the original image instead)
+            for idx, (page_num, bbox, label) in bbox_index.items():
+                if page_num in problem_pages and label == "Table":
+                    hires = hires_images[page_num]
+                    x1 = max(0, int(bbox[0] * crop_scale))
+                    y1 = max(0, int(bbox[1] * crop_scale))
+                    x2 = min(hires.width, int(bbox[2] * crop_scale))
+                    y2 = min(hires.height, int(bbox[3] * crop_scale))
+                    if x2 > x1 and y2 > y1:
+                        buf = io.BytesIO()
+                        hires.crop((x1, y1, x2, y2)).save(buf, format="JPEG", quality=90)
+                        fname = f"table_{idx}.jpg"
+                        image_data[fname] = base64.b64encode(buf.getvalue()).decode()
+                        figure_filenames.append(fname)
+                        figure_mappings.append(f"  - Table (Red box #{idx}) → {fname}")
 
             # Return full annotated pages in order
             extraction_images = [page_images[p] for p in sorted(problem_pages)]
