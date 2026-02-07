@@ -449,13 +449,12 @@ When a problem contains a table whose rows correspond to the labeled sub-parts (
 ## Referenced data (tables, models, formulas)
 The images may include multiple pages. Some pages contain reference material (data tables, models, formulas, definitions) that problems refer to by name (e.g. "Table 1", "the model", "the equation above").
 
-The student will only see the extracted question — they will NOT have access to the original document pages. Each question must be self-contained.
+ONLY include referenced data if the problem EXPLICITLY mentions it by name in its question text. If a problem does NOT mention "Table 1" or "the model" or similar, do NOT include that data — just extract the question as-is. Many problems are completely self-contained and need no additional context.
 
-**Tables:** If a table image file is provided (e.g. table_5.jpg), reference it in the question's `figures` list. Do NOT reproduce tables as \\begin{tabular} — the image preserves visual content (structural formulas, drawings) that cannot be represented in LaTeX.
-
-**Models, equations, formulas:** Reproduce these in the question's `text` field as LaTeX so the question is self-contained.
-
-This applies to EVERY question that references the data — not just the first one. If problems 1 through 7 all reference "Table 1", ALL seven must include the table image in their figures list.
+When a problem DOES explicitly reference external data:
+- **Tables:** Include the table image file (e.g. table_5.jpg) in the question's `figures` list. Do NOT reproduce tables as \\begin{tabular} — the image preserves visual content (structural formulas, drawings) that cannot be represented in LaTeX.
+- **Models, equations, formulas:** Reproduce these in the question's `text` field as LaTeX.
+- This applies to EVERY question that references the data. If problems 1 through 7 all say "Table 1", ALL seven must include the table image.
 
 ## Answer space
 Estimate answer_space_cm at the most specific level (deepest part > parent part > question):
