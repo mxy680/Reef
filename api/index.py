@@ -509,9 +509,10 @@ async def ai_reconstruct(
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         num_pages = len(doc)
 
-        # Render pages at 96 DPI for Surya layout detection
-        SURYA_DPI = 96
-        CROP_DPI = 288  # 3x for readable crops
+        # Render pages at 192 DPI for Surya layout detection (highres triggers
+        # image slicing for better detection of sparse text blocks)
+        SURYA_DPI = 192
+        CROP_DPI = 288  # high-res for readable crops
         crop_scale = CROP_DPI / SURYA_DPI  # = 3.0
 
         surya_images = []
