@@ -457,6 +457,29 @@ Estimate answer_space_cm at the most specific level (deepest part > parent part 
 """
 
 
+LATEX_FIX_PROMPT = """You are a LaTeX expert. The following LaTeX body content failed to compile. Fix it and return ONLY the corrected LaTeX body content — no preamble, no \\documentclass, no \\begin{{document}}.
+
+## Failed LaTeX
+```
+{latex_body}
+```
+
+## Compilation Error
+```
+{error_message}
+```
+
+## Rules
+- Return ONLY the fixed LaTeX body content, nothing else
+- Do NOT wrap in code fences or markdown
+- Do NOT add \\documentclass, \\usepackage, \\begin{{document}}, or \\end{{document}}
+- Fix the specific error shown above
+- Preserve all content — do not remove or simplify questions
+- Keep all math in $...$ or \\[...\\] delimiters
+- Available packages: amsmath, amssymb, amsfonts, graphicx, booktabs, array, xcolor, needspace, algorithm, algorithmic, listings, caption, changepage
+"""
+
+
 @app.post("/ai/reconstruct")
 async def ai_reconstruct(
     pdf: UploadFile = File(..., description="PDF file to reconstruct"),
@@ -535,14 +558,16 @@ async def ai_reconstruct(
                 resolution=150,
             )
 
-        # Call Gemini 2.0 Flash (via OpenRouter) to group annotations into problems
+        # Create LLM client once for grouping, extraction, and compilation fix attempts
         from lib.openai_client import LLMClient
-        prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
         llm_client = LLMClient(
             api_key=os.getenv("OPENROUTER_API_KEY"),
             model="google/gemini-3-flash-preview",
             base_url="https://openrouter.ai/api/v1",
         )
+
+        # Call Gemini 2.0 Flash (via OpenRouter) to group annotations into problems
+        prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
         raw_response = llm_client.generate(
             prompt=prompt,
             images=page_images,
@@ -759,7 +784,7 @@ async def ai_reconstruct(
         compiler = LaTeXCompiler()
 
         async def compile_problem(problem_num: int, label: str, latex: str, image_data: dict[str, str]) -> tuple[str, bytes | None]:
-            """Compile a single problem's LaTeX to PDF."""
+            """Compile a single problem's LaTeX to PDF. On failure, ask LLM to fix the LaTeX and retry once."""
             header = f"Problem {problem_num}"
             content = f"\\textbf{{\\large {header}}}\n\n{latex}"
             print(f"  [compile] {label}: {len(latex)} chars, images={list(image_data.keys()) or 'none'}")
@@ -770,9 +795,26 @@ async def ai_reconstruct(
                 return (label, pdf_bytes)
             except Exception as e:
                 print(f"  [compile] {label}: FAILED — {e}")
-                fallback = f"\\textbf{{\\large {header}}}\n\n\\textit{{LaTeX compilation failed for this problem.}}"
-                pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fallback)
-                return (label, pdf_bytes)
+                # Try LLM fix
+                try:
+                    fix_prompt = LATEX_FIX_PROMPT.format(
+                        latex_body=latex,
+                        error_message=str(e)[:2000]
+                    )
+                    fixed_latex = await asyncio.to_thread(
+                        llm_client.generate, prompt=fix_prompt
+                    )
+                    fixed_content = f"\\textbf{{\\large {header}}}\n\n{fixed_latex}"
+                    pdf_bytes = await asyncio.to_thread(
+                        compiler.compile_latex, fixed_content, image_data=image_data or None
+                    )
+                    print(f"  [compile] {label}: FIXED by LLM")
+                    return (label, pdf_bytes)
+                except Exception as e2:
+                    print(f"  [compile] {label}: FIX FAILED — {e2}")
+                    fallback = f"\\textbf{{\\large {header}}}\n\n\\textit{{LaTeX compilation failed for this problem.}}"
+                    pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fallback)
+                    return (label, pdf_bytes)
 
         compile_tasks = [compile_problem(i + 1, label, latex, image_data) for i, (p, (label, latex, image_data, _)) in enumerate(zip(group_result.problems, results))]
         compiled = await asyncio.gather(*compile_tasks)
