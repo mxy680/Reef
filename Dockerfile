@@ -15,6 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && mv tectonic /usr/local/bin/ \
     && rm -rf /var/lib/apt/lists/*
 
+# Pre-warm tectonic bundle cache so parallel compiles don't race
+RUN echo '\documentclass{article}\begin{document}Hello\end{document}' > /tmp/warmup.tex \
+    && tectonic /tmp/warmup.tex --outdir /tmp \
+    && rm /tmp/warmup.tex /tmp/warmup.pdf
+
 # Install CPU-only PyTorch first (much smaller)
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
