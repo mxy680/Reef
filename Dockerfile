@@ -51,6 +51,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Pre-download Surya layout model (~1.3GB) so it's baked into the image
+# This avoids downloading on every cold start
+RUN python -c "\
+from surya.settings import settings; \
+from surya.common.s3 import download_directory; \
+import os; \
+ckpt = settings.LAYOUT_MODEL_CHECKPOINT.replace('s3://', ''); \
+local = os.path.join(settings.MODEL_CACHE_DIR, ckpt); \
+os.makedirs(local, exist_ok=True); \
+download_directory(ckpt, local); \
+print(f'Downloaded {ckpt} to {local}')"
+
 # Expose port
 EXPOSE 8000
 
