@@ -57,35 +57,41 @@ extension Color {
 // MARK: - Reef Color Palette
 extension Color {
 
-    // MARK: - Primary Colors
+    // MARK: - Primary Colors (Light Mode)
 
-    /// Primary actions, interactive elements, highlights, active states, and key call-to-action buttons
-    static let vibrantTeal = Color(hex: "119DA4")
+    /// Primary accent — warm coral for actions, highlights, CTA buttons
+    static let softCoral = Color(hex: "F9C1B6")
 
-    /// Secondary elements, links, hover states, and supporting UI components
-    static let oceanMid = Color(hex: "0C7489")
+    /// Secondary accent — soft seafoam green
+    static let seafoam = Color(hex: "C3DFDE")
 
-    /// Headers, emphasis areas, dark backgrounds, and navigation elements
-    static let deepSea = Color(hex: "13505B")
+    /// Pressed/contrast coral — deeper coral for emphasis
+    static let deepCoral = Color(hex: "D4877A")
+
+    /// Links, icon accents — muted teal
+    static let deepTeal = Color(hex: "5B9E9B")
 
     // MARK: - Neutral Colors
 
-    /// Body text, icons, and high-contrast elements requiring maximum readability
-    static let inkBlack = Color(hex: "040404")
+    /// Headlines, body text
+    static let charcoal = Color(hex: "2B2B2B")
 
-    /// Backgrounds, cards, dividers, and neutral surfaces
-    static let sageMist = Color(hex: "E8EAE1")
+    /// Secondary text
+    static let midGray = Color(hex: "7A7A7A")
+
+    /// Page background — warm blush white
+    static let blushWhite = Color(hex: "F9F5F6")
 
     // MARK: - Card Colors
 
     /// Card background - pure white
     static let cardBackground = Color(hex: "FFFFFF")
 
-    /// Thumbnail background - light gray
-    static let thumbnailBackground = Color(hex: "F5F5F5")
+    /// Thumbnail background — matches blushWhite
+    static let thumbnailBackground = Color(hex: "F9F5F6")
 
-    /// Thumbnail border - subtle gray
-    static let thumbnailBorder = Color(hex: "E0E0E0")
+    /// Thumbnail border — charcoal retro outline
+    static let thumbnailBorder = Color(hex: "2B2B2B")
 
     /// Delete button red
     static let deleteRed = Color(hex: "E07A5F")
@@ -95,85 +101,88 @@ extension Color {
 
     // MARK: - Semantic Aliases
 
-    static let reefPrimary = vibrantTeal
-    static let reefSecondary = oceanMid
-    static let reefAccent = deepSea
-    static let reefText = inkBlack
-    static let reefBackground = sageMist
+    static let reefPrimary = deepTeal
+    static let reefSecondary = deepTeal
+    static let reefAccent = deepCoral
+    static let reefText = charcoal
+    static let reefBackground = blushWhite
 
     // MARK: - Dark Mode Colors
 
-    /// Dark mode background - deep ocean darkness
-    static let deepOcean = Color(hex: "0A1628")
+    /// Dark mode background — warm darkness
+    static let warmDark = Color(hex: "1A1418")
 
-    /// Dark mode text - pearl white for readability
-    static let pearlWhite = Color(hex: "F0F2F5")
+    /// Dark mode card background — slightly lighter than warmDark
+    static let warmDarkCard = Color(hex: "251E22")
 
-    /// Dark mode secondary - slightly brighter teal
-    static let brightTeal = Color(hex: "14B8C4")
+    /// Dark mode text — warm white for readability
+    static let warmWhite = Color(hex: "F5F0EE")
 
-    /// Dark mode accent - lighter teal for dark backgrounds
-    static let lightTeal = Color(hex: "1A7A8A")
+    /// Dark mode secondary — bright seafoam
+    static let brightSeafoam = Color(hex: "D4EDEC")
 
-    /// Dark mode card background - slightly lighter than deepOcean for contrast
-    static let deepOceanCard = Color(hex: "131F33")
+    /// Dark mode accent — bright teal for links on dark backgrounds
+    static let brightTealDark = Color(hex: "7CB8B5")
 
     // MARK: - Adaptive Colors
 
-    /// Light gray background for light mode (close to white)
-    static let lightGrayBackground = Color(white: 0.96)
-
     /// Adaptive background color
     static func adaptiveBackground(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? deepOcean : lightGrayBackground
+        scheme == .dark ? warmDark : blushWhite
     }
 
     /// Adaptive text color
     static func adaptiveText(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? pearlWhite : inkBlack
+        scheme == .dark ? warmWhite : charcoal
     }
 
-    /// Adaptive primary color (unchanged across themes)
+    /// Adaptive primary color (teal for buttons and interactive elements)
     static func adaptivePrimary(for scheme: ColorScheme) -> Color {
-        vibrantTeal
+        deepTeal
     }
 
     /// Adaptive secondary color
     static func adaptiveSecondary(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? brightTeal : oceanMid
+        scheme == .dark ? brightSeafoam : deepTeal
     }
 
     /// Adaptive accent color
     static func adaptiveAccent(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? lightTeal : deepSea
+        scheme == .dark ? brightTealDark : deepCoral
     }
 
     /// Adaptive card background - slightly elevated from page background in dark mode
     static func adaptiveCardBackground(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? deepOceanCard : .white
+        scheme == .dark ? warmDarkCard : .white
     }
+
+    /// Adaptive secondary text color
+    static func adaptiveSecondaryText(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? warmWhite.opacity(0.6) : midGray
+    }
+
 }
 
 // MARK: - Reef Gradients
 extension LinearGradient {
 
-    /// Ocean gradient: Deep Sea → Ocean Mid → Vibrant Teal
-    static let reefOcean = LinearGradient(
-        colors: [.deepSea, .oceanMid, .vibrantTeal],
+    /// Warm gradient: Deep Coral → Soft Coral → Seafoam
+    static let reefWarm = LinearGradient(
+        colors: [.deepCoral, .softCoral, .seafoam],
         startPoint: .leading,
         endPoint: .trailing
     )
 
-    /// Vertical ocean gradient for backgrounds
-    static let reefOceanVertical = LinearGradient(
-        colors: [.deepSea, .oceanMid, .vibrantTeal],
+    /// Vertical warm gradient for backgrounds
+    static let reefWarmVertical = LinearGradient(
+        colors: [.deepCoral, .softCoral, .seafoam],
         startPoint: .bottom,
         endPoint: .top
     )
 
-    /// Deep gradient: Deep Sea → Ocean Mid
-    static let reefDeep = LinearGradient(
-        colors: [.deepSea, .oceanMid],
+    /// Coral gradient: Deep Coral → Soft Coral
+    static let reefCoral = LinearGradient(
+        colors: [.deepCoral, .softCoral],
         startPoint: .leading,
         endPoint: .trailing
     )
@@ -182,16 +191,17 @@ extension LinearGradient {
     static func preAuthGradient(for scheme: ColorScheme) -> LinearGradient {
         if scheme == .dark {
             return LinearGradient(
-                colors: [.lightTeal, .deepOcean],
+                colors: [.brightTealDark, .warmDark],
                 startPoint: .top,
                 endPoint: .bottom
             )
         } else {
             return LinearGradient(
-                colors: [.oceanMid, .deepSea],
+                colors: [.deepCoral, .softCoral],
                 startPoint: .top,
                 endPoint: .bottom
             )
         }
     }
+
 }

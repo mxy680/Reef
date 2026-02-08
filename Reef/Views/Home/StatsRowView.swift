@@ -12,7 +12,7 @@ struct StatsRowView: View {
     let colorScheme: ColorScheme
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 20) {
             StatCardView(
                 icon: "flame.fill",
                 value: "\(statsService.studyStreak)",
@@ -51,10 +51,10 @@ struct StatCardView: View {
     let colorScheme: ColorScheme
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(.vibrantTeal)
+                .font(.system(size: 28))
+                .foregroundColor(.deepTeal)
 
             Text(value)
                 .font(.quicksand(28, weight: .semiBold))
@@ -65,9 +65,15 @@ struct StatCardView: View {
                 .foregroundColor(Color.adaptiveSecondary(for: colorScheme))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 28)
         .background(Color.adaptiveCardBackground(for: colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.12 : 0.06), radius: 12, x: 0, y: 4)
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.06 : 0.03), radius: 3, x: 0, y: 1)
     }
 }
 

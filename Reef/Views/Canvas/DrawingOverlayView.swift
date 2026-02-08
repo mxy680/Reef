@@ -289,14 +289,14 @@ class CanvasContainerView: UIView {
     private var isDarkMode: Bool = false
     private var originalPageImages: [UIImage] = []
 
-    /// Light gray background for scroll view in light mode (close to white)
-    private static let scrollBackgroundLight = UIColor(red: 245/255, green: 245/255, blue: 245/255, alpha: 1)
+    /// Blush White (#F9F5F6) background for scroll view in light mode
+    private static let scrollBackgroundLight = UIColor(red: 249/255, green: 245/255, blue: 246/255, alpha: 1)
 
-    /// Deep Ocean (#0A1628) for document page background in dark mode
-    private static let pageBackgroundDark = UIColor(red: 10/255, green: 22/255, blue: 40/255, alpha: 1)
+    /// Warm Dark (#1A1418) for document page background in dark mode
+    private static let pageBackgroundDark = UIColor(red: 26/255, green: 20/255, blue: 24/255, alpha: 1)
 
-    /// Lighter background for scroll area in dark mode (lighter than the page)
-    private static let scrollBackgroundDark = UIColor(red: 18/255, green: 32/255, blue: 52/255, alpha: 1)
+    /// Warm Dark Card (#251E22) for scroll area in dark mode
+    private static let scrollBackgroundDark = UIColor(red: 37/255, green: 30/255, blue: 34/255, alpha: 1)
 
     /// Height of the separator line between pages
     static let separatorHeight: CGFloat = 2
@@ -1127,8 +1127,8 @@ class PageContainerView: UIView {
 
     private var isDarkMode: Bool = false
 
-    /// Deep Ocean (#0A1628) for document page background in dark mode
-    private static let pageBackgroundDark = UIColor(red: 10/255, green: 22/255, blue: 40/255, alpha: 1)
+    /// Warm Dark (#1A1418) for document page background in dark mode
+    private static let pageBackgroundDark = UIColor(red: 26/255, green: 20/255, blue: 24/255, alpha: 1)
 
     init(pageImage: UIImage, pageIndex: Int, backgroundMode: CanvasBackgroundMode, backgroundOpacity: CGFloat, backgroundSpacing: CGFloat, isDarkMode: Bool) {
         self.pageIndex = pageIndex

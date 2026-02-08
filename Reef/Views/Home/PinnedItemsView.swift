@@ -36,7 +36,7 @@ struct PinnedItemsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             // Header
             Text("Pinned")
                 .font(.quicksand(20, weight: .semiBold))
@@ -60,7 +60,12 @@ struct PinnedItemsView: View {
                     Spacer()
                 }
                 .background(Color.adaptiveCardBackground(for: colorScheme))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
             } else {
                 // Vertical list
                 VStack(spacing: 0) {
@@ -80,12 +85,17 @@ struct PinnedItemsView: View {
 
                         if index < pinnedItems.count - 1 {
                             Divider()
-                                .background(Color.adaptiveSecondary(for: colorScheme).opacity(0.2))
+                                .background(Color.adaptiveSecondary(for: colorScheme).opacity(0.08))
                         }
                     }
                 }
                 .background(Color.adaptiveCardBackground(for: colorScheme))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
             }
         }
     }
@@ -135,10 +145,10 @@ struct PinnedItemRow: View {
                 // Icon
                 Image(systemName: item.icon)
                     .font(.system(size: 20))
-                    .foregroundColor(.vibrantTeal)
-                    .frame(width: 48, height: 48)
+                    .foregroundColor(.deepTeal)
+                    .frame(width: 52, height: 52)
                     .background(Color.adaptiveBackground(for: colorScheme))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 // Title and subtitle
                 VStack(alignment: .leading, spacing: 4) {
@@ -167,7 +177,7 @@ struct PinnedItemRow: View {
                     .foregroundColor(Color.adaptiveSecondary(for: colorScheme).opacity(0.5))
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 16)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

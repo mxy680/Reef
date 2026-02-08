@@ -200,7 +200,7 @@ struct CanvasView: View {
             }
         }
         .ignoresSafeArea()
-        .background(themeManager.isDarkMode ? Color.black : Color(white: 0.96))
+        .background(themeManager.isDarkMode ? Color.warmDark : Color.blushWhite)
         .preferredColorScheme(effectiveColorScheme)
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
@@ -237,7 +237,7 @@ struct PDFKitView: UIViewRepresentable {
         pdfView.autoScales = true
         pdfView.displayMode = .singlePageContinuous
         pdfView.displayDirection = .vertical
-        pdfView.backgroundColor = .systemBackground
+        pdfView.backgroundColor = UIColor(red: 249/255, green: 245/255, blue: 246/255, alpha: 1)
 
         if let document = PDFDocument(url: url) {
             pdfView.document = document

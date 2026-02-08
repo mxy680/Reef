@@ -66,11 +66,11 @@ struct DocumentGridItem<T: DocumentItem>: View {
         themeManager.isDarkMode ? .dark : .light
     }
 
-    /// Footer color matches canvas scroll background (behind the page)
+    /// Footer color — subtle seafoam tint
     private var footerColor: Color {
         effectiveColorScheme == .dark
-            ? Color(red: 18/255, green: 32/255, blue: 52/255)  // #122034
-            : Color(white: 245/255)  // #F5F5F5
+            ? Color.warmDarkCard
+            : .white
     }
 
     var body: some View {
@@ -92,16 +92,6 @@ struct DocumentGridItem<T: DocumentItem>: View {
                         placeholderIcon
                     }
 
-                    // Subtle gradient fade at bottom of thumbnail
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0),
-                            Color.black.opacity(effectiveColorScheme == .dark ? 0.25 : 0.12)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 60)
                 }
 
                 // Processing status indicators - positioned in overlay
@@ -157,15 +147,15 @@ struct DocumentGridItem<T: DocumentItem>: View {
 
             // Name, date, and action icons footer
             HStack(alignment: .bottom, spacing: 8) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(document.name)
                         .font(.quicksand(15, weight: .semiBold))
-                        .foregroundColor(effectiveColorScheme == .dark ? .white : Color.inkBlack)
+                        .foregroundColor(effectiveColorScheme == .dark ? .white : Color.charcoal)
                         .lineLimit(1)
 
                     Text(document.dateAdded.formatted(date: .abbreviated, time: .omitted))
                         .font(.quicksand(13, weight: .regular))
-                        .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.6) : Color.inkBlack.opacity(0.5))
+                        .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.6) : Color.charcoal.opacity(0.5))
                 }
 
                 Spacer()
@@ -178,8 +168,8 @@ struct DocumentGridItem<T: DocumentItem>: View {
                     } label: {
                         Image(systemName: "pencil")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.7) : Color.inkBlack.opacity(0.6))
-                            .frame(width: 28, height: 28)
+                            .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.7) : Color.charcoal.opacity(0.6))
+                            .frame(width: 32, height: 32)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -189,24 +179,24 @@ struct DocumentGridItem<T: DocumentItem>: View {
                     } label: {
                         Image(systemName: "trash")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.red.opacity(0.7))
-                            .frame(width: 28, height: 28)
+                            .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.7) : Color.charcoal.opacity(0.6))
+                            .frame(width: 32, height: 32)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
             .background(footerColor)
         }
-        .cornerRadius(12)
+        .cornerRadius(16)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.08), radius: 8, x: 0, y: 4)
-        .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.3 : 0.04), radius: 2, x: 0, y: 1)
+        .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.12 : 0.06), radius: 12, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.06 : 0.03), radius: 3, x: 0, y: 1)
         .scaleEffect(isPressed ? 0.95 : 1.0)
         .animation(.easeInOut(duration: 0.12), value: isPressed)
         .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
@@ -312,8 +302,8 @@ struct DocumentGridItem<T: DocumentItem>: View {
 
         let renderer = UIGraphicsImageRenderer(size: thumbnailSize)
         return renderer.image { context in
-            // Fill with background color matching thumbnail area (deepOceanCard in dark mode)
-            let bgColor = isDarkMode ? UIColor(red: 19/255, green: 31/255, blue: 51/255, alpha: 1) : UIColor.white
+            // Fill with background color matching thumbnail area (warmDarkCard in dark mode)
+            let bgColor = isDarkMode ? UIColor(red: 37/255, green: 30/255, blue: 34/255, alpha: 1) : UIColor.white
             bgColor.setFill()
             context.fill(CGRect(origin: .zero, size: thumbnailSize))
 

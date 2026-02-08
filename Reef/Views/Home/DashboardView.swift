@@ -19,7 +19,7 @@ struct DashboardView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 32) {
                 // Stats Row
                 StatsRowView(
                     statsService: statsService,
@@ -43,9 +43,9 @@ struct DashboardView: View {
                     onSelectNote: onSelectNote
                 )
 
-                Spacer(minLength: 24)
+                Spacer(minLength: 40)
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: colorScheme))
     }

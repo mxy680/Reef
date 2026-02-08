@@ -31,7 +31,7 @@ struct ContextualToolbar: View {
     private var defaultPenColors: [Color] {
         [
             colorScheme == .dark ? .white : .black,
-            .vibrantTeal,
+            .deepTeal,
             Color(red: 0.9, green: 0.2, blue: 0.2)  // Red
         ]
     }
@@ -91,7 +91,7 @@ struct ContextualToolbar: View {
         .frame(height: 48)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
+                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24)
                         .strokeBorder(
@@ -286,11 +286,11 @@ struct ContextualToolbar: View {
             } label: {
                 Image(systemName: "eraser.line.dashed")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(eraserType == .stroke ? .vibrantTeal : Color.adaptiveText(for: colorScheme))
+                    .foregroundColor(eraserType == .stroke ? .deepTeal : Color.adaptiveText(for: colorScheme))
                     .frame(width: 36, height: 36)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(eraserType == .stroke ? Color.vibrantTeal.opacity(0.15) : Color.clear)
+                            .fill(eraserType == .stroke ? Color.deepTeal.opacity(0.15) : Color.clear)
                     )
             }
             .buttonStyle(.plain)
@@ -303,11 +303,11 @@ struct ContextualToolbar: View {
             } label: {
                 Image(systemName: "eraser")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(eraserType == .bitmap ? .vibrantTeal : Color.adaptiveText(for: colorScheme))
+                    .foregroundColor(eraserType == .bitmap ? .deepTeal : Color.adaptiveText(for: colorScheme))
                     .frame(width: 36, height: 36)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(eraserType == .bitmap ? Color.vibrantTeal.opacity(0.15) : Color.clear)
+                            .fill(eraserType == .bitmap ? Color.deepTeal.opacity(0.15) : Color.clear)
                     )
             }
             .buttonStyle(.plain)
@@ -337,11 +337,11 @@ struct ContextualToolbar: View {
             } label: {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(diagramAutosnap ? .vibrantTeal : Color.adaptiveText(for: colorScheme))
+                    .foregroundColor(diagramAutosnap ? .deepTeal : Color.adaptiveText(for: colorScheme))
                     .frame(width: 36, height: 36)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(diagramAutosnap ? Color.vibrantTeal.opacity(0.15) : Color.clear)
+                            .fill(diagramAutosnap ? Color.deepTeal.opacity(0.15) : Color.clear)
                     )
             }
             .buttonStyle(.plain)
@@ -415,7 +415,7 @@ struct ContextualToolbar: View {
 
             // Slider
             Slider(value: value, in: range)
-                .accentColor(.vibrantTeal)
+                .accentColor(.deepTeal)
                 .frame(width: 100)
 
             // Large size indicator

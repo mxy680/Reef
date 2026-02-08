@@ -28,7 +28,7 @@ struct PreAuthView: View {
 
                 Text("Dive into smarter studying")
                     .font(.quicksand(20, weight: .regular))
-                    .foregroundColor(effectiveColorScheme == .dark ? .pearlWhite.opacity(0.8) : .sageMist)
+                    .foregroundColor(effectiveColorScheme == .dark ? .warmWhite.opacity(0.8) : .blushWhite)
 
                 Spacer()
 

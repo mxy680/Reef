@@ -41,16 +41,15 @@ struct FilterBar: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
             .background(Color.adaptiveCardBackground(for: effectiveColorScheme))
-            .cornerRadius(12)
+            .cornerRadius(16)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.adaptiveText(for: effectiveColorScheme).opacity(0.15), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.08), radius: 8, x: 0, y: 4)
-            .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.3 : 0.04), radius: 2, x: 0, y: 1)
+            .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
 
             // Sort toggle button
             Button {
@@ -66,16 +65,16 @@ struct FilterBar: View {
                         .font(.system(size: 12, weight: .semibold))
                 }
                 .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color.vibrantTeal)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
+                .background(Color.deepTeal)
                 .cornerRadius(20)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 32)
-        .padding(.top, 16)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 40)
+        .padding(.top, 20)
+        .padding(.bottom, 12)
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
     }
 }
@@ -88,5 +87,5 @@ struct FilterBar: View {
         FilterBar(searchText: .constant("Chapter"), sortNewestFirst: .constant(false))
         Spacer()
     }
-    .background(Color.lightGrayBackground)
+    .background(Color.blushWhite)
 }

@@ -25,7 +25,7 @@ struct PrivacySettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 32) {
                 // Data & Storage Section
                 settingsSection(title: "Data & Storage") {
                     // Clear Cache
@@ -47,7 +47,7 @@ struct PrivacySettingsView: View {
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(Color.vibrantTeal)
+                                .background(Color.deepTeal)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                         .buttonStyle(.plain)
@@ -55,7 +55,7 @@ struct PrivacySettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Clear Search History
                     HStack {
@@ -71,7 +71,7 @@ struct PrivacySettingsView: View {
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(Color.vibrantTeal)
+                                .background(Color.deepTeal)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                         .buttonStyle(.plain)
@@ -79,7 +79,7 @@ struct PrivacySettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Storage Used
                     HStack {
@@ -89,7 +89,7 @@ struct PrivacySettingsView: View {
                         Spacer()
                         Text(storageUsed)
                             .font(.quicksand(14, weight: .medium))
-                            .foregroundColor(Color.oceanMid)
+                            .foregroundColor(Color.deepTeal)
                     }
                     .padding(.vertical, 4)
                 }
@@ -107,11 +107,11 @@ struct PrivacySettingsView: View {
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                         }
                     }
-                    .tint(Color.vibrantTeal)
+                    .tint(Color.deepTeal)
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Re-index All Documents
                     VStack(alignment: .leading, spacing: 8) {
@@ -127,7 +127,7 @@ struct PrivacySettingsView: View {
                             Spacer()
                             if isReindexing {
                                 ProgressView()
-                                    .tint(Color.vibrantTeal)
+                                    .tint(Color.deepTeal)
                             } else {
                                 Button {
                                     startReindexing()
@@ -137,7 +137,7 @@ struct PrivacySettingsView: View {
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 16)
                                         .padding(.vertical, 8)
-                                        .background(Color.vibrantTeal)
+                                        .background(Color.deepTeal)
                                         .clipShape(RoundedRectangle(cornerRadius: 8))
                                 }
                                 .buttonStyle(.plain)
@@ -146,7 +146,7 @@ struct PrivacySettingsView: View {
 
                         if isReindexing {
                             ProgressView(value: reindexProgress)
-                                .tint(Color.vibrantTeal)
+                                .tint(Color.deepTeal)
                         }
                     }
                     .padding(.vertical, 4)
@@ -165,11 +165,11 @@ struct PrivacySettingsView: View {
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                         }
                     }
-                    .tint(Color.vibrantTeal)
+                    .tint(Color.deepTeal)
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Share Crash Reports
                     Toggle(isOn: $preferences.shareCrashReports) {
@@ -182,7 +182,7 @@ struct PrivacySettingsView: View {
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                         }
                     }
-                    .tint(Color.vibrantTeal)
+                    .tint(Color.deepTeal)
                     .padding(.vertical, 4)
                 }
 
@@ -208,7 +208,7 @@ struct PrivacySettingsView: View {
                     .buttonStyle(.plain)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // What Data We Collect
                     NavigationLink {
@@ -232,7 +232,7 @@ struct PrivacySettingsView: View {
 
                 Spacer(minLength: 16)
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
         .onAppear {
@@ -380,19 +380,23 @@ struct PrivacySettingsView: View {
     }
 
     private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(title)
                 .font(.quicksand(14, weight: .semiBold))
-                .foregroundColor(Color.oceanMid)
+                .foregroundColor(Color.deepTeal)
                 .textCase(.uppercase)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 content()
             }
-            .padding(16)
+            .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
         }
     }
@@ -474,7 +478,7 @@ struct DataCollectionInfoView: View {
                 ForEach(items, id: \.self) { item in
                     HStack(alignment: .top, spacing: 8) {
                         Circle()
-                            .fill(Color.vibrantTeal)
+                            .fill(Color.deepTeal)
                             .frame(width: 6, height: 6)
                             .padding(.top, 6)
                         Text(item)
@@ -484,11 +488,15 @@ struct DataCollectionInfoView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+            RoundedRectangle(cornerRadius: 16)
+                .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
         )
     }
 }

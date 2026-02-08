@@ -37,7 +37,7 @@ struct AccountSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 32) {
                 // Profile Section
                 settingsSection(title: "Profile") {
                     // Avatar Row
@@ -58,7 +58,7 @@ struct AccountSettingsView: View {
                                         .clipShape(Circle())
                                 } else {
                                     Circle()
-                                        .fill(Color.vibrantTeal)
+                                        .fill(Color.deepTeal)
                                         .frame(width: 60, height: 60)
                                         .overlay(
                                             Text(userInitials)
@@ -69,7 +69,7 @@ struct AccountSettingsView: View {
 
                                 // Pencil badge
                                 Circle()
-                                    .fill(Color.oceanMid)
+                                    .fill(Color.deepTeal)
                                     .frame(width: 24, height: 24)
                                     .overlay(
                                         Image(systemName: "pencil")
@@ -84,7 +84,7 @@ struct AccountSettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Name Row
                     HStack {
@@ -109,7 +109,7 @@ struct AccountSettingsView: View {
                             } label: {
                                 Text("Save")
                                     .font(.quicksand(14, weight: .semiBold))
-                                    .foregroundColor(Color.vibrantTeal)
+                                    .foregroundColor(Color.deepTeal)
                             }
                             .buttonStyle(.plain)
                         } else {
@@ -123,7 +123,7 @@ struct AccountSettingsView: View {
                             } label: {
                                 Image(systemName: "pencil")
                                     .font(.system(size: 14))
-                                    .foregroundColor(Color.vibrantTeal)
+                                    .foregroundColor(Color.deepTeal)
                             }
                             .buttonStyle(.plain)
                         }
@@ -131,7 +131,7 @@ struct AccountSettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Email Row (read-only)
                     HStack {
@@ -158,7 +158,7 @@ struct AccountSettingsView: View {
                         Spacer()
                         Text("Connected")
                             .font(.quicksand(14, weight: .regular))
-                            .foregroundColor(Color.vibrantTeal)
+                            .foregroundColor(Color.deepTeal)
                     }
                     .padding(.vertical, 4)
                 }
@@ -185,7 +185,7 @@ struct AccountSettingsView: View {
                     .buttonStyle(.plain)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Delete Account Button
                     Button {
@@ -209,7 +209,7 @@ struct AccountSettingsView: View {
 
                 Spacer(minLength: 16)
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
         .onAppear {
@@ -272,20 +272,25 @@ struct AccountSettingsView: View {
     }
 
     private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(title)
                 .font(.quicksand(14, weight: .semiBold))
-                .foregroundColor(Color.oceanMid)
+                .foregroundColor(Color.deepTeal)
                 .textCase(.uppercase)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 content()
             }
-            .padding(16)
+            .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
         }
     }
 }

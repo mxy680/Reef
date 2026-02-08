@@ -6,12 +6,31 @@
 //
 
 import SwiftUI
+import PDFKit
 
 struct UploadOptionsSheet: View {
     @Binding var isPresented: Bool
     @State private var assignmentModeEnabled: Bool = true
+    @State private var totalPages: Int = 0
     let urls: [URL]
     let onUpload: (Bool) -> Void
+
+    /// Estimated processing time string based on total page count.
+    /// Formula: T(n) ≈ 20 + 4n seconds per document, summed across all docs.
+    private var estimatedTimeString: String {
+        guard totalPages > 0 else { return "Estimating..." }
+        let totalSeconds = 20 * urls.count + 4 * totalPages
+        if totalSeconds < 60 {
+            return "~\(totalSeconds) sec processing"
+        } else {
+            let minutes = Double(totalSeconds) / 60.0
+            if minutes < 2 {
+                return "~1 min processing"
+            } else {
+                return "~\(Int(minutes.rounded())) min processing"
+            }
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -23,7 +42,7 @@ struct UploadOptionsSheet: View {
                 }
 
             // Centered popup card
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 // Header
                 Text("Upload \(urls.count) \(urls.count == 1 ? "file" : "files")")
                     .font(.quicksand(16, weight: .semiBold))
@@ -44,16 +63,16 @@ struct UploadOptionsSheet: View {
                     Spacer()
 
                     Toggle("", isOn: $assignmentModeEnabled)
-                        .toggleStyle(SwitchToggleStyle(tint: .vibrantTeal))
+                        .toggleStyle(SwitchToggleStyle(tint: .deepTeal))
                         .labelsHidden()
                 }
 
-                // Processing time note
+                // Processing time estimate
                 if assignmentModeEnabled {
                     HStack(spacing: 4) {
                         Image(systemName: "clock")
                             .font(.system(size: 10))
-                        Text("1-2 min processing")
+                        Text(estimatedTimeString)
                             .font(.quicksand(10, weight: .regular))
                     }
                     .foregroundColor(Color(white: 0.55))
@@ -70,9 +89,9 @@ struct UploadOptionsSheet: View {
                             .font(.quicksand(14, weight: .medium))
                             .foregroundColor(Color(white: 0.4))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
+                            .padding(.vertical, 14)
                             .background(Color(white: 0.94))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
 
@@ -84,21 +103,28 @@ struct UploadOptionsSheet: View {
                             .font(.quicksand(14, weight: .semiBold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
-                            .background(Color.vibrantTeal)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .padding(.vertical, 14)
+                            .background(Color.deepTeal)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(22)
-            .frame(width: 320)
-            .background(Color.lightGrayBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: Color.black.opacity(0.12), radius: 24, x: 0, y: 8)
-            .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+            .padding(28)
+            .frame(width: 360)
+            .background(Color.blushWhite)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: Color.black.opacity(0.15), radius: 32, x: 0, y: 12)
+            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 2)
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: assignmentModeEnabled)
+        .onAppear {
+            totalPages = urls.reduce(0) { count, url in
+                let accessing = url.startAccessingSecurityScopedResource()
+                defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                return count + (PDFDocument(url: url)?.pageCount ?? 0)
+            }
+        }
     }
 }
 

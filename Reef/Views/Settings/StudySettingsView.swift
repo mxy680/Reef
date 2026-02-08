@@ -17,7 +17,7 @@ struct StudySettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 32) {
                 // Quiz Defaults Section
                 settingsSection(title: "Quiz Defaults") {
                     // Default Difficulty
@@ -31,7 +31,7 @@ struct StudySettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Default Question Count
                     HStack {
@@ -50,7 +50,7 @@ struct StudySettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Preferred Question Types
                     VStack(alignment: .leading, spacing: 12) {
@@ -67,7 +67,7 @@ struct StudySettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Default Time Limit
                     HStack {
@@ -98,7 +98,7 @@ struct StudySettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Default Passing Score
                     VStack(alignment: .leading, spacing: 8) {
@@ -109,15 +109,15 @@ struct StudySettingsView: View {
                             Spacer()
                             Text("\(Int(preferences.examDefaultPassingScore))%")
                                 .font(.quicksand(14, weight: .medium))
-                                .foregroundColor(Color.oceanMid)
+                                .foregroundColor(Color.deepTeal)
                         }
                         Slider(value: $preferences.examDefaultPassingScore, in: 50...100, step: 5)
-                            .tint(Color.vibrantTeal)
+                            .tint(Color.deepTeal)
                     }
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Default Time Limit
                     HStack {
@@ -135,7 +135,7 @@ struct StudySettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Show Timer Toggle
                     Toggle(isOn: $preferences.examShowTimer) {
@@ -143,7 +143,7 @@ struct StudySettingsView: View {
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                     }
-                    .tint(Color.vibrantTeal)
+                    .tint(Color.deepTeal)
                     .padding(.vertical, 4)
                 }
 
@@ -160,7 +160,7 @@ struct StudySettingsView: View {
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                         }
                     }
-                    .tint(Color.vibrantTeal)
+                    .tint(Color.deepTeal)
                     .padding(.vertical, 4)
 
                     if preferences.focusOnWeakAreas {
@@ -176,10 +176,10 @@ struct StudySettingsView: View {
                                 Spacer()
                                 Text("\(Int(preferences.weakAreaWeight * 100))%")
                                     .font(.quicksand(14, weight: .medium))
-                                    .foregroundColor(Color.oceanMid)
+                                    .foregroundColor(Color.deepTeal)
                             }
                             Slider(value: $preferences.weakAreaWeight, in: 0.5...1.0, step: 0.1)
-                                .tint(Color.vibrantTeal)
+                                .tint(Color.deepTeal)
                             Text("Higher weight means more questions from weak areas")
                                 .font(.quicksand(12, weight: .regular))
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
@@ -190,7 +190,7 @@ struct StudySettingsView: View {
 
                 Spacer(minLength: 16)
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
     }
@@ -210,7 +210,7 @@ struct StudySettingsView: View {
                         .padding(.vertical, 10)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(selection.wrappedValue == level.rawValue ? Color.vibrantTeal : Color.clear)
+                                .fill(selection.wrappedValue == level.rawValue ? Color.deepTeal : Color.clear)
                         )
                 }
                 .buttonStyle(.plain)
@@ -219,7 +219,7 @@ struct StudySettingsView: View {
         .padding(4)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.5) : Color.sageMist.opacity(0.7))
+                .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10)
@@ -234,7 +234,7 @@ struct StudySettingsView: View {
             HStack {
                 Image(systemName: preferences.isQuestionTypeSelected(type) ? "checkmark.square.fill" : "square")
                     .font(.system(size: 20))
-                    .foregroundColor(preferences.isQuestionTypeSelected(type) ? Color.vibrantTeal : Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
+                    .foregroundColor(preferences.isQuestionTypeSelected(type) ? Color.deepTeal : Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
                 Text(type.displayName)
                     .font(.quicksand(15, weight: .medium))
                     .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
@@ -245,19 +245,23 @@ struct StudySettingsView: View {
     }
 
     private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(title)
                 .font(.quicksand(14, weight: .semiBold))
-                .foregroundColor(Color.oceanMid)
+                .foregroundColor(Color.deepTeal)
                 .textCase(.uppercase)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 content()
             }
-            .padding(16)
+            .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
         }
     }
@@ -288,10 +292,10 @@ struct StudySettingsView: View {
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10, weight: .semibold))
             }
-            .foregroundColor(Color.vibrantTeal)
+            .foregroundColor(Color.deepTeal)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.vibrantTeal.opacity(0.12))
+            .background(Color.deepTeal.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }

@@ -22,7 +22,7 @@ struct AboutView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 32) {
                 // App Info Section
                 settingsSection(title: "App Info") {
                     // Version
@@ -33,12 +33,12 @@ struct AboutView: View {
                         Spacer()
                         Text(appVersion)
                             .font(.quicksand(14, weight: .regular))
-                            .foregroundColor(Color.oceanMid)
+                            .foregroundColor(Color.deepTeal)
                     }
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // What's New
                     NavigationLink {
@@ -66,13 +66,13 @@ struct AboutView: View {
                     linkRow(icon: "envelope", title: "Send Feedback", url: "mailto:feedback@reefapp.com")
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Help Center
                     linkRow(icon: "questionmark.circle", title: "Help Center", url: "https://reefapp.com/help")
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Report a Bug
                     linkRow(icon: "ant", title: "Report a Bug", url: "mailto:bugs@reefapp.com?subject=Bug%20Report")
@@ -84,13 +84,13 @@ struct AboutView: View {
                     linkRow(icon: "bird", title: "Twitter / X", url: "https://twitter.com/reefapp")
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Instagram
                     linkRow(icon: "camera", title: "Instagram", url: "https://instagram.com/reefapp")
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Discord
                     linkRow(icon: "bubble.left.and.bubble.right", title: "Discord", url: "https://discord.gg/reefapp")
@@ -118,7 +118,7 @@ struct AboutView: View {
                     .buttonStyle(.plain)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Acknowledgments
                     NavigationLink {
@@ -146,13 +146,13 @@ struct AboutView: View {
                     linkRow(icon: "doc.text", title: "Terms of Service", url: "https://reefapp.com/terms")
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Privacy Policy
                     linkRow(icon: "lock.shield", title: "Privacy Policy", url: "https://reefapp.com/privacy")
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Open Source Licenses
                     NavigationLink {
@@ -180,7 +180,7 @@ struct AboutView: View {
 
                 Spacer(minLength: 16)
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
     }
@@ -210,19 +210,23 @@ struct AboutView: View {
     }
 
     private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(title)
                 .font(.quicksand(14, weight: .semiBold))
-                .foregroundColor(Color.oceanMid)
+                .foregroundColor(Color.deepTeal)
                 .textCase(.uppercase)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 content()
             }
-            .padding(16)
+            .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
         }
     }
@@ -235,13 +239,13 @@ struct AboutView: View {
             HStack(spacing: 20) {
                 Image(systemName: "fish.fill")
                     .font(.system(size: 28))
-                    .foregroundColor(Color.vibrantTeal)
+                    .foregroundColor(Color.deepTeal)
                 Image(systemName: "tortoise.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(Color.oceanMid)
+                    .foregroundColor(Color.deepTeal)
                 Image(systemName: "hare.fill")
                     .font(.system(size: 26))
-                    .foregroundColor(Color.deepSea)
+                    .foregroundColor(Color.deepCoral)
             }
 
             Text("Made with \u{2764} for students")
@@ -282,7 +286,7 @@ struct WhatsNewView: View {
                     ]
                 )
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
         .navigationTitle("What's New")
@@ -298,14 +302,14 @@ struct WhatsNewView: View {
                 Spacer()
                 Text(date)
                     .font(.quicksand(14, weight: .regular))
-                    .foregroundColor(Color.oceanMid)
+                    .foregroundColor(Color.deepTeal)
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(changes, id: \.self) { change in
                     HStack(alignment: .top, spacing: 8) {
                         Circle()
-                            .fill(Color.vibrantTeal)
+                            .fill(Color.deepTeal)
                             .frame(width: 6, height: 6)
                             .padding(.top, 6)
                         Text(change)
@@ -315,10 +319,14 @@ struct WhatsNewView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+            RoundedRectangle(cornerRadius: 16)
+                .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
         )
     }
 }
@@ -343,7 +351,7 @@ struct TeamView: View {
                 // Team members
                 teamMember(name: "Mark Shteyn", role: "Founder & Developer", emoji: "\u{1F9D1}\u{200D}\u{1F4BB}")
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
         .navigationTitle("Meet the Team")
@@ -361,16 +369,20 @@ struct TeamView: View {
                     .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                 Text(role)
                     .font(.quicksand(14, weight: .regular))
-                    .foregroundColor(Color.oceanMid)
+                    .foregroundColor(Color.deepTeal)
             }
 
             Spacer()
         }
-        .padding(16)
+        .padding(20)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+            RoundedRectangle(cornerRadius: 16)
+                .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
         )
     }
 }
@@ -398,7 +410,7 @@ struct AcknowledgmentsView: View {
                     ("PDFKit", "PDF rendering and annotation")
                 ])
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
         .navigationTitle("Acknowledgments")
@@ -423,8 +435,12 @@ struct AcknowledgmentsView: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+            RoundedRectangle(cornerRadius: 16)
+                .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
         )
     }
 }
@@ -451,11 +467,15 @@ struct OpenSourceLicensesView: View {
                     .padding()
                     .frame(maxWidth: .infinity)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
                     )
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
         .navigationTitle("Open Source Licenses")

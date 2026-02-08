@@ -42,7 +42,7 @@ struct CourseDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 32) {
                 // Search Bar
                 searchBar
 
@@ -58,9 +58,9 @@ struct CourseDetailView: View {
                     }
                 }
 
-                Spacer(minLength: 24)
+                Spacer(minLength: 40)
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: colorScheme))
         .onChange(of: searchText) { _, newValue in
@@ -98,23 +98,24 @@ struct CourseDetailView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(14)
+        .padding(16)
         .background(Color.adaptiveCardBackground(for: colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.adaptiveText(for: colorScheme).opacity(0.15), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
         )
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Content Cards
 
     private var contentCards: some View {
         LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: 16),
-            GridItem(.flexible(), spacing: 16),
-            GridItem(.flexible(), spacing: 16)
-        ], spacing: 16) {
+            GridItem(.flexible(), spacing: 20),
+            GridItem(.flexible(), spacing: 20),
+            GridItem(.flexible(), spacing: 20)
+        ], spacing: 20) {
             // Notes Card
             ContentCard(
                 title: "Notes",
@@ -161,7 +162,7 @@ struct CourseDetailView: View {
                 } label: {
                     Text("View All")
                         .font(.quicksand(14, weight: .medium))
-                        .foregroundColor(.vibrantTeal)
+                        .foregroundColor(.deepTeal)
                 }
                 .buttonStyle(.plain)
             }
@@ -176,7 +177,7 @@ struct CourseDetailView: View {
                             // Icon
                             Image(systemName: note.fileTypeIcon)
                                 .font(.system(size: 18))
-                                .foregroundColor(.vibrantTeal)
+                                .foregroundColor(.deepTeal)
                                 .frame(width: 40, height: 40)
                                 .background(Color.adaptiveBackground(for: colorScheme))
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -201,23 +202,24 @@ struct CourseDetailView: View {
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.3))
                         }
-                        .padding(12)
+                        .padding(14)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
 
                     if index < recentNotes.count - 1 {
                         Divider()
-                            .background(Color.adaptiveSecondary(for: colorScheme).opacity(0.2))
+                            .background(Color.adaptiveSecondary(for: colorScheme).opacity(0.08))
                     }
                 }
             }
             .background(Color.adaptiveCardBackground(for: colorScheme))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
         }
     }
 
@@ -262,7 +264,7 @@ struct CourseDetailView: View {
                             } label: {
                                 Text("View All")
                                     .font(.quicksand(14, weight: .medium))
-                                    .foregroundColor(.vibrantTeal)
+                                    .foregroundColor(.deepTeal)
                             }
                             .buttonStyle(.plain)
                         }
@@ -301,8 +303,8 @@ struct ContentCard: View {
             VStack(spacing: 16) {
                 // Icon
                 Image(systemName: icon)
-                    .font(.system(size: 32))
-                    .foregroundColor(.vibrantTeal)
+                    .font(.system(size: 40))
+                    .foregroundColor(.deepTeal)
 
                 // Title
                 Text(title)
@@ -315,13 +317,15 @@ struct ContentCard: View {
                     .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 32)
+            .padding(.vertical, 40)
             .background(Color.adaptiveCardBackground(for: colorScheme))
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                    .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.12 : 0.06), radius: 12, x: 0, y: 4)
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.06 : 0.03), radius: 3, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -339,7 +343,7 @@ struct SearchResultRow: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundColor(.vibrantTeal)
+                .foregroundColor(.deepTeal)
                 .frame(width: 40, height: 40)
                 .background(Color.adaptiveBackground(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -361,9 +365,9 @@ struct SearchResultRow: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.3))
         }
-        .padding(12)
+        .padding(16)
         .background(Color.adaptiveCardBackground(for: colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
 

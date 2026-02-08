@@ -22,7 +22,7 @@ struct RecognitionFeedbackView: View {
                 // Header
                 HStack {
                     Image(systemName: "sparkles")
-                        .foregroundColor(.vibrantTeal)
+                        .foregroundColor(.deepTeal)
                     Text("Recognition")
                         .font(.headline)
                     Spacer()
@@ -55,7 +55,7 @@ struct RecognitionFeedbackView: View {
                                 .foregroundColor(.secondary)
                             Text(latex)
                                 .font(.system(.body, design: .monospaced))
-                                .foregroundColor(.oceanMid)
+                                .foregroundColor(.deepTeal)
                         }
                     }
 

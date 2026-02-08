@@ -34,7 +34,7 @@ struct RecentItemsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             // Header
             Text("Recent")
                 .font(.quicksand(20, weight: .semiBold))
@@ -57,7 +57,12 @@ struct RecentItemsView: View {
                     Spacer()
                 }
                 .background(Color.adaptiveCardBackground(for: colorScheme))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
             } else {
                 // Vertical list
                 VStack(spacing: 0) {
@@ -82,12 +87,17 @@ struct RecentItemsView: View {
 
                         if index < recentItems.count - 1 {
                             Divider()
-                                .background(Color.adaptiveSecondary(for: colorScheme).opacity(0.2))
+                                .background(Color.adaptiveSecondary(for: colorScheme).opacity(0.08))
                         }
                     }
                 }
                 .background(Color.adaptiveCardBackground(for: colorScheme))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
             }
         }
     }
@@ -153,10 +163,10 @@ struct RecentItemRow: View {
                 // Thumbnail/icon
                 Image(systemName: item.icon)
                     .font(.system(size: 20))
-                    .foregroundColor(.vibrantTeal)
-                    .frame(width: 48, height: 48)
+                    .foregroundColor(.deepTeal)
+                    .frame(width: 52, height: 52)
                     .background(Color.adaptiveBackground(for: colorScheme))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 // Title and course name
                 VStack(alignment: .leading, spacing: 4) {
@@ -182,12 +192,12 @@ struct RecentItemRow: View {
                 Button(action: onPin) {
                     Image(systemName: isPinned ? "pin.fill" : "pin")
                         .font(.system(size: 16))
-                        .foregroundColor(isPinned ? .vibrantTeal : Color.adaptiveSecondary(for: colorScheme))
+                        .foregroundColor(isPinned ? .deepTeal : Color.adaptiveSecondary(for: colorScheme))
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 16)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -195,10 +195,16 @@ struct HomeView: View {
                         .foregroundColor(selectedItem == .home && selectedCourse == nil ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                     Spacer()
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(selectedItem == .home && selectedCourse == nil ? Color.deepTeal.opacity(0.1) : Color.clear)
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
 
             // My Reef tab
             Button {
@@ -212,10 +218,16 @@ struct HomeView: View {
                         .foregroundColor(selectedItem == .myReef ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                     Spacer()
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(selectedItem == .myReef ? Color.deepTeal.opacity(0.1) : Color.clear)
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
 
             // Analytics tab
             Button {
@@ -229,10 +241,16 @@ struct HomeView: View {
                         .foregroundColor(selectedItem == .analytics ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                     Spacer()
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(selectedItem == .analytics ? Color.deepTeal.opacity(0.1) : Color.clear)
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
 
             // Tutors tab
             Button {
@@ -246,10 +264,16 @@ struct HomeView: View {
                         .foregroundColor(selectedItem == .tutors ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                     Spacer()
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(selectedItem == .tutors ? Color.deepTeal.opacity(0.1) : Color.clear)
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
 
             // Settings tab
             Button {
@@ -263,10 +287,16 @@ struct HomeView: View {
                         .foregroundColor(selectedItem == .settings ? Color.adaptiveSecondary(for: effectiveColorScheme) : Color.adaptiveText(for: effectiveColorScheme))
                     Spacer()
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(selectedItem == .settings ? Color.deepTeal.opacity(0.1) : Color.clear)
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
         }
 
         // SECTION B: Courses (always visible)
@@ -320,13 +350,19 @@ struct HomeView: View {
                         } label: {
                             Image(systemName: "pin.fill")
                                 .font(.system(size: 12))
-                                .foregroundColor(selectedCourse?.id == course.id ? .vibrantTeal : Color.adaptiveText(for: effectiveColorScheme))
+                                .foregroundColor(selectedCourse?.id == course.id ? .deepTeal : Color.adaptiveText(for: effectiveColorScheme))
                         }
                         .buttonStyle(.plain)
                     }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(selectedCourse?.id == course.id ? Color.deepTeal.opacity(0.1) : Color.clear)
+                )
                 .contentShape(Rectangle())
-                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
             }
 
             // Add Course row at bottom
@@ -383,7 +419,7 @@ struct HomeView: View {
                 } label: {
                     Image(systemName: userPrefsManager.isPinned(id: course.id) ? "pin.fill" : "pin")
                         .font(.system(size: 18))
-                        .foregroundColor(userPrefsManager.isPinned(id: course.id) ? .vibrantTeal : Color.adaptiveText(for: effectiveColorScheme))
+                        .foregroundColor(userPrefsManager.isPinned(id: course.id) ? .deepTeal : Color.adaptiveText(for: effectiveColorScheme))
                 }
             }
 
@@ -426,12 +462,12 @@ struct HomeView: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 44, height: 44)
+                    .frame(width: 48, height: 48)
                     .clipShape(Circle())
             } else {
                 Circle()
                     .fill(Color.adaptivePrimary(for: effectiveColorScheme))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 48, height: 48)
                     .overlay(
                         Text(userInitials)
                             .font(.quicksand(18, weight: .semiBold))
@@ -463,9 +499,9 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 16)
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+        .padding(.bottom, 20)
     }
 
     var body: some View {
@@ -485,7 +521,7 @@ struct HomeView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(height: 40)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
 
                             Text("Reef")
                                 .font(.dynaPuff(28, weight: .bold))
@@ -898,7 +934,7 @@ struct CourseOptionsPopup: View {
     }
 
     private var textFieldBackgroundColor: Color {
-        colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground
+        colorScheme == .dark ? Color.warmDark : Color.blushWhite
     }
 
     var body: some View {
@@ -920,10 +956,11 @@ struct CourseOptionsPopup: View {
                     optionsContent
                 }
             }
-            .frame(width: 340)
+            .frame(width: 380)
             .background(cardBackgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: Color.black.opacity(0.25), radius: 20, y: 10)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: Color.black.opacity(0.15), radius: 32, x: 0, y: 12)
+            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 2)
             .scaleEffect(isVisible ? 1 : 0.9)
             .opacity(isVisible ? 1 : 0)
         }
@@ -950,7 +987,7 @@ struct CourseOptionsPopup: View {
             .padding(.vertical, 16)
             .background(headerBackgroundColor)
 
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
                 // Course Name and Icon Row
                 HStack(spacing: 12) {
                     // Course Name TextField
@@ -964,9 +1001,9 @@ struct CourseOptionsPopup: View {
                             .foregroundColor(Color.adaptiveText(for: colorScheme))
                             .padding(12)
                             .background(textFieldBackgroundColor)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 14)
                                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                             )
                     }
@@ -987,9 +1024,9 @@ struct CourseOptionsPopup: View {
                                 .foregroundColor(Color.adaptiveSecondary(for: colorScheme))
                                 .frame(width: 48, height: 48)
                                 .background(textFieldBackgroundColor)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
+                                    RoundedRectangle(cornerRadius: 14)
                                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                                 )
                         }
@@ -1011,9 +1048,9 @@ struct CourseOptionsPopup: View {
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 16)
                     .background(Color.deleteRed)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
 
@@ -1026,11 +1063,11 @@ struct CourseOptionsPopup: View {
                             .font(.quicksand(16, weight: .semiBold))
                             .foregroundColor(Color.adaptiveText(for: colorScheme))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, 16)
                             .background(textFieldBackgroundColor)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 14)
                                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                             )
                     }
@@ -1048,14 +1085,14 @@ struct CourseOptionsPopup: View {
                             .font(.quicksand(16, weight: .semiBold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color.vibrantTeal)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .padding(.vertical, 16)
+                            .background(Color.deepTeal)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(20)
+            .padding(24)
         }
     }
 
@@ -1095,7 +1132,7 @@ struct CourseOptionsPopup: View {
 
             // Icon Grid
             ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 5), spacing: 16) {
                     ForEach(courseIcons, id: \.self) { icon in
                         Button {
                             editedIcon = icon
@@ -1108,16 +1145,16 @@ struct CourseOptionsPopup: View {
                                 .foregroundColor(editedIcon == icon ? .white : Color.adaptiveSecondary(for: colorScheme))
                                 .frame(width: 48, height: 48)
                                 .background(editedIcon == icon ? Color.gray : textFieldBackgroundColor)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
+                                    RoundedRectangle(cornerRadius: 14)
                                         .stroke(editedIcon == icon ? Color.gray : Color.gray.opacity(0.3), lineWidth: editedIcon == icon ? 2 : 1)
                                 )
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(20)
+                .padding(24)
             }
             .frame(maxHeight: 300)
         }
@@ -1141,7 +1178,7 @@ struct CourseOptionsPopup: View {
             .padding(.horizontal, 12)
             .background(Color.deleteRed)
 
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
                 Text("This action cannot be undone. All notes, quizzes, and exams will be permanently deleted.")
                     .font(.quicksand(15, weight: .regular))
                     .foregroundColor(Color.adaptiveText(for: colorScheme))
@@ -1159,11 +1196,11 @@ struct CourseOptionsPopup: View {
                             .font(.quicksand(16, weight: .semiBold))
                             .foregroundColor(Color.adaptiveText(for: colorScheme))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, 16)
                             .background(textFieldBackgroundColor)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 14)
                                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                             )
                     }
@@ -1181,14 +1218,14 @@ struct CourseOptionsPopup: View {
                             .font(.quicksand(16, weight: .semiBold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, 16)
                             .background(Color.deleteRed)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(20)
+            .padding(24)
         }
     }
 

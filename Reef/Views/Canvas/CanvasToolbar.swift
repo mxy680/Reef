@@ -438,7 +438,7 @@ struct CanvasToolbar: View {
         .frame(height: 56)
         .background(
             RoundedRectangle(cornerRadius: 28)
-                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
+                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
                 .overlay(
                     RoundedRectangle(cornerRadius: 28)
                         .strokeBorder(
@@ -485,7 +485,7 @@ private struct ToolbarButton: View {
                     .frame(width: 44, height: 44)
                     .background(
                         isSelected ?
-                            Color.vibrantTeal.opacity(0.15) :
+                            Color.deepTeal.opacity(0.15) :
                             Color.clear
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -521,7 +521,7 @@ private struct ToolbarButton: View {
             return Color.adaptiveText(for: colorScheme).opacity(0.3)
         }
         if isSelected {
-            return .vibrantTeal
+            return .deepTeal
         }
         return Color.adaptiveText(for: colorScheme)
     }
@@ -549,11 +549,11 @@ private struct BackgroundModeToolbar: View {
                         Text(mode.displayName)
                             .font(.system(size: 10, weight: .medium))
                     }
-                    .foregroundColor(canvasBackgroundMode == mode ? .vibrantTeal : Color.adaptiveText(for: colorScheme))
+                    .foregroundColor(canvasBackgroundMode == mode ? .deepTeal : Color.adaptiveText(for: colorScheme))
                     .frame(width: 56, height: 44)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(canvasBackgroundMode == mode ? Color.vibrantTeal.opacity(0.15) : Color.clear)
+                            .fill(canvasBackgroundMode == mode ? Color.deepTeal.opacity(0.15) : Color.clear)
                     )
                 }
                 .buttonStyle(.plain)
@@ -572,7 +572,7 @@ private struct BackgroundModeToolbar: View {
                     .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(canvasBackgroundMode == .normal ? 0.2 : 0.5))
 
                 Slider(value: $canvasBackgroundOpacity, in: 0.05...0.5)
-                    .accentColor(.vibrantTeal)
+                    .accentColor(.deepTeal)
                     .frame(width: 60)
                     .disabled(canvasBackgroundMode == .normal)
 
@@ -594,7 +594,7 @@ private struct BackgroundModeToolbar: View {
                     .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(canvasBackgroundMode == .normal ? 0.2 : 0.5))
 
                 Slider(value: $canvasBackgroundSpacing, in: 24...80)
-                    .accentColor(.vibrantTeal)
+                    .accentColor(.deepTeal)
                     .frame(width: 60)
                     .disabled(canvasBackgroundMode == .normal)
 
@@ -628,7 +628,7 @@ private struct BackgroundModeToolbar: View {
         .frame(height: 48)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
+                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24)
                         .strokeBorder(
@@ -742,7 +742,7 @@ struct AIToolbar: View {
         .frame(height: 48)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
+                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24)
                         .strokeBorder(
@@ -920,7 +920,7 @@ private struct DocumentOperationsToolbar: View {
         .frame(height: 48)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.deepOcean : Color.lightGrayBackground)
+                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24)
                         .strokeBorder(
@@ -942,7 +942,7 @@ private struct DocumentOperationsToolbar: View {
     VStack {
         CanvasToolbar(
             selectedTool: .constant(.pen),
-            selectedPenColor: .constant(.inkBlack),
+            selectedPenColor: .constant(.charcoal),
             selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
             penWidth: .constant(StrokeWidthRange.penDefault),
             highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),

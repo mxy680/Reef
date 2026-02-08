@@ -36,9 +36,9 @@ struct ExamsView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 32) {
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 64))
+                .font(.system(size: 72))
                 .foregroundColor(Color.adaptiveSecondary(for: effectiveColorScheme).opacity(0.6))
 
             VStack(spacing: 8) {
@@ -63,11 +63,11 @@ struct ExamsView: View {
                         .font(.quicksand(16, weight: .semiBold))
                 }
                 .foregroundColor(.white)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(Color.vibrantTeal)
-                .cornerRadius(12)
-                .shadow(color: Color.vibrantTeal.opacity(0.4), radius: 8, x: 0, y: 4)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 16)
+                .background(Color.deepTeal)
+                .cornerRadius(20)
+                .shadow(color: Color.deepTeal.opacity(0.4), radius: 8, x: 0, y: 4)
             }
             .buttonStyle(.plain)
         }
@@ -244,7 +244,7 @@ struct GenerateExamSheet: View {
                                         .padding(.vertical, 10)
                                         .background(
                                             selectedTimeLimit == minutes
-                                                ? Color.vibrantTeal
+                                                ? Color.deepTeal
                                                 : Color.adaptiveText(for: effectiveColorScheme).opacity(0.1)
                                         )
                                         .cornerRadius(8)
@@ -271,7 +271,7 @@ struct GenerateExamSheet: View {
                                         .padding(.vertical, 10)
                                         .background(
                                             selectedPassingScore == score
-                                                ? Color.vibrantTeal
+                                                ? Color.deepTeal
                                                 : Color.adaptiveText(for: effectiveColorScheme).opacity(0.1)
                                         )
                                         .cornerRadius(8)
@@ -291,11 +291,11 @@ struct GenerateExamSheet: View {
 
                             Text("\(Int(numberOfQuestions))")
                                 .font(.quicksand(16, weight: .semiBold))
-                                .foregroundColor(Color.vibrantTeal)
+                                .foregroundColor(Color.deepTeal)
                         }
 
                         Slider(value: $numberOfQuestions, in: 1...10, step: 1)
-                            .tint(Color.vibrantTeal)
+                            .tint(Color.deepTeal)
                     }
 
                     // Source
@@ -339,8 +339,8 @@ struct GenerateExamSheet: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(canGenerate ? Color.vibrantTeal : Color.vibrantTeal.opacity(0.5))
-                    .cornerRadius(12)
+                    .background(canGenerate ? Color.deepTeal : Color.deepTeal.opacity(0.5))
+                    .cornerRadius(20)
                 }
                 .disabled(!canGenerate)
                 .padding(.horizontal, 24)
@@ -440,7 +440,7 @@ struct GenerateExamSheet: View {
                 } label: {
                     Text(selectedNoteIds.count == allSourceNotes.count ? "Deselect All" : "Select All")
                         .font(.quicksand(12, weight: .medium))
-                        .foregroundColor(Color.vibrantTeal)
+                        .foregroundColor(Color.deepTeal)
                 }
                 .buttonStyle(.plain)
             }
@@ -465,7 +465,7 @@ struct GenerateExamSheet: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: selectedNoteIds.contains(sourceNote.id) ? "checkmark.square.fill" : "square")
                                         .font(.system(size: 20))
-                                        .foregroundColor(selectedNoteIds.contains(sourceNote.id) ? Color.vibrantTeal : Color.adaptiveText(for: effectiveColorScheme).opacity(0.4))
+                                        .foregroundColor(selectedNoteIds.contains(sourceNote.id) ? Color.deepTeal : Color.adaptiveText(for: effectiveColorScheme).opacity(0.4))
 
                                     Image(systemName: sourceNote.icon)
                                         .font(.system(size: 16))

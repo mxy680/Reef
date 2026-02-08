@@ -50,7 +50,7 @@ struct SettingsView: View {
     // MARK: - Tab Picker
 
     private var tabPicker: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 8) {
             ForEach(SettingsTab.allCases) { tab in
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -63,11 +63,11 @@ struct SettingsView: View {
                         Text(tab.rawValue)
                             .font(.quicksand(14, weight: .semiBold))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(selectedTab == tab ? Color.vibrantTeal : Color.lightGrayBackground.opacity(effectiveColorScheme == .dark ? 0.2 : 1))
+                            .fill(selectedTab == tab ? Color.deepTeal : Color.blushWhite.opacity(effectiveColorScheme == .dark ? 0.2 : 1))
                     )
                     .foregroundColor(selectedTab == tab ? .white : Color.adaptiveText(for: effectiveColorScheme))
                 }

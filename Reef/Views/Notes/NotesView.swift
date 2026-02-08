@@ -120,9 +120,9 @@ struct NotesView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 32) {
             Image(systemName: "folder.badge.plus")
-                .font(.system(size: 64))
+                .font(.system(size: 72))
                 .foregroundColor(Color.adaptiveSecondary(for: effectiveColorScheme).opacity(0.6))
 
             VStack(spacing: 8) {
@@ -145,11 +145,11 @@ struct NotesView: View {
                         .font(.quicksand(16, weight: .semiBold))
                 }
                 .foregroundColor(.white)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(Color.vibrantTeal)
-                .cornerRadius(12)
-                .shadow(color: Color.vibrantTeal.opacity(0.4), radius: 8, x: 0, y: 4)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 16)
+                .background(Color.deepTeal)
+                .cornerRadius(20)
+                .shadow(color: Color.deepTeal.opacity(0.4), radius: 8, x: 0, y: 4)
             }
             .buttonStyle(.plain)
         }
@@ -167,7 +167,7 @@ struct NotesView: View {
                 if filteredNotes.isEmpty && !debouncedSearchText.isEmpty {
                     noResultsView
                 } else {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 24), count: 3), spacing: 24) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 24), count: 4), spacing: 24) {
                         ForEach(filteredNotes) { note in
                             Button {
                                 note.lastOpenedAt = Date()
@@ -184,7 +184,7 @@ struct NotesView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(32)
+                    .padding(40)
                 }
             }
         }

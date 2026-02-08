@@ -10,11 +10,11 @@ import CoreImage.CIFilterBuiltins
 
 struct PDFThumbnailGenerator {
 
-    /// Sage Mist background color (#E8EAE1) for light mode thumbnails
-    private static let sageMistColor = UIColor(red: 232/255, green: 234/255, blue: 225/255, alpha: 1)
+    /// Blush White background color (#F9F5F6) for light mode thumbnails
+    private static let blushWhiteColor = UIColor(red: 249/255, green: 245/255, blue: 246/255, alpha: 1)
 
-    /// Deep Ocean background color (#0A1628) for dark mode thumbnails
-    private static let deepOceanColor = UIColor(red: 10/255, green: 22/255, blue: 40/255, alpha: 1)
+    /// Warm Dark background color (#1A1418) for dark mode thumbnails
+    private static let warmDarkColor = UIColor(red: 26/255, green: 20/255, blue: 24/255, alpha: 1)
 
     /// Generates a thumbnail image from the first page of a PDF at a fixed canvas size
     /// - Parameters:
@@ -57,7 +57,7 @@ struct PDFThumbnailGenerator {
 
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { context in
-            // Fill with white background (document color)
+            // Fill with white background (#FFFFFF)
             UIColor.white.setFill()
             context.fill(CGRect(origin: .zero, size: size))
 
@@ -68,7 +68,7 @@ struct PDFThumbnailGenerator {
         }
     }
 
-    /// Generates a dark mode thumbnail with Deep Ocean background and light content
+    /// Generates a dark mode thumbnail with warm dark background and light content
     private static func generateDarkModeThumbnail(page: PDFPage, size: CGSize) -> UIImage? {
         let pageRect = page.bounds(for: .mediaBox)
 
@@ -104,8 +104,8 @@ struct PDFThumbnailGenerator {
         falseColor.inputImage = ciImage
         // color0: Black pixels (text) → White for readability
         falseColor.color0 = CIColor(red: 1, green: 1, blue: 1)
-        // color1: White pixels (background) → Deep Ocean (#0A1628)
-        falseColor.color1 = CIColor(red: 10/255, green: 22/255, blue: 40/255)
+        // color1: White pixels (background) → Warm Dark (#1A1418)
+        falseColor.color1 = CIColor(red: 26/255, green: 20/255, blue: 24/255)
 
         guard let tintedImage = falseColor.outputImage else { return normalImage }
 

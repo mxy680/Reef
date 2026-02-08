@@ -17,7 +17,7 @@ struct AISettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 32) {
                 // Reasoning Model Section
                 settingsSection(title: "Reasoning Model") {
                     HStack {
@@ -45,15 +45,15 @@ struct AISettingsView: View {
                             Spacer()
                             Text(sensitivityLabel)
                                 .font(.quicksand(14, weight: .regular))
-                                .foregroundColor(Color.oceanMid)
+                                .foregroundColor(Color.deepTeal)
                         }
                         Slider(value: $preferences.pauseDetectionSensitivity, in: 0...1)
-                            .tint(Color.vibrantTeal)
+                            .tint(Color.deepTeal)
                     }
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Auto-Feedback Toggle
                     Toggle(isOn: $preferences.autoFeedbackEnabled) {
@@ -66,11 +66,11 @@ struct AISettingsView: View {
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                         }
                     }
-                    .tint(Color.vibrantTeal)
+                    .tint(Color.deepTeal)
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Feedback Detail Level
                     HStack {
@@ -106,7 +106,7 @@ struct AISettingsView: View {
                     .padding(.vertical, 4)
 
                     Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.1))
+                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
 
                     // Recognition Language
                     HStack {
@@ -126,7 +126,7 @@ struct AISettingsView: View {
 
                 Spacer(minLength: 16)
             }
-            .padding(24)
+            .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
     }
@@ -142,19 +142,23 @@ struct AISettingsView: View {
     }
 
     private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(title)
                 .font(.quicksand(14, weight: .semiBold))
-                .foregroundColor(Color.oceanMid)
+                .foregroundColor(Color.deepTeal)
                 .textCase(.uppercase)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 content()
             }
-            .padding(16)
+            .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(effectiveColorScheme == .dark ? Color.deepSea.opacity(0.3) : Color.sageMist.opacity(0.5))
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
         }
     }
@@ -185,10 +189,10 @@ struct AISettingsView: View {
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10, weight: .semibold))
             }
-            .foregroundColor(Color.vibrantTeal)
+            .foregroundColor(Color.deepTeal)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.vibrantTeal.opacity(0.12))
+            .background(Color.deepTeal.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }

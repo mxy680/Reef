@@ -96,7 +96,7 @@ struct AssignmentView: View {
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(isDarkMode ? Color.black : Color(white: 0.96))
+                    .background(isDarkMode ? Color.warmDark : Color.blushWhite)
                 }
             }
             .gesture(
