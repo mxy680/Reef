@@ -809,7 +809,7 @@ async def ai_reconstruct(
         from lib.latex_compiler import LaTeXCompiler
         compiler = LaTeXCompiler()
 
-        async def compile_problem(problem_num: int, label: str, latex: str, image_data: dict[str, str]) -> tuple[str, bytes | None]:
+        async def compile_problem(problem_num: int, label: str, latex: str, image_data: dict[str, str], question_dict: dict | None) -> tuple[str, bytes | None, dict | None]:
             """Compile a single problem's LaTeX to PDF. On failure, ask LLM to fix the LaTeX and retry once."""
             header = f"Problem {problem_num}"
             content = f"\\textbf{{\\large {header}}}\n\n{latex}"
@@ -818,7 +818,7 @@ async def ai_reconstruct(
                 pdf_bytes = await asyncio.to_thread(
                     compiler.compile_latex, content, image_data=image_data or None
                 )
-                return (label, pdf_bytes)
+                return (label, pdf_bytes, question_dict)
             except Exception as e:
                 print(f"  [compile] {label}: FAILED — {e}")
                 # Try LLM fix
@@ -835,25 +835,34 @@ async def ai_reconstruct(
                         compiler.compile_latex, fixed_content, image_data=image_data or None
                     )
                     print(f"  [compile] {label}: FIXED by LLM")
-                    return (label, pdf_bytes)
+                    return (label, pdf_bytes, question_dict)
                 except Exception as e2:
                     print(f"  [compile] {label}: FIX FAILED — {e2}")
                     fallback = f"\\textbf{{\\large {header}}}\n\n\\textit{{LaTeX compilation failed for this problem.}}"
                     pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fallback)
-                    return (label, pdf_bytes)
+                    return (label, pdf_bytes, None)  # No regions for fallback
 
-        compile_tasks = [compile_problem(i + 1, label, latex, image_data) for i, (p, (label, latex, image_data, _)) in enumerate(zip(group_result.problems, results))]
+        compile_tasks = [compile_problem(i + 1, label, latex, image_data, q_dict) for i, (p, (label, latex, image_data, q_dict)) in enumerate(zip(group_result.problems, results))]
         compiled = await asyncio.gather(*compile_tasks)
 
         if split:
-            # Return individual problem PDFs as JSON
+            # Return individual problem PDFs as JSON with region metadata
+            from lib.region_extractor import extract_question_regions
             problem_pdfs = []
-            for i, (label, pdf_bytes) in enumerate(compiled):
-                problem_pdfs.append({
+            for i, (label, pdf_bytes, question_dict) in enumerate(compiled):
+                entry = {
                     "number": i + 1,
                     "label": label,
-                    "pdf_base64": base64.b64encode(pdf_bytes).decode()
-                })
+                    "pdf_base64": base64.b64encode(pdf_bytes).decode(),
+                }
+                if question_dict is not None:
+                    region_data = extract_question_regions(pdf_bytes, question_dict)
+                    entry["page_heights"] = region_data["page_heights"]
+                    entry["regions"] = region_data["regions"]
+                else:
+                    entry["page_heights"] = []
+                    entry["regions"] = []
+                problem_pdfs.append(entry)
             return JSONResponse({
                 "problems": problem_pdfs,
                 "total_problems": len(problem_pdfs),
@@ -862,7 +871,7 @@ async def ai_reconstruct(
 
         # Merge all per-problem PDFs into one
         merged = fitz.open()
-        for label, problem_pdf_bytes in compiled:
+        for label, problem_pdf_bytes, _ in compiled:
             sub_doc = fitz.open(stream=problem_pdf_bytes, filetype="pdf")
             merged.insert_pdf(sub_doc)
             sub_doc.close()
