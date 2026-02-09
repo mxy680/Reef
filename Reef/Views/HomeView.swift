@@ -429,7 +429,9 @@ struct HomeView: View {
 
             // Dark mode toggle
             Button {
-                themeManager.toggle()
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    themeManager.toggle()
+                }
             } label: {
                 Image(systemName: themeManager.isDarkMode ? "sun.max.fill" : "moon.fill")
                     .font(.system(size: 18))
@@ -572,10 +574,12 @@ struct HomeView: View {
                             Text(detailTitle)
                                 .font(.quicksand(20, weight: .semiBold))
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                                .padding(.leading, 16)
                         }
 
                         ToolbarItem(placement: .topBarTrailing) {
                             toolbarTrailingContent
+                                .padding(.trailing, 12)
                         }
                     }
                     .toolbarBackground(Color.adaptiveBackground(for: effectiveColorScheme), for: .navigationBar)
@@ -594,6 +598,7 @@ struct HomeView: View {
                 if !newCourseName.isEmpty {
                     let course = Course(name: newCourseName)
                     modelContext.insert(course)
+                    userPrefsManager.addPin(id: course.id)
                     newCourseName = ""
                 }
             }
@@ -942,7 +947,7 @@ struct CourseOptionsPopup: View {
     }
 
     private var headerBackgroundColor: Color {
-        Color.adaptiveSecondary(for: colorScheme)
+        Color.deepTeal
     }
 
     private var textFieldBackgroundColor: Color {

@@ -235,24 +235,31 @@ struct BentoStatCard: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 28))
+                .font(.system(size: 24))
                 .foregroundColor(iconColor)
+                .frame(width: 44, height: 44)
+                .background(iconColor.opacity(colorScheme == .dark ? 0.15 : 0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            Text(value)
-                .font(.quicksand(28, weight: .bold))
-                .foregroundColor(Color.adaptiveText(for: colorScheme))
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.quicksand(24, weight: .bold))
+                    .foregroundColor(Color.adaptiveText(for: colorScheme))
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
 
-            Text(label)
-                .font(.quicksand(13, weight: .regular))
-                .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme))
-                .lineLimit(1)
+                Text(label)
+                    .font(.quicksand(13, weight: .regular))
+                    .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme))
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 120)
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(cardBackground)
         .dashboardCard(colorScheme: colorScheme)
     }

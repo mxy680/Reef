@@ -31,6 +31,7 @@ struct AssignmentView: View {
     var onPreviousQuestion: () -> Void = {}
     var onNextQuestion: () -> Void = {}
     var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
+    var onPauseDetected: ((PauseContext) -> Void)? = nil
 
     private var questions: [ExtractedQuestion] {
         note.extractedQuestions
@@ -82,7 +83,8 @@ struct AssignmentView: View {
                         canvasBackgroundOpacity: canvasBackgroundOpacity,
                         canvasBackgroundSpacing: canvasBackgroundSpacing,
                         isDarkMode: isDarkMode,
-                        onCanvasReady: onCanvasReady
+                        onCanvasReady: onCanvasReady,
+                        onPauseDetected: onPauseDetected
                     )
                     .id(currentIndex) // Force new view instance for each question
                 } else {
@@ -123,7 +125,7 @@ struct AssignmentView: View {
 
 // MARK: - String Extension for Deterministic UUID
 
-private extension String {
+extension String {
     /// Creates a deterministic UUID-like string from this string
     /// Used to generate consistent document IDs for question drawings
     var md5UUID: String {

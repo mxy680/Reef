@@ -12,6 +12,7 @@ struct ExamsView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var themeManager = ThemeManager.shared
     @Query private var allExams: [ExamAttempt]
+    @State private var isInitialLoad: Bool = true
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
@@ -25,12 +26,61 @@ struct ExamsView: View {
 
     var body: some View {
         Group {
-            if exams.isEmpty {
+            if isInitialLoad {
+                skeletonView
+            } else if exams.isEmpty {
                 emptyStateView
             } else {
                 examsList
             }
         }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    isInitialLoad = false
+                }
+            }
+        }
+    }
+
+    // MARK: - Skeleton
+
+    private var skeletonView: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<6, id: \.self) { index in
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(Color.adaptiveSecondaryText(for: effectiveColorScheme).opacity(0.08))
+                        .frame(width: 24, height: 24)
+                        .frame(width: 40)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.adaptiveSecondaryText(for: effectiveColorScheme).opacity(0.12))
+                            .frame(width: 180, height: 14)
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.adaptiveSecondaryText(for: effectiveColorScheme).opacity(0.08))
+                            .frame(width: 100, height: 12)
+                    }
+
+                    Spacer()
+
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.adaptiveSecondaryText(for: effectiveColorScheme).opacity(0.06))
+                        .frame(width: 8, height: 14)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 20)
+
+                if index < 5 {
+                    Divider()
+                        .padding(.leading, 72)
+                }
+            }
+
+            Spacer()
+        }
+        .background(Color.adaptiveBackground(for: effectiveColorScheme))
     }
 
     // MARK: - Empty State

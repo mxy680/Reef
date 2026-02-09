@@ -46,7 +46,6 @@ struct PinnedItemsView: View {
 
             VStack(spacing: 0) {
                 let items = Array(pinnedItems.prefix(3))
-                let skeletonCount = 3 - items.count
 
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     PinnedRowView(
@@ -62,18 +61,20 @@ struct PinnedItemsView: View {
                         }
                     )
 
-                    if index < items.count - 1 || skeletonCount > 0 {
-                        Divider()
-                            .padding(.leading, 64)
-                    }
+                    Divider()
+                        .padding(.leading, 64)
                 }
 
-                ForEach(0..<skeletonCount, id: \.self) { index in
-                    PinnedSkeletonRow(colorScheme: colorScheme)
+                // Placeholder rows to fill empty slots
+                if items.count < 3 {
+                    let placeholderCount = 3 - items.count
+                    ForEach(0..<placeholderCount, id: \.self) { index in
+                        PlaceholderSlotView(colorScheme: colorScheme)
 
-                    if index < skeletonCount - 1 {
-                        Divider()
-                            .padding(.leading, 64)
+                        if index < placeholderCount - 1 {
+                            Divider()
+                                .padding(.leading, 64)
+                        }
                     }
                 }
 
@@ -132,26 +133,21 @@ private struct PinnedRowView: View {
     }
 }
 
-// MARK: - Pinned Skeleton Row
+// MARK: - Placeholder Slot View
 
-private struct PinnedSkeletonRow: View {
+private struct PlaceholderSlotView: View {
     let colorScheme: ColorScheme
 
     var body: some View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.1))
+                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.2))
                 .frame(width: 40, height: 40)
 
-            VStack(alignment: .leading, spacing: 6) {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.1))
-                    .frame(width: 100, height: 12)
-
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.07))
-                    .frame(width: 60, height: 10)
-            }
+            Text("Pin a course")
+                .font(.quicksand(14, weight: .regular))
+                .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.35))
 
             Spacer()
         }

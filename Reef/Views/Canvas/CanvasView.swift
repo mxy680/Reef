@@ -38,9 +38,17 @@ struct CanvasView: View {
     // Drawing persistence
     @State private var saveTask: Task<Void, Never>?
 
+    // PDF export state
+    @State private var isExporting: Bool = false
+    @State private var exportedFileURL: URL? = nil
+    @State private var showExportPreview: Bool = false
+
     // Assignment mode state
     @State private var viewMode: CanvasViewMode = .document
     @State private var currentQuestionIndex: Int = 0
+
+    // Tutor detection
+    @StateObject private var tutorDetection = TutorDetectionState()
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
@@ -100,6 +108,9 @@ struct CanvasView: View {
                     },
                     onCanvasReady: { container in
                         canvasViewRef = container
+                    },
+                    onPauseDetected: { context in
+                        handlePauseDetected(context)
                     }
                 )
             } else {
@@ -176,6 +187,7 @@ struct CanvasView: View {
                     onClearCurrentPage: {
                         canvasViewRef?.clearCurrentPage()
                     },
+                    onExportPDF: { exportPDF() },
                     isAssignmentEnabled: isAssignmentEnabled,
                     viewMode: $viewMode,
                     currentQuestionIndex: currentQuestionIndex,
@@ -197,6 +209,43 @@ struct CanvasView: View {
                     isAssignmentProcessing: note.isAssignmentProcessing
                 )
                 .padding(.bottom, 24)
+            }
+
+            // Export loading overlay
+            if isExporting {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .overlay(
+                        VStack(spacing: 14) {
+                            ProgressView()
+                                .scaleEffect(1.3)
+                                .tint(.deepTeal)
+                            Text("Preparing export...")
+                                .font(.quicksand(14, weight: .medium))
+                                .foregroundColor(Color(white: 0.3))
+                        }
+                        .padding(.horizontal, 36)
+                        .padding(.vertical, 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.blushWhite)
+                        )
+                        .shadow(color: Color.black.opacity(0.15), radius: 32, x: 0, y: 12)
+                        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 2)
+                    )
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: isExporting)
+        .sheet(isPresented: $showExportPreview, onDismiss: {
+            exportedFileURL = nil
+            Task {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                PDFExportService.cleanupExportFiles()
+            }
+        }) {
+            if let url = exportedFileURL {
+                PDFExportPreview(url: url, colorScheme: effectiveColorScheme)
             }
         }
         .ignoresSafeArea()
@@ -224,7 +273,207 @@ struct CanvasView: View {
                 isViewingCanvas = false
             }
         }
+        .onChange(of: currentQuestionIndex) { _, _ in
+            tutorDetection.clear()
+        }
     }
+
+    // MARK: - PDF Export
+
+    private func exportPDF() {
+        guard !isExporting else { return }
+        isExporting = true
+
+        let safeName = note.name.replacingOccurrences(of: "/", with: "-")
+        let fileName = "\(safeName).pdf"
+
+        Task {
+            do {
+                let url: URL
+
+                if isAssignmentEnabled {
+                    // Assignment mode: save current question's drawings, then export all questions
+                    canvasViewRef?.saveAllDrawings()
+                    url = try await PDFExportService.generateAssignmentPDF(note: note, fileName: fileName)
+                } else {
+                    // Document mode: export current document with annotations
+                    guard let container = canvasViewRef else { throw PDFExportService.ExportError.renderingFailed }
+                    container.saveAllDrawings()
+                    let pages = await container.exportPageData()
+                    url = try await PDFExportService.generatePDF(pages: pages, fileName: fileName)
+                }
+
+                await MainActor.run {
+                    exportedFileURL = url
+                    isExporting = false
+                    showExportPreview = true
+                }
+            } catch {
+                await MainActor.run {
+                    isExporting = false
+                }
+            }
+        }
+    }
+
+    // MARK: - Tutor Detection
+
+    private func handlePauseDetected(_ context: PauseContext) {
+        let questions = note.extractedQuestions
+        guard currentQuestionIndex >= 0 && currentQuestionIndex < questions.count else { return }
+
+        let question = questions[currentQuestionIndex]
+        let regionData = question.regionData
+
+        var subquestionLabel: String? = nil
+
+        if let endPoint = context.lastStrokeEndPoint {
+            let pdfY = CoordinateMapper.canvasToPDFY(endPoint.y)
+            let page = context.lastStrokePageIndex ?? 0
+
+            if let resolved = RegionResolver.resolve(pdfY: pdfY, page: page, regionData: regionData) {
+                subquestionLabel = resolved.label
+            }
+        }
+
+        let result = TutorDetectionResult(
+            questionIndex: currentQuestionIndex,
+            questionNumber: question.questionNumber,
+            subquestionLabel: subquestionLabel,
+            pauseContext: context,
+            timestamp: Date()
+        )
+
+        tutorDetection.update(result)
+    }
+}
+
+// MARK: - PDF Export Preview
+
+struct PDFExportPreview: View {
+    let url: URL
+    let colorScheme: ColorScheme
+    @Environment(\.dismiss) private var dismiss
+    @State private var showShareSheet = false
+    @State private var pageCount: Int = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Drag indicator
+            RoundedRectangle(cornerRadius: 2.5)
+                .fill(Color(white: colorScheme == .dark ? 0.4 : 0.78))
+                .frame(width: 36, height: 5)
+                .padding(.top, 10)
+                .padding(.bottom, 14)
+
+            // Header
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme))
+                        .frame(width: 30, height: 30)
+                        .background(
+                            Circle()
+                                .fill(colorScheme == .dark ? Color.white.opacity(0.1) : Color(white: 0.92))
+                        )
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                VStack(spacing: 2) {
+                    Text("Export Preview")
+                        .font(.quicksand(16, weight: .semiBold))
+                        .foregroundColor(Color.adaptiveText(for: colorScheme))
+                    if pageCount > 0 {
+                        Text("\(pageCount) \(pageCount == 1 ? "page" : "pages")")
+                            .font(.quicksand(11, weight: .regular))
+                            .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme))
+                    }
+                }
+
+                Spacer()
+
+                // Invisible spacer to balance the X button
+                Color.clear
+                    .frame(width: 30, height: 30)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
+
+            // PDF preview
+            PDFPreviewView(url: url)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(colorScheme == .dark ? Color.white.opacity(0.15) : Color.black.opacity(0.15), lineWidth: 1)
+                )
+                .padding(.horizontal, 16)
+
+            // Share button
+            Button {
+                showShareSheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Share PDF")
+                        .font(.quicksand(14, weight: .semiBold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.deepTeal)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+        }
+        .background(Color.adaptiveBackground(for: colorScheme))
+        .preferredColorScheme(colorScheme)
+        .onAppear {
+            if let doc = PDFDocument(url: url) {
+                pageCount = doc.pageCount
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(activityItems: [url])
+        }
+    }
+}
+
+/// PDFView wrapper for the export preview — pages fill width, no zoom-out past fit
+private struct PDFPreviewView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> PDFView {
+        let pdfView = PDFView()
+        pdfView.autoScales = true
+        pdfView.displayMode = .singlePageContinuous
+        pdfView.displayDirection = .vertical
+        pdfView.backgroundColor = UIColor(Color.blushWhite)
+        pdfView.pageShadowsEnabled = false
+        pdfView.pageBreakMargins = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+
+        if let document = PDFDocument(url: url) {
+            pdfView.document = document
+
+            // Lock minimum zoom to the auto-scaled level so user can't zoom out
+            DispatchQueue.main.async {
+                pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
+                pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
+            }
+        }
+
+        return pdfView
+    }
+
+    func updateUIView(_ uiView: PDFView, context: Context) {}
 }
 
 // MARK: - PDF View

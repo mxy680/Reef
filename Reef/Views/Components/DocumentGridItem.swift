@@ -85,13 +85,14 @@ struct DocumentGridItem<T: DocumentItem>: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .clipped()
+                            .id(thumbnail)
+                            .transition(.opacity)
                     } else if isLoadingThumbnail {
                         ProgressView()
                             .scaleEffect(0.8)
                     } else {
                         placeholderIcon
                     }
-
                 }
 
                 // Processing status indicators - positioned in overlay
@@ -142,7 +143,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
 
             // Separator between thumbnail and footer
             Rectangle()
-                .fill(Color.gray.opacity(0.25))
+                .fill(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35))
                 .frame(height: 1)
 
             // Name, date, and action icons footer
@@ -168,7 +169,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
                     } label: {
                         Image(systemName: "pencil")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.7) : Color.charcoal.opacity(0.6))
+                            .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.7) : .deepTeal)
                             .frame(width: 32, height: 32)
                             .contentShape(Rectangle())
                     }
@@ -179,7 +180,7 @@ struct DocumentGridItem<T: DocumentItem>: View {
                     } label: {
                         Image(systemName: "trash")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(effectiveColorScheme == .dark ? .white.opacity(0.7) : Color.charcoal.opacity(0.6))
+                            .foregroundColor(effectiveColorScheme == .dark ? Color.deepCoral.opacity(0.8) : .deepCoral)
                             .frame(width: 32, height: 32)
                             .contentShape(Rectangle())
                     }
@@ -205,10 +206,16 @@ struct DocumentGridItem<T: DocumentItem>: View {
         .onAppear {
             loadThumbnail()
         }
-        .onChange(of: themeManager.isDarkMode) { _, _ in
-            // Reload thumbnail when theme changes (for PDFs)
-            if document.documentFileType == .pdf {
-                loadThumbnail()
+        .onChange(of: themeManager.isDarkMode) { _, newValue in
+            // Swap to pre-cached variant with crossfade for seamless theme transition
+            if let cached = ThumbnailCache.shared.thumbnail(for: document.id, isDarkMode: newValue) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    thumbnail = cached
+                }
+            } else if document.documentFileType == .pdf {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    loadThumbnail()
+                }
             }
         }
         .alert("Rename \(itemType)", isPresented: $isShowingRenameAlert) {
@@ -250,7 +257,6 @@ struct DocumentGridItem<T: DocumentItem>: View {
             return
         }
 
-
         // Capture values before entering detached task (Swift 6 concurrency)
         let documentId = document.id
         let fileExtension = document.fileExtension
@@ -281,6 +287,23 @@ struct DocumentGridItem<T: DocumentItem>: View {
             await MainActor.run {
                 thumbnail = generatedThumbnail
                 isLoadingThumbnail = false
+            }
+
+            // Pre-generate opposite theme variant so dark mode toggle is instant
+            let oppositeMode = !isDarkMode
+            if ThumbnailCache.shared.thumbnail(for: documentId, isDarkMode: oppositeMode) == nil {
+                let oppositeThumbnail: UIImage?
+                switch fileType {
+                case .image:
+                    oppositeThumbnail = Self.loadImageThumbnail(from: fileURL, isDarkMode: oppositeMode)
+                case .pdf:
+                    oppositeThumbnail = PDFThumbnailGenerator.generateThumbnail(from: fileURL, isDarkMode: oppositeMode)
+                case .document:
+                    oppositeThumbnail = nil
+                }
+                if let image = oppositeThumbnail {
+                    ThumbnailCache.shared.setThumbnail(image, for: documentId, isDarkMode: oppositeMode)
+                }
             }
         }
     }

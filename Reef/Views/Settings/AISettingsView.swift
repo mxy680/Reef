@@ -144,9 +144,8 @@ struct AISettingsView: View {
     private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(title)
-                .font(.quicksand(14, weight: .semiBold))
-                .foregroundColor(Color.deepTeal)
-                .textCase(.uppercase)
+                .font(.quicksand(18, weight: .semiBold))
+                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
 
             VStack(spacing: 16) {
                 content()

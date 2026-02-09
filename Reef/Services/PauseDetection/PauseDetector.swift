@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreGraphics
 import PencilKit
 
 /// Detects when users pause while writing/drawing
@@ -36,6 +37,12 @@ final class PauseDetector {
 
     /// Last stroke velocity for context
     private var lastStrokeVelocity: Double = 0
+
+    /// Canvas coordinates of the last stroke's final point
+    private var lastStrokeEndPoint: CGPoint?
+
+    /// Which page container the last stroke was on
+    private var lastStrokePageIndex: Int?
 
     /// Time of last activity (stroke completion or tool use)
     private var lastActivityTime: Date?
@@ -70,10 +77,14 @@ final class PauseDetector {
     // MARK: - Public Methods
 
     /// Record a stroke completion event
-    /// - Parameter stroke: The completed PKStroke
-    func recordStrokeCompleted(stroke: PKStroke) {
+    /// - Parameters:
+    ///   - stroke: The completed PKStroke
+    ///   - pageIndex: Which page container the stroke was on (0-indexed)
+    func recordStrokeCompleted(stroke: PKStroke, pageIndex: Int? = nil) {
         let points = stroke.path.map { $0 }
         lastStrokeVelocity = VelocityCalculator.averageVelocity(from: points)
+        lastStrokeEndPoint = stroke.path.last.map { CGPoint(x: $0.location.x, y: $0.location.y) }
+        lastStrokePageIndex = pageIndex
 
         let now = Date()
         strokeTimestamps.append(now)
@@ -113,6 +124,8 @@ final class PauseDetector {
         strokeTimestamps.removeAll()
         totalStrokeCount = 0
         lastStrokeVelocity = 0
+        lastStrokeEndPoint = nil
+        lastStrokePageIndex = nil
         lastActivityTime = nil
         isPaused = false
     }
@@ -177,7 +190,9 @@ final class PauseDetector {
             duration: timeSinceActivity,
             strokeCount: totalStrokeCount,
             lastTool: currentTool,
-            lastStrokeVelocity: lastStrokeVelocity
+            lastStrokeVelocity: lastStrokeVelocity,
+            lastStrokeEndPoint: lastStrokeEndPoint,
+            lastStrokePageIndex: lastStrokePageIndex
         )
 
         onPauseDetected?(context)

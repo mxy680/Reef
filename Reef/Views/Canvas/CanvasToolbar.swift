@@ -114,6 +114,7 @@ struct CanvasToolbar: View {
     var onAddPageToEnd: () -> Void = {}
     var onDeleteCurrentPage: () -> Void = {}
     var onClearCurrentPage: () -> Void = {}
+    var onExportPDF: () -> Void = {}
 
     // Assignment mode properties
     var isAssignmentEnabled: Bool = false
@@ -272,6 +273,7 @@ struct CanvasToolbar: View {
                     onAddPageToEnd: onAddPageToEnd,
                     onDeleteCurrentPage: onDeleteCurrentPage,
                     onClearCurrentPage: onClearCurrentPage,
+                    onExportPDF: onExportPDF,
                     onClose: { documentOperationsSelected = false }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -810,6 +812,7 @@ private struct DocumentOperationsToolbar: View {
     let onAddPageToEnd: () -> Void
     let onDeleteCurrentPage: () -> Void
     let onClearCurrentPage: () -> Void
+    let onExportPDF: () -> Void
     var onClose: (() -> Void)? = nil
 
     var body: some View {
@@ -867,6 +870,28 @@ private struct DocumentOperationsToolbar: View {
                         .font(.system(size: 18, weight: .medium))
                         .frame(width: 24, height: 24)
                     Text("Clear Page")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundColor(Color.adaptiveText(for: colorScheme))
+                .frame(width: 72, height: 44)
+            }
+            .buttonStyle(.plain)
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 8)
+
+            // Export PDF
+            Button {
+                onExportPDF()
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(width: 24, height: 24)
+                    Text("Export PDF")
                         .font(.system(size: 10, weight: .medium))
                 }
                 .foregroundColor(Color.adaptiveText(for: colorScheme))

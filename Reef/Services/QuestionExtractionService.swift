@@ -9,10 +9,35 @@ import Foundation
 
 // MARK: - API Models
 
+struct SubquestionRegion: Codable {
+    let label: String?      // nil = question stem
+    let page: Int           // 0-indexed page within this question's PDF
+    let yStart: Float       // top of region (PDF points)
+    let yEnd: Float         // bottom of region (PDF points)
+
+    enum CodingKeys: String, CodingKey {
+        case label, page
+        case yStart = "y_start"
+        case yEnd = "y_end"
+    }
+}
+
+struct ProblemRegionData: Codable {
+    let pageHeights: [Float]
+    let regions: [SubquestionRegion]
+
+    enum CodingKeys: String, CodingKey {
+        case pageHeights = "page_heights"
+        case regions
+    }
+}
+
 struct ReconstructProblem: Codable {
     let number: Int
     let label: String
     let pdf_base64: String
+    let page_heights: [Float]?
+    let regions: [SubquestionRegion]?
 }
 
 struct ReconstructSplitResponse: Codable {
@@ -68,6 +93,7 @@ actor QuestionExtractionService {
 
     private let baseURL = "https://api.studyreef.com"
     private let session: URLSession
+    private var activeDataTasks: [UUID: URLSessionDataTask] = [:]
 
     private init() {
         let config = URLSessionConfiguration.default
@@ -77,6 +103,12 @@ actor QuestionExtractionService {
     }
 
     // MARK: - Public API
+
+    /// Cancel an in-progress extraction request for the given note
+    func cancelExtraction(for noteID: UUID) {
+        activeDataTasks[noteID]?.cancel()
+        activeDataTasks.removeValue(forKey: noteID)
+    }
 
     /// Extract questions from a PDF file by sending it to the reconstruction server
     /// - Parameters:
@@ -115,12 +147,28 @@ actor QuestionExtractionService {
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
         urlRequest.httpBody = body
 
-        // Send request
+        // Send request using a cancellable data task
+        defer { activeDataTasks.removeValue(forKey: noteID) }
+
         let data: Data
         let response: URLResponse
 
         do {
-            (data, response) = try await session.data(for: urlRequest)
+            (data, response) = try await withCheckedThrowingContinuation { continuation in
+                let task = session.dataTask(with: urlRequest) { data, response, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                        return
+                    }
+                    guard let data, let response else {
+                        continuation.resume(throwing: QuestionExtractionError.noData)
+                        return
+                    }
+                    continuation.resume(returning: (data, response))
+                }
+                activeDataTasks[noteID] = task
+                task.resume()
+            }
         } catch {
             throw QuestionExtractionError.networkError(error)
         }
@@ -180,9 +228,15 @@ actor QuestionExtractionService {
             throw QuestionExtractionError.fileWriteError
         }
 
+        var regionData: ProblemRegionData? = nil
+        if let heights = problem.page_heights, let regions = problem.regions, !regions.isEmpty {
+            regionData = ProblemRegionData(pageHeights: heights, regions: regions)
+        }
+
         return ExtractedQuestion(
             questionNumber: problem.number,  // 1-based for display
-            pdfFileName: fileName
+            pdfFileName: fileName,
+            regionData: regionData
         )
     }
 }

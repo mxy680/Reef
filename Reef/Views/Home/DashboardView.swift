@@ -18,6 +18,25 @@ struct DashboardView: View {
     @StateObject private var statsService = StudyStatsService.shared
     @StateObject private var userPrefs = UserPreferencesManager.shared
 
+    @State private var isInitialLoad: Bool = true
+
+    private var totalCharCount: Int {
+        courses.reduce(0) { total, course in
+            total + course.notes.reduce(0) { noteTotal, note in
+                noteTotal + (note.extractedText?.count ?? 0)
+            }
+        }
+    }
+
+    private var formattedCharCount: String {
+        if totalCharCount >= 1_000_000 {
+            return String(format: "%.1fM", Double(totalCharCount) / 1_000_000)
+        } else if totalCharCount >= 1_000 {
+            return String(format: "%.1fk", Double(totalCharCount) / 1_000)
+        }
+        return "\(totalCharCount)"
+    }
+
     private var continueStudyingItem: (Note, Course)? {
         var best: (Note, Course, Date)?
         for course in courses {
@@ -34,6 +53,23 @@ struct DashboardView: View {
     }
 
     var body: some View {
+        Group {
+            if isInitialLoad {
+                skeletonView
+            } else {
+                dashboardContent
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    isInitialLoad = false
+                }
+            }
+        }
+    }
+
+    private var dashboardContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // === BENTO TOP ROW ===
@@ -64,10 +100,10 @@ struct DashboardView: View {
                             )
                         }
                         BentoStatCard(
-                            icon: "sparkles",
+                            icon: "character.cursor.ibeam",
                             iconColor: .deepTeal,
-                            value: "\(statsService.aiFeedbackCount)",
-                            label: "AI feedback",
+                            value: formattedCharCount,
+                            label: "characters",
                             colorScheme: colorScheme
                         )
                     }
@@ -103,6 +139,164 @@ struct DashboardView: View {
             .padding(32)
         }
         .background(Color.adaptiveBackground(for: colorScheme))
+    }
+    // MARK: - Skeleton
+
+    private var skeletonView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // === BENTO TOP ROW ===
+                HStack(alignment: .top, spacing: 16) {
+                    // Left: Streak hero banner placeholder
+                    ZStack {
+                        Color.adaptiveCardBackground(for: colorScheme)
+                        SkeletonShimmerView(colorScheme: colorScheme)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.black.opacity(colorScheme == .dark ? 0.35 : 0.4), lineWidth: 1.5)
+                    )
+                    .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
+
+                    // Right: 2 stat cards + 1 stat card
+                    VStack(spacing: 16) {
+                        HStack(spacing: 16) {
+                            skeletonStatCard
+                            skeletonStatCard
+                        }
+                        skeletonStatCard
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+
+                // === ACTIVITY SECTION ===
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                            .frame(width: 8, height: 8)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                            .frame(width: 70, height: 16)
+                        Spacer()
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                            .frame(width: 60, height: 14)
+                    }
+
+                    VStack(spacing: 4) {
+                        // Day letter headers
+                        HStack(spacing: 4) {
+                            ForEach(0..<7, id: \.self) { _ in
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 12)
+                            }
+                        }
+
+                        // 4 week rows
+                        ForEach(0..<4, id: \.self) { _ in
+                            HStack(spacing: 4) {
+                                ForEach(0..<7, id: \.self) { _ in
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(colorScheme == .dark
+                                            ? Color.white.opacity(0.06)
+                                            : Color.adaptiveSecondary(for: colorScheme).opacity(0.1))
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 60)
+                                }
+                            }
+                        }
+                    }
+                    .padding(14)
+                    .background(colorScheme == .dark ? Color.warmDarkCard : .white)
+                    .dashboardCard(colorScheme: colorScheme)
+                }
+
+                // === PINNED & RECENT ===
+                HStack(alignment: .top, spacing: 16) {
+                    skeletonListCard
+                    skeletonListCard
+                }
+
+                Spacer(minLength: 40)
+            }
+            .padding(32)
+        }
+        .background(Color.adaptiveBackground(for: colorScheme))
+    }
+
+    private var skeletonStatCard: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                .frame(width: 44, height: 44)
+
+            VStack(alignment: .leading, spacing: 2) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                    .frame(width: 50, height: 20)
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                    .frame(width: 70, height: 13)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(colorScheme == .dark ? Color.warmDarkCard : .white)
+        .dashboardCard(colorScheme: colorScheme)
+    }
+
+    private var skeletonListCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                    .frame(width: 8, height: 8)
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                    .frame(width: 60, height: 16)
+            }
+
+            VStack(spacing: 0) {
+                ForEach(0..<3, id: \.self) { index in
+                    HStack(spacing: 12) {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                            .frame(width: 40, height: 40)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                                .frame(width: 120, height: 14)
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                                .frame(width: 80, height: 12)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+
+                    if index < 2 {
+                        Divider()
+                            .padding(.leading, 64)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .frame(height: 210)
+            .clipped()
+            .background(Color.adaptiveCardBackground(for: colorScheme))
+            .dashboardCard(colorScheme: colorScheme, cornerRadius: 16)
+        }
     }
 }
 

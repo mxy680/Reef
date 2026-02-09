@@ -47,6 +47,7 @@ struct DrawingOverlayView: UIViewRepresentable {
     var onRedoStateChanged: (Bool) -> Void = { _ in }
     var onRecognitionResult: (RecognitionResult) -> Void = { _ in }
     var onDrawingChanged: (PKDrawing) -> Void = { _ in }
+    var onPauseDetected: ((PauseContext) -> Void)? = nil
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView(documentID: documentID, documentURL: documentURL, fileType: fileType, backgroundMode: canvasBackgroundMode, backgroundOpacity: canvasBackgroundOpacity, backgroundSpacing: canvasBackgroundSpacing, isDarkMode: isDarkMode)
@@ -57,6 +58,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.onDrawingChanged = onDrawingChanged
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.pauseSensitivity = pauseSensitivity
+        context.coordinator.onPauseDetectedCallback = onPauseDetected
 
         // Set up delegates for all page canvases after a brief delay
         let initialColor = UIColor(selectedPenColor)
@@ -97,6 +99,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.pauseSensitivity = pauseSensitivity
         context.coordinator.onRecognitionResult = onRecognitionResult
+        context.coordinator.onPauseDetectedCallback = onPauseDetected
     }
 
     private func updateTool(_ canvasView: PKCanvasView) {
@@ -161,6 +164,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         // Pause detection
         private let pauseDetector = PauseDetector()
         private var previousStrokeCount: Int = 0
+        var onPauseDetectedCallback: ((PauseContext) -> Void)?
 
         // Shape detection — prevents re-entrant callbacks when replacing a stroke
         private var isReplacingStroke: Bool = false
@@ -178,6 +182,7 @@ struct DrawingOverlayView: UIViewRepresentable {
 
         private func handlePauseDetected(_ context: PauseContext) {
             print("[PauseDetector] Pause detected: \(String(format: "%.1f", context.duration))s after \(context.strokeCount) strokes (tool: \(context.lastTool), velocity: \(String(format: "%.1f", context.lastStrokeVelocity)) pts/s)")
+            onPauseDetectedCallback?(context)
         }
 
         private func updatePauseDetectorState() {
@@ -223,7 +228,8 @@ struct DrawingOverlayView: UIViewRepresentable {
             // Detect new strokes for pause detection
             if currentStrokeCount > previousStrokeCount,
                let latestStroke = canvasView.drawing.strokes.last {
-                pauseDetector.recordStrokeCompleted(stroke: latestStroke)
+                let pageIndex = container?.pageContainers.firstIndex(where: { $0.canvasView === canvasView })
+                pauseDetector.recordStrokeCompleted(stroke: latestStroke, pageIndex: pageIndex)
             }
             previousStrokeCount = currentStrokeCount
 
@@ -583,10 +589,114 @@ class CanvasContainerView: UIView {
         print("Cleared drawing on page \(currentVisiblePage + 1)")
     }
 
-    /// Saves all drawings for all pages
+    // MARK: - PDF Export
+
+    /// Collects export data for all pages, re-rendering document pages in light mode (no dark filter).
+    @MainActor
+    func exportPageData() async -> [PDFExportService.PageExportData] {
+        // Re-render document pages in light mode for export
+        var lightImages: [UIImage] = []
+        if let url = documentURL, let fileType = fileType {
+            switch fileType {
+            case .pdf:
+                lightImages = await renderPDFPagesForExport(url: url)
+            case .image:
+                if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                    lightImages = [image]
+                }
+            case .document:
+                break
+            }
+        }
+
+        guard let structure = documentStructure else {
+            // No structure - treat each image as an original page
+            return lightImages.enumerated().map { index, image in
+                var drawing = index < pageContainers.count ? pageContainers[index].canvasView.drawing : PKDrawing()
+                if isDarkMode { drawing = PageContainerView.invertDrawingColors(drawing) }
+                return PDFExportService.PageExportData(
+                    image: image,
+                    drawing: drawing,
+                    pageSize: image.size
+                )
+            }
+        }
+
+        var exportPages: [PDFExportService.PageExportData] = []
+        for (i, page) in structure.pages.enumerated() {
+            var drawing = i < pageContainers.count ? pageContainers[i].canvasView.drawing : PKDrawing()
+            if isDarkMode { drawing = PageContainerView.invertDrawingColors(drawing) }
+            let pageSize = i < pageContainers.count
+                ? (pageContainers[i].documentImageView.image?.size ?? CGSize(width: 1224, height: 1584))
+                : CGSize(width: 1224, height: 1584)
+
+            switch page.type {
+            case .original:
+                let image: UIImage?
+                if let originalIndex = page.originalIndex, originalIndex < lightImages.count {
+                    image = lightImages[originalIndex]
+                } else {
+                    image = nil
+                }
+                exportPages.append(PDFExportService.PageExportData(image: image, drawing: drawing, pageSize: pageSize))
+            case .blank:
+                exportPages.append(PDFExportService.PageExportData(image: nil, drawing: drawing, pageSize: pageSize))
+            }
+        }
+        return exportPages
+    }
+
+    /// Renders PDF pages in light mode (never applies dark mode filter) for export.
+    private func renderPDFPagesForExport(url: URL) async -> [UIImage] {
+        guard let document = PDFDocument(url: url) else { return [] }
+
+        let pageCount = document.pageCount
+        guard pageCount > 0 else { return [] }
+
+        let renderScale: CGFloat = 2.0
+        var images: [UIImage] = []
+
+        for i in 0..<pageCount {
+            guard let page = document.page(at: i) else { continue }
+            let pageRect = page.bounds(for: .mediaBox)
+
+            let imageSize = CGSize(
+                width: pageRect.width * renderScale,
+                height: pageRect.height * renderScale
+            )
+
+            // Explicit 1x so image.size in points = pixel dimensions = canvas coordinates
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1.0
+            let renderer = UIGraphicsImageRenderer(size: imageSize, format: format)
+
+            let pageImage = renderer.image { context in
+                UIColor.white.setFill()
+                context.fill(CGRect(origin: .zero, size: imageSize))
+
+                context.cgContext.translateBy(x: 0, y: pageRect.height * renderScale)
+                context.cgContext.scaleBy(x: renderScale, y: -renderScale)
+
+                page.draw(with: .mediaBox, to: context.cgContext)
+            }
+
+            // Always light mode - never apply dark mode filter
+            images.append(pageImage)
+        }
+
+        return images
+    }
+
+    /// Saves all drawings for all pages (always in light mode colors)
     func saveAllDrawings() {
         guard let documentID = documentID else { return }
-        let drawings = pageContainers.map { $0.canvasView.drawing }
+        let drawings = pageContainers.map { container -> PKDrawing in
+            if isDarkMode {
+                // Un-invert colors back to light mode for storage
+                return PageContainerView.invertDrawingColors(container.canvasView.drawing)
+            }
+            return container.canvasView.drawing
+        }
         try? DrawingStorageService.shared.saveAllDrawings(drawings, for: documentID)
     }
 
@@ -603,12 +713,16 @@ class CanvasContainerView: UIView {
         saveAllDrawings()
     }
 
-    /// Loads drawings for all pages from storage
+    /// Loads drawings for all pages from storage (inverts if currently in dark mode)
     func loadAllDrawings() {
         guard let documentID = documentID else { return }
         let drawings = DrawingStorageService.shared.loadAllDrawings(for: documentID, pageCount: pageContainers.count)
         for (index, drawing) in drawings.enumerated() where index < pageContainers.count {
-            pageContainers[index].canvasView.drawing = drawing
+            if isDarkMode {
+                pageContainers[index].canvasView.drawing = PageContainerView.invertDrawingColors(drawing)
+            } else {
+                pageContainers[index].canvasView.drawing = drawing
+            }
         }
     }
 
@@ -1089,7 +1203,7 @@ class CanvasContainerView: UIView {
         let falseColor = CIFilter.falseColor()
         falseColor.inputImage = ciImage
         falseColor.color0 = CIColor(red: 1, green: 1, blue: 1)
-        falseColor.color1 = CIColor(red: 10/255, green: 22/255, blue: 40/255)
+        falseColor.color1 = CIColor(red: 26/255, green: 20/255, blue: 24/255)
 
         guard let outputImage = falseColor.outputImage else { return image }
 
@@ -1149,8 +1263,8 @@ class PageContainerView: UIView {
         backgroundColor = pageBg
         documentImageView.backgroundColor = pageBg
 
-        // Configure shadow
-        updateShadow(for: isDarkMode)
+        // Configure border
+        updateBorder(for: isDarkMode)
     }
 
     required init?(coder: NSCoder) {
@@ -1207,39 +1321,44 @@ class PageContainerView: UIView {
             self.documentImageView.backgroundColor = pageBg
         }
 
-        updateShadow(for: newDarkMode, animated: true)
+        updateBorder(for: newDarkMode, animated: true)
+        invertCanvasDrawingColors()
     }
 
-    private func updateShadow(for darkMode: Bool, animated: Bool = false) {
-        let shadowColor = darkMode ? UIColor(white: 0.4, alpha: 1).cgColor : UIColor.black.cgColor
-        let shadowOpacity: Float = darkMode ? 0.3 : 0.25
-        let shadowRadius: CGFloat = darkMode ? 16 : 12
+    /// Inverts stroke colors on this page's canvas for dark/light mode toggle.
+    private func invertCanvasDrawingColors() {
+        canvasView.drawing = Self.invertDrawingColors(canvasView.drawing)
+    }
+
+    /// Returns a new PKDrawing with all stroke colors inverted.
+    static func invertDrawingColors(_ drawing: PKDrawing) -> PKDrawing {
+        let invertedStrokes = drawing.strokes.map { stroke -> PKStroke in
+            var newStroke = stroke
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            stroke.ink.color.getRed(&r, green: &g, blue: &b, alpha: &a)
+            let invertedColor = UIColor(red: 1 - r, green: 1 - g, blue: 1 - b, alpha: a)
+            newStroke.ink = PKInk(stroke.ink.inkType, color: invertedColor)
+            return newStroke
+        }
+        return PKDrawing(strokes: invertedStrokes)
+    }
+
+    private func updateBorder(for darkMode: Bool, animated: Bool = false) {
+        let borderColor = darkMode
+            ? UIColor.white.withAlphaComponent(0.15).cgColor
+            : UIColor.black.withAlphaComponent(0.4).cgColor
 
         if animated {
-            let colorAnim = CABasicAnimation(keyPath: "shadowColor")
-            colorAnim.fromValue = layer.shadowColor
-            colorAnim.toValue = shadowColor
+            let colorAnim = CABasicAnimation(keyPath: "borderColor")
+            colorAnim.fromValue = layer.borderColor
+            colorAnim.toValue = borderColor
             colorAnim.duration = 0.3
-
-            let opacityAnim = CABasicAnimation(keyPath: "shadowOpacity")
-            opacityAnim.fromValue = layer.shadowOpacity
-            opacityAnim.toValue = shadowOpacity
-            opacityAnim.duration = 0.3
-
-            let radiusAnim = CABasicAnimation(keyPath: "shadowRadius")
-            radiusAnim.fromValue = layer.shadowRadius
-            radiusAnim.toValue = shadowRadius
-            radiusAnim.duration = 0.3
-
-            layer.add(colorAnim, forKey: "shadowColor")
-            layer.add(opacityAnim, forKey: "shadowOpacity")
-            layer.add(radiusAnim, forKey: "shadowRadius")
+            layer.add(colorAnim, forKey: "borderColor")
         }
 
-        layer.shadowColor = shadowColor
-        layer.shadowOpacity = shadowOpacity
-        layer.shadowOffset = CGSize(width: 0, height: 4)
-        layer.shadowRadius = shadowRadius
+        layer.borderWidth = 1.5
+        layer.borderColor = borderColor
+        layer.shadowOpacity = 0
     }
 }
 

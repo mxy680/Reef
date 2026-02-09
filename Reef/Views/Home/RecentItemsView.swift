@@ -76,11 +76,23 @@ struct RecentItemsView: View {
                             }
                         )
 
-                        if index < recentItems.count - 1 {
-                            Divider()
-                                .padding(.leading, 64)
+                        Divider()
+                            .padding(.leading, 64)
+                    }
+
+                    // Placeholder rows to fill empty slots
+                    if recentItems.count < 3 {
+                        let placeholderCount = 3 - recentItems.count
+                        ForEach(0..<placeholderCount, id: \.self) { index in
+                            RecentPlaceholderView(colorScheme: colorScheme)
+
+                            if index < placeholderCount - 1 {
+                                Divider()
+                                    .padding(.leading, 64)
+                            }
                         }
                     }
+
                     Spacer(minLength: 0)
                 }
                 .frame(height: 210)
@@ -139,6 +151,29 @@ private struct RecentRowView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Recent Placeholder View
+
+private struct RecentPlaceholderView: View {
+    let colorScheme: ColorScheme
+
+    var body: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.2))
+                .frame(width: 40, height: 40)
+
+            Text("Open a note")
+                .font(.quicksand(14, weight: .regular))
+                .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.35))
+
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 }
 

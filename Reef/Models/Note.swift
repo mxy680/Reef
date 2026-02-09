@@ -23,6 +23,7 @@ struct ExtractedQuestion: Codable, Identifiable {
     var id: UUID = UUID()
     let questionNumber: Int
     let pdfFileName: String  // Local filename for the question PDF
+    var regionData: ProblemRegionData?
 }
 
 @Model

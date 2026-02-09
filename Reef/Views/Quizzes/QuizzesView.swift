@@ -11,12 +11,62 @@ struct QuizzesView: View {
     var onGenerateQuiz: () -> Void
     @StateObject private var themeManager = ThemeManager.shared
 
+    @State private var isInitialLoad: Bool = true
+
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
     }
 
     var body: some View {
-        emptyStateView
+        Group {
+            if isInitialLoad {
+                skeletonView
+            } else {
+                emptyStateView
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    isInitialLoad = false
+                }
+            }
+        }
+    }
+
+    // MARK: - Skeleton
+
+    private var skeletonView: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<6, id: \.self) { index in
+                HStack(spacing: 12) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.adaptiveSecondaryText(for: effectiveColorScheme).opacity(0.08))
+                        .frame(width: 40, height: 40)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.adaptiveSecondaryText(for: effectiveColorScheme).opacity(0.12))
+                            .frame(width: 160, height: 14)
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.adaptiveSecondaryText(for: effectiveColorScheme).opacity(0.08))
+                            .frame(width: 100, height: 12)
+                    }
+
+                    Spacer()
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
+
+                if index < 5 {
+                    Divider()
+                        .padding(.leading, 72)
+                }
+            }
+
+            Spacer()
+        }
+        .background(Color.adaptiveBackground(for: effectiveColorScheme))
     }
 
     // MARK: - Empty State

@@ -54,6 +54,7 @@ struct NotesView: View {
     @State private var sortNewestFirst: Bool = true
     @State private var semanticSearchResults: [UUID]? = nil  // Ordered by relevance
     @State private var isSearching: Bool = false
+    @State private var isInitialLoad: Bool = true
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
@@ -95,10 +96,19 @@ struct NotesView: View {
 
     var body: some View {
         Group {
-            if notes.isEmpty {
+            if isInitialLoad {
+                skeletonGrid
+            } else if notes.isEmpty {
                 emptyStateView
             } else {
                 notesGrid
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    isInitialLoad = false
+                }
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -167,7 +177,7 @@ struct NotesView: View {
                 if filteredNotes.isEmpty && !debouncedSearchText.isEmpty {
                     noResultsView
                 } else {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 24), count: 4), spacing: 24) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 24)], spacing: 24) {
                         ForEach(filteredNotes) { note in
                             Button {
                                 note.lastOpenedAt = Date()
@@ -256,6 +266,41 @@ struct NotesView: View {
         isSearching = false
     }
 
+    // MARK: - Skeleton Grid
+
+    private var skeletonGrid: some View {
+        VStack(spacing: 0) {
+            // Skeleton filter bar matching FilterBar layout
+            HStack(spacing: 16) {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.adaptiveCardBackground(for: effectiveColorScheme))
+                    .frame(height: 48)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(effectiveColorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
+
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.deepTeal.opacity(0.5))
+                    .frame(width: 110, height: 48)
+            }
+            .padding(.horizontal, 40)
+            .padding(.top, 20)
+            .padding(.bottom, 12)
+
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 24)], spacing: 24) {
+                    ForEach(0..<12, id: \.self) { _ in
+                        SkeletonCardView(colorScheme: effectiveColorScheme)
+                    }
+                }
+                .padding(40)
+            }
+        }
+        .background(Color.adaptiveBackground(for: effectiveColorScheme))
+    }
+
     // MARK: - Actions
 
     private func deleteNote(_ note: Note) {
@@ -268,13 +313,108 @@ struct NotesView: View {
         // Delete associated drawing
         DrawingStorageService.shared.deleteDrawing(for: note.id)
 
-        // Remove from vector index
+        // Cancel any in-progress server extraction and clean up question files
         let noteId = note.id
+        Task {
+            await QuestionExtractionService.shared.cancelExtraction(for: noteId)
+        }
+        try? FileStorageService.shared.deleteQuestionSet(questionSetID: noteId)
+
+        // Remove from vector index
         Task {
             try? await RAGService.shared.deleteDocument(documentId: noteId)
         }
 
         modelContext.delete(note)
         try? modelContext.save()
+    }
+}
+
+// MARK: - Skeleton Card
+
+private struct SkeletonCardView: View {
+    let colorScheme: ColorScheme
+    @State private var shimmerOffset: CGFloat = -1
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? Color.warmDarkCard : .white
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Thumbnail area — exact match: frame(maxWidth: .infinity).aspectRatio(9/10)
+            ZStack {
+                Color.adaptiveCardBackground(for: colorScheme)
+                shimmerOverlay
+            }
+            .frame(maxWidth: .infinity)
+            .aspectRatio(9/10, contentMode: .fill)
+
+            // Separator — exact match
+            Rectangle()
+                .fill(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35))
+                .frame(height: 1)
+
+            // Footer — mirrors HStack(alignment: .bottom, spacing: 8) from DocumentGridItem
+            HStack(alignment: .bottom, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                        .frame(width: 100, height: 15) // matches quicksand(15) line height
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                        .frame(width: 70, height: 13) // matches quicksand(13) line height
+                }
+
+                Spacer()
+
+                // Placeholder for action icons (two 32x32 frames)
+                HStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.clear)
+                        .frame(width: 32, height: 32)
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.clear)
+                        .frame(width: 32, height: 32)
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(cardBackground)
+        }
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.12 : 0.06), radius: 12, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.06 : 0.03), radius: 3, x: 0, y: 1)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: false)) {
+                shimmerOffset = 1
+            }
+        }
+    }
+
+    private var shimmerOverlay: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            Color.adaptiveSecondaryText(for: colorScheme).opacity(0.06),
+                            .clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: width * 0.6)
+                .offset(x: shimmerOffset * width)
+        }
+        .clipped()
     }
 }

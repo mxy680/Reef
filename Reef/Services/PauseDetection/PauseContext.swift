@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreGraphics
 
 /// Metadata about a detected pause event
 struct PauseContext {
@@ -24,17 +25,27 @@ struct PauseContext {
     /// Average velocity of the last stroke (points per second)
     let lastStrokeVelocity: Double
 
+    /// Canvas coordinates of last stroke's final point
+    let lastStrokeEndPoint: CGPoint?
+
+    /// Which page container the stroke was on (0-indexed)
+    let lastStrokePageIndex: Int?
+
     init(
         duration: TimeInterval,
         strokeCount: Int,
         lastTool: CanvasTool,
         timestamp: Date = Date(),
-        lastStrokeVelocity: Double = 0
+        lastStrokeVelocity: Double = 0,
+        lastStrokeEndPoint: CGPoint? = nil,
+        lastStrokePageIndex: Int? = nil
     ) {
         self.duration = duration
         self.strokeCount = strokeCount
         self.lastTool = lastTool
         self.timestamp = timestamp
         self.lastStrokeVelocity = lastStrokeVelocity
+        self.lastStrokeEndPoint = lastStrokeEndPoint
+        self.lastStrokePageIndex = lastStrokePageIndex
     }
 }
