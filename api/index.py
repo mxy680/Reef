@@ -25,7 +25,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lib.mock_responses import get_mock_embedding
 import re
-from collections import defaultdict
+from collections import defaultdict, deque
+from dataclasses import dataclass
+import numpy as np
 from lib.models import EmbedRequest, EmbedResponse, ProblemGroup, GroupProblemsResponse, Question, QuestionBatch
 from lib.embedding import get_embedding_service
 from lib.question_to_latex import question_to_latex, _sanitize_text
@@ -158,6 +160,86 @@ async def ai_embed(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@dataclass
+class SyntheticBox:
+    """Mimics Surya's LayoutBox interface for injected detections."""
+    bbox: list[float]
+    label: str
+
+
+def detect_uncovered_figures(page_img: Image.Image, layout_bboxes) -> list[list[float]]:
+    """Detect visual content not covered by any Surya bounding box.
+
+    Converts the page to grayscale, masks out known bboxes and margins,
+    then finds clusters of remaining non-white pixels using a block grid + BFS.
+    Returns bounding boxes for clusters large enough to be figures.
+    """
+    BLOCK = 30
+    PADDING = 15
+    DENSITY_THRESH = 0.02
+    MIN_W, MIN_H = 80, 80
+
+    gray = np.array(page_img.convert("L"))
+    h, w = gray.shape
+
+    # Mask out all Surya-detected regions (+ padding)
+    for box in layout_bboxes:
+        bx1 = max(0, int(box.bbox[0]) - PADDING)
+        by1 = max(0, int(box.bbox[1]) - PADDING)
+        bx2 = min(w, int(box.bbox[2]) + PADDING)
+        by2 = min(h, int(box.bbox[3]) + PADDING)
+        gray[by1:by2, bx1:bx2] = 255
+
+    # Blank page margins (top/bottom 4%, left/right 3%)
+    margin_tb = int(h * 0.04)
+    margin_lr = int(w * 0.03)
+    gray[:margin_tb, :] = 255
+    gray[h - margin_tb:, :] = 255
+    gray[:, :margin_lr] = 255
+    gray[:, w - margin_lr:] = 255
+
+    # Compute block density grid
+    rows = h // BLOCK
+    cols = w // BLOCK
+    active = np.zeros((rows, cols), dtype=bool)
+    for r in range(rows):
+        for c in range(cols):
+            patch = gray[r * BLOCK:(r + 1) * BLOCK, c * BLOCK:(c + 1) * BLOCK]
+            density = np.mean(patch < 230)
+            if density > DENSITY_THRESH:
+                active[r, c] = True
+
+    # BFS connected components on active blocks
+    visited = np.zeros_like(active)
+    results: list[list[float]] = []
+    for r in range(rows):
+        for c in range(cols):
+            if active[r, c] and not visited[r, c]:
+                queue = deque([(r, c)])
+                visited[r, c] = True
+                min_r, max_r, min_c, max_c = r, r, c, c
+                while queue:
+                    cr, cc = queue.popleft()
+                    min_r = min(min_r, cr)
+                    max_r = max(max_r, cr)
+                    min_c = min(min_c, cc)
+                    max_c = max(max_c, cc)
+                    for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                        nr, nc = cr + dr, cc + dc
+                        if 0 <= nr < rows and 0 <= nc < cols and active[nr, nc] and not visited[nr, nc]:
+                            visited[nr, nc] = True
+                            queue.append((nr, nc))
+                # Convert block coords back to pixel coords
+                x1 = min_c * BLOCK
+                y1 = min_r * BLOCK
+                x2 = (max_c + 1) * BLOCK
+                y2 = (max_r + 1) * BLOCK
+                if (x2 - x1) >= MIN_W and (y2 - y1) >= MIN_H:
+                    results.append([float(x1), float(y1), float(x2), float(y2)])
+
+    return results
 
 
 def annotate_page(img: Image.Image, layout_result, scale: int = 2, start_index: int = 1) -> tuple[Image.Image, int]:
@@ -531,11 +613,11 @@ async def ai_reconstruct(
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         num_pages = len(doc)
 
-        # Render pages at 192 DPI for Surya layout detection (highres triggers
+        # Render pages at 288 DPI for Surya layout detection (highres triggers
         # image slicing for better detection of sparse text blocks)
-        SURYA_DPI = 192
-        CROP_DPI = 288  # high-res for readable crops
-        crop_scale = CROP_DPI / SURYA_DPI  # = 3.0
+        SURYA_DPI = 288
+        CROP_DPI = 384  # high-res for readable crops
+        crop_scale = CROP_DPI / SURYA_DPI
 
         surya_images = []
         hires_images = []
@@ -543,18 +625,25 @@ async def ai_reconstruct(
         hires_mat = fitz.Matrix(CROP_DPI/72, CROP_DPI/72)
         for page_num in range(num_pages):
             pdf_page = doc[page_num]
-            # 96 DPI for Surya
+            # 288 DPI for Surya
             pix = pdf_page.get_pixmap(matrix=surya_mat)
             surya_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
-            # 288 DPI for cropping
+            # 384 DPI for cropping
             pix = pdf_page.get_pixmap(matrix=hires_mat)
             hires_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
         doc.close()
 
-        # Run Surya layout detection on 96 DPI images (serialized via lock)
+        # Run Surya layout detection on 288 DPI images (serialized via lock)
         layout_predictor = get_layout_predictor()
         async with _layout_lock:
             layout_results = await asyncio.to_thread(layout_predictor, surya_images)
+
+        # Detect figures missed by Surya (pixel-based gap detection)
+        for page_idx, (img, layout_result) in enumerate(zip(surya_images, layout_results)):
+            uncovered = detect_uncovered_figures(img, layout_result.bboxes)
+            for bbox in uncovered:
+                layout_result.bboxes.append(SyntheticBox(bbox=bbox, label="Picture"))
+                print(f"  [reconstruct] Detected uncovered figure on page {page_idx+1}: {bbox}")
 
         # Annotate each page with continuous indexing
         annotated_pages = []
