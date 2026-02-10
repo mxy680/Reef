@@ -39,6 +39,7 @@ struct AssignmentView: View {
     var onRedoStateChanged: (Bool) -> Void = { _ in }
 
     @StateObject private var tutoringService = TutoringWebSocketService()
+    @StateObject private var audioPlayer = TutorAudioPlayer()
 
     private var questions: [ExtractedQuestion] {
         note.extractedQuestions
@@ -93,7 +94,6 @@ struct AssignmentView: View {
                         isRulerActive: isRulerActive,
                         textSize: textSize,
                         textColor: textColor,
-                        tutoringService: tutoringService,
                         questionContext: currentQuestion.map { q in
                             StrokeStreamManager.QuestionContext(
                                 questionIndex: currentIndex,
@@ -105,6 +105,7 @@ struct AssignmentView: View {
                         onUndoStateChanged: onUndoStateChanged,
                         onRedoStateChanged: onRedoStateChanged,
                         onPauseDetected: onPauseDetected,
+                        tutoringService: tutoringService,
                         onSwipeLeft: onNextQuestion,
                         onSwipeRight: onPreviousQuestion
                     )
@@ -126,20 +127,41 @@ struct AssignmentView: View {
         }
         .onAppear {
             setupTutoringCallbacks()
-            tutoringService.connect()
+            startTutoringSession()
         }
         .onDisappear {
+            tutoringService.endSession()
             tutoringService.disconnect()
+            audioPlayer.cancelAll()
         }
         .onChange(of: currentIndex) { _ in
-            tutoringService.disconnect()
-            tutoringService.connect()
+            audioPlayer.cancelAll()
+            tutoringService.endSession()
+            startTutoringSession()
         }
+    }
+
+    private func startTutoringSession() {
+        guard let question = currentQuestion else { return }
+        tutoringService.startSession(
+            problemId: "\(note.id.uuidString)-q\(currentIndex)",
+            questionNumber: question.questionNumber,
+            problemText: "", // Problem text not stored on ExtractedQuestion — server uses transcript
+            problemParts: [],
+            courseName: note.course?.name ?? ""
+        )
     }
 
     private func setupTutoringCallbacks() {
         tutoringService.onTranscriptionComplete = { text, batchIndex in
             print("[Tutor] Transcription (batch #\(batchIndex)): \(text)")
+        }
+        tutoringService.onTutorAudio = { [audioPlayer] audioData, text, status, confidence in
+            print("[Tutor] Audio feedback (\(status), \(confidence)): \(text)")
+            audioPlayer.enqueue(audioData: audioData, text: text)
+        }
+        tutoringService.onTutorFeedback = { text, status, confidence in
+            print("[Tutor] Text feedback (\(status), \(confidence)): \(text)")
         }
     }
 }

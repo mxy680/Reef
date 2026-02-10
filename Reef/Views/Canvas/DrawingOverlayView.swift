@@ -198,8 +198,8 @@ struct DrawingOverlayView: UIViewRepresentable {
         var currentPenWidth: CGFloat = 4.0
         var diagramAutosnap: Bool = true
 
-        // Pause detection (disabled — stroke stream handles batching now)
-        // private let pauseDetector = PauseDetector()
+        // Pause detection — fires pause messages for AI tutoring reasoning triggers
+        private let pauseDetector = PauseDetector()
         private var previousStrokeCount: Int = 0
         var onPauseDetectedCallback: ((PauseContext) -> Void)?
 
@@ -225,7 +225,7 @@ struct DrawingOverlayView: UIViewRepresentable {
                         location += " part \(sub)"
                     }
                 }
-                print("[StrokeStream] 📸 Sending screenshot: \(payload.strokeCount) strokes, \(imageData.count) bytes\(location)")
+                print("[StrokeStream] Sending screenshot: \(payload.strokeCount) strokes, \(imageData.count) bytes\(location)")
                 self?.tutoringService?.sendScreenshot(
                     imageData: imageData,
                     batchIndex: payload.batchIndex,
@@ -234,6 +234,17 @@ struct DrawingOverlayView: UIViewRepresentable {
                 )
             }
             strokeStreamManager.start()
+
+            // Wire PauseDetector to send pause messages via WebSocket
+            pauseDetector.onPauseDetected = { [weak self] context in
+                self?.handlePauseDetected(context)
+                self?.tutoringService?.sendPause(
+                    duration: context.duration,
+                    strokeCount: context.strokeCount,
+                    questionNumber: self?.strokeStreamManager.currentQuestionNumber,
+                    subquestion: nil
+                )
+            }
         }
 
         private func handlePauseDetected(_ context: PauseContext) {
@@ -281,6 +292,7 @@ struct DrawingOverlayView: UIViewRepresentable {
                let latestStroke = canvasView.drawing.strokes.last {
                 let pageIndex = container?.pageContainers.firstIndex(where: { $0.canvasView === canvasView })
                 strokeStreamManager.recordStroke(latestStroke, pageIndex: pageIndex)
+                pauseDetector.recordStrokeCompleted(stroke: latestStroke, pageIndex: pageIndex)
             }
             previousStrokeCount = currentStrokeCount
 

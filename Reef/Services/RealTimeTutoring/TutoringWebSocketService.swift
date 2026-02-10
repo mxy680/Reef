@@ -2,8 +2,9 @@
 //  TutoringWebSocketService.swift
 //  Reef
 //
-//  WebSocket client for streaming handwriting screenshots to the server
-//  and receiving real-time transcriptions back.
+//  WebSocket client for the real-time AI tutoring pipeline.
+//  Handles session lifecycle, screenshot streaming, pause/help signals,
+//  and receiving transcription, feedback, and audio responses.
 //
 
 import Foundation
@@ -14,11 +15,16 @@ final class TutoringWebSocketService: ObservableObject {
     private let session = URLSession(configuration: .default)
     private let baseURL = "wss://api.studyreef.com"
 
-    /// Called for each streaming text chunk: (text, batchIndex)
-    var onTranscriptionDelta: ((String, Int) -> Void)?
+    // MARK: - Callbacks
 
-    /// Called when full transcription is available: (fullText, batchIndex)
+    /// Called when a transcription arrives: (deltaLatex, fullLatex, batchIndex)
     var onTranscriptionComplete: ((String, Int) -> Void)?
+
+    /// Called when tutor audio arrives: (audioData, text, status, confidence)
+    var onTutorAudio: ((Data, String, String, Double) -> Void)?
+
+    /// Called when text-only feedback arrives: (text, status, confidence)
+    var onTutorFeedback: ((String, String, Double) -> Void)?
 
     // MARK: - Connection
 
@@ -41,7 +47,36 @@ final class TutoringWebSocketService: ObservableObject {
         webSocketTask = nil
     }
 
-    // MARK: - Send
+    // MARK: - Session Lifecycle
+
+    func startSession(
+        problemId: String,
+        questionNumber: Int,
+        problemText: String,
+        problemParts: [[String: String]],
+        courseName: String
+    ) {
+        ensureConnected()
+
+        let payload: [String: Any] = [
+            "type": "session_start",
+            "problem_id": problemId,
+            "question_number": questionNumber,
+            "problem_text": problemText,
+            "problem_parts": problemParts,
+            "course_name": courseName,
+        ]
+        sendJSON(payload)
+        print("[Tutor WS] Session started: Q\(questionNumber)")
+    }
+
+    func endSession() {
+        let payload: [String: Any] = ["type": "session_end"]
+        sendJSON(payload)
+        print("[Tutor WS] Session ended")
+    }
+
+    // MARK: - Send Messages
 
     func sendScreenshot(
         imageData: Data,
@@ -49,7 +84,7 @@ final class TutoringWebSocketService: ObservableObject {
         questionNumber: Int?,
         subquestion: String?
     ) {
-        guard let task = webSocketTask else { return }
+        ensureConnected()
 
         let payload: [String: Any] = [
             "type": "screenshot",
@@ -58,10 +93,44 @@ final class TutoringWebSocketService: ObservableObject {
             "question_number": questionNumber as Any,
             "subquestion": subquestion as Any,
         ]
+        sendJSON(payload)
+    }
+
+    func sendPause(duration: TimeInterval, strokeCount: Int, questionNumber: Int?, subquestion: String?) {
+        let payload: [String: Any] = [
+            "type": "pause",
+            "duration": duration,
+            "stroke_count": strokeCount,
+            "question_number": questionNumber as Any,
+            "subquestion": subquestion as Any,
+        ]
+        sendJSON(payload)
+    }
+
+    func sendHelp(questionNumber: Int?, subquestion: String?) {
+        let payload: [String: Any] = [
+            "type": "help",
+            "question_number": questionNumber as Any,
+            "subquestion": subquestion as Any,
+        ]
+        sendJSON(payload)
+        print("[Tutor WS] Help requested")
+    }
+
+    // MARK: - Private Helpers
+
+    private func ensureConnected() {
+        if webSocketTask == nil {
+            connect()
+        }
+    }
+
+    private func sendJSON(_ payload: [String: Any]) {
+        guard let task = webSocketTask else { return }
 
         guard let jsonData = try? JSONSerialization.data(withJSONObject: payload),
               let jsonString = String(data: jsonData, encoding: .utf8) else {
-            print("[Tutor WS] Failed to encode screenshot message")
+            print("[Tutor WS] Failed to encode message")
             return
         }
 
@@ -82,7 +151,7 @@ final class TutoringWebSocketService: ObservableObject {
                 switch result {
                 case .success(let message):
                     self.handleMessage(message)
-                    self.receiveMessages() // Continue listening
+                    self.receiveMessages()
                 case .failure(let error):
                     print("[Tutor WS] Receive error: \(error.localizedDescription)")
                 }
@@ -98,20 +167,34 @@ final class TutoringWebSocketService: ObservableObject {
             return
         }
 
-        let batchIndex = json["batch_index"] as? Int ?? 0
-
         switch type {
-        case "transcription_delta":
-            if let deltaText = json["text"] as? String {
-                onTranscriptionDelta?(deltaText, batchIndex)
+        case "transcription":
+            let batchIndex = json["batch_index"] as? Int ?? 0
+            if let deltaLatex = json["delta_latex"] as? String {
+                onTranscriptionComplete?(deltaLatex, batchIndex)
             }
-        case "transcription_complete":
-            if let fullText = json["text"] as? String {
-                onTranscriptionComplete?(fullText, batchIndex)
+
+        case "tutor_audio":
+            if let audioB64 = json["audio_b64"] as? String,
+               let audioData = Data(base64Encoded: audioB64),
+               let feedbackText = json["text"] as? String,
+               let status = json["status"] as? String {
+                let confidence = json["confidence"] as? Double ?? 0.0
+                onTutorAudio?(audioData, feedbackText, status, confidence)
             }
+
+        case "tutor_feedback":
+            if let feedbackText = json["text"] as? String,
+               let status = json["status"] as? String {
+                let confidence = json["confidence"] as? Double ?? 0.0
+                onTutorFeedback?(feedbackText, status, confidence)
+            }
+
         case "error":
+            let batchIndex = json["batch_index"] as? Int
             let errorMsg = json["message"] as? String ?? "Unknown error"
-            print("[Tutor WS] Server error (batch \(batchIndex)): \(errorMsg)")
+            print("[Tutor WS] Server error\(batchIndex.map { " (batch \($0))" } ?? ""): \(errorMsg)")
+
         default:
             break
         }

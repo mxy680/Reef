@@ -49,6 +49,11 @@ final class StrokeStreamManager {
     /// Current question context (set in assignment mode)
     private var questionContext: QuestionContext?
 
+    /// The current question number, if in assignment mode.
+    var currentQuestionNumber: Int? {
+        questionContext?.questionNumber
+    }
+
     // MARK: - Callbacks
 
     /// Called when a batch is ready for API submission
