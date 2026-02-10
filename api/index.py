@@ -33,6 +33,7 @@ from lib.embedding import get_embedding_service
 from lib.question_to_latex import question_to_latex, _sanitize_text
 from lib.database import init_db, close_db
 from api.users import router as users_router
+from api.tutoring import router as tutoring_router
 
 # Surya imports
 from surya.foundation import FoundationPredictor
@@ -95,6 +96,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(users_router)
+app.include_router(tutoring_router)
 
 
 @app.get("/health")

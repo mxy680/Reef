@@ -111,3 +111,32 @@ class LLMClient:
 
         response = self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
+
+    def generate_stream(
+        self,
+        prompt: str,
+        images: list[bytes] | None = None,
+        temperature: float | None = None,
+    ):
+        """Yield text chunks as they arrive from the model."""
+        content: list[dict] = [{"type": "text", "text": prompt}]
+        if images:
+            for img_bytes in images:
+                b64 = base64.b64encode(img_bytes).decode()
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+                })
+
+        kwargs: dict = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": content}],
+            "stream": True,
+        }
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+
+        stream = self.client.chat.completions.create(**kwargs)
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
