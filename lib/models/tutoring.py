@@ -65,6 +65,7 @@ class TranscriptionResponse(BaseModel):
 
     delta_latex: str
     should_check: bool
+    corrected_transcript: str | None = None  # set when erasures detected
 
 
 class ReasoningResponse(BaseModel):

@@ -51,6 +51,7 @@ async def _tier1_transcribe(
     session: TutoringSession,
     image_bytes: bytes,
     batch_index: int,
+    has_erasures: bool = False,
 ) -> TranscriptionResponse:
     """Run Tier 1 transcription on a screenshot. Returns structured response."""
     prompt = build_transcription_prompt(
@@ -58,6 +59,7 @@ async def _tier1_transcribe(
         problem_text=session.problem_text,
         course_name=session.course_name,
         batches_since_check=session.batches_since_reasoning,
+        has_erasures=has_erasures,
     )
 
     raw = await asyncio.to_thread(
@@ -75,7 +77,14 @@ async def _tier1_transcribe(
         cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
         result = TranscriptionResponse.model_validate_json(cleaned)
 
-    session.append_transcript(batch_index, result.delta_latex)
+    # Handle erasure corrections: replace full transcript instead of appending
+    if result.corrected_transcript is not None:
+        session.full_transcript = result.corrected_transcript
+        session.batches_since_reasoning += 1
+        session.last_activity = time.time()
+    else:
+        session.append_transcript(batch_index, result.delta_latex)
+
     return result
 
 
@@ -262,17 +271,20 @@ async def tutor_websocket(websocket: WebSocket):
                 image_b64 = msg.get("image", "")
                 image_bytes = base64.b64decode(image_b64)
                 subquestion = msg.get("subquestion")
+                has_erasures = msg.get("has_erasures", False)
 
                 print(
                     f"[Tutor WS] Screenshot: batch={batch_index}, "
                     f"q={msg.get('question_number')}, "
+                    f"has_erasures={has_erasures}, "
                     f"size={len(image_bytes)} bytes"
                 )
 
                 # Tier 1: Transcription (structured output)
                 try:
                     result = await _tier1_transcribe(
-                        transcription_client, session, image_bytes, batch_index
+                        transcription_client, session, image_bytes, batch_index,
+                        has_erasures=has_erasures,
                     )
                     await websocket.send_json({
                         "type": "transcription",
