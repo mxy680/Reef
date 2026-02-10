@@ -74,6 +74,7 @@ class LLMClient:
         images: list[bytes] | None = None,
         temperature: float | None = None,
         response_schema: dict | None = None,
+        system_message: str | None = None,
     ) -> str:
         """
         Generate text response, optionally with images.
@@ -83,6 +84,7 @@ class LLMClient:
             images: Optional list of JPEG image bytes to include.
             temperature: Sampling temperature.
             response_schema: Optional JSON schema for structured output.
+            system_message: Optional system prompt prepended to messages.
 
         Returns:
             Generated text response.
@@ -97,9 +99,14 @@ class LLMClient:
                     "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
                 })
 
+        messages: list[dict] = []
+        if system_message:
+            messages.append({"role": "system", "content": system_message})
+        messages.append({"role": "user", "content": content})
+
         kwargs: dict = {
             "model": self.model,
-            "messages": [{"role": "user", "content": content}],
+            "messages": messages,
         }
         if temperature is not None:
             kwargs["temperature"] = temperature
@@ -117,6 +124,7 @@ class LLMClient:
         prompt: str,
         images: list[bytes] | None = None,
         temperature: float | None = None,
+        system_message: str | None = None,
     ):
         """Yield text chunks as they arrive from the model."""
         content: list[dict] = [{"type": "text", "text": prompt}]
@@ -128,9 +136,14 @@ class LLMClient:
                     "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
                 })
 
+        messages: list[dict] = []
+        if system_message:
+            messages.append({"role": "system", "content": system_message})
+        messages.append({"role": "user", "content": content})
+
         kwargs: dict = {
             "model": self.model,
-            "messages": [{"role": "user", "content": content}],
+            "messages": messages,
             "stream": True,
         }
         if temperature is not None:
