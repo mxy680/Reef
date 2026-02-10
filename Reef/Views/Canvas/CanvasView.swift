@@ -35,6 +35,17 @@ struct CanvasView: View {
     // Reference to canvas
     @State private var canvasViewRef: CanvasContainerView?
 
+    // Ruler state
+    @State private var isRulerActive: Bool = false
+
+    // Text box state
+    @State private var textSize: CGFloat = 16
+    @State private var textColor: Color = .black
+
+    // Undo/redo state
+    @State private var canUndo: Bool = false
+    @State private var canRedo: Bool = false
+
     // Drawing persistence
     @State private var saveTask: Task<Void, Never>?
 
@@ -46,6 +57,7 @@ struct CanvasView: View {
     // Assignment mode state
     @State private var viewMode: CanvasViewMode = .document
     @State private var currentQuestionIndex: Int = 0
+    @State private var showTutorSidebar: Bool = false
 
     // Tutor detection
     @StateObject private var tutorDetection = TutorDetectionState()
@@ -73,74 +85,8 @@ struct CanvasView: View {
 
     var body: some View {
         ZStack {
-            // Content view - switches between document and assignment view
-            if viewMode == .assignment && isAssignmentEnabled {
-                // Assignment mode view
-                AssignmentView(
-                    note: note,
-                    currentIndex: currentQuestionIndex,
-                    selectedTool: $selectedTool,
-                    selectedPenColor: $selectedPenColor,
-                    selectedHighlighterColor: $selectedHighlighterColor,
-                    penWidth: $penWidth,
-                    highlighterWidth: $highlighterWidth,
-                    eraserSize: $eraserSize,
-                    eraserType: $eraserType,
-                    diagramWidth: $diagramWidth,
-                    diagramAutosnap: $diagramAutosnap,
-                    canvasBackgroundMode: canvasBackgroundMode,
-                    canvasBackgroundOpacity: canvasBackgroundOpacity,
-                    canvasBackgroundSpacing: canvasBackgroundSpacing,
-                    isDarkMode: themeManager.isDarkMode,
-                    onPreviousQuestion: {
-                        if currentQuestionIndex > 0 {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                currentQuestionIndex -= 1
-                            }
-                        }
-                    },
-                    onNextQuestion: {
-                        if currentQuestionIndex < totalQuestions - 1 {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                currentQuestionIndex += 1
-                            }
-                        }
-                    },
-                    onCanvasReady: { container in
-                        canvasViewRef = container
-                    },
-                    onPauseDetected: { context in
-                        handlePauseDetected(context)
-                    }
-                )
-            } else {
-                // Document view (default)
-                DrawingOverlayView(
-                    documentID: note.id,
-                    documentURL: fileURL,
-                    fileType: note.fileType,
-                    selectedTool: $selectedTool,
-                    selectedPenColor: $selectedPenColor,
-                    selectedHighlighterColor: $selectedHighlighterColor,
-                    penWidth: $penWidth,
-                    highlighterWidth: $highlighterWidth,
-                    eraserSize: $eraserSize,
-                    eraserType: $eraserType,
-                    diagramWidth: $diagramWidth,
-                    diagramAutosnap: $diagramAutosnap,
-                    canvasBackgroundMode: canvasBackgroundMode,
-                    canvasBackgroundOpacity: canvasBackgroundOpacity,
-                    canvasBackgroundSpacing: canvasBackgroundSpacing,
-                    isDarkMode: themeManager.isDarkMode,
-                    onCanvasReady: { container in
-                        canvasViewRef = container
-                    }
-                )
-            }
-
-            // Floating toolbar at bottom
-            VStack {
-                Spacer()
+            VStack(spacing: 0) {
+                // Top toolbar
                 CanvasToolbar(
                     selectedTool: $selectedTool,
                     selectedPenColor: $selectedPenColor,
@@ -159,19 +105,15 @@ struct CanvasView: View {
                     colorScheme: effectiveColorScheme,
                     onHomePressed: {
                         if let onDismiss = onDismiss {
-                            // Use parent-controlled animation
                             onDismiss()
                         } else {
-                            // Fallback for navigation-based usage
                             dismiss()
                         }
                     },
-                    onAIPressed: { /* TODO: Implement AI assistant */ },
                     onToggleDarkMode: {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             themeManager.toggle()
                         }
-                        // Update pen color to match new theme
                         selectedPenColor = themeManager.isDarkMode ? .white : .black
                     },
                     isDocumentAIReady: note.isAIReady,
@@ -184,10 +126,18 @@ struct CanvasView: View {
                     onDeleteCurrentPage: {
                         canvasViewRef?.deleteCurrentPage()
                     },
+                    onDeleteLastPage: {
+                        canvasViewRef?.deleteLastPage()
+                    },
                     onClearCurrentPage: {
                         canvasViewRef?.clearCurrentPage()
                     },
                     onExportPDF: { exportPDF() },
+                    pageCount: canvasViewRef?.pageContainers.count ?? 1,
+                    canUndo: canUndo,
+                    canRedo: canRedo,
+                    onUndo: { canvasViewRef?.performUndo() },
+                    onRedo: { canvasViewRef?.performRedo() },
                     isAssignmentEnabled: isAssignmentEnabled,
                     viewMode: $viewMode,
                     currentQuestionIndex: currentQuestionIndex,
@@ -206,9 +156,99 @@ struct CanvasView: View {
                             }
                         }
                     },
-                    isAssignmentProcessing: note.isAssignmentProcessing
+                    onJumpToQuestion: { index in
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            currentQuestionIndex = index
+                        }
+                    },
+                    isAssignmentProcessing: note.isAssignmentProcessing,
+                    isTutorSidebarVisible: showTutorSidebar,
+                    onToggleTutorSidebar: {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            showTutorSidebar.toggle()
+                        }
+                    },
+                    isRulerActive: isRulerActive,
+                    onToggleRuler: { isRulerActive.toggle() },
+                    onAutoZoom: { canvasViewRef?.fitToWidth() },
+                    textSize: $textSize,
+                    textColor: $textColor
                 )
-                .padding(.bottom, 24)
+
+                // Content view - switches between document and assignment view
+                if viewMode == .assignment && isAssignmentEnabled {
+                    // Assignment mode view
+                    AssignmentView(
+                        note: note,
+                        currentIndex: currentQuestionIndex,
+                        selectedTool: $selectedTool,
+                        selectedPenColor: $selectedPenColor,
+                        selectedHighlighterColor: $selectedHighlighterColor,
+                        penWidth: $penWidth,
+                        highlighterWidth: $highlighterWidth,
+                        eraserSize: $eraserSize,
+                        eraserType: $eraserType,
+                        diagramWidth: $diagramWidth,
+                        diagramAutosnap: $diagramAutosnap,
+                        canvasBackgroundMode: canvasBackgroundMode,
+                        canvasBackgroundOpacity: canvasBackgroundOpacity,
+                        canvasBackgroundSpacing: canvasBackgroundSpacing,
+                        isDarkMode: themeManager.isDarkMode,
+                        isRulerActive: isRulerActive,
+                        textSize: textSize,
+                        textColor: UIColor(textColor),
+                        onPreviousQuestion: {
+                            if currentQuestionIndex > 0 {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    currentQuestionIndex -= 1
+                                }
+                            }
+                        },
+                        onNextQuestion: {
+                            if currentQuestionIndex < totalQuestions - 1 {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    currentQuestionIndex += 1
+                                }
+                            }
+                        },
+                        onCanvasReady: { container in
+                            canvasViewRef = container
+                        },
+                        onPauseDetected: { context in
+                            handlePauseDetected(context)
+                        },
+                        onUndoStateChanged: { canUndo = $0 },
+                        onRedoStateChanged: { canRedo = $0 }
+                    )
+                } else {
+                    // Document view (default)
+                    DrawingOverlayView(
+                        documentID: note.id,
+                        documentURL: fileURL,
+                        fileType: note.fileType,
+                        selectedTool: $selectedTool,
+                        selectedPenColor: $selectedPenColor,
+                        selectedHighlighterColor: $selectedHighlighterColor,
+                        penWidth: $penWidth,
+                        highlighterWidth: $highlighterWidth,
+                        eraserSize: $eraserSize,
+                        eraserType: $eraserType,
+                        diagramWidth: $diagramWidth,
+                        diagramAutosnap: $diagramAutosnap,
+                        canvasBackgroundMode: canvasBackgroundMode,
+                        canvasBackgroundOpacity: canvasBackgroundOpacity,
+                        canvasBackgroundSpacing: canvasBackgroundSpacing,
+                        isDarkMode: themeManager.isDarkMode,
+                        isRulerActive: isRulerActive,
+                        textSize: textSize,
+                        textColor: UIColor(textColor),
+                        onCanvasReady: { container in
+                            canvasViewRef = container
+                        },
+                        onUndoStateChanged: { canUndo = $0 },
+                        onRedoStateChanged: { canRedo = $0 }
+                    )
+                }
             }
 
             // Export loading overlay
@@ -248,7 +288,7 @@ struct CanvasView: View {
                 PDFExportPreview(url: url, colorScheme: effectiveColorScheme)
             }
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(edges: .bottom)
         .background(themeManager.isDarkMode ? Color.warmDark : Color.blushWhite)
         .preferredColorScheme(effectiveColorScheme)
         .navigationBarHidden(true)

@@ -17,6 +17,7 @@ enum PDFExportService {
         let image: UIImage?
         let drawing: PKDrawing
         let pageSize: CGSize
+        var textBoxes: [TextBoxData] = []
     }
 
     enum ExportError: Error, LocalizedError {
@@ -75,6 +76,22 @@ enum PDFExportService {
                         drawingImage = page.drawing.image(from: canvasRect, scale: 1.0)
                     }
                     drawingImage.draw(in: pageRect)
+                }
+
+                // Layer 4: Text boxes — render at PDF scale (canvas coords / 2)
+                if !page.textBoxes.isEmpty {
+                    let scale: CGFloat = 0.5  // canvas 2x → PDF 1x
+                    for textBox in page.textBoxes where !textBox.text.isEmpty {
+                        let attributes: [NSAttributedString.Key: Any] = [
+                            .font: UIFont.systemFont(ofSize: textBox.fontSize * scale),
+                            .foregroundColor: textBox.uiColor
+                        ]
+                        let attrString = NSAttributedString(string: textBox.text, attributes: attributes)
+                        let drawPoint = CGPoint(x: textBox.x * scale, y: textBox.y * scale)
+                        let drawWidth = textBox.width * scale
+                        let drawRect = CGRect(x: drawPoint.x, y: drawPoint.y, width: drawWidth, height: pdfPageSize.height - drawPoint.y)
+                        attrString.draw(with: drawRect, options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+                    }
                 }
             }
         }

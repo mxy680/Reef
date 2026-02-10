@@ -40,6 +40,9 @@ struct DrawingOverlayView: UIViewRepresentable {
     var canvasBackgroundOpacity: CGFloat = 0.15
     var canvasBackgroundSpacing: CGFloat = 48
     var isDarkMode: Bool = false
+    var isRulerActive: Bool = false
+    var textSize: CGFloat = 16
+    var textColor: UIColor = .black
     var recognitionEnabled: Bool = false
     var pauseSensitivity: Double = 0.5
     var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
@@ -48,6 +51,8 @@ struct DrawingOverlayView: UIViewRepresentable {
     var onRecognitionResult: (RecognitionResult) -> Void = { _ in }
     var onDrawingChanged: (PKDrawing) -> Void = { _ in }
     var onPauseDetected: ((PauseContext) -> Void)? = nil
+    var onSwipeLeft: (() -> Void)? = nil
+    var onSwipeRight: (() -> Void)? = nil
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView(documentID: documentID, documentURL: documentURL, fileType: fileType, backgroundMode: canvasBackgroundMode, backgroundOpacity: canvasBackgroundOpacity, backgroundSpacing: canvasBackgroundSpacing, isDarkMode: isDarkMode)
@@ -59,6 +64,8 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.pauseSensitivity = pauseSensitivity
         context.coordinator.onPauseDetectedCallback = onPauseDetected
+        container.onSwipeLeft = onSwipeLeft
+        container.onSwipeRight = onSwipeRight
 
         // Set up delegates for all page canvases after a brief delay
         let initialColor = UIColor(selectedPenColor)
@@ -82,14 +89,27 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.diagramAutosnap = diagramAutosnap
 
         // Update tool for all page canvases
+        let isEraserTool = selectedTool == .eraser
         for pageContainer in container.pageContainers {
             // Set delegate if not already set (for newly added pages)
             if pageContainer.canvasView.delegate == nil {
                 pageContainer.canvasView.delegate = context.coordinator
             }
             updateTool(pageContainer.canvasView)
+            pageContainer.canvasView.isRulerActive = isRulerActive
+            pageContainer.textBoxContainerView.isTextBoxToolActive = (selectedTool == .textBox)
+            pageContainer.textBoxContainerView.currentFontSize = textSize
+            pageContainer.textBoxContainerView.currentTextColor = textColor
+
+            // Eraser cursor state
+            pageContainer.canvasView.isEraserActive = isEraserTool
+            if isEraserTool {
+                pageContainer.canvasView.eraserCursorSize = eraserSize
+            }
         }
 
+        container.onSwipeLeft = onSwipeLeft
+        container.onSwipeRight = onSwipeRight
         container.updateDarkMode(isDarkMode)
         container.updateBackgroundMode(canvasBackgroundMode)
         container.updateBackgroundOpacity(canvasBackgroundOpacity)
@@ -108,21 +128,29 @@ struct DrawingOverlayView: UIViewRepresentable {
             // Convert SwiftUI Color to UIColor using explicit RGB to avoid color scheme adaptation
             let uiColor = uiColorFromSwiftUIColor(selectedPenColor)
             canvasView.tool = PKInkingTool(.pen, color: uiColor, width: penWidth)
+            canvasView.isUserInteractionEnabled = true
         case .highlighter:
             let uiColor = UIColor(selectedHighlighterColor).withAlphaComponent(0.3)
             canvasView.tool = PKInkingTool(.marker, color: uiColor, width: highlighterWidth * 3)
+            canvasView.isUserInteractionEnabled = true
         case .eraser:
             switch eraserType {
             case .stroke:
-                canvasView.tool = PKEraserTool(.vector)
+                canvasView.tool = PKEraserTool(.vector, width: eraserSize)
             case .bitmap:
                 canvasView.tool = PKEraserTool(.bitmap, width: eraserSize)
             }
+            canvasView.isUserInteractionEnabled = true
         case .lasso:
             canvasView.tool = PKLassoTool()
+            canvasView.isUserInteractionEnabled = true
         case .diagram:
             let uiColor = uiColorFromSwiftUIColor(selectedPenColor)
             canvasView.tool = PKInkingTool(.pen, color: uiColor, width: diagramWidth)
+            canvasView.isUserInteractionEnabled = true
+        case .textBox:
+            // Disable PencilKit drawing — text overlay handles input
+            canvasView.isUserInteractionEnabled = false
         }
     }
 
@@ -295,6 +323,10 @@ class CanvasContainerView: UIView {
     private var isDarkMode: Bool = false
     private var originalPageImages: [UIImage] = []
 
+    /// Swipe navigation callbacks (for assignment mode question switching)
+    var onSwipeLeft: (() -> Void)?
+    var onSwipeRight: (() -> Void)?
+
     /// Blush White (#F9F5F6) background for scroll view in light mode
     private static let scrollBackgroundLight = UIColor(red: 249/255, green: 245/255, blue: 246/255, alpha: 1)
 
@@ -384,6 +416,41 @@ class CanvasContainerView: UIView {
         ])
 
         setupUndoRedoGestures()
+        setupSwipeGestures()
+    }
+
+    /// Tracks whether the current two-finger pan already fired a navigation action
+    private var swipeNavigationFired: Bool = false
+
+    private func setupSwipeGestures() {
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(handleTwoFingerPan(_:)))
+        pan.minimumNumberOfTouches = 2
+        pan.maximumNumberOfTouches = 2
+        // Allow the scroll view's own pan to work simultaneously
+        pan.delegate = self
+        scrollView.addGestureRecognizer(pan)
+    }
+
+    @objc private func handleTwoFingerPan(_ gesture: UIPanGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            swipeNavigationFired = false
+        case .changed:
+            guard !swipeNavigationFired else { return }
+            let translation = gesture.translation(in: scrollView)
+            let threshold: CGFloat = 60
+            // Must be primarily horizontal
+            guard abs(translation.x) > abs(translation.y) * 1.5 else { return }
+            if translation.x < -threshold {
+                swipeNavigationFired = true
+                onSwipeLeft?()
+            } else if translation.x > threshold {
+                swipeNavigationFired = true
+                onSwipeRight?()
+            }
+        default:
+            break
+        }
     }
 
     private func setupUndoRedoGestures() {
@@ -580,6 +647,25 @@ class CanvasContainerView: UIView {
         return true
     }
 
+    /// Deletes the last page in the document
+    /// Returns false if this is the only page (cannot delete)
+    @discardableResult
+    func deleteLastPage() -> Bool {
+        guard pageContainers.count > 1 else {
+            print("Cannot delete the only page in the document")
+            return false
+        }
+
+        let deleteIndex = pageContainers.count - 1
+        deletePage(at: deleteIndex)
+
+        documentStructure?.pages.remove(at: deleteIndex)
+        saveDocumentState()
+
+        print("Deleted last page (was page \(deleteIndex + 1))")
+        return true
+    }
+
     /// Clears the drawing on the currently visible page
     func clearCurrentPage() {
         guard currentVisiblePage < pageContainers.count else { return }
@@ -614,10 +700,12 @@ class CanvasContainerView: UIView {
             return lightImages.enumerated().map { index, image in
                 var drawing = index < pageContainers.count ? pageContainers[index].canvasView.drawing : PKDrawing()
                 if isDarkMode { drawing = PageContainerView.invertDrawingColors(drawing) }
+                let textBoxes = index < pageContainers.count ? pageContainers[index].textBoxContainerView.textBoxes : []
                 return PDFExportService.PageExportData(
                     image: image,
                     drawing: drawing,
-                    pageSize: image.size
+                    pageSize: image.size,
+                    textBoxes: textBoxes
                 )
             }
         }
@@ -629,6 +717,7 @@ class CanvasContainerView: UIView {
             let pageSize = i < pageContainers.count
                 ? (pageContainers[i].documentImageView.image?.size ?? CGSize(width: 1224, height: 1584))
                 : CGSize(width: 1224, height: 1584)
+            let textBoxes = i < pageContainers.count ? pageContainers[i].textBoxContainerView.textBoxes : []
 
             switch page.type {
             case .original:
@@ -638,9 +727,9 @@ class CanvasContainerView: UIView {
                 } else {
                     image = nil
                 }
-                exportPages.append(PDFExportService.PageExportData(image: image, drawing: drawing, pageSize: pageSize))
+                exportPages.append(PDFExportService.PageExportData(image: image, drawing: drawing, pageSize: pageSize, textBoxes: textBoxes))
             case .blank:
-                exportPages.append(PDFExportService.PageExportData(image: nil, drawing: drawing, pageSize: pageSize))
+                exportPages.append(PDFExportService.PageExportData(image: nil, drawing: drawing, pageSize: pageSize, textBoxes: textBoxes))
             }
         }
         return exportPages
@@ -687,7 +776,7 @@ class CanvasContainerView: UIView {
         return images
     }
 
-    /// Saves all drawings for all pages (always in light mode colors)
+    /// Saves all drawings and text boxes for all pages (always in light mode colors)
     func saveAllDrawings() {
         guard let documentID = documentID else { return }
         let drawings = pageContainers.map { container -> PKDrawing in
@@ -698,6 +787,10 @@ class CanvasContainerView: UIView {
             return container.canvasView.drawing
         }
         try? DrawingStorageService.shared.saveAllDrawings(drawings, for: documentID)
+
+        // Also save text boxes
+        let allTextBoxes = pageContainers.map { $0.textBoxContainerView.textBoxes }
+        try? DrawingStorageService.shared.saveAllTextBoxes(allTextBoxes, for: documentID)
     }
 
     /// Saves document structure and all drawings
@@ -713,7 +806,7 @@ class CanvasContainerView: UIView {
         saveAllDrawings()
     }
 
-    /// Loads drawings for all pages from storage (inverts if currently in dark mode)
+    /// Loads drawings and text boxes for all pages from storage (inverts drawings if currently in dark mode)
     func loadAllDrawings() {
         guard let documentID = documentID else { return }
         let drawings = DrawingStorageService.shared.loadAllDrawings(for: documentID, pageCount: pageContainers.count)
@@ -722,6 +815,15 @@ class CanvasContainerView: UIView {
                 pageContainers[index].canvasView.drawing = PageContainerView.invertDrawingColors(drawing)
             } else {
                 pageContainers[index].canvasView.drawing = drawing
+            }
+        }
+
+        // Load text boxes
+        let allTextBoxes = DrawingStorageService.shared.loadAllTextBoxes(for: documentID, pageCount: pageContainers.count)
+        for (index, textBoxes) in allTextBoxes.enumerated() where index < pageContainers.count {
+            pageContainers[index].textBoxContainerView.loadTextBoxes(textBoxes)
+            pageContainers[index].textBoxContainerView.onTextBoxesChanged = { [weak self] in
+                self?.saveAllDrawings()
             }
         }
     }
@@ -745,6 +847,9 @@ class CanvasContainerView: UIView {
             backgroundSpacing: backgroundSpacing,
             isDarkMode: isDarkMode
         )
+        newContainer.textBoxContainerView.onTextBoxesChanged = { [weak self] in
+            self?.saveAllDrawings()
+        }
 
         // Calculate the position in the stack view (accounting for separators)
         // Each page except the last has a separator after it
@@ -949,7 +1054,7 @@ class CanvasContainerView: UIView {
                     self.setupPageContainers(with: originalImages)
                 }
 
-                // Load drawings for all pages
+                // Load drawings and text boxes for all pages
                 self.loadAllDrawings()
 
                 // Center and fit document after layout completes
@@ -993,6 +1098,11 @@ class CanvasContainerView: UIView {
             x: -scrollView.contentInset.left,
             y: -scrollView.contentInset.top - topPadding
         )
+    }
+
+    /// Fit document width to viewport
+    func fitToWidth() {
+        centerAndFitDocument()
     }
 
     /// Sets up page containers based on saved document structure
@@ -1220,9 +1330,10 @@ class CanvasContainerView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        // Center content if smaller than scroll view
+        // Center content if smaller than scroll view, with minimum top padding
+        let minTopPadding: CGFloat = 20
         let offsetX = max((scrollView.bounds.width - scrollView.contentSize.width) / 2, 0)
-        let offsetY = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, 0)
+        let offsetY = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, minTopPadding)
         scrollView.contentInset = UIEdgeInsets(top: offsetY, left: offsetX, bottom: offsetY, right: offsetX)
     }
 }
@@ -1234,6 +1345,7 @@ class PageContainerView: UIView {
     let documentImageView = UIImageView()
     let backgroundPatternView = CanvasBackgroundPatternView()
     let canvasView = ReefCanvasView()
+    let textBoxContainerView = TextBoxContainerView()
     let pageIndex: Int
 
     /// Stored reference to height constraint for workspace operations
@@ -1292,6 +1404,10 @@ class PageContainerView: UIView {
         canvasView.drawingPolicy = .pencilOnly
         addSubview(canvasView)
 
+        // Text box container view (above canvas)
+        textBoxContainerView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(textBoxContainerView)
+
         NSLayoutConstraint.activate([
             documentImageView.topAnchor.constraint(equalTo: topAnchor),
             documentImageView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -1306,7 +1422,12 @@ class PageContainerView: UIView {
             canvasView.topAnchor.constraint(equalTo: topAnchor),
             canvasView.leadingAnchor.constraint(equalTo: leadingAnchor),
             canvasView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            canvasView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            canvasView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            textBoxContainerView.topAnchor.constraint(equalTo: topAnchor),
+            textBoxContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            textBoxContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            textBoxContainerView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
 
@@ -1505,6 +1626,18 @@ extension CanvasContainerView: UIScrollViewDelegate {
                 break
             }
         }
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension CanvasContainerView: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Allow the two-finger pan to work alongside the scroll view's pan
+        if gestureRecognizer is UIPanGestureRecognizer && otherGestureRecognizer == scrollView.panGestureRecognizer {
+            return true
+        }
+        return false
     }
 }
 

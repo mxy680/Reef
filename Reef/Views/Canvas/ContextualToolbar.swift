@@ -8,129 +8,143 @@
 import SwiftUI
 import UIKit
 
-// MARK: - Contextual Toolbar
+// MARK: - Shared Constants
 
-struct ContextualToolbar: View {
-    let selectedTool: CanvasTool
-    @Binding var penWidth: CGFloat
-    @Binding var highlighterWidth: CGFloat
-    @Binding var eraserSize: CGFloat
-    @Binding var eraserType: EraserType
-    @Binding var diagramWidth: CGFloat
-    @Binding var diagramAutosnap: Bool
-    @Binding var selectedPenColor: Color
-    @Binding var selectedHighlighterColor: Color
-    @Binding var customPenColors: [Color]
-    @Binding var customHighlighterColors: [Color]
-    let colorScheme: ColorScheme
+private let maxCustomColors = 4  // 3 default + 4 custom = 7 max
 
-    var onClose: (() -> Void)? = nil
+// MARK: - Color Swatch Component
 
-    private static let maxCustomColors = 4  // 3 default + 4 custom = 7 max
+struct ColorSwatch: View {
+    let color: Color
+    let isSelected: Bool
+    var isRemoving: Bool = false
+    let onTap: () -> Void
+    var onLongPress: (() -> Void)? = nil
 
-    private var defaultPenColors: [Color] {
-        [
-            colorScheme == .dark ? .white : .black,
-            .deepTeal,
-            Color(red: 0.9, green: 0.2, blue: 0.2)  // Red
-        ]
-    }
-
-    private let defaultHighlighterColors: [Color] = [
-        Color(red: 1.0, green: 0.92, blue: 0.23),   // Yellow
-        Color(red: 0.6, green: 0.8, blue: 1.0),     // Blue
-        Color(red: 1.0, green: 0.6, blue: 0.8)      // Pink
-    ]
-
-    private var allPenColors: [Color] {
-        defaultPenColors + customPenColors
-    }
-
-    private var allHighlighterColors: [Color] {
-        defaultHighlighterColors + customHighlighterColors
-    }
+    @State private var isPressed: Bool = false
 
     var body: some View {
-        HStack(spacing: 0) {
-            Group {
-                switch selectedTool {
-                case .pen:
-                    penOptions
-                case .highlighter:
-                    highlighterOptions
-                case .eraser:
-                    eraserOptions
-                case .lasso:
-                    EmptyView()  // Uses Apple's default popup menu
-                case .diagram:
-                    diagramOptions
-                }
+        Circle()
+            .fill(color)
+            .frame(width: 28, height: 28)
+            .overlay(
+                Circle()
+                    .strokeBorder(
+                        isSelected ? Color.white : Color.clear,
+                        lineWidth: 2
+                    )
+            )
+            .shadow(
+                color: isSelected ? color.opacity(0.3) : Color.clear,
+                radius: 4
+            )
+            .scaleEffect(isRemoving ? 0.01 : (isPressed ? 0.85 : 1.0))
+            .opacity(isRemoving ? 0 : 1)
+            .rotationEffect(isRemoving ? .degrees(90) : .degrees(0))
+            .onTapGesture {
+                onTap()
             }
-
-            if onClose != nil {
-                // Divider before close button
-                Rectangle()
-                    .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                    .frame(width: 1, height: 24)
-                    .padding(.leading, 12)
-                    .padding(.trailing, 8)
-
-                // Close button
-                Button {
-                    onClose?()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.6))
-                        .frame(width: 28, height: 28)
+            .onLongPressGesture(minimumDuration: 0.4, pressing: { pressing in
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isPressed = pressing
                 }
-                .buttonStyle(.plain)
+            }) {
+                // Haptic feedback
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                onLongPress?()
             }
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 48)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .strokeBorder(
-                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
-                            lineWidth: 1
-                        )
-                )
-                .shadow(
-                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
-                    radius: colorScheme == .dark ? 12 : 8,
-                    x: 0,
-                    y: 4
-                )
-        )
+            .allowsHitTesting(onLongPress != nil || true)
     }
+}
 
-    // MARK: - Pen Options
+// MARK: - Thickness Slider View
+
+struct ThicknessSliderView: View {
+    @Binding var value: CGFloat
+    let range: ClosedRange<CGFloat>
+    let colorScheme: ColorScheme
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Small size indicator
+            Circle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.5))
+                .frame(width: 4, height: 4)
+
+            // Slider
+            Slider(value: $value, in: range)
+                .accentColor(.deepTeal)
+                .frame(width: 100)
+
+            // Large size indicator
+            Circle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.5))
+                .frame(width: 12, height: 12)
+
+            // Current size preview
+            Circle()
+                .fill(Color.adaptiveText(for: colorScheme))
+                .frame(width: min(value, 16), height: min(value, 16))
+                .frame(width: 20, height: 20)
+        }
+    }
+}
+
+// MARK: - Color Helpers
+
+private func colorsAreClose(_ color1: Color, _ color2: Color) -> Bool {
+    let uiColor1 = UIColor(color1)
+    let uiColor2 = UIColor(color2)
+
+    var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+    var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+
+    uiColor1.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+    uiColor2.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+
+    let threshold: CGFloat = 0.05
+    return abs(r1 - r2) < threshold && abs(g1 - g2) < threshold && abs(b1 - b2) < threshold
+}
+
+// MARK: - Default Colors
+
+private func defaultPenColors(for colorScheme: ColorScheme) -> [Color] {
+    [
+        colorScheme == .dark ? .white : .black,
+        .deepTeal,
+        Color(red: 0.9, green: 0.2, blue: 0.2)  // Red
+    ]
+}
+
+private let defaultHighlighterColors: [Color] = [
+    Color(red: 1.0, green: 0.92, blue: 0.23),   // Yellow
+    Color(red: 0.6, green: 0.8, blue: 1.0),     // Blue
+    Color(red: 1.0, green: 0.6, blue: 0.8)      // Pink
+]
+
+// MARK: - Pen Options View
+
+struct PenOptionsView: View {
+    @Binding var penWidth: CGFloat
+    @Binding var selectedPenColor: Color
+    @Binding var customPenColors: [Color]
+    let colorScheme: ColorScheme
 
     @State private var penColorPickerColor: Color = .gray
     @State private var removingPenColorIndex: Int? = nil
 
-    private var penOptions: some View {
+    private var allPenColors: [Color] {
+        defaultPenColors(for: colorScheme) + customPenColors
+    }
+
+    var body: some View {
         HStack(spacing: 12) {
-            // Thickness slider with preview
-            thicknessSlider(
-                value: $penWidth,
-                range: StrokeWidthRange.penMin...StrokeWidthRange.penMax
-            )
-
-            // Divider
-            Rectangle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                .frame(width: 1, height: 24)
-                .padding(.horizontal, 4)
-
             // Color swatches
             ForEach(Array(allPenColors.enumerated()), id: \.offset) { index, color in
-                let isCustomColor = index >= defaultPenColors.count
-                let customIndex = index - defaultPenColors.count
+                let defaults = defaultPenColors(for: colorScheme)
+                let isCustomColor = index >= defaults.count
+                let customIndex = index - defaults.count
                 let isRemoving = isCustomColor && removingPenColorIndex == customIndex
 
                 ColorSwatch(
@@ -145,7 +159,7 @@ struct ContextualToolbar: View {
             }
 
             // Add color button (if under max)
-            if customPenColors.count < Self.maxCustomColors {
+            if customPenColors.count < maxCustomColors {
                 ColorPicker("", selection: $penColorPickerColor, supportsOpacity: false)
                     .labelsHidden()
                     .frame(width: 28, height: 28)
@@ -164,6 +178,19 @@ struct ContextualToolbar: View {
                         }
                     }
             }
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            // Thickness slider with preview
+            ThicknessSliderView(
+                value: $penWidth,
+                range: StrokeWidthRange.penMin...StrokeWidthRange.penMax,
+                colorScheme: colorScheme
+            )
         }
     }
 
@@ -172,7 +199,7 @@ struct ContextualToolbar: View {
 
         // If removing the selected color, switch to first default
         if colorsAreClose(selectedPenColor, customPenColors[index]) {
-            selectedPenColor = defaultPenColors.first ?? .black
+            selectedPenColor = defaultPenColors(for: colorScheme).first ?? .black
         }
 
         // Trigger removal animation
@@ -190,26 +217,25 @@ struct ContextualToolbar: View {
             }
         }
     }
+}
 
-    // MARK: - Highlighter Options
+// MARK: - Highlighter Options View
+
+struct HighlighterOptionsView: View {
+    @Binding var highlighterWidth: CGFloat
+    @Binding var selectedHighlighterColor: Color
+    @Binding var customHighlighterColors: [Color]
+    let colorScheme: ColorScheme
 
     @State private var highlighterColorPickerColor: Color = .gray
     @State private var removingHighlighterColorIndex: Int? = nil
 
-    private var highlighterOptions: some View {
+    private var allHighlighterColors: [Color] {
+        defaultHighlighterColors + customHighlighterColors
+    }
+
+    var body: some View {
         HStack(spacing: 12) {
-            // Thickness slider with preview
-            thicknessSlider(
-                value: $highlighterWidth,
-                range: StrokeWidthRange.highlighterMin...StrokeWidthRange.highlighterMax
-            )
-
-            // Divider
-            Rectangle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                .frame(width: 1, height: 24)
-                .padding(.horizontal, 4)
-
             // Color swatches
             ForEach(Array(allHighlighterColors.enumerated()), id: \.offset) { index, color in
                 let isCustomColor = index >= defaultHighlighterColors.count
@@ -228,7 +254,7 @@ struct ContextualToolbar: View {
             }
 
             // Add color button (if under max)
-            if customHighlighterColors.count < Self.maxCustomColors {
+            if customHighlighterColors.count < maxCustomColors {
                 ColorPicker("", selection: $highlighterColorPickerColor, supportsOpacity: false)
                     .labelsHidden()
                     .frame(width: 28, height: 28)
@@ -247,6 +273,19 @@ struct ContextualToolbar: View {
                         }
                     }
             }
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            // Thickness slider with preview
+            ThicknessSliderView(
+                value: $highlighterWidth,
+                range: StrokeWidthRange.highlighterMin...StrokeWidthRange.highlighterMax,
+                colorScheme: colorScheme
+            )
         }
     }
 
@@ -273,10 +312,29 @@ struct ContextualToolbar: View {
             }
         }
     }
+}
 
-    // MARK: - Eraser Options
+// MARK: - Eraser Options View
 
-    private var eraserOptions: some View {
+struct EraserOptionsView: View {
+    @Binding var eraserSize: CGFloat
+    @Binding var eraserType: EraserType
+    let colorScheme: ColorScheme
+    var onClearPage: () -> Void = {}
+
+    private struct EraserPreset: Identifiable {
+        let id: String
+        let size: CGFloat
+        let displaySize: CGFloat
+    }
+
+    private let presets: [EraserPreset] = [
+        EraserPreset(id: "small", size: StrokeWidthRange.eraserSmall, displaySize: 10),
+        EraserPreset(id: "medium", size: StrokeWidthRange.eraserMedium, displaySize: 16),
+        EraserPreset(id: "large", size: StrokeWidthRange.eraserLarge, displaySize: 24),
+    ]
+
+    var body: some View {
         HStack(spacing: 12) {
             // Stroke eraser button
             Button {
@@ -317,57 +375,66 @@ struct ContextualToolbar: View {
                 .frame(width: 1, height: 24)
                 .padding(.horizontal, 4)
 
-            thicknessSlider(
-                value: $eraserSize,
-                range: StrokeWidthRange.eraserMin...StrokeWidthRange.eraserMax
-            )
-            .opacity(eraserType == .bitmap ? 1.0 : 0.35)
-            .disabled(eraserType == .stroke)
-            .animation(.easeInOut(duration: 0.2), value: eraserType)
-        }
-    }
+            // Size preset buttons
+            ForEach(presets) { preset in
+                let isSelected = eraserSize == preset.size
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        eraserSize = preset.size
+                    }
+                } label: {
+                    Circle()
+                        .fill(isSelected ? Color.deepTeal : Color.adaptiveText(for: colorScheme).opacity(0.4))
+                        .frame(width: preset.displaySize, height: preset.displaySize)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(isSelected ? Color.deepTeal.opacity(0.15) : Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
 
-    // MARK: - Diagram Options
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
 
-    private var diagramOptions: some View {
-        HStack(spacing: 12) {
-            // Autosnap toggle
-            Button {
-                diagramAutosnap.toggle()
-            } label: {
-                Image(systemName: "bolt.fill")
+            // Clear page button
+            Button(action: onClearPage) {
+                Image(systemName: "trash")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(diagramAutosnap ? .deepTeal : Color.adaptiveText(for: colorScheme))
+                    .foregroundColor(Color.adaptiveText(for: colorScheme))
                     .frame(width: 36, height: 36)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(diagramAutosnap ? Color.deepTeal.opacity(0.15) : Color.clear)
-                    )
             }
             .buttonStyle(.plain)
+        }
+    }
+}
 
-            // Divider
-            Rectangle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                .frame(width: 1, height: 24)
-                .padding(.horizontal, 4)
+// MARK: - Diagram Options View
 
-            // Thickness slider
-            thicknessSlider(
-                value: $diagramWidth,
-                range: StrokeWidthRange.diagramMin...StrokeWidthRange.diagramMax
-            )
+struct DiagramOptionsView: View {
+    @Binding var diagramWidth: CGFloat
+    @Binding var diagramAutosnap: Bool
+    @Binding var selectedPenColor: Color
+    @Binding var customPenColors: [Color]
+    let colorScheme: ColorScheme
 
-            // Divider
-            Rectangle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                .frame(width: 1, height: 24)
-                .padding(.horizontal, 4)
+    @State private var penColorPickerColor: Color = .gray
+    @State private var removingPenColorIndex: Int? = nil
 
+    private var allPenColors: [Color] {
+        defaultPenColors(for: colorScheme) + customPenColors
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
             // Color swatches
             ForEach(Array(allPenColors.enumerated()), id: \.offset) { index, color in
-                let isCustomColor = index >= defaultPenColors.count
-                let customIndex = index - defaultPenColors.count
+                let defaults = defaultPenColors(for: colorScheme)
+                let isCustomColor = index >= defaults.count
+                let customIndex = index - defaults.count
                 let isRemoving = isCustomColor && removingPenColorIndex == customIndex
 
                 ColorSwatch(
@@ -382,7 +449,7 @@ struct ContextualToolbar: View {
             }
 
             // Add color button
-            if customPenColors.count < Self.maxCustomColors {
+            if customPenColors.count < maxCustomColors {
                 ColorPicker("", selection: $penColorPickerColor, supportsOpacity: false)
                     .labelsHidden()
                     .frame(width: 28, height: 28)
@@ -401,151 +468,140 @@ struct ContextualToolbar: View {
                         }
                     }
             }
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            // Thickness slider
+            ThicknessSliderView(
+                value: $diagramWidth,
+                range: StrokeWidthRange.diagramMin...StrokeWidthRange.diagramMax,
+                colorScheme: colorScheme
+            )
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            // Autosnap toggle
+            Button {
+                diagramAutosnap.toggle()
+            } label: {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(diagramAutosnap ? .deepTeal : Color.adaptiveText(for: colorScheme))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(diagramAutosnap ? Color.deepTeal.opacity(0.15) : Color.clear)
+                    )
+            }
+            .buttonStyle(.plain)
         }
     }
 
-    // MARK: - Thickness Slider
+    private func removeCustomPenColor(at index: Int) {
+        guard index >= 0 && index < customPenColors.count else { return }
 
-    private func thicknessSlider(value: Binding<CGFloat>, range: ClosedRange<CGFloat>) -> some View {
-        HStack(spacing: 8) {
-            // Small size indicator
-            Circle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.5))
-                .frame(width: 4, height: 4)
+        // If removing the selected color, switch to first default
+        if colorsAreClose(selectedPenColor, customPenColors[index]) {
+            selectedPenColor = defaultPenColors(for: colorScheme).first ?? .black
+        }
 
-            // Slider
-            Slider(value: value, in: range)
-                .accentColor(.deepTeal)
-                .frame(width: 100)
+        // Trigger removal animation
+        withAnimation(.easeInOut(duration: 0.15)) {
+            removingPenColorIndex = index
+        }
 
-            // Large size indicator
-            Circle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.5))
-                .frame(width: 12, height: 12)
-
-            // Current size preview
-            Circle()
-                .fill(Color.adaptiveText(for: colorScheme))
-                .frame(width: min(value.wrappedValue, 16), height: min(value.wrappedValue, 16))
-                .frame(width: 20, height: 20)
+        // Remove after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                if index < customPenColors.count {
+                    customPenColors.remove(at: index)
+                }
+                removingPenColorIndex = nil
+            }
         }
     }
-
-    // MARK: - Color Helpers
-
-    private func colorsAreClose(_ color1: Color, _ color2: Color) -> Bool {
-        let uiColor1 = UIColor(color1)
-        let uiColor2 = UIColor(color2)
-
-        var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
-        var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
-
-        uiColor1.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
-        uiColor2.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
-
-        let threshold: CGFloat = 0.05
-        return abs(r1 - r2) < threshold && abs(g1 - g2) < threshold && abs(b1 - b2) < threshold
-    }
-
 }
 
-#Preview {
-    VStack(spacing: 20) {
-        ContextualToolbar(
-            selectedTool: .pen,
-            penWidth: .constant(StrokeWidthRange.penDefault),
-            highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
-            eraserSize: .constant(StrokeWidthRange.eraserDefault),
-            eraserType: .constant(.stroke),
-            diagramWidth: .constant(StrokeWidthRange.diagramDefault),
-            diagramAutosnap: .constant(true),
-            selectedPenColor: .constant(.black),
-            selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
-            customPenColors: .constant([]),
-            customHighlighterColors: .constant([]),
-            colorScheme: .light,
-            onClose: {}
-        )
+// MARK: - Text Options View
 
-        ContextualToolbar(
-            selectedTool: .diagram,
-            penWidth: .constant(StrokeWidthRange.penDefault),
-            highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
-            eraserSize: .constant(StrokeWidthRange.eraserDefault),
-            eraserType: .constant(.stroke),
-            diagramWidth: .constant(StrokeWidthRange.diagramDefault),
-            diagramAutosnap: .constant(true),
-            selectedPenColor: .constant(.black),
-            selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
-            customPenColors: .constant([]),
-            customHighlighterColors: .constant([]),
-            colorScheme: .light,
-            onClose: {}
-        )
+struct TextOptionsView: View {
+    @Binding var textSize: CGFloat
+    @Binding var textColor: Color
+    @Binding var customPenColors: [Color]
+    let colorScheme: ColorScheme
 
-        ContextualToolbar(
-            selectedTool: .eraser,
-            penWidth: .constant(StrokeWidthRange.penDefault),
-            highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
-            eraserSize: .constant(StrokeWidthRange.eraserDefault),
-            eraserType: .constant(.bitmap),
-            diagramWidth: .constant(StrokeWidthRange.diagramDefault),
-            diagramAutosnap: .constant(true),
-            selectedPenColor: .constant(.black),
-            selectedHighlighterColor: .constant(Color(red: 1.0, green: 0.92, blue: 0.23)),
-            customPenColors: .constant([]),
-            customHighlighterColors: .constant([]),
-            colorScheme: .dark,
-            onClose: {}
-        )
+    @State private var colorPickerColor: Color = .gray
 
+    private var allColors: [Color] {
+        defaultPenColors(for: colorScheme) + customPenColors
     }
-    .padding()
-    .background(Color.gray.opacity(0.3))
-}
-
-// MARK: - Color Swatch Component
-
-private struct ColorSwatch: View {
-    let color: Color
-    let isSelected: Bool
-    let isRemoving: Bool
-    let onTap: () -> Void
-    let onLongPress: (() -> Void)?
-
-    @State private var isPressed: Bool = false
 
     var body: some View {
-        Circle()
-            .fill(color)
-            .frame(width: 28, height: 28)
-            .overlay(
-                Circle()
-                    .strokeBorder(
-                        isSelected ? Color.white : Color.clear,
-                        lineWidth: 2
+        HStack(spacing: 12) {
+            // Color swatches (reuse pen colors)
+            ForEach(Array(allColors.enumerated()), id: \.offset) { _, color in
+                ColorSwatch(
+                    color: color,
+                    isSelected: textColor == color,
+                    onTap: { textColor = color }
+                )
+            }
+
+            // Add color button
+            if customPenColors.count < 4 {
+                ColorPicker("", selection: $colorPickerColor, supportsOpacity: false)
+                    .labelsHidden()
+                    .frame(width: 28, height: 28)
+                    .overlay(
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
+                            .allowsHitTesting(false)
                     )
-            )
-            .shadow(
-                color: isSelected ? color.opacity(0.3) : Color.clear,
-                radius: 4
-            )
-            .scaleEffect(isRemoving ? 0.01 : (isPressed ? 0.85 : 1.0))
-            .opacity(isRemoving ? 0 : 1)
-            .rotationEffect(isRemoving ? .degrees(90) : .degrees(0))
-            .onTapGesture {
-                onTap()
+                    .onChange(of: colorPickerColor) { _, newColor in
+                        if !allColors.contains(where: { colorsAreClose($0, newColor) }) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                customPenColors.append(newColor)
+                            }
+                            textColor = newColor
+                        }
+                    }
             }
-            .onLongPressGesture(minimumDuration: 0.4, pressing: { pressing in
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    isPressed = pressing
-                }
-            }) {
-                // Haptic feedback
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
-                onLongPress?()
+
+            // Divider
+            Rectangle()
+                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                .frame(width: 1, height: 24)
+                .padding(.horizontal, 4)
+
+            // Font size slider
+            HStack(spacing: 8) {
+                Text("A")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
+
+                Slider(value: $textSize, in: 10...48, step: 1)
+                    .accentColor(.deepTeal)
+                    .frame(width: 100)
+
+                Text("A")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
+
+                Text("\(Int(textSize))pt")
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundColor(Color.adaptiveText(for: colorScheme))
+                    .frame(width: 36)
             }
-            .allowsHitTesting(onLongPress != nil || true)
+        }
     }
 }
+

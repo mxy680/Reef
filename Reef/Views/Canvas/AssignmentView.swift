@@ -28,10 +28,15 @@ struct AssignmentView: View {
     var canvasBackgroundOpacity: CGFloat = 0.15
     var canvasBackgroundSpacing: CGFloat = 48
     var isDarkMode: Bool = false
+    var isRulerActive: Bool = false
+    var textSize: CGFloat = 16
+    var textColor: UIColor = .black
     var onPreviousQuestion: () -> Void = {}
     var onNextQuestion: () -> Void = {}
     var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
     var onPauseDetected: ((PauseContext) -> Void)? = nil
+    var onUndoStateChanged: (Bool) -> Void = { _ in }
+    var onRedoStateChanged: (Bool) -> Void = { _ in }
 
     private var questions: [ExtractedQuestion] {
         note.extractedQuestions
@@ -83,8 +88,15 @@ struct AssignmentView: View {
                         canvasBackgroundOpacity: canvasBackgroundOpacity,
                         canvasBackgroundSpacing: canvasBackgroundSpacing,
                         isDarkMode: isDarkMode,
+                        isRulerActive: isRulerActive,
+                        textSize: textSize,
+                        textColor: textColor,
                         onCanvasReady: onCanvasReady,
-                        onPauseDetected: onPauseDetected
+                        onUndoStateChanged: onUndoStateChanged,
+                        onRedoStateChanged: onRedoStateChanged,
+                        onPauseDetected: onPauseDetected,
+                        onSwipeLeft: onNextQuestion,
+                        onSwipeRight: onPreviousQuestion
                     )
                     .id(currentIndex) // Force new view instance for each question
                 } else {
@@ -101,24 +113,6 @@ struct AssignmentView: View {
                     .background(isDarkMode ? Color.warmDark : Color.blushWhite)
                 }
             }
-            .gesture(
-                DragGesture(minimumDistance: 50, coordinateSpace: .local)
-                    .onEnded { value in
-                        let horizontalAmount = value.translation.width
-                        let verticalAmount = value.translation.height
-
-                        // Only trigger for horizontal swipes (more horizontal than vertical)
-                        guard abs(horizontalAmount) > abs(verticalAmount) else { return }
-
-                        if horizontalAmount < 0 {
-                            // Swipe left - next question
-                            onNextQuestion()
-                        } else {
-                            // Swipe right - previous question
-                            onPreviousQuestion()
-                        }
-                    }
-            )
         }
     }
 }

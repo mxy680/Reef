@@ -2,7 +2,7 @@
 //  CanvasToolbar.swift
 //  Reef
 //
-//  Floating toolbar with pencil, eraser, color picker, and home button
+//  GoodNotes 6-style top-of-screen toolbar with popover-based tool options
 //
 
 import SwiftUI
@@ -15,6 +15,16 @@ enum CanvasTool: Equatable {
     case eraser
     case lasso
     case diagram
+    case textBox
+}
+
+extension CanvasTool {
+    var hasSecondaryOptions: Bool {
+        switch self {
+        case .pen, .highlighter, .eraser, .diagram, .textBox: return true
+        case .lasso: return false
+        }
+    }
 }
 
 enum EraserType: String, CaseIterable {
@@ -39,10 +49,10 @@ enum CanvasBackgroundMode: String, CaseIterable {
 
     var iconName: String {
         switch self {
-        case .normal: return "rectangle"
-        case .grid: return "grid"
-        case .dotted: return "circle.grid.3x3"
-        case .lined: return "line.3.horizontal"
+        case .normal: return "doc"
+        case .grid: return "squareshape.split.3x3"
+        case .dotted: return "circle.grid.3x3.fill"
+        case .lined: return "rectangle.split.3x1"
         }
     }
 }
@@ -58,16 +68,15 @@ enum StrokeWidthRange {
     static let highlighterMax: CGFloat = 24
     static let highlighterDefault: CGFloat = 12
 
-    static let eraserMin: CGFloat = 8
-    static let eraserMax: CGFloat = 48
-    static let eraserDefault: CGFloat = 16
+    static let eraserSmall: CGFloat = 12
+    static let eraserMedium: CGFloat = 24
+    static let eraserLarge: CGFloat = 48
+    static let eraserDefault: CGFloat = 24
 
     static let diagramMin: CGFloat = 4
     static let diagramMax: CGFloat = 48
     static let diagramDefault: CGFloat = 37
 }
-
-// MARK: - Canvas Toolbar
 
 // MARK: - View Mode
 
@@ -90,6 +99,8 @@ enum CanvasViewMode: String, CaseIterable {
     }
 }
 
+// MARK: - Canvas Toolbar
+
 struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
     @Binding var selectedPenColor: Color
@@ -107,14 +118,22 @@ struct CanvasToolbar: View {
     @Binding var canvasBackgroundSpacing: CGFloat
     let colorScheme: ColorScheme
     let onHomePressed: () -> Void
-    let onAIPressed: () -> Void
+    var onAIActionSelected: (String) -> Void = { _ in }
     let onToggleDarkMode: () -> Void
     var isDocumentAIReady: Bool = true
     var onAddPageAfterCurrent: () -> Void = {}
     var onAddPageToEnd: () -> Void = {}
     var onDeleteCurrentPage: () -> Void = {}
+    var onDeleteLastPage: () -> Void = {}
     var onClearCurrentPage: () -> Void = {}
     var onExportPDF: () -> Void = {}
+    var pageCount: Int = 1
+
+    // Undo/Redo
+    var canUndo: Bool = false
+    var canRedo: Bool = false
+    var onUndo: () -> Void = {}
+    var onRedo: () -> Void = {}
 
     // Assignment mode properties
     var isAssignmentEnabled: Bool = false
@@ -123,31 +142,30 @@ struct CanvasToolbar: View {
     var totalQuestions: Int = 0
     var onPreviousQuestion: () -> Void = {}
     var onNextQuestion: () -> Void = {}
+    var onJumpToQuestion: (Int) -> Void = { _ in }
     var isAssignmentProcessing: Bool = false
+    var isTutorSidebarVisible: Bool = false
+    var onToggleTutorSidebar: () -> Void = {}
 
-    @State private var contextualToolbarHidden: Bool = false
-    @State private var backgroundModeSelected: Bool = false
-    @State private var aiModeSelected: Bool = false
-    @State private var documentOperationsSelected: Bool = false
+    // Ruler toggle
+    var isRulerActive: Bool = false
+    var onToggleRuler: () -> Void = {}
 
-    private var toolHasContextualMenu: Bool {
-        switch selectedTool {
-        case .pen, .highlighter, .eraser, .diagram:
-            return true
-        case .lasso:
-            return false  // Use Apple's default popup menu
-        }
-    }
+    // Zoom (auto-center)
+    var onAutoZoom: () -> Void = {}
 
-    private var showToolContextualToolbar: Bool {
-        guard !backgroundModeSelected else { return false }
-        switch selectedTool {
-        case .pen, .highlighter, .eraser, .diagram:
-            return !contextualToolbarHidden
-        case .lasso:
-            return false  // Use Apple's default popup menu
-        }
-    }
+    // Text box tool options
+    @Binding var textSize: CGFloat
+    @Binding var textColor: Color
+
+    // Secondary toolbar state (inline tool options)
+    @State private var showSecondaryToolbar: Bool = false
+    @State private var showBackgroundOptions: Bool = false
+
+    // Non-drawing popover state
+    @State private var showDocOpsPopover: Bool = false
+    @State private var showAIPopover: Bool = false
+    @State private var showPageOpsPopover: Bool = false
 
     private var paginationEnabled: Bool {
         viewMode == .assignment && totalQuestions > 0 && !isAssignmentProcessing
@@ -157,276 +175,596 @@ struct CanvasToolbar: View {
         isAssignmentEnabled && totalQuestions > 0 && !isAssignmentProcessing
     }
 
-    private var showBackgroundModeToolbar: Bool {
-        backgroundModeSelected
-    }
-
-    private var showAIToolbar: Bool {
-        aiModeSelected
-    }
-
-    private var showDocumentOperationsToolbar: Bool {
-        documentOperationsSelected
+    private func closeAllPopovers() {
+        showDocOpsPopover = false
+        showAIPopover = false
+        showPageOpsPopover = false
     }
 
     private func selectTool(_ tool: CanvasTool) {
-        // Deselect other modes when selecting a drawing tool
-        backgroundModeSelected = false
-        aiModeSelected = false
-        documentOperationsSelected = false
-
-        if selectedTool == tool && toolHasContextualMenu {
-            contextualToolbarHidden.toggle()
-        } else {
-            selectedTool = tool
-            contextualToolbarHidden = false
+        withAnimation(.easeInOut(duration: 0.2)) {
+            closeAllPopovers()
+            showBackgroundOptions = false
+            if selectedTool == tool {
+                // Already selected — toggle secondary toolbar
+                showSecondaryToolbar.toggle()
+            } else {
+                selectedTool = tool
+                showSecondaryToolbar = tool.hasSecondaryOptions
+            }
         }
     }
 
-    private func selectBackgroundMode() {
-        if backgroundModeSelected {
-            // Toggle off if already selected
-            backgroundModeSelected = false
-        } else {
-            // Select background mode, hide other toolbars
-            backgroundModeSelected = true
-            contextualToolbarHidden = true
-            aiModeSelected = false
-            documentOperationsSelected = false
+    private func toggleBackgroundOptions() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            closeAllPopovers()
+            showSecondaryToolbar = false
+            showBackgroundOptions.toggle()
         }
     }
 
-    private func selectAIMode() {
-        if aiModeSelected {
-            // Toggle off if already selected
-            aiModeSelected = false
+    private func toggleNonDrawingPopover(_ popover: inout Bool) {
+        if popover {
+            popover = false
         } else {
-            // Select AI mode, hide other contextual toolbars
-            aiModeSelected = true
-            contextualToolbarHidden = true
-            backgroundModeSelected = false
-            documentOperationsSelected = false
-        }
-    }
-
-    private func selectDocumentOperations() {
-        if documentOperationsSelected {
-            // Toggle off if already selected
-            documentOperationsSelected = false
-        } else {
-            // Select document operations, hide other toolbars
-            documentOperationsSelected = true
-            contextualToolbarHidden = true
-            backgroundModeSelected = false
-            aiModeSelected = false
+            closeAllPopovers()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showSecondaryToolbar = false
+                showBackgroundOptions = false
+            }
+            popover = true
         }
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            // Tool contextual tier
-            if showToolContextualToolbar {
-                ContextualToolbar(
-                    selectedTool: selectedTool,
-                    penWidth: $penWidth,
-                    highlighterWidth: $highlighterWidth,
-                    eraserSize: $eraserSize,
-                    eraserType: $eraserType,
-                    diagramWidth: $diagramWidth,
-                    diagramAutosnap: $diagramAutosnap,
-                    selectedPenColor: $selectedPenColor,
-                    selectedHighlighterColor: $selectedHighlighterColor,
-                    customPenColors: $customPenColors,
-                    customHighlighterColors: $customHighlighterColors,
-                    colorScheme: colorScheme,
-                    onClose: { contextualToolbarHidden = true }
-                )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+        VStack(spacing: 0) {
+            // Problem tab bar (only when assignment enabled)
+            if isAssignmentEnabled {
+                problemTabBar
             }
 
-            // Background mode contextual tier
-            if showBackgroundModeToolbar {
-                BackgroundModeToolbar(
-                    canvasBackgroundMode: $canvasBackgroundMode,
-                    canvasBackgroundOpacity: $canvasBackgroundOpacity,
-                    canvasBackgroundSpacing: $canvasBackgroundSpacing,
-                    colorScheme: colorScheme,
-                    onClose: { backgroundModeSelected = false }
-                )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            HStack(spacing: 0) {
+                // LEFT SECTION: Undo, Redo (+ Home when not assignment)
+                leftSection
 
-            // AI toolbar tier
-            if showAIToolbar {
-                AIToolbar(
-                    colorScheme: colorScheme,
-                    onClose: { aiModeSelected = false }
-                )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+                toolbarDivider
 
-            // Document operations toolbar tier
-            if showDocumentOperationsToolbar {
-                DocumentOperationsToolbar(
-                    colorScheme: colorScheme,
-                    onAddPageAfterCurrent: onAddPageAfterCurrent,
-                    onAddPageToEnd: onAddPageToEnd,
-                    onDeleteCurrentPage: onDeleteCurrentPage,
-                    onClearCurrentPage: onClearCurrentPage,
-                    onExportPDF: onExportPDF,
-                    onClose: { documentOperationsSelected = false }
-                )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+                Spacer(minLength: 0)
 
-            // Main toolbar
-            mainToolbar
+                // CENTER SECTION: Drawing tools
+                centerSection
+
+                toolbarDivider
+
+                // AI SECTION: Inline AI action buttons
+                aiSection
+
+                Spacer(minLength: 0)
+
+                // RIGHT SECTION: BG, Doc Ops, Dark
+                rightSection
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background(toolbarBackground)
+
+            // Bottom separator line
+            Rectangle()
+                .fill(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.15))
+                .frame(height: 0.5)
         }
-        .animation(.easeOut(duration: 0.2), value: showToolContextualToolbar)
-        .animation(.easeOut(duration: 0.2), value: showBackgroundModeToolbar)
-        .animation(.easeOut(duration: 0.2), value: showAIToolbar)
-        .animation(.easeOut(duration: 0.2), value: showDocumentOperationsToolbar)
-        .animation(.easeOut(duration: 0.2), value: selectedTool)
-        .animation(.easeOut(duration: 0.2), value: contextualToolbarHidden)
-        .animation(.easeOut(duration: 0.2), value: backgroundModeSelected)
-        .animation(.easeOut(duration: 0.2), value: aiModeSelected)
-        .animation(.easeOut(duration: 0.2), value: documentOperationsSelected)
+        .overlay(alignment: .bottom) {
+            secondaryToolbar
+                .offset(y: 56)
+        }
+        .zIndex(1)
+        .background(
+            (isAssignmentEnabled ? tabStripBackground : toolbarBackground)
+                .ignoresSafeArea(edges: .top)
+        )
     }
 
-    private var mainToolbar: some View {
+    // MARK: - Problem Tab Bar
+
+    private var assignmentModeBinding: Binding<Bool> {
+        Binding(
+            get: { viewMode == .assignment },
+            set: { viewMode = $0 ? .assignment : .document }
+        )
+    }
+
+    private var toolbarBackground: Color {
+        .deepTeal
+    }
+
+    private var tabStripBackground: Color {
+        Color(red: 0.28, green: 0.53, blue: 0.52) // darker teal
+    }
+
+    private var tabSurface: Color {
+        .deepTeal
+    }
+
+    private var problemTabBar: some View {
+        ZStack(alignment: .bottom) {
+            // Recessed tab strip background
+            tabStripBackground
+
+            // Left-aligned scrollable Chrome-style tabs
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        ForEach(0..<totalQuestions, id: \.self) { index in
+                            let isSelected = index == currentQuestionIndex
+
+                            Button {
+                                onJumpToQuestion(index)
+                            } label: {
+                                Text("Q\(index + 1)")
+                                    .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                                    .foregroundColor(
+                                        isSelected
+                                            ? .white
+                                            : Color.white.opacity(0.55)
+                                    )
+                                    .frame(minWidth: 42, minHeight: 30)
+                                    .padding(.horizontal, 4)
+                                    .background(
+                                        isSelected
+                                            ? tabSurface
+                                            : Color.clear
+                                    )
+                                    .clipShape(ChromeTabShape())
+                                    .overlay(
+                                        isSelected
+                                            ? ChromeTabShape()
+                                                .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                                            : nil
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .id(index)
+
+                            // Separator between unselected tabs
+                            if index < totalQuestions - 1 && !isSelected && index + 1 != currentQuestionIndex {
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.2))
+                                    .frame(width: 1, height: 16)
+                                    .padding(.vertical, 8)
+                            }
+                        }
+                    }
+                    .padding(.top, 6)
+                    .padding(.horizontal, 2)
+                }
+                .padding(.leading, 48)
+                .padding(.trailing, 150)
+                .onChange(of: currentQuestionIndex) { _, newValue in
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        proxy.scrollTo(newValue, anchor: .center)
+                    }
+                }
+            }
+
+            // Pinned edges
+            HStack(spacing: 0) {
+                HStack(spacing: 0) {
+                    // Home button
+                    Button(action: onHomePressed) {
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, 6)
+
+                }
+                .background(tabStripBackground)
+
+                Spacer()
+
+                // Assignment mode toggle
+                HStack(spacing: 6) {
+                    Text("Tutor Mode")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(isAssignmentEnabled ? .white : (colorScheme == .dark ? .white.opacity(0.5) : .deepTeal))
+                    Toggle("", isOn: assignmentModeBinding)
+                        .toggleStyle(TutorToggleStyle())
+                        .labelsHidden()
+                        .disabled(isAssignmentProcessing)
+                }
+                .padding(.trailing, 10)
+                .padding(.leading, 4)
+                .frame(height: 40)
+                .background(tabStripBackground)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 40)
+    }
+
+    // MARK: - Left Section
+
+    private var leftSection: some View {
         HStack(spacing: 0) {
-            // Home button
+            // Back button (only when NOT in assignment mode — it's in the tab bar otherwise)
+            if !isAssignmentEnabled {
+                ToolbarButton(
+                    icon: "chevron.left",
+                    isSelected: false,
+                    colorScheme: colorScheme,
+                    action: onHomePressed
+                )
+            }
+
+            // Undo button
             ToolbarButton(
-                icon: "house.fill",
+                icon: "arrow.uturn.backward",
                 isSelected: false,
+                isDisabled: !canUndo,
                 colorScheme: colorScheme,
-                action: onHomePressed
+                action: onUndo
             )
 
-            toolbarDivider
-
-            // Drawing tools
+            // Redo button
             ToolbarButton(
+                icon: "arrow.uturn.forward",
+                isSelected: false,
+                isDisabled: !canRedo,
+                colorScheme: colorScheme,
+                action: onRedo
+            )
+        }
+    }
+
+    // MARK: - Center Section
+
+    private var centerSection: some View {
+        HStack(spacing: 0) {
+            // --- Drawing tools ---
+
+            // Pen
+            DrawingToolButton(
                 icon: "pencil.tip",
-                isSelected: selectedTool == .pen && !backgroundModeSelected,
+                isSelected: selectedTool == .pen,
+                colorDot: selectedPenColor,
+                showColorDot: true,
                 colorScheme: colorScheme,
                 action: { selectTool(.pen) }
             )
 
-            ToolbarButton(
-                icon: "skew",
-                isSelected: selectedTool == .diagram && !backgroundModeSelected,
-                colorScheme: colorScheme,
-                action: { selectTool(.diagram) }
-            )
-
-            ToolbarButton(
+            // Highlighter
+            DrawingToolButton(
                 icon: "highlighter",
-                isSelected: selectedTool == .highlighter && !backgroundModeSelected,
+                isSelected: selectedTool == .highlighter,
+                colorDot: selectedHighlighterColor,
+                showColorDot: true,
                 colorScheme: colorScheme,
                 action: { selectTool(.highlighter) }
             )
 
-            ToolbarButton(
+            // Diagram
+            DrawingToolButton(
+                icon: "skew",
+                isSelected: selectedTool == .diagram,
+                colorDot: selectedPenColor,
+                showColorDot: true,
+                colorScheme: colorScheme,
+                action: { selectTool(.diagram) }
+            )
+
+            // Text box
+            DrawingToolButton(
+                icon: "character.textbox",
+                isSelected: selectedTool == .textBox,
+                colorDot: textColor,
+                showColorDot: true,
+                colorScheme: colorScheme,
+                action: { selectTool(.textBox) }
+            )
+
+            // --- Edit tools ---
+
+            // Eraser
+            DrawingToolButton(
                 icon: "eraser.fill",
-                isSelected: selectedTool == .eraser && !backgroundModeSelected,
+                isSelected: selectedTool == .eraser,
+                colorDot: .clear,
+                showColorDot: false,
                 colorScheme: colorScheme,
                 action: { selectTool(.eraser) }
             )
 
+            // Lasso
             ToolbarButton(
                 icon: "lasso",
-                isSelected: selectedTool == .lasso && !backgroundModeSelected,
+                isSelected: selectedTool == .lasso,
                 colorScheme: colorScheme,
                 action: { selectTool(.lasso) }
             )
 
-            // Background mode button
+            // --- Canvas utilities ---
+
+            // Ruler toggle
             ToolbarButton(
-                icon: "squareshape.split.3x3",
-                isSelected: backgroundModeSelected,
+                icon: "ruler",
+                isSelected: isRulerActive,
                 colorScheme: colorScheme,
-                action: selectBackgroundMode
+                action: onToggleRuler
             )
 
-            // Document operations button
+            // Background mode (grid/dots/lines)
+            ToolbarButton(
+                icon: canvasBackgroundMode.iconName,
+                isSelected: showBackgroundOptions,
+                colorScheme: colorScheme,
+                action: toggleBackgroundOptions
+            )
+
+            // Page operations
             ToolbarButton(
                 icon: "doc.badge.plus",
-                isSelected: documentOperationsSelected,
+                isSelected: showPageOpsPopover,
                 colorScheme: colorScheme,
-                action: selectDocumentOperations
+                action: { toggleNonDrawingPopover(&showPageOpsPopover) }
             )
-
-            // Assignment mode controls (only shown when assignment mode is enabled)
-            if isAssignmentEnabled {
-                toolbarDivider
-
-                // Pagination controls (always visible, disabled in document mode)
-                HStack(spacing: 4) {
-                    // Previous button
+            .popover(isPresented: $showPageOpsPopover) {
+                HStack(spacing: 0) {
                     Button {
-                        onPreviousQuestion()
+                        showPageOpsPopover = false
+                        onAddPageAfterCurrent()
                     } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(paginationEnabled && currentQuestionIndex > 0
-                                ? Color.adaptiveText(for: colorScheme)
-                                : Color.adaptiveText(for: colorScheme).opacity(0.3))
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!paginationEnabled || currentQuestionIndex == 0)
-
-                    // Position indicator
-                    Text("\(currentQuestionIndex + 1)/\(totalQuestions)")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(paginationEnabled
-                            ? Color.adaptiveText(for: colorScheme)
-                            : Color.adaptiveText(for: colorScheme).opacity(0.3))
-                        .frame(minWidth: 36)
-
-                    // Next button
-                    Button {
-                        onNextQuestion()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(paginationEnabled && currentQuestionIndex < totalQuestions - 1
-                                ? Color.adaptiveText(for: colorScheme)
-                                : Color.adaptiveText(for: colorScheme).opacity(0.3))
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!paginationEnabled || currentQuestionIndex >= totalQuestions - 1)
-                }
-
-                // Single toggle icon for Doc/Assignment mode
-                Button {
-                    viewMode = (viewMode == .assignment) ? .document : .assignment
-                } label: {
-                    Image(systemName: viewMode == .assignment ? "doc.text" : "list.number")
-                        .font(.system(size: 20, weight: .medium))
+                        VStack(spacing: 4) {
+                            Image(systemName: "doc.badge.plus")
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 24, height: 24)
+                            Text("Insert After")
+                                .font(.system(size: 10, weight: .medium))
+                        }
                         .foregroundColor(Color.adaptiveText(for: colorScheme))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 72, height: 44)
+                    }
+                    .buttonStyle(.plain)
+
+                    Rectangle()
+                        .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                        .frame(width: 1, height: 24)
+                        .padding(.horizontal, 4)
+
+                    Button {
+                        showPageOpsPopover = false
+                        onAddPageToEnd()
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "doc.fill.badge.plus")
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 24, height: 24)
+                            Text("Add to End")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(Color.adaptiveText(for: colorScheme))
+                        .frame(width: 72, height: 44)
+                    }
+                    .buttonStyle(.plain)
+
+                    Rectangle()
+                        .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                        .frame(width: 1, height: 24)
+                        .padding(.horizontal, 4)
+
+                    Button {
+                        showPageOpsPopover = false
+                        onDeleteCurrentPage()
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "minus.circle")
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 24, height: 24)
+                            Text("Delete Current")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(.red.opacity(0.8))
+                        .frame(width: 72, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(pageCount <= 1)
+                    .opacity(pageCount <= 1 ? 0.4 : 1.0)
+
+                    Rectangle()
+                        .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+                        .frame(width: 1, height: 24)
+                        .padding(.horizontal, 4)
+
+                    Button {
+                        showPageOpsPopover = false
+                        onDeleteLastPage()
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 24, height: 24)
+                            Text("Delete Last")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(.red.opacity(0.8))
+                        .frame(width: 72, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(pageCount <= 1)
+                    .opacity(pageCount <= 1 ? 0.4 : 1.0)
                 }
-                .buttonStyle(.plain)
-                .disabled(isAssignmentProcessing)
+                .padding(12)
+                .reefPopoverStyle(colorScheme: colorScheme)
             }
 
-            toolbarDivider
+            // Auto-zoom (fit to width)
+            ToolbarButton(
+                icon: "arrow.up.left.and.down.right.magnifyingglass",
+                isSelected: false,
+                colorScheme: colorScheme,
+                action: onAutoZoom
+            )
+        }
+    }
 
-            // AI button
+    // MARK: - Secondary Toolbar (Floating Tool Options)
+
+    private var showFloatingToolbar: Bool {
+        (showSecondaryToolbar && selectedTool.hasSecondaryOptions) || showBackgroundOptions
+    }
+
+    @ViewBuilder
+    private var secondaryToolbar: some View {
+        if showFloatingToolbar {
+            HStack(spacing: 0) {
+                if showBackgroundOptions {
+                    BackgroundModePopoverContent(
+                        canvasBackgroundMode: $canvasBackgroundMode,
+                        canvasBackgroundOpacity: $canvasBackgroundOpacity,
+                        canvasBackgroundSpacing: $canvasBackgroundSpacing,
+                        colorScheme: colorScheme
+                    )
+                } else {
+                    switch selectedTool {
+                    case .pen:
+                        PenOptionsView(
+                            penWidth: $penWidth,
+                            selectedPenColor: $selectedPenColor,
+                            customPenColors: $customPenColors,
+                            colorScheme: colorScheme
+                        )
+                    case .highlighter:
+                        HighlighterOptionsView(
+                            highlighterWidth: $highlighterWidth,
+                            selectedHighlighterColor: $selectedHighlighterColor,
+                            customHighlighterColors: $customHighlighterColors,
+                            colorScheme: colorScheme
+                        )
+                    case .eraser:
+                        EraserOptionsView(
+                            eraserSize: $eraserSize,
+                            eraserType: $eraserType,
+                            colorScheme: colorScheme,
+                            onClearPage: onClearCurrentPage
+                        )
+                    case .diagram:
+                        DiagramOptionsView(
+                            diagramWidth: $diagramWidth,
+                            diagramAutosnap: $diagramAutosnap,
+                            selectedPenColor: $selectedPenColor,
+                            customPenColors: $customPenColors,
+                            colorScheme: colorScheme
+                        )
+                    case .textBox:
+                        TextOptionsView(
+                            textSize: $textSize,
+                            textColor: $textColor,
+                            customPenColors: $customPenColors,
+                            colorScheme: colorScheme
+                        )
+                    case .lasso:
+                        EmptyView()
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .strokeBorder(
+                                colorScheme == .dark ? Color.white.opacity(0.15) : Color.black.opacity(0.4),
+                                lineWidth: 1.5
+                            )
+                    )
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
+        }
+    }
+
+    // MARK: - AI Section
+
+    private var aiDisabled: Bool {
+        !isDocumentAIReady || (isAssignmentEnabled && !isAssignmentReady)
+    }
+
+    @ViewBuilder
+    private var aiSection: some View {
+        if isAssignmentEnabled {
+            // Ask
             ToolbarButton(
                 icon: "sparkles",
-                isSelected: aiModeSelected,
-                isDisabled: !isDocumentAIReady || (isAssignmentEnabled && !isAssignmentReady),
+                isSelected: false,
+                isDisabled: aiDisabled,
                 showProcessingIndicator: !isDocumentAIReady || isAssignmentProcessing,
                 processingIndicatorColor: isAssignmentProcessing ? .blue : .yellow,
                 colorScheme: colorScheme,
-                action: selectAIMode
+                action: { onAIActionSelected("ask") }
             )
 
-            toolbarDivider
+            // Hint
+            ToolbarButton(
+                icon: "lightbulb.fill",
+                isSelected: false,
+                isDisabled: aiDisabled,
+                colorScheme: colorScheme,
+                action: { onAIActionSelected("hint") }
+            )
+
+            // Check
+            ToolbarButton(
+                icon: "checkmark.circle.fill",
+                isSelected: false,
+                isDisabled: aiDisabled,
+                colorScheme: colorScheme,
+                action: { onAIActionSelected("check") }
+            )
+
+            // More AI actions
+            ToolbarButton(
+                icon: "ellipsis.circle",
+                isSelected: showAIPopover,
+                isDisabled: aiDisabled,
+                colorScheme: colorScheme,
+                action: { toggleNonDrawingPopover(&showAIPopover) }
+            )
+            .popover(isPresented: $showAIPopover) {
+                AIActionsPopoverContent(
+                    colorScheme: colorScheme,
+                    onActionSelected: { action in
+                        showAIPopover = false
+                        onAIActionSelected(action)
+                    }
+                )
+                .reefPopoverStyle(colorScheme: colorScheme)
+            }
+        }
+    }
+
+    // MARK: - Right Section
+
+    private var rightSection: some View {
+        HStack(spacing: 0) {
+            // Export PDF
+            ToolbarButton(
+                icon: "square.and.arrow.up",
+                isSelected: false,
+                colorScheme: colorScheme,
+                action: onExportPDF
+            )
+            .offset(y: -1)
+
+            // Tutor log sidebar toggle
+            ToolbarButton(
+                icon: isTutorSidebarVisible ? "book.pages.fill" : "book.pages",
+                isSelected: isTutorSidebarVisible,
+                colorScheme: colorScheme,
+                action: onToggleTutorSidebar
+            )
 
             // Dark mode toggle
             ToolbarButton(
@@ -436,32 +774,48 @@ struct CanvasToolbar: View {
                 action: onToggleDarkMode
             )
         }
-        .padding(.horizontal, 12)
-        .frame(height: 56)
-        .background(
-            RoundedRectangle(cornerRadius: 28)
-                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 28)
-                        .strokeBorder(
-                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
-                            lineWidth: 1
-                        )
-                )
-                .shadow(
-                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
-                    radius: colorScheme == .dark ? 12 : 8,
-                    x: 0,
-                    y: 4
-                )
-        )
     }
 
     private var toolbarDivider: some View {
         Rectangle()
-            .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
+            .fill(Color.white.opacity(0.3))
             .frame(width: 1, height: 28)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 6)
+    }
+}
+
+// MARK: - Drawing Tool Button (with color dot indicator)
+
+private struct DrawingToolButton: View {
+    let icon: String
+    let isSelected: Bool
+    let colorDot: Color
+    let showColorDot: Bool
+    let colorScheme: ColorScheme
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(foregroundColor)
+                .frame(width: 36, height: 36, alignment: .center)
+                .background(
+                    isSelected ?
+                        Color.white.opacity(0.25) :
+                        Color.clear
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .frame(width: 36, height: 36)
+        .buttonStyle(.plain)
+    }
+
+    private var foregroundColor: Color {
+        if isSelected {
+            return .white
+        }
+        return Color.white.opacity(0.9)
     }
 }
 
@@ -482,24 +836,24 @@ private struct ToolbarButton: View {
         Button(action: action) {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundColor(foregroundColor)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 36, height: 36, alignment: .center)
                     .background(
                         isSelected ?
-                            Color.deepTeal.opacity(0.15) :
+                            Color.white.opacity(0.25) :
                             Color.clear
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
 
                 // Pulsing indicator when processing
                 if showProcessingIndicator {
                     Circle()
                         .fill(processingIndicatorColor)
-                        .frame(width: 8, height: 8)
+                        .frame(width: 7, height: 7)
                         .scaleEffect(processingPulseScale)
                         .shadow(color: processingIndicatorColor.opacity(0.5), radius: 2)
-                        .offset(x: -4, y: 4)
+                        .offset(x: -2, y: 2)
                         .onAppear {
                             withAnimation(
                                 .easeInOut(duration: 0.8)
@@ -514,35 +868,37 @@ private struct ToolbarButton: View {
                 }
             }
         }
+        .frame(width: 36, height: 36)
         .buttonStyle(.plain)
         .disabled(isDisabled)
     }
 
     private var foregroundColor: Color {
         if isDisabled {
-            return Color.adaptiveText(for: colorScheme).opacity(0.3)
+            return Color.white.opacity(0.35)
         }
         if isSelected {
-            return .deepTeal
+            return .white
         }
-        return Color.adaptiveText(for: colorScheme)
+        return Color.white.opacity(0.9)
     }
 }
 
-// MARK: - Background Mode Toolbar
+// MARK: - Background Mode Popover Content
 
-private struct BackgroundModeToolbar: View {
+private struct BackgroundModePopoverContent: View {
     @Binding var canvasBackgroundMode: CanvasBackgroundMode
     @Binding var canvasBackgroundOpacity: CGFloat
     @Binding var canvasBackgroundSpacing: CGFloat
     let colorScheme: ColorScheme
-    var onClose: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(CanvasBackgroundMode.allCases, id: \.self) { mode in
                 Button {
-                    canvasBackgroundMode = mode
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        canvasBackgroundMode = mode
+                    }
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: mode.iconName)
@@ -561,263 +917,163 @@ private struct BackgroundModeToolbar: View {
                 .buttonStyle(.plain)
             }
 
-            // Opacity slider (always visible, disabled when normal)
-            Rectangle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                .frame(width: 1, height: 24)
-                .padding(.horizontal, 8)
-
-            // Opacity slider
-            HStack(spacing: 4) {
-                Image(systemName: "sun.min")
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(canvasBackgroundMode == .normal ? 0.2 : 0.5))
-
-                Slider(value: $canvasBackgroundOpacity, in: 0.05...0.5)
-                    .accentColor(.deepTeal)
-                    .frame(width: 60)
-                    .disabled(canvasBackgroundMode == .normal)
-
-                Image(systemName: "sun.max")
-                    .font(.system(size: 11))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(canvasBackgroundMode == .normal ? 0.2 : 0.5))
-            }
-            .opacity(canvasBackgroundMode == .normal ? 0.4 : 1.0)
-
-            // Spacing slider
-            Rectangle()
-                .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                .frame(width: 1, height: 24)
-                .padding(.horizontal, 6)
-
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.down.right.and.arrow.up.left")
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(canvasBackgroundMode == .normal ? 0.2 : 0.5))
-
-                Slider(value: $canvasBackgroundSpacing, in: 24...80)
-                    .accentColor(.deepTeal)
-                    .frame(width: 60)
-                    .disabled(canvasBackgroundMode == .normal)
-
-                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 10))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(canvasBackgroundMode == .normal ? 0.2 : 0.5))
-            }
-            .opacity(canvasBackgroundMode == .normal ? 0.4 : 1.0)
-
-            if onClose != nil {
-                // Divider before close button
+            if canvasBackgroundMode != .normal {
                 Rectangle()
                     .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
                     .frame(width: 1, height: 24)
-                    .padding(.leading, 12)
-                    .padding(.trailing, 8)
+                    .padding(.horizontal, 8)
 
-                // Close button
-                Button {
-                    onClose?()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.6))
-                        .frame(width: 28, height: 28)
+                // Opacity slider
+                HStack(spacing: 4) {
+                    Image(systemName: "sun.min")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
+
+                    Slider(value: $canvasBackgroundOpacity, in: 0.05...0.5)
+                        .accentColor(.deepTeal)
+                        .frame(width: 60)
+
+                    Image(systemName: "sun.max")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
                 }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 48)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .strokeBorder(
-                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
-                            lineWidth: 1
-                        )
-                )
-                .shadow(
-                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
-                    radius: colorScheme == .dark ? 12 : 8,
-                    x: 0,
-                    y: 4
-                )
-        )
-    }
-}
 
-// MARK: - AI Toolbar
-
-struct AIToolbar: View {
-    let colorScheme: ColorScheme
-    var onClose: (() -> Void)? = nil
-
-    var body: some View {
-        HStack(spacing: 0) {
-            // Ask (Push to Talk) button
-            AIToolbarButton(
-                icon: "mic.fill",
-                label: "Ask",
-                colorScheme: colorScheme,
-                action: { /* No functionality yet */ }
-            )
-
-            // Simplify button
-            AIToolbarButton(
-                icon: "list.bullet",
-                label: "Simplify",
-                colorScheme: colorScheme,
-                action: { /* No functionality yet */ }
-            )
-
-            // Hint button
-            AIToolbarButton(
-                icon: "lightbulb.fill",
-                label: "Hint",
-                colorScheme: colorScheme,
-                action: { /* No functionality yet */ }
-            )
-
-            // Improve button
-            AIToolbarButton(
-                icon: "wand.and.stars",
-                label: "Improve",
-                colorScheme: colorScheme,
-                action: { /* No functionality yet */ }
-            )
-
-            // Check button
-            AIToolbarButton(
-                icon: "checkmark.circle.fill",
-                label: "Check",
-                colorScheme: colorScheme,
-                action: { /* No functionality yet */ }
-            )
-
-            // Show Error button
-            AIToolbarButton(
-                icon: "exclamationmark.triangle.fill",
-                label: "Show",
-                colorScheme: colorScheme,
-                action: { /* No functionality yet */ }
-            )
-
-            // Stuck button
-            AIToolbarButton(
-                icon: "hand.raised.fill",
-                label: "Stuck",
-                colorScheme: colorScheme,
-                action: { /* No functionality yet */ }
-            )
-
-            // Recap button
-            AIToolbarButton(
-                icon: "arrow.clockwise",
-                label: "Recap",
-                colorScheme: colorScheme,
-                action: { /* No functionality yet */ }
-            )
-
-            if onClose != nil {
-                // Divider before close button
                 Rectangle()
                     .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
                     .frame(width: 1, height: 24)
-                    .padding(.leading, 12)
-                    .padding(.trailing, 8)
+                    .padding(.horizontal, 6)
 
-                // Close button
-                Button {
-                    onClose?()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.6))
-                        .frame(width: 28, height: 28)
+                // Spacing slider
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.down.right.and.arrow.up.left")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
+
+                    Slider(value: $canvasBackgroundSpacing, in: 24...80)
+                        .accentColor(.deepTeal)
+                        .frame(width: 60)
+
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.5))
                 }
-                .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 8)
         .frame(height: 48)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .strokeBorder(
-                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
-                            lineWidth: 1
-                        )
-                )
-                .shadow(
-                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
-                    radius: colorScheme == .dark ? 12 : 8,
-                    x: 0,
-                    y: 4
-                )
-        )
     }
 }
 
-// MARK: - AI Toolbar Button
+// MARK: - AI Actions Popover Content
 
-private struct AIToolbarButton: View {
-    let icon: String
-    let label: String
+private struct AIActionsPopoverContent: View {
     let colorScheme: ColorScheme
-    var isDisabled: Bool = false
-    var isLoading: Bool = false
-    let action: () -> Void
+    let onActionSelected: (String) -> Void
+
+    private struct AIActionItem: Identifiable {
+        let id: String
+        let icon: String
+        let label: String
+    }
+
+    private struct AIActionSection: Identifiable {
+        let id: String
+        let title: String
+        let items: [AIActionItem]
+    }
+
+    private var sections: [AIActionSection] {
+        [
+            AIActionSection(id: "help", title: "HELP ME", items: [
+                AIActionItem(id: "simplify", icon: "list.bullet", label: "Simplify"),
+                AIActionItem(id: "improve", icon: "wand.and.stars", label: "Improve"),
+                AIActionItem(id: "stuck", icon: "hand.raised.fill", label: "Stuck"),
+                AIActionItem(id: "show", icon: "exclamationmark.triangle.fill", label: "Show Answer"),
+            ]),
+            AIActionSection(id: "understand", title: "UNDERSTAND", items: [
+                AIActionItem(id: "why", icon: "questionmark.bubble", label: "Why?"),
+                AIActionItem(id: "define", icon: "text.book.closed", label: "Define"),
+                AIActionItem(id: "step_by_step", icon: "list.number", label: "Step-by-Step"),
+            ]),
+            AIActionSection(id: "review", title: "REVIEW", items: [
+                AIActionItem(id: "recap", icon: "arrow.clockwise", label: "Recap"),
+                AIActionItem(id: "find_error", icon: "magnifyingglass", label: "Find Error"),
+                AIActionItem(id: "compare", icon: "arrow.left.arrow.right", label: "Compare"),
+                AIActionItem(id: "organize", icon: "text.justify.left", label: "Organize"),
+                AIActionItem(id: "summarize", icon: "doc.plaintext", label: "Summarize"),
+            ]),
+            AIActionSection(id: "practice", title: "PRACTICE", items: [
+                AIActionItem(id: "similar", icon: "plus.square.on.square", label: "Similar Problem"),
+                AIActionItem(id: "quiz", icon: "brain.head.profile", label: "Quiz Me"),
+                AIActionItem(id: "flashcard", icon: "rectangle.on.rectangle.angled", label: "Flashcard"),
+            ]),
+        ]
+    }
 
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                ZStack {
-                    if isLoading {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(width: 24, height: 24)
-                    } else {
-                        Image(systemName: icon)
-                            .font(.system(size: 18, weight: .medium))
-                            .frame(width: 24, height: 24)
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(Array(sections.enumerated()), id: \.element.id) { sectionIndex, section in
+                    if sectionIndex > 0 {
+                        Rectangle()
+                            .fill(Color.adaptiveText(for: colorScheme).opacity(0.1))
+                            .frame(height: 0.5)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                    }
+
+                    // Section header
+                    HStack {
+                        Text(section.title)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.45))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.top, sectionIndex == 0 ? 8 : 4)
+                    .padding(.bottom, 2)
+
+                    // Section items
+                    ForEach(section.items) { action in
+                        Button {
+                            onActionSelected(action.id)
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: action.icon)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .frame(width: 24, height: 24)
+                                Text(action.label)
+                                    .font(.system(size: 14, weight: .medium))
+                                Spacer()
+                            }
+                            .foregroundColor(Color.adaptiveText(for: colorScheme))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                Text(label)
-                    .font(.system(size: 10, weight: .medium))
-            }
-            .foregroundColor(foregroundColor)
-            .frame(width: 52, height: 40)
-        }
-        .buttonStyle(.plain)
-        .disabled(isDisabled || isLoading)
-    }
 
-    private var foregroundColor: Color {
-        if isDisabled || isLoading {
-            return Color.adaptiveText(for: colorScheme).opacity(0.3)
+                Spacer().frame(height: 8)
+            }
         }
-        return Color.adaptiveText(for: colorScheme)
+        .frame(width: 220)
+        .frame(maxHeight: 400)
     }
 }
 
-// MARK: - Document Operations Toolbar
+// MARK: - Document Operations Popover Content
 
-private struct DocumentOperationsToolbar: View {
+private struct DocumentOperationsPopoverContent: View {
     let colorScheme: ColorScheme
     let onAddPageAfterCurrent: () -> Void
     let onAddPageToEnd: () -> Void
     let onDeleteCurrentPage: () -> Void
     let onClearCurrentPage: () -> Void
     let onExportPDF: () -> Void
-    var onClose: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 0) {
-            // Add page after current
             Button {
                 onAddPageAfterCurrent()
             } label: {
@@ -833,13 +1089,11 @@ private struct DocumentOperationsToolbar: View {
             }
             .buttonStyle(.plain)
 
-            // Divider
             Rectangle()
                 .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
                 .frame(width: 1, height: 24)
                 .padding(.horizontal, 8)
 
-            // Add page to end
             Button {
                 onAddPageToEnd()
             } label: {
@@ -855,13 +1109,11 @@ private struct DocumentOperationsToolbar: View {
             }
             .buttonStyle(.plain)
 
-            // Divider
             Rectangle()
                 .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
                 .frame(width: 1, height: 24)
                 .padding(.horizontal, 8)
 
-            // Clear current page
             Button {
                 onClearCurrentPage()
             } label: {
@@ -877,13 +1129,11 @@ private struct DocumentOperationsToolbar: View {
             }
             .buttonStyle(.plain)
 
-            // Divider
             Rectangle()
                 .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
                 .frame(width: 1, height: 24)
                 .padding(.horizontal, 8)
 
-            // Export PDF
             Button {
                 onExportPDF()
             } label: {
@@ -899,13 +1149,11 @@ private struct DocumentOperationsToolbar: View {
             }
             .buttonStyle(.plain)
 
-            // Divider
             Rectangle()
                 .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
                 .frame(width: 1, height: 24)
                 .padding(.horizontal, 8)
 
-            // Delete current page
             Button {
                 onDeleteCurrentPage()
             } label: {
@@ -920,46 +1168,35 @@ private struct DocumentOperationsToolbar: View {
                 .frame(width: 72, height: 44)
             }
             .buttonStyle(.plain)
-
-            if onClose != nil {
-                // Divider before close button
-                Rectangle()
-                    .fill(Color.adaptiveText(for: colorScheme).opacity(0.2))
-                    .frame(width: 1, height: 24)
-                    .padding(.leading, 12)
-                    .padding(.trailing, 8)
-
-                // Close button
-                Button {
-                    onClose?()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.6))
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
-            }
         }
-        .padding(.horizontal, 12)
         .frame(height: 48)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(colorScheme == .dark ? Color.warmDark : Color.blushWhite)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .strokeBorder(
-                            colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear,
-                            lineWidth: 1
-                        )
-                )
-                .shadow(
-                    color: colorScheme == .dark ? Color.black.opacity(0.5) : Color.black.opacity(0.15),
-                    radius: colorScheme == .dark ? 12 : 8,
-                    x: 0,
-                    y: 4
-                )
+    }
+}
+
+// MARK: - Chrome Tab Shape
+
+private struct ChromeTabShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let curve: CGFloat = 8
+        var path = Path()
+
+        // Start at bottom-left
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        // Curve up to top-left
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + curve, y: rect.minY),
+            control: CGPoint(x: rect.minX, y: rect.minY)
         )
+        // Straight across top
+        path.addLine(to: CGPoint(x: rect.maxX - curve, y: rect.minY))
+        // Curve down to bottom-right
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.maxY),
+            control: CGPoint(x: rect.maxX, y: rect.minY)
+        )
+        // Close along the bottom
+        path.closeSubpath()
+        return path
     }
 }
 
@@ -982,15 +1219,83 @@ private struct DocumentOperationsToolbar: View {
             canvasBackgroundSpacing: .constant(48),
             colorScheme: .light,
             onHomePressed: {},
-            onAIPressed: {},
             onToggleDarkMode: {},
             isDocumentAIReady: false,
+            canUndo: true,
+            canRedo: false,
             isAssignmentEnabled: true,
             viewMode: .constant(.document),
             currentQuestionIndex: 2,
-            totalQuestions: 12
+            totalQuestions: 12,
+            textSize: .constant(16),
+            textColor: .constant(.black)
         )
+        Spacer()
     }
-    .padding()
     .background(Color.gray.opacity(0.2))
+}
+
+// MARK: - Reef Popover Style
+
+private struct ReefPopoverStyle: ViewModifier {
+    let colorScheme: ColorScheme
+
+    private var cardBg: Color {
+        colorScheme == .dark ? .warmDarkCard : .blushWhite
+    }
+
+    private var borderColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.15) : .charcoal
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .background(cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(borderColor, lineWidth: 1)
+            )
+            .presentationCompactAdaptation(.popover)
+            .presentationBackground(cardBg)
+    }
+}
+
+private extension View {
+    func reefPopoverStyle(colorScheme: ColorScheme) -> some View {
+        modifier(ReefPopoverStyle(colorScheme: colorScheme))
+    }
+}
+
+// MARK: - Tutor Toggle Style
+
+private struct TutorToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        let trackWidth: CGFloat = 36
+        let trackHeight: CGFloat = 20
+        let knobSize: CGFloat = 16
+        let knobPadding: CGFloat = 2
+
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                configuration.isOn.toggle()
+            }
+        } label: {
+            ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                Capsule()
+                    .fill(configuration.isOn ? Color.seafoam : Color.white.opacity(0.15))
+                    .overlay(
+                        Capsule()
+                            .strokeBorder(Color.deepTeal.opacity(configuration.isOn ? 0 : 0.6), lineWidth: 1)
+                    )
+                    .frame(width: trackWidth, height: trackHeight)
+
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: knobSize, height: knobSize)
+                    .padding(knobPadding)
+            }
+        }
+        .buttonStyle(.plain)
+    }
 }

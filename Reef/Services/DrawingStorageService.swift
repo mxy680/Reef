@@ -270,7 +270,45 @@ class DrawingStorageService {
         return structure
     }
 
+    // MARK: - Text Box API
+
+    /// Saves text boxes for a specific page
+    func saveTextBoxes(_ textBoxes: [TextBoxData], for documentID: UUID, pageIndex: Int) throws {
+        let url = getTextBoxURL(for: documentID, pageIndex: pageIndex)
+        let data = try JSONEncoder().encode(textBoxes)
+        try data.write(to: url)
+    }
+
+    /// Loads text boxes for a specific page
+    func loadTextBoxes(for documentID: UUID, pageIndex: Int) -> [TextBoxData] {
+        let url = getTextBoxURL(for: documentID, pageIndex: pageIndex)
+        guard fileManager.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url),
+              let textBoxes = try? JSONDecoder().decode([TextBoxData].self, from: data) else {
+            return []
+        }
+        return textBoxes
+    }
+
+    /// Saves all text boxes for all pages of a document
+    func saveAllTextBoxes(_ allTextBoxes: [[TextBoxData]], for documentID: UUID) throws {
+        for (index, textBoxes) in allTextBoxes.enumerated() {
+            try saveTextBoxes(textBoxes, for: documentID, pageIndex: index)
+        }
+    }
+
+    /// Loads all text boxes for all pages of a document
+    func loadAllTextBoxes(for documentID: UUID, pageCount: Int) -> [[TextBoxData]] {
+        return (0..<pageCount).map { index in
+            loadTextBoxes(for: documentID, pageIndex: index)
+        }
+    }
+
     // MARK: - Private
+
+    private func getTextBoxURL(for documentID: UUID, pageIndex: Int) -> URL {
+        drawingsDirectory.appendingPathComponent("\(documentID.uuidString)_page\(pageIndex).textboxes")
+    }
 
     private func getDrawingURL(for documentID: UUID, pageIndex: Int) -> URL {
         drawingsDirectory.appendingPathComponent("\(documentID.uuidString)_page\(pageIndex).drawing")

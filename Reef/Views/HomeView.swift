@@ -697,7 +697,7 @@ struct HomeView: View {
             )
             .offset(x: isCanvasExiting ? UIScreen.main.bounds.width : 0)
             .transition(.asymmetric(
-                insertion: .move(edge: .trailing),
+                insertion: .opacity,
                 removal: .identity  // We handle removal with offset animation
             ))
             .zIndex(1)
