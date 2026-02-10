@@ -2,12 +2,9 @@
 //  BatchTrigger.swift
 //  Reef
 //
-//  Timer-based trigger that fires when any of three conditions is met:
-//  1. Pending stroke count >= threshold
-//  2. Time since last send >= maxTime (with pending >= 1)
-//  3. Time since pencil lift >= liftDelay (with pending >= 1)
-//
-//  Mirrors the PauseDetector timer pattern.
+//  Timer-based trigger that fires when:
+//  - At least one stroke is pending AND
+//  - Time since last send >= interval
 //
 
 import Foundation
@@ -26,9 +23,6 @@ final class BatchTrigger {
 
     /// When the last batch was sent (or when tracking started)
     private var lastSendTime: Date = Date()
-
-    /// When the pencil last lifted (last stroke completed)
-    private var lastPencilLiftTime: Date?
 
     /// Timer for periodic condition checks
     private var checkTimer: Timer?
@@ -75,37 +69,26 @@ final class BatchTrigger {
     /// Record that a new stroke was added to the pending buffer
     func recordStrokeAdded() {
         pendingStrokeCount += 1
-        lastPencilLiftTime = Date()
     }
 
     /// Record that a batch was sent (resets counters)
     func recordBatchSent() {
         pendingStrokeCount = 0
         lastSendTime = Date()
-        lastPencilLiftTime = nil
     }
 
     /// Reset all state
     func reset() {
         pendingStrokeCount = 0
         lastSendTime = Date()
-        lastPencilLiftTime = nil
     }
 
     // MARK: - Private
 
     private func checkConditions() {
-        guard pendingStrokeCount > 0 else { return }
-
-        // Condition 1: stroke count threshold
-        if pendingStrokeCount >= config.strokeCountThreshold { fire(); return }
-
-        // Condition 2: max time since last send
-        if Date().timeIntervalSince(lastSendTime) >= config.maxTimeSinceLastSend { fire(); return }
-
-        // Condition 3: pencil lift delay
-        if let liftTime = lastPencilLiftTime,
-           Date().timeIntervalSince(liftTime) >= config.pencilLiftDelay { fire(); return }
+        guard pendingStrokeCount >= 1,
+              Date().timeIntervalSince(lastSendTime) >= config.interval else { return }
+        fire()
     }
 
     private func fire() {
