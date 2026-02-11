@@ -33,7 +33,6 @@ from lib.embedding import get_embedding_service
 from lib.question_to_latex import question_to_latex, _sanitize_text
 from lib.database import init_db, close_db
 from api.users import router as users_router
-from api.tutoring import router as tutoring_router
 
 # Surya imports
 from surya.foundation import FoundationPredictor
@@ -96,7 +95,6 @@ app.add_middleware(
 
 # Include routers
 app.include_router(users_router)
-app.include_router(tutoring_router)
 
 
 @app.get("/health")
@@ -473,7 +471,7 @@ async def ai_group_problems(
             page_images.append(buf.getvalue())
 
         # Call Gemini (via OpenRouter) with annotated images and prompt
-        from lib.openai_client import LLMClient
+        from lib.llm_client import LLMClient
         prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
         llm_client = LLMClient(
             api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -676,7 +674,7 @@ async def ai_reconstruct(
             )
 
         # Create LLM client once for grouping, extraction, and compilation fix attempts
-        from lib.openai_client import LLMClient
+        from lib.llm_client import LLMClient
         llm_client = LLMClient(
             api_key=os.getenv("OPENROUTER_API_KEY"),
             model="google/gemini-3-flash-preview",
