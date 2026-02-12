@@ -181,6 +181,13 @@ struct DrawingOverlayView: UIViewRepresentable {
         // Recognition state
         var recognitionEnabled: Bool = false
 
+        // Timestamp of last drawing change (≈ pen-up) for latency tracking
+        private var lastDrawingChangeTime: CFAbsoluteTime = 0
+
+        // Union of all stroke bounds added during the current debounce window,
+        // used to identify which clusters the user is actively writing in.
+        private var activeStrokeBoundsUnion: CGRect = .null
+
         // Tool state
         var currentTool: CanvasTool = .pen
         var currentPenColor: UIColor = .black
@@ -234,18 +241,70 @@ struct DrawingOverlayView: UIViewRepresentable {
             let manager = getClusterManager(for: canvasView)
             manager.applyClusters(clusters)
 
-            let dirty = manager.dirtyClusters
-            if !dirty.isEmpty {
-                print("[Clustering] Server response — \(dirty.count) dirty cluster(s) on page \(page):")
-                for c in dirty {
-                    let b = c.boundingBox
-                    print("  → [\(c.id)] \(c.strokeCount) strokes, bounds=(\(Int(b.minX)),\(Int(b.minY)) \(Int(b.width))x\(Int(b.height)))")
+            // Transcribe only dirty clusters the user touched during this debounce window
+            let drawing = canvasView.drawing
+            let touchedRegion = activeStrokeBoundsUnion
+            activeStrokeBoundsUnion = .null  // reset for next window
+            let activeDirtyClusters = manager.dirtyClusters.filter { cluster in
+                touchedRegion != .null && cluster.boundingBox.intersects(touchedRegion)
+            }
+            let skippedCount = manager.dirtyClusters.count - activeDirtyClusters.count
+            if skippedCount > 0 {
+                print("[Transcription] Skipped \(skippedCount) dirty cluster(s) not near active stroke")
+            }
+            for cluster in activeDirtyClusters {
+                let padding: CGFloat = 10
+                let paddedRect = cluster.boundingBox.insetBy(dx: -padding, dy: -padding)
+                    .intersection(CGRect(origin: .zero, size: CGSize(
+                        width: drawing.bounds.maxX + padding,
+                        height: drawing.bounds.maxY + padding
+                    )))
+
+                // Render strokes on a white background (PKDrawing renders on transparent,
+                // which becomes black when JPEG-compressed)
+                let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+                var strokeImage: UIImage?
+                lightTraits.performAsCurrent {
+                    strokeImage = drawing.image(from: paddedRect, scale: 2.0)
+                }
+                guard let strokes = strokeImage else { continue }
+
+                let renderer = UIGraphicsImageRenderer(size: strokes.size)
+                let composited = renderer.image { ctx in
+                    UIColor.white.setFill()
+                    ctx.fill(CGRect(origin: .zero, size: strokes.size))
+                    strokes.draw(at: .zero)
+                }
+
+                guard let jpegData = composited.jpegData(compressionQuality: 0.9) else { continue }
+                let clusterId = cluster.id
+                let bbox = cluster.boundingBox
+                print("[Transcription] Sending cluster \(clusterId) (\(Int(bbox.width))x\(Int(bbox.height)) @ \(Int(bbox.origin.x)),\(Int(bbox.origin.y)), \(cluster.strokeCount) strokes, \(jpegData.count / 1024)KB)")
+
+                let penUpTime = self.lastDrawingChangeTime
+                Task {
+                    do {
+                        let result = try await AIService.shared.transcribeCluster(
+                            imageData: jpegData,
+                            clusterId: clusterId
+                        )
+                        let ms = Int((CFAbsoluteTimeGetCurrent() - penUpTime) * 1000)
+                        let cents = result.cost * 100
+                        print("[Transcription] [\(result.clusterId)] \"\(result.text)\" (\(result.promptTokens)/\(result.completionTokens) tokens, \(String(format: "%.3f", cents))¢, \(ms)ms)")
+                    } catch {
+                        let ms = Int((CFAbsoluteTimeGetCurrent() - penUpTime) * 1000)
+                        print("[Transcription] [\(clusterId)] error: \(error.localizedDescription) (\(ms)ms)")
+                    }
                 }
             }
         }
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             updateUndoRedoState(canvasView)
+            lastDrawingChangeTime = CFAbsoluteTimeGetCurrent()
+            if let lastStroke = canvasView.drawing.strokes.last {
+                activeStrokeBoundsUnion = activeStrokeBoundsUnion.union(lastStroke.renderBounds)
+            }
 
             // Skip if we triggered this via shape replacement
             guard !isReplacingStroke else { return }
@@ -280,10 +339,10 @@ struct DrawingOverlayView: UIViewRepresentable {
                 shapeClusterManager.update(with: canvasView.drawing.strokes)
                 let shapePageNum = getPageIndex(for: canvasView) ?? 0
 
-                // Transcription debounce (800ms) — send stroke bounds to server
+                // Transcription debounce (1s) — send stroke bounds to server
                 transcriptionTask?.cancel()
                 transcriptionTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 800_000_000)
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                     if !Task.isCancelled {
                         self.ensureWebSocketConnected()
                         let payload = shapeClusterManager.strokeBoundsPayload()
@@ -311,10 +370,10 @@ struct DrawingOverlayView: UIViewRepresentable {
             clusterManager.update(with: canvasView.drawing.strokes)
             let pageNum = getPageIndex(for: canvasView) ?? 0
 
-            // Transcription debounce (800ms) — send stroke bounds to server
+            // Transcription debounce (1s) — send stroke bounds to server
             transcriptionTask?.cancel()
             transcriptionTask = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 800_000_000)
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
                 if !Task.isCancelled {
                     self.ensureWebSocketConnected()
                     let payload = clusterManager.strokeBoundsPayload()

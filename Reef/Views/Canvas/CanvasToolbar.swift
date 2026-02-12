@@ -22,7 +22,8 @@ enum CanvasTool: Equatable {
 extension CanvasTool {
     var hasSecondaryOptions: Bool {
         switch self {
-        case .pen, .highlighter, .eraser, .diagram, .textBox: return true
+        case .pen, .highlighter, .eraser, .diagram: return true
+        case .textBox: return false
         case .lasso, .pan: return false
         }
     }
@@ -53,7 +54,7 @@ enum CanvasBackgroundMode: String, CaseIterable {
         case .normal: return "doc"
         case .grid: return "squareshape.split.3x3"
         case .dotted: return "circle.grid.3x3.fill"
-        case .lined: return "rectangle.split.3x1"
+        case .lined: return "text.justify.left"
         }
     }
 }
@@ -152,9 +153,6 @@ struct CanvasToolbar: View {
     var isRulerActive: Bool = false
     var onToggleRuler: () -> Void = {}
 
-    // Zoom (auto-center)
-    var onAutoZoom: () -> Void = {}
-
     // Text box tool options
     @Binding var textSize: CGFloat
     @Binding var textColor: Color
@@ -234,6 +232,11 @@ struct CanvasToolbar: View {
 
                 // CENTER SECTION: Drawing tools
                 centerSection
+
+                toolbarDivider
+
+                // CANVAS UTILITIES: Ruler, Background, Pages
+                canvasUtilitiesSection
 
                 toolbarDivider
 
@@ -436,34 +439,14 @@ struct CanvasToolbar: View {
                 action: { selectTool(.pen) }
             )
 
-            // Highlighter
-            DrawingToolButton(
-                icon: "highlighter",
-                isSelected: selectedTool == .highlighter,
-                colorDot: selectedHighlighterColor,
-                showColorDot: true,
-                colorScheme: colorScheme,
-                action: { selectTool(.highlighter) }
-            )
-
             // Diagram
             DrawingToolButton(
-                icon: "skew",
+                icon: "compass.drawing",
                 isSelected: selectedTool == .diagram,
                 colorDot: selectedPenColor,
                 showColorDot: true,
                 colorScheme: colorScheme,
                 action: { selectTool(.diagram) }
-            )
-
-            // Text box
-            DrawingToolButton(
-                icon: "character.textbox",
-                isSelected: selectedTool == .textBox,
-                colorDot: textColor,
-                showColorDot: true,
-                colorScheme: colorScheme,
-                action: { selectTool(.textBox) }
             )
 
             // --- Edit tools ---
@@ -488,17 +471,21 @@ struct CanvasToolbar: View {
 
             // Pan (scroll/zoom) — useful in simulator where finger = draw
             ToolbarButton(
-                icon: "hand.draw",
+                icon: "hand.draw.fill",
                 isSelected: selectedTool == .pan,
                 colorScheme: colorScheme,
                 action: { selectTool(.pan) }
             )
+        }
+    }
 
-            // --- Canvas utilities ---
+    // MARK: - Canvas Utilities Section
 
+    private var canvasUtilitiesSection: some View {
+        HStack(spacing: 0) {
             // Ruler toggle
             ToolbarButton(
-                icon: "ruler",
+                icon: "pencil.and.ruler.fill",
                 isSelected: isRulerActive,
                 colorScheme: colorScheme,
                 action: onToggleRuler
@@ -506,7 +493,7 @@ struct CanvasToolbar: View {
 
             // Background mode (grid/dots/lines)
             ToolbarButton(
-                icon: canvasBackgroundMode.iconName,
+                icon: "document.badge.gearshape.fill",
                 isSelected: showBackgroundOptions,
                 colorScheme: colorScheme,
                 action: toggleBackgroundOptions
@@ -514,7 +501,7 @@ struct CanvasToolbar: View {
 
             // Page operations
             ToolbarButton(
-                icon: "doc.badge.plus",
+                icon: "doc.fill.badge.plus",
                 isSelected: showPageOpsPopover,
                 colorScheme: colorScheme,
                 action: { toggleNonDrawingPopover(&showPageOpsPopover) }
@@ -607,14 +594,6 @@ struct CanvasToolbar: View {
                 .padding(12)
                 .reefPopoverStyle(colorScheme: colorScheme)
             }
-
-            // Auto-zoom (fit to width)
-            ToolbarButton(
-                icon: "arrow.up.left.and.down.right.magnifyingglass",
-                isSelected: false,
-                colorScheme: colorScheme,
-                action: onAutoZoom
-            )
         }
     }
 
@@ -666,14 +645,7 @@ struct CanvasToolbar: View {
                             customPenColors: $customPenColors,
                             colorScheme: colorScheme
                         )
-                    case .textBox:
-                        TextOptionsView(
-                            textSize: $textSize,
-                            textColor: $textColor,
-                            customPenColors: $customPenColors,
-                            colorScheme: colorScheme
-                        )
-                    case .lasso, .pan:
+                    case .textBox, .lasso, .pan:
                         EmptyView()
                     }
                 }
@@ -735,7 +707,7 @@ struct CanvasToolbar: View {
 
             // More AI actions
             ToolbarButton(
-                icon: "ellipsis.circle",
+                icon: "ellipsis.circle.fill",
                 isSelected: showAIPopover,
                 isDisabled: aiDisabled,
                 colorScheme: colorScheme,
@@ -760,7 +732,7 @@ struct CanvasToolbar: View {
         HStack(spacing: 0) {
             // Export PDF
             ToolbarButton(
-                icon: "square.and.arrow.up",
+                icon: "square.and.arrow.up.fill",
                 isSelected: false,
                 colorScheme: colorScheme,
                 action: onExportPDF
@@ -769,7 +741,7 @@ struct CanvasToolbar: View {
 
             // Tutor log sidebar toggle
             ToolbarButton(
-                icon: isTutorSidebarVisible ? "book.pages.fill" : "book.pages",
+                icon: "book.pages.fill",
                 isSelected: isTutorSidebarVisible,
                 colorScheme: colorScheme,
                 action: onToggleTutorSidebar

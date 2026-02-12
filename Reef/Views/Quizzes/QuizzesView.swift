@@ -9,10 +9,10 @@ import SwiftData
 struct QuizzesView: View {
     let course: Course
     var onGenerateQuiz: () -> Void
+    var onSelectQuiz: (Quiz) -> Void = { _ in }
     @StateObject private var themeManager = ThemeManager.shared
 
     @State private var isInitialLoad: Bool = true
-    @State private var selectedQuiz: Quiz? = nil
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
@@ -39,9 +39,6 @@ struct QuizzesView: View {
                 }
             }
         }
-        .fullScreenCover(item: $selectedQuiz) { quiz in
-            QuizAttemptView(quiz: quiz)
-        }
     }
 
     // MARK: - Quiz List
@@ -51,7 +48,7 @@ struct QuizzesView: View {
             LazyVStack(spacing: 0) {
                 ForEach(courseQuizzes) { quiz in
                     Button {
-                        selectedQuiz = quiz
+                        onSelectQuiz(quiz)
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "list.bullet.clipboard")

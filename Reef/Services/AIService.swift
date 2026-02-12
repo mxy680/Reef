@@ -135,6 +135,77 @@ class AIService {
         return embedResponse.embeddings
     }
 
+    // MARK: - Transcription
+
+    struct TranscriptionResponse {
+        let text: String
+        let clusterId: String
+        let promptTokens: Int
+        let completionTokens: Int
+        let cost: Double
+    }
+
+    /// Sends a cluster image to the server for Gemini handwriting transcription.
+    nonisolated func transcribeCluster(imageData: Data, clusterId: String) async throws -> TranscriptionResponse {
+        let urlString = baseURL + "/ai/transcribe"
+
+        guard let url = URL(string: urlString) else {
+            throw AIServiceError.invalidURL
+        }
+
+        let base64Image = imageData.base64EncodedString()
+        let body: [String: String] = ["image": base64Image, "cluster_id": clusterId]
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let data: Data
+        let response: URLResponse
+
+        do {
+            (data, response) = try await session.data(for: urlRequest)
+        } catch {
+            throw AIServiceError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AIServiceError.noData
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let message: String
+            if let errorDict = try? JSONDecoder().decode([String: String].self, from: data),
+               let detail = errorDict["detail"] {
+                message = detail
+            } else {
+                message = String(data: data, encoding: .utf8) ?? "Unknown error"
+            }
+            throw AIServiceError.serverError(statusCode: httpResponse.statusCode, message: message)
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let text = json["text"] as? String,
+              let returnedClusterId = json["cluster_id"] as? String,
+              let usage = json["usage"] as? [String: Any],
+              let promptTokens = usage["prompt_tokens"] as? Int,
+              let completionTokens = usage["completion_tokens"] as? Int,
+              let cost = usage["cost"] as? Double else {
+            throw AIServiceError.decodingError(
+                NSError(domain: "AIService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid transcription response"])
+            )
+        }
+
+        return TranscriptionResponse(
+            text: text,
+            clusterId: returnedClusterId,
+            promptTokens: promptTokens,
+            completionTokens: completionTokens,
+            cost: cost
+        )
+    }
+
     // MARK: - Cluster WebSocket
 
     /// Connects to the cluster WebSocket endpoint.

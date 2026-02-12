@@ -8,7 +8,8 @@ import PDFKit
 import PencilKit
 
 struct CanvasView: View {
-    let note: Note
+    var note: Note? = nil
+    var quiz: Quiz? = nil
     @Binding var columnVisibility: NavigationSplitViewVisibility
     @Binding var isViewingCanvas: Bool
     var onDismiss: (() -> Void)? = nil
@@ -63,8 +64,12 @@ struct CanvasView: View {
         themeManager.isDarkMode ? .dark : .light
     }
 
+    /// Whether we are displaying a quiz (vs a note)
+    private var isQuizMode: Bool { quiz != nil }
+
     private var fileURL: URL {
-        FileStorageService.shared.getFileURL(
+        guard let note = note else { return URL(fileURLWithPath: "/dev/null") }
+        return FileStorageService.shared.getFileURL(
             for: note.id,
             fileExtension: note.fileExtension
         )
@@ -72,12 +77,37 @@ struct CanvasView: View {
 
     /// Whether assignment mode is enabled for this note
     private var isAssignmentEnabled: Bool {
-        note.isAssignment && note.isAssignmentReady
+        if isQuizMode { return true }
+        guard let note = note else { return false }
+        return note.isAssignment && note.isAssignmentReady
     }
 
     /// Total number of extracted questions
     private var totalQuestions: Int {
-        note.extractedQuestions.count
+        if let quiz = quiz { return quiz.questions.count }
+        return note?.extractedQuestions.count ?? 0
+    }
+
+    // MARK: - Quiz Helpers
+
+    private var currentQuizQuestion: QuizQuestionItem? {
+        guard let quiz = quiz,
+              currentQuestionIndex >= 0 && currentQuestionIndex < quiz.questions.count else { return nil }
+        return quiz.questions[currentQuestionIndex]
+    }
+
+    private var quizQuestionFileURL: URL? {
+        guard let quiz = quiz, let question = currentQuizQuestion else { return nil }
+        return FileStorageService.shared.getQuizQuestionFileURL(
+            quizID: quiz.id,
+            fileName: question.pdfFileName
+        )
+    }
+
+    private var quizQuestionDocumentID: UUID {
+        guard let quiz = quiz else { return UUID() }
+        let combinedString = "\(quiz.id.uuidString)-quiz-\(currentQuestionIndex)"
+        return UUID(uuidString: combinedString.md5UUID) ?? UUID()
     }
 
     var body: some View {
@@ -113,7 +143,7 @@ struct CanvasView: View {
                         }
                         selectedPenColor = themeManager.isDarkMode ? .white : .black
                     },
-                    isDocumentAIReady: note.isAIReady,
+                    isDocumentAIReady: isQuizMode || (note?.isAIReady ?? false),
                     onAddPageAfterCurrent: {
                         canvasViewRef?.addPageAfterCurrent()
                     },
@@ -158,7 +188,7 @@ struct CanvasView: View {
                             currentQuestionIndex = index
                         }
                     },
-                    isAssignmentProcessing: note.isAssignmentProcessing,
+                    isAssignmentProcessing: note?.isAssignmentProcessing ?? false,
                     isTutorSidebarVisible: showTutorSidebar,
                     onToggleTutorSidebar: {
                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -167,7 +197,6 @@ struct CanvasView: View {
                     },
                     isRulerActive: isRulerActive,
                     onToggleRuler: { isRulerActive.toggle() },
-                    onAutoZoom: { canvasViewRef?.fitToWidth() },
                     textSize: $textSize,
                     textColor: $textColor
                 )
@@ -176,7 +205,50 @@ struct CanvasView: View {
                 HStack(spacing: 0) {
                     // Content view - switches between document and assignment view
                     Group {
-                        if viewMode == .assignment && isAssignmentEnabled {
+                        if isQuizMode, let url = quizQuestionFileURL {
+                            // Quiz mode — paginated quiz questions
+                            DrawingOverlayView(
+                                documentID: quizQuestionDocumentID,
+                                documentURL: url,
+                                fileType: .pdf,
+                                selectedTool: $selectedTool,
+                                selectedPenColor: $selectedPenColor,
+                                selectedHighlighterColor: $selectedHighlighterColor,
+                                penWidth: $penWidth,
+                                highlighterWidth: $highlighterWidth,
+                                eraserSize: $eraserSize,
+                                eraserType: $eraserType,
+                                diagramWidth: $diagramWidth,
+                                diagramAutosnap: $diagramAutosnap,
+                                canvasBackgroundMode: canvasBackgroundMode,
+                                canvasBackgroundOpacity: canvasBackgroundOpacity,
+                                canvasBackgroundSpacing: canvasBackgroundSpacing,
+                                isDarkMode: themeManager.isDarkMode,
+                                isRulerActive: isRulerActive,
+                                textSize: textSize,
+                                textColor: UIColor(textColor),
+                                onCanvasReady: { container in
+                                    canvasViewRef = container
+                                },
+                                onUndoStateChanged: { canUndo = $0 },
+                                onRedoStateChanged: { canRedo = $0 },
+                                onSwipeLeft: {
+                                    if currentQuestionIndex < totalQuestions - 1 {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            currentQuestionIndex += 1
+                                        }
+                                    }
+                                },
+                                onSwipeRight: {
+                                    if currentQuestionIndex > 0 {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            currentQuestionIndex -= 1
+                                        }
+                                    }
+                                }
+                            )
+                            .id(currentQuestionIndex) // Force new view per question
+                        } else if viewMode == .assignment && isAssignmentEnabled, let note = note {
                             // Assignment mode view
                             AssignmentView(
                                 note: note,
@@ -217,7 +289,7 @@ struct CanvasView: View {
                                 onUndoStateChanged: { canUndo = $0 },
                                 onRedoStateChanged: { canRedo = $0 }
                             )
-                        } else {
+                        } else if let note = note {
                             // Document view (default)
                             DrawingOverlayView(
                                 documentID: note.id,
@@ -316,8 +388,8 @@ struct CanvasView: View {
             }
             // Set default pen color based on theme
             selectedPenColor = themeManager.isDarkMode ? .white : .black
-            // Auto-default to assignment view when assignment is ready
-            if note.isAssignment && note.isAssignmentReady {
+            // Auto-default to assignment view when assignment is ready or in quiz mode
+            if isQuizMode || (note?.isAssignment == true && note?.isAssignmentReady == true) {
                 viewMode = .assignment
             }
         }
@@ -337,14 +409,21 @@ struct CanvasView: View {
         guard !isExporting else { return }
         isExporting = true
 
-        let safeName = note.name.replacingOccurrences(of: "/", with: "-")
+        let displayName = isQuizMode ? (quiz?.topic ?? "Quiz") : (note?.name ?? "Document")
+        let safeName = displayName.replacingOccurrences(of: "/", with: "-")
         let fileName = "\(safeName).pdf"
 
         Task {
             do {
                 let url: URL
 
-                if isAssignmentEnabled {
+                if isQuizMode {
+                    // Quiz mode: export current canvas drawings
+                    guard let container = canvasViewRef else { throw PDFExportService.ExportError.renderingFailed }
+                    container.saveAllDrawings()
+                    let pages = await container.exportPageData()
+                    url = try await PDFExportService.generatePDF(pages: pages, fileName: fileName)
+                } else if isAssignmentEnabled, let note = note {
                     // Assignment mode: save current question's drawings, then export all questions
                     canvasViewRef?.saveAllDrawings()
                     url = try await PDFExportService.generateAssignmentPDF(note: note, fileName: fileName)
