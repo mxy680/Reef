@@ -18,21 +18,24 @@ import asyncio
 import base64
 from pathlib import Path
 from datetime import datetime
+import time
 
 # Import lib modules
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from pydantic import BaseModel
 from lib.mock_responses import get_mock_embedding
 import re
 from collections import defaultdict, deque
 from dataclasses import dataclass
 import numpy as np
-from lib.models import EmbedRequest, EmbedResponse, ProblemGroup, GroupProblemsResponse, Question, QuestionBatch
+from lib.models import EmbedRequest, EmbedResponse, ProblemGroup, GroupProblemsResponse, Question, QuestionBatch, QuizGenerationRequest, QuizQuestionResponse
 from lib.embedding import get_embedding_service
-from lib.question_to_latex import question_to_latex, _sanitize_text
+from lib.question_to_latex import question_to_latex, quiz_question_to_latex, _sanitize_text
 from lib.database import init_db, close_db
 from api.users import router as users_router
+from api.clustering import router as clustering_router
 
 # Surya imports
 from surya.foundation import FoundationPredictor
@@ -95,6 +98,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(users_router)
+app.include_router(clustering_router)
 
 
 @app.get("/health")
@@ -608,6 +612,7 @@ async def ai_reconstruct(
         pdf_bytes = await pdf.read()
         base_name = Path(pdf.filename).stem if pdf.filename else "document"
         data_dir = Path(__file__).parent.parent / "data"
+        t_pipeline = time.perf_counter()
 
         # Open PDF with PyMuPDF
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -617,26 +622,31 @@ async def ai_reconstruct(
         CROP_DPI = 384  # high-res for readable crops
         crop_scale = CROP_DPI / SURYA_DPI
 
+        t0 = time.perf_counter()
         surya_images = []
         hires_images = []
         surya_mat = fitz.Matrix(SURYA_DPI/72, SURYA_DPI/72)
         hires_mat = fitz.Matrix(CROP_DPI/72, CROP_DPI/72)
         for page_num in range(num_pages):
             pdf_page = doc[page_num]
-            # 288 DPI for Surya
+            # 192 DPI for Surya
             pix = pdf_page.get_pixmap(matrix=surya_mat)
             surya_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
             # 384 DPI for cropping
             pix = pdf_page.get_pixmap(matrix=hires_mat)
             hires_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
         doc.close()
+        print(f"  [timing] PDF rendering ({num_pages} pages): {time.perf_counter()-t0:.2f}s")
 
-        # Run Surya layout detection on 288 DPI images (serialized via lock)
+        # Run Surya layout detection (serialized via lock)
+        t0 = time.perf_counter()
         layout_predictor = get_layout_predictor()
         async with _layout_lock:
             layout_results = await asyncio.to_thread(layout_predictor, surya_images)
+        print(f"  [timing] Surya layout detection: {time.perf_counter()-t0:.2f}s")
 
         # Detect figures missed by Surya (pixel-based gap detection)
+        t0 = time.perf_counter()
         for page_idx, (img, layout_result) in enumerate(zip(surya_images, layout_results)):
             uncovered = detect_uncovered_figures(img, layout_result.bboxes)
             for bbox in uncovered:
@@ -658,6 +668,7 @@ async def ai_reconstruct(
             buf = io.BytesIO()
             page.save(buf, format="JPEG", quality=85)
             page_images.append(buf.getvalue())
+        print(f"  [timing] Figure detection + annotation + JPEG encode: {time.perf_counter()-t0:.2f}s")
 
         # Debug: save annotated pages as PDF
         if debug:
@@ -679,7 +690,8 @@ async def ai_reconstruct(
             base_url="https://openrouter.ai/api/v1",
         )
 
-        # Call Gemini 2.0 Flash (via OpenRouter) to group annotations into problems
+        # Call Gemini to group annotations into problems
+        t0 = time.perf_counter()
         prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
         raw_response = await asyncio.to_thread(
             llm_client.generate,
@@ -688,6 +700,7 @@ async def ai_reconstruct(
             response_schema=GroupProblemsResponse.model_json_schema(),
         )
         group_result = GroupProblemsResponse.model_validate_json(raw_response)
+        print(f"  [timing] Gemini problem grouping: {time.perf_counter()-t0:.2f}s")
 
         # Sort problems by first annotation index to preserve document order
         group_result.problems.sort(key=lambda p: min(p.annotation_indices) if p.annotation_indices else float('inf'))
@@ -875,8 +888,10 @@ async def ai_reconstruct(
             crop_groups[key].append(p)
 
         # Run one extraction per unique crop group in parallel
+        t0 = time.perf_counter()
         group_tasks = [reconstruct_group(probs) for probs in crop_groups.values()]
         group_results_nested = await asyncio.gather(*group_tasks)
+        print(f"  [timing] Gemini question extraction ({len(group_tasks)} groups): {time.perf_counter()-t0:.2f}s")
 
         # Flatten and reorder to match original problem order
         results_by_label: dict[str, tuple] = {}
@@ -932,8 +947,10 @@ async def ai_reconstruct(
                     pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fallback)
                     return (label, pdf_bytes, None)  # No regions for fallback
 
+        t0 = time.perf_counter()
         compile_tasks = [compile_problem(i + 1, label, latex, image_data, q_dict) for i, (p, (label, latex, image_data, q_dict)) in enumerate(zip(group_result.problems, results))]
         compiled = await asyncio.gather(*compile_tasks)
+        print(f"  [timing] LaTeX compilation ({len(compile_tasks)} problems): {time.perf_counter()-t0:.2f}s")
 
         if split:
             # Return individual problem PDFs as JSON with region metadata
@@ -953,6 +970,7 @@ async def ai_reconstruct(
                     entry["page_heights"] = []
                     entry["regions"] = []
                 problem_pdfs.append(entry)
+            print(f"  [timing] TOTAL pipeline: {time.perf_counter()-t_pipeline:.2f}s")
             return JSONResponse({
                 "problems": problem_pdfs,
                 "total_problems": len(problem_pdfs),
@@ -978,6 +996,7 @@ async def ai_reconstruct(
             output_path.write_bytes(merged_bytes)
 
         # Return the merged PDF
+        print(f"  [timing] TOTAL pipeline: {time.perf_counter()-t_pipeline:.2f}s")
         output = io.BytesIO(merged_bytes)
 
         return StreamingResponse(
@@ -989,6 +1008,167 @@ async def ai_reconstruct(
                 "X-Page-Count": str(num_pages),
             }
         )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+QUIZ_GENERATION_PROMPT = """\
+You are generating a practice quiz for a student. Create {num_questions} questions on the topic: "{topic}".
+
+Difficulty level: {difficulty}
+
+Question types to include: {question_types}
+
+{context_section}
+
+{general_knowledge_section}
+
+{additional_notes_section}
+
+## Rules
+- Each question must be valid LaTeX body content (no preamble, no \\documentclass, no \\begin{{document}}).
+- Use inline math with $...$ and display math with \\[...\\].
+- Escape LaTeX special characters in prose: \\& not &, \\% not %, \\# not #.
+- For "open ended" questions: ask the student to show their work and explain their reasoning.
+- For "multiple choice" questions: provide 4 options labeled (A), (B), (C), (D) using an itemized list.
+- For "fill in the blank" questions: use \\underline{{\\hspace{{3cm}}}} for blanks.
+- Vary the questions to test different aspects of the topic.
+- Questions should be appropriate for the specified difficulty level.
+- Do NOT include answers or solutions — this is a practice quiz for the student to work through.
+
+Return a JSON object matching the provided schema.
+"""
+
+
+class QuizQuestionGenerated(BaseModel):
+    """A single generated quiz question from the LLM."""
+    number: int
+    text: str
+    topic: str | None = None
+    answer_space_cm: float = 5.0
+
+
+class QuizQuestionsGenerated(BaseModel):
+    """Batch of generated quiz questions."""
+    questions: list[QuizQuestionGenerated]
+
+
+@app.post("/ai/generate-quiz")
+async def ai_generate_quiz(request_body: QuizGenerationRequest):
+    """
+    Generate a practice quiz from RAG context and configuration.
+
+    Pipeline:
+    1. Build prompt from topic + difficulty + RAG context
+    2. Call Gemini for structured question generation (LaTeX body)
+    3. Compile each question to PDF via LaTeXCompiler
+    4. On failure, use LLM auto-fix (same pattern as reconstruct)
+    5. Return array of { number, pdf_base64, topic }
+    """
+    try:
+        # Build context section
+        if request_body.rag_context.strip():
+            context_section = f"""## Course Materials Context
+The following is relevant content from the student's course notes. Base your questions on this material:
+
+---
+{request_body.rag_context}
+---"""
+        else:
+            context_section = "## No course materials provided.\nGenerate questions based on general knowledge of the topic."
+
+        # General knowledge section
+        if request_body.use_general_knowledge:
+            general_knowledge_section = "You may also draw on general knowledge beyond the provided notes to create more comprehensive questions."
+        else:
+            general_knowledge_section = "IMPORTANT: Only create questions that can be answered using the provided course materials. Do not require knowledge beyond what is in the notes."
+
+        # Additional notes section
+        if request_body.additional_notes:
+            additional_notes_section = f"## Additional Instructions\n{request_body.additional_notes}"
+        else:
+            additional_notes_section = ""
+
+        # Format question types
+        question_types_str = ", ".join(t.replace("_", " ") for t in request_body.question_types)
+
+        prompt = QUIZ_GENERATION_PROMPT.format(
+            num_questions=request_body.num_questions,
+            topic=request_body.topic,
+            difficulty=request_body.difficulty,
+            question_types=question_types_str,
+            context_section=context_section,
+            general_knowledge_section=general_knowledge_section,
+            additional_notes_section=additional_notes_section,
+        )
+
+        # Create LLM client
+        from lib.llm_client import LLMClient
+        llm_client = LLMClient(
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            model="google/gemini-3-flash-preview",
+            base_url="https://openrouter.ai/api/v1",
+        )
+
+        # Generate questions via LLM with structured output
+        raw_response = await asyncio.to_thread(
+            llm_client.generate,
+            prompt=prompt,
+            response_schema=QuizQuestionsGenerated.model_json_schema(),
+        )
+
+        generated = QuizQuestionsGenerated.model_validate_json(raw_response)
+
+        # Compile each question to PDF
+        from lib.latex_compiler import LaTeXCompiler
+        compiler = LaTeXCompiler()
+
+        async def compile_quiz_question(q: QuizQuestionGenerated) -> QuizQuestionResponse:
+            """Compile a single quiz question to PDF, with LLM fix on failure."""
+            latex_body = quiz_question_to_latex(q.number, q.text, q.answer_space_cm)
+            try:
+                pdf_bytes = await asyncio.to_thread(compiler.compile_latex, latex_body)
+                return QuizQuestionResponse(
+                    number=q.number,
+                    pdf_base64=base64.b64encode(pdf_bytes).decode(),
+                    topic=q.topic,
+                )
+            except Exception as e:
+                print(f"  [quiz] Question {q.number}: compile FAILED — {e}")
+                # Try LLM fix
+                try:
+                    fix_prompt = LATEX_FIX_PROMPT.format(
+                        latex_body=latex_body,
+                        error_message=str(e)[:2000],
+                    )
+                    fixed_latex = await asyncio.to_thread(llm_client.generate, prompt=fix_prompt)
+                    fixed_body = f"\\textbf{{Question {q.number}}}\n\n{fixed_latex}"
+                    pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fixed_body)
+                    print(f"  [quiz] Question {q.number}: FIXED by LLM")
+                    return QuizQuestionResponse(
+                        number=q.number,
+                        pdf_base64=base64.b64encode(pdf_bytes).decode(),
+                        topic=q.topic,
+                    )
+                except Exception as e2:
+                    print(f"  [quiz] Question {q.number}: FIX FAILED — {e2}")
+                    # Fallback: compile a placeholder
+                    fallback = f"\\textbf{{Question {q.number}}}\n\n\\textit{{Question generation failed. Please try again.}}\n\n\\vspace{{5.0cm}}"
+                    pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fallback)
+                    return QuizQuestionResponse(
+                        number=q.number,
+                        pdf_base64=base64.b64encode(pdf_bytes).decode(),
+                        topic=q.topic,
+                    )
+
+        # Compile all questions in parallel
+        compile_tasks = [compile_quiz_question(q) for q in generated.questions]
+        results = await asyncio.gather(*compile_tasks)
+
+        return [r.model_dump() for r in results]
 
     except HTTPException:
         raise

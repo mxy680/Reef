@@ -4,6 +4,7 @@ from .embed import EmbedRequest, EmbedResponse
 from .group_problems import ProblemGroup, GroupProblemsResponse
 from .question import Part, Question, QuestionBatch
 from .region import PartRegion
+from .quiz import QuizGenerationRequest, QuizQuestionResponse
 from .user import UserProfileRequest, UserProfileResponse
 
 __all__ = [
@@ -15,6 +16,8 @@ __all__ = [
     "PartRegion",
     "Question",
     "QuestionBatch",
+    "QuizGenerationRequest",
+    "QuizQuestionResponse",
     "UserProfileRequest",
     "UserProfileResponse",
 ]

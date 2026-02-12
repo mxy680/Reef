@@ -51,6 +51,16 @@ def _sanitize_text(text: str) -> str:
     return text
 
 
+def quiz_question_to_latex(number: int, latex_text: str, answer_space_cm: float = 5.0) -> str:
+    """Format a generated quiz question for LaTeX compilation.
+
+    Used by the quiz generation endpoint — wraps a single question's LaTeX
+    body with a bold header and vertical answer space.
+    """
+    sanitized = _sanitize_text(latex_text)
+    return f"\\textbf{{Question {number}}}\n\n{sanitized}\n\n\\vspace{{{answer_space_cm:.1f}cm}}"
+
+
 def question_to_latex(question: Question) -> str:
     """Convert a Question to a LaTeX body string.
 
