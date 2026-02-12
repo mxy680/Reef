@@ -6,6 +6,9 @@ services:
       - PORT=8000
       - DATABASE_URL=postgresql://reef:${POSTGRES_PASSWORD}@db:5432/reef
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - MODAL_SURYA_URL=${MODAL_SURYA_URL}
+      - MODAL_TTS_URL=${MODAL_TTS_URL}
+      - MODAL_EMBED_URL=${MODAL_EMBED_URL}
     volumes:
       - app-data:/app/data
     depends_on:

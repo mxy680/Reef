@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies including tectonic for LaTeX compilation and espeak-ng for Kokoro TTS
+# Install system dependencies including tectonic for LaTeX compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfontconfig1 \
     libfreetype6 \
     libssl3 \
-    espeak-ng \
     && curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh \
     && mv tectonic /usr/local/bin/ \
     && rm -rf /var/lib/apt/lists/*
@@ -42,30 +41,12 @@ $x^2 + y^2 = z^2$\n\
     && tectonic /tmp/warmup.tex --outdir /tmp \
     && rm /tmp/warmup.tex /tmp/warmup.pdf
 
-# Install CPU-only PyTorch first (much smaller)
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-
 # Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
-
-# Pre-download Surya layout model (~1.3GB) so it's baked into the image
-# This avoids downloading on every cold start
-RUN python -c "\
-from surya.settings import settings; \
-from surya.common.s3 import download_directory; \
-import os; \
-ckpt = settings.LAYOUT_MODEL_CHECKPOINT.replace('s3://', ''); \
-local = os.path.join(settings.MODEL_CACHE_DIR, ckpt); \
-os.makedirs(local, exist_ok=True); \
-download_directory(ckpt, local); \
-print(f'Downloaded {ckpt} to {local}')"
-
-# Pre-download Kokoro TTS model (~330MB) so it's baked into the image
-RUN python -c "from kokoro import KPipeline; p = KPipeline(lang_code='a'); print('Kokoro model cached')"
 
 # Expose port
 EXPOSE 8000

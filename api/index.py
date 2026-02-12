@@ -31,48 +31,27 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 import numpy as np
 from lib.models import EmbedRequest, EmbedResponse, ProblemGroup, GroupProblemsResponse, Question, QuestionBatch, QuizGenerationRequest, QuizQuestionResponse
-from lib.embedding import get_embedding_service
+from lib.embedding_client import get_embedding_service
 from lib.question_to_latex import question_to_latex, quiz_question_to_latex, _sanitize_text
 from lib.database import init_db, close_db
 from api.users import router as users_router
 from api.clustering import router as clustering_router
+from api.tts import router as tts_router
+from api.transcribe import router as transcribe_router
 
-# Surya imports
-from surya.foundation import FoundationPredictor
-from surya.layout import LayoutPredictor
-from surya.settings import settings
+from lib.surya_client import detect_layout
 from PIL import Image, ImageDraw, ImageFont
 import fitz  # PyMuPDF
 
-# Global model cache
-_layout_predictor = None
-_foundation_predictor = None
-_layout_lock = asyncio.Lock()  # Serialize Surya inference (PyTorch models aren't thread-safe)
-
-def get_layout_predictor():
-    """Get or create the layout predictor singleton."""
-    global _layout_predictor, _foundation_predictor
-    if _layout_predictor is None:
-        _foundation_predictor = FoundationPredictor(checkpoint=settings.LAYOUT_MODEL_CHECKPOINT)
-        _layout_predictor = LayoutPredictor(_foundation_predictor)
-    return _layout_predictor
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Preload ML models and initialize database at startup."""
-    print("[Startup] Preloading models...")
+    """Initialize database at startup."""
+    print("[Startup] Initializing...")
 
     # Initialize database (no-op if DATABASE_URL not set)
     await init_db()
 
-    # Preload embedding model
-    print("[Startup] Loading embedding model...")
-    embedding_service = get_embedding_service()
-    embedding_service._load_model()
-
-    # Surya models load lazily on first /ai/annotate request
-    print("[Startup] Ready! (Surya models load on first use)")
+    print("[Startup] Ready! (Surya + TTS + Embeddings on Modal)")
 
     yield
 
@@ -99,6 +78,8 @@ app.add_middleware(
 # Include routers
 app.include_router(users_router)
 app.include_router(clustering_router)
+app.include_router(tts_router)
+app.include_router(transcribe_router)
 
 
 @app.get("/health")
@@ -344,9 +325,8 @@ async def ai_annotate(
             images.append(img)
         doc.close()
 
-        # Run Surya layout detection on all pages
-        layout_predictor = get_layout_predictor()
-        layout_results = layout_predictor(images)
+        # Run Surya layout detection via Modal GPU
+        layout_results = await asyncio.to_thread(detect_layout, images)
 
         # Annotate each page with continuous indexing
         annotated_pages = []
@@ -454,9 +434,8 @@ async def ai_group_problems(
             images.append(img)
         doc.close()
 
-        # Run Surya layout detection on all pages
-        layout_predictor = get_layout_predictor()
-        layout_results = layout_predictor(images)
+        # Run Surya layout detection via Modal GPU
+        layout_results = await asyncio.to_thread(detect_layout, images)
 
         # Annotate each page with continuous indexing
         annotated_pages = []
@@ -638,12 +617,10 @@ async def ai_reconstruct(
         doc.close()
         print(f"  [timing] PDF rendering ({num_pages} pages): {time.perf_counter()-t0:.2f}s")
 
-        # Run Surya layout detection (serialized via lock)
+        # Run Surya layout detection via Modal GPU
         t0 = time.perf_counter()
-        layout_predictor = get_layout_predictor()
-        async with _layout_lock:
-            layout_results = await asyncio.to_thread(layout_predictor, surya_images)
-        print(f"  [timing] Surya layout detection: {time.perf_counter()-t0:.2f}s")
+        layout_results = await asyncio.to_thread(detect_layout, surya_images)
+        print(f"  [timing] Surya layout detection (Modal GPU): {time.perf_counter()-t0:.2f}s")
 
         # Detect figures missed by Surya (pixel-based gap detection)
         t0 = time.perf_counter()

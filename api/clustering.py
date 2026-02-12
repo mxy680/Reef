@@ -7,6 +7,7 @@ assignments with dirty flags for incremental transcription.
 
 import hashlib
 import json
+import time
 
 import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -15,8 +16,8 @@ from sklearn.cluster import DBSCAN
 router = APIRouter()
 
 # Anisotropic margins (points) — must match the values the iOS app expects.
-H_MARGIN = 60.0  # generous horizontal so words on the same line merge
-V_MARGIN = 12.0   # strict vertical so separate lines stay apart
+H_MARGIN = 40.0  # horizontal gap tolerance
+V_MARGIN = 8.0    # vertical gap tolerance
 
 
 def _rect_distance_matrix(rects: np.ndarray) -> np.ndarray:
@@ -108,8 +109,8 @@ def _cluster_strokes(rects: list[dict]) -> list[dict]:
 async def cluster_websocket(ws: WebSocket):
     await ws.accept()
 
-    # Per-connection state: page -> {cluster_id: frozenset of stroke indices}
-    previous_state: dict[int, dict[str, frozenset]] = {}
+    # Per-connection state: page -> set of known cluster IDs
+    previous_state: dict[int, set[str]] = {}
 
     try:
         while True:
@@ -122,18 +123,22 @@ async def cluster_websocket(ws: WebSocket):
             page = msg.get("page", 1)
             strokes = msg.get("strokes", [])
 
+            t0 = time.perf_counter()
             clusters = _cluster_strokes(strokes)
+            dt_ms = (time.perf_counter() - t0) * 1000
+            print(f"[cluster] {len(strokes)} strokes → {len(clusters)} clusters in {dt_ms:.1f}ms")
 
-            # Compute dirty flags by diffing against previous state
-            prev = previous_state.get(page, {})
-            new_state: dict[str, frozenset] = {}
+            # Compute dirty flags by diffing against previous state.
+            # Cluster IDs are deterministic hashes of sorted stroke coordinates,
+            # so a new ID means the cluster's composition changed.
+            prev_ids = previous_state.get(page, set())
+            new_ids: set[str] = set()
             response_clusters: list[dict] = []
 
             for c in clusters:
                 cid = c["id"]
-                member_set = frozenset(c["stroke_indices"])
-                new_state[cid] = member_set
-                dirty = (cid not in prev) or (prev[cid] != member_set)
+                new_ids.add(cid)
+                dirty = cid not in prev_ids
                 response_clusters.append({
                     "id": cid,
                     "bbox": c["bbox"],
@@ -141,7 +146,7 @@ async def cluster_websocket(ws: WebSocket):
                     "dirty": dirty,
                 })
 
-            previous_state[page] = new_state
+            previous_state[page] = new_ids
 
             await ws.send_text(json.dumps({
                 "type": "clusters",
