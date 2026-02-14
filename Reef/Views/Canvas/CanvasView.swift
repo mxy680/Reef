@@ -58,7 +58,6 @@ struct CanvasView: View {
     // Assignment mode state
     @State private var viewMode: CanvasViewMode = .document
     @State private var currentQuestionIndex: Int = 0
-    @State private var showTutorSidebar: Bool = false
 
     private var effectiveColorScheme: ColorScheme {
         themeManager.isDarkMode ? .dark : .light
@@ -189,12 +188,6 @@ struct CanvasView: View {
                         }
                     },
                     isAssignmentProcessing: note?.isAssignmentProcessing ?? false,
-                    isTutorSidebarVisible: showTutorSidebar,
-                    onToggleTutorSidebar: {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            showTutorSidebar.toggle()
-                        }
-                    },
                     isRulerActive: isRulerActive,
                     onToggleRuler: { isRulerActive.toggle() },
                     textSize: $textSize,
@@ -321,20 +314,6 @@ struct CanvasView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .clipped()
-
-                    // AI Panel sidebar
-                    if showTutorSidebar {
-                        Rectangle()
-                            .fill(themeManager.isDarkMode ? Color.warmDarkCard : Color.seafoam.opacity(0.25))
-                            .frame(width: 320)
-                            .overlay(
-                                Rectangle()
-                                    .fill(themeManager.isDarkMode ? Color.brightTealDark.opacity(0.3) : Color.deepTeal.opacity(0.15))
-                                    .frame(width: 1),
-                                alignment: .leading
-                            )
-                            .transition(.move(edge: .trailing))
-                    }
                 }
             }
 

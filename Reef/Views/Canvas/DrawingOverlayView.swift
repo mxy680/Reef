@@ -44,6 +44,7 @@ struct DrawingOverlayView: UIViewRepresentable {
     var textSize: CGFloat = 16
     var textColor: UIColor = .black
     var recognitionEnabled: Bool = false
+    var problemContext: String? = nil
     var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
     var onUndoStateChanged: (Bool) -> Void = { _ in }
     var onRedoStateChanged: (Bool) -> Void = { _ in }
@@ -51,7 +52,6 @@ struct DrawingOverlayView: UIViewRepresentable {
     var onDrawingChanged: (PKDrawing) -> Void = { _ in }
     var onSwipeLeft: (() -> Void)? = nil
     var onSwipeRight: (() -> Void)? = nil
-
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView(documentID: documentID, documentURL: documentURL, fileType: fileType, backgroundMode: canvasBackgroundMode, backgroundOpacity: canvasBackgroundOpacity, backgroundSpacing: canvasBackgroundSpacing, isDarkMode: isDarkMode)
         context.coordinator.container = container
@@ -60,6 +60,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.onRecognitionResult = onRecognitionResult
         context.coordinator.onDrawingChanged = onDrawingChanged
         context.coordinator.recognitionEnabled = recognitionEnabled
+        context.coordinator.problemContext = problemContext
         container.onSwipeLeft = onSwipeLeft
         container.onSwipeRight = onSwipeRight
 
@@ -99,6 +100,7 @@ struct DrawingOverlayView: UIViewRepresentable {
 
             // Eraser cursor state
             pageContainer.canvasView.isEraserActive = isEraserTool
+            pageContainer.canvasView.isCustomStrokeEraserActive = isEraserTool && eraserType == .stroke
             if isEraserTool {
                 pageContainer.canvasView.eraserCursorSize = eraserSize
             }
@@ -114,6 +116,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         // Keep recognition settings in sync
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.onRecognitionResult = onRecognitionResult
+        context.coordinator.problemContext = problemContext
     }
 
     private func updateTool(_ canvasView: PKCanvasView) {
@@ -172,21 +175,11 @@ struct DrawingOverlayView: UIViewRepresentable {
         // Drawing change debounce
         private var drawingChangeTask: Task<Void, Never>?
 
-        // Transcription debounce (800ms after last stroke change)
-        private var transcriptionTask: Task<Void, Never>?
-
-        // Spatial stroke clustering — one manager per canvas (page)
-        private var clusterManagers: [ObjectIdentifier: StrokeClusterManager] = [:]
-
         // Recognition state
         var recognitionEnabled: Bool = false
 
-        // Timestamp of last drawing change (≈ pen-up) for latency tracking
-        private var lastDrawingChangeTime: CFAbsoluteTime = 0
-
-        // Union of all stroke bounds added during the current debounce window,
-        // used to identify which clusters the user is actively writing in.
-        private var activeStrokeBoundsUnion: CGRect = .null
+        // Problem context (stored but no longer triggers pipeline)
+        var problemContext: String?
 
         // Tool state
         var currentTool: CanvasTool = .pen
@@ -199,112 +192,58 @@ struct DrawingOverlayView: UIViewRepresentable {
         // Shape detection — prevents re-entrant callbacks when replacing a stroke
         private var isReplacingStroke: Bool = false
 
-        // WebSocket connection state
-        private var webSocketConnected: Bool = false
+        // Stroke streaming
+        private var strokeSessionId: String = UUID().uuidString
+        private var strokeSocketConnected: Bool = false
+        private var lastSentStrokeCount: [ObjectIdentifier: Int] = [:]
 
-        /// Returns (or creates) the StrokeClusterManager for a given canvas view.
-        private func getClusterManager(for canvasView: PKCanvasView) -> StrokeClusterManager {
-            let key = ObjectIdentifier(canvasView)
-            if let existing = clusterManagers[key] {
-                return existing
-            }
-            let manager = StrokeClusterManager()
-            clusterManagers[key] = manager
-            return manager
-        }
-
-        /// Returns the 1-based page number for a canvas view, or nil if not found.
-        private func getPageIndex(for canvasView: PKCanvasView) -> Int? {
+        /// Returns the 1-based page number for a canvas view.
+        private func getPageIndex(for canvasView: PKCanvasView) -> Int {
             guard let index = container?.pageContainers.firstIndex(where: { $0.canvasView === canvasView }) else {
-                return nil
+                return 1
             }
-            return index + 1 // 1-based for display
+            return index + 1
         }
 
-        /// Lazily connects the cluster WebSocket and registers the response handler.
-        private func ensureWebSocketConnected() {
-            guard !webSocketConnected else { return }
-            webSocketConnected = true
-            AIService.shared.connectClusterSocket()
-            AIService.shared.onClusters { [weak self] page, clusters in
-                self?.handleClusterResponse(page: page, clusters: clusters)
+        /// Extracts full PKStrokePoint data from new strokes and sends to server.
+        private func sendNewStrokes(from canvasView: PKCanvasView) {
+            if !strokeSocketConnected {
+                strokeSocketConnected = true
+                AIService.shared.connectStrokeSocket()
             }
-        }
 
-        /// Handles a cluster response from the server.
-        private func handleClusterResponse(page: Int, clusters: [[String: Any]]) {
-            guard let container = container else { return }
-            let pageIndex = page - 1  // convert 1-based to 0-based
-            guard pageIndex >= 0, pageIndex < container.pageContainers.count else { return }
+            let key = ObjectIdentifier(canvasView)
+            let allStrokes = canvasView.drawing.strokes
+            let previousCount = lastSentStrokeCount[key] ?? 0
 
-            let canvasView = container.pageContainers[pageIndex].canvasView
-            let manager = getClusterManager(for: canvasView)
-            manager.applyClusters(clusters)
+            guard allStrokes.count > previousCount else { return }
+            let newStrokes = allStrokes[previousCount...]
+            lastSentStrokeCount[key] = allStrokes.count
 
-            // Transcribe only dirty clusters the user touched during this debounce window
-            let drawing = canvasView.drawing
-            let touchedRegion = activeStrokeBoundsUnion
-            activeStrokeBoundsUnion = .null  // reset for next window
-            let activeDirtyClusters = manager.dirtyClusters.filter { cluster in
-                touchedRegion != .null && cluster.boundingBox.intersects(touchedRegion)
-            }
-            let skippedCount = manager.dirtyClusters.count - activeDirtyClusters.count
-            if skippedCount > 0 {
-                print("[Transcription] Skipped \(skippedCount) dirty cluster(s) not near active stroke")
-            }
-            for cluster in activeDirtyClusters {
-                let padding: CGFloat = 10
-                let paddedRect = cluster.boundingBox.insetBy(dx: -padding, dy: -padding)
-                    .intersection(CGRect(origin: .zero, size: CGSize(
-                        width: drawing.bounds.maxX + padding,
-                        height: drawing.bounds.maxY + padding
-                    )))
+            let pageNum = getPageIndex(for: canvasView)
 
-                // Render strokes on a white background (PKDrawing renders on transparent,
-                // which becomes black when JPEG-compressed)
-                let lightTraits = UITraitCollection(userInterfaceStyle: .light)
-                var strokeImage: UIImage?
-                lightTraits.performAsCurrent {
-                    strokeImage = drawing.image(from: paddedRect, scale: 2.0)
-                }
-                guard let strokes = strokeImage else { continue }
-
-                let renderer = UIGraphicsImageRenderer(size: strokes.size)
-                let composited = renderer.image { ctx in
-                    UIColor.white.setFill()
-                    ctx.fill(CGRect(origin: .zero, size: strokes.size))
-                    strokes.draw(at: .zero)
-                }
-
-                guard let jpegData = composited.jpegData(compressionQuality: 0.9) else { continue }
-                let clusterId = cluster.id
-                let bbox = cluster.boundingBox
-                print("[Transcription] Sending cluster \(clusterId) (\(Int(bbox.width))x\(Int(bbox.height)) @ \(Int(bbox.origin.x)),\(Int(bbox.origin.y)), \(cluster.strokeCount) strokes, \(jpegData.count / 1024)KB)")
-
-                let penUpTime = self.lastDrawingChangeTime
-                Task {
-                    do {
-                        let result = try await AIService.shared.transcribeCluster(
-                            imageData: jpegData,
-                            clusterId: clusterId
-                        )
-                        let ms = Int((CFAbsoluteTimeGetCurrent() - penUpTime) * 1000)
-                        let cents = result.cost * 100
-                        print("[Transcription] [\(result.clusterId)] \"\(result.text)\" (\(result.promptTokens)/\(result.completionTokens) tokens, \(String(format: "%.3f", cents))¢, \(ms)ms)")
-                    } catch {
-                        let ms = Int((CFAbsoluteTimeGetCurrent() - penUpTime) * 1000)
-                        print("[Transcription] [\(clusterId)] error: \(error.localizedDescription) (\(ms)ms)")
-                    }
+            let strokeData: [[[String: Double]]] = newStrokes.map { stroke in
+                stroke.path.map { point in
+                    [
+                        "x": Double(point.location.x),
+                        "y": Double(point.location.y),
+                        "t": point.timeOffset,
+                        "force": Double(point.force),
+                        "altitude": Double(point.altitude),
+                        "azimuth": Double(point.azimuth)
+                    ]
                 }
             }
+
+            AIService.shared.sendStrokes(
+                sessionId: strokeSessionId,
+                page: pageNum,
+                strokes: strokeData
+            )
         }
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             updateUndoRedoState(canvasView)
-            lastDrawingChangeTime = CFAbsoluteTimeGetCurrent()
-            if let lastStroke = canvasView.drawing.strokes.last {
-                activeStrokeBoundsUnion = activeStrokeBoundsUnion.union(lastStroke.renderBounds)
-            }
 
             // Skip if we triggered this via shape replacement
             guard !isReplacingStroke else { return }
@@ -334,21 +273,8 @@ struct DrawingOverlayView: UIViewRepresentable {
                     }
                 }
 
-                // Update spatial clusters after shape replacement
-                let shapeClusterManager = getClusterManager(for: canvasView)
-                shapeClusterManager.update(with: canvasView.drawing.strokes)
-                let shapePageNum = getPageIndex(for: canvasView) ?? 0
-
-                // Transcription debounce (1s) — send stroke bounds to server
-                transcriptionTask?.cancel()
-                transcriptionTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
-                    if !Task.isCancelled {
-                        self.ensureWebSocketConnected()
-                        let payload = shapeClusterManager.strokeBoundsPayload()
-                        AIService.shared.sendStrokeBounds(page: shapePageNum, strokes: payload)
-                    }
-                }
+                // Send new strokes after shape replacement
+                sendNewStrokes(from: canvasView)
                 return
             }
 
@@ -359,30 +285,13 @@ struct DrawingOverlayView: UIViewRepresentable {
             drawingChangeTask = Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 if !Task.isCancelled {
-                    // Save all drawings for multi-page support
                     self.container?.saveAllDrawings()
                     self.onDrawingChanged(canvasView.drawing)
                 }
             }
 
-            // Update spatial clusters
-            let clusterManager = getClusterManager(for: canvasView)
-            clusterManager.update(with: canvasView.drawing.strokes)
-            let pageNum = getPageIndex(for: canvasView) ?? 0
-
-            // Transcription debounce (1s) — send stroke bounds to server
-            transcriptionTask?.cancel()
-            transcriptionTask = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                if !Task.isCancelled {
-                    self.ensureWebSocketConnected()
-                    let payload = clusterManager.strokeBoundsPayload()
-                    AIService.shared.sendStrokeBounds(page: pageNum, strokes: payload)
-                }
-            }
-        }
-
-        func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
+            // Stream new strokes to server
+            sendNewStrokes(from: canvasView)
         }
 
         func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {

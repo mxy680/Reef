@@ -146,8 +146,6 @@ struct CanvasToolbar: View {
     var onNextQuestion: () -> Void = {}
     var onJumpToQuestion: (Int) -> Void = { _ in }
     var isAssignmentProcessing: Bool = false
-    var isTutorSidebarVisible: Bool = false
-    var onToggleTutorSidebar: () -> Void = {}
 
     // Ruler toggle
     var isRulerActive: Bool = false
@@ -738,14 +736,6 @@ struct CanvasToolbar: View {
                 action: onExportPDF
             )
             .offset(y: -1)
-
-            // Tutor log sidebar toggle
-            ToolbarButton(
-                icon: "book.pages.fill",
-                isSelected: isTutorSidebarVisible,
-                colorScheme: colorScheme,
-                action: onToggleTutorSidebar
-            )
 
             // Dark mode toggle
             ToolbarButton(

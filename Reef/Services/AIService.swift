@@ -55,18 +55,12 @@ class AIService {
     static let shared = AIService()
 
     #if DEBUG
-    private let baseURL = "http://172.20.83.12:8000"
+    private let baseURL = "https://044c-129-22-21-200.ngrok-free.app"
     #else
     private let baseURL = "https://api.studyreef.com"
     #endif
     private let session: URLSession
 
-    // MARK: - WebSocket state
-
-    private var clusterSocket: URLSessionWebSocketTask?
-    private var clusterCallback: ((_ page: Int, _ clusters: [[String: Any]]) -> Void)?
-    private var reconnectAttempts: Int = 0
-    private static let maxReconnectAttempts = 5
 
     private init() {
         let config = URLSessionConfiguration.default
@@ -135,176 +129,82 @@ class AIService {
         return embedResponse.embeddings
     }
 
-    // MARK: - Transcription
+    // MARK: - Stroke WebSocket
 
-    struct TranscriptionResponse {
-        let text: String
-        let clusterId: String
-        let promptTokens: Int
-        let completionTokens: Int
-        let cost: Double
-    }
+    private var strokeSocket: URLSessionWebSocketTask?
+    private var strokeReconnectAttempts: Int = 0
+    private static let maxStrokeReconnectAttempts = 5
 
-    /// Sends a cluster image to the server for Gemini handwriting transcription.
-    nonisolated func transcribeCluster(imageData: Data, clusterId: String) async throws -> TranscriptionResponse {
-        let urlString = baseURL + "/ai/transcribe"
-
-        guard let url = URL(string: urlString) else {
-            throw AIServiceError.invalidURL
-        }
-
-        let base64Image = imageData.base64EncodedString()
-        let body: [String: String] = ["image": base64Image, "cluster_id": clusterId]
-
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let data: Data
-        let response: URLResponse
-
-        do {
-            (data, response) = try await session.data(for: urlRequest)
-        } catch {
-            throw AIServiceError.networkError(error)
-        }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AIServiceError.noData
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            let message: String
-            if let errorDict = try? JSONDecoder().decode([String: String].self, from: data),
-               let detail = errorDict["detail"] {
-                message = detail
-            } else {
-                message = String(data: data, encoding: .utf8) ?? "Unknown error"
-            }
-            throw AIServiceError.serverError(statusCode: httpResponse.statusCode, message: message)
-        }
-
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let text = json["text"] as? String,
-              let returnedClusterId = json["cluster_id"] as? String,
-              let usage = json["usage"] as? [String: Any],
-              let promptTokens = usage["prompt_tokens"] as? Int,
-              let completionTokens = usage["completion_tokens"] as? Int,
-              let cost = usage["cost"] as? Double else {
-            throw AIServiceError.decodingError(
-                NSError(domain: "AIService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid transcription response"])
-            )
-        }
-
-        return TranscriptionResponse(
-            text: text,
-            clusterId: returnedClusterId,
-            promptTokens: promptTokens,
-            completionTokens: completionTokens,
-            cost: cost
-        )
-    }
-
-    // MARK: - Cluster WebSocket
-
-    /// Connects to the cluster WebSocket endpoint.
-    func connectClusterSocket() {
-        guard clusterSocket == nil else { return }
-        #if DEBUG
-        guard let url = URL(string: "ws://172.20.83.12:8000/ws/cluster") else { return }
-        #else
-        guard let url = URL(string: "wss://api.studyreef.com/ws/cluster") else { return }
-        #endif
+    /// Connects to the stroke logging WebSocket endpoint.
+    func connectStrokeSocket() {
+        guard strokeSocket == nil else { return }
+        let wsURL = baseURL.replacingOccurrences(of: "https://", with: "wss://") + "/ws/strokes"
+        guard let url = URL(string: wsURL) else { return }
         let task = session.webSocketTask(with: url)
-        clusterSocket = task
+        strokeSocket = task
         task.resume()
-        reconnectAttempts = 0
-        listenForClusterMessages()
+        strokeReconnectAttempts = 0
+        listenForStrokeAcks()
     }
 
-    /// Disconnects the cluster WebSocket.
-    func disconnectClusterSocket() {
-        clusterSocket?.cancel(with: .normalClosure, reason: nil)
-        clusterSocket = nil
+    /// Disconnects the stroke WebSocket.
+    func disconnectStrokeSocket() {
+        strokeSocket?.cancel(with: .normalClosure, reason: nil)
+        strokeSocket = nil
     }
 
-    /// Sends stroke bounding boxes for a page to the server for clustering.
-    func sendStrokeBounds(page: Int, strokes: [[String: CGFloat]]) {
-        // Reconnect immediately if socket died between sends
-        if clusterSocket == nil {
-            connectClusterSocket()
+    /// Sends stroke point data for a page to the server for logging.
+    func sendStrokes(sessionId: String, page: Int, strokes: [[[String: Double]]]) {
+        if strokeSocket == nil {
+            connectStrokeSocket()
         }
-        guard let socket = clusterSocket else { return }
+        guard let socket = strokeSocket else { return }
 
         let payload: [String: Any] = [
-            "type": "stroke_bounds",
+            "type": "strokes",
+            "session_id": sessionId,
             "page": page,
-            "strokes": strokes
+            "strokes": strokes.map { points in
+                ["points": points]
+            }
         ]
 
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let text = String(data: data, encoding: .utf8) else { return }
 
         socket.send(.string(text)) { [weak self] error in
-            if let error = error {
-                print("[AIService] WebSocket send error: \(error.localizedDescription)")
+            if error != nil {
                 DispatchQueue.main.async {
-                    self?.clusterSocket?.cancel(with: .abnormalClosure, reason: nil)
-                    self?.clusterSocket = nil
+                    self?.strokeSocket?.cancel(with: .abnormalClosure, reason: nil)
+                    self?.strokeSocket = nil
                 }
             }
         }
     }
 
-    /// Registers a callback for cluster responses from the server.
-    func onClusters(_ callback: @escaping (_ page: Int, _ clusters: [[String: Any]]) -> Void) {
-        clusterCallback = callback
-    }
-
-    /// Recursive receive loop for cluster WebSocket messages.
-    private func listenForClusterMessages() {
-        clusterSocket?.receive { [weak self] result in
+    /// Receive loop for ack messages (keeps connection alive).
+    private func listenForStrokeAcks() {
+        guard let socket = strokeSocket else { return }
+        socket.receive { [weak self] result in
             switch result {
-            case .success(let message):
-                switch message {
-                case .string(let text):
-                    if let data = text.data(using: .utf8),
-                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       json["type"] as? String == "clusters",
-                       let page = json["page"] as? Int,
-                       let clusters = json["clusters"] as? [[String: Any]] {
-                        DispatchQueue.main.async {
-                            self?.clusterCallback?(page, clusters)
-                        }
-                    }
-                case .data:
-                    break
-                @unknown default:
-                    break
-                }
-                // Continue listening
+            case .success:
                 DispatchQueue.main.async {
-                    self?.listenForClusterMessages()
+                    self?.listenForStrokeAcks()
                 }
-
-            case .failure(let error):
-                print("[AIService] WebSocket receive error: \(error.localizedDescription)")
+            case .failure:
                 guard let self = self else { return }
                 DispatchQueue.main.async {
-                    self.clusterSocket = nil
-                    self.reconnectAttempts += 1
-                    if self.reconnectAttempts <= Self.maxReconnectAttempts {
-                        let delay = min(pow(2.0, Double(self.reconnectAttempts)), 30.0)
-                        print("[AIService] WebSocket reconnect attempt \(self.reconnectAttempts)/\(Self.maxReconnectAttempts) in \(delay)s")
+                    self.strokeSocket = nil
+                    self.strokeReconnectAttempts += 1
+                    if self.strokeReconnectAttempts <= Self.maxStrokeReconnectAttempts {
+                        let delay = min(pow(2.0, Double(self.strokeReconnectAttempts)), 30.0)
                         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                            self.connectClusterSocket()
+                            self.connectStrokeSocket()
                         }
-                    } else {
-                        print("[AIService] WebSocket max reconnect attempts reached, giving up")
                     }
                 }
             }
         }
     }
+
 }

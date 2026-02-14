@@ -37,6 +37,9 @@ struct AssignmentView: View {
     var onUndoStateChanged: (Bool) -> Void = { _ in }
     var onRedoStateChanged: (Bool) -> Void = { _ in }
 
+    /// Extracted problem text for the current question (for tutor feedback)
+    @State private var problemText: String?
+
     private var questions: [ExtractedQuestion] {
         note.extractedQuestions
     }
@@ -90,6 +93,7 @@ struct AssignmentView: View {
                         isRulerActive: isRulerActive,
                         textSize: textSize,
                         textColor: textColor,
+                        problemContext: problemText,
                         onCanvasReady: onCanvasReady,
                         onUndoStateChanged: onUndoStateChanged,
                         onRedoStateChanged: onRedoStateChanged,
@@ -112,6 +116,19 @@ struct AssignmentView: View {
                 }
             }
         }
+        .task(id: currentIndex) {
+            await extractProblemText()
+        }
+    }
+
+    /// Extract text from the current question's PDF for tutor feedback context
+    private func extractProblemText() async {
+        guard let url = questionFileURL else {
+            problemText = nil
+            return
+        }
+        let result = await DocumentTextExtractor.shared.extractText(from: url)
+        problemText = result.text
     }
 }
 
