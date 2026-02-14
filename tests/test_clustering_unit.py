@@ -1,4 +1,4 @@
-"""Unit tests for bounding-box overlap stroke clustering (no database)."""
+"""Unit tests for Y-centroid gap stroke clustering (no database)."""
 
 import pytest
 import sys
@@ -6,7 +6,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lib.stroke_clustering import StrokeEntry, extract_stroke_entries, cluster_by_bbox_overlap
+from lib.stroke_clustering import StrokeEntry, extract_stroke_entries, cluster_by_centroid_gap
 
 
 # ---------------------------------------------------------------------------
@@ -96,167 +96,206 @@ class TestExtractStrokeEntries:
 
 
 # ---------------------------------------------------------------------------
-# cluster_by_bbox_overlap
+# cluster_by_centroid_gap
 # ---------------------------------------------------------------------------
 
-class TestClusterByBboxOverlap:
+class TestClusterByCentroidGap:
 
-    def test_two_separate_clusters(self):
-        """Two groups far apart should form two clusters."""
+    def test_two_lines(self):
+        """Two groups of strokes at different y positions → two clusters."""
         entries = [
-            _box_entry(90, 90, 120, 120, idx=0),
-            _box_entry(95, 100, 115, 115, idx=1),
-            _box_entry(900, 900, 1020, 1020, idx=2),
-            _box_entry(910, 910, 1010, 1010, idx=3),
+            _box_entry(280, 380, 320, 420, idx=0),   # line 1, centroid_y=400
+            _box_entry(310, 390, 350, 420, idx=1),   # line 1, centroid_y=405
+            _box_entry(340, 380, 380, 410, idx=2),   # line 1, centroid_y=395
+            _box_entry(280, 480, 320, 520, idx=3),   # line 2, centroid_y=500
+            _box_entry(310, 490, 350, 520, idx=4),   # line 2, centroid_y=505
+            _box_entry(340, 480, 380, 510, idx=5),   # line 2, centroid_y=495
         ]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
+        _, labels, infos = cluster_by_centroid_gap(entries)
 
         assert len(infos) == 2
-        assert infos[0].stroke_count == 2
-        assert infos[1].stroke_count == 2
-
-    def test_single_cluster_overlapping(self):
-        """Overlapping bboxes should all merge into one cluster."""
-        entries = [
-            _box_entry(0, 0, 50, 50, idx=0),
-            _box_entry(40, 0, 90, 50, idx=1),
-            _box_entry(80, 0, 130, 50, idx=2),
-        ]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
-
-        assert len(infos) == 1
         assert infos[0].stroke_count == 3
+        assert infos[1].stroke_count == 3
 
-    def test_isolated_points_separate_clusters(self):
-        """Points far apart with no overlap get their own clusters."""
+    def test_three_lines(self):
+        """Three distinct y-regions → three clusters."""
         entries = [
-            _point_entry(0, 0, idx=0),
-            _point_entry(500, 500, idx=1),
-            _point_entry(1000, 0, idx=2),
+            _point_entry(100, 100, idx=0),
+            _point_entry(120, 105, idx=1),
+            _point_entry(100, 200, idx=2),
+            _point_entry(120, 205, idx=3),
+            _point_entry(100, 300, idx=4),
+            _point_entry(120, 305, idx=5),
         ]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
+        _, labels, infos = cluster_by_centroid_gap(entries)
 
         assert len(infos) == 3
-        assert all(info.stroke_count == 1 for info in infos)
+        assert all(info.stroke_count == 2 for info in infos)
 
-    def test_single_stroke_one_cluster(self):
-        """A single stroke forms its own cluster."""
+    def test_single_line(self):
+        """All strokes at similar y → one cluster."""
+        entries = [
+            _point_entry(100, 100, idx=0),
+            _point_entry(200, 105, idx=1),
+            _point_entry(300, 102, idx=2),
+            _point_entry(400, 108, idx=3),
+        ]
+        _, labels, infos = cluster_by_centroid_gap(entries)
+
+        assert len(infos) == 1
+        assert infos[0].stroke_count == 4
+
+    def test_tall_symbol_stays_on_its_line(self):
+        """An integral sign spanning y=350-450 has centroid_y=400, stays on line 1."""
+        entries = [
+            _box_entry(50, 380, 200, 420, idx=0),     # line 1 character, centroid_y=400
+            _box_entry(100, 350, 120, 450, idx=1),     # integral ∫, centroid_y=400
+            _box_entry(150, 385, 250, 415, idx=2),     # line 1 character, centroid_y=400
+            _box_entry(50, 520, 200, 560, idx=3),      # line 2 character, centroid_y=540
+            _box_entry(150, 525, 250, 555, idx=4),     # line 2 character, centroid_y=540
+        ]
+        _, labels, infos = cluster_by_centroid_gap(entries)
+
+        assert len(infos) == 2
+        assert labels[0] == 0  # line 1
+        assert labels[1] == 0  # integral on line 1
+        assert labels[2] == 0  # line 1
+        assert labels[3] == 1  # line 2
+        assert labels[4] == 1  # line 2
+
+    def test_tall_symbol_bbox_would_bridge_but_centroid_doesnt(self):
+        """Bbox of tall stroke overlaps next line's bbox, but centroids are separate."""
+        entries = [
+            _box_entry(50, 110, 200, 140, idx=0),      # line 1, centroid_y=125
+            _box_entry(100, 80, 120, 200, idx=1),       # tall stroke, centroid_y=140
+            _box_entry(50, 190, 200, 220, idx=2),       # line 2, centroid_y=205
+        ]
+        # Bbox overlap: entry 1 (y=80-200) overlaps entry 2 (y=190-220).
+        # Centroid gap: 125→140 = 15 (< 20 threshold), 140→205 = 65 (> 20) → 2 clusters.
+        _, labels, infos = cluster_by_centroid_gap(entries)
+
+        assert len(infos) == 2
+        assert labels[0] == labels[1]  # entries 0,1 same cluster
+        assert labels[2] != labels[0]  # entry 2 different cluster
+
+    def test_subscript_stays_on_line(self):
+        """Subscript with ~10px centroid_y offset stays on same line."""
+        entries = [
+            _point_entry(100, 400, idx=0),    # base character
+            _point_entry(200, 400, idx=1),    # base character
+            _point_entry(250, 412, idx=2),    # subscript, ~12px lower
+            _point_entry(300, 400, idx=3),    # base character
+        ]
+        _, labels, infos = cluster_by_centroid_gap(entries)
+
+        assert len(infos) == 1
+
+    def test_single_stroke(self):
+        """A single stroke forms one cluster."""
         entries = [_point_entry(100, 100)]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
+        _, labels, infos = cluster_by_centroid_gap(entries)
 
         assert len(infos) == 1
         assert labels[0] == 0
 
-    def test_touching_edges_connect(self):
-        """Two bboxes sharing an edge should connect."""
-        # bbox A: 0-100, bbox B: 100-200 — touching at x=100
+    def test_empty_input(self):
+        """Empty input returns empty output."""
+        centroids, labels, infos = cluster_by_centroid_gap([])
+        assert len(infos) == 0
+        assert len(labels) == 0
+        assert centroids.shape == (0, 2)
+
+    def test_two_strokes_same_line(self):
+        """Two strokes at similar y → one cluster."""
         entries = [
-            _box_entry(0, 0, 100, 50, idx=0),
-            _box_entry(100, 0, 200, 50, idx=1),
+            _point_entry(100, 400, idx=0),
+            _point_entry(200, 405, idx=1),
         ]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
+        _, labels, infos = cluster_by_centroid_gap(entries)
 
         assert len(infos) == 1
-        assert infos[0].stroke_count == 2
 
-    def test_any_gap_separates(self):
-        """Two bboxes with any gap between them stay separate."""
-        # bbox A: 0-100, bbox B: 101-200 — 1px gap
+    def test_two_strokes_different_lines(self):
+        """Two strokes far apart in y → two clusters."""
         entries = [
-            _box_entry(0, 0, 100, 50, idx=0),
-            _box_entry(101, 0, 200, 50, idx=1),
+            _point_entry(100, 100, idx=0),
+            _point_entry(100, 500, idx=1),
         ]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
+        _, labels, infos = cluster_by_centroid_gap(entries)
 
         assert len(infos) == 2
 
-    def test_merge_multiple_clusters(self):
-        """A stroke bridging two existing clusters should merge them."""
+    def test_labels_ordered_top_to_bottom(self):
+        """Cluster 0 should be the topmost line."""
         entries = [
-            _box_entry(0, 0, 50, 50, idx=0),      # cluster A
-            _box_entry(200, 0, 250, 50, idx=1),    # cluster B (separate)
-            _box_entry(40, 0, 210, 50, idx=2),     # bridges A and B
+            _point_entry(100, 500, idx=0),    # line 2 (bottom)
+            _point_entry(100, 100, idx=1),    # line 1 (top)
         ]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
+        _, labels, infos = cluster_by_centroid_gap(entries)
 
-        assert len(infos) == 1
-        assert infos[0].stroke_count == 3
+        assert len(infos) == 2
+        assert labels[1] == 0  # top stroke → cluster 0
+        assert labels[0] == 1  # bottom stroke → cluster 1
 
     def test_centroid_accuracy(self):
         """Cluster centroid should be mean of member centroids."""
         entries = [
             _box_entry(0, 0, 100, 100, idx=0),     # centroid (50, 50)
-            _box_entry(50, 50, 150, 150, idx=1),    # centroid (100, 100)
+            _box_entry(50, 0, 150, 100, idx=1),     # centroid (100, 50)
         ]
-        _, _, infos = cluster_by_bbox_overlap(entries)
+        _, _, infos = cluster_by_centroid_gap(entries)
 
         assert len(infos) == 1
         assert infos[0].centroid[0] == pytest.approx(75.0)
-        assert infos[0].centroid[1] == pytest.approx(75.0)
+        assert infos[0].centroid[1] == pytest.approx(50.0)
 
     def test_bounding_box_accuracy(self):
         """Cluster bounding box should span all member bboxes."""
         entries = [
             _box_entry(10, 20, 50, 60, idx=0),
-            _box_entry(30, 40, 80, 90, idx=1),
+            _box_entry(30, 25, 80, 55, idx=1),
         ]
-        _, _, infos = cluster_by_bbox_overlap(entries)
+        _, _, infos = cluster_by_centroid_gap(entries)
 
         assert len(infos) == 1
         bbox = infos[0].bounding_box
         assert bbox[0] == pytest.approx(10.0)
         assert bbox[1] == pytest.approx(20.0)
         assert bbox[2] == pytest.approx(80.0)
-        assert bbox[3] == pytest.approx(90.0)
+        assert bbox[3] == pytest.approx(60.0)
 
-    def test_labels_sequential(self):
-        """Cluster labels should be 0, 1, 2... in order."""
+    def test_threshold_exactly_at(self):
+        """Gap exactly at threshold should NOT split (> not >=)."""
+        # With 2 strokes, < 3 gaps → threshold = 20
         entries = [
-            _box_entry(0, 0, 10, 10, idx=0),
-            _box_entry(500, 500, 510, 510, idx=1),
-            _box_entry(1000, 0, 1010, 10, idx=2),
+            _point_entry(100, 100, idx=0),
+            _point_entry(100, 120, idx=1),    # gap = 20, not > 20
         ]
-        _, _, infos = cluster_by_bbox_overlap(entries)
+        _, labels, infos = cluster_by_centroid_gap(entries)
 
-        assert len(infos) == 3
-        assert [i.cluster_label for i in infos] == [0, 1, 2]
+        assert len(infos) == 1
 
-    def test_realistic_two_lines(self):
-        """Two lines of handwriting on iPad canvas should separate."""
-        # Line 1: strokes around y=400
-        # Line 2: strokes around y=1200
+    def test_threshold_just_above(self):
+        """Gap just above threshold should split."""
+        # With 2 strokes, < 3 gaps → threshold = 20
         entries = [
-            _box_entry(280, 380, 320, 420, idx=0),
-            _box_entry(310, 390, 350, 420, idx=1),
-            _box_entry(340, 380, 380, 410, idx=2),
-            _box_entry(280, 1180, 320, 1220, idx=3),
-            _box_entry(310, 1190, 350, 1220, idx=4),
-            _box_entry(340, 1180, 380, 1210, idx=5),
+            _point_entry(100, 100, idx=0),
+            _point_entry(100, 121, idx=1),    # gap = 21 > 20
         ]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
+        _, labels, infos = cluster_by_centroid_gap(entries)
 
         assert len(infos) == 2
-        assert infos[0].stroke_count == 3
-        assert infos[1].stroke_count == 3
 
-    def test_tall_stroke_doesnt_bridge_lines(self):
-        """A tall stroke (like integral sign) shouldn't cause cluster bbox to absorb next line."""
-        entries = [
-            _box_entry(50, 100, 200, 130, idx=0),    # line 1: short wide stroke
-            _box_entry(100, 80, 120, 160, idx=1),     # line 1: tall stroke (integral), touches entry 0
-            _box_entry(50, 200, 200, 230, idx=2),     # line 2: well below — doesn't touch any stroke
-        ]
-        _, labels, infos = cluster_by_bbox_overlap(entries)
+    def test_adaptive_threshold_with_many_strokes(self):
+        """With many strokes, threshold adapts based on median gap."""
+        # 8 strokes on line 1 (y=100..107), 1 stroke on line 2 (y=200)
+        entries = [_point_entry(i * 50, 100 + i, idx=i) for i in range(8)]
+        entries.append(_point_entry(100, 200, idx=8))
 
-        # Old algorithm: cluster bbox after entry 1 would be (50,80)-(200,160),
-        # which with any padding would reach entry 2 at y=200. Per-stroke check prevents this.
+        _, labels, infos = cluster_by_centroid_gap(entries)
+
         assert len(infos) == 2
-        assert infos[0].stroke_count == 2  # entries 0+1
-        assert infos[1].stroke_count == 1  # entry 2
-
-    def test_empty_entries(self):
-        """Empty input returns empty output."""
-        centroids, labels, infos = cluster_by_bbox_overlap([])
-        assert len(infos) == 0
-        assert len(labels) == 0
-        assert centroids.shape == (0, 2)
+        # First 8 on cluster 0, last one on cluster 1
+        for i in range(8):
+            assert labels[i] == 0
+        assert labels[8] == 1

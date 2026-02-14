@@ -59,17 +59,6 @@ class TestClusterStrokesValidation:
         response = client.post("/api/cluster-strokes", json={"session_id": "abc"})
         assert response.status_code == 422
 
-    def test_invalid_eps(self, client):
-        response = client.post("/api/cluster-strokes", json={
-            "session_id": "abc", "page": 1, "eps": -1
-        })
-        assert response.status_code == 422
-
-    def test_invalid_min_samples(self, client):
-        response = client.post("/api/cluster-strokes", json={
-            "session_id": "abc", "page": 1, "min_samples": 0
-        })
-        assert response.status_code == 422
 
 
 # ---------------------------------------------------------------------------
@@ -160,38 +149,6 @@ class TestClusterStrokesWithData:
         assert len(cluster["centroid"]) == 2
         assert isinstance(cluster["bounding_box"], list)
         assert len(cluster["bounding_box"]) == 4
-
-    @patch("lib.stroke_clustering.get_pool")
-    def test_custom_eps(self, mock_get_pool, client):
-        """A very small eps should make nearby points become noise."""
-        rows = [
-            {"id": 1, "strokes": [_make_stroke(0, 0), _make_stroke(200, 200)]},
-        ]
-        pool, _ = _make_pool_mock(rows)
-        mock_get_pool.return_value = pool
-
-        response = client.post("/api/cluster-strokes", json={
-            "session_id": "s1", "page": 1, "eps": 10.0,
-        })
-        data = response.json()
-        assert data["num_clusters"] == 0
-        assert data["noise_strokes"] == 2
-
-    @patch("lib.stroke_clustering.get_pool")
-    def test_defaults_applied(self, mock_get_pool, client):
-        """Omitting eps/min_samples should use defaults (150.0, 2)."""
-        rows = [
-            {"id": 1, "strokes": [_make_stroke(100, 100), _make_stroke(110, 100)]},
-        ]
-        pool, _ = _make_pool_mock(rows)
-        mock_get_pool.return_value = pool
-
-        response = client.post("/api/cluster-strokes", json={
-            "session_id": "s1", "page": 1,
-        })
-        data = response.json()
-        # Distance ~10 < default eps 150, min_samples=2 → 1 cluster
-        assert data["num_clusters"] == 1
 
     @patch("lib.stroke_clustering.get_pool")
     def test_db_writes_called(self, mock_get_pool, client):

@@ -1,8 +1,9 @@
-"""Incremental bounding-box stroke clustering.
+"""Y-centroid gap stroke clustering.
 
-A new stroke joins a cluster only if its bounding box touches/overlaps
-the bounding box of at least one stroke already in that cluster.
-When a stroke touches strokes in multiple clusters, those clusters merge.
+Strokes are sorted by centroid_y, then split into clusters wherever the
+gap between consecutive centroid_y values exceeds a threshold.  This
+correctly handles tall symbols (integrals, brackets) whose bounding boxes
+span multiple lines but whose centroids remain on the correct line.
 """
 
 import asyncio
@@ -58,62 +59,53 @@ def extract_stroke_entries(rows: list[dict]) -> list[StrokeEntry]:
     return entries
 
 
-def _bboxes_touch(a: StrokeEntry, b: StrokeEntry) -> bool:
-    """Return True if two stroke bounding boxes touch or overlap."""
-    return (a.min_x <= b.max_x and a.max_x >= b.min_x and
-            a.min_y <= b.max_y and a.max_y >= b.min_y)
-
-
-def cluster_by_bbox_overlap(
+def cluster_by_centroid_gap(
     entries: list[StrokeEntry],
 ) -> tuple[np.ndarray, np.ndarray, list[ClusterInfo]]:
-    """Cluster strokes incrementally by per-stroke bounding-box overlap.
+    """Cluster strokes by gaps between sorted centroid_y values.
 
-    For each stroke in order:
-    1. Check if its bbox touches any individual stroke already in a cluster.
-    2. No touch → new cluster.
-    3. Touches stroke(s) in one cluster → join that cluster.
-    4. Touches strokes in multiple clusters → merge those clusters.
+    1. Sort strokes by centroid_y.
+    2. Compute consecutive gaps.
+    3. Threshold: max(median_gap * 4, 20) when ≥3 gaps, else 20.
+    4. Any gap > threshold starts a new cluster.
+    5. Labels assigned top-to-bottom (cluster 0 = topmost line).
     """
     if not entries:
         return np.array([]).reshape(0, 2), np.array([], dtype=int), []
 
-    cluster_members: list[list[int]] = []    # entry indices per cluster
-
-    for i, entry in enumerate(entries):
-        overlapping: list[int] = []
-
-        for c_idx, members in enumerate(cluster_members):
-            for m_idx in members:
-                if _bboxes_touch(entry, entries[m_idx]):
-                    overlapping.append(c_idx)
-                    break  # one touch is enough to link to this cluster
-
-        if not overlapping:
-            cluster_members.append([i])
-        elif len(overlapping) == 1:
-            cluster_members[overlapping[0]].append(i)
-        else:
-            target = overlapping[0]
-            cluster_members[target].append(i)
-            for c_idx in sorted(overlapping[1:], reverse=True):
-                cluster_members[target].extend(cluster_members[c_idx])
-                del cluster_members[c_idx]
-
-    # Build output
-    labels = np.zeros(len(entries), dtype=int)
     centroids = np.array([[e.centroid_x, e.centroid_y] for e in entries])
+
+    # Sort by centroid_y
+    order = np.argsort(centroids[:, 1])
+    sorted_cy = centroids[order, 1]
+
+    # Compute gaps and threshold
+    gaps = np.diff(sorted_cy)
+    if len(gaps) < 3:
+        threshold = 20.0
+    else:
+        threshold = max(float(np.median(gaps)) * 4, 20.0)
+
+    # Assign cluster labels top-to-bottom
+    labels = np.zeros(len(entries), dtype=int)
+    current_label = 0
+    for rank in range(len(order)):
+        if rank > 0 and gaps[rank - 1] > threshold:
+            current_label += 1
+        labels[order[rank]] = current_label
+
+    # Build ClusterInfo list
+    num_clusters = current_label + 1
     cluster_infos: list[ClusterInfo] = []
 
-    for label, members in enumerate(cluster_members):
-        for idx in members:
-            labels[idx] = label
-
-        member_entries = [entries[idx] for idx in members]
-        member_centroids = centroids[np.array(members)]
+    for label in range(num_clusters):
+        mask = labels == label
+        member_indices = np.where(mask)[0]
+        member_entries = [entries[i] for i in member_indices]
+        member_centroids = centroids[member_indices]
         cluster_infos.append(ClusterInfo(
             cluster_label=label,
-            stroke_count=len(members),
+            stroke_count=len(member_entries),
             centroid=[
                 float(member_centroids[:, 0].mean()),
                 float(member_centroids[:, 1].mean()),
@@ -156,8 +148,8 @@ async def update_cluster_labels(session_id: str, page: int):
     for e in entries:
         print(f"[cluster] stroke log={e.log_id} idx={e.index} bbox=({e.min_x:.0f},{e.min_y:.0f})-({e.max_x:.0f},{e.max_y:.0f})")
 
-    _, labels, cluster_infos = cluster_by_bbox_overlap(entries)
-    print(f"[cluster] bbox-overlap → {len(cluster_infos)} clusters, labels={[int(l) for l in labels]}")
+    _, labels, cluster_infos = cluster_by_centroid_gap(entries)
+    print(f"[cluster] centroid-gap → {len(cluster_infos)} clusters, labels={[int(l) for l in labels]}")
 
     # Group labels by log_id
     labels_by_log: dict[int, list[int]] = {}
@@ -201,7 +193,7 @@ async def cluster_strokes(session_id: str, page: int) -> ClusterResponse:
             num_strokes=0, num_clusters=0, noise_strokes=0, clusters=[],
         )
 
-    centroids, labels, cluster_infos = cluster_by_bbox_overlap(entries)
+    centroids, labels, cluster_infos = cluster_by_centroid_gap(entries)
 
     # Store results to database
     async with pool.acquire() as conn:

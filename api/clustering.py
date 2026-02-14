@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.post("/api/cluster-strokes", response_model=ClusterResponse)
 async def api_cluster_strokes(body: ClusterRequest):
-    """Run bounding-box overlap clustering on all strokes for a session+page.
+    """Run centroid-gap clustering on all strokes for a session+page.
 
     Re-clustering is safe: old cluster data is replaced on each call.
     """
