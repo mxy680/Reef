@@ -287,7 +287,7 @@ class TestClusterByCentroidGap:
         assert len(infos) == 2
 
     def test_adaptive_threshold_with_many_strokes(self):
-        """With many strokes, threshold adapts based on median gap."""
+        """With many strokes, threshold adapts based on gap distribution."""
         # 8 strokes on line 1 (y=100..107), 1 stroke on line 2 (y=200)
         entries = [_point_entry(i * 50, 100 + i, idx=i) for i in range(8)]
         entries.append(_point_entry(100, 200, idx=8))
@@ -299,3 +299,57 @@ class TestClusterByCentroidGap:
         for i in range(8):
             assert labels[i] == 0
         assert labels[8] == 1
+
+    def test_real_ipad_close_lines(self):
+        """Real iPad handwriting: two lines only ~12px apart in centroid space.
+
+        Line 1: 14 strokes with centroids around y=292-302
+        Line 2: 16 strokes with centroids around y=314-331
+        Gap between lines: ~11.8px
+        """
+        # Stroke bboxes from real session 8BEDD7CA
+        entries = [
+            # Line 1 (log 154) — upper line, centroids ~292-296
+            _box_entry(274, 286, 279, 299, idx=0),   # cy=292.5
+            _box_entry(263, 286, 272, 300, idx=1),    # cy=293.0
+            _box_entry(254, 293, 260, 295, idx=2),    # cy=294.0
+            _box_entry(286, 291, 294, 298, idx=3),    # cy=294.5
+            _box_entry(283, 292, 293, 299, idx=4),    # cy=295.5
+            # Line 1 (log 150) — centroids ~296-302
+            _box_entry(100, 290, 140, 302, idx=5),    # cy=296.0
+            _box_entry(150, 295, 170, 300, idx=6),    # cy=297.5
+            _box_entry(180, 294, 200, 301, idx=7),    # cy=297.5
+            _box_entry(60, 290, 100, 306, idx=8),     # cy=298.0
+            _box_entry(40, 297, 60, 299, idx=9),      # cy=298.0
+            _box_entry(120, 294, 140, 303, idx=10),   # cy=298.5
+            _box_entry(160, 295, 180, 302, idx=11),   # cy=298.5
+            _box_entry(200, 295, 220, 302, idx=12),   # cy=298.5
+            _box_entry(20, 301, 40, 303, idx=13),     # cy=302.0
+            # Line 2 (log 153) — lower line, centroids ~314-331
+            _box_entry(233, 311, 238, 316, idx=14),   # cy=313.5
+            _box_entry(224, 315, 230, 321, idx=15),   # cy=318.0
+            _box_entry(225, 316, 229, 322, idx=16),   # cy=319.0
+            _box_entry(242, 315, 248, 331, idx=17),   # cy=323.0
+            _box_entry(215, 317, 221, 331, idx=18),   # cy=324.0
+            _box_entry(225, 324, 236, 324, idx=19),   # cy=324.0
+            _box_entry(229, 329, 235, 334, idx=20),   # cy=331.5
+            # Line 2 (log 155) — centroids ~319-323
+            _box_entry(305, 313, 319, 325, idx=21),   # cy=319.0
+            _box_entry(256, 319, 263, 320, idx=22),   # cy=319.5
+            _box_entry(291, 314, 293, 327, idx=23),   # cy=320.5
+            _box_entry(288, 320, 298, 322, idx=24),   # cy=321.0
+            _box_entry(269, 318, 279, 327, idx=25),   # cy=322.5
+            _box_entry(269, 318, 278, 328, idx=26),   # cy=323.0
+            # Line 2 (logs 151, 152)
+            _box_entry(50, 324, 80, 325, idx=27),     # cy=324.5
+            _box_entry(50, 320, 80, 330, idx=28),     # cy=325.0
+            _box_entry(50, 329, 80, 330, idx=29),     # cy=329.5
+        ]
+        _, labels, infos = cluster_by_centroid_gap(entries)
+
+        assert len(infos) == 2, f"Expected 2 clusters, got {len(infos)}"
+        # First 14 entries are line 1, next 16 are line 2
+        for i in range(14):
+            assert labels[i] == 0, f"Entry {i} should be cluster 0 (line 1)"
+        for i in range(14, 30):
+            assert labels[i] == 1, f"Entry {i} should be cluster 1 (line 2)"

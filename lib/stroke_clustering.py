@@ -66,7 +66,10 @@ def cluster_by_centroid_gap(
 
     1. Sort strokes by centroid_y.
     2. Compute consecutive gaps.
-    3. Threshold: max(median_gap * 4, 20) when ≥3 gaps, else 20.
+    3. Find threshold via natural-breaks: sort the gaps, find the biggest
+       jump in the sorted sequence. If the gap above the jump is ≥2× the
+       gap below it, use the midpoint as threshold. Otherwise fall back to
+       median_gap × 4 (floor 20).
     4. Any gap > threshold starts a new cluster.
     5. Labels assigned top-to-bottom (cluster 0 = topmost line).
     """
@@ -81,10 +84,23 @@ def cluster_by_centroid_gap(
 
     # Compute gaps and threshold
     gaps = np.diff(sorted_cy)
-    if len(gaps) < 3:
+    if len(gaps) < 8:
+        # Too few strokes for natural-breaks — use fixed threshold
         threshold = 20.0
     else:
-        threshold = max(float(np.median(gaps)) * 4, 20.0)
+        # Natural-breaks: sort gaps, find biggest jump in sorted sequence
+        sorted_gaps = np.sort(gaps)
+        gap_jumps = np.diff(sorted_gaps)
+        best_jump_idx = int(np.argmax(gap_jumps))
+        below = float(sorted_gaps[best_jump_idx])
+        above = float(sorted_gaps[best_jump_idx + 1])
+
+        if above > max(below * 2, 5):
+            # Significant natural break found
+            threshold = (below + above) / 2
+        else:
+            # No clear break — use median-based fallback
+            threshold = max(float(np.median(gaps)) * 4, 20.0)
 
     # Assign cluster labels top-to-bottom
     labels = np.zeros(len(entries), dtype=int)
