@@ -48,6 +48,9 @@ async def init_db():
             ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT ''
         """)
         await conn.execute("""
+            ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS cluster_labels JSONB NOT NULL DEFAULT '[]'::jsonb
+        """)
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS clusters (
                 id SERIAL PRIMARY KEY,
                 session_id TEXT NOT NULL,

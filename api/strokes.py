@@ -5,12 +5,14 @@ iOS streams full PKStrokePoint data per page; server logs
 each batch to the stroke_logs table in Postgres.
 """
 
+import asyncio
 import json
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 
 from lib.database import get_pool
+from lib.stroke_clustering import update_cluster_labels
 
 router = APIRouter()
 
@@ -54,7 +56,8 @@ async def get_stroke_logs(
             f"""
             SELECT id, session_id, page, received_at,
                    jsonb_array_length(strokes) AS stroke_count,
-                   strokes, event_type, deleted_count, message, user_id
+                   strokes, event_type, deleted_count, message, user_id,
+                   cluster_labels
             FROM stroke_logs
             {where}
             ORDER BY received_at DESC
@@ -77,6 +80,7 @@ async def get_stroke_logs(
                 "deleted_count": r["deleted_count"],
                 "message": r["message"],
                 "user_id": r["user_id"],
+                "cluster_labels": json.loads(r["cluster_labels"]),
             }
             for r in rows
         ],
@@ -216,6 +220,8 @@ async def strokes_websocket(ws: WebSocket, session_id: str = "", user_id: str = 
                         deleted_count,
                         msg.get("user_id", user_id),
                     )
+                # Re-cluster in background (don't block ack)
+                asyncio.create_task(update_cluster_labels(session_id, page))
 
             await ws.send_text(json.dumps({"type": "ack"}))
 
