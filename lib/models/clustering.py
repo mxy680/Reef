@@ -1,13 +1,11 @@
 """Pydantic models for stroke clustering endpoint."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ClusterRequest(BaseModel):
     session_id: str
     page: int
-    eps: float = Field(default=20.0, gt=0)
-    min_samples: int = Field(default=1, ge=1)
 
 
 class ClusterInfo(BaseModel):

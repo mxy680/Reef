@@ -1,4 +1,4 @@
-"""Unit tests for pure stroke clustering computation (no database)."""
+"""Unit tests for bounding-box overlap stroke clustering (no database)."""
 
 import pytest
 import sys
@@ -6,7 +6,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lib.stroke_clustering import StrokeEntry, extract_stroke_entries, run_dbscan
+from lib.stroke_clustering import StrokeEntry, extract_stroke_entries, cluster_by_bbox_overlap
 
 
 # ---------------------------------------------------------------------------
@@ -23,12 +23,14 @@ def _make_line_stroke(points: list[tuple[float, float]]) -> dict:
     return {"points": [{"x": x, "y": y} for x, y in points]}
 
 
-def _entries_at(coords: list[tuple[float, float]]) -> list[StrokeEntry]:
-    """Shortcut: build StrokeEntry list from (x, y) pairs."""
-    return [
-        StrokeEntry(log_id=1, index=i, centroid_x=x, centroid_y=y)
-        for i, (x, y) in enumerate(coords)
-    ]
+def _point_entry(x: float, y: float, idx: int = 0) -> StrokeEntry:
+    """Single-point stroke entry at (x, y)."""
+    return StrokeEntry(log_id=1, index=idx, min_x=x, min_y=y, max_x=x, max_y=y)
+
+
+def _box_entry(x1: float, y1: float, x2: float, y2: float, idx: int = 0) -> StrokeEntry:
+    """Stroke entry with explicit bounding box."""
+    return StrokeEntry(log_id=1, index=idx, min_x=x1, min_y=y1, max_x=x2, max_y=y2)
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +77,7 @@ class TestExtractStrokeEntries:
         rows = [{"id": 1, "strokes": [{"points": []}, _make_stroke(5, 5)]}]
         entries = extract_stroke_entries(rows)
         assert len(entries) == 1
-        assert entries[0].index == 1  # the empty one at index 0 was skipped
+        assert entries[0].index == 1
 
     def test_no_points_key_skipped(self):
         rows = [{"id": 1, "strokes": [{}]}]
@@ -86,7 +88,6 @@ class TestExtractStrokeEntries:
         assert extract_stroke_entries([]) == []
 
     def test_json_string_strokes(self):
-        """strokes column might come as a JSON string instead of parsed list."""
         import json
         rows = [{"id": 1, "strokes": json.dumps([_make_stroke(7.0, 8.0)])}]
         entries = extract_stroke_entries(rows)
@@ -95,128 +96,156 @@ class TestExtractStrokeEntries:
 
 
 # ---------------------------------------------------------------------------
-# run_dbscan — geometry tests
+# cluster_by_bbox_overlap
 # ---------------------------------------------------------------------------
 
-class TestRunDbscan:
+class TestClusterByBboxOverlap:
 
-    def test_two_tight_clusters(self):
-        """Two groups of points far apart should form two clusters."""
-        # Cluster A around (100, 100), Cluster B around (1000, 1000)
-        entries = _entries_at([
-            (100, 100), (110, 105), (95, 110),   # cluster A
-            (1000, 1000), (1010, 1005), (995, 1010),  # cluster B
-        ])
-        _, labels, infos = run_dbscan(entries, eps=150, min_samples=2)
+    def test_two_separate_clusters(self):
+        """Two groups far apart should form two clusters."""
+        entries = [
+            _box_entry(90, 90, 120, 120, idx=0),
+            _box_entry(95, 100, 115, 115, idx=1),
+            _box_entry(900, 900, 1020, 1020, idx=2),
+            _box_entry(910, 910, 1010, 1010, idx=3),
+        ]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
 
         assert len(infos) == 2
+        assert infos[0].stroke_count == 2
+        assert infos[1].stroke_count == 2
+
+    def test_single_cluster_overlapping(self):
+        """Overlapping bboxes should all merge into one cluster."""
+        entries = [
+            _box_entry(0, 0, 50, 50, idx=0),
+            _box_entry(40, 0, 90, 50, idx=1),
+            _box_entry(80, 0, 130, 50, idx=2),
+        ]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
+
+        assert len(infos) == 1
         assert infos[0].stroke_count == 3
-        assert infos[1].stroke_count == 3
-        assert (labels == -1).sum() == 0  # no noise
 
-    def test_single_cluster(self):
-        """All points close together should form one cluster."""
-        entries = _entries_at([(100, 100), (120, 110), (130, 90), (105, 115)])
-        _, labels, infos = run_dbscan(entries, eps=150, min_samples=2)
+    def test_isolated_points_separate_clusters(self):
+        """Points far apart with no overlap get their own clusters."""
+        entries = [
+            _point_entry(0, 0, idx=0),
+            _point_entry(500, 500, idx=1),
+            _point_entry(1000, 0, idx=2),
+        ]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
 
-        assert len(infos) == 1
-        assert infos[0].stroke_count == 4
+        assert len(infos) == 3
+        assert all(info.stroke_count == 1 for info in infos)
 
-    def test_all_noise(self):
-        """Points all far apart should all be noise."""
-        entries = _entries_at([(0, 0), (500, 500), (1000, 0), (500, 1000)])
-        _, labels, infos = run_dbscan(entries, eps=50, min_samples=2)
-
-        assert len(infos) == 0
-        assert (labels == -1).sum() == 4
-
-    def test_single_stroke_is_noise(self):
-        """A single stroke can't form a cluster with min_samples=2."""
-        entries = _entries_at([(100, 100)])
-        _, labels, infos = run_dbscan(entries, eps=150, min_samples=2)
-
-        assert len(infos) == 0
-        assert labels[0] == -1
-
-    def test_noise_plus_cluster(self):
-        """Two nearby + one distant point: cluster of 2, noise of 1."""
-        entries = _entries_at([(100, 100), (110, 100), (900, 900)])
-        _, labels, infos = run_dbscan(entries, eps=150, min_samples=2)
+    def test_single_stroke_one_cluster(self):
+        """A single stroke forms its own cluster."""
+        entries = [_point_entry(100, 100)]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
 
         assert len(infos) == 1
-        assert infos[0].stroke_count == 2
-        assert (labels == -1).sum() == 1
+        assert labels[0] == 0
 
-    def test_eps_boundary(self):
-        """Two points exactly at eps distance should still cluster."""
-        # Distance between (0, 0) and (150, 0) = 150.0 = eps
-        entries = _entries_at([(0, 0), (150, 0)])
-        _, labels, infos = run_dbscan(entries, eps=150, min_samples=2)
+    def test_bbox_expansion_connects_nearby(self):
+        """Two bboxes just barely apart should connect via 10% expansion."""
+        # bbox A: 0-100, bbox B: 105-200 — gap of 5px
+        # A's width=100, expansion = 100*0.10/2 = 5px on each side
+        # So A expands to [-5, _, 105, _] which just touches B at 105
+        entries = [
+            _box_entry(0, 0, 100, 50, idx=0),
+            _box_entry(105, 0, 200, 50, idx=1),
+        ]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
 
         assert len(infos) == 1
         assert infos[0].stroke_count == 2
 
-    def test_eps_just_beyond(self):
-        """Two points just beyond eps should not cluster."""
-        entries = _entries_at([(0, 0), (151, 0)])
-        _, labels, infos = run_dbscan(entries, eps=150, min_samples=2)
+    def test_beyond_expansion_separates(self):
+        """Two bboxes far enough apart stay separate despite expansion."""
+        # bbox A: 0-100, bbox B: 120-220 — gap of 20px
+        # A's width=100, expansion = 5px → expanded to [-5, _, 105, _]
+        # B starts at 120, well beyond 105
+        entries = [
+            _box_entry(0, 0, 100, 50, idx=0),
+            _box_entry(120, 0, 220, 50, idx=1),
+        ]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
 
-        assert len(infos) == 0
+        assert len(infos) == 2
 
-    def test_cluster_centroid_accuracy(self):
+    def test_merge_multiple_clusters(self):
+        """A stroke bridging two existing clusters should merge them."""
+        entries = [
+            _box_entry(0, 0, 50, 50, idx=0),      # cluster A
+            _box_entry(200, 0, 250, 50, idx=1),    # cluster B (separate)
+            _box_entry(40, 0, 210, 50, idx=2),     # bridges A and B
+        ]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
+
+        assert len(infos) == 1
+        assert infos[0].stroke_count == 3
+
+    def test_centroid_accuracy(self):
         """Cluster centroid should be mean of member centroids."""
-        entries = _entries_at([(100, 200), (200, 300)])
-        # Distance = sqrt(100^2 + 100^2) ≈ 141, well within eps=150
-        _, _, infos = run_dbscan(entries, eps=150, min_samples=2)
+        entries = [
+            _box_entry(0, 0, 100, 100, idx=0),     # centroid (50, 50)
+            _box_entry(50, 50, 150, 150, idx=1),    # centroid (100, 100)
+        ]
+        _, _, infos = cluster_by_bbox_overlap(entries)
 
         assert len(infos) == 1
-        assert infos[0].centroid[0] == pytest.approx(150.0)
-        assert infos[0].centroid[1] == pytest.approx(250.0)
+        assert infos[0].centroid[0] == pytest.approx(75.0)
+        assert infos[0].centroid[1] == pytest.approx(75.0)
 
     def test_bounding_box_accuracy(self):
-        """Bounding box should span min/max of member centroids."""
-        entries = _entries_at([(50, 100), (200, 300), (150, 200)])
-        _, _, infos = run_dbscan(entries, eps=250, min_samples=2)
+        """Cluster bounding box should span all member bboxes."""
+        entries = [
+            _box_entry(10, 20, 50, 60, idx=0),
+            _box_entry(30, 40, 80, 90, idx=1),
+        ]
+        _, _, infos = cluster_by_bbox_overlap(entries)
 
         assert len(infos) == 1
         bbox = infos[0].bounding_box
-        assert bbox[0] == pytest.approx(50.0)   # x1
-        assert bbox[1] == pytest.approx(100.0)  # y1
-        assert bbox[2] == pytest.approx(200.0)  # x2
-        assert bbox[3] == pytest.approx(300.0)  # y2
+        assert bbox[0] == pytest.approx(10.0)
+        assert bbox[1] == pytest.approx(20.0)
+        assert bbox[2] == pytest.approx(80.0)
+        assert bbox[3] == pytest.approx(90.0)
 
-    def test_min_samples_respected(self):
-        """min_samples=3 should require 3 neighbors to form a cluster."""
-        entries = _entries_at([(100, 100), (110, 100)])
-        _, labels, infos = run_dbscan(entries, eps=150, min_samples=3)
-
-        # Only 2 points, need 3 — both become noise
-        assert len(infos) == 0
-        assert (labels == -1).sum() == 2
-
-    def test_cluster_labels_sequential(self):
+    def test_labels_sequential(self):
         """Cluster labels should be 0, 1, 2... in order."""
-        entries = _entries_at([
-            (0, 0), (10, 0),           # cluster 0
-            (500, 500), (510, 500),    # cluster 1
-            (1000, 0), (1010, 0),      # cluster 2
-        ])
-        _, _, infos = run_dbscan(entries, eps=150, min_samples=2)
+        entries = [
+            _box_entry(0, 0, 10, 10, idx=0),
+            _box_entry(500, 500, 510, 510, idx=1),
+            _box_entry(1000, 0, 1010, 10, idx=2),
+        ]
+        _, _, infos = cluster_by_bbox_overlap(entries)
 
         assert len(infos) == 3
         assert [i.cluster_label for i in infos] == [0, 1, 2]
 
-    def test_realistic_canvas_scenario(self):
-        """Simulate realistic strokes: two problem areas on a 1224x1584 canvas."""
-        # Problem 1: strokes around (300, 400)
-        # Problem 2: strokes around (300, 1200)
-        entries = _entries_at([
-            (280, 380), (310, 420), (290, 400), (320, 390), (300, 410),
-            (280, 1180), (310, 1220), (290, 1200), (320, 1190), (300, 1210),
-        ])
-        _, labels, infos = run_dbscan(entries, eps=150, min_samples=2)
+    def test_realistic_two_lines(self):
+        """Two lines of handwriting on iPad canvas should separate."""
+        # Line 1: strokes around y=400
+        # Line 2: strokes around y=1200
+        entries = [
+            _box_entry(280, 380, 320, 420, idx=0),
+            _box_entry(310, 390, 350, 420, idx=1),
+            _box_entry(340, 380, 380, 410, idx=2),
+            _box_entry(280, 1180, 320, 1220, idx=3),
+            _box_entry(310, 1190, 350, 1220, idx=4),
+            _box_entry(340, 1180, 380, 1210, idx=5),
+        ]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
 
         assert len(infos) == 2
-        assert infos[0].stroke_count == 5
-        assert infos[1].stroke_count == 5
-        assert (labels == -1).sum() == 0
+        assert infos[0].stroke_count == 3
+        assert infos[1].stroke_count == 3
+
+    def test_empty_entries(self):
+        """Empty input returns empty output."""
+        centroids, labels, infos = cluster_by_bbox_overlap([])
+        assert len(infos) == 0
+        assert len(labels) == 0
+        assert centroids.shape == (0, 2)

@@ -1,7 +1,8 @@
-"""Core DBSCAN stroke clustering logic.
+"""Incremental bounding-box stroke clustering.
 
-Uses bounding-box gap distance: two strokes are "close" if their
-bounding boxes overlap or are within `eps` pixels of each other.
+Assigns strokes to clusters by checking overlap with existing cluster
+bounding boxes (expanded by 10%).  When a stroke overlaps multiple
+clusters, those clusters are merged.
 """
 
 import asyncio
@@ -9,11 +10,11 @@ import json
 from dataclasses import dataclass
 
 import numpy as np
-from sklearn.cluster import DBSCAN
-from sklearn.metrics import pairwise_distances
 
 from lib.database import get_pool
 from lib.models.clustering import ClusterInfo, ClusterResponse
+
+EXPAND_PCT = 0.10
 
 
 @dataclass
@@ -59,66 +60,103 @@ def extract_stroke_entries(rows: list[dict]) -> list[StrokeEntry]:
     return entries
 
 
-def bbox_gap_distance(entries: list[StrokeEntry]) -> np.ndarray:
-    """Compute pairwise bounding-box gap distance matrix.
-
-    Distance = 0 if bboxes overlap, otherwise min edge-to-edge gap.
-    """
-    n = len(entries)
-    dist = np.zeros((n, n))
-    for i in range(n):
-        a = entries[i]
-        for j in range(i + 1, n):
-            b = entries[j]
-            # Gap on each axis (negative means overlap)
-            gap_x = max(0, max(a.min_x, b.min_x) - min(a.max_x, b.max_x))
-            gap_y = max(0, max(a.min_y, b.min_y) - min(a.max_y, b.max_y))
-            # Euclidean gap distance (0 if overlapping on both axes)
-            d = (gap_x ** 2 + (gap_y * 3) ** 2) ** 0.5
-            dist[i, j] = d
-            dist[j, i] = d
-    return dist
-
-
-def run_dbscan(
+def cluster_by_bbox_overlap(
     entries: list[StrokeEntry],
-    eps: float = 20.0,
-    min_samples: int = 1,
+    expand_pct: float = EXPAND_PCT,
 ) -> tuple[np.ndarray, np.ndarray, list[ClusterInfo]]:
-    """Run DBSCAN using bounding-box gap distance."""
-    dist_matrix = bbox_gap_distance(entries)
-    labels = DBSCAN(eps=eps, min_samples=min_samples, metric="precomputed").fit_predict(dist_matrix)
+    """Cluster strokes incrementally by bounding-box overlap.
 
+    For each stroke in order:
+    1. Check if its bbox overlaps any existing cluster bbox (expanded by expand_pct).
+    2. No overlap → new cluster.
+    3. One overlap → add to that cluster, grow its bbox.
+    4. Multiple overlaps → merge those clusters, add stroke.
+    """
+    if not entries:
+        return np.array([]).reshape(0, 2), np.array([], dtype=int), []
+
+    cluster_bboxes: list[list[float]] = []   # [min_x, min_y, max_x, max_y]
+    cluster_members: list[list[int]] = []    # entry indices
+
+    for i, entry in enumerate(entries):
+        overlapping: list[int] = []
+
+        for c_idx, bbox in enumerate(cluster_bboxes):
+            w = bbox[2] - bbox[0]
+            h = bbox[3] - bbox[1]
+            pad_x = w * expand_pct / 2
+            pad_y = h * expand_pct / 2
+
+            if (entry.min_x <= bbox[2] + pad_x and
+                entry.max_x >= bbox[0] - pad_x and
+                entry.min_y <= bbox[3] + pad_y and
+                entry.max_y >= bbox[1] - pad_y):
+                overlapping.append(c_idx)
+
+        if not overlapping:
+            cluster_bboxes.append([entry.min_x, entry.min_y, entry.max_x, entry.max_y])
+            cluster_members.append([i])
+        elif len(overlapping) == 1:
+            c = overlapping[0]
+            cluster_members[c].append(i)
+            cluster_bboxes[c] = [
+                min(cluster_bboxes[c][0], entry.min_x),
+                min(cluster_bboxes[c][1], entry.min_y),
+                max(cluster_bboxes[c][2], entry.max_x),
+                max(cluster_bboxes[c][3], entry.max_y),
+            ]
+        else:
+            # Merge all overlapping clusters into the first one
+            target = overlapping[0]
+            cluster_members[target].append(i)
+            for c_idx in sorted(overlapping[1:], reverse=True):
+                cluster_members[target].extend(cluster_members[c_idx])
+                cluster_bboxes[target] = [
+                    min(cluster_bboxes[target][0], cluster_bboxes[c_idx][0]),
+                    min(cluster_bboxes[target][1], cluster_bboxes[c_idx][1]),
+                    max(cluster_bboxes[target][2], cluster_bboxes[c_idx][2]),
+                    max(cluster_bboxes[target][3], cluster_bboxes[c_idx][3]),
+                ]
+                del cluster_bboxes[c_idx]
+                del cluster_members[c_idx]
+            cluster_bboxes[target] = [
+                min(cluster_bboxes[target][0], entry.min_x),
+                min(cluster_bboxes[target][1], entry.min_y),
+                max(cluster_bboxes[target][2], entry.max_x),
+                max(cluster_bboxes[target][3], entry.max_y),
+            ]
+
+    # Build output
+    labels = np.zeros(len(entries), dtype=int)
     centroids = np.array([[e.centroid_x, e.centroid_y] for e in entries])
-
     cluster_infos: list[ClusterInfo] = []
-    for label in sorted(set(labels)):
-        if label == -1:
-            continue
 
-        mask = labels == label
-        cluster_entries = [e for e, m in zip(entries, mask) if m]
-        cluster_centroids = centroids[mask]
+    for label, members in enumerate(cluster_members):
+        for idx in members:
+            labels[idx] = label
+
+        member_entries = [entries[idx] for idx in members]
+        member_centroids = centroids[np.array(members)]
         cluster_infos.append(ClusterInfo(
-            cluster_label=int(label),
-            stroke_count=int(mask.sum()),
+            cluster_label=label,
+            stroke_count=len(members),
             centroid=[
-                float(cluster_centroids[:, 0].mean()),
-                float(cluster_centroids[:, 1].mean()),
+                float(member_centroids[:, 0].mean()),
+                float(member_centroids[:, 1].mean()),
             ],
             bounding_box=[
-                float(min(e.min_x for e in cluster_entries)),
-                float(min(e.min_y for e in cluster_entries)),
-                float(max(e.max_x for e in cluster_entries)),
-                float(max(e.max_y for e in cluster_entries)),
+                float(min(e.min_x for e in member_entries)),
+                float(min(e.min_y for e in member_entries)),
+                float(max(e.max_x for e in member_entries)),
+                float(max(e.max_y for e in member_entries)),
             ],
         ))
 
     return centroids, labels, cluster_infos
 
 
-async def update_cluster_labels(session_id: str, page: int, eps: float = 20.0, min_samples: int = 1):
-    """Re-run DBSCAN on all draw strokes for a session+page and update cluster_labels column."""
+async def update_cluster_labels(session_id: str, page: int):
+    """Re-cluster all draw strokes for a session+page and update cluster_labels column."""
     pool = get_pool()
     if not pool:
         return
@@ -144,8 +182,8 @@ async def update_cluster_labels(session_id: str, page: int, eps: float = 20.0, m
     for e in entries:
         print(f"[cluster] stroke log={e.log_id} idx={e.index} bbox=({e.min_x:.0f},{e.min_y:.0f})-({e.max_x:.0f},{e.max_y:.0f})")
 
-    _, labels, cluster_infos = await asyncio.to_thread(run_dbscan, entries, eps, min_samples)
-    print(f"[cluster] eps={eps} bbox-gap → {len(cluster_infos)} clusters, labels={[int(l) for l in labels]}")
+    _, labels, cluster_infos = cluster_by_bbox_overlap(entries)
+    print(f"[cluster] bbox-overlap → {len(cluster_infos)} clusters, labels={[int(l) for l in labels]}")
 
     # Group labels by log_id
     labels_by_log: dict[int, list[int]] = {}
@@ -159,12 +197,7 @@ async def update_cluster_labels(session_id: str, page: int, eps: float = 20.0, m
         )
 
 
-async def cluster_strokes(
-    session_id: str,
-    page: int,
-    eps: float = 20.0,
-    min_samples: int = 1,
-) -> ClusterResponse:
+async def cluster_strokes(session_id: str, page: int) -> ClusterResponse:
     pool = get_pool()
     if not pool:
         raise RuntimeError("Database not configured")
@@ -194,9 +227,7 @@ async def cluster_strokes(
             num_strokes=0, num_clusters=0, noise_strokes=0, clusters=[],
         )
 
-    centroids, labels, cluster_infos = await asyncio.to_thread(
-        run_dbscan, entries, eps, min_samples
-    )
+    centroids, labels, cluster_infos = cluster_by_bbox_overlap(entries)
 
     # Store results to database
     async with pool.acquire() as conn:
@@ -242,12 +273,10 @@ async def cluster_strokes(
                     info.bounding_box[2], info.bounding_box[3],
                 )
 
-    noise_count = int((labels == -1).sum())
-
     return ClusterResponse(
         session_id=session_id, page=page,
         num_strokes=len(entries),
         num_clusters=len(cluster_infos),
-        noise_strokes=noise_count,
+        noise_strokes=0,
         clusters=cluster_infos,
     )

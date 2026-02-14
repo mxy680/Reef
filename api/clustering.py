@@ -1,4 +1,4 @@
-"""REST endpoint for on-demand DBSCAN stroke clustering."""
+"""REST endpoint for on-demand stroke clustering."""
 
 from fastapi import APIRouter, HTTPException
 
@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.post("/api/cluster-strokes", response_model=ClusterResponse)
 async def api_cluster_strokes(body: ClusterRequest):
-    """Run DBSCAN clustering on all strokes for a session+page.
+    """Run bounding-box overlap clustering on all strokes for a session+page.
 
     Re-clustering is safe: old cluster data is replaced on each call.
     """
@@ -18,8 +18,6 @@ async def api_cluster_strokes(body: ClusterRequest):
         return await cluster_strokes(
             session_id=body.session_id,
             page=body.page,
-            eps=body.eps,
-            min_samples=body.min_samples,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
