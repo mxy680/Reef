@@ -14,7 +14,7 @@ import numpy as np
 from lib.database import get_pool
 from lib.models.clustering import ClusterInfo, ClusterResponse
 
-EXPAND_PCT = 0.10
+BBOX_PAD = 5.0  # fixed pixel expansion for overlap checks
 
 
 @dataclass
@@ -62,12 +62,12 @@ def extract_stroke_entries(rows: list[dict]) -> list[StrokeEntry]:
 
 def cluster_by_bbox_overlap(
     entries: list[StrokeEntry],
-    expand_pct: float = EXPAND_PCT,
+    pad: float = BBOX_PAD,
 ) -> tuple[np.ndarray, np.ndarray, list[ClusterInfo]]:
     """Cluster strokes incrementally by bounding-box overlap.
 
     For each stroke in order:
-    1. Check if its bbox overlaps any existing cluster bbox (expanded by expand_pct).
+    1. Check if its bbox overlaps any existing cluster bbox (expanded by pad pixels).
     2. No overlap → new cluster.
     3. One overlap → add to that cluster, grow its bbox.
     4. Multiple overlaps → merge those clusters, add stroke.
@@ -82,15 +82,10 @@ def cluster_by_bbox_overlap(
         overlapping: list[int] = []
 
         for c_idx, bbox in enumerate(cluster_bboxes):
-            w = bbox[2] - bbox[0]
-            h = bbox[3] - bbox[1]
-            pad_x = w * expand_pct / 2
-            pad_y = h * expand_pct / 2
-
-            if (entry.min_x <= bbox[2] + pad_x and
-                entry.max_x >= bbox[0] - pad_x and
-                entry.min_y <= bbox[3] + pad_y and
-                entry.max_y >= bbox[1] - pad_y):
+            if (entry.min_x <= bbox[2] + pad and
+                entry.max_x >= bbox[0] - pad and
+                entry.min_y <= bbox[3] + pad and
+                entry.max_y >= bbox[1] - pad):
                 overlapping.append(c_idx)
 
         if not overlapping:

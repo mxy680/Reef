@@ -147,11 +147,9 @@ class TestClusterByBboxOverlap:
         assert len(infos) == 1
         assert labels[0] == 0
 
-    def test_bbox_expansion_connects_nearby(self):
-        """Two bboxes just barely apart should connect via 10% expansion."""
-        # bbox A: 0-100, bbox B: 105-200 — gap of 5px
-        # A's width=100, expansion = 100*0.10/2 = 5px on each side
-        # So A expands to [-5, _, 105, _] which just touches B at 105
+    def test_fixed_pad_connects_nearby(self):
+        """Two bboxes within 5px pad should connect."""
+        # bbox A: 0-100, bbox B: 105-200 — gap of 5px = pad
         entries = [
             _box_entry(0, 0, 100, 50, idx=0),
             _box_entry(105, 0, 200, 50, idx=1),
@@ -161,11 +159,9 @@ class TestClusterByBboxOverlap:
         assert len(infos) == 1
         assert infos[0].stroke_count == 2
 
-    def test_beyond_expansion_separates(self):
-        """Two bboxes far enough apart stay separate despite expansion."""
-        # bbox A: 0-100, bbox B: 120-220 — gap of 20px
-        # A's width=100, expansion = 5px → expanded to [-5, _, 105, _]
-        # B starts at 120, well beyond 105
+    def test_beyond_pad_separates(self):
+        """Two bboxes with gap > 5px pad stay separate."""
+        # bbox A: 0-100, bbox B: 120-220 — gap of 20px >> 5px
         entries = [
             _box_entry(0, 0, 100, 50, idx=0),
             _box_entry(120, 0, 220, 50, idx=1),
