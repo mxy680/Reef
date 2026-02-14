@@ -149,36 +149,66 @@ def cluster_by_centroid_gap(
 
 
 async def update_cluster_labels(session_id: str, page: int):
-    """Re-cluster all draw strokes for a session+page and update cluster_labels column."""
+    """Re-cluster all visible strokes for a session+page and update cluster_labels column."""
     pool = get_pool()
     if not pool:
         return
 
     async with pool.acquire() as conn:
-        rows = await conn.fetch(
+        # Fetch all draw and erase events in chronological order so we can
+        # resolve which strokes are actually visible (erase replaces canvas).
+        all_rows = await conn.fetch(
             """
-            SELECT id, strokes
+            SELECT id, strokes, event_type
             FROM stroke_logs
-            WHERE session_id = $1 AND page = $2 AND event_type = 'draw'
+            WHERE session_id = $1 AND page = $2 AND event_type IN ('draw', 'erase')
             ORDER BY received_at
             """,
             session_id, page,
         )
 
-    if not rows:
+    if not all_rows:
+        # No strokes at all — clean up stale clusters
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM clusters WHERE session_id = $1 AND page = $2",
+                session_id, page,
+            )
+        return
+
+    # Resolve visible rows: erase events reset the canvas
+    visible_rows: list[dict] = []
+    for row in all_rows:
+        if row["event_type"] == "erase":
+            visible_rows = [dict(row)]
+        else:
+            visible_rows.append(dict(row))
+
+    if not visible_rows:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM clusters WHERE session_id = $1 AND page = $2",
+                session_id, page,
+            )
         return
 
     # Build stroke lookup: (log_id, stroke_index) → stroke dict
     stroke_lookup: dict[tuple[int, int], dict] = {}
-    for row in rows:
+    for row in visible_rows:
         log_id = row["id"]
         strokes_json = row["strokes"]
         strokes = strokes_json if isinstance(strokes_json, list) else json.loads(strokes_json)
         for idx, stroke in enumerate(strokes):
             stroke_lookup[(log_id, idx)] = stroke
 
-    entries = extract_stroke_entries([dict(r) for r in rows])
+    entries = extract_stroke_entries(visible_rows)
     if not entries:
+        # All strokes erased — clean up stale clusters
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM clusters WHERE session_id = $1 AND page = $2",
+                session_id, page,
+            )
         return
 
     for e in entries:
@@ -206,7 +236,24 @@ async def update_cluster_labels(session_id: str, page: int):
         if stroke:
             strokes_by_cluster.setdefault(label, []).append(stroke)
 
-    # Render + transcribe each cluster, upsert into clusters table
+    # Delete stale cluster rows, then render + transcribe each cluster
+    current_labels = [info.cluster_label for info in cluster_infos]
+    async with pool.acquire() as conn:
+        if current_labels:
+            await conn.execute(
+                """
+                DELETE FROM clusters
+                WHERE session_id = $1 AND page = $2
+                  AND cluster_label != ALL($3::int[])
+                """,
+                session_id, page, current_labels,
+            )
+        else:
+            await conn.execute(
+                "DELETE FROM clusters WHERE session_id = $1 AND page = $2",
+                session_id, page,
+            )
+
     for info in cluster_infos:
         label = info.cluster_label
         cluster_strokes = strokes_by_cluster.get(label, [])
