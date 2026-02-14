@@ -66,10 +66,10 @@ def cluster_by_centroid_gap(
 
     1. Sort strokes by centroid_y.
     2. Compute consecutive gaps.
-    3. Find threshold via natural-breaks: sort the gaps, find the biggest
-       ratio between consecutive non-zero sorted gaps. If the ratio ≥ 2,
-       use the midpoint as threshold. Otherwise fall back to
-       median_gap × 4 (floor 20).
+    3. Find threshold via natural-breaks: sort gaps, find the biggest
+       ratio between consecutive non-zero sorted gaps where the upper
+       value ≥ 5px. If ratio ≥ 1.5, use the midpoint as threshold.
+       Otherwise fall back to median_gap × 4 (floor 20).
     4. Any gap > threshold starts a new cluster.
     5. Labels assigned top-to-bottom (cluster 0 = topmost line).
     """
@@ -89,21 +89,25 @@ def cluster_by_centroid_gap(
         threshold = 20.0
     else:
         # Natural-breaks: find the biggest ratio between consecutive
-        # non-zero sorted gaps. This identifies where within-line gaps
-        # transition to between-line gaps, even with multiple line breaks.
+        # non-zero sorted gaps, but only where the upper gap is >= 5px
+        # (sub-5px gaps can't be real line breaks). This avoids false
+        # splits from tiny within-line ratio noise (e.g. 0.5→1.0 = 2x).
         sorted_gaps = np.sort(gaps)
         nonzero = sorted_gaps[sorted_gaps > 0]
 
+        best_ratio = 0.0
+        best_ratio_idx = -1
         if len(nonzero) >= 2:
             ratios = nonzero[1:] / nonzero[:-1]
-            best_ratio_idx = int(np.argmax(ratios))
+            for i in range(len(ratios)):
+                if nonzero[i + 1] >= 5 and ratios[i] > best_ratio:
+                    best_ratio = float(ratios[i])
+                    best_ratio_idx = i
 
-            if ratios[best_ratio_idx] >= 2.0:
-                below = float(nonzero[best_ratio_idx])
-                above = float(nonzero[best_ratio_idx + 1])
-                threshold = (below + above) / 2
-            else:
-                threshold = max(float(np.median(gaps)) * 4, 20.0)
+        if best_ratio_idx >= 0 and best_ratio >= 1.5:
+            below = float(nonzero[best_ratio_idx])
+            above = float(nonzero[best_ratio_idx + 1])
+            threshold = (below + above) / 2
         else:
             threshold = max(float(np.median(gaps)) * 4, 20.0)
 
