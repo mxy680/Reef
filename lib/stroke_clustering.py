@@ -1,8 +1,8 @@
 """Incremental bounding-box stroke clustering.
 
-Assigns strokes to clusters by checking overlap with existing cluster
-bounding boxes (expanded by 10%).  When a stroke overlaps multiple
-clusters, those clusters are merged.
+A new stroke joins a cluster only if its bounding box touches/overlaps
+the bounding box of at least one stroke already in that cluster.
+When a stroke touches strokes in multiple clusters, those clusters merge.
 """
 
 import asyncio
@@ -13,8 +13,6 @@ import numpy as np
 
 from lib.database import get_pool
 from lib.models.clustering import ClusterInfo, ClusterResponse
-
-BBOX_PAD = 0.0  # strokes must touch/overlap cluster bbox to join
 
 
 @dataclass
@@ -60,66 +58,47 @@ def extract_stroke_entries(rows: list[dict]) -> list[StrokeEntry]:
     return entries
 
 
+def _bboxes_touch(a: StrokeEntry, b: StrokeEntry) -> bool:
+    """Return True if two stroke bounding boxes touch or overlap."""
+    return (a.min_x <= b.max_x and a.max_x >= b.min_x and
+            a.min_y <= b.max_y and a.max_y >= b.min_y)
+
+
 def cluster_by_bbox_overlap(
     entries: list[StrokeEntry],
-    pad: float = BBOX_PAD,
 ) -> tuple[np.ndarray, np.ndarray, list[ClusterInfo]]:
-    """Cluster strokes incrementally by bounding-box overlap.
+    """Cluster strokes incrementally by per-stroke bounding-box overlap.
 
     For each stroke in order:
-    1. Check if its bbox overlaps any existing cluster bbox (expanded by pad pixels).
-    2. No overlap → new cluster.
-    3. One overlap → add to that cluster, grow its bbox.
-    4. Multiple overlaps → merge those clusters, add stroke.
+    1. Check if its bbox touches any individual stroke already in a cluster.
+    2. No touch → new cluster.
+    3. Touches stroke(s) in one cluster → join that cluster.
+    4. Touches strokes in multiple clusters → merge those clusters.
     """
     if not entries:
         return np.array([]).reshape(0, 2), np.array([], dtype=int), []
 
-    cluster_bboxes: list[list[float]] = []   # [min_x, min_y, max_x, max_y]
-    cluster_members: list[list[int]] = []    # entry indices
+    cluster_members: list[list[int]] = []    # entry indices per cluster
 
     for i, entry in enumerate(entries):
         overlapping: list[int] = []
 
-        for c_idx, bbox in enumerate(cluster_bboxes):
-            if (entry.min_x <= bbox[2] + pad and
-                entry.max_x >= bbox[0] - pad and
-                entry.min_y <= bbox[3] + pad and
-                entry.max_y >= bbox[1] - pad):
-                overlapping.append(c_idx)
+        for c_idx, members in enumerate(cluster_members):
+            for m_idx in members:
+                if _bboxes_touch(entry, entries[m_idx]):
+                    overlapping.append(c_idx)
+                    break  # one touch is enough to link to this cluster
 
         if not overlapping:
-            cluster_bboxes.append([entry.min_x, entry.min_y, entry.max_x, entry.max_y])
             cluster_members.append([i])
         elif len(overlapping) == 1:
-            c = overlapping[0]
-            cluster_members[c].append(i)
-            cluster_bboxes[c] = [
-                min(cluster_bboxes[c][0], entry.min_x),
-                min(cluster_bboxes[c][1], entry.min_y),
-                max(cluster_bboxes[c][2], entry.max_x),
-                max(cluster_bboxes[c][3], entry.max_y),
-            ]
+            cluster_members[overlapping[0]].append(i)
         else:
-            # Merge all overlapping clusters into the first one
             target = overlapping[0]
             cluster_members[target].append(i)
             for c_idx in sorted(overlapping[1:], reverse=True):
                 cluster_members[target].extend(cluster_members[c_idx])
-                cluster_bboxes[target] = [
-                    min(cluster_bboxes[target][0], cluster_bboxes[c_idx][0]),
-                    min(cluster_bboxes[target][1], cluster_bboxes[c_idx][1]),
-                    max(cluster_bboxes[target][2], cluster_bboxes[c_idx][2]),
-                    max(cluster_bboxes[target][3], cluster_bboxes[c_idx][3]),
-                ]
-                del cluster_bboxes[c_idx]
                 del cluster_members[c_idx]
-            cluster_bboxes[target] = [
-                min(cluster_bboxes[target][0], entry.min_x),
-                min(cluster_bboxes[target][1], entry.min_y),
-                max(cluster_bboxes[target][2], entry.max_x),
-                max(cluster_bboxes[target][3], entry.max_y),
-            ]
 
     # Build output
     labels = np.zeros(len(entries), dtype=int)

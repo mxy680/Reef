@@ -239,6 +239,21 @@ class TestClusterByBboxOverlap:
         assert infos[0].stroke_count == 3
         assert infos[1].stroke_count == 3
 
+    def test_tall_stroke_doesnt_bridge_lines(self):
+        """A tall stroke (like integral sign) shouldn't cause cluster bbox to absorb next line."""
+        entries = [
+            _box_entry(50, 100, 200, 130, idx=0),    # line 1: short wide stroke
+            _box_entry(100, 80, 120, 160, idx=1),     # line 1: tall stroke (integral), touches entry 0
+            _box_entry(50, 200, 200, 230, idx=2),     # line 2: well below — doesn't touch any stroke
+        ]
+        _, labels, infos = cluster_by_bbox_overlap(entries)
+
+        # Old algorithm: cluster bbox after entry 1 would be (50,80)-(200,160),
+        # which with any padding would reach entry 2 at y=200. Per-stroke check prevents this.
+        assert len(infos) == 2
+        assert infos[0].stroke_count == 2  # entries 0+1
+        assert infos[1].stroke_count == 1  # entry 2
+
     def test_empty_entries(self):
         """Empty input returns empty output."""
         centroids, labels, infos = cluster_by_bbox_overlap([])
