@@ -188,6 +188,27 @@ async def strokes_websocket(ws: WebSocket, session_id: str = "", user_id: str = 
                 await ws.send_text(json.dumps({"type": "ack"}))
                 continue
 
+            if msg_type == "context":
+                sid = msg.get("session_id", "")
+                page = msg.get("page", 0)
+                problem_context = msg.get("problem_context", "")
+                pool = get_pool()
+                if pool and problem_context:
+                    async with pool.acquire() as conn:
+                        await conn.execute(
+                            """
+                            INSERT INTO stroke_logs (session_id, page, strokes, event_type, message, user_id, problem_context)
+                            VALUES ($1, $2, '[]'::jsonb, 'system', 'problem_context', $3, $4)
+                            """,
+                            sid,
+                            page,
+                            msg.get("user_id", user_id),
+                            problem_context,
+                        )
+                    print(f"[strokes_ws] stored problem context for session {sid}: {problem_context[:80]}...")
+                await ws.send_text(json.dumps({"type": "ack"}))
+                continue
+
             if msg_type == "system":
                 sid = msg.get("session_id", "")
                 page = msg.get("page", 0)

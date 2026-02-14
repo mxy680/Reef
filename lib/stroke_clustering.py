@@ -236,6 +236,21 @@ async def update_cluster_labels(session_id: str, page: int):
         if stroke:
             strokes_by_cluster.setdefault(label, []).append(stroke)
 
+    # Look up problem context for this session (most recent context message)
+    problem_context = ""
+    async with pool.acquire() as conn:
+        ctx_row = await conn.fetchrow(
+            """
+            SELECT problem_context FROM stroke_logs
+            WHERE session_id = $1 AND problem_context != ''
+            ORDER BY received_at DESC LIMIT 1
+            """,
+            session_id,
+        )
+        if ctx_row:
+            problem_context = ctx_row["problem_context"]
+            print(f"[transcribe] using problem context: {problem_context[:80]}...")
+
     # Delete stale cluster rows, then render + transcribe each cluster
     current_labels = [info.cluster_label for info in cluster_infos]
     async with pool.acquire() as conn:
@@ -261,7 +276,7 @@ async def update_cluster_labels(session_id: str, page: int):
         if cluster_strokes:
             try:
                 image_bytes = render_strokes(cluster_strokes)
-                transcription = await asyncio.to_thread(transcribe_strokes_image, image_bytes)
+                transcription = await asyncio.to_thread(transcribe_strokes_image, image_bytes, problem_context)
                 print(f"[transcribe] cluster {label}: {transcription}")
             except Exception as exc:
                 print(f"[transcribe] cluster {label} failed: {exc}")
