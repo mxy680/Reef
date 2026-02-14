@@ -134,9 +134,14 @@ class AIService {
     private var strokeSocket: URLSessionWebSocketTask?
     private var strokeReconnectAttempts: Int = 0
     private static let maxStrokeReconnectAttempts = 5
+    /// The current stroke session ID, reused for voice messages.
+    private(set) var currentSessionId: String?
 
     /// Connects to the stroke logging WebSocket endpoint.
     func connectStrokeSocket(sessionId: String? = nil) {
+        if let sid = sessionId {
+            currentSessionId = sid
+        }
         guard strokeSocket == nil else {
             // Already connected — just send hello if we have a new session ID
             if let sid = sessionId {
@@ -210,6 +215,25 @@ class AIService {
         }
     }
 
+    /// Sends problem context to the server so transcription can use it for disambiguation.
+    func sendProblemContext(sessionId: String, page: Int = 0, problemContext: String) {
+        guard let socket = strokeSocket, !problemContext.isEmpty else { return }
+
+        let userId = KeychainService.get(.userIdentifier) ?? ""
+        let payload: [String: Any] = [
+            "type": "context",
+            "session_id": sessionId,
+            "page": page,
+            "problem_context": problemContext,
+            "user_id": userId
+        ]
+
+        guard let data = try? JSONSerialization.data(withJSONObject: payload),
+              let text = String(data: data, encoding: .utf8) else { return }
+
+        socket.send(.string(text)) { _ in }
+    }
+
     /// Sends a clear command for a session+page, deleting those logs from the DB.
     func sendClear(sessionId: String, page: Int) {
         guard let socket = strokeSocket else { return }
@@ -269,7 +293,11 @@ class AIService {
             .replacingOccurrences(of: "https://", with: "wss://")
             .replacingOccurrences(of: "http://", with: "ws://")
             + "/ws/voice"
-        guard let url = URL(string: wsURL) else { return }
+        guard let url = URL(string: wsURL) else {
+            print("[VoiceWS] Invalid URL")
+            return
+        }
+        print("[VoiceWS] Connecting to \(wsURL)")
         let task = session.webSocketTask(with: url)
         voiceSocket = task
         task.resume()
@@ -287,10 +315,14 @@ class AIService {
     ///   - sessionId: Current document session ID
     ///   - page: Current page number
     func sendVoiceMessage(audioData: Data, sessionId: String, page: Int) {
+        print("[VoiceWS] sendVoiceMessage called — \(audioData.count) bytes, session=\(sessionId)")
         if voiceSocket == nil {
             connectVoiceSocket()
         }
-        guard let socket = voiceSocket else { return }
+        guard let socket = voiceSocket else {
+            print("[VoiceWS] voiceSocket is nil after connect attempt")
+            return
+        }
 
         let userId = KeychainService.get(.userIdentifier) ?? ""
 
@@ -302,49 +334,44 @@ class AIService {
             "page": page
         ]
         guard let startData = try? JSONSerialization.data(withJSONObject: startPayload),
-              let startText = String(data: startData, encoding: .utf8) else { return }
+              let startText = String(data: startData, encoding: .utf8) else {
+            print("[VoiceWS] Failed to serialize voice_start payload")
+            return
+        }
 
-        socket.send(.string(startText)) { [weak self] error in
-            if let error = error {
-                print("[VoiceWS] Failed to send voice_start: \(error)")
-                return
-            }
+        // Fire-and-forget sends (same pattern as stroke socket)
+        print("[VoiceWS] Sending voice_start...")
+        socket.send(.string(startText)) { error in
+            if let error = error { print("[VoiceWS] voice_start error: \(error)") }
+        }
 
-            // 2. Send binary audio data
-            socket.send(.data(audioData)) { error in
-                if let error = error {
-                    print("[VoiceWS] Failed to send audio data: \(error)")
-                    return
+        // 2. Send binary audio data
+        print("[VoiceWS] Sending \(audioData.count) bytes of audio...")
+        socket.send(.data(audioData)) { error in
+            if let error = error { print("[VoiceWS] audio data error: \(error)") }
+        }
+
+        // 3. Send voice_end
+        let endText = "{\"type\":\"voice_end\"}"
+        print("[VoiceWS] Sending voice_end...")
+        socket.send(.string(endText)) { error in
+            if let error = error { print("[VoiceWS] voice_end error: \(error)") }
+        }
+
+        // 4. Listen for ack
+        socket.receive { [weak self] result in
+            switch result {
+            case .success(let message):
+                if case .string(let text) = message,
+                   let data = text.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let transcription = json["transcription"] as? String {
+                    print("[VoiceWS] Transcription: \(transcription)")
                 }
-
-                // 3. Send voice_end
-                let endPayload = ["type": "voice_end"]
-                guard let endData = try? JSONSerialization.data(withJSONObject: endPayload),
-                      let endText = String(data: endData, encoding: .utf8) else { return }
-
-                socket.send(.string(endText)) { error in
-                    if let error = error {
-                        print("[VoiceWS] Failed to send voice_end: \(error)")
-                        return
-                    }
-
-                    // 4. Listen for ack with transcription
-                    socket.receive { result in
-                        switch result {
-                        case .success(let message):
-                            if case .string(let text) = message,
-                               let data = text.data(using: .utf8),
-                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                               let transcription = json["transcription"] as? String {
-                                print("[VoiceWS] Transcription: \(transcription)")
-                            }
-                        case .failure(let error):
-                            print("[VoiceWS] Failed to receive ack: \(error)")
-                            DispatchQueue.main.async {
-                                self?.voiceSocket = nil
-                            }
-                        }
-                    }
+            case .failure(let error):
+                print("[VoiceWS] Failed to receive ack: \(error)")
+                DispatchQueue.main.async {
+                    self?.voiceSocket = nil
                 }
             }
         }

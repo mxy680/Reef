@@ -34,8 +34,6 @@ struct DrawingOverlayView: UIViewRepresentable {
     @Binding var highlighterWidth: CGFloat
     @Binding var eraserSize: CGFloat
     @Binding var eraserType: EraserType
-    @Binding var diagramWidth: CGFloat
-    @Binding var diagramAutosnap: Bool
     var canvasBackgroundMode: CanvasBackgroundMode = .normal
     var canvasBackgroundOpacity: CGFloat = 0.15
     var canvasBackgroundSpacing: CGFloat = 48
@@ -76,6 +74,16 @@ struct DrawingOverlayView: UIViewRepresentable {
             self.onCanvasReady(container)
         }
 
+        // Connect stroke WebSocket when canvas appears
+        AIService.shared.connectStrokeSocket(sessionId: documentID.uuidString)
+
+        // Send problem context for transcription disambiguation
+        if let ctx = problemContext, !ctx.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx)
+            }
+        }
+
         return container
     }
 
@@ -83,7 +91,6 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.currentTool = selectedTool
         context.coordinator.currentPenColor = UIColor(selectedPenColor)
         context.coordinator.currentPenWidth = penWidth
-        context.coordinator.diagramAutosnap = diagramAutosnap
 
         // Update tool for all page canvases
         let isEraserTool = selectedTool == .eraser
@@ -141,10 +148,6 @@ struct DrawingOverlayView: UIViewRepresentable {
         case .lasso:
             canvasView.tool = PKLassoTool()
             canvasView.isUserInteractionEnabled = true
-        case .diagram:
-            let uiColor = uiColorFromSwiftUIColor(selectedPenColor)
-            canvasView.tool = PKInkingTool(.pen, color: uiColor, width: diagramWidth)
-            canvasView.isUserInteractionEnabled = true
         case .textBox:
             // Disable PencilKit drawing — text overlay handles input
             canvasView.isUserInteractionEnabled = false
@@ -161,11 +164,22 @@ struct DrawingOverlayView: UIViewRepresentable {
         return UIColor(color)
     }
 
+    static func dismantleUIView(_ container: CanvasContainerView, coordinator: Coordinator) {
+        AIService.shared.disconnectStrokeSocket()
+    }
+
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(documentID: documentID)
     }
 
     class Coordinator: NSObject, PKCanvasViewDelegate {
+        private let documentID: UUID
+
+        init(documentID: UUID) {
+            self.documentID = documentID
+            super.init()
+        }
+
         weak var container: CanvasContainerView?
         var onUndoStateChanged: (Bool) -> Void = { _ in }
         var onRedoStateChanged: (Bool) -> Void = { _ in }
@@ -174,6 +188,8 @@ struct DrawingOverlayView: UIViewRepresentable {
 
         // Drawing change debounce
         private var drawingChangeTask: Task<Void, Never>?
+        // Stroke send debounce (800ms idle)
+        private var strokeSendTask: Task<Void, Never>?
 
         // Recognition state
         var recognitionEnabled: Bool = false
@@ -185,16 +201,9 @@ struct DrawingOverlayView: UIViewRepresentable {
         var currentTool: CanvasTool = .pen
         var currentPenColor: UIColor = .black
         var currentPenWidth: CGFloat = 4.0
-        var diagramAutosnap: Bool = true
-
-        private var previousStrokeCount: Int = 0
-
-        // Shape detection — prevents re-entrant callbacks when replacing a stroke
-        private var isReplacingStroke: Bool = false
 
         // Stroke streaming
-        private var strokeSessionId: String = UUID().uuidString
-        private var strokeSocketConnected: Bool = false
+        private lazy var strokeSessionId: String = documentID.uuidString
         private var lastSentStrokeCount: [ObjectIdentifier: Int] = [:]
 
         /// Returns the 1-based page number for a canvas view.
@@ -206,23 +215,16 @@ struct DrawingOverlayView: UIViewRepresentable {
         }
 
         /// Extracts full PKStrokePoint data from new strokes and sends to server.
-        private func sendNewStrokes(from canvasView: PKCanvasView) {
-            if !strokeSocketConnected {
-                strokeSocketConnected = true
-                AIService.shared.connectStrokeSocket()
-            }
-
-            let key = ObjectIdentifier(canvasView)
-            let allStrokes = canvasView.drawing.strokes
-            let previousCount = lastSentStrokeCount[key] ?? 0
-
-            guard allStrokes.count > previousCount else { return }
-            let newStrokes = allStrokes[previousCount...]
-            lastSentStrokeCount[key] = allStrokes.count
-
+        /// Sends a clear command to delete all stroke logs for the given canvas's page.
+        func clearStrokes(for canvasView: PKCanvasView) {
             let pageNum = getPageIndex(for: canvasView)
+            let key = ObjectIdentifier(canvasView)
+            lastSentStrokeCount[key] = 0
+            AIService.shared.sendClear(sessionId: strokeSessionId, page: pageNum)
+        }
 
-            let strokeData: [[[String: Double]]] = newStrokes.map { stroke in
+        private func strokePointData(from strokes: some Collection<PKStroke>) -> [[[String: Double]]] {
+            strokes.map { stroke in
                 stroke.path.map { point in
                     [
                         "x": Double(point.location.x),
@@ -234,7 +236,34 @@ struct DrawingOverlayView: UIViewRepresentable {
                     ]
                 }
             }
+        }
 
+        private func sendNewStrokes(from canvasView: PKCanvasView) {
+            let key = ObjectIdentifier(canvasView)
+            let allStrokes = canvasView.drawing.strokes
+            let previousCount = lastSentStrokeCount[key] ?? 0
+            let pageNum = getPageIndex(for: canvasView)
+
+            // Erase detected — send full snapshot of remaining strokes
+            if allStrokes.count < previousCount {
+                let deletedCount = previousCount - allStrokes.count
+                lastSentStrokeCount[key] = allStrokes.count
+                let strokeData = strokePointData(from: allStrokes)
+                AIService.shared.sendStrokes(
+                    sessionId: strokeSessionId,
+                    page: pageNum,
+                    strokes: strokeData,
+                    eventType: "erase",
+                    deletedCount: deletedCount
+                )
+                return
+            }
+
+            guard allStrokes.count > previousCount else { return }
+            let newStrokes = allStrokes[previousCount...]
+            lastSentStrokeCount[key] = allStrokes.count
+
+            let strokeData = strokePointData(from: newStrokes)
             AIService.shared.sendStrokes(
                 sessionId: strokeSessionId,
                 page: pageNum,
@@ -244,41 +273,6 @@ struct DrawingOverlayView: UIViewRepresentable {
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             updateUndoRedoState(canvasView)
-
-            // Skip if we triggered this via shape replacement
-            guard !isReplacingStroke else { return }
-
-            // Shape autosnap — only for Diagram tool with autosnap enabled
-            let currentStrokeCount = canvasView.drawing.strokes.count
-            if currentTool == .diagram,
-               diagramAutosnap,
-               currentStrokeCount > previousStrokeCount,
-               let newStroke = canvasView.drawing.strokes.last,
-               let replacement = ShapeDetector.detect(stroke: newStroke) {
-
-                isReplacingStroke = true
-                var strokes = canvasView.drawing.strokes
-                strokes[strokes.count - 1] = replacement
-                canvasView.drawing = PKDrawing(strokes: strokes)
-                previousStrokeCount = canvasView.drawing.strokes.count
-                DispatchQueue.main.async { self.isReplacingStroke = false }
-
-                // Trigger debounced save
-                drawingChangeTask?.cancel()
-                drawingChangeTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 500_000_000)
-                    if !Task.isCancelled {
-                        self.container?.saveAllDrawings()
-                        self.onDrawingChanged(canvasView.drawing)
-                    }
-                }
-
-                // Send new strokes after shape replacement
-                sendNewStrokes(from: canvasView)
-                return
-            }
-
-            previousStrokeCount = currentStrokeCount
 
             // Debounced save callback (500ms)
             drawingChangeTask?.cancel()
@@ -290,8 +284,14 @@ struct DrawingOverlayView: UIViewRepresentable {
                 }
             }
 
-            // Stream new strokes to server
-            sendNewStrokes(from: canvasView)
+            // Debounced stroke send (1s idle after last change)
+            strokeSendTask?.cancel()
+            strokeSendTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                if !Task.isCancelled {
+                    self.sendNewStrokes(from: canvasView)
+                }
+            }
         }
 
         func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
@@ -686,6 +686,9 @@ class CanvasContainerView: UIView {
     func clearCurrentPage() {
         guard currentVisiblePage < pageContainers.count else { return }
         let container = pageContainers[currentVisiblePage]
+        if let coordinator = container.canvasView.delegate as? DrawingOverlayView.Coordinator {
+            coordinator.clearStrokes(for: container.canvasView)
+        }
         container.canvasView.drawing = PKDrawing()
         saveAllDrawings()
         print("Cleared drawing on page \(currentVisiblePage + 1)")
@@ -800,6 +803,7 @@ class CanvasContainerView: UIView {
                 // Un-invert colors back to light mode for storage
                 return PageContainerView.invertDrawingColors(container.canvasView.drawing)
             }
+
             return container.canvasView.drawing
         }
         try? DrawingStorageService.shared.saveAllDrawings(drawings, for: documentID)
@@ -1673,8 +1677,6 @@ extension CanvasContainerView: UIGestureRecognizerDelegate {
         highlighterWidth: .constant(StrokeWidthRange.highlighterDefault),
         eraserSize: .constant(StrokeWidthRange.eraserDefault),
         eraserType: .constant(.stroke),
-        diagramWidth: .constant(StrokeWidthRange.diagramDefault),
-        diagramAutosnap: .constant(true),
         canvasBackgroundMode: .grid
     )
     .background(Color.gray.opacity(0.2))
