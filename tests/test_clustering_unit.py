@@ -300,6 +300,29 @@ class TestClusterByCentroidGap:
             assert labels[i] == 0
         assert labels[8] == 1
 
+    def test_third_line_doesnt_merge_first_two(self):
+        """Adding a third line of strokes must not merge the first two lines."""
+        # Line 1: centroids ~295-302
+        line1 = [_box_entry(i*30, 290, i*30+20, 310, idx=i) for i in range(9)]
+        # Line 2: centroids ~317-337
+        line2 = [_box_entry(i*30, 315, i*30+20, 340, idx=9+i) for i in range(10)]
+        # Line 3: centroids ~362-367, added later
+        line3 = [_box_entry(i*30, 356, i*30+20, 377, idx=19+i) for i in range(4)]
+
+        entries = line1 + line2 + line3
+        _, labels, infos = cluster_by_centroid_gap(entries)
+
+        assert len(infos) == 3, f"Expected 3 clusters, got {len(infos)}"
+        # All line1 strokes in cluster 0
+        for i in range(9):
+            assert labels[i] == 0, f"Line 1 stroke {i} should be cluster 0"
+        # All line2 strokes in cluster 1
+        for i in range(9, 19):
+            assert labels[i] == 1, f"Line 2 stroke {i} should be cluster 1"
+        # All line3 strokes in cluster 2
+        for i in range(19, 23):
+            assert labels[i] == 2, f"Line 3 stroke {i} should be cluster 2"
+
     def test_real_ipad_close_lines(self):
         """Real iPad handwriting: two lines only ~12px apart in centroid space.
 

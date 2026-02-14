@@ -67,8 +67,8 @@ def cluster_by_centroid_gap(
     1. Sort strokes by centroid_y.
     2. Compute consecutive gaps.
     3. Find threshold via natural-breaks: sort the gaps, find the biggest
-       jump in the sorted sequence. If the gap above the jump is ≥2× the
-       gap below it, use the midpoint as threshold. Otherwise fall back to
+       ratio between consecutive non-zero sorted gaps. If the ratio ≥ 2,
+       use the midpoint as threshold. Otherwise fall back to
        median_gap × 4 (floor 20).
     4. Any gap > threshold starts a new cluster.
     5. Labels assigned top-to-bottom (cluster 0 = topmost line).
@@ -88,18 +88,23 @@ def cluster_by_centroid_gap(
         # Too few strokes for natural-breaks — use fixed threshold
         threshold = 20.0
     else:
-        # Natural-breaks: sort gaps, find biggest jump in sorted sequence
+        # Natural-breaks: find the biggest ratio between consecutive
+        # non-zero sorted gaps. This identifies where within-line gaps
+        # transition to between-line gaps, even with multiple line breaks.
         sorted_gaps = np.sort(gaps)
-        gap_jumps = np.diff(sorted_gaps)
-        best_jump_idx = int(np.argmax(gap_jumps))
-        below = float(sorted_gaps[best_jump_idx])
-        above = float(sorted_gaps[best_jump_idx + 1])
+        nonzero = sorted_gaps[sorted_gaps > 0]
 
-        if above > max(below * 2, 5):
-            # Significant natural break found
-            threshold = (below + above) / 2
+        if len(nonzero) >= 2:
+            ratios = nonzero[1:] / nonzero[:-1]
+            best_ratio_idx = int(np.argmax(ratios))
+
+            if ratios[best_ratio_idx] >= 2.0:
+                below = float(nonzero[best_ratio_idx])
+                above = float(nonzero[best_ratio_idx + 1])
+                threshold = (below + above) / 2
+            else:
+                threshold = max(float(np.median(gaps)) * 4, 20.0)
         else:
-            # No clear break — use median-based fallback
             threshold = max(float(np.median(gaps)) * 4, 20.0)
 
     # Assign cluster labels top-to-bottom
