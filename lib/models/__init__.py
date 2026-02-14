@@ -1,12 +1,12 @@
 """Pydantic models for API endpoints."""
 
 from .embed import EmbedRequest, EmbedResponse
-from .feedback import TutoringFeedback
 from .group_problems import ProblemGroup, GroupProblemsResponse
 from .question import Part, Question, QuestionBatch
 from .region import PartRegion
 from .quiz import QuizGenerationRequest, QuizQuestionResponse
 from .user import UserProfileRequest, UserProfileResponse
+from .clustering import ClusterRequest, ClusterInfo, ClusterResponse
 
 __all__ = [
     "EmbedRequest",
@@ -19,7 +19,9 @@ __all__ = [
     "QuestionBatch",
     "QuizGenerationRequest",
     "QuizQuestionResponse",
-    "TutoringFeedback",
     "UserProfileRequest",
     "UserProfileResponse",
+    "ClusterRequest",
+    "ClusterInfo",
+    "ClusterResponse",
 ]

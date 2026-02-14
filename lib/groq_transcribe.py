@@ -1,7 +1,6 @@
 """Groq Whisper transcription client."""
 
 import os
-import tempfile
 from openai import OpenAI
 
 _client: OpenAI | None = None
@@ -27,12 +26,8 @@ def transcribe(audio_bytes: bytes) -> str:
         Transcribed text string.
     """
     client = _get_client()
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp:
-        tmp.write(audio_bytes)
-        tmp.flush()
-        tmp.seek(0)
-        result = client.audio.transcriptions.create(
-            model="whisper-large-v3-turbo",
-            file=tmp,
-        )
+    result = client.audio.transcriptions.create(
+        model="whisper-large-v3-turbo",
+        file=("recording.wav", audio_bytes, "audio/wav"),
+    )
     return result.text
