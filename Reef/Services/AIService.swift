@@ -219,6 +219,7 @@ class AIService {
         socket.send(.string(text)) { [weak self] error in
             if error != nil {
                 DispatchQueue.main.async {
+                    guard self?.strokeSocket === socket else { return }
                     self?.strokeSocket?.cancel(with: .abnormalClosure, reason: nil)
                     self?.strokeSocket = nil
                 }
@@ -290,6 +291,9 @@ class AIService {
             case .failure:
                 guard let self = self else { return }
                 DispatchQueue.main.async {
+                    // Only reconnect if this socket is still the active one.
+                    // A cancelled old socket's failure must not nuke a newer socket.
+                    guard self.strokeSocket === socket else { return }
                     self.strokeSocket = nil
                     self.strokeReconnectAttempts += 1
                     if self.strokeReconnectAttempts <= Self.maxStrokeReconnectAttempts {
