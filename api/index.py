@@ -962,12 +962,24 @@ async def ai_reconstruct(
 
 {question_text}
 
-For each part/subpart, provide a clear, complete solution. Use LaTeX notation for math (e.g. $x^2$, \\[...\\]).
-
-Respond with JSON:
-{{"answers": [{{"part_label": null or "a" or "b" etc., "answer": "step-by-step solution"}}]}}
-
+For each part/subpart, provide a clear, complete solution. Use LaTeX notation for math.
 Use part_label: null for the main question (if no parts), or the part label for each subpart."""
+
+                answer_schema = {
+                    "type": "object",
+                    "properties": {
+                        "answers": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "part_label": {"type": ["string", "null"]},
+                                    "answer": {"type": "string"},
+                                },
+                            },
+                        },
+                    },
+                }
 
                 last_exc = None
                 for attempt in range(max_retries):
@@ -975,6 +987,7 @@ Use part_label: null for the main question (if no parts), or the part label for 
                         raw = await asyncio.to_thread(
                             llm_client.generate,
                             prompt=answer_prompt,
+                            response_schema=answer_schema,
                         )
                         result = json.loads(raw)
                         answers = result.get("answers", [])
@@ -1288,3 +1301,27 @@ The following is relevant content from the student's course notes. Base your que
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/ai/documents/{filename}")
+async def delete_document(filename: str):
+    """Delete a document and its questions/answer keys from the database."""
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    async with pool.acquire() as conn:
+        # Find document by filename (may match multiple if re-uploaded)
+        doc_ids = await conn.fetch(
+            "SELECT id FROM documents WHERE filename = $1", filename
+        )
+        if not doc_ids:
+            raise HTTPException(status_code=404, detail=f"Document '{filename}' not found")
+
+        # CASCADE deletes questions and answer_keys automatically
+        for row in doc_ids:
+            await conn.execute("DELETE FROM documents WHERE id = $1", row["id"])
+
+    count = len(doc_ids)
+    print(f"[delete] Deleted {count} document(s) with filename '{filename}'")
+    return {"deleted": count, "filename": filename}
