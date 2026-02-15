@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import time
 
 from openai import OpenAI
@@ -86,6 +87,58 @@ HOW TO SPEAK:
 """
 
 
+def _trigrams(text: str) -> set[str]:
+    """Extract character trigrams from text (for fuzzy matching)."""
+    s = re.sub(r'\s+', ' ', text.strip().lower())
+    return {s[i:i+3] for i in range(max(0, len(s) - 2))}
+
+
+def _trigram_similarity(a: str, b: str) -> float:
+    """Compute Jaccard similarity of character trigrams between two strings."""
+    ta, tb = _trigrams(a), _trigrams(b)
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / len(ta | tb)
+
+
+async def _find_matching_question(conn, canvas_text: str) -> dict | None:
+    """Try to find the question the student is working on by matching canvas content against DB questions.
+
+    Uses trigram similarity between the canvas content and question texts.
+    Returns {"id": int, "text": str, "label": str} or None.
+    """
+    if not canvas_text.strip():
+        return None
+
+    # Get all questions that have answer keys (from most recent document first)
+    rows = await conn.fetch(
+        """
+        SELECT DISTINCT q.id, q.text, q.label, d.id AS doc_id
+        FROM questions q
+        JOIN documents d ON q.document_id = d.id
+        JOIN answer_keys ak ON ak.question_id = q.id
+        ORDER BY d.id DESC, q.id ASC
+        """,
+    )
+    if not rows:
+        return None
+
+    best_score = 0.0
+    best_row = None
+    for r in rows:
+        score = _trigram_similarity(canvas_text, r["text"] or "")
+        if score > best_score:
+            best_score = score
+            best_row = r
+
+    if best_row and best_score >= 0.05:  # Low threshold since canvas is partial work
+        print(f"[reasoning] matched canvas to question: id={best_row['id']} "
+              f"label={best_row['label']} similarity={best_score:.3f}")
+        return {"id": best_row["id"], "text": best_row["text"], "label": best_row["label"]}
+
+    return None
+
+
 async def _assemble_context(session_id: str, page: int) -> str | None:
     """Build the user message with problem, answer key, canvas, and timeline."""
     pool = get_pool()
@@ -93,7 +146,7 @@ async def _assemble_context(session_id: str, page: int) -> str | None:
         return None
 
     async with pool.acquire() as conn:
-        # Problem context
+        # Problem context from iOS app (sent as a "context" WebSocket message)
         ctx_row = await conn.fetchrow(
             """
             SELECT problem_context FROM stroke_logs
@@ -103,27 +156,6 @@ async def _assemble_context(session_id: str, page: int) -> str | None:
             session_id,
         )
         problem_context = ctx_row["problem_context"] if ctx_row else ""
-
-        # Answer key — find via problem_context matching a question
-        answer_key = ""
-        if problem_context:
-            # Look for a question whose text matches the problem context
-            ak_rows = await conn.fetch(
-                """
-                SELECT ak.part_label, ak.answer
-                FROM answer_keys ak
-                JOIN questions q ON ak.question_id = q.id
-                WHERE q.text = $1 OR q.label = $1
-                ORDER BY ak.id
-                """,
-                problem_context,
-            )
-            if ak_rows:
-                parts = []
-                for r in ak_rows:
-                    label = f"({r['part_label']}) " if r["part_label"] else ""
-                    parts.append(f"{label}{r['answer']}")
-                answer_key = "\n".join(parts)
 
         # Cluster transcriptions in reading order
         cluster_rows = await conn.fetch(
@@ -135,6 +167,46 @@ async def _assemble_context(session_id: str, page: int) -> str | None:
             """,
             session_id, page,
         )
+
+        if not cluster_rows:
+            return None  # Nothing on canvas yet
+
+        # Build canvas text for question matching
+        canvas_text = " ".join(r["transcription"] for r in cluster_rows)
+
+        # Find the relevant question and answer key
+        question_text = problem_context  # Prefer iOS-provided context
+        answer_key = ""
+
+        # Try to match against DB questions (works even without problem_context)
+        matched_q = await _find_matching_question(conn, canvas_text)
+        if matched_q:
+            # Use matched question text if iOS didn't provide context
+            if not question_text:
+                question_text = matched_q["text"]
+                print(f"[reasoning] no problem_context from iOS, using matched question: {matched_q['label']}")
+
+            # Look up answer key by question_id
+            ak_rows = await conn.fetch(
+                """
+                SELECT part_label, answer
+                FROM answer_keys
+                WHERE question_id = $1
+                ORDER BY id
+                """,
+                matched_q["id"],
+            )
+            if ak_rows:
+                parts = []
+                for r in ak_rows:
+                    label = f"({r['part_label']}) " if r["part_label"] else ""
+                    parts.append(f"{label}{r['answer']}")
+                answer_key = "\n".join(parts)
+                print(f"[reasoning] found answer key for question {matched_q['id']} ({len(ak_rows)} parts)")
+        elif problem_context:
+            print(f"[reasoning] WARNING: problem_context set but no matching question found")
+        else:
+            print(f"[reasoning] WARNING: no problem_context and no matching question for canvas: {canvas_text[:80]}...")
 
         # Recent stroke timeline (last 10 events)
         timeline_rows = await conn.fetch(
@@ -149,14 +221,11 @@ async def _assemble_context(session_id: str, page: int) -> str | None:
             session_id, page,
         )
 
-    if not cluster_rows:
-        return None  # Nothing on canvas yet
-
     # Format context
     sections = []
 
-    if problem_context:
-        sections.append(f"PROBLEM:\n{problem_context}")
+    if question_text:
+        sections.append(f"PROBLEM:\n{question_text}")
 
     if answer_key:
         sections.append(f"ANSWER KEY (for your reference only — never reveal):\n{answer_key}")
