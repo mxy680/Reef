@@ -174,7 +174,12 @@ struct DrawingOverlayView: UIViewRepresentable {
     }
 
     static func dismantleUIView(_ container: CanvasContainerView, coordinator: Coordinator) {
-        AIService.shared.disconnectStrokeSocket()
+        // Only disconnect if this view's session is still the active one.
+        // SwiftUI may call the new view's makeUIView before this dismantleUIView,
+        // so blindly disconnecting would kill the new view's socket.
+        if AIService.shared.currentSessionId == coordinator.documentID.uuidString {
+            AIService.shared.disconnectStrokeSocket()
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -182,7 +187,7 @@ struct DrawingOverlayView: UIViewRepresentable {
     }
 
     class Coordinator: NSObject, PKCanvasViewDelegate {
-        private let documentID: UUID
+        let documentID: UUID
 
         init(documentID: UUID) {
             self.documentID = documentID
