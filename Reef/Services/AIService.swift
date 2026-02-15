@@ -138,17 +138,17 @@ class AIService {
     private(set) var currentSessionId: String?
 
     /// Connects to the stroke logging WebSocket endpoint.
+    /// Always creates a fresh connection when a sessionId is provided.
     func connectStrokeSocket(sessionId: String? = nil) {
         if let sid = sessionId {
+            // New session — close the old socket and open a fresh one
+            if currentSessionId != sid {
+                strokeSocket?.cancel(with: .normalClosure, reason: nil)
+                strokeSocket = nil
+            }
             currentSessionId = sid
         }
-        guard strokeSocket == nil else {
-            // Already connected — just send hello if we have a new session ID
-            if let sid = sessionId {
-                sendHello(sessionId: sid)
-            }
-            return
-        }
+        guard strokeSocket == nil else { return }
         let userId = KeychainService.get(.userIdentifier) ?? ""
         var wsPath = "/ws/strokes"
         if let sid = sessionId {
