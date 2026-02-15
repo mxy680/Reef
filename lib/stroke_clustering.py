@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from lib.database import get_pool
-from lib.groq_vision import transcribe_diagram_image, transcribe_strokes_image
+from lib.groq_vision import transcribe_strokes_image
 from lib.models.clustering import ClusterInfo, ClusterResponse
 from lib.stroke_renderer import render_strokes
 
@@ -224,6 +224,65 @@ def cluster_by_centroid_gap(
     for i in range(len(labels)):
         labels[i] = drelabel[_dfind(int(labels[i]))]
 
+    # Intersection merge: merge any clusters whose bounding boxes intersect.
+    num_after_diag = len(canonical_set)
+    int_merge: dict[int, int] = {l: l for l in range(num_after_diag)}
+
+    def _ifind(lbl: int) -> int:
+        while int_merge[lbl] != lbl:
+            lbl = int_merge[lbl]
+        return lbl
+
+    # Recompute bounding boxes after previous merges
+    int_bboxes: dict[int, tuple[float, float, float, float]] = {}
+    for lbl in range(num_after_diag):
+        mask = labels == lbl
+        members = [entries[i] for i in np.where(mask)[0]]
+        if members:
+            int_bboxes[lbl] = (
+                min(e.min_x for e in members),
+                min(e.min_y for e in members),
+                max(e.max_x for e in members),
+                max(e.max_y for e in members),
+            )
+
+    # Iteratively merge until no more intersections (transitive closure)
+    changed = True
+    while changed:
+        changed = False
+        # Recompute canonical bboxes after merges
+        canon_bboxes: dict[int, tuple[float, float, float, float]] = {}
+        for lbl in range(num_after_diag):
+            c = _ifind(lbl)
+            if c not in canon_bboxes and lbl in int_bboxes:
+                canon_bboxes[c] = int_bboxes[lbl]
+            elif lbl in int_bboxes and c in canon_bboxes:
+                cb = canon_bboxes[c]
+                ib = int_bboxes[lbl]
+                canon_bboxes[c] = (
+                    min(cb[0], ib[0]), min(cb[1], ib[1]),
+                    max(cb[2], ib[2]), max(cb[3], ib[3]),
+                )
+
+        canons = sorted(canon_bboxes.keys())
+        for i in range(len(canons)):
+            for j in range(i + 1, len(canons)):
+                a, b = canons[i], canons[j]
+                if _ifind(a) == _ifind(b):
+                    continue
+                ax1, ay1, ax2, ay2 = canon_bboxes[a]
+                bx1, by1, bx2, by2 = canon_bboxes[b]
+                # Two rectangles intersect if they overlap in both x and y
+                if ax1 < bx2 and bx1 < ax2 and ay1 < by2 and by1 < ay2:
+                    int_merge[_ifind(b)] = _ifind(a)
+                    changed = True
+
+    # Relabel after intersection merging
+    canonical_set = sorted(set(_ifind(l) for l in range(num_after_diag)))
+    irelabel = {old: new for new, old in enumerate(canonical_set)}
+    for i in range(len(labels)):
+        labels[i] = irelabel[_ifind(int(labels[i]))]
+
     # Build ClusterInfo list
     num_clusters = len(canonical_set)
     cluster_infos: list[ClusterInfo] = []
@@ -249,20 +308,6 @@ def cluster_by_centroid_gap(
         ))
 
     return centroids, labels, cluster_infos
-
-
-def classify_cluster_content(info: ClusterInfo) -> str:
-    """Classify a cluster as 'math' (text/equations) or 'diagram' based on bbox shape."""
-    x1, y1, x2, y2 = info.bounding_box
-    width = x2 - x1
-    height = y2 - y1
-    if height <= 0:
-        return "math"
-    aspect_ratio = width / height
-    area = width * height
-    if aspect_ratio <= 2.5 and height > 50 and area > 10000 and info.stroke_count >= 4:
-        return "diagram"
-    return "math"
 
 
 async def update_cluster_labels(session_id: str, page: int):
@@ -388,18 +433,16 @@ async def update_cluster_labels(session_id: str, page: int):
 
     for info in cluster_infos:
         label = info.cluster_label
-        content_type = classify_cluster_content(info)
+        content_type = "math"
         cluster_strokes = strokes_by_cluster.get(label, [])
         transcription = ""
         if cluster_strokes:
             try:
                 image_bytes = render_strokes(cluster_strokes)
-                if content_type == "diagram":
-                    transcription = await asyncio.to_thread(transcribe_diagram_image, image_bytes, problem_context)
-                    print(f"[transcribe] cluster {label} (diagram/TikZ): {transcription[:80]}...")
-                else:
-                    transcription = await asyncio.to_thread(transcribe_strokes_image, image_bytes, problem_context)
-                    print(f"[transcribe] cluster {label}: {transcription}")
+                result = await asyncio.to_thread(transcribe_strokes_image, image_bytes, problem_context)
+                content_type = result["content_type"]
+                transcription = result["transcription"]
+                print(f"[transcribe] cluster {label} ({content_type}): {transcription[:80]}")
             except Exception as exc:
                 print(f"[transcribe] cluster {label} failed: {exc}")
 

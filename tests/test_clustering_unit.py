@@ -163,20 +163,19 @@ class TestClusterByCentroidGap:
         assert labels[3] == 1  # line 2
         assert labels[4] == 1  # line 2
 
-    def test_tall_symbol_bbox_would_bridge_but_centroid_doesnt(self):
-        """Bbox of tall stroke overlaps next line's bbox, but centroids are separate."""
+    def test_tall_symbol_bbox_bridges_lines_and_merges(self):
+        """Tall stroke bbox overlaps next line's bbox — intersection merge unifies them."""
         entries = [
             _box_entry(50, 110, 200, 140, idx=0),      # line 1, centroid_y=125
             _box_entry(100, 80, 120, 200, idx=1),       # tall stroke, centroid_y=140
             _box_entry(50, 190, 200, 220, idx=2),       # line 2, centroid_y=205
         ]
-        # Bbox overlap: entry 1 (y=80-200) overlaps entry 2 (y=190-220).
-        # Centroid gap: 125→140 = 15 (< 20 threshold), 140→205 = 65 (> 20) → 2 clusters.
+        # Entry 1 bbox (y=80-200) intersects entry 2 bbox (y=190-220),
+        # so all three merge into one cluster.
         _, labels, infos = cluster_by_centroid_gap(entries)
 
-        assert len(infos) == 2
-        assert labels[0] == labels[1]  # entries 0,1 same cluster
-        assert labels[2] != labels[0]  # entry 2 different cluster
+        assert len(infos) == 1
+        assert labels[0] == labels[1] == labels[2]
 
     def test_subscript_stays_on_line(self):
         """Subscript with ~10px centroid_y offset stays on same line."""
