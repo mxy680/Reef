@@ -43,6 +43,8 @@ struct DrawingOverlayView: UIViewRepresentable {
     var textColor: UIColor = .black
     var recognitionEnabled: Bool = false
     var problemContext: String? = nil
+    var documentName: String? = nil
+    var questionNumber: Int? = nil
     var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
     var onUndoStateChanged: (Bool) -> Void = { _ in }
     var onRedoStateChanged: (Bool) -> Void = { _ in }
@@ -79,8 +81,10 @@ struct DrawingOverlayView: UIViewRepresentable {
 
         // Send problem context for transcription disambiguation
         if let ctx = problemContext, !ctx.isEmpty {
+            let docName = documentName
+            let qNum = questionNumber
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx)
+                AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx, documentName: docName, questionNumber: qNum)
             }
         }
 
@@ -126,7 +130,7 @@ struct DrawingOverlayView: UIViewRepresentable {
 
         // Resend problem context if it changed (e.g. text extraction completed after view creation)
         if let ctx = problemContext, !ctx.isEmpty, ctx != context.coordinator.problemContext {
-            AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx)
+            AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx, documentName: documentName, questionNumber: questionNumber)
         }
         context.coordinator.problemContext = problemContext
     }

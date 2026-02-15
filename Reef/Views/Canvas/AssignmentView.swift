@@ -22,8 +22,6 @@ struct AssignmentView: View {
     @Binding var highlighterWidth: CGFloat
     @Binding var eraserSize: CGFloat
     @Binding var eraserType: EraserType
-    @Binding var diagramWidth: CGFloat
-    @Binding var diagramAutosnap: Bool
     var canvasBackgroundMode: CanvasBackgroundMode = .normal
     var canvasBackgroundOpacity: CGFloat = 0.15
     var canvasBackgroundSpacing: CGFloat = 48
@@ -84,8 +82,6 @@ struct AssignmentView: View {
                         highlighterWidth: $highlighterWidth,
                         eraserSize: $eraserSize,
                         eraserType: $eraserType,
-                        diagramWidth: $diagramWidth,
-                        diagramAutosnap: $diagramAutosnap,
                         canvasBackgroundMode: canvasBackgroundMode,
                         canvasBackgroundOpacity: canvasBackgroundOpacity,
                         canvasBackgroundSpacing: canvasBackgroundSpacing,
@@ -94,6 +90,8 @@ struct AssignmentView: View {
                         textSize: textSize,
                         textColor: textColor,
                         problemContext: problemText,
+                        documentName: note.fileName,
+                        questionNumber: currentQuestion?.questionNumber,
                         onCanvasReady: onCanvasReady,
                         onUndoStateChanged: onUndoStateChanged,
                         onRedoStateChanged: onRedoStateChanged,
