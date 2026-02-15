@@ -123,6 +123,11 @@ struct DrawingOverlayView: UIViewRepresentable {
         // Keep recognition settings in sync
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.onRecognitionResult = onRecognitionResult
+
+        // Resend problem context if it changed (e.g. text extraction completed after view creation)
+        if let ctx = problemContext, !ctx.isEmpty, ctx != context.coordinator.problemContext {
+            AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx)
+        }
         context.coordinator.problemContext = problemContext
     }
 

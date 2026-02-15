@@ -217,7 +217,11 @@ class AIService {
 
     /// Sends problem context to the server so transcription can use it for disambiguation.
     func sendProblemContext(sessionId: String, page: Int = 0, problemContext: String) {
-        guard let socket = strokeSocket, !problemContext.isEmpty else { return }
+        guard !problemContext.isEmpty else { return }
+        if strokeSocket == nil {
+            connectStrokeSocket(sessionId: sessionId)
+        }
+        guard let socket = strokeSocket else { return }
 
         let userId = KeychainService.get(.userIdentifier) ?? ""
         let payload: [String: Any] = [
