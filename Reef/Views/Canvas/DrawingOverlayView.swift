@@ -76,17 +76,12 @@ struct DrawingOverlayView: UIViewRepresentable {
             self.onCanvasReady(container)
         }
 
-        // Connect stroke WebSocket when canvas appears
-        AIService.shared.connectStrokeSocket(sessionId: documentID.uuidString)
-
-        // Send problem context for transcription disambiguation
-        if let ctx = problemContext, !ctx.isEmpty {
-            let docName = documentName
-            let qNum = questionNumber
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx, documentName: docName, questionNumber: qNum)
-            }
-        }
+        // Connect stroke WebSocket with question metadata (available immediately on server)
+        AIService.shared.connectStrokeSocket(
+            sessionId: documentID.uuidString,
+            documentName: documentName,
+            questionNumber: questionNumber
+        )
 
         return container
     }
@@ -128,9 +123,9 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.onRecognitionResult = onRecognitionResult
 
-        // Resend problem context if it changed (e.g. text extraction completed after view creation)
+        // Send problem context when text extraction completes (enriches reasoning, not needed for dashboard question ID)
         if let ctx = problemContext, !ctx.isEmpty, ctx != context.coordinator.problemContext {
-            AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx, documentName: documentName, questionNumber: questionNumber)
+            AIService.shared.sendProblemContext(sessionId: documentID.uuidString, problemContext: ctx)
         }
         context.coordinator.problemContext = problemContext
     }

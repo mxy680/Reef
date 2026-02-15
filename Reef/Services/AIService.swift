@@ -139,7 +139,7 @@ class AIService {
 
     /// Connects to the stroke logging WebSocket endpoint.
     /// Always creates a fresh connection when a sessionId is provided.
-    func connectStrokeSocket(sessionId: String? = nil) {
+    func connectStrokeSocket(sessionId: String? = nil, documentName: String? = nil, questionNumber: Int? = nil) {
         if let sid = sessionId {
             // New session — close the old socket and open a fresh one
             if currentSessionId != sid {
@@ -151,10 +151,21 @@ class AIService {
         guard strokeSocket == nil else { return }
         let userId = KeychainService.get(.userIdentifier) ?? ""
         var wsPath = "/ws/strokes"
+        var queryItems: [String] = []
         if let sid = sessionId {
-            wsPath += "?session_id=\(sid)&user_id=\(userId)"
-        } else if !userId.isEmpty {
-            wsPath += "?user_id=\(userId)"
+            queryItems.append("session_id=\(sid)")
+        }
+        if !userId.isEmpty {
+            queryItems.append("user_id=\(userId)")
+        }
+        if let dn = documentName {
+            queryItems.append("document_name=\(dn)")
+        }
+        if let qn = questionNumber {
+            queryItems.append("question_number=\(qn)")
+        }
+        if !queryItems.isEmpty {
+            wsPath += "?" + queryItems.joined(separator: "&")
         }
         let wsURL = baseURL.replacingOccurrences(of: "https://", with: "wss://").replacingOccurrences(of: "http://", with: "ws://") + wsPath
         guard let url = URL(string: wsURL) else { return }
