@@ -326,17 +326,21 @@ async def run_reasoning(session_id: str, page: int) -> dict | None:
     # Store to DB
     pool = get_pool()
     if pool:
-        async with pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO reasoning_logs
-                    (session_id, page, context, action, level, target, error_type,
-                     delay_ms, message, prompt_tokens, completion_tokens, cached_tokens, estimated_cost)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                """,
-                session_id, page, context, action, level, target, error_type,
-                delay_ms, message, prompt_tokens, completion_tokens, cached_tokens, estimated_cost,
-            )
+        try:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO reasoning_logs
+                        (session_id, page, context, action, level, target, error_type,
+                         delay_ms, message, prompt_tokens, completion_tokens, cached_tokens, estimated_cost)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                    """,
+                    session_id, page, context, action, level, target, error_type,
+                    delay_ms, message or "", prompt_tokens, completion_tokens, cached_tokens, estimated_cost,
+                )
+            print(f"[reasoning] stored to DB")
+        except Exception as e:
+            print(f"[reasoning] DB insert failed: {e}")
 
     return {
         "action": action,
