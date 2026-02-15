@@ -18,7 +18,8 @@ from lib.stroke_clustering import clear_session_usage, get_session_usage, update
 router = APIRouter()
 
 _active_ws: set[WebSocket] = set()
-_active_sessions: dict[WebSocket, str] = {}
+# Each value: {"session_id": str, "document_name": str, "question_number": int|None, "question_id": int|None}
+_active_sessions: dict[WebSocket, dict] = {}
 
 # Reasoning debounce: per-(session, page) sequence counter
 _stroke_seq: dict[tuple[str, int], int] = {}
@@ -57,8 +58,8 @@ async def _cluster_then_reason(session_id: str, page: int):
                 "session_id": session_id,
                 "page": page,
             })
-            for ws, sid in list(_active_sessions.items()):
-                if sid == session_id:
+            for ws, info in list(_active_sessions.items()):
+                if info["session_id"] == session_id:
                     try:
                         await ws.send_text(message)
                     except Exception:
@@ -151,27 +152,56 @@ async def get_stroke_logs(
             if ctx_row:
                 problem_context = ctx_row["problem_context"]
 
-            # Match canvas content to a question for problem + answer key
-            canvas_text = " ".join(transcriptions.get(l, "") for l in cluster_order)
-            matched_q = None
-            if canvas_text.strip():
-                matched_q = await _find_matching_question(conn, canvas_text, session_id=session_id)
-            if not matched_q:
-                matched_q = await _get_cached_question(conn, session_id)
-            if matched_q:
-                matched_question_text = matched_q["text"]
-                matched_question_label = matched_q.get("label", "")
-                document_name = matched_q.get("doc_filename", "")
-                ak_rows = await conn.fetch(
-                    "SELECT part_label, answer FROM answer_keys WHERE question_id = $1 ORDER BY id",
-                    matched_q["id"],
+            # Check if this session has an active WebSocket with question metadata
+            active_question_id = None
+            active_doc_name = ""
+            for ws_info in _active_sessions.values():
+                if ws_info["session_id"] == session_id:
+                    active_question_id = ws_info.get("question_id")
+                    active_doc_name = ws_info.get("document_name", "")
+                    break
+
+            if active_question_id:
+                # Direct lookup — no matching/caching needed
+                q_row = await conn.fetchrow(
+                    "SELECT id, text, label FROM questions WHERE id = $1", active_question_id
                 )
-                if ak_rows:
-                    parts = []
-                    for r in ak_rows:
-                        label = f"({r['part_label']}) " if r["part_label"] else ""
-                        parts.append(f"{label}{r['answer']}")
-                    answer_key = "\n".join(parts)
+                if q_row:
+                    matched_question_text = q_row["text"]
+                    matched_question_label = q_row["label"] or ""
+                    document_name = active_doc_name
+                    ak_rows = await conn.fetch(
+                        "SELECT part_label, answer FROM answer_keys WHERE question_id = $1 ORDER BY id",
+                        q_row["id"],
+                    )
+                    if ak_rows:
+                        parts = []
+                        for r in ak_rows:
+                            label = f"({r['part_label']}) " if r["part_label"] else ""
+                            parts.append(f"{label}{r['answer']}")
+                        answer_key = "\n".join(parts)
+            else:
+                # Fallback: trigram matching for sessions without active WebSocket
+                canvas_text = " ".join(transcriptions.get(l, "") for l in cluster_order)
+                matched_q = None
+                if canvas_text.strip():
+                    matched_q = await _find_matching_question(conn, canvas_text, session_id=session_id)
+                if not matched_q:
+                    matched_q = await _get_cached_question(conn, session_id)
+                if matched_q:
+                    matched_question_text = matched_q["text"]
+                    matched_question_label = matched_q.get("label", "")
+                    document_name = matched_q.get("doc_filename", "")
+                    ak_rows = await conn.fetch(
+                        "SELECT part_label, answer FROM answer_keys WHERE question_id = $1 ORDER BY id",
+                        matched_q["id"],
+                    )
+                    if ak_rows:
+                        parts = []
+                        for r in ak_rows:
+                            label = f"({r['part_label']}) " if r["part_label"] else ""
+                            parts.append(f"{label}{r['answer']}")
+                        answer_key = "\n".join(parts)
 
     # Compute token usage and cost for session
     usage = None
@@ -207,7 +237,7 @@ async def get_stroke_logs(
         ],
         "total": total,
         "ws_connections": len(_active_ws),
-        "active_sessions": list(_active_sessions.values()),
+        "active_sessions": list(set(v["session_id"] for v in _active_sessions.values())),
         "transcriptions": transcriptions,
         "content_types": content_types,
         "cluster_order": cluster_order,
@@ -318,13 +348,38 @@ async def get_reasoning_logs(
 
 
 @router.websocket("/ws/strokes")
-async def strokes_websocket(ws: WebSocket, session_id: str = "", user_id: str = ""):
+async def strokes_websocket(ws: WebSocket, session_id: str = "", user_id: str = "",
+                            document_name: str = "", question_number: int | None = None):
     await ws.accept()
     _active_ws.add(ws)
 
+    # Strip extension from document_name for DB matching
+    doc_name = document_name.rsplit(".", 1)[0] if "." in document_name else document_name
+
+    # Immediate question lookup from connection params
+    question_id = None
+    if doc_name and question_number is not None:
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as conn:
+                q_row = await conn.fetchrow("""
+                    SELECT q.id FROM questions q
+                    JOIN documents d ON q.document_id = d.id
+                    WHERE d.filename = $1 AND q.number = $2
+                    ORDER BY d.id DESC LIMIT 1
+                """, doc_name, question_number)
+                if q_row:
+                    question_id = q_row["id"]
+                    print(f"[strokes_ws] immediate question match: doc={doc_name!r} q_num={question_number} -> Q{question_id}")
+
     # Register session from query param and insert system log
     if session_id:
-        _active_sessions[ws] = session_id
+        _active_sessions[ws] = {
+            "session_id": session_id,
+            "document_name": document_name,  # Keep original with extension for display
+            "question_number": question_number,
+            "question_id": question_id,
+        }
         print(f"[strokes_ws] session {session_id} connected via query param")
         pool = get_pool()
         if pool:
@@ -351,7 +406,12 @@ async def strokes_websocket(ws: WebSocket, session_id: str = "", user_id: str = 
             if msg_type == "hello":
                 sid = msg.get("session_id", "")
                 if sid:
-                    _active_sessions[ws] = sid
+                    _active_sessions[ws] = {
+                        "session_id": sid,
+                        "document_name": document_name,
+                        "question_number": question_number,
+                        "question_id": question_id,
+                    }
                     print(f"[strokes_ws] hello from session {sid}")
                     pool = get_pool()
                     if pool:
@@ -493,7 +553,9 @@ async def strokes_websocket(ws: WebSocket, session_id: str = "", user_id: str = 
 
             session_id = msg.get("session_id", "")
             if session_id:
-                _active_sessions[ws] = session_id
+                existing = _active_sessions.get(ws, {})
+                existing["session_id"] = session_id
+                _active_sessions[ws] = existing
             page = msg.get("page", 1)
             strokes = msg.get("strokes", [])
             event_type = msg.get("event_type", "draw")
