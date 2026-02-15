@@ -53,6 +53,10 @@ If "diagram":
   Include coordinates, labels, equations, styles (solid/dashed/dotted), and any other relevant details.
 - Leave "transcription" empty.
 
+Crossed-out content:
+- An X drawn over a symbol or expression means the student crossed it out / deleted it. OMIT crossed-out content entirely from the transcription.
+- Do NOT transcribe the X itself as a variable or multiplication sign when it's clearly a strike-through mark (large, overlapping existing writing).
+
 Common handwriting ambiguities — prefer these interpretations:
 - "2" not "z", "x" not "×", "1" not "l", "0" not "O", "5" not "S"
 
