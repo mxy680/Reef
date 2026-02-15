@@ -12,7 +12,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 
 from lib.database import get_pool
-from lib.reasoning import _find_matching_question, clear_reasoning_usage, get_reasoning_usage, run_reasoning
+from lib.reasoning import _find_matching_question, _get_cached_question, clear_reasoning_usage, get_reasoning_usage, run_reasoning
 from lib.stroke_clustering import clear_session_usage, get_session_usage, update_cluster_labels
 
 router = APIRouter()
@@ -151,20 +151,23 @@ async def get_stroke_logs(
 
             # Match canvas content to a question for problem + answer key
             canvas_text = " ".join(transcriptions.get(l, "") for l in cluster_order)
+            matched_q = None
             if canvas_text.strip():
-                matched_q = await _find_matching_question(conn, canvas_text)
-                if matched_q:
-                    matched_question_text = matched_q["text"]
-                    ak_rows = await conn.fetch(
-                        "SELECT part_label, answer FROM answer_keys WHERE question_id = $1 ORDER BY id",
-                        matched_q["id"],
-                    )
-                    if ak_rows:
-                        parts = []
-                        for r in ak_rows:
-                            label = f"({r['part_label']}) " if r["part_label"] else ""
-                            parts.append(f"{label}{r['answer']}")
-                        answer_key = "\n".join(parts)
+                matched_q = await _find_matching_question(conn, canvas_text, session_id=session_id)
+            if not matched_q:
+                matched_q = await _get_cached_question(conn, session_id)
+            if matched_q:
+                matched_question_text = matched_q["text"]
+                ak_rows = await conn.fetch(
+                    "SELECT part_label, answer FROM answer_keys WHERE question_id = $1 ORDER BY id",
+                    matched_q["id"],
+                )
+                if ak_rows:
+                    parts = []
+                    for r in ak_rows:
+                        label = f"({r['part_label']}) " if r["part_label"] else ""
+                        parts.append(f"{label}{r['answer']}")
+                    answer_key = "\n".join(parts)
 
     # Compute token usage and cost for session
     usage = None

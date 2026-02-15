@@ -156,6 +156,13 @@ async def init_db():
             CREATE INDEX IF NOT EXISTS idx_reasoning_logs_session
             ON reasoning_logs(session_id, created_at DESC)
         """)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS session_question_cache (
+                session_id TEXT PRIMARY KEY,
+                question_id INT NOT NULL,
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
     print("[DB] Connected and tables ready")
 
 

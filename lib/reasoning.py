@@ -101,10 +101,11 @@ def _trigram_similarity(a: str, b: str) -> float:
     return len(ta & tb) / len(ta | tb)
 
 
-async def _find_matching_question(conn, canvas_text: str) -> dict | None:
+async def _find_matching_question(conn, canvas_text: str, session_id: str | None = None) -> dict | None:
     """Try to find the question the student is working on by matching canvas content against DB questions.
 
     Uses trigram similarity between the canvas content and question texts.
+    If session_id is provided and a match is found, caches the result in session_question_cache.
     Returns {"id": int, "text": str, "label": str} or None.
     """
     if not canvas_text.strip():
@@ -134,8 +135,38 @@ async def _find_matching_question(conn, canvas_text: str) -> dict | None:
     if best_row and best_score >= 0.05:  # Low threshold since canvas is partial work
         print(f"[reasoning] matched canvas to question: id={best_row['id']} "
               f"label={best_row['label']} similarity={best_score:.3f}")
+        # Cache the match for this session
+        if session_id:
+            try:
+                await conn.execute(
+                    """
+                    INSERT INTO session_question_cache (session_id, question_id, updated_at)
+                    VALUES ($1, $2, NOW())
+                    ON CONFLICT (session_id) DO UPDATE SET question_id = $2, updated_at = NOW()
+                    """,
+                    session_id, best_row["id"],
+                )
+            except Exception as exc:
+                logger.error("Failed to cache question match: %s", exc)
         return {"id": best_row["id"], "text": best_row["text"], "label": best_row["label"]}
 
+    return None
+
+
+async def _get_cached_question(conn, session_id: str) -> dict | None:
+    """Retrieve the cached question match for a session, if any."""
+    row = await conn.fetchrow(
+        """
+        SELECT q.id, q.text, q.label
+        FROM session_question_cache sqc
+        JOIN questions q ON q.id = sqc.question_id
+        WHERE sqc.session_id = $1
+        """,
+        session_id,
+    )
+    if row:
+        print(f"[reasoning] using cached question match: id={row['id']} label={row['label']}")
+        return {"id": row["id"], "text": row["text"], "label": row["label"]}
     return None
 
 
@@ -179,7 +210,7 @@ async def _assemble_context(session_id: str, page: int) -> str | None:
         answer_key = ""
 
         # Try to match against DB questions (works even without problem_context)
-        matched_q = await _find_matching_question(conn, canvas_text)
+        matched_q = await _find_matching_question(conn, canvas_text, session_id=session_id)
         if matched_q:
             # Use matched question text if iOS didn't provide context
             if not question_text:
