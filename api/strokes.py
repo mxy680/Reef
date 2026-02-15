@@ -12,7 +12,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 
 from lib.database import get_pool
-from lib.stroke_clustering import get_session_usage, update_cluster_labels
+from lib.stroke_clustering import clear_session_usage, get_session_usage, update_cluster_labels
 
 router = APIRouter()
 
@@ -70,17 +70,35 @@ async def get_stroke_logs(
     # Fetch transcriptions and content types for this session
     transcriptions: dict[int, str] = {}
     content_types: dict[int, str] = {}
+    cluster_order: list[int] = []
     if session_id:
         async with pool.acquire() as conn:
             transcription_rows = await conn.fetch(
                 """
-                SELECT cluster_label, transcription, content_type FROM clusters
+                SELECT cluster_label, transcription, content_type, centroid_y FROM clusters
                 WHERE session_id = $1 AND transcription != ''
+                ORDER BY centroid_y ASC
                 """,
                 session_id,
             )
         transcriptions = {r["cluster_label"]: r["transcription"] for r in transcription_rows}
         content_types = {r["cluster_label"]: r["content_type"] for r in transcription_rows}
+        cluster_order = [r["cluster_label"] for r in transcription_rows]
+
+    # Fetch latest problem context for this session
+    problem_context = ""
+    if session_id:
+        async with pool.acquire() as conn:
+            ctx_row = await conn.fetchrow(
+                """
+                SELECT problem_context FROM stroke_logs
+                WHERE session_id = $1 AND problem_context != ''
+                ORDER BY received_at DESC LIMIT 1
+                """,
+                session_id,
+            )
+            if ctx_row:
+                problem_context = ctx_row["problem_context"]
 
     # Compute token usage and cost for session
     usage = None
@@ -119,7 +137,9 @@ async def get_stroke_logs(
         "active_sessions": list(_active_sessions.values()),
         "transcriptions": transcriptions,
         "content_types": content_types,
+        "cluster_order": cluster_order,
         "usage": usage,
+        "problem_context": problem_context,
     }
 
 
@@ -136,8 +156,13 @@ async def clear_stroke_logs(
             result = await conn.execute(
                 "DELETE FROM stroke_logs WHERE session_id = $1", session_id
             )
+            await conn.execute(
+                "DELETE FROM clusters WHERE session_id = $1", session_id
+            )
+            clear_session_usage(session_id)
         else:
             result = await conn.execute("DELETE FROM stroke_logs")
+            await conn.execute("DELETE FROM clusters")
 
     count = int(result.split()[-1])
     return {"deleted": count}
@@ -204,6 +229,12 @@ async def strokes_websocket(ws: WebSocket, session_id: str = "", user_id: str = 
                             session_id,
                             page,
                         )
+                        await conn.execute(
+                            "DELETE FROM clusters WHERE session_id = $1 AND page = $2",
+                            session_id,
+                            page,
+                        )
+                clear_session_usage(session_id)
                 await ws.send_text(json.dumps({"type": "ack"}))
                 continue
 

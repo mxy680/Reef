@@ -26,6 +26,11 @@ def get_session_usage(session_id: str) -> dict:
     return _session_usage.get(session_id, {"prompt_tokens": 0, "completion_tokens": 0, "calls": 0})
 
 
+def clear_session_usage(session_id: str) -> None:
+    """Reset token usage for a session."""
+    _session_usage.pop(session_id, None)
+
+
 def _accumulate_usage(session_id: str, usage: dict) -> None:
     """Add token counts from a single transcription call to the session total."""
     if session_id not in _session_usage:
