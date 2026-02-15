@@ -209,8 +209,8 @@ async def get_stroke_logs(
         raw_usage = get_session_usage(session_id)
         prompt_tokens = raw_usage["prompt_tokens"]
         completion_tokens = raw_usage["completion_tokens"]
-        # Gemini 3 Flash Preview via OpenRouter: $0.50/M input, $3.00/M output
-        estimated_cost = (prompt_tokens * 0.50 + completion_tokens * 3.00) / 1_000_000
+        # Llama 4 Maverick on Groq: $0.20/M input, $0.60/M output
+        estimated_cost = (prompt_tokens * 0.20 + completion_tokens * 0.60) / 1_000_000
         usage = {
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
