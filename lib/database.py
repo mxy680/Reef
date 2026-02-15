@@ -84,6 +84,9 @@ async def init_db():
             ALTER TABLE clusters ADD COLUMN IF NOT EXISTS transcription TEXT NOT NULL DEFAULT ''
         """)
         await conn.execute("""
+            ALTER TABLE clusters ADD COLUMN IF NOT EXISTS content_type TEXT NOT NULL DEFAULT 'math'
+        """)
+        await conn.execute("""
             ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS problem_context TEXT NOT NULL DEFAULT ''
         """)
         await conn.execute("""

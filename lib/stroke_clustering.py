@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from lib.database import get_pool
-from lib.groq_vision import transcribe_strokes_image
+from lib.groq_vision import transcribe_diagram_image, transcribe_strokes_image
 from lib.models.clustering import ClusterInfo, ClusterResponse
 from lib.stroke_renderer import render_strokes
 
@@ -158,11 +158,71 @@ def cluster_by_centroid_gap(
             if overlap / smaller_height > 0.5:
                 merge_map[_find(b)] = _find(a)
 
-    # Relabel after merging
+    # Relabel after y-overlap merging
     canonical_set = sorted(set(_find(l) for l in range(current_label + 1)))
     relabel = {old: new for new, old in enumerate(canonical_set)}
     for i in range(len(labels)):
         labels[i] = relabel[_find(int(labels[i]))]
+
+    # Diagram-merge pass: merge vertically adjacent clusters that form a
+    # square-ish combined shape (diagrams, not text lines).
+    num_after_overlap = len(canonical_set)
+    diag_merge: dict[int, int] = {l: l for l in range(num_after_overlap)}
+
+    def _dfind(lbl: int) -> int:
+        while diag_merge[lbl] != lbl:
+            lbl = diag_merge[lbl]
+        return lbl
+
+    # Compute per-cluster bounding boxes
+    cluster_bboxes: dict[int, tuple[float, float, float, float]] = {}
+    for lbl in range(num_after_overlap):
+        mask = labels == lbl
+        members = [entries[i] for i in np.where(mask)[0]]
+        if members:
+            cluster_bboxes[lbl] = (
+                min(e.min_x for e in members),
+                min(e.min_y for e in members),
+                max(e.max_x for e in members),
+                max(e.max_y for e in members),
+            )
+
+    # Sort clusters by min_y for pairwise checking
+    sorted_labels = sorted(cluster_bboxes.keys(), key=lambda l: cluster_bboxes[l][1])
+    for i in range(len(sorted_labels)):
+        for j in range(i + 1, len(sorted_labels)):
+            a, b = sorted_labels[i], sorted_labels[j]
+            if _dfind(a) == _dfind(b):
+                continue
+            ax1, ay1, ax2, ay2 = cluster_bboxes[a]
+            bx1, by1, bx2, by2 = cluster_bboxes[b]
+
+            # Check x-overlap > 30%
+            x_overlap = max(0, min(ax2, bx2) - max(ax1, bx1))
+            smaller_width = min(ax2 - ax1, bx2 - bx1) or 1
+            if x_overlap / smaller_width < 0.3:
+                continue
+
+            # Skip if either cluster is text-like (wide relative to tall)
+            a_ar = (ax2 - ax1) / max(ay2 - ay1, 1)
+            b_ar = (bx2 - bx1) / max(by2 - by1, 1)
+            if a_ar >= 2.5 or b_ar >= 2.5:
+                continue
+
+            # Check combined aspect ratio
+            cx1 = min(ax1, bx1)
+            cy1 = min(ay1, by1)
+            cx2 = max(ax2, bx2)
+            cy2 = max(ay2, by2)
+            combined_ar = (cx2 - cx1) / max(cy2 - cy1, 1)
+            if combined_ar < 2.5:
+                diag_merge[_dfind(b)] = _dfind(a)
+
+    # Relabel after diagram merging
+    canonical_set = sorted(set(_dfind(l) for l in range(num_after_overlap)))
+    drelabel = {old: new for new, old in enumerate(canonical_set)}
+    for i in range(len(labels)):
+        labels[i] = drelabel[_dfind(int(labels[i]))]
 
     # Build ClusterInfo list
     num_clusters = len(canonical_set)
@@ -189,6 +249,20 @@ def cluster_by_centroid_gap(
         ))
 
     return centroids, labels, cluster_infos
+
+
+def classify_cluster_content(info: ClusterInfo) -> str:
+    """Classify a cluster as 'math' (text/equations) or 'diagram' based on bbox shape."""
+    x1, y1, x2, y2 = info.bounding_box
+    width = x2 - x1
+    height = y2 - y1
+    if height <= 0:
+        return "math"
+    aspect_ratio = width / height
+    area = width * height
+    if aspect_ratio <= 2.5 and height > 50 and area > 10000 and info.stroke_count >= 4:
+        return "diagram"
+    return "math"
 
 
 async def update_cluster_labels(session_id: str, page: int):
@@ -314,13 +388,18 @@ async def update_cluster_labels(session_id: str, page: int):
 
     for info in cluster_infos:
         label = info.cluster_label
+        content_type = classify_cluster_content(info)
         cluster_strokes = strokes_by_cluster.get(label, [])
         transcription = ""
         if cluster_strokes:
             try:
                 image_bytes = render_strokes(cluster_strokes)
-                transcription = await asyncio.to_thread(transcribe_strokes_image, image_bytes, problem_context)
-                print(f"[transcribe] cluster {label}: {transcription}")
+                if content_type == "diagram":
+                    transcription = await asyncio.to_thread(transcribe_diagram_image, image_bytes, problem_context)
+                    print(f"[transcribe] cluster {label} (diagram/TikZ): {transcription[:80]}...")
+                else:
+                    transcription = await asyncio.to_thread(transcribe_strokes_image, image_bytes, problem_context)
+                    print(f"[transcribe] cluster {label}: {transcription}")
             except Exception as exc:
                 print(f"[transcribe] cluster {label} failed: {exc}")
 
@@ -328,21 +407,23 @@ async def update_cluster_labels(session_id: str, page: int):
             await conn.execute(
                 """
                 INSERT INTO clusters (session_id, page, cluster_label, stroke_count,
-                                      centroid_x, centroid_y, bbox_x1, bbox_y1, bbox_x2, bbox_y2, transcription)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                                      centroid_x, centroid_y, bbox_x1, bbox_y1, bbox_x2, bbox_y2,
+                                      transcription, content_type)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 ON CONFLICT (session_id, page, cluster_label) DO UPDATE SET
                     stroke_count = EXCLUDED.stroke_count,
                     centroid_x = EXCLUDED.centroid_x, centroid_y = EXCLUDED.centroid_y,
                     bbox_x1 = EXCLUDED.bbox_x1, bbox_y1 = EXCLUDED.bbox_y1,
                     bbox_x2 = EXCLUDED.bbox_x2, bbox_y2 = EXCLUDED.bbox_y2,
-                    transcription = EXCLUDED.transcription
+                    transcription = EXCLUDED.transcription,
+                    content_type = EXCLUDED.content_type
                 """,
                 session_id, page,
                 label, info.stroke_count,
                 info.centroid[0], info.centroid[1],
                 info.bounding_box[0], info.bounding_box[1],
                 info.bounding_box[2], info.bounding_box[3],
-                transcription,
+                transcription, content_type,
             )
 
 

@@ -67,18 +67,20 @@ async def get_stroke_logs(
             limit,
         )
 
-    # Fetch transcriptions for this session
+    # Fetch transcriptions and content types for this session
     transcriptions: dict[int, str] = {}
+    content_types: dict[int, str] = {}
     if session_id:
         async with pool.acquire() as conn:
             transcription_rows = await conn.fetch(
                 """
-                SELECT cluster_label, transcription FROM clusters
+                SELECT cluster_label, transcription, content_type FROM clusters
                 WHERE session_id = $1 AND transcription != ''
                 """,
                 session_id,
             )
         transcriptions = {r["cluster_label"]: r["transcription"] for r in transcription_rows}
+        content_types = {r["cluster_label"]: r["content_type"] for r in transcription_rows}
 
     return {
         "logs": [
@@ -101,6 +103,7 @@ async def get_stroke_logs(
         "ws_connections": len(_active_ws),
         "active_sessions": list(_active_sessions.values()),
         "transcriptions": transcriptions,
+        "content_types": content_types,
     }
 
 

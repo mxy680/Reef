@@ -65,3 +65,51 @@ def transcribe_strokes_image(image_bytes: bytes, problem_context: str = "") -> s
         max_tokens=256,
     )
     return response.choices[0].message.content.strip()
+
+
+_DIAGRAM_PROMPT = """\
+Transcribe this handwritten diagram into TikZ code.
+Return ONLY the TikZ code starting with \\begin{tikzpicture} and ending with \\end{tikzpicture}.
+
+Guidelines:
+- For coordinate axes: use \\draw[->] for axes, \\node for labels
+- For geometric shapes: use \\draw for lines, circles, rectangles
+- For graphs/plots: use \\draw[smooth] or plot coordinates
+- For labels and annotations: use \\node
+- For arrows: use \\draw[->] or \\draw[-stealth]
+- For curves: use \\draw[smooth,tension=0.7] or Bezier curves
+- Keep coordinates simple and readable
+- Do not include \\documentclass, \\usepackage, or \\begin{document} — only the tikzpicture environment"""
+
+_DIAGRAM_CONTEXT_TEMPLATE = """
+
+The student is working on this problem:
+{problem_context}
+
+Use this context to understand what the diagram represents."""
+
+
+def transcribe_diagram_image(image_bytes: bytes, problem_context: str = "") -> str:
+    """Send diagram image to Groq Llama 4 Maverick, return TikZ transcription."""
+    client = _get_client()
+    b64 = base64.b64encode(image_bytes).decode("ascii")
+    data_url = f"data:image/png;base64,{b64}"
+
+    prompt = _DIAGRAM_PROMPT
+    if problem_context:
+        prompt += _DIAGRAM_CONTEXT_TEMPLATE.format(problem_context=problem_context)
+
+    response = client.chat.completions.create(
+        model="meta-llama/llama-4-maverick-17b-128e-instruct",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                ],
+            }
+        ],
+        max_tokens=512,
+    )
+    return response.choices[0].message.content.strip()
