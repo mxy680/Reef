@@ -212,7 +212,7 @@ async def get_stroke_logs(
         "content_types": content_types,
         "cluster_order": cluster_order,
         "usage": usage,
-        "problem_context": problem_context or matched_question_text,
+        "problem_context": matched_question_text or problem_context,
         "answer_key": answer_key,
         "matched_question_label": matched_question_label,
         "document_name": document_name,
