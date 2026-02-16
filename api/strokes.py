@@ -97,6 +97,8 @@ async def get_stroke_logs(
                 active_doc_name = ws_info.get("document_name", "")
                 qn = ws_info.get("question_number")
                 if active_doc_name and qn is not None:
+                    # Strip extension — iOS sends "foo.pdf" but DB stores "foo"
+                    doc_stem = active_doc_name.rsplit(".", 1)[0] if "." in active_doc_name else active_doc_name
                     async with pool.acquire() as conn:
                         q_row = await conn.fetchrow(
                             """
@@ -104,7 +106,7 @@ async def get_stroke_logs(
                             JOIN documents d ON q.document_id = d.id
                             WHERE d.filename = $1 AND q.number = $2
                             """,
-                            active_doc_name,
+                            doc_stem,
                             qn,
                         )
                         if q_row:
