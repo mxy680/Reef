@@ -165,30 +165,6 @@ struct TutorsView: View {
             }
             .padding(.top, 4)
 
-            // Voice preview expansion
-            if showingVoicePreview {
-                HStack(spacing: 10) {
-                    Image(systemName: "quote.opening")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.5))
-
-                    Text(tutor.voice)
-                        .font(.quicksand(13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.85))
-                        .italic()
-
-                    Image(systemName: "quote.closing")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.5))
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal, 16)
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                .id(tutor.id + "-voicepreview")
-            }
         }
         .padding(.vertical, 28)
         .padding(.horizontal, 16)
