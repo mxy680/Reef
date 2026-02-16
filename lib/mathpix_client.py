@@ -76,12 +76,15 @@ def invalidate_session(session_id: str, page: int) -> None:
         print(f"[mathpix] invalidated session ({session_id}, page={page})")
 
 
-def get_session_expiry(session_id: str, page: int) -> str | None:
-    """Return ISO timestamp of session expiry, or None if no session."""
+def get_session_info(session_id: str, page: int) -> dict | None:
+    """Return session expiry and strokes_session_id, or None if no session."""
     key = (session_id, page)
     session = _sessions.get(key)
     if session and datetime.now(timezone.utc) < session.expires_at:
-        return session.expires_at.isoformat()
+        return {
+            "expires_at": session.expires_at.isoformat(),
+            "strokes_session_id": session.strokes_session_id,
+        }
     return None
 
 
