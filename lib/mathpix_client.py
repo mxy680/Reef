@@ -9,6 +9,7 @@ Requires MATHPIX_APP_ID and MATHPIX_APP_KEY env vars.
 import asyncio
 import json
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -150,6 +151,94 @@ async def _debounced_cluster_and_transcribe(session_id: str, page: int) -> None:
         print(f"[mathpix] error for ({session_id}, page={page}): {e}")
 
 
+def _diagram_score(
+    latex: str,
+    stroke_count: int,
+    bbox: tuple[float, float, float, float],  # x1, y1, x2, y2
+    raw_line_data: list | None,
+) -> float:
+    """0.0 = definitely math, 1.0 = definitely diagram."""
+    score = 0.0
+
+    # Short/empty transcription for many strokes
+    stripped = latex.replace("\\text", "").replace("{", "").replace("}", "").strip()
+    if stroke_count >= 3 and len(stripped) <= 2:
+        score += 0.5
+    elif stroke_count >= 5 and len(stripped) <= 5:
+        score += 0.3
+
+    # Square-ish aspect ratio (width/height < 2.0)
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
+    ar = w / max(h, 1)
+    if 0.3 < ar < 2.0:
+        score += 0.2
+
+    # Empty or missing line_data
+    if not raw_line_data:
+        score += 0.2
+
+    # Mathpix wrapped entire output in \text{} with 1-2 chars
+    if re.match(r'^\\text\s*\{?\s*\w{0,2}\s*\}?$', latex.strip()):
+        score += 0.3
+
+    return min(score, 1.0)
+
+
+def _collect_cluster_strokes(visible_rows: list[dict], cluster_label: int) -> list[dict]:
+    """Collect stroke dicts belonging to a specific cluster."""
+    result = []
+    for row in visible_rows:
+        strokes_data = row["strokes"] if isinstance(row["strokes"], list) else json.loads(row["strokes"])
+        labels_data = row.get("cluster_labels")
+        if not labels_data:
+            continue
+        if isinstance(labels_data, str):
+            labels_data = json.loads(labels_data)
+        for idx, stroke in enumerate(strokes_data):
+            if idx < len(labels_data) and labels_data[idx] == cluster_label:
+                if stroke.get("points"):
+                    result.append(stroke)
+    return result
+
+
+def _vision_classify_cluster(strokes: list[dict]) -> str:
+    """Use Gemini Flash to classify a rendered cluster as math/chemistry/diagram."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    from lib.llm_client import LLMClient
+    from lib.stroke_renderer import render_strokes
+
+    png_bytes = render_strokes(strokes)
+
+    # Convert PNG → JPEG (LLMClient hardcodes image/jpeg content type)
+    img = Image.open(BytesIO(png_bytes)).convert("RGB")
+    buf = BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    jpeg_bytes = buf.getvalue()
+
+    client = LLMClient(
+        api_key=os.getenv("OPENROUTER_API_KEY"),
+        model="google/gemini-3-flash-preview",
+        base_url="https://openrouter.ai/api/v1",
+    )
+
+    result = client.generate(
+        prompt="Classify this handwritten content as exactly one of: math, chemistry, diagram. "
+               "Diagrams include: free body diagrams, graphs, charts, geometric figures, circuits, "
+               "flowcharts, or any non-equation drawing. Respond with just the single word.",
+        images=[jpeg_bytes],
+        temperature=0.0,
+    )
+
+    word = result.strip().lower()
+    if word in ("math", "chemistry", "diagram"):
+        return word
+    return "diagram"  # default to diagram if unclear
+
+
 async def _do_cluster_transcription(
     session_id: str, page: int, cluster_label: int
 ) -> None:
@@ -244,6 +333,22 @@ async def _do_cluster_transcription(
         elif line_type == "diagram":
             content_type = "other"
         # "math" stays as default
+
+    # Diagram detection: heuristic + optional vision
+    all_x = [x for xs in cluster_x for x in xs]
+    all_y = [y for ys in cluster_y for y in ys]
+    bbox = (min(all_x), min(all_y), max(all_x), max(all_y))
+    diag_score = _diagram_score(latex, stroke_count, bbox, raw_line_data)
+
+    if diag_score >= 0.7:
+        content_type = "diagram"
+        print(f"[mathpix] cluster {cluster_label}: diagram (heuristic score={diag_score:.2f})")
+    elif diag_score >= 0.4:
+        cluster_strokes = _collect_cluster_strokes(visible_rows, cluster_label)
+        if cluster_strokes:
+            vision_type = await asyncio.to_thread(_vision_classify_cluster, cluster_strokes)
+            content_type = vision_type
+            print(f"[mathpix] cluster {cluster_label}: vision says {vision_type} (heuristic score={diag_score:.2f})")
 
     # Update cluster row
     async with pool.acquire() as conn:
