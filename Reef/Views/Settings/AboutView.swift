@@ -2,7 +2,7 @@
 //  AboutView.swift
 //  Reef
 //
-//  About tab showing app info, support links, and legal information.
+//  About view showing app info, support links, and legal information.
 //
 
 import SwiftUI
@@ -22,167 +22,156 @@ struct AboutView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 32) {
-                // App Info Section
-                settingsSection(title: "App Info") {
-                    // Version
+            VStack(spacing: 0) {
+                sectionHeader("App Info", isFirst: true)
+
+                HStack {
+                    Text("Version")
+                        .font(.quicksand(16, weight: .medium))
+                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    Spacer()
+                    Text(appVersion)
+                        .font(.quicksand(14, weight: .regular))
+                        .foregroundColor(Color.deepTeal)
+                }
+                .frame(minHeight: 44)
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                NavigationLink {
+                    WhatsNewView()
+                } label: {
                     HStack {
-                        Text("Version")
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 18))
+                        Text("What's New")
                             .font(.quicksand(16, weight: .medium))
-                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
                         Spacer()
-                        Text(appVersion)
-                            .font(.quicksand(14, weight: .regular))
-                            .foregroundColor(Color.deepTeal)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
                     }
-                    .padding(.vertical, 4)
+                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
 
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                sectionHeader("Support")
 
-                    // What's New
-                    NavigationLink {
-                        WhatsNewView()
-                    } label: {
-                        HStack {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 18))
-                            Text("What's New")
-                                .font(.quicksand(16, weight: .medium))
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
-                        }
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                        .padding(.vertical, 4)
+                linkRow(icon: "envelope", title: "Send Feedback", url: "mailto:feedback@reefapp.com")
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                linkRow(icon: "questionmark.circle", title: "Help Center", url: "https://reefapp.com/help")
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                linkRow(icon: "ant", title: "Report a Bug", url: "mailto:bugs@reefapp.com?subject=Bug%20Report")
+
+                sectionHeader("Connect")
+
+                linkRow(icon: "bird", title: "Twitter / X", url: "https://twitter.com/reefapp")
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                linkRow(icon: "camera", title: "Instagram", url: "https://instagram.com/reefapp")
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                linkRow(icon: "bubble.left.and.bubble.right", title: "Discord", url: "https://discord.gg/reefapp")
+
+                sectionHeader("Credits")
+
+                NavigationLink {
+                    TeamView()
+                } label: {
+                    HStack {
+                        Image(systemName: "person.3")
+                            .font(.system(size: 18))
+                        Text("Meet the Team")
+                            .font(.quicksand(16, weight: .medium))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
                     }
-                    .buttonStyle(.plain)
+                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    .frame(minHeight: 44)
                 }
+                .buttonStyle(.plain)
 
-                // Support Section
-                settingsSection(title: "Support") {
-                    // Send Feedback
-                    linkRow(icon: "envelope", title: "Send Feedback", url: "mailto:feedback@reefapp.com")
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
 
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Help Center
-                    linkRow(icon: "questionmark.circle", title: "Help Center", url: "https://reefapp.com/help")
-
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Report a Bug
-                    linkRow(icon: "ant", title: "Report a Bug", url: "mailto:bugs@reefapp.com?subject=Bug%20Report")
-                }
-
-                // Connect Section
-                settingsSection(title: "Connect") {
-                    // Twitter/X
-                    linkRow(icon: "bird", title: "Twitter / X", url: "https://twitter.com/reefapp")
-
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Instagram
-                    linkRow(icon: "camera", title: "Instagram", url: "https://instagram.com/reefapp")
-
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Discord
-                    linkRow(icon: "bubble.left.and.bubble.right", title: "Discord", url: "https://discord.gg/reefapp")
-                }
-
-                // Credits Section
-                settingsSection(title: "Credits") {
-                    // Meet the Team
-                    NavigationLink {
-                        TeamView()
-                    } label: {
-                        HStack {
-                            Image(systemName: "person.3")
-                                .font(.system(size: 18))
-                            Text("Meet the Team")
-                                .font(.quicksand(16, weight: .medium))
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
-                        }
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                        .padding(.vertical, 4)
+                NavigationLink {
+                    AcknowledgmentsView()
+                } label: {
+                    HStack {
+                        Image(systemName: "heart")
+                            .font(.system(size: 18))
+                        Text("Acknowledgments")
+                            .font(.quicksand(16, weight: .medium))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
                     }
-                    .buttonStyle(.plain)
-
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Acknowledgments
-                    NavigationLink {
-                        AcknowledgmentsView()
-                    } label: {
-                        HStack {
-                            Image(systemName: "heart")
-                                .font(.system(size: 18))
-                            Text("Acknowledgments")
-                                .font(.quicksand(16, weight: .medium))
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
-                        }
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
+                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    .frame(minHeight: 44)
                 }
+                .buttonStyle(.plain)
 
-                // Legal Section
-                settingsSection(title: "Legal") {
-                    // Terms of Service
-                    linkRow(icon: "doc.text", title: "Terms of Service", url: "https://reefapp.com/terms")
+                sectionHeader("Legal")
 
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                linkRow(icon: "doc.text", title: "Terms of Service", url: "https://reefapp.com/terms")
 
-                    // Privacy Policy
-                    linkRow(icon: "lock.shield", title: "Privacy Policy", url: "https://reefapp.com/privacy")
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
 
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                linkRow(icon: "lock.shield", title: "Privacy Policy", url: "https://reefapp.com/privacy")
 
-                    // Open Source Licenses
-                    NavigationLink {
-                        OpenSourceLicensesView()
-                    } label: {
-                        HStack {
-                            Image(systemName: "chevron.left.forwardslash.chevron.right")
-                                .font(.system(size: 18))
-                            Text("Open Source Licenses")
-                                .font(.quicksand(16, weight: .medium))
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
-                        }
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                        .padding(.vertical, 4)
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                NavigationLink {
+                    OpenSourceLicensesView()
+                } label: {
+                    HStack {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                            .font(.system(size: 18))
+                        Text("Open Source Licenses")
+                            .font(.quicksand(16, weight: .medium))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
                     }
-                    .buttonStyle(.plain)
+                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    .frame(minHeight: 44)
                 }
+                .buttonStyle(.plain)
 
-                // Reef Graphic
                 reefGraphic
-                    .padding(.top, 16)
-
-                Spacer(minLength: 16)
+                    .padding(.top, 24)
             }
             .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Helpers
@@ -204,30 +193,20 @@ struct AboutView: View {
                     .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
             }
             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-            .padding(.vertical, 4)
+            .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
     }
 
-    private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(title)
-                .font(.quicksand(18, weight: .semiBold))
-                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-
-            VStack(spacing: 16) {
-                content()
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
-            )
-        }
+    private func sectionHeader(_ title: String, isFirst: Bool = false) -> some View {
+        Text(title)
+            .font(.quicksand(13, weight: .semiBold))
+            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
+            .textCase(.uppercase)
+            .tracking(0.8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, isFirst ? 0 : 32)
+            .padding(.bottom, 12)
     }
 
     // MARK: - Reef Graphic
@@ -483,5 +462,7 @@ struct OpenSourceLicensesView: View {
 }
 
 #Preview {
-    AboutView()
+    NavigationStack {
+        AboutView()
+    }
 }

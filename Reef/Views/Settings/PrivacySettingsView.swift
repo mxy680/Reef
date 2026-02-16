@@ -2,7 +2,7 @@
 //  PrivacySettingsView.swift
 //  Reef
 //
-//  Privacy settings tab for data management and analytics preferences.
+//  Privacy settings for data management and analytics preferences.
 //
 
 import SwiftUI
@@ -25,216 +25,221 @@ struct PrivacySettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 32) {
+            VStack(spacing: 0) {
                 // Data & Storage Section
-                settingsSection(title: "Data & Storage") {
-                    // Clear Cache
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Clear Cache")
-                                .font(.quicksand(16, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                            Text(cacheSize)
-                                .font(.quicksand(13, weight: .regular))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
-                        }
-                        Spacer()
-                        Button {
-                            showClearCacheConfirmation = true
-                        } label: {
-                            Text("Clear")
-                                .font(.quicksand(14, weight: .semiBold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.deepTeal)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.vertical, 4)
+                sectionHeader("Data & Storage", isFirst: true)
 
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Clear Search History
-                    HStack {
-                        Text("Clear Search History")
+                // Clear Cache
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Clear Cache")
                             .font(.quicksand(16, weight: .medium))
                             .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                        Spacer()
-                        Button {
-                            showClearHistoryConfirmation = true
-                        } label: {
-                            Text("Clear")
-                                .font(.quicksand(14, weight: .semiBold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.deepTeal)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
+                        Text(cacheSize)
+                            .font(.quicksand(13, weight: .regular))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                     }
-                    .padding(.vertical, 4)
-
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Storage Used
-                    HStack {
-                        Text("Storage Used")
-                            .font(.quicksand(16, weight: .medium))
-                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                        Spacer()
-                        Text(storageUsed)
-                            .font(.quicksand(14, weight: .medium))
-                            .foregroundColor(Color.deepTeal)
+                    Spacer()
+                    Button {
+                        showClearCacheConfirmation = true
+                    } label: {
+                        Text("Clear")
+                            .font(.quicksand(14, weight: .semiBold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.deepTeal)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
-                    .padding(.vertical, 4)
+                    .buttonStyle(.plain)
                 }
+                .frame(minHeight: 44)
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                // Clear Search History
+                HStack {
+                    Text("Clear Search History")
+                        .font(.quicksand(16, weight: .medium))
+                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    Spacer()
+                    Button {
+                        showClearHistoryConfirmation = true
+                    } label: {
+                        Text("Clear")
+                            .font(.quicksand(14, weight: .semiBold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.deepTeal)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .frame(minHeight: 44)
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                // Storage Used
+                HStack {
+                    Text("Storage Used")
+                        .font(.quicksand(16, weight: .medium))
+                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    Spacer()
+                    Text(storageUsed)
+                        .font(.quicksand(14, weight: .medium))
+                        .foregroundColor(Color.deepTeal)
+                }
+                .frame(minHeight: 44)
 
                 // RAG Indexing Section
-                settingsSection(title: "RAG Indexing") {
-                    // Index Documents Toggle
-                    Toggle(isOn: $preferences.indexDocumentsForAI) {
+                sectionHeader("RAG Indexing")
+
+                // Index Documents Toggle
+                Toggle(isOn: $preferences.indexDocumentsForAI) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Index Documents for AI")
+                            .font(.quicksand(16, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                        Text("Enable AI to search your documents for better answers")
+                            .font(.quicksand(13, weight: .regular))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
+                    }
+                }
+                .tint(Color.deepTeal)
+                .frame(minHeight: 44)
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                // Re-index All Documents
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Index Documents for AI")
+                            Text("Re-index All Documents")
                                 .font(.quicksand(16, weight: .medium))
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                            Text("Enable AI to search your documents for better answers")
+                            Text("Rebuild the AI search index")
                                 .font(.quicksand(13, weight: .regular))
                                 .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                         }
-                    }
-                    .tint(Color.deepTeal)
-                    .padding(.vertical, 4)
-
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Re-index All Documents
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Re-index All Documents")
-                                    .font(.quicksand(16, weight: .medium))
-                                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                                Text("Rebuild the AI search index")
-                                    .font(.quicksand(13, weight: .regular))
-                                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
-                            }
-                            Spacer()
-                            if isReindexing {
-                                ProgressView()
-                                    .tint(Color.deepTeal)
-                            } else {
-                                Button {
-                                    startReindexing()
-                                } label: {
-                                    Text("Re-index")
-                                        .font(.quicksand(14, weight: .semiBold))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
-                                        .background(Color.deepTeal)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-
+                        Spacer()
                         if isReindexing {
-                            ProgressView(value: reindexProgress)
+                            ProgressView()
                                 .tint(Color.deepTeal)
+                        } else {
+                            Button {
+                                startReindexing()
+                            } label: {
+                                Text("Re-index")
+                                    .font(.quicksand(14, weight: .semiBold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(Color.deepTeal)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .padding(.vertical, 4)
+
+                    if isReindexing {
+                        ProgressView(value: reindexProgress)
+                            .tint(Color.deepTeal)
+                    }
                 }
+                .frame(minHeight: 44)
 
                 // Analytics Section
-                settingsSection(title: "Analytics") {
-                    // Share Usage Analytics
-                    Toggle(isOn: $preferences.shareUsageAnalytics) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Share Usage Analytics")
-                                .font(.quicksand(16, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                            Text("Help us improve Reef by sharing anonymous usage data")
-                                .font(.quicksand(13, weight: .regular))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
-                        }
-                    }
-                    .tint(Color.deepTeal)
-                    .padding(.vertical, 4)
+                sectionHeader("Analytics")
 
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // Share Crash Reports
-                    Toggle(isOn: $preferences.shareCrashReports) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Share Crash Reports")
-                                .font(.quicksand(16, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                            Text("Automatically send crash reports to help fix issues")
-                                .font(.quicksand(13, weight: .regular))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
-                        }
+                // Share Usage Analytics
+                Toggle(isOn: $preferences.shareUsageAnalytics) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Share Usage Analytics")
+                            .font(.quicksand(16, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                        Text("Help us improve Reef by sharing anonymous usage data")
+                            .font(.quicksand(13, weight: .regular))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
                     }
-                    .tint(Color.deepTeal)
-                    .padding(.vertical, 4)
                 }
+                .tint(Color.deepTeal)
+                .frame(minHeight: 44)
+
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                // Share Crash Reports
+                Toggle(isOn: $preferences.shareCrashReports) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Share Crash Reports")
+                            .font(.quicksand(16, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                        Text("Automatically send crash reports to help fix issues")
+                            .font(.quicksand(13, weight: .regular))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.6))
+                    }
+                }
+                .tint(Color.deepTeal)
+                .frame(minHeight: 44)
 
                 // Your Data Section
-                settingsSection(title: "Your Data") {
-                    // Export My Data
-                    Button {
-                        exportData()
-                    } label: {
-                        HStack {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 18))
-                            Text("Export My Data")
-                                .font(.quicksand(16, weight: .medium))
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
-                        }
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
+                sectionHeader("Your Data")
 
-                    Divider()
-                        .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
-
-                    // What Data We Collect
-                    NavigationLink {
-                        DataCollectionInfoView()
-                    } label: {
-                        HStack {
-                            Image(systemName: "info.circle")
-                                .font(.system(size: 18))
-                            Text("What Data We Collect")
-                                .font(.quicksand(16, weight: .medium))
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
-                        }
-                        .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-                        .padding(.vertical, 4)
+                // Export My Data
+                Button {
+                    exportData()
+                } label: {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 18))
+                        Text("Export My Data")
+                            .font(.quicksand(16, weight: .medium))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
                     }
-                    .buttonStyle(.plain)
+                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    .frame(minHeight: 44)
                 }
+                .buttonStyle(.plain)
 
-                Spacer(minLength: 16)
+                Divider()
+                    .background(Color.adaptiveText(for: effectiveColorScheme).opacity(0.06))
+                    .padding(.vertical, 12)
+
+                // What Data We Collect
+                NavigationLink {
+                    DataCollectionInfoView()
+                } label: {
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 18))
+                        Text("What Data We Collect")
+                            .font(.quicksand(16, weight: .medium))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
+                    }
+                    .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                    .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
             }
             .padding(32)
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
+        .navigationTitle("Privacy")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             calculateSizes()
         }
@@ -262,6 +267,17 @@ struct PrivacySettingsView: View {
     }
 
     // MARK: - Helpers
+
+    private func sectionHeader(_ title: String, isFirst: Bool = false) -> some View {
+        Text(title)
+            .font(.quicksand(13, weight: .semiBold))
+            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme).opacity(0.5))
+            .textCase(.uppercase)
+            .tracking(0.8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, isFirst ? 0 : 32)
+            .padding(.bottom, 12)
+    }
 
     private func calculateSizes() {
         // Calculate cache size
@@ -378,27 +394,6 @@ struct PrivacySettingsView: View {
             }
         }
     }
-
-    private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(title)
-                .font(.quicksand(18, weight: .semiBold))
-                .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
-
-            VStack(spacing: 16) {
-                content()
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
-            )
-        }
-    }
 }
 
 // MARK: - Share Sheet
@@ -501,5 +496,7 @@ struct DataCollectionInfoView: View {
 }
 
 #Preview {
-    PrivacySettingsView()
+    NavigationStack {
+        PrivacySettingsView()
+    }
 }
