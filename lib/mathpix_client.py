@@ -199,7 +199,15 @@ async def _do_transcription(session_id: str, page: int) -> None:
         latex = result.get("latex_styled", "") or result.get("text", "")
         text = result.get("text", "")
         confidence = result.get("confidence", 0.0)
-        line_data = result.get("line_data")
+        raw_line_data = result.get("line_data")
+        # Wrap line_data with image dimensions so the dashboard can map coordinates
+        line_data = None
+        if raw_line_data is not None:
+            line_data = {
+                "image_width": result.get("image_width", 0),
+                "image_height": result.get("image_height", 0),
+                "lines": raw_line_data,
+            }
 
         # UPSERT into page_transcriptions
         async with pool.acquire() as conn:
@@ -219,9 +227,9 @@ async def _do_transcription(session_id: str, page: int) -> None:
             )
 
         line_types = ""
-        if line_data:
+        if raw_line_data:
             from collections import Counter
-            counts = Counter(ld.get("type", "unknown") for ld in line_data)
+            counts = Counter(ld.get("type", "unknown") for ld in raw_line_data)
             line_types = ", ".join(f"{t}={n}" for t, n in counts.most_common())
         print(
             f"[mathpix] ({session_id}, page={page}): "
