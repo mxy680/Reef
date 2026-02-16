@@ -16,6 +16,7 @@ struct TutorsView: View {
     @State private var focusedTutorID: String?
     @State private var autoScrollTimer: Timer?
     @State private var isUserInteracting = false
+    @State private var showingVoicePreview = false
 
     private let tutors = TutorCatalog.allTutors
     private let autoScrollInterval: TimeInterval = 4.0
@@ -57,32 +58,8 @@ struct TutorsView: View {
     private var mainContent: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Hero card
                 heroCard
-
-                // Info cards row
-                HStack(alignment: .top, spacing: 16) {
-                    infoCard(
-                        icon: "quote.bubble.fill",
-                        title: "Voice",
-                        text: focusedTutor.voice,
-                        tint: focusedTutor.accentColor
-                    )
-                    .id(focusedTutor.id + "-voice")
-
-                    infoCard(
-                        icon: "book.closed.fill",
-                        title: "Lore",
-                        text: focusedTutor.lore,
-                        tint: focusedTutor.accentColor
-                    )
-                    .id(focusedTutor.id + "-lore")
-                }
-
-                // Fun fact card
                 funFactCard
-
-                // Carousel
                 carouselSection
             }
             .padding(32)
@@ -120,40 +97,98 @@ struct TutorsView: View {
                 .font(.quicksand(15, weight: .semiBold))
                 .foregroundColor(.white.opacity(0.85))
 
-            Text(tutor.personality)
-                .font(.quicksand(14, weight: .regular))
-                .foregroundColor(.white.opacity(0.9))
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .padding(.horizontal, 24)
-                .id(tutor.id + "-personality")
+            // Personality + lore
+            VStack(spacing: 8) {
+                Text(tutor.personality)
+                    .font(.quicksand(14, weight: .regular))
+                    .foregroundColor(.white.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                    .id(tutor.id + "-personality")
 
-            // Select button
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    if isActive {
-                        selectionManager.selectedTutorID = nil
-                    } else {
-                        selectionManager.selectTutor(tutor, preset: tutor.presetModes.first)
-                    }
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: isActive ? "checkmark.circle.fill" : "plus.circle.fill")
-                        .font(.system(size: 16))
-                    Text(isActive ? "Active Tutor" : "Select as Active Tutor")
-                        .font(.quicksand(15, weight: .semiBold))
-                }
-                .foregroundColor(isActive ? .white : Color.adaptiveText(for: colorScheme))
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(
-                    Capsule()
-                        .fill(isActive ? Color.white.opacity(0.25) : Color.white)
-                )
+                Text(tutor.lore)
+                    .font(.quicksand(13, weight: .regular))
+                    .foregroundColor(.white.opacity(0.75))
+                    .multilineTextAlignment(.center)
+                    .id(tutor.id + "-lore")
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 24)
+
+            // Buttons row
+            HStack(spacing: 12) {
+                // Preview voice
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        showingVoicePreview.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: showingVoicePreview ? "speaker.wave.2.fill" : "speaker.wave.2")
+                            .font(.system(size: 14))
+                        Text("Preview Voice")
+                            .font(.quicksand(14, weight: .semiBold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.2))
+                    )
+                }
+                .buttonStyle(.plain)
+
+                // Select tutor
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        if isActive {
+                            selectionManager.selectedTutorID = nil
+                        } else {
+                            selectionManager.selectTutor(tutor, preset: tutor.presetModes.first)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: isActive ? "checkmark.circle.fill" : "plus.circle.fill")
+                            .font(.system(size: 16))
+                        Text(isActive ? "Active Tutor" : "Select as Active Tutor")
+                            .font(.quicksand(15, weight: .semiBold))
+                    }
+                    .foregroundColor(isActive ? .white : Color.adaptiveText(for: colorScheme))
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule()
+                            .fill(isActive ? Color.white.opacity(0.25) : Color.white)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
             .padding(.top, 4)
+
+            // Voice preview expansion
+            if showingVoicePreview {
+                HStack(spacing: 10) {
+                    Image(systemName: "quote.opening")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.5))
+
+                    Text(tutor.voice)
+                        .font(.quicksand(13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.85))
+                        .italic()
+
+                    Image(systemName: "quote.closing")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 16)
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                .id(tutor.id + "-voicepreview")
+            }
         }
         .padding(.vertical, 28)
         .padding(.horizontal, 16)
@@ -165,34 +200,9 @@ struct TutorsView: View {
                 .stroke(Color.black.opacity(colorScheme == .dark ? 0.35 : 0.4), lineWidth: 1.5)
         )
         .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
-    }
-
-    // MARK: - Info Card
-
-    private func infoCard(icon: String, title: String, text: String, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundColor(tint)
-                    .frame(width: 32, height: 32)
-                    .background(tint.opacity(colorScheme == .dark ? 0.15 : 0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                Text(title)
-                    .font(.quicksand(16, weight: .semiBold))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme))
-            }
-
-            Text(text)
-                .font(.quicksand(13, weight: .regular))
-                .foregroundColor(Color.adaptiveSecondaryText(for: colorScheme))
-                .fixedSize(horizontal: false, vertical: true)
+        .onChange(of: focusedTutorID) { _, _ in
+            showingVoicePreview = false
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(cardBg)
-        .dashboardCard(colorScheme: colorScheme)
     }
 
     // MARK: - Fun Fact Card
@@ -328,12 +338,6 @@ struct TutorsView: View {
                     RoundedRectangle(cornerRadius: 24)
                         .stroke(Color.black.opacity(colorScheme == .dark ? 0.35 : 0.4), lineWidth: 1.5)
                 )
-
-                // Info cards skeleton
-                HStack(spacing: 16) {
-                    skeletonInfoCard
-                    skeletonInfoCard
-                }
 
                 // Fun fact skeleton
                 skeletonInfoCard
