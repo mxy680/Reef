@@ -164,8 +164,6 @@ struct AnalyticsView: View {
 
                 // 6. Common Mistakes
                 commonMistakesSection
-
-                Spacer(minLength: 40)
             }
             .padding(32)
         }
