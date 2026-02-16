@@ -36,6 +36,7 @@ struct AccountSettingsView: View {
     }
 
     var body: some View {
+        GeometryReader { geo in
         ScrollView {
             VStack(spacing: 0) {
                 sectionHeader("Profile", isFirst: true)
@@ -201,6 +202,7 @@ struct AccountSettingsView: View {
                 .buttonStyle(.plain)
             }
             .padding(24)
+            .frame(minHeight: geo.size.height - 64)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
@@ -210,6 +212,7 @@ struct AccountSettingsView: View {
                     .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
             .padding(32)
+        }
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
         .navigationTitle("Account")

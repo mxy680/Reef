@@ -16,6 +16,7 @@ struct AISettingsView: View {
     }
 
     var body: some View {
+        GeometryReader { geo in
         ScrollView {
             VStack(spacing: 0) {
                 sectionHeader("Reasoning Model", isFirst: true)
@@ -122,6 +123,7 @@ struct AISettingsView: View {
                 .frame(minHeight: 44)
             }
             .padding(24)
+            .frame(minHeight: geo.size.height - 64)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(effectiveColorScheme == .dark ? Color.warmDarkCard : Color.white)
@@ -131,6 +133,7 @@ struct AISettingsView: View {
                     .stroke(Color.black.opacity(effectiveColorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
             )
             .padding(32)
+        }
         }
         .background(Color.adaptiveBackground(for: effectiveColorScheme))
         .navigationTitle("AI")
