@@ -31,7 +31,11 @@ class TutorSelectionManager: ObservableObject {
         didSet { objectWillChange.send() }
     }
 
-    private init() {}
+    private init() {
+        if selectedTutorID == nil {
+            selectedTutorID = "finn"
+        }
+    }
 
     var selectedTutor: Tutor? {
         guard let id = selectedTutorID else { return nil }

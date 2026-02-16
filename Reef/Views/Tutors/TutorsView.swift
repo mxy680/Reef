@@ -235,10 +235,12 @@ struct TutorsView: View {
                     }
                 }
                 .scrollTargetLayout()
+                .padding(.horizontal, 32)
+                .padding(.vertical, 12)
             }
             .scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $focusedTutorID)
-            .frame(height: 210)
+            .frame(height: 230)
             .simultaneousGesture(
                 DragGesture()
                     .onChanged { _ in isUserInteracting = true }
