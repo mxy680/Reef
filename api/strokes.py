@@ -58,12 +58,12 @@ class ClearRequest(BaseModel):
 
 @router.post("/api/strokes/connect")
 async def strokes_connect(req: ConnectRequest):
-    # Evict any previous sessions (e.g. stale question-switch sessions)
-    # Keep only the new one — iPad has one active session at a time
+    # Evict stale session metadata (e.g. question-switch sessions)
+    # Only remove from _active_sessions — don't destroy Mathpix page
+    # sessions, which need to persist for incremental transcription
     stale = [sid for sid in _active_sessions if sid != req.session_id]
     for sid in stale:
         _active_sessions.pop(sid, None)
-        cleanup_sessions(sid)
 
     _active_sessions[req.session_id] = {
         "document_name": req.document_name or "",
