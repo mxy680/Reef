@@ -19,7 +19,7 @@ struct TutorsView: View {
     @State private var showingVoicePreview = false
 
     private let tutors = TutorCatalog.allTutors
-    private let autoScrollInterval: TimeInterval = 4.0
+    private let autoScrollInterval: TimeInterval = 15.0
 
     private var focusedTutor: Tutor {
         tutors.first { $0.id == focusedTutorID } ?? tutors[0]
