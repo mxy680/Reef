@@ -19,8 +19,9 @@
 
 - Always restart the local dev server after making changes to Reef-Server code
 - `clusters` table must be cleared alongside `stroke_logs` on any delete/clear operation
+- Clustering uses DBSCAN with bounding-box gap distance (Y-axis weighted 3x) in `stroke_clustering.py` — eps=20, min_samples=1
 - Token usage is tracked in-memory per session via `_session_usage` in `stroke_clustering.py` — resets on server restart
-- API response includes `cluster_order` (sorted by centroid_y for reading order), `problem_context`, and `usage`
+- API response includes `cluster_order`, `cluster_types`, `cluster_boxes` (bounding boxes per cluster), `problem_context`, and `usage`
 - Transcription uses Gemini 3 Flash Preview via OpenRouter (single-stage, replaced Groq Maverick+Llama 3.3)
 - Reasoning uses Gemini 2.5 Flash Preview via OpenRouter — free-form text output for TTS (adaptive coaching, not structured JSON)
 - Reasoning triggers after transcription completes (sequence-counter debounce with 2.5s delay in `_cluster_then_reason`)
