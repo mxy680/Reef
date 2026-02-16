@@ -6,38 +6,13 @@ correctly handles tall symbols (integrals, brackets) whose bounding boxes
 span multiple lines but whose centroids remain on the correct line.
 """
 
-import asyncio
 import json
 from dataclasses import dataclass
 
 import numpy as np
 
 from lib.database import get_pool
-from lib.groq_vision import transcribe_strokes_image
 from lib.models.clustering import ClusterInfo, ClusterResponse
-from lib.stroke_renderer import render_strokes
-
-# Per-session token usage accumulator
-_session_usage: dict[str, dict] = {}
-
-
-def get_session_usage(session_id: str) -> dict:
-    """Return cumulative token usage for a session."""
-    return _session_usage.get(session_id, {"prompt_tokens": 0, "completion_tokens": 0, "calls": 0})
-
-
-def clear_session_usage(session_id: str) -> None:
-    """Reset token usage for a session."""
-    _session_usage.pop(session_id, None)
-
-
-def _accumulate_usage(session_id: str, usage: dict) -> None:
-    """Add token counts from a single transcription call to the session total."""
-    if session_id not in _session_usage:
-        _session_usage[session_id] = {"prompt_tokens": 0, "completion_tokens": 0, "calls": 0}
-    _session_usage[session_id]["prompt_tokens"] += usage.get("prompt_tokens", 0)
-    _session_usage[session_id]["completion_tokens"] += usage.get("completion_tokens", 0)
-    _session_usage[session_id]["calls"] += 1
 
 
 @dataclass
@@ -376,15 +351,6 @@ async def update_cluster_labels(session_id: str, page: int):
             )
         return
 
-    # Build stroke lookup: (log_id, stroke_index) → stroke dict
-    stroke_lookup: dict[tuple[int, int], dict] = {}
-    for row in visible_rows:
-        log_id = row["id"]
-        strokes_json = row["strokes"]
-        strokes = strokes_json if isinstance(strokes_json, list) else json.loads(strokes_json)
-        for idx, stroke in enumerate(strokes):
-            stroke_lookup[(log_id, idx)] = stroke
-
     entries = extract_stroke_entries(visible_rows)
     if not entries:
         # All strokes erased — clean up stale clusters
@@ -412,30 +378,7 @@ async def update_cluster_labels(session_id: str, page: int):
             [(json.dumps(lbls), log_id) for log_id, lbls in labels_by_log.items()],
         )
 
-    # Group strokes by cluster label for transcription
-    strokes_by_cluster: dict[int, list[dict]] = {}
-    for i, entry in enumerate(entries):
-        label = int(labels[i])
-        stroke = stroke_lookup.get((entry.log_id, entry.index))
-        if stroke:
-            strokes_by_cluster.setdefault(label, []).append(stroke)
-
-    # Look up problem context for this session (most recent context message)
-    problem_context = ""
-    async with pool.acquire() as conn:
-        ctx_row = await conn.fetchrow(
-            """
-            SELECT problem_context FROM stroke_logs
-            WHERE session_id = $1 AND problem_context != ''
-            ORDER BY received_at DESC LIMIT 1
-            """,
-            session_id,
-        )
-        if ctx_row:
-            problem_context = ctx_row["problem_context"]
-            print(f"[transcribe] using problem context: {problem_context[:80]}...")
-
-    # Delete stale cluster rows, then render + transcribe each cluster
+    # Delete stale cluster rows, then upsert current clusters
     current_labels = [info.cluster_label for info in cluster_infos]
     async with pool.acquire() as conn:
         if current_labels:
@@ -454,43 +397,24 @@ async def update_cluster_labels(session_id: str, page: int):
             )
 
     for info in cluster_infos:
-        label = info.cluster_label
-        content_type = "math"
-        cluster_strokes = strokes_by_cluster.get(label, [])
-        transcription = ""
-        if cluster_strokes:
-            try:
-                image_bytes = render_strokes(cluster_strokes)
-                result = await asyncio.to_thread(transcribe_strokes_image, image_bytes, problem_context)
-                content_type = result["content_type"]
-                transcription = result["transcription"]
-                if result.get("usage"):
-                    _accumulate_usage(session_id, result["usage"])
-                print(f"[transcribe] cluster {label} ({content_type}): {transcription[:80]}")
-            except Exception as exc:
-                print(f"[transcribe] cluster {label} failed: {exc}")
-
         async with pool.acquire() as conn:
             await conn.execute(
                 """
                 INSERT INTO clusters (session_id, page, cluster_label, stroke_count,
                                       centroid_x, centroid_y, bbox_x1, bbox_y1, bbox_x2, bbox_y2,
                                       transcription, content_type)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, '', 'math')
                 ON CONFLICT (session_id, page, cluster_label) DO UPDATE SET
                     stroke_count = EXCLUDED.stroke_count,
                     centroid_x = EXCLUDED.centroid_x, centroid_y = EXCLUDED.centroid_y,
                     bbox_x1 = EXCLUDED.bbox_x1, bbox_y1 = EXCLUDED.bbox_y1,
-                    bbox_x2 = EXCLUDED.bbox_x2, bbox_y2 = EXCLUDED.bbox_y2,
-                    transcription = EXCLUDED.transcription,
-                    content_type = EXCLUDED.content_type
+                    bbox_x2 = EXCLUDED.bbox_x2, bbox_y2 = EXCLUDED.bbox_y2
                 """,
                 session_id, page,
-                label, info.stroke_count,
+                info.cluster_label, info.stroke_count,
                 info.centroid[0], info.centroid[1],
                 info.bounding_box[0], info.bounding_box[1],
                 info.bounding_box[2], info.bounding_box[3],
-                transcription, content_type,
             )
 
 
