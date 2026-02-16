@@ -12,7 +12,7 @@
 - SourceKit errors about macOS unavailability (AVAudioSession, UIColor, etc.) are noise — this is an iPad-only app
 - SourceKit "Cannot find X in scope" for types like KeychainService, CanvasViewMode, FileStorageService are indexing issues, not real errors
 - Swift struct initializer arguments MUST match declaration order — check the struct's property list before adding new parameters
-- `AIService` is `@MainActor` singleton; WebSocket send callbacks run off main thread
+- `AIService` is `@MainActor` singleton; stroke data sent via fire-and-forget REST POSTs (no WebSocket)
 - Debug base URL: `http://172.20.87.11:8000` (Tailscale), release: `https://api.studyreef.com`
 
 ## Server
