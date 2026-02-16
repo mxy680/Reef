@@ -17,7 +17,7 @@ import httpx
 from lib.database import get_pool
 
 MATHPIX_BASE = "https://api.mathpix.com"
-DEBOUNCE_SECONDS = 1.5
+DEBOUNCE_SECONDS = 0.5
 
 
 @dataclass
