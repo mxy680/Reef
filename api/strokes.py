@@ -88,6 +88,29 @@ async def get_stroke_logs(
             )
         cluster_order = [r["cluster_label"] for r in cluster_rows]
 
+    # Look up document_name and matched question label from active session
+    active_doc_name = ""
+    matched_question_label = ""
+    if session_id:
+        for ws_info in _active_sessions.values():
+            if ws_info.get("session_id") == session_id:
+                active_doc_name = ws_info.get("document_name", "")
+                qn = ws_info.get("question_number")
+                if active_doc_name and qn is not None:
+                    async with pool.acquire() as conn:
+                        q_row = await conn.fetchrow(
+                            """
+                            SELECT q.label FROM questions q
+                            JOIN documents d ON q.document_id = d.id
+                            WHERE d.filename = $1 AND q.number = $2
+                            """,
+                            active_doc_name,
+                            qn,
+                        )
+                        if q_row:
+                            matched_question_label = q_row["label"] or ""
+                break
+
     return {
         "logs": [
             {
@@ -109,6 +132,8 @@ async def get_stroke_logs(
         "ws_connections": len(_active_ws),
         "active_sessions": list(set(v["session_id"] for v in _active_sessions.values())),
         "cluster_order": cluster_order,
+        "document_name": active_doc_name,
+        "matched_question_label": matched_question_label,
     }
 
 
@@ -172,13 +197,23 @@ async def get_page_transcription(
 
 
 @router.websocket("/ws/strokes")
-async def strokes_websocket(ws: WebSocket, session_id: str = "", user_id: str = ""):
+async def strokes_websocket(
+    ws: WebSocket,
+    session_id: str = "",
+    user_id: str = "",
+    document_name: str = "",
+    question_number: Optional[int] = None,
+):
     await ws.accept()
     _active_ws.add(ws)
 
     # Register session from query param and insert system log
     if session_id:
-        _active_sessions[ws] = {"session_id": session_id}
+        _active_sessions[ws] = {
+            "session_id": session_id,
+            "document_name": document_name,
+            "question_number": question_number,
+        }
         register_ws(session_id, ws)
         print(f"[strokes_ws] session {session_id} connected via query param")
         pool = get_pool()
