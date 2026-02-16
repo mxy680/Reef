@@ -38,9 +38,6 @@ _sessions: dict[tuple[str, int], MathpixPageSession] = {}
 # (session_id, page) → pending debounce asyncio.Task
 _debounce_tasks: dict[tuple[str, int], asyncio.Task] = {}
 
-# WebSocket refs for sending transcription updates back to iPad
-_ws_by_session: dict[str, set] = {}
-
 
 def _get_credentials() -> tuple[str, str]:
     app_id = os.environ.get("MATHPIX_APP_ID", "")
@@ -48,17 +45,6 @@ def _get_credentials() -> tuple[str, str]:
     if not app_id or not app_key:
         raise RuntimeError("MATHPIX_APP_ID and MATHPIX_APP_KEY not set")
     return app_id, app_key
-
-
-def register_ws(session_id: str, ws) -> None:
-    _ws_by_session.setdefault(session_id, set()).add(ws)
-
-
-def unregister_ws(session_id: str, ws) -> None:
-    if session_id in _ws_by_session:
-        _ws_by_session[session_id].discard(ws)
-        if not _ws_by_session[session_id]:
-            del _ws_by_session[session_id]
 
 
 async def create_session() -> MathpixPageSession:
@@ -270,21 +256,6 @@ async def _do_transcription(session_id: str, page: int) -> None:
             f"confidence={confidence:.2f}, "
             f"latex={latex[:80]}"
         )
-
-        # Notify connected WebSockets
-        ws_set = _ws_by_session.get(session_id, set())
-        msg = json.dumps({
-            "type": "transcription",
-            "page": page,
-            "latex": latex,
-            "text": text,
-            "confidence": confidence,
-        })
-        for ws in list(ws_set):
-            try:
-                await ws.send_text(msg)
-            except Exception:
-                pass
 
     except Exception as e:
         print(f"[mathpix] error for ({session_id}, page={page}): {e}")

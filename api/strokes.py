@@ -1,31 +1,157 @@
 """
-WebSocket endpoint for real-time stroke logging.
+REST endpoints for stroke logging.
 
-iOS streams full PKStrokePoint data per page; server logs
+iOS sends debounced stroke data via POST; server logs
 each batch to the stroke_logs table in Postgres.
 """
 
 import asyncio
 import json
+from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
 from lib.database import get_pool
 from lib.mathpix_client import (
     cleanup_sessions,
     invalidate_session,
-    register_ws,
     schedule_transcription,
-    unregister_ws,
 )
 from lib.stroke_clustering import update_cluster_labels
 
 router = APIRouter()
 
-_active_ws: set[WebSocket] = set()
-_active_sessions: dict[WebSocket, dict] = {}
+# session_id → {document_name, question_number, last_seen}
+_active_sessions: dict[str, dict] = {}
 
+
+# ── Pydantic request models ────────────────────────────────
+
+class ConnectRequest(BaseModel):
+    session_id: str
+    user_id: str = ""
+    document_name: Optional[str] = None
+    question_number: Optional[int] = None
+
+
+class DisconnectRequest(BaseModel):
+    session_id: str
+
+
+class StrokesRequest(BaseModel):
+    session_id: str
+    user_id: str = ""
+    page: int = 1
+    strokes: list = []
+    event_type: str = "draw"
+    deleted_count: int = 0
+
+
+class ClearRequest(BaseModel):
+    session_id: str
+    page: int = 1
+
+
+# ── REST endpoints ──────────────────────────────────────────
+
+@router.post("/api/strokes/connect")
+async def strokes_connect(req: ConnectRequest):
+    _active_sessions[req.session_id] = {
+        "document_name": req.document_name or "",
+        "question_number": req.question_number,
+        "last_seen": datetime.now(timezone.utc).isoformat(),
+    }
+    print(f"[strokes] session {req.session_id} connected")
+
+    pool = get_pool()
+    if pool:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO stroke_logs (session_id, page, strokes, event_type, message, user_id)
+                VALUES ($1, 0, '[]'::jsonb, 'system', $2, $3)
+                """,
+                req.session_id,
+                "session started",
+                req.user_id,
+            )
+
+    return {"status": "connected"}
+
+
+@router.post("/api/strokes/disconnect")
+async def strokes_disconnect(req: DisconnectRequest):
+    _active_sessions.pop(req.session_id, None)
+    cleanup_sessions(req.session_id)
+    print(f"[strokes] session {req.session_id} disconnected")
+    return {"status": "disconnected"}
+
+
+@router.post("/api/strokes")
+async def strokes_post(req: StrokesRequest):
+    pool = get_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO stroke_logs (session_id, page, strokes, event_type, deleted_count, user_id)
+            VALUES ($1, $2, $3::jsonb, $4, $5, $6)
+            """,
+            req.session_id,
+            req.page,
+            json.dumps(req.strokes),
+            req.event_type,
+            req.deleted_count,
+            req.user_id,
+        )
+
+    # Re-cluster in background
+    asyncio.create_task(update_cluster_labels(req.session_id, req.page))
+
+    if req.event_type == "erase":
+        invalidate_session(req.session_id, req.page)
+    elif req.event_type == "draw":
+        schedule_transcription(req.session_id, req.page)
+
+    # Update last_seen
+    if req.session_id in _active_sessions:
+        _active_sessions[req.session_id]["last_seen"] = datetime.now(timezone.utc).isoformat()
+
+    return {"status": "ok"}
+
+
+@router.post("/api/strokes/clear")
+async def strokes_clear(req: ClearRequest):
+    pool = get_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "DELETE FROM stroke_logs WHERE session_id = $1 AND page = $2",
+            req.session_id,
+            req.page,
+        )
+        await conn.execute(
+            "DELETE FROM clusters WHERE session_id = $1 AND page = $2",
+            req.session_id,
+            req.page,
+        )
+        await conn.execute(
+            "DELETE FROM page_transcriptions WHERE session_id = $1 AND page = $2",
+            req.session_id,
+            req.page,
+        )
+
+    invalidate_session(req.session_id, req.page)
+    return {"status": "ok"}
+
+
+# ── Existing GET / DELETE endpoints ─────────────────────────
 
 @router.get("/api/stroke-logs")
 async def get_stroke_logs(
@@ -91,27 +217,25 @@ async def get_stroke_logs(
     # Look up document_name and matched question label from active session
     active_doc_name = ""
     matched_question_label = ""
-    if session_id:
-        for ws_info in _active_sessions.values():
-            if ws_info.get("session_id") == session_id:
-                active_doc_name = ws_info.get("document_name", "")
-                qn = ws_info.get("question_number")
-                if active_doc_name and qn is not None:
-                    # Strip extension — iOS sends "foo.pdf" but DB stores "foo"
-                    doc_stem = active_doc_name.rsplit(".", 1)[0] if "." in active_doc_name else active_doc_name
-                    async with pool.acquire() as conn:
-                        q_row = await conn.fetchrow(
-                            """
-                            SELECT q.label FROM questions q
-                            JOIN documents d ON q.document_id = d.id
-                            WHERE d.filename = $1 AND q.number = $2
-                            """,
-                            doc_stem,
-                            qn,
-                        )
-                        if q_row:
-                            matched_question_label = q_row["label"] or ""
-                break
+    if session_id and session_id in _active_sessions:
+        info = _active_sessions[session_id]
+        active_doc_name = info.get("document_name", "")
+        qn = info.get("question_number")
+        if active_doc_name and qn is not None:
+            # Strip extension — iOS sends "foo.pdf" but DB stores "foo"
+            doc_stem = active_doc_name.rsplit(".", 1)[0] if "." in active_doc_name else active_doc_name
+            async with pool.acquire() as conn:
+                q_row = await conn.fetchrow(
+                    """
+                    SELECT q.label FROM questions q
+                    JOIN documents d ON q.document_id = d.id
+                    WHERE d.filename = $1 AND q.number = $2
+                    """,
+                    doc_stem,
+                    qn,
+                )
+                if q_row:
+                    matched_question_label = q_row["label"] or ""
 
     return {
         "logs": [
@@ -131,8 +255,8 @@ async def get_stroke_logs(
             for r in rows
         ],
         "total": total,
-        "ws_connections": len(_active_ws),
-        "active_sessions": list(set(v["session_id"] for v in _active_sessions.values())),
+        "active_connections": len(_active_sessions),
+        "active_sessions": list(_active_sessions.keys()),
         "cluster_order": cluster_order,
         "document_name": active_doc_name,
         "matched_question_label": matched_question_label,
@@ -196,165 +320,3 @@ async def get_page_transcription(
         "confidence": row["confidence"],
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
     }
-
-
-@router.websocket("/ws/strokes")
-async def strokes_websocket(
-    ws: WebSocket,
-    session_id: str = "",
-    user_id: str = "",
-    document_name: str = "",
-    question_number: Optional[int] = None,
-):
-    await ws.accept()
-    _active_ws.add(ws)
-
-    # Register session from query param and insert system log
-    if session_id:
-        _active_sessions[ws] = {
-            "session_id": session_id,
-            "document_name": document_name,
-            "question_number": question_number,
-        }
-        register_ws(session_id, ws)
-        print(f"[strokes_ws] session {session_id} connected via query param")
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as conn:
-                await conn.execute(
-                    """
-                    INSERT INTO stroke_logs (session_id, page, strokes, event_type, message, user_id)
-                    VALUES ($1, 0, '[]'::jsonb, 'system', $2, $3)
-                    """,
-                    session_id,
-                    "session started",
-                    user_id,
-                )
-
-    try:
-        while True:
-            raw = await ws.receive_text()
-            msg = json.loads(raw)
-
-            msg_type = msg.get("type")
-
-            print(f"[strokes_ws] received msg_type={msg_type}")
-
-            if msg_type == "hello":
-                sid = msg.get("session_id", "")
-                if sid:
-                    _active_sessions[ws] = {"session_id": sid}
-                    print(f"[strokes_ws] hello from session {sid}")
-                    pool = get_pool()
-                    if pool:
-                        async with pool.acquire() as conn:
-                            await conn.execute(
-                                """
-                                INSERT INTO stroke_logs (session_id, page, strokes, event_type, message)
-                                VALUES ($1, 0, '[]'::jsonb, 'system', $2)
-                                """,
-                                sid,
-                                "session started",
-                            )
-                await ws.send_text(json.dumps({"type": "ack"}))
-                continue
-
-            if msg_type == "clear":
-                session_id = msg.get("session_id", "")
-                page = msg.get("page", 1)
-                pool = get_pool()
-                if pool:
-                    async with pool.acquire() as conn:
-                        await conn.execute(
-                            "DELETE FROM stroke_logs WHERE session_id = $1 AND page = $2",
-                            session_id,
-                            page,
-                        )
-                        await conn.execute(
-                            "DELETE FROM clusters WHERE session_id = $1 AND page = $2",
-                            session_id,
-                            page,
-                        )
-                        await conn.execute(
-                            "DELETE FROM page_transcriptions WHERE session_id = $1 AND page = $2",
-                            session_id,
-                            page,
-                        )
-                invalidate_session(session_id, page)
-                await ws.send_text(json.dumps({"type": "ack"}))
-                continue
-
-            if msg_type == "system":
-                sid = msg.get("session_id", "")
-                page = msg.get("page", 0)
-                message = msg.get("message", "")
-                pool = get_pool()
-                if pool:
-                    async with pool.acquire() as conn:
-                        await conn.execute(
-                            """
-                            INSERT INTO stroke_logs (session_id, page, strokes, event_type, message, user_id)
-                            VALUES ($1, $2, '[]'::jsonb, 'system', $3, $4)
-                            """,
-                            sid,
-                            page,
-                            message,
-                            msg.get("user_id", user_id),
-                        )
-                await ws.send_text(json.dumps({"type": "ack"}))
-                continue
-
-            if msg_type != "strokes":
-                continue
-
-            session_id = msg.get("session_id", "")
-            if session_id:
-                existing = _active_sessions.get(ws, {})
-                existing["session_id"] = session_id
-                _active_sessions[ws] = existing
-            page = msg.get("page", 1)
-            strokes = msg.get("strokes", [])
-            event_type = msg.get("event_type", "draw")
-            deleted_count = msg.get("deleted_count", 0)
-
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
-                    await conn.execute(
-                        """
-                        INSERT INTO stroke_logs (session_id, page, strokes, event_type, deleted_count, user_id)
-                        VALUES ($1, $2, $3::jsonb, $4, $5, $6)
-                        """,
-                        session_id,
-                        page,
-                        json.dumps(strokes),
-                        event_type,
-                        deleted_count,
-                        msg.get("user_id", user_id),
-                    )
-                # Re-cluster in background (don't block ack)
-                asyncio.create_task(update_cluster_labels(session_id, page))
-
-                if event_type == "erase":
-                    invalidate_session(session_id, page)
-                elif event_type == "draw":
-                    schedule_transcription(session_id, page)
-
-            await ws.send_text(json.dumps({"type": "ack"}))
-
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        print(f"[strokes_ws] error: {e}")
-        try:
-            await ws.close(code=1011, reason=str(e)[:120])
-        except Exception:
-            pass
-    finally:
-        _active_ws.discard(ws)
-        session_info = _active_sessions.pop(ws, None)
-        if session_info:
-            sid = session_info.get("session_id", "")
-            if sid:
-                unregister_ws(sid, ws)
-                cleanup_sessions(sid)
