@@ -120,9 +120,7 @@ async def strokes_post(req: StrokesRequest):
     # Re-cluster in background
     asyncio.create_task(update_cluster_labels(req.session_id, req.page))
 
-    if req.event_type == "erase":
-        invalidate_session(req.session_id, req.page)
-    elif req.event_type == "draw":
+    if req.event_type in ("draw", "erase"):
         schedule_transcription(req.session_id, req.page)
 
     # Update last_seen
