@@ -300,10 +300,8 @@ struct StudySettingsView: View {
             .foregroundColor(Color.deepTeal)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.deepTeal.opacity(0.4), lineWidth: 1)
-            )
+            .background(Color.deepTeal.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
     }
