@@ -85,33 +85,23 @@ private struct BentoCard: View {
     }
 
     private var heroContent: some View {
-        ZStack {
-            // Accent circle peeking from top-right
-            Circle()
-                .fill(.white.opacity(0.15))
-                .frame(width: 180, height: 180)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .offset(x: 50, y: -40)
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: section.icon)
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundStyle(.white)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Image(systemName: section.icon)
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundStyle(.white)
+            Spacer()
 
-                Spacer()
+            Text(section.title)
+                .font(.quicksand(24, weight: .bold))
+                .foregroundColor(.white)
 
-                Text(section.title)
-                    .font(.quicksand(24, weight: .bold))
-                    .foregroundColor(.white)
-
-                Text(section.subtitle)
-                    .font(.quicksand(14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.75))
-            }
-            .padding(24)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            Text(section.subtitle)
+                .font(.quicksand(14, weight: .medium))
+                .foregroundColor(.white.opacity(0.75))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(
@@ -132,33 +122,23 @@ private struct BentoCard: View {
         let tintOpacity: Double = colorScheme == .dark ? 0.08 : 0.25
         let cardBg = colorScheme == .dark ? Color.warmDarkCard : Color.white
 
-        return ZStack {
-            // Accent circle peeking from top-right
-            Circle()
-                .fill(section.tint.opacity(colorScheme == .dark ? 0.15 : 0.35))
-                .frame(width: 100, height: 100)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .offset(x: 30, y: -30)
+        return VStack(alignment: .leading, spacing: 4) {
+            Image(systemName: section.icon)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(section.iconColor)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Image(systemName: section.icon)
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(section.iconColor)
+            Spacer()
 
-                Spacer()
+            Text(section.title)
+                .font(.quicksand(17, weight: .bold))
+                .foregroundColor(Color.adaptiveText(for: colorScheme))
 
-                Text(section.title)
-                    .font(.quicksand(17, weight: .bold))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme))
-
-                Text(section.subtitle)
-                    .font(.quicksand(12, weight: .regular))
-                    .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.55))
-            }
-            .padding(18)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            Text(section.subtitle)
+                .font(.quicksand(12, weight: .regular))
+                .foregroundColor(Color.adaptiveText(for: colorScheme).opacity(0.55))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(cardBg)
