@@ -76,17 +76,12 @@ struct DrawingOverlayView: UIViewRepresentable {
             self.onCanvasReady(container)
         }
 
-        // Connect stroke WebSocket with question metadata (available immediately on server)
-        AIService.shared.connectStrokeSocket(
+        // Notify server of session start with question metadata
+        AIService.shared.connectStrokeSession(
             sessionId: documentID.uuidString,
             documentName: documentName,
             questionNumber: questionNumber
         )
-
-        // Listen for page-level transcription messages from Mathpix
-        AIService.shared.onTranscription = { latex, text, confidence, page in
-            print("[Transcription] page=\(page) confidence=\(String(format: "%.1f%%", confidence * 100)) latex=\(latex.prefix(80))")
-        }
 
         return container
     }
@@ -174,7 +169,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         // SwiftUI may call the new view's makeUIView before this dismantleUIView,
         // so blindly disconnecting would kill the new view's socket.
         if AIService.shared.currentSessionId == coordinator.documentID.uuidString {
-            AIService.shared.disconnectStrokeSocket()
+            AIService.shared.disconnectStrokeSession()
         }
     }
 

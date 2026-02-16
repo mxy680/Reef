@@ -129,168 +129,56 @@ class AIService {
         return embedResponse.embeddings
     }
 
-    // MARK: - Stroke WebSocket
+    // MARK: - Stroke REST
 
-    private var strokeSocket: URLSessionWebSocketTask?
-    private var strokeReconnectAttempts: Int = 0
-    private static let maxStrokeReconnectAttempts = 5
     /// The current stroke session ID, reused for voice messages.
     private(set) var currentSessionId: String?
 
-    /// Callback for page-level transcription messages from the server.
-    /// Parameters: latex, text, confidence, page
-    var onTranscription: ((String, String, Double, Int) -> Void)?
-
-    /// Connects to the stroke logging WebSocket endpoint.
-    /// Always creates a fresh connection when a sessionId is provided
-    /// (ensures document_name/question_number params are sent).
-    func connectStrokeSocket(sessionId: String? = nil, documentName: String? = nil, questionNumber: Int? = nil) {
-        if let sid = sessionId {
-            // Always replace when sessionId is provided — the reconnect path
-            // creates sockets without session metadata, so we must replace them.
-            strokeSocket?.cancel(with: .normalClosure, reason: nil)
-            strokeSocket = nil
-            currentSessionId = sid
-        }
-        guard strokeSocket == nil else { return }
-        let userId = KeychainService.get(.userIdentifier) ?? ""
-        var wsPath = "/ws/strokes"
-        var queryItems: [String] = []
-        if let sid = sessionId {
-            queryItems.append("session_id=\(sid)")
-        }
-        if !userId.isEmpty {
-            queryItems.append("user_id=\(userId)")
-        }
-        if let dn = documentName {
-            queryItems.append("document_name=\(dn)")
-        }
-        if let qn = questionNumber {
-            queryItems.append("question_number=\(qn)")
-        }
-        if !queryItems.isEmpty {
-            wsPath += "?" + queryItems.joined(separator: "&")
-        }
-        let wsURL = baseURL.replacingOccurrences(of: "https://", with: "wss://").replacingOccurrences(of: "http://", with: "ws://") + wsPath
-        guard let url = URL(string: wsURL) else { return }
-        let task = session.webSocketTask(with: url)
-        strokeSocket = task
-        task.resume()
-        strokeReconnectAttempts = 0
-        listenForStrokeAcks()
-
+    /// Fire-and-forget JSON POST helper for stroke endpoints.
+    private func postJSON(path: String, body: [String: Any]) {
+        guard let url = URL(string: baseURL + path) else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        session.dataTask(with: request) { _, _, _ in }.resume()
     }
 
-    private func sendHello(sessionId: String) {
-        guard let socket = strokeSocket else { return }
-        let payload: [String: Any] = ["type": "hello", "session_id": sessionId]
-        guard let data = try? JSONSerialization.data(withJSONObject: payload),
-              let text = String(data: data, encoding: .utf8) else { return }
-        socket.send(.string(text)) { _ in }
+    /// Notify server of session start.
+    func connectStrokeSession(sessionId: String, documentName: String? = nil, questionNumber: Int? = nil) {
+        currentSessionId = sessionId
+        var body: [String: Any] = [
+            "session_id": sessionId,
+            "user_id": KeychainService.get(.userIdentifier) ?? ""
+        ]
+        if let dn = documentName { body["document_name"] = dn }
+        if let qn = questionNumber { body["question_number"] = qn }
+        postJSON(path: "/api/strokes/connect", body: body)
     }
 
-    /// Disconnects the stroke WebSocket.
-    func disconnectStrokeSocket() {
-        strokeSocket?.cancel(with: .normalClosure, reason: nil)
-        strokeSocket = nil
+    /// Notify server of session end.
+    func disconnectStrokeSession() {
+        guard let sid = currentSessionId else { return }
+        postJSON(path: "/api/strokes/disconnect", body: ["session_id": sid])
+        currentSessionId = nil
     }
 
     /// Sends stroke point data for a page to the server for logging.
     func sendStrokes(sessionId: String, page: Int, strokes: [[[String: Double]]], eventType: String = "draw", deletedCount: Int = 0) {
-        if strokeSocket == nil {
-            connectStrokeSocket()
-        }
-        guard let socket = strokeSocket else { return }
-
-        let userId = KeychainService.get(.userIdentifier) ?? ""
-        var payload: [String: Any] = [
-            "type": "strokes",
-            "event_type": eventType,
+        var body: [String: Any] = [
             "session_id": sessionId,
-            "user_id": userId,
+            "user_id": KeychainService.get(.userIdentifier) ?? "",
             "page": page,
-            "strokes": strokes.map { points in
-                ["points": points]
-            }
+            "strokes": strokes.map { ["points": $0] },
+            "event_type": eventType
         ]
-        if deletedCount > 0 {
-            payload["deleted_count"] = deletedCount
-        }
-
-        guard let data = try? JSONSerialization.data(withJSONObject: payload),
-              let text = String(data: data, encoding: .utf8) else { return }
-
-        socket.send(.string(text)) { [weak self] error in
-            if error != nil {
-                DispatchQueue.main.async {
-                    guard self?.strokeSocket === socket else { return }
-                    self?.strokeSocket?.cancel(with: .abnormalClosure, reason: nil)
-                    self?.strokeSocket = nil
-                }
-            }
-        }
+        if deletedCount > 0 { body["deleted_count"] = deletedCount }
+        postJSON(path: "/api/strokes", body: body)
     }
 
     /// Sends a clear command for a session+page, deleting those logs from the DB.
     func sendClear(sessionId: String, page: Int) {
-        guard let socket = strokeSocket else { return }
-
-        let payload: [String: Any] = [
-            "type": "clear",
-            "session_id": sessionId,
-            "page": page
-        ]
-
-        guard let data = try? JSONSerialization.data(withJSONObject: payload),
-              let text = String(data: data, encoding: .utf8) else { return }
-
-        socket.send(.string(text)) { [weak self] error in
-            if error != nil {
-                DispatchQueue.main.async {
-                    self?.strokeSocket?.cancel(with: .abnormalClosure, reason: nil)
-                    self?.strokeSocket = nil
-                }
-            }
-        }
-    }
-
-    /// Receive loop for ack/transcription messages (keeps connection alive).
-    private func listenForStrokeAcks() {
-        guard let socket = strokeSocket else { return }
-        socket.receive { [weak self] result in
-            switch result {
-            case .success(let message):
-                DispatchQueue.main.async {
-                    if case .string(let text) = message,
-                       let data = text.data(using: .utf8),
-                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let type = json["type"] as? String,
-                       type == "transcription",
-                       let latex = json["latex"] as? String,
-                       let plainText = json["text"] as? String,
-                       let confidence = json["confidence"] as? Double,
-                       let page = json["page"] as? Int {
-                        self?.onTranscription?(latex, plainText, confidence, page)
-                    }
-                    self?.listenForStrokeAcks()
-                }
-            case .failure:
-                guard let self = self else { return }
-                DispatchQueue.main.async {
-                    // Only reconnect if this socket is still the active one.
-                    // A cancelled old socket's failure must not nuke a newer socket.
-                    guard self.strokeSocket === socket else { return }
-                    self.strokeSocket = nil
-                    self.strokeReconnectAttempts += 1
-                    if self.strokeReconnectAttempts <= Self.maxStrokeReconnectAttempts {
-                        let delay = min(pow(2.0, Double(self.strokeReconnectAttempts)), 30.0)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                            self.connectStrokeSocket()
-                        }
-                    }
-                }
-            }
-        }
+        postJSON(path: "/api/strokes/clear", body: ["session_id": sessionId, "page": page])
     }
 
     // MARK: - Voice WebSocket
