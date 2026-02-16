@@ -1,8 +1,8 @@
-"""Mathpix session-based handwriting transcription at the page level.
+"""Mathpix handwriting transcription at the page level.
 
-One Mathpix session per (session_id, page) pair. Strokes accumulate within
-a session (append-only). Erase/clear events invalidate the session so a
-fresh one is created on the next draw.
+Each transcription call creates a fresh Mathpix session and sends ALL visible
+strokes. Erase/clear events invalidate (cancel pending debounce) so the next
+draw triggers a clean re-transcription.
 
 Requires MATHPIX_APP_ID and MATHPIX_APP_KEY env vars. If missing,
 transcription is silently skipped.
@@ -11,8 +11,7 @@ transcription is silently skipped.
 import asyncio
 import json
 import os
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
 
 import httpx
 
@@ -23,17 +22,10 @@ DEBOUNCE_SECONDS = 1.5
 
 
 @dataclass
-class MathpixPageSession:
+class MathpixSession:
     strokes_session_id: str
     app_token: str
-    expires_at: datetime
-    sent_stroke_log_ids: set[int] = field(default_factory=set)
-    last_latex: str = ""
-    last_confidence: float = 0.0
 
-
-# (session_id, page) → MathpixPageSession
-_sessions: dict[tuple[str, int], MathpixPageSession] = {}
 
 # (session_id, page) → pending debounce asyncio.Task
 _debounce_tasks: dict[tuple[str, int], asyncio.Task] = {}
@@ -47,7 +39,7 @@ def _get_credentials() -> tuple[str, str]:
     return app_id, app_key
 
 
-async def create_session() -> MathpixPageSession:
+async def create_session() -> MathpixSession:
     app_id, app_key = _get_credentials()
     async with httpx.AsyncClient() as client:
         resp = await client.post(
@@ -62,33 +54,14 @@ async def create_session() -> MathpixPageSession:
         resp.raise_for_status()
         data = resp.json()
 
-    return MathpixPageSession(
+    return MathpixSession(
         strokes_session_id=data["strokes_session_id"],
         app_token=data["app_token"],
-        expires_at=datetime.now(timezone.utc) + timedelta(minutes=4, seconds=30),
-        # 4.5 min safety margin on 5 min TTL
     )
-
-
-def _is_expired(session: MathpixPageSession) -> bool:
-    return datetime.now(timezone.utc) >= session.expires_at
-
-
-async def get_or_create_session(
-    session_id: str, page: int
-) -> MathpixPageSession:
-    key = (session_id, page)
-    existing = _sessions.get(key)
-    if existing and not _is_expired(existing):
-        return existing
-    session = await create_session()
-    _sessions[key] = session
-    return session
 
 
 def invalidate_session(session_id: str, page: int) -> None:
     key = (session_id, page)
-    _sessions.pop(key, None)
     task = _debounce_tasks.pop(key, None)
     if task:
         task.cancel()
@@ -96,14 +69,13 @@ def invalidate_session(session_id: str, page: int) -> None:
 
 
 def cleanup_sessions(session_id: str) -> None:
-    keys_to_remove = [k for k in _sessions if k[0] == session_id]
+    keys_to_remove = [k for k in _debounce_tasks if k[0] == session_id]
     for key in keys_to_remove:
-        _sessions.pop(key, None)
         task = _debounce_tasks.pop(key, None)
         if task:
             task.cancel()
     if keys_to_remove:
-        print(f"[mathpix] cleaned up {len(keys_to_remove)} page session(s) for {session_id}")
+        print(f"[mathpix] cleaned up {len(keys_to_remove)} debounce task(s) for {session_id}")
 
 
 def reef_strokes_to_mathpix(strokes: list[dict]) -> dict:
@@ -128,7 +100,7 @@ def reef_strokes_to_mathpix(strokes: list[dict]) -> dict:
     return {"strokes": {"x": all_x, "y": all_y}}
 
 
-async def send_strokes(session: MathpixPageSession, strokes: list[dict]) -> dict:
+async def send_strokes(session: MathpixSession, strokes: list[dict]) -> dict:
     payload = reef_strokes_to_mathpix(strokes)
     async with httpx.AsyncClient() as client:
         resp = await client.post(
@@ -195,45 +167,26 @@ async def _do_transcription(session_id: str, page: int) -> None:
         if not visible_rows:
             return
 
-        # Collect all visible strokes with their log IDs
-        strokes_with_ids: list[tuple[int, dict]] = []
+        # Collect all visible strokes
+        all_strokes: list[dict] = []
         for row in visible_rows:
-            log_id = row["id"]
             strokes_data = row["strokes"]
             if isinstance(strokes_data, str):
                 strokes_data = json.loads(strokes_data)
             for stroke in strokes_data:
                 if stroke.get("points"):
-                    strokes_with_ids.append((log_id, stroke))
+                    all_strokes.append(stroke)
 
-        if not strokes_with_ids:
+        if not all_strokes:
             return
 
-        session = await get_or_create_session(session_id, page)
-
-        # Filter to unsent strokes
-        unsent = [
-            (log_id, stroke) for log_id, stroke in strokes_with_ids
-            if log_id not in session.sent_stroke_log_ids
-        ]
-
-        if not unsent:
-            return
-
-        unsent_strokes = [stroke for _, stroke in unsent]
-        unsent_log_ids = {log_id for log_id, _ in unsent}
-
-        result = await send_strokes(session, unsent_strokes)
-
-        # Mark as sent
-        session.sent_stroke_log_ids.update(unsent_log_ids)
+        # Fresh session each call — no incremental tracking
+        session = await create_session()
+        result = await send_strokes(session, all_strokes)
 
         latex = result.get("latex_styled", "") or result.get("text", "")
         text = result.get("text", "")
         confidence = result.get("confidence", 0.0)
-
-        session.last_latex = latex
-        session.last_confidence = confidence
 
         # UPSERT into page_transcriptions
         async with pool.acquire() as conn:
@@ -252,7 +205,7 @@ async def _do_transcription(session_id: str, page: int) -> None:
 
         print(
             f"[mathpix] ({session_id}, page={page}): "
-            f"sent {len(unsent_strokes)} strokes, "
+            f"sent {len(all_strokes)} strokes, "
             f"confidence={confidence:.2f}, "
             f"latex={latex[:80]}"
         )
