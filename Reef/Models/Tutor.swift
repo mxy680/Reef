@@ -2,7 +2,7 @@
 //  Tutor.swift
 //  Reef
 //
-//  AI tutor persona models and starter catalog.
+//  AI tutor persona models — marine animal characters.
 //
 
 import SwiftUI
@@ -22,11 +22,12 @@ struct TutorPresetMode: Identifiable, Equatable {
 struct Tutor: Identifiable, Equatable {
     let id: String
     let name: String
+    let emoji: String
+    let species: String
     let specialty: String
     let tagline: String
     let backstory: String
     let accentColor: Color
-    let avatarSymbol: String
     let presetModes: [TutorPresetMode]
 }
 
@@ -35,53 +36,58 @@ struct Tutor: Identifiable, Equatable {
 enum TutorCatalog {
     static let allTutors: [Tutor] = [
         Tutor(
-            id: "professor-wave",
-            name: "Professor Wave",
+            id: "finn",
+            name: "Finn",
+            emoji: "🐬",
+            species: "Dolphin",
             specialty: "Math & Physics",
             tagline: "Patient explanations with real-world analogies",
-            backstory: "Professor Wave spent years teaching at a seaside university where every lesson connected to the world around them. Whether it's the physics of ocean waves or the geometry of a lighthouse beam, they make abstract concepts tangible and approachable.",
+            backstory: "Finn grew up racing through coral-filled currents, calculating angles and trajectories for fun. Now this friendly dolphin uses real-world ocean physics — wave frequencies, buoyancy, tidal forces — to make abstract math feel as natural as swimming.",
             accentColor: .deepTeal,
-            avatarSymbol: "function",
             presetModes: defaultPresets
         ),
         Tutor(
-            id: "dr-sage",
-            name: "Dr. Sage",
+            id: "coral",
+            name: "Coral",
+            emoji: "🐙",
+            species: "Octopus",
             specialty: "Biology & Chemistry",
             tagline: "Guides you with questions, not answers",
-            backstory: "Dr. Sage believes the best way to learn is by discovering answers yourself. Armed with the Socratic method, they ask the right questions at the right time to lead you to breakthroughs — never giving away the solution directly.",
-            accentColor: Color(hex: "6B8E6B"),
-            avatarSymbol: "leaf.fill",
+            backstory: "With eight arms and a massive brain, Coral is the reef's master problem-solver. This wise octopus never hands you the answer — instead, they ask the perfect question at the perfect moment to guide you toward your own breakthrough.",
+            accentColor: Color(hex: "C75B8E"),
             presetModes: defaultPresets
         ),
         Tutor(
-            id: "coach-rex",
-            name: "Coach Rex",
+            id: "shelly",
+            name: "Shelly",
+            emoji: "🐢",
+            species: "Sea Turtle",
             specialty: "Study Skills",
             tagline: "Motivational, structured, and goal-oriented",
-            backstory: "Coach Rex knows that success is built on habits. They combine motivational energy with concrete study strategies — time-boxing, spaced repetition, and active recall — to help you study smarter, not harder.",
-            accentColor: .deepCoral,
-            avatarSymbol: "figure.run",
+            backstory: "Shelly has crossed every ocean with patience and persistence. This ancient sea turtle knows that the secret to any long journey is steady habits — time-boxing, spaced repetition, and never giving up, one stroke at a time.",
+            accentColor: Color(hex: "6B8E6B"),
             presetModes: defaultPresets
         ),
         Tutor(
-            id: "luna",
-            name: "Luna",
+            id: "pearl",
+            name: "Pearl",
+            emoji: "🪼",
+            species: "Jellyfish",
             specialty: "Literature & History",
             tagline: "Storytelling-based explanations that stick",
-            backstory: "Luna weaves every lesson into a story. Historical events become epic narratives, literary themes turn into character journeys, and complex timelines unfold like chapters of a novel. Learning with Luna means you'll never forget the plot.",
+            backstory: "Pearl drifts through the deep, glowing with stories from every era. This luminous jellyfish weaves historical events into epic narratives and turns literary themes into unforgettable character journeys — learning with Pearl means you never forget the plot.",
             accentColor: Color(hex: "9B7DB8"),
-            avatarSymbol: "book.fill",
             presetModes: defaultPresets
         ),
         Tutor(
-            id: "byte",
-            name: "Byte",
+            id: "chip",
+            name: "Chip",
+            emoji: "🐡",
+            species: "Pufferfish",
             specialty: "Computer Science",
             tagline: "Concise, logical, and hands-off",
-            backstory: "Byte speaks in clean, efficient language — like well-written code. They give you just enough to unblock yourself, prefer pseudocode over paragraphs, and trust you to figure things out with minimal hand-holding.",
+            backstory: "Small but sharp, Chip communicates in clean, efficient bursts — like well-written code. This pufferfish gives you just enough to unblock yourself, prefers pseudocode over paragraphs, and trusts you to figure things out with minimal hand-holding.",
             accentColor: Color(hex: "5A7FA5"),
-            avatarSymbol: "terminal.fill",
             presetModes: defaultPresets
         ),
     ]
