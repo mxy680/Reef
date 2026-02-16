@@ -188,6 +188,9 @@ async def _do_transcription(session_id: str, page: int) -> None:
                 json={
                     "strokes_session_id": session.strokes_session_id,
                     "strokes": {"strokes": {"x": all_x, "y": all_y}},
+                    "include_smiles": True,
+                    "include_geometry_data": True,
+                    "include_line_data": True,
                 },
             )
             resp.raise_for_status()
@@ -196,26 +199,35 @@ async def _do_transcription(session_id: str, page: int) -> None:
         latex = result.get("latex_styled", "") or result.get("text", "")
         text = result.get("text", "")
         confidence = result.get("confidence", 0.0)
+        line_data = result.get("line_data")
 
         # UPSERT into page_transcriptions
         async with pool.acquire() as conn:
             await conn.execute(
                 """
-                INSERT INTO page_transcriptions (session_id, page, latex, text, confidence, updated_at)
-                VALUES ($1, $2, $3, $4, $5, NOW())
+                INSERT INTO page_transcriptions (session_id, page, latex, text, confidence, line_data, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6::jsonb, NOW())
                 ON CONFLICT (session_id, page) DO UPDATE SET
                     latex = EXCLUDED.latex,
                     text = EXCLUDED.text,
                     confidence = EXCLUDED.confidence,
+                    line_data = EXCLUDED.line_data,
                     updated_at = NOW()
                 """,
                 session_id, page, latex, text, confidence,
+                json.dumps(line_data) if line_data is not None else None,
             )
 
+        line_types = ""
+        if line_data:
+            from collections import Counter
+            counts = Counter(ld.get("type", "unknown") for ld in line_data)
+            line_types = ", ".join(f"{t}={n}" for t, n in counts.most_common())
         print(
             f"[mathpix] ({session_id}, page={page}): "
             f"sent {len(visible)} strokes, "
             f"confidence={confidence:.2f}, "
+            f"line_data=[{line_types}], "
             f"latex={latex[:80]}"
         )
 

@@ -313,7 +313,7 @@ async def get_page_transcription(
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            SELECT latex, text, confidence, updated_at
+            SELECT latex, text, confidence, line_data, updated_at
             FROM page_transcriptions
             WHERE session_id = $1 AND page = $2
             """,
@@ -322,11 +322,16 @@ async def get_page_transcription(
         )
 
     if not row:
-        return {"latex": "", "text": "", "confidence": 0, "updated_at": None}
+        return {"latex": "", "text": "", "confidence": 0, "line_data": None, "updated_at": None}
+
+    line_data = row["line_data"]
+    if isinstance(line_data, str):
+        line_data = json.loads(line_data)
 
     return {
         "latex": row["latex"],
         "text": row["text"],
         "confidence": row["confidence"],
+        "line_data": line_data,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
     }

@@ -173,6 +173,9 @@ async def init_db():
             ON page_transcriptions(session_id, page)
         """)
         await conn.execute("""
+            ALTER TABLE page_transcriptions ADD COLUMN IF NOT EXISTS line_data JSONB DEFAULT NULL
+        """)
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS session_question_cache (
                 session_id TEXT PRIMARY KEY,
                 question_id INT NOT NULL,
