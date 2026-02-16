@@ -58,12 +58,19 @@ class ClearRequest(BaseModel):
 
 @router.post("/api/strokes/connect")
 async def strokes_connect(req: ConnectRequest):
+    # Evict any previous sessions (e.g. stale question-switch sessions)
+    # Keep only the new one — iPad has one active session at a time
+    stale = [sid for sid in _active_sessions if sid != req.session_id]
+    for sid in stale:
+        _active_sessions.pop(sid, None)
+        cleanup_sessions(sid)
+
     _active_sessions[req.session_id] = {
         "document_name": req.document_name or "",
         "question_number": req.question_number,
         "last_seen": datetime.now(timezone.utc).isoformat(),
     }
-    print(f"[strokes] session {req.session_id} connected")
+    print(f"[strokes] session {req.session_id} connected (evicted {len(stale)} stale)")
 
     pool = get_pool()
     if pool:
@@ -256,7 +263,10 @@ async def get_stroke_logs(
         ],
         "total": total,
         "active_connections": len(_active_sessions),
-        "active_sessions": list(_active_sessions.keys()),
+        "active_sessions": sorted(
+            _active_sessions.keys(),
+            key=lambda sid: _active_sessions[sid].get("last_seen", ""),
+        ),
         "cluster_order": cluster_order,
         "document_name": active_doc_name,
         "matched_question_label": matched_question_label,
