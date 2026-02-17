@@ -15,6 +15,8 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from lib.database import get_pool
 from lib.groq_transcribe import transcribe
+from lib.reasoning import run_question_reasoning
+from api.reasoning import push_reasoning
 
 router = APIRouter()
 
@@ -46,6 +48,7 @@ async def ws_voice(ws: WebSocket):
             session_id = msg.get("session_id", "")
             user_id = msg.get("user_id", "")
             page = msg.get("page", 0)
+            mode = msg.get("mode", "")
             print(f"[voice_ws] voice_start: session={session_id[:8]}..., page={page}")
 
             # Accumulate binary audio chunks until voice_end
@@ -89,6 +92,14 @@ async def ws_voice(ws: WebSocket):
 
             await ws.send_json({"type": "ack", "transcription": text})
             print("[voice_ws] Sent ack")
+
+            # If this is a question, run reasoning immediately and push via reasoning WS
+            if mode == "question" and text.strip():
+                try:
+                    result = await run_question_reasoning(session_id, page, text)
+                    await push_reasoning(session_id, result["action"], result["message"])
+                except Exception as e:
+                    print(f"[voice_ws] Question reasoning failed: {e}")
 
     except WebSocketDisconnect:
         pass
