@@ -330,7 +330,8 @@ async def get_reasoning_logs(
         rows = await conn.fetch(
             """
             SELECT id, session_id, page, created_at, action, message,
-                   prompt_tokens, completion_tokens, estimated_cost
+                   prompt_tokens, completion_tokens, estimated_cost,
+                   source, question_text
             FROM reasoning_logs
             WHERE session_id = $1
             ORDER BY created_at DESC
@@ -363,6 +364,8 @@ async def get_reasoning_logs(
                 "prompt_tokens": r["prompt_tokens"],
                 "completion_tokens": r["completion_tokens"],
                 "estimated_cost": float(r["estimated_cost"]),
+                "source": r["source"],
+                "question_text": r["question_text"],
             }
             for r in rows
         ],
