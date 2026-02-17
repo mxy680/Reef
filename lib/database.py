@@ -149,12 +149,23 @@ async def init_db():
                 message TEXT,
                 prompt_tokens INT NOT NULL DEFAULT 0,
                 completion_tokens INT NOT NULL DEFAULT 0,
-                estimated_cost FLOAT NOT NULL DEFAULT 0
+                estimated_cost FLOAT NOT NULL DEFAULT 0,
+                source VARCHAR(20) NOT NULL DEFAULT 'auto',
+                question_text TEXT
             )
         """)
         await conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_reasoning_logs_session
             ON reasoning_logs(session_id, created_at DESC)
+        """)
+        # Migrations: add columns if missing (safe to re-run)
+        await conn.execute("""
+            ALTER TABLE reasoning_logs
+            ADD COLUMN IF NOT EXISTS source VARCHAR(20) NOT NULL DEFAULT 'auto'
+        """)
+        await conn.execute("""
+            ALTER TABLE reasoning_logs
+            ADD COLUMN IF NOT EXISTS question_text TEXT
         """)
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS page_transcriptions (
