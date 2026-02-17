@@ -18,6 +18,7 @@ from lib.database import get_pool
 
 MATHPIX_BASE = "https://api.mathpix.com"
 DEBOUNCE_SECONDS = 0.5
+REASONING_DEBOUNCE_SECONDS = 2.5
 
 
 @dataclass
@@ -32,6 +33,9 @@ _sessions: dict[tuple[str, int], MathpixSession] = {}
 
 # (session_id, page) → pending debounce asyncio.Task
 _debounce_tasks: dict[tuple[str, int], asyncio.Task] = {}
+
+# (session_id, page) → pending reasoning asyncio.Task (separate debounce)
+_reasoning_tasks: dict[tuple[str, int], asyncio.Task] = {}
 
 
 def _get_credentials() -> tuple[str, str]:
@@ -83,6 +87,9 @@ def invalidate_session(session_id: str, page: int) -> None:
     task = _debounce_tasks.pop(key, None)
     if task:
         task.cancel()
+    r_task = _reasoning_tasks.pop(key, None)
+    if r_task:
+        r_task.cancel()
     print(f"[mathpix] invalidated session ({session_id}, page={page})")
 
 
@@ -105,8 +112,45 @@ def cleanup_sessions(session_id: str) -> None:
         task = _debounce_tasks.pop(key, None)
         if task:
             task.cancel()
-    if keys_to_remove:
+        r_task = _reasoning_tasks.pop(key, None)
+        if r_task:
+            r_task.cancel()
+    # Also cancel reasoning tasks for pages not in _sessions
+    r_keys = [k for k in _reasoning_tasks if k[0] == session_id]
+    for key in r_keys:
+        r_task = _reasoning_tasks.pop(key, None)
+        if r_task:
+            r_task.cancel()
+    if keys_to_remove or r_keys:
         print(f"[mathpix] cleaned up {len(keys_to_remove)} session(s) for {session_id}")
+
+
+# ── Reasoning debounce ────────────────────────────────────
+
+
+def schedule_reasoning(session_id: str, page: int) -> None:
+    """Debounce 2.5s, then run the reasoning model (separate from transcription debounce)."""
+    key = (session_id, page)
+    existing = _reasoning_tasks.pop(key, None)
+    if existing:
+        existing.cancel()
+    _reasoning_tasks[key] = asyncio.create_task(
+        _debounced_reasoning(session_id, page)
+    )
+
+
+async def _debounced_reasoning(session_id: str, page: int) -> None:
+    await asyncio.sleep(REASONING_DEBOUNCE_SECONDS)
+    _reasoning_tasks.pop((session_id, page), None)
+
+    try:
+        from lib.reasoning import run_reasoning
+        from api.reasoning import push_reasoning
+
+        result = await run_reasoning(session_id, page)
+        await push_reasoning(session_id, result["action"], result["message"])
+    except Exception as e:
+        print(f"[reasoning] error for ({session_id}, page={page}): {e}")
 
 
 # ── Per-cluster transcription ─────────────────────────────
@@ -137,6 +181,8 @@ async def _debounced_cluster_and_transcribe(session_id: str, page: int) -> None:
             print(f"[mathpix] ({session_id}, page={page}): no dirty clusters, skipping transcription")
             # Still concatenate in case cluster order changed
             await _concatenate_cluster_transcriptions(session_id, page)
+            # Still trigger reasoning (student may have paused)
+            schedule_reasoning(session_id, page)
             return
 
         # 2. Transcribe each dirty cluster sequentially
@@ -145,6 +191,9 @@ async def _debounced_cluster_and_transcribe(session_id: str, page: int) -> None:
 
         # 3. Concatenate all cluster transcriptions into page_transcriptions
         await _concatenate_cluster_transcriptions(session_id, page)
+
+        # 4. Schedule reasoning (separate 2.5s debounce)
+        schedule_reasoning(session_id, page)
 
     except Exception as e:
         print(f"[mathpix] error for ({session_id}, page={page}): {e}")

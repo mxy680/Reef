@@ -148,6 +148,11 @@ async def strokes_clear(req: ClearRequest):
             req.session_id,
             req.page,
         )
+        await conn.execute(
+            "DELETE FROM reasoning_logs WHERE session_id = $1 AND page = $2",
+            req.session_id,
+            req.page,
+        )
 
     invalidate_session(req.session_id, req.page)
     return {"status": "ok"}
@@ -299,13 +304,75 @@ async def clear_stroke_logs(
             await conn.execute(
                 "DELETE FROM page_transcriptions WHERE session_id = $1", session_id
             )
+            await conn.execute(
+                "DELETE FROM reasoning_logs WHERE session_id = $1", session_id
+            )
         else:
             result = await conn.execute("DELETE FROM stroke_logs")
             await conn.execute("DELETE FROM clusters")
             await conn.execute("DELETE FROM page_transcriptions")
+            await conn.execute("DELETE FROM reasoning_logs")
 
     count = int(result.split()[-1])
     return {"deleted": count}
+
+
+@router.get("/api/reasoning-logs")
+async def get_reasoning_logs(
+    session_id: str = Query(...),
+    limit: int = Query(default=50, ge=1, le=200),
+):
+    pool = get_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, session_id, page, created_at, action, message,
+                   prompt_tokens, completion_tokens, estimated_cost
+            FROM reasoning_logs
+            WHERE session_id = $1
+            ORDER BY created_at DESC
+            LIMIT $2
+            """,
+            session_id,
+            limit,
+        )
+        usage_row = await conn.fetchrow(
+            """
+            SELECT COUNT(*) AS calls,
+                   COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                   COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                   COALESCE(SUM(estimated_cost), 0) AS estimated_cost
+            FROM reasoning_logs
+            WHERE session_id = $1
+            """,
+            session_id,
+        )
+
+    return {
+        "logs": [
+            {
+                "id": r["id"],
+                "session_id": r["session_id"],
+                "page": r["page"],
+                "created_at": r["created_at"].isoformat(),
+                "action": r["action"],
+                "message": r["message"],
+                "prompt_tokens": r["prompt_tokens"],
+                "completion_tokens": r["completion_tokens"],
+                "estimated_cost": float(r["estimated_cost"]),
+            }
+            for r in rows
+        ],
+        "usage": {
+            "calls": usage_row["calls"],
+            "prompt_tokens": usage_row["prompt_tokens"],
+            "completion_tokens": usage_row["completion_tokens"],
+            "estimated_cost": float(usage_row["estimated_cost"]),
+        } if usage_row else None,
+    }
 
 
 @router.get("/api/page-transcription")

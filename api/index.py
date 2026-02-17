@@ -39,6 +39,7 @@ from api.tts import router as tts_router
 from api.strokes import router as strokes_router
 from api.clustering import router as clustering_router
 from api.voice import router as voice_router
+from api.reasoning import router as reasoning_router
 
 from lib.surya_client import detect_layout
 from PIL import Image, ImageDraw, ImageFont
@@ -82,6 +83,7 @@ app.include_router(tts_router)
 app.include_router(strokes_router)
 app.include_router(clustering_router)
 app.include_router(voice_router)
+app.include_router(reasoning_router)
 
 
 @app.get("/health")
