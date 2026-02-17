@@ -16,7 +16,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from lib.database import get_pool
 from lib.groq_transcribe import transcribe
 from lib.reasoning import run_question_reasoning
-from api.reasoning import push_reasoning
+from api.reasoning import _stream_tts
 
 router = APIRouter()
 
@@ -93,11 +93,13 @@ async def ws_voice(ws: WebSocket):
             await ws.send_json({"type": "ack", "transcription": text})
             print("[voice_ws] Sent ack")
 
-            # If this is a question, run reasoning immediately and push via reasoning WS
+            # If this is a question, run reasoning and stream TTS back on this WS
             if mode == "question" and text.strip():
                 try:
                     result = await run_question_reasoning(session_id, page, text)
-                    await push_reasoning(session_id, result["action"], result["message"])
+                    if result["action"] == "speak":
+                        await ws.send_json({"type": "reasoning", "message": result["message"]})
+                        await _stream_tts(ws, result["message"])
                 except Exception as e:
                     print(f"[voice_ws] Question reasoning failed: {e}")
 
