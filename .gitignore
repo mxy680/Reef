@@ -1,2 +1,8 @@
 tts-demo/
 dashboard/
+CLAUDE.md
+.claude/
+.playwright-mcp/
+.DS_Store
+docs/
+mathpix/
