@@ -1,112 +1,107 @@
-"""
-WebSocket endpoint for voice message transcription.
+"""REST endpoints for voice transcription.
 
-Protocol:
-  Client sends:  {"type": "voice_start", "session_id": "...", "user_id": "...", "page": 1}
-  Client sends:  binary audio data (WAV)
-  Client sends:  {"type": "voice_end"}
-  Server sends:  {"type": "ack", "transcription": "..."}
+Replaces WebSocket /ws/voice with plain HTTP POST endpoints.
+Works through any proxy without WebSocket upgrade.
 """
 
 import asyncio
-import json
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, UploadFile, File, Form
 
 from lib.database import get_pool
 from lib.groq_transcribe import transcribe
 from lib.reasoning import run_question_reasoning
-from api.reasoning import _stream_tts
+from api.reasoning import push_reasoning
 
 router = APIRouter()
 
 
-@router.websocket("/ws/voice")
-async def ws_voice(ws: WebSocket):
-    """Receive audio from iPad, transcribe with Groq, store in DB."""
-    await ws.accept()
-    print("[voice_ws] Connection accepted")
+@router.post("/api/voice/transcribe")
+async def voice_transcribe(
+    audio: UploadFile = File(...),
+    session_id: str = Form(...),
+    user_id: str = Form(""),
+    page: int = Form(0),
+):
+    """Transcribe voice audio and store in DB.
 
+    Accepts multipart form with WAV audio file.
+    Returns the transcription text.
+    """
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        return {"error": "No audio received"}
+
+    print(f"[voice] Transcribing {len(audio_bytes)} bytes for session={session_id[:8]}...")
+    text = await asyncio.to_thread(transcribe, audio_bytes)
+    print(f"[voice] Transcription: {text}")
+
+    # Store in DB
+    pool = get_pool()
+    if pool:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO stroke_logs
+                    (session_id, page, strokes, event_type, message, user_id)
+                VALUES ($1, $2, '[]'::jsonb, 'voice', $3, $4)
+                """,
+                session_id,
+                page,
+                text,
+                user_id,
+            )
+        print("[voice] Stored in DB")
+
+    return {"transcription": text}
+
+
+@router.post("/api/voice/question")
+async def voice_question(
+    audio: UploadFile = File(...),
+    session_id: str = Form(...),
+    user_id: str = Form(""),
+    page: int = Form(0),
+):
+    """Transcribe voice question and trigger async reasoning.
+
+    Returns transcription immediately. Reasoning result arrives via SSE.
+    """
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        return {"error": "No audio received"}
+
+    print(f"[voice] Question: transcribing {len(audio_bytes)} bytes for session={session_id[:8]}...")
+    text = await asyncio.to_thread(transcribe, audio_bytes)
+    print(f"[voice] Question transcription: {text}")
+
+    # Store in DB
+    pool = get_pool()
+    if pool:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO stroke_logs
+                    (session_id, page, strokes, event_type, message, user_id)
+                VALUES ($1, $2, '[]'::jsonb, 'voice', $3, $4)
+                """,
+                session_id,
+                page,
+                text,
+                user_id,
+            )
+
+    # Kick off reasoning in background — result arrives via SSE
+    if text.strip():
+        asyncio.create_task(_async_question_reasoning(session_id, page, text))
+
+    return {"transcription": text}
+
+
+async def _async_question_reasoning(session_id: str, page: int, text: str) -> None:
+    """Background task: run reasoning and push result via SSE."""
     try:
-        while True:
-            # Wait for voice_start (accept both text and binary frames)
-            print("[voice_ws] Waiting for voice_start...")
-            ws_msg = await ws.receive()
-            print(f"[voice_ws] Received frame: text={('text' in ws_msg)}, bytes={('bytes' in ws_msg)}")
-
-            if "text" in ws_msg:
-                msg = json.loads(ws_msg["text"])
-            else:
-                print("[voice_ws] Unexpected binary frame, skipping")
-                continue
-
-            if msg.get("type") != "voice_start":
-                print(f"[voice_ws] Unexpected type: {msg.get('type')}")
-                await ws.send_json({"type": "error", "detail": "Expected voice_start"})
-                continue
-
-            session_id = msg.get("session_id", "")
-            user_id = msg.get("user_id", "")
-            page = msg.get("page", 0)
-            mode = msg.get("mode", "")
-            print(f"[voice_ws] voice_start: session={session_id[:8]}..., page={page}")
-
-            # Accumulate binary audio chunks until voice_end
-            audio_buffer = bytearray()
-            while True:
-                ws_msg = await ws.receive()
-                if "text" in ws_msg:
-                    inner = json.loads(ws_msg["text"])
-                    if inner.get("type") == "voice_end":
-                        print(f"[voice_ws] voice_end received, {len(audio_buffer)} bytes of audio")
-                        break
-                elif "bytes" in ws_msg:
-                    audio_buffer.extend(ws_msg["bytes"])
-                    print(f"[voice_ws] Received audio chunk: {len(ws_msg['bytes'])} bytes (total: {len(audio_buffer)})")
-
-            if not audio_buffer:
-                await ws.send_json({"type": "error", "detail": "No audio received"})
-                continue
-
-            # Transcribe in a thread (blocking OpenAI SDK call)
-            print(f"[voice_ws] Transcribing {len(audio_buffer)} bytes with Groq...")
-            text = await asyncio.to_thread(transcribe, bytes(audio_buffer))
-            print(f"[voice_ws] Transcription: {text}")
-
-            # Store in DB
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
-                    await conn.execute(
-                        """
-                        INSERT INTO stroke_logs
-                            (session_id, page, strokes, event_type, message, user_id)
-                        VALUES ($1, $2, '[]'::jsonb, 'voice', $3, $4)
-                        """,
-                        session_id,
-                        page,
-                        text,
-                        user_id,
-                    )
-                print("[voice_ws] Stored in DB")
-
-            await ws.send_json({"type": "ack", "transcription": text})
-            print("[voice_ws] Sent ack")
-
-            # If this is a question, run reasoning and stream TTS back on this WS
-            if mode == "question" and text.strip():
-                try:
-                    result = await run_question_reasoning(session_id, page, text)
-                    if result["action"] == "speak":
-                        await ws.send_json({"type": "reasoning", "message": result["message"]})
-                        await _stream_tts(ws, result["message"])
-                except Exception as e:
-                    print(f"[voice_ws] Question reasoning failed: {e}")
-
-    except WebSocketDisconnect:
-        pass
+        result = await run_question_reasoning(session_id, page, text)
+        await push_reasoning(session_id, result["action"], result.get("message", ""))
     except Exception as e:
-        try:
-            await ws.send_json({"type": "error", "detail": str(e)})
-        except Exception:
-            pass
+        print(f"[voice] Question reasoning failed: {e}")

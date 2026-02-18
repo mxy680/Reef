@@ -40,6 +40,8 @@ from api.strokes import router as strokes_router
 from api.clustering import router as clustering_router
 from api.voice import router as voice_router
 from api.reasoning import router as reasoning_router
+from api.events import router as events_router
+from api.tts_stream import router as tts_stream_router, cleanup_stale_tts
 
 from lib.surya_client import detect_layout
 from PIL import Image, ImageDraw, ImageFont
@@ -55,7 +57,17 @@ async def lifespan(app: FastAPI):
 
     print("[Startup] Ready! (Surya + TTS + Embeddings on Modal)")
 
+    # Periodic cleanup of stale TTS entries (every 60s)
+    async def tts_cleanup_loop():
+        while True:
+            await asyncio.sleep(60)
+            await cleanup_stale_tts()
+
+    cleanup_task = asyncio.create_task(tts_cleanup_loop())
+
     yield
+
+    cleanup_task.cancel()
 
     print("[Shutdown] Cleaning up...")
     await close_db()
@@ -84,6 +96,8 @@ app.include_router(strokes_router)
 app.include_router(clustering_router)
 app.include_router(voice_router)
 app.include_router(reasoning_router)
+app.include_router(events_router)
+app.include_router(tts_stream_router)
 
 
 @app.get("/health")
