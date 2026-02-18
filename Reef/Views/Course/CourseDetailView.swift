@@ -102,13 +102,7 @@ struct CourseDetailView: View {
                 }
                 .padding(16)
                 .background(Color.adaptiveCardBackground(for: colorScheme))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.12),
-                        radius: 6, x: 4, y: 4)
-                .shadow(color: (colorScheme == .dark
-                            ? Color(hex: "2A2228").opacity(0.5)
-                            : Color.white.opacity(0.7)),
-                        radius: 6, x: -4, y: -4)
+                .dashboardCard(colorScheme: colorScheme, cornerRadius: 16)
 
                 // Bento top row skeleton
                 HStack(spacing: 16) {
@@ -117,13 +111,7 @@ struct CourseDetailView: View {
                         Color.adaptiveCardBackground(for: colorScheme)
                         SkeletonShimmerView(colorScheme: colorScheme)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 24))
-                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.15),
-                            radius: 10, x: 6, y: 6)
-                    .shadow(color: (colorScheme == .dark
-                                ? Color(hex: "2A2228").opacity(0.7)
-                                : Color.white.opacity(0.8)),
-                            radius: 10, x: -6, y: -6)
+                    .claymorphic(cornerRadius: 24, colorScheme: colorScheme)
 
                     // Stacked cards placeholder
                     VStack(spacing: 16) {
@@ -232,13 +220,7 @@ struct CourseDetailView: View {
         }
         .padding(16)
         .background(Color.adaptiveCardBackground(for: colorScheme))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.12),
-                radius: 6, x: 4, y: 4)
-        .shadow(color: (colorScheme == .dark
-                    ? Color(hex: "2A2228").opacity(0.5)
-                    : Color.white.opacity(0.7)),
-                radius: 6, x: -4, y: -4)
+        .dashboardCard(colorScheme: colorScheme, cornerRadius: 16)
     }
 
     // MARK: - Bento Top Row
@@ -515,13 +497,7 @@ struct NotesHeroCard: View {
             .padding(24)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .background(heroGradient)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.15),
-                    radius: 10, x: 6, y: 6)
-            .shadow(color: (colorScheme == .dark
-                        ? Color(hex: "2A2228").opacity(0.7)
-                        : Color.white.opacity(0.8)),
-                    radius: 10, x: -6, y: -6)
+            .claymorphic(cornerRadius: 24, colorScheme: colorScheme)
         }
         .buttonStyle(.plain)
         .onAppear {

@@ -79,13 +79,13 @@ extension Color {
     /// Secondary text
     static let midGray = Color(hex: "7A7A7A")
 
-    /// Page background — clean white
-    static let blushWhite = Color(hex: "FFFFFF")
+    /// Page background — neumorphic base
+    static let blushWhite = Color(hex: "ECF0F3")
 
     // MARK: - Card Colors
 
-    /// Card background — warm blush tint for depth against white
-    static let cardBackground = Color(hex: "EDE7E9")
+    /// Card background — matches page background for neumorphic shadows
+    static let cardBackground = Color(hex: "ECF0F3")
 
     /// Thumbnail background — matches card background
     static let thumbnailBackground = Color(hex: "EDE7E9")
