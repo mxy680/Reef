@@ -7,6 +7,43 @@
 
 import SwiftUI
 
+// MARK: - Claymorphic Card Modifier
+
+struct ClaymorphicModifier: ViewModifier {
+    let tint: Color
+    let cornerRadius: CGFloat
+    let colorScheme: ColorScheme
+
+    func body(content: Content) -> some View {
+        content
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            // Outer shadow — color-tinted, floating depth
+            .shadow(color: tint.opacity(colorScheme == .dark ? 0.40 : 0.30), radius: 16, x: 6, y: 6)
+            // Inner light highlight (top-left) — simulated inset shadow
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(colorScheme == .dark ? 0.15 : 0.35), lineWidth: 3)
+                    .blur(radius: 6)
+                    .offset(x: 3, y: 3)
+                    .mask(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            )
+            // Inner dark shadow (bottom-right) — simulated inset shadow
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.black.opacity(colorScheme == .dark ? 0.30 : 0.20), lineWidth: 3)
+                    .blur(radius: 6)
+                    .offset(x: -3, y: -3)
+                    .mask(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            )
+    }
+}
+
+extension View {
+    func claymorphic(tint: Color = .deepTeal, cornerRadius: CGFloat = 28, colorScheme: ColorScheme = .light) -> some View {
+        modifier(ClaymorphicModifier(tint: tint, cornerRadius: cornerRadius, colorScheme: colorScheme))
+    }
+}
+
 // MARK: - Dashboard Card Modifier
 
 struct DashboardCardModifier: ViewModifier {
@@ -134,12 +171,7 @@ struct StreakHeroBanner: View {
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(bannerGradient)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.black.opacity(colorScheme == .dark ? 0.35 : 0.4), lineWidth: 1.5)
-        )
-        .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
+        .claymorphic(tint: .deepCoral, cornerRadius: 28, colorScheme: colorScheme)
         .onAppear {
             // Animate streak count up
             withAnimation(.easeOut(duration: 0.8)) {
@@ -261,7 +293,7 @@ struct BentoStatCard: View {
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(cardBackground)
-        .dashboardCard(colorScheme: colorScheme)
+        .claymorphic(tint: iconColor, cornerRadius: 28, colorScheme: colorScheme)
     }
 }
 
