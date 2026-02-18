@@ -103,11 +103,12 @@ struct CourseDetailView: View {
                 .padding(16)
                 .background(Color.adaptiveCardBackground(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.12),
+                        radius: 6, x: 4, y: 4)
+                .shadow(color: (colorScheme == .dark
+                            ? Color(hex: "2A2228").opacity(0.5)
+                            : Color.white.opacity(0.7)),
+                        radius: 6, x: -4, y: -4)
 
                 // Bento top row skeleton
                 HStack(spacing: 16) {
@@ -117,11 +118,12 @@ struct CourseDetailView: View {
                         SkeletonShimmerView(colorScheme: colorScheme)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 24))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24)
-                            .stroke(Color.black.opacity(colorScheme == .dark ? 0.35 : 0.4), lineWidth: 1.5)
-                    )
-                    .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.15),
+                            radius: 10, x: 6, y: 6)
+                    .shadow(color: (colorScheme == .dark
+                                ? Color(hex: "2A2228").opacity(0.7)
+                                : Color.white.opacity(0.8)),
+                            radius: 10, x: -6, y: -6)
 
                     // Stacked cards placeholder
                     VStack(spacing: 16) {
@@ -231,11 +233,12 @@ struct CourseDetailView: View {
         .padding(16)
         .background(Color.adaptiveCardBackground(for: colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.black.opacity(colorScheme == .dark ? 0.5 : 0.35), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.12),
+                radius: 6, x: 4, y: 4)
+        .shadow(color: (colorScheme == .dark
+                    ? Color(hex: "2A2228").opacity(0.5)
+                    : Color.white.opacity(0.7)),
+                radius: 6, x: -4, y: -4)
     }
 
     // MARK: - Bento Top Row
@@ -513,11 +516,12 @@ struct NotesHeroCard: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .background(heroGradient)
             .clipShape(RoundedRectangle(cornerRadius: 24))
-            .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.black.opacity(colorScheme == .dark ? 0.35 : 0.4), lineWidth: 1.5)
-            )
-            .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.15),
+                    radius: 10, x: 6, y: 6)
+            .shadow(color: (colorScheme == .dark
+                        ? Color(hex: "2A2228").opacity(0.7)
+                        : Color.white.opacity(0.8)),
+                    radius: 10, x: -6, y: -6)
         }
         .buttonStyle(.plain)
         .onAppear {

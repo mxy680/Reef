@@ -79,8 +79,8 @@ extension Color {
     /// Secondary text
     static let midGray = Color(hex: "7A7A7A")
 
-    /// Page background — clean white
-    static let blushWhite = Color(hex: "FFFFFF")
+    /// Page background — warm off-white (matches cards for neumorphic shadows)
+    static let blushWhite = Color(hex: "EDE7E9")
 
     // MARK: - Card Colors
 
@@ -112,8 +112,8 @@ extension Color {
     /// Dark mode background — warm darkness
     static let warmDark = Color(hex: "1A1418")
 
-    /// Dark mode card background — slightly lighter than warmDark
-    static let warmDarkCard = Color(hex: "251E22")
+    /// Dark mode card background — matches warmDark for neumorphic shadows
+    static let warmDarkCard = Color(hex: "1A1418")
 
     /// Dark mode text — warm white for readability
     static let warmWhite = Color(hex: "F5F0EE")

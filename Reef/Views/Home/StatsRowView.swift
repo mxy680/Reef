@@ -7,24 +7,27 @@
 
 import SwiftUI
 
-// MARK: - Claymorphic Card Modifier
+// MARK: - Neumorphic Card Modifier
 
-struct ClaymorphicModifier: ViewModifier {
+struct NeumorphicModifier: ViewModifier {
     let cornerRadius: CGFloat
     let colorScheme: ColorScheme
 
     func body(content: Content) -> some View {
         content
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            // Soft neutral shadow — no color tint, just depth
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.18 : 0.12), radius: 24, x: 0, y: 10)
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.10 : 0.06), radius: 6, x: 0, y: 3)
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.15),
+                    radius: 10, x: 6, y: 6)
+            .shadow(color: (colorScheme == .dark
+                        ? Color(hex: "2A2228").opacity(0.7)
+                        : Color.white.opacity(0.8)),
+                    radius: 10, x: -6, y: -6)
     }
 }
 
 extension View {
     func claymorphic(cornerRadius: CGFloat = 28, colorScheme: ColorScheme = .light) -> some View {
-        modifier(ClaymorphicModifier(cornerRadius: cornerRadius, colorScheme: colorScheme))
+        modifier(NeumorphicModifier(cornerRadius: cornerRadius, colorScheme: colorScheme))
     }
 }
 
@@ -37,11 +40,12 @@ struct DashboardCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.black.opacity(colorScheme == .dark ? 0.35 : 0.4), lineWidth: 1.5)
-            )
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.08 : 0.04), radius: 4, x: 0, y: 2)
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.12),
+                    radius: 6, x: 4, y: 4)
+            .shadow(color: (colorScheme == .dark
+                        ? Color(hex: "2A2228").opacity(0.5)
+                        : Color.white.opacity(0.7)),
+                    radius: 6, x: -4, y: -4)
     }
 }
 
