@@ -82,8 +82,7 @@ struct DrawingOverlayView: UIViewRepresentable {
             documentName: documentName,
             questionNumber: questionNumber
         )
-        AIService.shared.connectVoiceSocket()
-        AIService.shared.connectReasoningSocket(sessionId: documentID.uuidString)
+        AIService.shared.connectSSE(sessionId: documentID.uuidString)
 
         return container
     }
@@ -172,8 +171,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         // so blindly disconnecting would kill the new view's socket.
         if AIService.shared.currentSessionId == coordinator.documentID.uuidString {
             AIService.shared.disconnectStrokeSession()
-            AIService.shared.disconnectVoiceSocket()
-            AIService.shared.disconnectReasoningSocket()
+            AIService.shared.disconnectSSE()
         }
     }
 

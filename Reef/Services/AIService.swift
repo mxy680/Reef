@@ -56,7 +56,7 @@ class AIService {
     static let shared = AIService()
 
     #if DEBUG
-    private let baseURL = "https://assistant-evaluate-rss-copying.trycloudflare.com"
+    private let baseURL = "https://reef.mxy680.net"
     #else
     private let baseURL = "https://api.studyreef.com"
     #endif
@@ -182,88 +182,149 @@ class AIService {
         postJSON(path: "/api/strokes/clear", body: ["session_id": sessionId, "page": page])
     }
 
-    // MARK: - Reasoning WebSocket
+    // MARK: - SSE Client (replaces reasoning WebSocket)
 
-    private var reasoningSocket: URLSessionWebSocketTask?
-    private var reasoningSessionId: String?
+    private var sseTask: Task<Void, Never>?
+    private var sseSessionId: String?
     private var audioEngine: AVAudioEngine?
     private var audioPlayer: AVAudioPlayerNode?
     private var currentTTSSampleRate: Double = 24000
 
-    /// Connect to the reasoning WebSocket to receive tutor responses and TTS audio.
-    func connectReasoningSocket(sessionId: String) {
-        guard reasoningSocket == nil else { return }
-        reasoningSessionId = sessionId
-        let wsURL = baseURL
-            .replacingOccurrences(of: "https://", with: "wss://")
-            .replacingOccurrences(of: "http://", with: "ws://")
-            + "/ws/reasoning?session_id=\(sessionId)"
-        guard let url = URL(string: wsURL) else {
-            print("[ReasoningWS] Invalid URL")
+    /// URLSession with long timeouts for SSE streaming.
+    private lazy var sseSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 300
+        config.timeoutIntervalForResource = 0  // no resource timeout
+        return URLSession(configuration: config)
+    }()
+
+    /// Connect to the SSE event stream to receive reasoning results and TTS notifications.
+    func connectSSE(sessionId: String) {
+        guard sseTask == nil else { return }
+        sseSessionId = sessionId
+
+        guard let url = URL(string: baseURL + "/api/events?session_id=\(sessionId)") else {
+            print("[SSE] Invalid URL")
             return
         }
-        print("[ReasoningWS] Connecting to \(wsURL)")
-        let task = session.webSocketTask(with: url)
-        reasoningSocket = task
-        task.resume()
-        listenForReasoningMessages()
-    }
 
-    /// Ensure reasoning WebSocket is connected, reconnecting if dropped.
-    private func ensureReasoningSocket() {
-        guard let sid = reasoningSessionId else { return }
-        if let existing = reasoningSocket {
-            existing.cancel(with: .normalClosure, reason: nil)
-            reasoningSocket = nil
+        var request = URLRequest(url: url)
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+
+        print("[SSE] Connecting for session=\(sessionId.prefix(8))...")
+
+        sseTask = Task { [weak self] in
+            var backoff: UInt64 = 1_000_000_000  // 1s
+            let maxBackoff: UInt64 = 30_000_000_000  // 30s
+
+            while !Task.isCancelled {
+                do {
+                    guard let self = self else { return }
+                    let (bytes, response) = try await self.sseSession.bytes(for: request)
+                    guard let httpResponse = response as? HTTPURLResponse,
+                          httpResponse.statusCode == 200 else {
+                        print("[SSE] Bad status, retrying in \(backoff / 1_000_000_000)s")
+                        try await Task.sleep(nanoseconds: backoff)
+                        backoff = min(backoff * 2, maxBackoff)
+                        continue
+                    }
+
+                    backoff = 1_000_000_000  // reset on successful connect
+                    print("[SSE] Connected for session=\(sessionId.prefix(8))...")
+
+                    var eventType = ""
+                    var dataBuffer = ""
+
+                    for try await line in bytes.lines {
+                        if line.isEmpty {
+                            // End of event — process it
+                            if !dataBuffer.isEmpty {
+                                await self.handleSSEEvent(type: eventType, data: dataBuffer)
+                            }
+                            eventType = ""
+                            dataBuffer = ""
+                        } else if line.hasPrefix(":") {
+                            // SSE comment (keepalive) — ignore
+                            continue
+                        } else if line.hasPrefix("event: ") {
+                            eventType = String(line.dropFirst(7))
+                        } else if line.hasPrefix("data: ") {
+                            dataBuffer += String(line.dropFirst(6))
+                        }
+                    }
+                } catch {
+                    if Task.isCancelled { break }
+                    print("[SSE] Error: \(error), reconnecting in \(backoff / 1_000_000_000)s")
+                    try? await Task.sleep(nanoseconds: backoff)
+                    backoff = min(backoff * 2, maxBackoff)
+                }
+            }
         }
-        connectReasoningSocket(sessionId: sid)
     }
 
-    /// Disconnect the reasoning WebSocket.
-    func disconnectReasoningSocket() {
-        reasoningSocket?.cancel(with: .normalClosure, reason: nil)
-        reasoningSocket = nil
-        reasoningSessionId = nil
+    /// Disconnect the SSE event stream.
+    func disconnectSSE() {
+        sseTask?.cancel()
+        sseTask = nil
+        sseSessionId = nil
         stopAudioPlayback()
     }
 
-    /// Listen for reasoning messages (text JSON + binary TTS audio).
-    private func listenForReasoningMessages() {
-        reasoningSocket?.receive { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let message):
-                switch message {
-                case .string(let text):
-                    if let data = text.data(using: .utf8),
-                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let type = json["type"] as? String {
-                        if type == "reasoning" {
-                            let msg = json["message"] as? String ?? ""
-                            print("[ReasoningWS] Reasoning: \(msg.prefix(80))")
-                        } else if type == "tts_start" {
-                            let sampleRate = json["sample_rate"] as? Double ?? 24000
-                            DispatchQueue.main.async {
-                                self.startAudioPlayback(sampleRate: sampleRate)
-                            }
-                        } else if type == "tts_end" {
-                            print("[ReasoningWS] TTS stream ended")
-                        }
-                    }
-                case .data(let data):
-                    DispatchQueue.main.async {
-                        self.playAudioChunk(data)
-                    }
-                @unknown default:
-                    break
-                }
-                self.listenForReasoningMessages()
-            case .failure(let error):
-                print("[ReasoningWS] Receive error: \(error)")
-                DispatchQueue.main.async {
-                    self.reasoningSocket = nil
+    /// Handle a parsed SSE event.
+    private func handleSSEEvent(type: String, data: String) async {
+        guard let jsonData = data.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            return
+        }
+
+        if type == "reasoning" {
+            let message = json["message"] as? String ?? ""
+            let ttsId = json["tts_id"] as? String
+            print("[SSE] Reasoning: \(message.prefix(80))")
+
+            if let ttsId = ttsId {
+                await fetchTTSStream(ttsId: ttsId)
+            }
+        }
+    }
+
+    // MARK: - HTTP TTS Streaming
+
+    /// Fetch and play TTS audio stream from the server.
+    private func fetchTTSStream(ttsId: String) async {
+        guard let url = URL(string: baseURL + "/api/tts/stream/\(ttsId)") else { return }
+
+        print("[TTS] Fetching stream for tts_id=\(ttsId.prefix(8))...")
+
+        do {
+            let (bytes, response) = try await sseSession.bytes(for: URLRequest(url: url))
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                print("[TTS] Bad status for tts_id=\(ttsId.prefix(8))...")
+                return
+            }
+
+            let sampleRate = Double(httpResponse.value(forHTTPHeaderField: "X-Sample-Rate") ?? "24000") ?? 24000
+            startAudioPlayback(sampleRate: sampleRate)
+
+            // Read chunks and feed to audio player
+            var buffer = Data()
+            let chunkSize = 8192
+            for try await byte in bytes {
+                buffer.append(byte)
+                if buffer.count >= chunkSize {
+                    playAudioChunk(buffer)
+                    buffer = Data()
                 }
             }
+            // Flush remaining bytes
+            if !buffer.isEmpty {
+                playAudioChunk(buffer)
+            }
+            print("[TTS] Stream complete for tts_id=\(ttsId.prefix(8))...")
+
+        } catch {
+            print("[TTS] Stream error: \(error)")
         }
     }
 
@@ -283,7 +344,7 @@ class AIService {
             channels: 1,
             interleaved: true
         ) else {
-            print("[ReasoningWS] Failed to create audio format")
+            print("[TTS] Failed to create audio format")
             return
         }
         engine.connect(player, to: engine.mainMixerNode, format: format)
@@ -295,9 +356,9 @@ class AIService {
             player.play()
             audioEngine = engine
             audioPlayer = player
-            print("[ReasoningWS] Audio playback started")
+            print("[TTS] Audio playback started")
         } catch {
-            print("[ReasoningWS] Failed to start audio: \(error)")
+            print("[TTS] Failed to start audio: \(error)")
         }
     }
 
@@ -331,200 +392,58 @@ class AIService {
         audioEngine = nil
     }
 
-    // MARK: - Voice WebSocket
+    // MARK: - Voice REST (replaces voice WebSocket)
 
-    private var voiceSocket: URLSessionWebSocketTask?
-
-    /// Connect to the voice transcription WebSocket.
-    func connectVoiceSocket() {
-        guard voiceSocket == nil else { return }
-        let wsURL = baseURL
-            .replacingOccurrences(of: "https://", with: "wss://")
-            .replacingOccurrences(of: "http://", with: "ws://")
-            + "/ws/voice"
-        guard let url = URL(string: wsURL) else {
-            print("[VoiceWS] Invalid URL")
-            return
-        }
-        print("[VoiceWS] Connecting to \(wsURL)")
-        let task = session.webSocketTask(with: url)
-        voiceSocket = task
-        task.resume()
-    }
-
-    /// Disconnect the voice WebSocket.
-    func disconnectVoiceSocket() {
-        voiceSocket?.cancel(with: .normalClosure, reason: nil)
-        voiceSocket = nil
-    }
-
-    /// Send recorded audio data for transcription.
-    /// - Parameters:
-    ///   - audioData: WAV audio bytes
-    ///   - sessionId: Current document session ID
-    ///   - page: Current page number
-    func sendVoiceMessage(audioData: Data, sessionId: String, page: Int) {
-        print("[VoiceWS] sendVoiceMessage called — \(audioData.count) bytes, session=\(sessionId)")
-        if voiceSocket == nil {
-            connectVoiceSocket()
-        }
-        guard let socket = voiceSocket else {
-            print("[VoiceWS] voiceSocket is nil after connect attempt")
-            return
-        }
-
-        let userId = KeychainService.get(.userIdentifier) ?? ""
-
-        // 1. Send voice_start
-        let startPayload: [String: Any] = [
-            "type": "voice_start",
-            "session_id": sessionId,
-            "user_id": userId,
-            "page": page
-        ]
-        guard let startData = try? JSONSerialization.data(withJSONObject: startPayload),
-              let startText = String(data: startData, encoding: .utf8) else {
-            print("[VoiceWS] Failed to serialize voice_start payload")
-            return
-        }
-
-        // Fire-and-forget sends (same pattern as stroke socket)
-        print("[VoiceWS] Sending voice_start...")
-        socket.send(.string(startText)) { error in
-            if let error = error { print("[VoiceWS] voice_start error: \(error)") }
-        }
-
-        // 2. Send binary audio data
-        print("[VoiceWS] Sending \(audioData.count) bytes of audio...")
-        socket.send(.data(audioData)) { error in
-            if let error = error { print("[VoiceWS] audio data error: \(error)") }
-        }
-
-        // 3. Send voice_end
-        let endText = "{\"type\":\"voice_end\"}"
-        print("[VoiceWS] Sending voice_end...")
-        socket.send(.string(endText)) { error in
-            if let error = error { print("[VoiceWS] voice_end error: \(error)") }
-        }
-
-        // 4. Listen for ack
-        socket.receive { [weak self] result in
-            switch result {
-            case .success(let message):
-                if case .string(let text) = message,
-                   let data = text.data(using: .utf8),
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let transcription = json["transcription"] as? String {
-                    print("[VoiceWS] Transcription: \(transcription)")
-                }
-            case .failure(let error):
-                print("[VoiceWS] Failed to receive ack: \(error)")
-                DispatchQueue.main.async {
-                    self?.voiceSocket = nil
-                }
-            }
-        }
-    }
-
-    /// Send recorded audio as a voice question for immediate reasoning response.
+    /// Send recorded audio as a voice question. Transcription returns immediately;
+    /// reasoning result arrives via SSE with a tts_id for audio streaming.
     func sendVoiceQuestion(audioData: Data, sessionId: String, page: Int) {
-        print("[VoiceWS] sendVoiceQuestion called — \(audioData.count) bytes")
-        if voiceSocket == nil {
-            connectVoiceSocket()
-        }
-        guard let socket = voiceSocket else {
-            print("[VoiceWS] voiceSocket is nil after connect attempt")
+        print("[Voice] sendVoiceQuestion — \(audioData.count) bytes, session=\(sessionId.prefix(8))...")
+
+        guard let url = URL(string: baseURL + "/api/voice/question") else {
+            print("[Voice] Invalid URL")
             return
         }
 
         let userId = KeychainService.get(.userIdentifier) ?? ""
+        let boundary = UUID().uuidString
 
-        // 1. Send voice_start with mode: "question"
-        let startPayload: [String: Any] = [
-            "type": "voice_start",
-            "session_id": sessionId,
-            "user_id": userId,
-            "page": page,
-            "mode": "question"
-        ]
-        guard let startData = try? JSONSerialization.data(withJSONObject: startPayload),
-              let startText = String(data: startData, encoding: .utf8) else {
-            print("[VoiceWS] Failed to serialize voice_start payload")
-            return
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        // Build multipart body
+        var body = Data()
+        func appendField(_ name: String, _ value: String) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(value)\r\n".data(using: .utf8)!)
         }
+        appendField("session_id", sessionId)
+        appendField("user_id", userId)
+        appendField("page", "\(page)")
 
-        socket.send(.string(startText)) { error in
-            if let error = error { print("[VoiceWS] voice_start error: \(error)") }
-        }
+        // Audio file part
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"audio\"; filename=\"recording.wav\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: audio/wav\r\n\r\n".data(using: .utf8)!)
+        body.append(audioData)
+        body.append("\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
-        // 2. Send binary audio data
-        print("[VoiceWS] Sending \(audioData.count) bytes of question audio...")
-        socket.send(.data(audioData)) { error in
-            if let error = error { print("[VoiceWS] audio data error: \(error)") }
-        }
+        request.httpBody = body
 
-        // 3. Send voice_end
-        let endText = "{\"type\":\"voice_end\"}"
-        socket.send(.string(endText)) { error in
-            if let error = error { print("[VoiceWS] voice_end error: \(error)") }
-        }
-
-        // 4. Listen for ack + reasoning + TTS stream on this socket
-        listenForVoiceResponse(on: socket)
-    }
-
-    /// Listen for ack, reasoning text, and TTS audio on the voice WebSocket.
-    private func listenForVoiceResponse(on socket: URLSessionWebSocketTask) {
-        socket.receive { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let message):
-                switch message {
-                case .string(let text):
-                    if let data = text.data(using: .utf8),
-                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let type = json["type"] as? String {
-                        if type == "ack" {
-                            let transcription = json["transcription"] as? String ?? ""
-                            print("[VoiceWS] Question ack: \(transcription.prefix(80))")
-                            // Keep listening for reasoning + TTS
-                            self.listenForVoiceResponse(on: socket)
-                        } else if type == "reasoning" {
-                            let msg = json["message"] as? String ?? ""
-                            print("[VoiceWS] Reasoning: \(msg.prefix(80))")
-                            self.listenForVoiceResponse(on: socket)
-                        } else if type == "tts_start" {
-                            let sampleRate = json["sample_rate"] as? Double ?? 24000
-                            print("[VoiceWS] Audio playback started")
-                            DispatchQueue.main.async {
-                                self.startAudioPlayback(sampleRate: sampleRate)
-                            }
-                            self.listenForVoiceResponse(on: socket)
-                        } else if type == "tts_end" {
-                            print("[VoiceWS] TTS stream ended")
-                            // Done — stop listening, voice WS stays open for next question
-                        } else {
-                            // Unknown type, keep listening
-                            self.listenForVoiceResponse(on: socket)
-                        }
-                    } else {
-                        self.listenForVoiceResponse(on: socket)
-                    }
-                case .data(let data):
-                    DispatchQueue.main.async {
-                        self.playAudioChunk(data)
-                    }
-                    self.listenForVoiceResponse(on: socket)
-                @unknown default:
-                    self.listenForVoiceResponse(on: socket)
-                }
-            case .failure(let error):
-                print("[VoiceWS] Voice response error: \(error)")
-                DispatchQueue.main.async {
-                    self.voiceSocket = nil
-                }
+        // Fire-and-forget — reasoning arrives via SSE
+        session.dataTask(with: request) { data, _, error in
+            if let error = error {
+                print("[Voice] Question POST error: \(error)")
+                return
             }
-        }
+            if let data = data,
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let transcription = json["transcription"] as? String {
+                print("[Voice] Question transcription: \(transcription.prefix(80))")
+            }
+        }.resume()
     }
 
 }
