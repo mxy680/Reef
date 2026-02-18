@@ -144,82 +144,80 @@ struct DashboardView: View {
     private var skeletonView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // === BENTO TOP ROW ===
-                HStack(alignment: .top, spacing: 16) {
-                    // Left: Streak hero banner placeholder
-                    ZStack {
-                        Color.adaptiveCardBackground(for: colorScheme)
-                        SkeletonShimmerView(colorScheme: colorScheme)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .claymorphic(cornerRadius: 28, colorScheme: colorScheme)
-
-                    // Right: 2 stat cards + 1 stat card
-                    VStack(spacing: 16) {
-                        HStack(spacing: 16) {
-                            skeletonStatCard
-                            skeletonStatCard
-                        }
-                        skeletonStatCard
-                    }
-                }
-                .fixedSize(horizontal: false, vertical: true)
-
-                // === ACTIVITY SECTION ===
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
-                            .frame(width: 8, height: 8)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
-                            .frame(width: 70, height: 16)
-                        Spacer()
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
-                            .frame(width: 60, height: 14)
-                    }
-
-                    VStack(spacing: 4) {
-                        // Day letter headers
-                        HStack(spacing: 4) {
-                            ForEach(0..<7, id: \.self) { _ in
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 12)
-                            }
-                        }
-
-                        // 4 week rows
-                        ForEach(0..<4, id: \.self) { _ in
-                            HStack(spacing: 4) {
-                                ForEach(0..<7, id: \.self) { _ in
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(colorScheme == .dark
-                                            ? Color.white.opacity(0.06)
-                                            : Color.adaptiveSecondary(for: colorScheme).opacity(0.1))
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 60)
-                                }
-                            }
-                        }
-                    }
-                    .padding(14)
-                    .background(colorScheme == .dark ? Color.warmDarkCard : .white)
-                    .claymorphic(cornerRadius: 28, colorScheme: colorScheme)
-                }
-
-                // === PINNED & RECENT ===
+                skeletonTopRow
+                skeletonActivitySection
                 HStack(alignment: .top, spacing: 16) {
                     skeletonListCard
                     skeletonListCard
                 }
-
             }
             .padding(32)
         }
         .background(Color.adaptiveBackground(for: colorScheme))
+    }
+
+    private var skeletonTopRow: some View {
+        HStack(alignment: .top, spacing: 16) {
+            ZStack {
+                Color.adaptiveCardBackground(for: colorScheme)
+                SkeletonShimmerView(colorScheme: colorScheme)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .claymorphic(cornerRadius: 28, colorScheme: colorScheme)
+
+            VStack(spacing: 16) {
+                HStack(spacing: 16) {
+                    skeletonStatCard
+                    skeletonStatCard
+                }
+                skeletonStatCard
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var skeletonActivitySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                    .frame(width: 8, height: 8)
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.12))
+                    .frame(width: 70, height: 16)
+                Spacer()
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                    .frame(width: 60, height: 14)
+            }
+
+            VStack(spacing: 4) {
+                HStack(spacing: 4) {
+                    ForEach(0..<7, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.adaptiveSecondaryText(for: colorScheme).opacity(0.08))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 12)
+                    }
+                }
+
+                ForEach(0..<4, id: \.self) { _ in
+                    HStack(spacing: 4) {
+                        ForEach(0..<7, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(colorScheme == .dark
+                                    ? Color.white.opacity(0.06)
+                                    : Color.adaptiveSecondary(for: colorScheme).opacity(0.1))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 60)
+                        }
+                    }
+                }
+            }
+            .padding(14)
+            .background(colorScheme == .dark ? Color.warmDarkCard : .white)
+            .claymorphic(cornerRadius: 28, colorScheme: colorScheme)
+        }
     }
 
     private var skeletonStatCard: some View {
