@@ -53,6 +53,39 @@ class ResetRequest(BaseModel):
 
 # -- Endpoints -----------------------------------------------------------------
 
+@router.get("/sessions")
+async def simulation_sessions():
+    """List active simulation sessions with problem metadata."""
+    pool = get_pool()
+    if not pool:
+        return {"sessions": []}
+
+    sessions = []
+    for session_id, data in _simulation_sessions.items():
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT q.text AS problem_text, q.label,
+                       json_agg(json_build_object('part_label', ak.part_label, 'answer', ak.answer)) AS answer_key
+                FROM questions q
+                JOIN documents d ON q.document_id = d.id
+                LEFT JOIN answer_keys ak ON ak.question_id = q.id
+                WHERE d.id = $1
+                GROUP BY q.id
+                """,
+                data["document_id"],
+            )
+        if row:
+            sessions.append({
+                "session_id": session_id,
+                "problem_text": row["problem_text"],
+                "label": row["label"],
+                "answer_key": json.loads(row["answer_key"]) if isinstance(row["answer_key"], str) else row["answer_key"],
+            })
+
+    return {"sessions": sessions}
+
+
 @router.post("/start")
 async def simulation_start(req: StartRequest):
     """Set up a simulation session with a problem and answer key."""
