@@ -1,10 +1,9 @@
 import NextAuth from "next-auth"
-import Google from "next-auth/providers/google"
 import { prisma } from "./db"
+import authConfig from "./auth.config"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [Google],
-  session: { strategy: "jwt" },
+  ...authConfig,
   callbacks: {
     async signIn({ profile }) {
       if (!profile?.sub || !profile?.email) return false
