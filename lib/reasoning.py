@@ -7,12 +7,21 @@ Uses Gemini 3 Flash Preview on OpenRouter for vision + structured inference.
 """
 
 import asyncio
+import base64
 import json
 import os
 import re
+from dataclasses import dataclass, field
 
 from lib.database import get_pool
 from lib.llm_client import LLMClient
+
+@dataclass
+class ReasoningContext:
+    """Text + optional images for the reasoning model."""
+    text: str
+    images: list[bytes] = field(default_factory=list)
+
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 REASONING_MODEL = "google/gemini-3-flash-preview"
@@ -99,6 +108,12 @@ Your message will be read aloud via text-to-speech. Write ONLY spoken English:
 - Ask questions more than you make statements — push them to construct understanding.
 - When guiding toward a next step, only reveal the very next micro-step, not the whole path ahead.
 
+## Image context
+
+You may receive images alongside the text:
+- **Question figures**: diagrams, charts, or tables from the original problem.
+- **Student drawing**: a rendered image of the student's strokes when their work is a diagram that couldn't be transcribed to text.
+
 ## Output format
 
 - action: "silent" (vast majority of the time) or "speak" (rare, only when clearly warranted)
@@ -150,13 +165,14 @@ def _get_client() -> LLMClient:
     )
 
 
-async def build_context(session_id: str, page: int) -> str:
+async def build_context(session_id: str, page: int) -> ReasoningContext:
     """Assemble reasoning context from transcription, problem/answer key, and history."""
     pool = get_pool()
     if not pool:
-        return ""
+        return ReasoningContext(text="")
 
     parts: list[str] = []
+    images: list[bytes] = []
 
     async with pool.acquire() as conn:
         # 1. Page transcription
@@ -169,6 +185,36 @@ async def build_context(session_id: str, page: int) -> str:
         )
         if tx_row and tx_row["text"]:
             parts.append(f"## Student's Current Work\n{tx_row['text']}")
+        elif tx_row and not tx_row["text"]:
+            # Diagram detected (Mathpix cleared text) — render strokes as image
+            stroke_rows = await conn.fetch(
+                """
+                SELECT id, strokes, event_type
+                FROM stroke_logs
+                WHERE session_id = $1 AND page = $2 AND event_type IN ('draw', 'erase')
+                ORDER BY received_at
+                """,
+                session_id, page,
+            )
+            visible_rows: list[dict] = []
+            for row in stroke_rows:
+                if row["event_type"] == "erase":
+                    visible_rows = [dict(row)]
+                else:
+                    visible_rows.append(dict(row))
+
+            all_strokes: list[dict] = []
+            for row in visible_rows:
+                strokes_data = row["strokes"]
+                if isinstance(strokes_data, str):
+                    strokes_data = json.loads(strokes_data)
+                all_strokes.extend(strokes_data)
+
+            if all_strokes:
+                from lib.stroke_renderer import render_strokes
+                png_bytes = render_strokes(all_strokes)
+                images.append(png_bytes)
+                parts.append("## Student's Current Work\n[See attached image of student's drawing]")
 
         # 2. Original problem + answer key
         # Primary: _active_sessions (live truth from iOS connect request)
@@ -224,6 +270,14 @@ async def build_context(session_id: str, page: int) -> str:
                 )
                 parts.append(f"## Answer Key\n{ak_text}")
 
+            # Question figures — decode from DB and attach as images
+            fig_rows = await conn.fetch(
+                "SELECT image_b64 FROM question_figures WHERE question_id = $1",
+                q_id,
+            )
+            for fig_row in fig_rows:
+                images.append(base64.b64decode(fig_row["image_b64"]))
+
         # 3. Last 5 reasoning interactions (session history)
         history_rows = await conn.fetch(
             """
@@ -239,7 +293,7 @@ async def build_context(session_id: str, page: int) -> str:
                 history_lines.append(f"  [{r['action']}] {r['message'] or ''}")
             parts.append(f"## Recent Tutor History\n" + "\n".join(history_lines))
 
-    return "\n\n".join(parts)
+    return ReasoningContext(text="\n\n".join(parts), images=images)
 
 
 async def build_context_structured(session_id: str, page: int) -> list[dict]:
@@ -261,6 +315,8 @@ async def build_context_structured(session_id: str, page: int) -> list[dict]:
         )
         if tx_row and tx_row["text"]:
             sections.append({"title": "Student's Current Work", "content": tx_row["text"]})
+        elif tx_row and not tx_row["text"]:
+            sections.append({"title": "Student Drawing", "content": "[Stroke rendering attached]"})
 
         # 2. Original problem + answer key
         q_id = None
@@ -315,6 +371,13 @@ async def build_context_structured(session_id: str, page: int) -> list[dict]:
                 )
                 sections.append({"title": "Answer Key", "content": ak_text})
 
+            fig_count = await conn.fetchval(
+                "SELECT COUNT(*) FROM question_figures WHERE question_id = $1",
+                q_id,
+            )
+            if fig_count:
+                sections.append({"title": "Question Figures", "content": f"{fig_count} image(s) attached"})
+
         # 3. Last 5 reasoning interactions
         history_rows = await conn.fetch(
             """
@@ -338,8 +401,8 @@ async def run_reasoning(session_id: str, page: int) -> dict:
 
     Returns {"action": "speak"|"silent", "message": "..."}.
     """
-    context = await build_context(session_id, page)
-    if not context:
+    ctx = await build_context(session_id, page)
+    if not ctx.text:
         return {"action": "silent", "message": "No context available"}
 
     client = _get_client()
@@ -347,7 +410,8 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     # Call LLM in a thread (blocking OpenAI SDK)
     raw = await asyncio.to_thread(
         client.generate,
-        prompt=context,
+        prompt=ctx.text,
+        images=ctx.images or None,
         response_schema=RESPONSE_SCHEMA,
         system_message=SYSTEM_PROMPT,
         temperature=0.3,
@@ -359,7 +423,7 @@ async def run_reasoning(session_id: str, page: int) -> dict:
 
     # Extract token usage from the raw response if available
     # LLMClient.generate() returns just the text, so we estimate from lengths
-    prompt_tokens = len(context.split()) + len(SYSTEM_PROMPT.split())
+    prompt_tokens = len(ctx.text.split()) + len(SYSTEM_PROMPT.split())
     completion_tokens = len(message.split())
     estimated_cost = (
         prompt_tokens * PROMPT_COST_PER_TOKEN
@@ -377,7 +441,7 @@ async def run_reasoning(session_id: str, page: int) -> dict:
                      prompt_tokens, completion_tokens, estimated_cost)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 """,
-                session_id, page, context, action, message,
+                session_id, page, ctx.text, action, message,
                 prompt_tokens, completion_tokens, estimated_cost,
             )
 
@@ -395,18 +459,18 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
 
     Returns {"action": "speak", "message": "..."}.
     """
-    context = await build_context(session_id, page)
-    if not context:
-        context = "No problem context available."
+    ctx = await build_context(session_id, page)
+    context_text = ctx.text if ctx.text else "No problem context available."
 
     # Append the student's question
-    context += f"\n\n## Student's Question\n\"{question}\""
+    context_text += f"\n\n## Student's Question\n\"{question}\""
 
     client = _get_client()
 
     raw = await asyncio.to_thread(
         client.generate,
-        prompt=context,
+        prompt=context_text,
+        images=ctx.images or None,
         response_schema=RESPONSE_SCHEMA,
         system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
         temperature=0.3,
@@ -417,7 +481,7 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
     action = "speak"
     message = result.get("message", "")
 
-    prompt_tokens = len(context.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
+    prompt_tokens = len(context_text.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
     completion_tokens = len(message.split())
     estimated_cost = (
         prompt_tokens * PROMPT_COST_PER_TOKEN
@@ -436,7 +500,7 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
                      source, question_text)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 """,
-                session_id, page, context, action, message,
+                session_id, page, context_text, action, message,
                 prompt_tokens, completion_tokens, estimated_cost,
                 "voice_question", question,
             )
@@ -475,11 +539,10 @@ async def run_question_reasoning_streaming(
     boundaries, and puts each complete sentence into the queue for TTS.
     Sends None sentinel when done.
     """
-    context = await build_context(session_id, page)
-    if not context:
-        context = "No problem context available."
+    ctx = await build_context(session_id, page)
+    context_text = ctx.text if ctx.text else "No problem context available."
 
-    context += f"\n\n## Student's Question\n\"{question}\""
+    context_text += f"\n\n## Student's Question\n\"{question}\""
 
     client = _get_client()
 
@@ -491,7 +554,8 @@ async def run_question_reasoning_streaming(
 
     try:
         async for token in client.agenerate_stream(
-            prompt=context,
+            prompt=context_text,
+            images=ctx.images or None,
             response_schema=RESPONSE_SCHEMA,
             system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
             temperature=0.3,
@@ -545,7 +609,7 @@ async def run_question_reasoning_streaming(
         print(f"[reasoning] Warning: could not parse streaming JSON: {full_raw[:100]}")
 
     action = "speak"
-    prompt_tokens = len(context.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
+    prompt_tokens = len(context_text.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
     completion_tokens = len(message.split())
     estimated_cost = (
         prompt_tokens * PROMPT_COST_PER_TOKEN
@@ -563,7 +627,7 @@ async def run_question_reasoning_streaming(
                      source, question_text)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 """,
-                session_id, page, context, action, message,
+                session_id, page, context_text, action, message,
                 prompt_tokens, completion_tokens, estimated_cost,
                 "voice_question", question,
             )

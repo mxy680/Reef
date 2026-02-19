@@ -95,9 +95,10 @@ class LLMClient:
         if images:
             for img_bytes in images:
                 b64 = base64.b64encode(img_bytes).decode()
+                mime = "image/png" if img_bytes[:4] == b"\x89PNG" else "image/jpeg"
                 content.append({
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+                    "image_url": {"url": f"data:{mime};base64,{b64}"},
                 })
 
         messages: list[dict] = []
@@ -133,9 +134,10 @@ class LLMClient:
         if images:
             for img_bytes in images:
                 b64 = base64.b64encode(img_bytes).decode()
+                mime = "image/png" if img_bytes[:4] == b"\x89PNG" else "image/jpeg"
                 content.append({
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+                    "image_url": {"url": f"data:{mime};base64,{b64}"},
                 })
 
         messages: list[dict] = []
@@ -174,9 +176,10 @@ class LLMClient:
         if images:
             for img_bytes in images:
                 b64 = base64.b64encode(img_bytes).decode()
+                mime = "image/png" if img_bytes[:4] == b"\x89PNG" else "image/jpeg"
                 content.append({
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+                    "image_url": {"url": f"data:{mime};base64,{b64}"},
                 })
 
         messages: list[dict] = []

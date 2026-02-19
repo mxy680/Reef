@@ -951,6 +951,23 @@ async def ai_reconstruct(
                     )
                     question_ids[problem.label] = qid
 
+                    # Persist figure images into question_figures table
+                    def _collect_figures(node: dict) -> list[str]:
+                        figs = list(node.get("figures", []))
+                        for part in node.get("parts", []):
+                            figs.extend(_collect_figures(part))
+                        return figs
+
+                    for fig_name in _collect_figures(q_dict):
+                        if fig_name in image_data_dict:
+                            await conn.execute(
+                                """
+                                INSERT INTO question_figures (question_id, filename, image_b64)
+                                VALUES ($1, $2, $3)
+                                """,
+                                qid, fig_name, image_data_dict[fig_name],
+                            )
+
             print(f"  [db] Stored document {document_id} with {len(question_ids)} questions in {time.perf_counter()-t0:.2f}s")
 
         # Generate answer keys in parallel via Gemini 3 Flash Preview

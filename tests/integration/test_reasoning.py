@@ -16,6 +16,7 @@ import pytest
 import respx
 
 from api.strokes import _active_sessions
+from lib.reasoning import ReasoningContext
 from tests.helpers import FakePool, make_chat_completion, make_sse_stream
 
 
@@ -142,7 +143,7 @@ class TestRunReasoning:
         from lib.reasoning import run_reasoning
 
         async def fake_build_context(sid, page):
-            return ""
+            return ReasoningContext(text="")
 
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: None)
@@ -155,7 +156,7 @@ class TestRunReasoning:
         from lib.reasoning import run_reasoning
 
         async def fake_build_context(sid, page):
-            return "x squared"
+            return ReasoningContext(text="x squared")
 
         fake_pool = FakePool()
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
@@ -184,7 +185,7 @@ class TestRunReasoning:
         from lib.reasoning import run_reasoning
 
         async def fake_build_context(sid, page):
-            return "some work"
+            return ReasoningContext(text="some work")
 
         fake_pool = FakePool()
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
@@ -218,7 +219,7 @@ class TestRunQuestionReasoning:
         from lib.reasoning import run_question_reasoning
 
         async def fake_build_context(sid, page):
-            return "context"
+            return ReasoningContext(text="context")
 
         fake_pool = FakePool()
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
@@ -239,7 +240,7 @@ class TestRunQuestionReasoning:
         from lib.reasoning import run_question_reasoning
 
         async def fake_build_context(sid, page):
-            return "context"
+            return ReasoningContext(text="context")
 
         fake_pool = FakePool()
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
@@ -271,7 +272,7 @@ class TestRunQuestionReasoningStreaming:
         from lib.reasoning import run_question_reasoning_streaming
 
         async def fake_build_context(sid, page):
-            return "context"
+            return ReasoningContext(text="context")
 
         fake_pool = FakePool()
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
@@ -310,7 +311,7 @@ class TestRunQuestionReasoningStreaming:
         from lib.reasoning import run_question_reasoning_streaming
 
         async def fake_build_context(sid, page):
-            return "context"
+            return ReasoningContext(text="context")
 
         fake_pool = FakePool()
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
@@ -342,7 +343,7 @@ class TestRunQuestionReasoningStreaming:
         from lib.reasoning import run_question_reasoning_streaming
 
         async def fake_build_context(sid, page):
-            return "context"
+            return ReasoningContext(text="context")
 
         fake_pool = FakePool()
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)

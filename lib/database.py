@@ -155,6 +155,19 @@ async def init_db():
         await conn.execute("""
             ALTER TABLE session_question_cache ADD COLUMN IF NOT EXISTS document_name TEXT NOT NULL DEFAULT ''
         """)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS question_figures (
+                id SERIAL PRIMARY KEY,
+                question_id INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+                filename TEXT NOT NULL,
+                image_b64 TEXT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        await conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_question_figures_question
+            ON question_figures(question_id)
+        """)
     print("[DB] Connected and tables ready")
 
 
