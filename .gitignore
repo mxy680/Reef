@@ -9,3 +9,4 @@ test-ios/.venv/
 test-ios/.appium_state.json
 test-ios/appium.log
 test-ios/*.png
+test.sh
