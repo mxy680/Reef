@@ -5,6 +5,7 @@ import { writeFile, mkdir } from "fs/promises"
 import path from "path"
 
 const REEF_SERVER_URL = process.env.REEF_SERVER_URL || "http://app:8000"
+const DATA_DIR = process.env.DATA_DIR || "/data/documents"
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 
 export async function POST(req: NextRequest) {
@@ -14,19 +15,6 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = session.user.id
-  const dailyLimit = (session as any).dailyLimit ?? 3
-
-  // Check daily limit
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const count = await prisma.document.count({
-    where: { userId, createdAt: { gte: since } },
-  })
-  if (count >= dailyLimit) {
-    return NextResponse.json(
-      { error: "Daily limit reached", limit: dailyLimit, used: count },
-      { status: 429 }
-    )
-  }
 
   // Parse the uploaded PDF
   const formData = await req.formData()
@@ -65,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     // Save the output PDF
     const pdfBytes = await resp.arrayBuffer()
-    const dir = path.join("/data/documents", userId)
+    const dir = path.join(DATA_DIR, userId)
     await mkdir(dir, { recursive: true })
     const outPath = path.join(dir, `${doc.id}.pdf`)
     await writeFile(outPath, Buffer.from(pdfBytes))
@@ -85,6 +73,7 @@ export async function POST(req: NextRequest) {
       problemCount,
     })
   } catch (err: any) {
+    console.error("[upload] Error:", err.message, err.stack)
     await prisma.document.update({
       where: { id: doc.id },
       data: { status: "failed", errorMessage: err.message?.slice(0, 500) },
