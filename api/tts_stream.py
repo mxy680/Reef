@@ -33,6 +33,17 @@ def register_tts(text: str) -> str:
     return tts_id
 
 
+def register_tts_stream() -> tuple[str, asyncio.Queue]:
+    """Register a queue-based TTS stream. Caller feeds sentences into the queue.
+
+    Returns (tts_id, queue). Put sentences as strings, None as sentinel when done.
+    """
+    tts_id = uuid.uuid4().hex
+    queue: asyncio.Queue = asyncio.Queue()
+    _pending_tts[tts_id] = {"queue": queue, "created_at": time.time()}
+    return tts_id, queue
+
+
 def _split_sentences(text: str) -> list[str]:
     """Split text into sentences for chunked TTS."""
     parts = re.split(r'(?<=[.!?])\s+', text.strip())
@@ -66,16 +77,50 @@ async def tts_stream(tts_id: str):
 
     Client reads X-Sample-Rate, X-Channels, X-Sample-Width headers
     to configure audio playback, then receives raw PCM bytes.
+
+    Supports two entry types:
+    - text-based (register_tts): all sentences known upfront
+    - queue-based (register_tts_stream): sentences arrive dynamically from LLM
     """
     entry = _pending_tts.pop(tts_id, None)
     if not entry:
         raise HTTPException(status_code=404, detail="TTS ID not found or already consumed")
 
-    text = entry["text"]
     api_key = os.getenv("DEEPINFRA_API_KEY", "")
     if not api_key:
         raise HTTPException(status_code=503, detail="DEEPINFRA_API_KEY not set")
 
+    if "queue" in entry:
+        # Queue-based: sentences arrive dynamically from LLM streaming
+        queue: asyncio.Queue = entry["queue"]
+
+        async def pcm_generator_queue():
+            async with httpx.AsyncClient() as client:
+                i = 0
+                while True:
+                    sentence = await queue.get()
+                    if sentence is None:
+                        break
+                    try:
+                        result = await _fetch_tts_chunk(client, api_key, sentence)
+                        if result:
+                            yield result
+                    except Exception as e:
+                        print(f"[tts_stream] Queue chunk {i} failed: {e}")
+                    i += 1
+
+        return StreamingResponse(
+            pcm_generator_queue(),
+            media_type="application/octet-stream",
+            headers={
+                "X-Sample-Rate": "24000",
+                "X-Channels": "1",
+                "X-Sample-Width": "2",
+            },
+        )
+
+    # Text-based: all sentences known upfront
+    text = entry["text"]
     sentences = _split_sentences(text)
     if not sentences:
         raise HTTPException(status_code=400, detail="No text to synthesize")
@@ -87,13 +132,14 @@ async def tts_stream(tts_id: str):
                 asyncio.create_task(_fetch_tts_chunk(client, api_key, s))
                 for s in sentences
             ]
-            # Yield audio in sentence order, skipping failed chunks
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            for result in results:
-                if isinstance(result, bytes) and result:
-                    yield result
-                elif isinstance(result, Exception):
-                    print(f"[tts_stream] Chunk failed: {result}")
+            # Yield each in order as it resolves (don't wait for all)
+            for i, task in enumerate(tasks):
+                try:
+                    result = await task
+                    if result:
+                        yield result
+                except Exception as e:
+                    print(f"[tts_stream] Chunk {i} failed: {e}")
 
     return StreamingResponse(
         pcm_generator(),

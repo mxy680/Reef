@@ -10,8 +10,8 @@ from fastapi import APIRouter, UploadFile, File, Form
 
 from lib.database import get_pool
 from lib.groq_transcribe import transcribe
-from lib.reasoning import run_question_reasoning
-from api.reasoning import push_reasoning
+from lib.reasoning import run_question_reasoning_streaming
+from api.reasoning import push_reasoning_streaming
 
 router = APIRouter()
 
@@ -99,9 +99,13 @@ async def voice_question(
 
 
 async def _async_question_reasoning(session_id: str, page: int, text: str) -> None:
-    """Background task: run reasoning and push result via SSE."""
+    """Background task: stream LLM → TTS pipeline via queue.
+
+    1. Register streaming TTS + push SSE event (iOS starts connecting immediately)
+    2. Stream LLM response, feeding sentences to the TTS queue as they're detected
+    """
     try:
-        result = await run_question_reasoning(session_id, page, text)
-        await push_reasoning(session_id, result["action"], result.get("message", ""))
+        tts_id, queue = await push_reasoning_streaming(session_id)
+        await run_question_reasoning_streaming(session_id, page, text, queue)
     except Exception as e:
         print(f"[voice] Question reasoning failed: {e}")

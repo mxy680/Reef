@@ -4,7 +4,7 @@ import base64
 import copy
 import os
 
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 
 
 def _make_strict(schema: dict) -> dict:
@@ -66,6 +66,7 @@ class LLMClient:
         if base_url:
             kwargs["base_url"] = base_url
         self.client = OpenAI(**kwargs)
+        self.async_client = AsyncOpenAI(**kwargs)
         self.model = model
 
     def generate(
@@ -157,5 +158,46 @@ class LLMClient:
 
         stream = self.client.chat.completions.create(**kwargs)
         for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+    async def agenerate_stream(
+        self,
+        prompt: str,
+        images: list[bytes] | None = None,
+        temperature: float | None = None,
+        response_schema: dict | None = None,
+        system_message: str | None = None,
+    ):
+        """Async generator that yields text chunks as they arrive."""
+        content: list[dict] = [{"type": "text", "text": prompt}]
+        if images:
+            for img_bytes in images:
+                b64 = base64.b64encode(img_bytes).decode()
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+                })
+
+        messages: list[dict] = []
+        if system_message:
+            messages.append({"role": "system", "content": system_message})
+        messages.append({"role": "user", "content": content})
+
+        kwargs: dict = {
+            "model": self.model,
+            "messages": messages,
+            "stream": True,
+        }
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+        if response_schema is not None:
+            kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
+            }
+
+        stream = await self.async_client.chat.completions.create(**kwargs)
+        async for chunk in stream:
             if chunk.choices and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content

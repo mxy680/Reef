@@ -28,3 +28,25 @@ async def push_reasoning(session_id: str, action: str, message: str) -> None:
         "tts_id": tts_id,
     })
     print(f"[reasoning] Pushed to session={session_id}: {message[:60]}")
+
+
+async def push_reasoning_streaming(session_id: str) -> tuple[str, "asyncio.Queue"]:
+    """Register a streaming TTS entry and push SSE event immediately.
+
+    iOS gets the tts_id right away and starts connecting to the TTS endpoint
+    while the LLM is still generating.
+
+    Returns (tts_id, queue) for the caller to feed sentences into.
+    """
+    import asyncio
+    from api.tts_stream import register_tts_stream
+    from api.events import publish_event
+
+    tts_id, queue = register_tts_stream()
+    await publish_event(session_id, "reasoning", {
+        "action": "speak",
+        "message": "",
+        "tts_id": tts_id,
+    })
+    print(f"[reasoning] Pushed streaming tts_id={tts_id[:8]} to session={session_id}")
+    return tts_id, queue

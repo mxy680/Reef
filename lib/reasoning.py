@@ -9,6 +9,7 @@ Uses GPT-OSS 120B on Groq for fast structured inference.
 import asyncio
 import json
 import os
+import re
 
 from lib.database import get_pool
 from lib.llm_client import LLMClient
@@ -446,3 +447,128 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
     )
 
     return {"action": action, "message": message}
+
+
+def _flush_sentences(buffer: str, queue: asyncio.Queue) -> str:
+    """Extract complete sentences from buffer, put them in queue.
+
+    Returns the remaining buffer (incomplete sentence).
+    Sentence boundary: [.!?] followed by whitespace with text after it.
+    """
+    pattern = re.compile(r'([.!?])\s+(?=\S)')
+    last_end = 0
+    for m in pattern.finditer(buffer):
+        sentence = buffer[last_end:m.end()].strip()
+        if sentence:
+            queue.put_nowait(sentence)
+        last_end = m.end()
+    return buffer[last_end:]
+
+
+async def run_question_reasoning_streaming(
+    session_id: str, page: int, question: str, tts_queue: asyncio.Queue
+) -> None:
+    """Stream LLM response and feed sentences to tts_queue as they're detected.
+
+    Parses streaming JSON to extract message content, detects sentence
+    boundaries, and puts each complete sentence into the queue for TTS.
+    Sends None sentinel when done.
+    """
+    context = await build_context(session_id, page)
+    if not context:
+        context = "No problem context available."
+
+    context += f"\n\n## Student's Question\n\"{question}\""
+
+    client = _get_client()
+
+    # Accumulate full raw response for logging
+    raw_tokens: list[str] = []
+    # State for JSON message extraction
+    found_marker = False
+    message_buffer = ""
+
+    try:
+        async for token in client.agenerate_stream(
+            prompt=context,
+            response_schema=RESPONSE_SCHEMA,
+            system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
+            temperature=0.3,
+        ):
+            raw_tokens.append(token)
+
+            if not found_marker:
+                # Look for "message": " marker in accumulated response
+                accumulated = "".join(raw_tokens)
+                marker = '"message": "'
+                marker_alt = '"message":"'
+                idx = accumulated.find(marker)
+                if idx == -1:
+                    idx = accumulated.find(marker_alt)
+                    if idx != -1:
+                        marker = marker_alt
+                if idx != -1:
+                    found_marker = True
+                    # Everything after the marker opening quote is message content
+                    after_marker = accumulated[idx + len(marker):]
+                    message_buffer = after_marker
+                    message_buffer = _flush_sentences(message_buffer, tts_queue)
+            else:
+                # We're inside the message value — accumulate and flush sentences
+                message_buffer += token
+                message_buffer = _flush_sentences(message_buffer, tts_queue)
+
+        # Flush remaining buffer (strip trailing "} from JSON)
+        remainder = message_buffer.rstrip()
+        for suffix in ('"}', '"'):
+            if remainder.endswith(suffix):
+                remainder = remainder[:-len(suffix)]
+                break
+        remainder = remainder.strip()
+        if remainder:
+            tts_queue.put_nowait(remainder)
+
+    except Exception as e:
+        print(f"[reasoning] Streaming failed: {e}")
+    finally:
+        # Always send sentinel so TTS endpoint stops waiting
+        await tts_queue.put(None)
+
+    # Parse full response for logging
+    full_raw = "".join(raw_tokens)
+    try:
+        result = json.loads(full_raw)
+        message = result.get("message", "")
+    except json.JSONDecodeError:
+        message = full_raw
+        print(f"[reasoning] Warning: could not parse streaming JSON: {full_raw[:100]}")
+
+    action = "speak"
+    prompt_tokens = len(context.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
+    completion_tokens = len(message.split())
+    estimated_cost = (
+        prompt_tokens * PROMPT_COST_PER_TOKEN
+        + completion_tokens * COMPLETION_COST_PER_TOKEN
+    )
+
+    pool = get_pool()
+    if pool:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO reasoning_logs
+                    (session_id, page, context, action, message,
+                     prompt_tokens, completion_tokens, estimated_cost,
+                     source, question_text)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                """,
+                session_id, page, context, action, message,
+                prompt_tokens, completion_tokens, estimated_cost,
+                "voice_question", question,
+            )
+
+    print(
+        f"[reasoning] STREAM QUESTION ({session_id}, page={page}): "
+        f"q=\"{question[:60]}\", answer={message[:80]}, "
+        f"tokens={prompt_tokens}+{completion_tokens}, cost=${estimated_cost:.4f}"
+    )
