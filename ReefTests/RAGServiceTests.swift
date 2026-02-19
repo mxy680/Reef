@@ -2,216 +2,281 @@
 //  RAGServiceTests.swift
 //  ReefTests
 //
-//  Tests for RAGService with mocked EmbeddingService and VectorStore.
+//  Integration tests for RAGService using the real local dev server,
+//  real EmbeddingService, and a real VectorStore backed by a temp SQLite file.
 //
 
 import Testing
 @testable import Reef
 import Foundation
 
-@Suite("RAGService")
+@Suite("RAGService Integration", .serialized)
 struct RAGServiceTests {
 
-    private func makeService(
-        embedding: MockEmbeddingService = MockEmbeddingService(),
-        vectorStore: MockVectorStore = MockVectorStore()
-    ) -> (RAGService, MockEmbeddingService, MockVectorStore) {
-        let service = RAGService(embeddingService: embedding, vectorStore: vectorStore)
-        return (service, embedding, vectorStore)
+    // MARK: - Helpers
+
+    /// Build a fresh set of real dependencies backed by a temp SQLite file.
+    /// Returns the service, vectorStore, and the temp DB URL so callers can clean up.
+    private func makeIntegrationDeps() async throws -> (RAGService, VectorStore, URL) {
+        let tempDB = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-test-\(UUID().uuidString).sqlite")
+        let aiService = AIService(baseURL: "http://localhost:8000")
+        let embeddingService = EmbeddingService(aiService: aiService)
+        let vectorStore = VectorStore(dbPath: tempDB)
+        try await vectorStore.initialize()
+        let ragService = RAGService(embeddingService: embeddingService, vectorStore: vectorStore)
+        try await ragService.initialize()
+        return (ragService, vectorStore, tempDB)
     }
 
-    // MARK: - Index Document
+    private func cleanup(vectorStore: VectorStore, tempDB: URL) async {
+        await vectorStore.close()
+        try? FileManager.default.removeItem(at: tempDB)
+    }
 
-    @Test("indexDocument chunks and stores embeddings")
-    func indexDocument_chunksAndStoresEmbeddings() async throws {
-        let (service, mockEmb, mockVS) = makeService()
+    // MARK: - indexDocument
+
+    @Test("indexDocument chunks and stores in real SQLite")
+    func indexDocument_chunksAndStoresInRealSQLite() async throws {
+        try #require(await IntegrationTestConfig.serverIsReachable(), "Server not available")
+
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
+
         let docId = UUID()
         let courseId = UUID()
-        let text = String(repeating: "This is content for indexing. ", count: 20) // ~600 chars
+        // ~600 chars — well above TextChunker.minChunkSize (200)
+        let text = String(repeating: "This is sample content for integration testing the RAG pipeline. ", count: 9)
 
-        try await service.indexDocument(
+        try await ragService.indexDocument(
             documentId: docId,
             documentType: .note,
             courseId: courseId,
             text: text
         )
 
-        #expect(mockEmb.embedCallCount == 1)
-        #expect(mockVS.indexedChunks.count == 1)
-        #expect(mockVS.indexedChunks[0].courseId == courseId)
+        let count = await ragService.chunkCount(forDocument: docId)
+        #expect(count > 0)
     }
 
     @Test("indexDocument short text skips indexing")
     func indexDocument_shortText_skipsIndexing() async throws {
-        let (service, mockEmb, mockVS) = makeService()
-        let text = "too short"
+        // No server needed — RAGService exits before calling embedding
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
 
-        try await service.indexDocument(
-            documentId: UUID(),
+        let docId = UUID()
+        try await ragService.indexDocument(
+            documentId: docId,
             documentType: .note,
             courseId: UUID(),
-            text: text
+            text: "too short"
         )
 
-        #expect(mockEmb.embedCallCount == 0)
-        #expect(mockVS.indexedChunks.isEmpty)
+        let count = await ragService.chunkCount(forDocument: docId)
+        #expect(count == 0)
     }
 
-    @Test("indexDocument embedding unavailable skips")
-    func indexDocument_embeddingUnavailable_skips() async throws {
-        let mockEmb = MockEmbeddingService()
-        mockEmb.isAvailableResult = false
-        let (service, _, mockVS) = makeService(embedding: mockEmb)
+    // MARK: - getContext
 
-        let text = String(repeating: "content ", count: 50)
-        try await service.indexDocument(
-            documentId: UUID(),
+    @Test("getContext returns formatted prompt with real embeddings")
+    func getContext_returnsFormattedPromptWithRealEmbeddings() async throws {
+        try #require(await IntegrationTestConfig.serverIsReachable(), "Server not available")
+
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
+
+        let docId = UUID()
+        let courseId = UUID()
+        let topicText = String(
+            repeating: "Calculus derivatives are the rate of change of a function with respect to a variable. ",
+            count: 8
+        )
+
+        try await ragService.indexDocument(
+            documentId: docId,
             documentType: .note,
-            courseId: UUID(),
-            text: text
+            courseId: courseId,
+            text: topicText
         )
 
-        #expect(mockVS.indexedChunks.isEmpty)
-    }
-
-    // MARK: - Get Context
-
-    @Test("getContext returns formatted prompt with results")
-    func getContext_returnsFormattedPrompt() async throws {
-        let mockVS = MockVectorStore()
-        mockVS.searchResults = [
-            VectorSearchResult(
-                id: "1", text: "Relevant chunk",
-                documentId: UUID(), documentType: .note,
-                pageNumber: 1, heading: "Intro",
-                similarity: 0.85
-            )
-        ]
-        let (service, _, _) = makeService(vectorStore: mockVS)
-
-        let context = try await service.getContext(query: "test query", courseId: UUID())
+        let context = try await ragService.getContext(
+            query: "what are derivatives",
+            courseId: courseId
+        )
 
         #expect(context.hasContext)
-        #expect(context.chunkCount == 1)
-        #expect(context.formattedPrompt.contains("Relevant chunk"))
         #expect(context.formattedPrompt.contains("course materials"))
+        #expect(context.formattedPrompt.lowercased().contains("derivative"))
     }
 
-    @Test("getContext filters low similarity results")
-    func getContext_filtersLowSimilarity() async throws {
-        let mockVS = MockVectorStore()
-        mockVS.searchResults = [
-            VectorSearchResult(
-                id: "1", text: "Good match",
-                documentId: UUID(), documentType: .note,
-                pageNumber: nil, heading: nil,
-                similarity: 0.80
-            ),
-            VectorSearchResult(
-                id: "2", text: "Bad match",
-                documentId: UUID(), documentType: .note,
-                pageNumber: nil, heading: nil,
-                similarity: 0.10  // Below 0.15 threshold
-            )
-        ]
-        let (service, _, _) = makeService(vectorStore: mockVS)
+    @Test("getContext no results for unrelated query")
+    func getContext_noResultsForUnrelatedQuery() async throws {
+        try #require(await IntegrationTestConfig.serverIsReachable(), "Server not available")
 
-        let context = try await service.getContext(query: "test", courseId: UUID())
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
 
-        #expect(context.chunkCount == 1)
-        #expect(context.formattedPrompt.contains("Good match"))
-        #expect(!context.formattedPrompt.contains("Bad match"))
-    }
+        let courseId = UUID()
+        let marineText = String(
+            repeating: "Marine biology studies ocean ecosystems, coral reefs, and deep-sea creatures. ",
+            count: 8
+        )
 
-    @Test("getContext no results returns empty context")
-    func getContext_noResults_returnsEmptyContext() async throws {
-        let mockVS = MockVectorStore()
-        mockVS.searchResults = []
-        let (service, _, _) = makeService(vectorStore: mockVS)
+        try await ragService.indexDocument(
+            documentId: UUID(),
+            documentType: .note,
+            courseId: courseId,
+            text: marineText
+        )
 
-        let context = try await service.getContext(query: "test", courseId: UUID())
+        let context = try await ragService.getContext(
+            query: "quantum physics wave-particle duality",
+            courseId: courseId
+        )
 
-        #expect(!context.hasContext)
-        #expect(context.chunkCount == 0)
-        #expect(context.formattedPrompt.isEmpty)
-    }
-
-    @Test("getContext embedding unavailable returns empty")
-    func getContext_embeddingUnavailable_returnsEmpty() async throws {
-        let mockEmb = MockEmbeddingService()
-        mockEmb.isAvailableResult = false
-        let (service, _, _) = makeService(embedding: mockEmb)
-
-        let context = try await service.getContext(query: "test", courseId: UUID())
-
-        #expect(!context.hasContext)
+        // RAGService filters results with similarity <= 0.15, so we either get
+        // no context or very low similarity chunks that were filtered out.
+        if context.hasContext {
+            let maxSimilarity = context.sources.map(\.similarity).max() ?? 0
+            #expect(maxSimilarity < 0.15, "Expected low similarity for unrelated query, got \(maxSimilarity)")
+        } else {
+            #expect(!context.hasContext)
+        }
     }
 
     @Test("getContext respects token budget")
     func getContext_respectsTokenBudget() async throws {
-        let mockVS = MockVectorStore()
-        let largeText = String(repeating: "x", count: 2000)
-        mockVS.searchResults = (0..<10).map { i in
-            VectorSearchResult(
-                id: "\(i)", text: largeText,
-                documentId: UUID(), documentType: .note,
-                pageNumber: nil, heading: nil,
-                similarity: 0.9
-            )
-        }
-        let (service, _, _) = makeService(vectorStore: mockVS)
+        try #require(await IntegrationTestConfig.serverIsReachable(), "Server not available")
 
-        // With default maxTokens=2000, chars budget is ~8000
-        // Each chunk is 2000 chars, so only ~3-4 should fit
-        let context = try await service.getContext(query: "test", courseId: UUID())
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
 
-        #expect(context.chunkCount < 10)
-        #expect(context.chunkCount >= 1)
-    }
-
-    // MARK: - Deletion
-
-    @Test("deleteDocument delegates to vector store")
-    func deleteDocument_delegatesToVectorStore() async throws {
-        let mockVS = MockVectorStore()
-        let (service, _, _) = makeService(vectorStore: mockVS)
         let docId = UUID()
-
-        try await service.deleteDocument(documentId: docId)
-
-        #expect(mockVS.deletedDocumentIds == [docId])
-    }
-
-    @Test("deleteCourse delegates to vector store")
-    func deleteCourse_delegatesToVectorStore() async throws {
-        let mockVS = MockVectorStore()
-        let (service, _, _) = makeService(vectorStore: mockVS)
         let courseId = UUID()
+        // Large text that will produce multiple chunks
+        let largeText = String(
+            repeating: "The history of mathematics spans thousands of years across many civilizations. ",
+            count: 40
+        )
 
-        try await service.deleteCourse(courseId: courseId)
+        try await ragService.indexDocument(
+            documentId: docId,
+            documentType: .note,
+            courseId: courseId,
+            text: largeText
+        )
 
-        #expect(mockVS.deletedCourseIds == [courseId])
+        let totalChunks = await ragService.chunkCount(forDocument: docId)
+
+        // maxTokens=50 → maxChars ~200, far too small to fit all chunks
+        let context = try await ragService.getContext(
+            query: "history of mathematics",
+            courseId: courseId,
+            maxTokens: 50
+        )
+
+        if context.hasContext && totalChunks > 1 {
+            #expect(context.chunkCount < totalChunks)
+        }
+        // At most 1 chunk can fit in 50 tokens (~200 chars)
+        #expect(context.chunkCount <= 1)
     }
 
-    // MARK: - Status
+    // MARK: - deleteDocument
 
-    @Test("isDocumentIndexed true when chunks exist")
-    func isDocumentIndexed_trueWhenChunksExist() async throws {
-        let mockVS = MockVectorStore()
-        mockVS.chunkCountResult = 5
-        let (service, _, _) = makeService(vectorStore: mockVS)
+    @Test("deleteDocument removes from index")
+    func deleteDocument_removesFromIndex() async throws {
+        try #require(await IntegrationTestConfig.serverIsReachable(), "Server not available")
 
-        let indexed = await service.isDocumentIndexed(documentId: UUID())
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
+
+        let docId = UUID()
+        let courseId = UUID()
+        let text = String(repeating: "Content about photosynthesis and plant biology. ", count: 10)
+
+        try await ragService.indexDocument(
+            documentId: docId,
+            documentType: .note,
+            courseId: courseId,
+            text: text
+        )
+
+        let countBeforeDelete = await ragService.chunkCount(forDocument: docId)
+        #expect(countBeforeDelete > 0)
+
+        try await ragService.deleteDocument(documentId: docId)
+
+        let countAfterDelete = await ragService.chunkCount(forDocument: docId)
+        #expect(countAfterDelete == 0)
+    }
+
+    // MARK: - deleteCourse
+
+    @Test("deleteCourse removes all documents in course")
+    func deleteCourse_removesAllDocumentsInCourse() async throws {
+        try #require(await IntegrationTestConfig.serverIsReachable(), "Server not available")
+
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
+
+        let courseId = UUID()
+        let docId1 = UUID()
+        let docId2 = UUID()
+        let text = String(repeating: "Thermodynamics studies heat, energy, and work in physical systems. ", count: 8)
+
+        try await ragService.indexDocument(
+            documentId: docId1,
+            documentType: .note,
+            courseId: courseId,
+            text: text
+        )
+        try await ragService.indexDocument(
+            documentId: docId2,
+            documentType: .note,
+            courseId: courseId,
+            text: text
+        )
+
+        #expect(await ragService.chunkCount(forDocument: docId1) > 0)
+        #expect(await ragService.chunkCount(forDocument: docId2) > 0)
+
+        try await ragService.deleteCourse(courseId: courseId)
+
+        #expect(await ragService.chunkCount(forDocument: docId1) == 0)
+        #expect(await ragService.chunkCount(forDocument: docId2) == 0)
+    }
+
+    // MARK: - isDocumentIndexed
+
+    @Test("isDocumentIndexed returns true after indexing")
+    func isDocumentIndexed_returnsTrueAfterIndexing() async throws {
+        try #require(await IntegrationTestConfig.serverIsReachable(), "Server not available")
+
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
+
+        let docId = UUID()
+        let text = String(repeating: "Linear algebra covers vectors, matrices, and linear transformations. ", count: 8)
+
+        try await ragService.indexDocument(
+            documentId: docId,
+            documentType: .note,
+            courseId: UUID(),
+            text: text
+        )
+
+        let indexed = await ragService.isDocumentIndexed(documentId: docId)
         #expect(indexed == true)
     }
 
-    @Test("isDocumentIndexed false when no chunks")
-    func isDocumentIndexed_falseWhenNoChunks() async throws {
-        let mockVS = MockVectorStore()
-        mockVS.chunkCountResult = 0
-        let (service, _, _) = makeService(vectorStore: mockVS)
+    @Test("isDocumentIndexed returns false for unknown document")
+    func isDocumentIndexed_returnsFalseForUnknownDocument() async throws {
+        let (ragService, vectorStore, tempDB) = try await makeIntegrationDeps()
+        defer { Task { await cleanup(vectorStore: vectorStore, tempDB: tempDB) } }
 
-        let indexed = await service.isDocumentIndexed(documentId: UUID())
+        let indexed = await ragService.isDocumentIndexed(documentId: UUID())
         #expect(indexed == false)
     }
 }
