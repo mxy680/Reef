@@ -13,9 +13,7 @@ Reef/
 ├── Reef-iOS/       — iPad SwiftUI app (submodule) → see Reef-iOS/CLAUDE.md
 ├── dashboard/      — Next.js debug dashboard (gitignored, local only)
 ├── test-ios/       — Appium iOS Simulator testing (helper script + venv)
-├── docs/plans/     — Design docs and implementation plans
-├── mathpix/        — Mathpix test scripts (one-off)
-└── tts-demo/       — TTS experiment (unused)
+└── docs/plans/     — Design docs and implementation plans
 ```
 
 ## iOS (Reef-iOS)
