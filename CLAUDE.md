@@ -1,5 +1,10 @@
 # Reef
 
+## Workflow
+
+- After finishing any implementation, always run the full test suite before reporting completion:
+  `xcodebuild -project Reef-iOS/Reef.xcodeproj -scheme Reef -destination 'platform=iOS Simulator,name=iPad Pro 11-inch (M4)' test 2>&1 | grep -E '(passed|failed|error:)'`
+
 ## Directory Map
 
 ```
