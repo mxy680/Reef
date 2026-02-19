@@ -3,7 +3,7 @@
 Watches student handwritten math work via page transcriptions,
 decides whether to intervene, and produces coaching feedback for TTS.
 
-Uses GPT-OSS 120B on Groq for fast structured inference.
+Uses Gemini 3 Flash Preview on OpenRouter for vision + structured inference.
 """
 
 import asyncio
@@ -14,12 +14,12 @@ import re
 from lib.database import get_pool
 from lib.llm_client import LLMClient
 
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "openai/gpt-oss-120b"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+REASONING_MODEL = "google/gemini-3-flash-preview"
 
-# Cost per token (Groq pricing for GPT-OSS 120B)
-PROMPT_COST_PER_TOKEN = 0.15 / 1_000_000
-COMPLETION_COST_PER_TOKEN = 0.60 / 1_000_000
+# Cost per token (Gemini 3 Flash Preview via OpenRouter)
+PROMPT_COST_PER_TOKEN = 0.50 / 1_000_000
+COMPLETION_COST_PER_TOKEN = 3.00 / 1_000_000
 
 SYSTEM_PROMPT = """\
 You are an adaptive math tutor silently observing a student's handwritten work on an iPad in real time. You have access to the original problem, the answer key, and the student's evolving work.
@@ -139,13 +139,13 @@ RESPONSE_SCHEMA = {
 
 
 def _get_client() -> LLMClient:
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        raise RuntimeError("GROQ_API_KEY not set")
+        raise RuntimeError("OPENROUTER_API_KEY not set")
     return LLMClient(
         api_key=api_key,
-        model=GROQ_MODEL,
-        base_url=GROQ_BASE_URL,
+        model=REASONING_MODEL,
+        base_url=OPENROUTER_BASE_URL,
     )
 
 

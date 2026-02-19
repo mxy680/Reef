@@ -4,8 +4,9 @@ TestBuildContext exercises real DB via the /api/reasoning-preview endpoint
 (which calls build_context_structured — identical queries to build_context).
 
 TestRunReasoning / TestRunQuestionReasoning / TestRunQuestionReasoningStreaming
-replace LLM calls with respx HTTP interception, DB pool with FakePool, and
-build_context with monkeypatch.setattr to avoid cross-event-loop issues.
+replace LLM calls with respx HTTP interception (OpenRouter), DB pool with
+FakePool, and build_context with monkeypatch.setattr to avoid cross-event-loop
+issues.
 """
 import asyncio
 import uuid
@@ -133,7 +134,7 @@ class TestBuildContext:
 # ── TestRunReasoning — FakePool + respx + monkeypatch ──────────────
 
 
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 class TestRunReasoning:
@@ -161,7 +162,7 @@ class TestRunReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(GROQ_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion('{"action": "speak", "message": "Try factoring."}'),
@@ -190,7 +191,7 @@ class TestRunReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(GROQ_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion('{"action": "silent", "message": "Student is working"}'),
@@ -224,7 +225,7 @@ class TestRunQuestionReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(GROQ_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion('{"action": "silent", "message": "I would stay quiet"}'),
@@ -245,7 +246,7 @@ class TestRunQuestionReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(GROQ_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion('{"action": "speak", "message": "x equals 5"}'),
@@ -292,7 +293,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(GROQ_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     content=sse_bytes,
@@ -326,7 +327,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(GROQ_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     content=sse_bytes,
@@ -356,7 +357,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(GROQ_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(500, json={"error": "Internal Server Error"})
             )
             items = asyncio.run(run())
