@@ -50,6 +50,9 @@ async def sse_events(session_id: str = Query(...)):
         print(f"[sse] Connected: session={session_id}")
 
         try:
+            # Flush immediately so proxies (Cloudflare) forward the headers
+            yield ": connected\n\n"
+
             while True:
                 try:
                     event_type, payload = await asyncio.wait_for(queue.get(), timeout=25)
