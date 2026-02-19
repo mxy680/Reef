@@ -17,7 +17,7 @@ from lib.mathpix_client import (
     cleanup_sessions,
     get_session_info,
     invalidate_session,
-    schedule_cluster_and_transcribe,
+    schedule_transcribe,
 )
 
 router = APIRouter()
@@ -69,7 +69,7 @@ async def strokes_connect(req: ConnectRequest):
         "question_number": req.question_number,
         "last_seen": datetime.now(timezone.utc).isoformat(),
     }
-    print(f"[strokes] session {req.session_id} connected (evicted {len(stale)} stale)")
+    print(f"[strokes] session {req.session_id} connected (doc={req.document_name!r}, q={req.question_number}, evicted {len(stale)} stale)")
 
     pool = get_pool()
     if pool:
@@ -115,9 +115,9 @@ async def strokes_post(req: StrokesRequest):
             req.user_id,
         )
 
-    # Re-cluster + per-cluster transcription (debounced)
+    # Whole-page transcription (debounced)
     if req.event_type in ("draw", "erase"):
-        schedule_cluster_and_transcribe(req.session_id, req.page)
+        schedule_transcribe(req.session_id, req.page)
 
     # Update last_seen
     if req.session_id in _active_sessions:
@@ -135,11 +135,6 @@ async def strokes_clear(req: ClearRequest):
     async with pool.acquire() as conn:
         await conn.execute(
             "DELETE FROM stroke_logs WHERE session_id = $1 AND page = $2",
-            req.session_id,
-            req.page,
-        )
-        await conn.execute(
-            "DELETE FROM clusters WHERE session_id = $1 AND page = $2",
             req.session_id,
             req.page,
         )
@@ -196,8 +191,7 @@ async def get_stroke_logs(
             f"""
             SELECT id, session_id, page, received_at,
                    jsonb_array_length(strokes) AS stroke_count,
-                   strokes, event_type, deleted_count, message, user_id,
-                   cluster_labels
+                   strokes, event_type, deleted_count, message, user_id
             FROM stroke_logs
             {where}
             ORDER BY received_at DESC
@@ -207,51 +201,19 @@ async def get_stroke_logs(
             limit,
         )
 
-    # Fetch cluster order (sorted by centroid_y for reading order) and content types
-    cluster_order: list[int] = []
-    cluster_types: dict[int, str] = {}
-    cluster_boxes: dict[int, list[float]] = {}
-    if session_id:
-        async with pool.acquire() as conn:
-            cluster_rows = await conn.fetch(
-                """
-                SELECT cluster_label, centroid_y, content_type,
-                       bbox_x1, bbox_y1, bbox_x2, bbox_y2
-                FROM clusters
-                WHERE session_id = $1
-                ORDER BY centroid_y ASC
-                """,
-                session_id,
-            )
-        cluster_order = [r["cluster_label"] for r in cluster_rows]
-        cluster_types = {r["cluster_label"]: r["content_type"] or "math" for r in cluster_rows}
-        cluster_boxes = {
-            r["cluster_label"]: [r["bbox_x1"], r["bbox_y1"], r["bbox_x2"], r["bbox_y2"]]
-            for r in cluster_rows
-        }
-
-    # Look up document_name and matched question label from active session
+    # Look up document_name and question label from active session
     active_doc_name = ""
     matched_question_label = ""
-    if session_id and session_id in _active_sessions:
-        info = _active_sessions[session_id]
+    # Fall back to any active session if no session_id query param
+    lookup_sid = session_id
+    if not lookup_sid and _active_sessions:
+        lookup_sid = max(_active_sessions, key=lambda s: _active_sessions[s].get("last_seen", ""))
+    if lookup_sid and lookup_sid in _active_sessions:
+        info = _active_sessions[lookup_sid]
         active_doc_name = info.get("document_name", "")
         qn = info.get("question_number")
-        if active_doc_name and qn is not None:
-            # Strip extension — iOS sends "foo.pdf" but DB stores "foo"
-            doc_stem = active_doc_name.rsplit(".", 1)[0] if "." in active_doc_name else active_doc_name
-            async with pool.acquire() as conn:
-                q_row = await conn.fetchrow(
-                    """
-                    SELECT q.label FROM questions q
-                    JOIN documents d ON q.document_id = d.id
-                    WHERE d.filename = $1 AND q.number = $2
-                    """,
-                    doc_stem,
-                    qn,
-                )
-                if q_row:
-                    matched_question_label = q_row["label"] or ""
+        if qn is not None:
+            matched_question_label = f"Q{qn}"
 
     return {
         "logs": [
@@ -266,7 +228,6 @@ async def get_stroke_logs(
                 "deleted_count": r["deleted_count"],
                 "message": r["message"],
                 "user_id": r["user_id"],
-                "cluster_labels": json.loads(r["cluster_labels"]),
             }
             for r in rows
         ],
@@ -276,9 +237,6 @@ async def get_stroke_logs(
             _active_sessions.keys(),
             key=lambda sid: _active_sessions[sid].get("last_seen", ""),
         ),
-        "cluster_order": cluster_order,
-        "cluster_types": cluster_types,
-        "cluster_boxes": cluster_boxes,
         "document_name": active_doc_name,
         "matched_question_label": matched_question_label,
         "mathpix_session": get_session_info(session_id, page or 1) if session_id else None,
@@ -299,9 +257,6 @@ async def clear_stroke_logs(
                 "DELETE FROM stroke_logs WHERE session_id = $1", session_id
             )
             await conn.execute(
-                "DELETE FROM clusters WHERE session_id = $1", session_id
-            )
-            await conn.execute(
                 "DELETE FROM page_transcriptions WHERE session_id = $1", session_id
             )
             await conn.execute(
@@ -309,7 +264,6 @@ async def clear_stroke_logs(
             )
         else:
             result = await conn.execute("DELETE FROM stroke_logs")
-            await conn.execute("DELETE FROM clusters")
             await conn.execute("DELETE FROM page_transcriptions")
             await conn.execute("DELETE FROM reasoning_logs")
 

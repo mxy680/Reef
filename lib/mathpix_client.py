@@ -7,6 +7,7 @@ Requires MATHPIX_APP_ID and MATHPIX_APP_KEY env vars.
 """
 
 import asyncio
+import hashlib
 import json
 import os
 from dataclasses import dataclass
@@ -84,6 +85,7 @@ async def get_or_create_session(
 def invalidate_session(session_id: str, page: int) -> None:
     key = (session_id, page)
     _sessions.pop(key, None)
+    _last_stroke_hash.pop(key, None)
     task = _debounce_tasks.pop(key, None)
     if task:
         task.cancel()
@@ -109,6 +111,7 @@ def cleanup_sessions(session_id: str) -> None:
     keys_to_remove = [k for k in _sessions if k[0] == session_id]
     for key in keys_to_remove:
         _sessions.pop(key, None)
+        _last_stroke_hash.pop(key, None)
         task = _debounce_tasks.pop(key, None)
         if task:
             task.cancel()
@@ -121,6 +124,10 @@ def cleanup_sessions(session_id: str) -> None:
         r_task = _reasoning_tasks.pop(key, None)
         if r_task:
             r_task.cancel()
+    # Clean up stroke hashes for this session
+    hash_keys = [k for k in _last_stroke_hash if k[0] == session_id]
+    for key in hash_keys:
+        _last_stroke_hash.pop(key, None)
     if keys_to_remove or r_keys:
         print(f"[mathpix] cleaned up {len(keys_to_remove)} session(s) for {session_id}")
 
@@ -153,223 +160,177 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
         print(f"[reasoning] error for ({session_id}, page={page}): {e}")
 
 
-# ── Per-cluster transcription ─────────────────────────────
+# ── Whole-page transcription ──────────────────────────────
+
+# (session_id, page) → hash of visible stroke set (skip-if-unchanged)
+_last_stroke_hash: dict[tuple[str, int], str] = {}
+
+DIAGRAM_CONFIDENCE_THRESHOLD = 0.8   # below → diagram
 
 
-def schedule_cluster_and_transcribe(session_id: str, page: int) -> None:
-    """Debounce 500ms, then re-cluster + transcribe only dirty clusters."""
+def schedule_transcribe(session_id: str, page: int) -> None:
+    """Debounce 500ms, then transcribe all visible strokes on this page."""
     key = (session_id, page)
     existing = _debounce_tasks.pop(key, None)
     if existing:
         existing.cancel()
     _debounce_tasks[key] = asyncio.create_task(
-        _debounced_cluster_and_transcribe(session_id, page)
+        _debounced_transcribe(session_id, page)
     )
 
 
-async def _debounced_cluster_and_transcribe(session_id: str, page: int) -> None:
+async def _debounced_transcribe(session_id: str, page: int) -> None:
     await asyncio.sleep(DEBOUNCE_SECONDS)
     _debounce_tasks.pop((session_id, page), None)
 
-    from lib.stroke_clustering import update_cluster_labels
+    try:
+        _get_credentials()
+    except RuntimeError:
+        # No Mathpix credentials — still trigger reasoning
+        schedule_reasoning(session_id, page)
+        return
+
+    pool = get_pool()
+    if not pool:
+        return
 
     try:
-        # 1. Re-cluster and get dirty labels
-        dirty_labels = await update_cluster_labels(session_id, page)
+        # 1. Fetch all draw/erase events and resolve visibility
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, strokes, event_type
+                FROM stroke_logs
+                WHERE session_id = $1 AND page = $2 AND event_type IN ('draw', 'erase')
+                ORDER BY received_at
+                """,
+                session_id, page,
+            )
 
-        if not dirty_labels:
-            print(f"[mathpix] ({session_id}, page={page}): no dirty clusters, skipping transcription")
-            # Still concatenate in case cluster order changed
-            await _concatenate_cluster_transcriptions(session_id, page)
-            # Still trigger reasoning (student may have paused)
+        visible_rows: list[dict] = []
+        for row in rows:
+            if row["event_type"] == "erase":
+                visible_rows = [dict(row)]
+            else:
+                visible_rows.append(dict(row))
+
+        # 2. Collect all visible strokes
+        all_x: list[list[float]] = []
+        all_y: list[list[float]] = []
+        stroke_count = 0
+        hash_parts: list[str] = []
+
+        for row in visible_rows:
+            strokes_data = row["strokes"]
+            if isinstance(strokes_data, str):
+                strokes_data = json.loads(strokes_data)
+
+            for stroke in strokes_data:
+                pts = stroke.get("points", [])
+                if pts:
+                    xs = [p["x"] for p in pts]
+                    ys = [p["y"] for p in pts]
+                    all_x.append(xs)
+                    all_y.append(ys)
+                    stroke_count += 1
+                    # Include in hash: log_id + stroke points for uniqueness
+                    hash_parts.append(f"{row['id']}:{json.dumps(pts, sort_keys=True)}")
+
+        if not all_x:
+            print(f"[mathpix] ({session_id}, page={page}): no visible strokes, skipping")
             schedule_reasoning(session_id, page)
             return
 
-        # 2. Transcribe each dirty cluster sequentially
-        for label in dirty_labels:
-            await _do_cluster_transcription(session_id, page, label)
+        # 3. Hash visible stroke set — skip if unchanged
+        stroke_hash = hashlib.sha256("\n".join(hash_parts).encode()).hexdigest()
+        key = (session_id, page)
+        if _last_stroke_hash.get(key) == stroke_hash:
+            print(f"[mathpix] ({session_id}, page={page}): strokes unchanged, skipping Mathpix call")
+            schedule_reasoning(session_id, page)
+            return
+        _last_stroke_hash[key] = stroke_hash
 
-        # 3. Concatenate all cluster transcriptions into page_transcriptions
-        await _concatenate_cluster_transcriptions(session_id, page)
+        # 4. Send all strokes to Mathpix in one request
+        session = await get_or_create_session(session_id, page)
 
-        # 4. Schedule reasoning (separate 2.5s debounce)
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{MATHPIX_BASE}/v3/strokes",
+                headers={
+                    "app_token": session.app_token,
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "strokes_session_id": session.strokes_session_id,
+                    "strokes": {"strokes": {"x": all_x, "y": all_y}},
+                    "include_smiles": True,
+                    "include_geometry_data": True,
+                    "include_line_data": True,
+                },
+            )
+            resp.raise_for_status()
+            result = resp.json()
+
+        # 5. Parse response
+        latex = result.get("latex_styled", "") or result.get("text", "")
+        raw_line_data = result.get("line_data")
+        confidence = result.get("confidence", 0.0)
+        if isinstance(confidence, str):
+            confidence = float(confidence)
+        has_error = "error" in result
+        is_handwritten = result.get("is_handwritten", True)
+
+        # Determine content_type from line_data
+        content_type = "math"
+        if raw_line_data and len(raw_line_data) > 0:
+            first_line = raw_line_data[0]
+            line_type = first_line.get("type", "")
+            subtype = first_line.get("subtype", "")
+            if line_type == "diagram" and subtype.startswith("chemistry"):
+                content_type = "chemistry"
+            elif line_type == "diagram":
+                content_type = "other"
+
+        # Diagram detection: error, low confidence, or not-handwritten → diagram
+        if has_error or not is_handwritten or confidence < DIAGRAM_CONFIDENCE_THRESHOLD:
+            content_type = "diagram"
+            latex = ""
+
+        text = latex
+
+        # 6. Upsert into page_transcriptions
+        line_data_json = json.dumps(raw_line_data) if raw_line_data else None
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO page_transcriptions (session_id, page, latex, text, confidence, line_data, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6::jsonb, NOW())
+                ON CONFLICT (session_id, page) DO UPDATE SET
+                    latex = EXCLUDED.latex,
+                    text = EXCLUDED.text,
+                    confidence = EXCLUDED.confidence,
+                    line_data = EXCLUDED.line_data,
+                    updated_at = NOW()
+                """,
+                session_id, page, latex, text, confidence, line_data_json,
+            )
+
+        from collections import Counter
+        line_types = ""
+        if raw_line_data:
+            counts = Counter(ld.get("type", "unknown") for ld in raw_line_data)
+            line_types = ", ".join(f"{t}={n}" for t, n in counts.most_common())
+        print(
+            f"[mathpix] ({session_id}, page={page}): "
+            f"sent {stroke_count} strokes, "
+            f"confidence={confidence:.2f}, "
+            f"content_type={content_type}, "
+            f"line_data=[{line_types}], "
+            f"latex={latex[:80]}"
+        )
+
+        # 7. Schedule reasoning
         schedule_reasoning(session_id, page)
 
     except Exception as e:
         print(f"[mathpix] error for ({session_id}, page={page}): {e}")
-
-
-DIAGRAM_CONFIDENCE_THRESHOLD = 0.8   # below → diagram
-
-
-async def _do_cluster_transcription(
-    session_id: str, page: int, cluster_label: int
-) -> None:
-    """Transcribe a single cluster's strokes via Mathpix."""
-    try:
-        _get_credentials()
-    except RuntimeError:
-        return
-
-    pool = get_pool()
-    if not pool:
-        return
-
-    # Fetch visible stroke_logs + their cluster_labels
-    async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            """
-            SELECT id, strokes, event_type, cluster_labels
-            FROM stroke_logs
-            WHERE session_id = $1 AND page = $2 AND event_type IN ('draw', 'erase')
-            ORDER BY received_at
-            """,
-            session_id, page,
-        )
-
-    # Resolve erases to get visible rows
-    visible_rows: list[dict] = []
-    for row in rows:
-        if row["event_type"] == "erase":
-            visible_rows = [dict(row)]
-        else:
-            visible_rows.append(dict(row))
-
-    # Filter to strokes belonging to this cluster
-    cluster_x: list[list[float]] = []
-    cluster_y: list[list[float]] = []
-    stroke_count = 0
-
-    for row in visible_rows:
-        strokes_data = row["strokes"]
-        if isinstance(strokes_data, str):
-            strokes_data = json.loads(strokes_data)
-        labels_data = row.get("cluster_labels")
-        if not labels_data:
-            continue
-        if isinstance(labels_data, str):
-            labels_data = json.loads(labels_data)
-
-        for idx, stroke in enumerate(strokes_data):
-            if idx < len(labels_data) and labels_data[idx] == cluster_label:
-                pts = stroke.get("points", [])
-                if pts:
-                    cluster_x.append([p["x"] for p in pts])
-                    cluster_y.append([p["y"] for p in pts])
-                    stroke_count += 1
-
-    if not cluster_x:
-        return
-
-    # Send to Mathpix (reuse same page session)
-    session = await get_or_create_session(session_id, page)
-
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            f"{MATHPIX_BASE}/v3/strokes",
-            headers={
-                "app_token": session.app_token,
-                "Content-Type": "application/json",
-            },
-            json={
-                "strokes_session_id": session.strokes_session_id,
-                "strokes": {"strokes": {"x": cluster_x, "y": cluster_y}},
-                "include_smiles": True,
-                "include_geometry_data": True,
-                "include_line_data": True,
-            },
-        )
-        resp.raise_for_status()
-        result = resp.json()
-
-    latex = result.get("latex_styled", "") or result.get("text", "")
-    raw_line_data = result.get("line_data")
-    confidence = result.get("confidence", 0.0)
-    if isinstance(confidence, str):
-        confidence = float(confidence)
-    has_error = "error" in result
-    is_handwritten = result.get("is_handwritten", True)
-
-    # Determine content_type from line_data
-    content_type = "math"
-    if raw_line_data and len(raw_line_data) > 0:
-        first_line = raw_line_data[0]
-        line_type = first_line.get("type", "")
-        subtype = first_line.get("subtype", "")
-        if line_type == "diagram" and subtype.startswith("chemistry"):
-            content_type = "chemistry"
-        elif line_type == "diagram":
-            content_type = "other"
-        # "math" stays as default
-
-    # Diagram detection: error, low confidence, or not-handwritten → diagram
-    if has_error or not is_handwritten or confidence < DIAGRAM_CONFIDENCE_THRESHOLD:
-        content_type = "diagram"
-        latex = ""
-        print(f"[mathpix] cluster {cluster_label}: diagram (confidence={confidence:.2f}, error={has_error}, is_handwritten={is_handwritten})")
-
-    # Update cluster row
-    async with pool.acquire() as conn:
-        await conn.execute(
-            """
-            UPDATE clusters SET transcription = $1, content_type = $2
-            WHERE session_id = $3 AND page = $4 AND cluster_label = $5
-            """,
-            latex, content_type, session_id, page, cluster_label,
-        )
-
-    from collections import Counter
-    line_types = ""
-    if raw_line_data:
-        counts = Counter(ld.get("type", "unknown") for ld in raw_line_data)
-        line_types = ", ".join(f"{t}={n}" for t, n in counts.most_common())
-    print(
-        f"[mathpix] cluster {cluster_label} ({session_id}, page={page}): "
-        f"sent {stroke_count} strokes, "
-        f"confidence={confidence:.2f}, "
-        f"content_type={content_type}, "
-        f"line_data=[{line_types}], "
-        f"latex={latex[:80]}"
-    )
-
-
-async def _concatenate_cluster_transcriptions(session_id: str, page: int) -> None:
-    """Concatenate all cluster transcriptions (ordered by centroid_y) into page_transcriptions."""
-    pool = get_pool()
-    if not pool:
-        return
-
-    async with pool.acquire() as conn:
-        cluster_rows = await conn.fetch(
-            """
-            SELECT transcription, content_type FROM clusters
-            WHERE session_id = $1 AND page = $2
-            ORDER BY centroid_y ASC
-            """,
-            session_id, page,
-        )
-
-    if not cluster_rows:
-        return
-
-    # Concatenate non-empty transcriptions
-    parts = [r["transcription"] for r in cluster_rows if r["transcription"]]
-    latex = "\n\n".join(parts)
-    text = latex  # use same for text field
-
-    async with pool.acquire() as conn:
-        await conn.execute(
-            """
-            INSERT INTO page_transcriptions (session_id, page, latex, text, confidence, line_data, updated_at)
-            VALUES ($1, $2, $3, $4, $5, NULL, NOW())
-            ON CONFLICT (session_id, page) DO UPDATE SET
-                latex = EXCLUDED.latex,
-                text = EXCLUDED.text,
-                confidence = EXCLUDED.confidence,
-                line_data = NULL,
-                updated_at = NOW()
-            """,
-            session_id, page, latex, text, 1.0,
-        )
-
-    print(f"[mathpix] concatenated {len(parts)} cluster transcriptions into page_transcriptions")

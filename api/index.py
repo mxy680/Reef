@@ -37,7 +37,6 @@ from lib.database import init_db, close_db, get_pool
 from api.users import router as users_router
 from api.tts import router as tts_router
 from api.strokes import router as strokes_router
-from api.clustering import router as clustering_router
 from api.voice import router as voice_router
 from api.reasoning import router as reasoning_router
 from api.events import router as events_router
@@ -93,7 +92,6 @@ app.add_middleware(
 app.include_router(users_router)
 app.include_router(tts_router)
 app.include_router(strokes_router)
-app.include_router(clustering_router)
 app.include_router(voice_router)
 app.include_router(reasoning_router)
 app.include_router(events_router)

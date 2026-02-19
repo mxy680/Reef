@@ -48,54 +48,13 @@ async def init_db():
             ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT ''
         """)
         await conn.execute("""
-            ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS cluster_labels JSONB NOT NULL DEFAULT '[]'::jsonb
-        """)
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS clusters (
-                id SERIAL PRIMARY KEY,
-                session_id TEXT NOT NULL,
-                page INT NOT NULL,
-                cluster_label INT NOT NULL,
-                stroke_count INT NOT NULL,
-                centroid_x FLOAT NOT NULL,
-                centroid_y FLOAT NOT NULL,
-                bbox_x1 FLOAT NOT NULL,
-                bbox_y1 FLOAT NOT NULL,
-                bbox_x2 FLOAT NOT NULL,
-                bbox_y2 FLOAT NOT NULL,
-                created_at TIMESTAMPTZ DEFAULT NOW(),
-                UNIQUE(session_id, page, cluster_label)
-            )
-        """)
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS cluster_classes (
-                id SERIAL PRIMARY KEY,
-                session_id TEXT NOT NULL,
-                page INT NOT NULL,
-                stroke_log_id INT NOT NULL REFERENCES stroke_logs(id) ON DELETE CASCADE,
-                stroke_index INT NOT NULL,
-                cluster_label INT NOT NULL,
-                centroid_x FLOAT NOT NULL,
-                centroid_y FLOAT NOT NULL,
-                UNIQUE(session_id, page, stroke_log_id, stroke_index)
-            )
-        """)
-        await conn.execute("""
-            ALTER TABLE clusters ADD COLUMN IF NOT EXISTS transcription TEXT NOT NULL DEFAULT ''
-        """)
-        await conn.execute("""
-            ALTER TABLE clusters ADD COLUMN IF NOT EXISTS content_type TEXT NOT NULL DEFAULT 'math'
-        """)
-        await conn.execute("""
             ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS problem_context TEXT NOT NULL DEFAULT ''
         """)
+        # Migration: drop clustering tables (no longer used)
+        await conn.execute("DROP TABLE IF EXISTS cluster_classes")
+        await conn.execute("DROP TABLE IF EXISTS clusters")
         await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_clusters_session_page
-            ON clusters(session_id, page)
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_cluster_classes_session_page
-            ON cluster_classes(session_id, page)
+            ALTER TABLE stroke_logs DROP COLUMN IF EXISTS cluster_labels
         """)
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS documents (

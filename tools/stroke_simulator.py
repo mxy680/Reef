@@ -2,11 +2,10 @@
 
 Converts text expressions (e.g., "2x + 3 = 7") into realistic stroke paths
 using font glyph tracing, sends them over WebSocket to the running server,
-and verifies clustering/transcription results via the REST API.
+and verifies transcription results via the REST API.
 
 Usage:
     uv run python tools/stroke_simulator.py "2x + 3 = 7" --verify
-    uv run python tools/stroke_simulator.py "2x + 3 = 7" "x = 2" --verify --expected-lines 2
     uv run python tools/stroke_simulator.py "f(x) = x^2" --preview
     uv run python tools/stroke_simulator.py "a + b" --clear --session-id test-1 --verify
 """
@@ -352,13 +351,12 @@ class StrokeSimulator:
         else:
             print(f"[sim] ack received ({len(strokes)} strokes sent)")
 
-    async def verify(self, expected_lines: int | None = None,
-                     timeout: float = 30.0, poll_interval: float = 1.0) -> dict:
-        """Poll GET /api/stroke-logs until transcriptions appear.
+    async def verify(self, timeout: float = 30.0, poll_interval: float = 1.0) -> dict:
+        """Poll GET /api/page-transcription until transcription appears.
 
         Returns the API response dict.
         """
-        url = f"{self.http_url}/api/stroke-logs?session_id={self.session_id}"
+        url = f"{self.http_url}/api/page-transcription?session_id={self.session_id}&page=1"
         start = time.time()
 
         async with httpx.AsyncClient() as client:
@@ -366,24 +364,16 @@ class StrokeSimulator:
                 resp = await client.get(url)
                 data = resp.json()
 
-                transcriptions = data.get("transcriptions", {})
-                cluster_order = data.get("cluster_order", [])
-
-                if transcriptions:
-                    n_clusters = len(cluster_order)
-                    print(f"[sim] {n_clusters} cluster(s) transcribed:")
-                    for label in cluster_order:
-                        print(f"  cluster {label}: {transcriptions.get(label, '(empty)')}")
-
-                    if expected_lines is not None and n_clusters != expected_lines:
-                        print(f"[sim] WARNING: expected {expected_lines} lines, got {n_clusters}")
-                    else:
-                        print("[sim] verification passed")
+                latex = data.get("latex", "")
+                if latex:
+                    print(f"[sim] transcription received:")
+                    print(f"  latex: {latex[:120]}")
+                    print("[sim] verification passed")
                     return data
 
                 await asyncio.sleep(poll_interval)
 
-        print(f"[sim] timeout after {timeout}s — no transcriptions found")
+        print(f"[sim] timeout after {timeout}s — no transcription found")
         return data
 
     async def clear(self) -> None:
@@ -441,8 +431,6 @@ async def main():
                         help=f"Horizontal spacing between characters (default: {DEFAULT_CHAR_SPACING})")
     parser.add_argument("--verify", action="store_true",
                         help="Poll server for transcription results after sending")
-    parser.add_argument("--expected-lines", type=int, default=None,
-                        help="Expected number of cluster lines (used with --verify)")
     parser.add_argument("--clear", action="store_true",
                         help="Clear session data before sending strokes")
     parser.add_argument("--session-id", default=None,
@@ -491,7 +479,7 @@ async def main():
         if args.verify:
             # Small delay to let server process
             await asyncio.sleep(1.0)
-            await sim.verify(expected_lines=args.expected_lines, timeout=args.timeout)
+            await sim.verify(timeout=args.timeout)
     finally:
         await sim.close()
 
