@@ -97,6 +97,10 @@ app.include_router(reasoning_router)
 app.include_router(events_router)
 app.include_router(tts_stream_router)
 
+if os.getenv("ENVIRONMENT") == "development":
+    from api.simulation import router as simulation_router
+    app.include_router(simulation_router)
+
 
 @app.get("/health")
 async def health_check():
