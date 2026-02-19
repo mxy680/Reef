@@ -88,10 +88,14 @@ Your message will be read aloud via text-to-speech. Write ONLY spoken English:
 
 ## Style
 
-- 1-2 sentences maximum. Concise and conversational — like a calm tutor sitting beside them.
+- ONE sentence. That's it. Absolute maximum two if truly necessary, but default to one.
+- Assume the student is a beginner who barely knows the topic. Use the simplest language possible. No jargon, no technical terminology unless you explain it in the same breath.
+- Focus on exactly ONE thing at a time. Never address two issues or two steps in a single message. If there are multiple problems, address only the most immediate one.
+- Conversational and warm — like a patient friend who happens to know math, not a professor.
 - Reference what the student actually wrote to show you're paying attention.
 - Use growth-mindset framing: "not yet" over "wrong," process over person.
 - Ask questions more than you make statements — push them to construct understanding.
+- When guiding toward a next step, only reveal the very next micro-step, not the whole path ahead.
 
 ## Output format
 
@@ -107,15 +111,16 @@ The student just asked you a question out loud. You MUST respond — this is not
 Answer their question using the problem context above.
 
 Guidelines for answering:
-- For conceptual questions ("why does this work?", "what does this mean?", "can you explain..."): \
-give a clear, direct explanation grounded in the problem they're working on.
+- Assume the student barely knows the topic. Use simple, everyday language. No jargon.
+- Answer ONE thing at a time. If they asked a big question, break it down and answer only the first piece. They can ask follow-ups.
+- For conceptual questions ("why does this work?", "what does this mean?"): \
+give a clear, simple explanation using plain words. Relate it to something concrete if possible.
 - For procedural questions ("what do I do next?", "how do I solve this?"): \
-give a helpful nudge or leading question rather than the full solution. \
-Guide them toward the next step without doing it for them.
+tell them only the very next small step, not the whole path. One step at a time.
 - For verification questions ("is this right?", "did I do this correctly?"): \
-check their work against the answer key and confirm or redirect specifically.
+check their work against the answer key and give a direct yes or no, then briefly explain why.
 - Always reference their current work and the specific problem they're on.
-- Keep it concise (2-3 sentences max) — this is spoken aloud via TTS.\
+- Keep it to 1-2 sentences. This is spoken aloud — short and clear beats thorough and long.\
 """
 
 RESPONSE_SCHEMA = {
@@ -233,6 +238,97 @@ async def build_context(session_id: str, page: int) -> str:
             parts.append(f"## Recent Tutor History\n" + "\n".join(history_lines))
 
     return "\n\n".join(parts)
+
+
+async def build_context_structured(session_id: str, page: int) -> list[dict]:
+    """Assemble reasoning context as structured sections for dashboard preview."""
+    pool = get_pool()
+    if not pool:
+        return []
+
+    sections: list[dict] = []
+
+    async with pool.acquire() as conn:
+        # 1. Page transcription
+        tx_row = await conn.fetchrow(
+            """
+            SELECT latex, text FROM page_transcriptions
+            WHERE session_id = $1 AND page = $2
+            """,
+            session_id, page,
+        )
+        if tx_row and tx_row["text"]:
+            sections.append({"title": "Student's Current Work", "content": tx_row["text"]})
+
+        # 2. Original problem + answer key
+        q_id = None
+
+        from api.strokes import _active_sessions
+        info = _active_sessions.get(session_id, {})
+        doc_name = info.get("document_name", "")
+        q_num = info.get("question_number")
+        if doc_name and q_num is not None:
+            doc_stem = doc_name.rsplit(".", 1)[0] if "." in doc_name else doc_name
+            q_row = await conn.fetchrow(
+                """
+                SELECT q.id, q.number, q.label, q.text, q.parts
+                FROM questions q JOIN documents d ON q.document_id = d.id
+                WHERE d.filename = $1 AND q.number = $2
+                """,
+                doc_stem, q_num,
+            )
+            if q_row:
+                q_id = q_row["id"]
+
+        # Fallback to session_question_cache
+        if q_id is None:
+            cache_row = await conn.fetchrow(
+                "SELECT question_id FROM session_question_cache WHERE session_id = $1",
+                session_id,
+            )
+            if cache_row:
+                q_id = cache_row["question_id"]
+                q_row = await conn.fetchrow(
+                    "SELECT id, number, label, text, parts FROM questions WHERE id = $1",
+                    q_id,
+                )
+
+        if q_id and q_row:
+            problem_lines = [q_row["text"]]
+            q_parts = q_row["parts"]
+            if isinstance(q_parts, str):
+                q_parts = json.loads(q_parts)
+            if q_parts:
+                for p in q_parts:
+                    problem_lines.append(f"  ({p.get('label', '?')}) {p.get('text', '')}")
+            sections.append({"title": f"Original Problem ({q_row['label']})", "content": "\n".join(problem_lines)})
+
+            ak_rows = await conn.fetch(
+                "SELECT part_label, answer FROM answer_keys WHERE question_id = $1",
+                q_id,
+            )
+            if ak_rows:
+                ak_text = "\n".join(
+                    f"  {r['part_label'] or 'Main'}: {r['answer']}" for r in ak_rows
+                )
+                sections.append({"title": "Answer Key", "content": ak_text})
+
+        # 3. Last 5 reasoning interactions
+        history_rows = await conn.fetch(
+            """
+            SELECT action, message, created_at FROM reasoning_logs
+            WHERE session_id = $1 AND page = $2
+            ORDER BY created_at DESC LIMIT 5
+            """,
+            session_id, page,
+        )
+        if history_rows:
+            history_lines = []
+            for r in reversed(history_rows):
+                history_lines.append(f"  [{r['action']}] {r['message'] or ''}")
+            sections.append({"title": "Recent Tutor History", "content": "\n".join(history_lines)})
+
+    return sections
 
 
 async def run_reasoning(session_id: str, page: int) -> dict:

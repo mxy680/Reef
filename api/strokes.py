@@ -366,3 +366,16 @@ async def get_page_transcription(
         "line_data": line_data,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
     }
+
+
+@router.get("/api/reasoning-preview")
+async def get_reasoning_preview(
+    session_id: str = Query(...),
+    page: int = Query(default=1),
+):
+    from lib.reasoning import SYSTEM_PROMPT, build_context_structured
+    sections = await build_context_structured(session_id, page)
+    return {
+        "system_prompt": SYSTEM_PROMPT,
+        "sections": sections,
+    }
