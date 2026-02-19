@@ -1,123 +1,90 @@
-"""Integration tests for api/users.py — profile CRUD with mock pool."""
+"""Integration tests for api/users.py — real DB CRUD via TestClient."""
 
-import pytest
-from httpx import ASGITransport, AsyncClient
-
-
-@pytest.fixture
-def patch_pool(mocker, mock_pool):
-    """Patch get_pool in users module to return mock_pool."""
-    mocker.patch("api.users.get_pool", return_value=mock_pool)
-    return mock_pool
+import uuid
 
 
-@pytest.fixture
-def patch_pool_none(mocker):
-    """Patch get_pool to return None."""
-    mocker.patch("api.users.get_pool", return_value=None)
+def _uid() -> str:
+    """Generate a unique Apple user ID for test isolation."""
+    return f"test_{uuid.uuid4().hex[:12]}"
 
 
-@pytest.fixture
-async def client():
-    from api.index import app
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
-        yield c
-
-
-class TestUpsertProfile:
-    async def test_put_valid_bearer(self, client, patch_pool, mock_conn):
-        mock_conn.fetchrow.return_value = {
-            "apple_user_id": "user123",
-            "display_name": "Test",
-            "email": "test@example.com",
-        }
-        resp = await client.put(
+class TestPutThenGet:
+    def test_put_creates_and_get_retrieves(self, client):
+        uid = _uid()
+        resp = client.put(
             "/users/profile",
-            json={"display_name": "Test", "email": "test@example.com"},
-            headers={"Authorization": "Bearer user123"},
+            json={"display_name": "Alice", "email": "alice@example.com"},
+            headers={"Authorization": f"Bearer {uid}"},
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["apple_user_id"] == "user123"
+        assert data["apple_user_id"] == uid
+        assert data["display_name"] == "Alice"
+        assert data["email"] == "alice@example.com"
 
-    async def test_put_without_authorization(self, client, patch_pool):
-        resp = await client.put(
+        # GET returns same profile
+        resp = client.get("/users/profile", headers={"Authorization": f"Bearer {uid}"})
+        assert resp.status_code == 200
+        assert resp.json()["display_name"] == "Alice"
+
+
+class TestUpsertCoalesce:
+    def test_put_twice_preserves_non_null_fields(self, client):
+        uid = _uid()
+        # First PUT sets both fields
+        client.put(
             "/users/profile",
-            json={"display_name": "Test"},
+            json={"display_name": "Bob", "email": "bob@example.com"},
+            headers={"Authorization": f"Bearer {uid}"},
         )
-        assert resp.status_code == 422
+        # Second PUT with null email — should keep existing email
+        resp = client.put(
+            "/users/profile",
+            json={"display_name": "Bobby"},
+            headers={"Authorization": f"Bearer {uid}"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["display_name"] == "Bobby"
+        assert data["email"] == "bob@example.com"
 
-    async def test_put_invalid_auth_prefix(self, client, patch_pool):
-        resp = await client.put(
+
+class TestDeleteThenGet:
+    def test_delete_removes_profile(self, client):
+        uid = _uid()
+        client.put(
+            "/users/profile",
+            json={"display_name": "Charlie"},
+            headers={"Authorization": f"Bearer {uid}"},
+        )
+        resp = client.delete("/users/profile", headers={"Authorization": f"Bearer {uid}"})
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
+
+        # GET after delete → 404
+        resp = client.get("/users/profile", headers={"Authorization": f"Bearer {uid}"})
+        assert resp.status_code == 404
+
+
+class TestGetNonexistent:
+    def test_get_unknown_user_returns_404(self, client):
+        uid = _uid()
+        resp = client.get("/users/profile", headers={"Authorization": f"Bearer {uid}"})
+        assert resp.status_code == 404
+
+
+class TestDeleteNonexistent:
+    def test_delete_unknown_user_returns_404(self, client):
+        uid = _uid()
+        resp = client.delete("/users/profile", headers={"Authorization": f"Bearer {uid}"})
+        assert resp.status_code == 404
+
+
+class TestInvalidAuth:
+    def test_bad_prefix_returns_401(self, client):
+        resp = client.put(
             "/users/profile",
             json={"display_name": "Test"},
             headers={"Authorization": "Token xyz"},
         )
         assert resp.status_code == 401
-
-
-class TestGetProfile:
-    async def test_get_found(self, client, patch_pool, mock_conn):
-        mock_conn.fetchrow.return_value = {
-            "apple_user_id": "user123",
-            "display_name": "Test",
-            "email": None,
-        }
-        resp = await client.get(
-            "/users/profile",
-            headers={"Authorization": "Bearer user123"},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["apple_user_id"] == "user123"
-
-    async def test_get_not_found(self, client, patch_pool, mock_conn):
-        mock_conn.fetchrow.return_value = None
-        resp = await client.get(
-            "/users/profile",
-            headers={"Authorization": "Bearer user123"},
-        )
-        assert resp.status_code == 404
-
-
-class TestDeleteProfile:
-    async def test_delete_success(self, client, patch_pool, mock_conn):
-        mock_conn.execute.return_value = "DELETE 1"
-        resp = await client.delete(
-            "/users/profile",
-            headers={"Authorization": "Bearer user123"},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["status"] == "deleted"
-
-    async def test_delete_not_found(self, client, patch_pool, mock_conn):
-        mock_conn.execute.return_value = "DELETE 0"
-        resp = await client.delete(
-            "/users/profile",
-            headers={"Authorization": "Bearer user123"},
-        )
-        assert resp.status_code == 404
-
-
-class TestNoDatabase:
-    async def test_put_no_db(self, client, patch_pool_none):
-        resp = await client.put(
-            "/users/profile",
-            json={"display_name": "Test"},
-            headers={"Authorization": "Bearer user123"},
-        )
-        assert resp.status_code == 503
-
-    async def test_get_no_db(self, client, patch_pool_none):
-        resp = await client.get(
-            "/users/profile",
-            headers={"Authorization": "Bearer user123"},
-        )
-        assert resp.status_code == 503
-
-    async def test_delete_no_db(self, client, patch_pool_none):
-        resp = await client.delete(
-            "/users/profile",
-            headers={"Authorization": "Bearer user123"},
-        )
-        assert resp.status_code == 503
