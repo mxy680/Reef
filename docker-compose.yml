@@ -24,11 +24,29 @@ services:
       - POSTGRES_DB=reef
     volumes:
       - pg-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/20-create-reef-document-db.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U reef"]
       interval: 5s
       timeout: 3s
       retries: 5
+
+  reef-document:
+    build:
+      context: ../Reef-Document
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://reef:${POSTGRES_PASSWORD}@db:5432/reef_document
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_GOOGLE_ID=${AUTH_GOOGLE_ID}
+      - AUTH_GOOGLE_SECRET=${AUTH_GOOGLE_SECRET}
+      - REEF_SERVER_URL=http://app:8000
+      - AUTH_TRUST_HOST=true
+    volumes:
+      - doc-data:/data/documents
+    depends_on:
+      - db
+    restart: unless-stopped
 
   caddy:
     image: caddy:2-alpine
@@ -46,3 +64,4 @@ volumes:
   pg-data:
   caddy-data:
   caddy-config:
+  doc-data:

@@ -6,3 +6,7 @@ api.studyreef.com {
         }
     }
 }
+
+doc.studyreef.com {
+    reverse_proxy reef-document:3000
+}
