@@ -92,6 +92,7 @@ struct AssignmentView: View {
                         problemContext: problemText,
                         documentName: note.fileName,
                         questionNumber: currentQuestion?.questionNumber,
+                        regionData: currentQuestion?.regionData,
                         onCanvasReady: onCanvasReady,
                         onUndoStateChanged: onUndoStateChanged,
                         onRedoStateChanged: onRedoStateChanged,

@@ -45,6 +45,7 @@ struct DrawingOverlayView: UIViewRepresentable {
     var problemContext: String? = nil
     var documentName: String? = nil
     var questionNumber: Int? = nil
+    var regionData: ProblemRegionData? = nil
     var onCanvasReady: (CanvasContainerView) -> Void = { _ in }
     var onUndoStateChanged: (Bool) -> Void = { _ in }
     var onRedoStateChanged: (Bool) -> Void = { _ in }
@@ -61,6 +62,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.onDrawingChanged = onDrawingChanged
         context.coordinator.recognitionEnabled = recognitionEnabled
         context.coordinator.problemContext = problemContext
+        context.coordinator.regionData = regionData
         container.onSwipeLeft = onSwipeLeft
         container.onSwipeRight = onSwipeRight
 
@@ -125,6 +127,7 @@ struct DrawingOverlayView: UIViewRepresentable {
         context.coordinator.onRecognitionResult = onRecognitionResult
 
         context.coordinator.problemContext = problemContext
+        context.coordinator.regionData = regionData
     }
 
     private func updateTool(_ canvasView: PKCanvasView) {
@@ -204,6 +207,10 @@ struct DrawingOverlayView: UIViewRepresentable {
         // Problem context (stored but no longer triggers pipeline)
         var problemContext: String?
 
+        // Region data for active part detection
+        var regionData: ProblemRegionData?
+        private var currentActivePart: String? = nil
+
         // Tool state
         var currentTool: CanvasTool = .pen
         var currentPenColor: UIColor = .black
@@ -219,6 +226,42 @@ struct DrawingOverlayView: UIViewRepresentable {
                 return 1
             }
             return index + 1
+        }
+
+        /// Detects which question part the student is writing in based on stroke position.
+        /// Returns the part label (e.g. "a", "b") or nil if in the stem or no region data.
+        private func detectActivePart(for canvasView: PKCanvasView) -> String? {
+            guard let regionData = regionData,
+                  !regionData.regions.isEmpty,
+                  let lastStroke = canvasView.drawing.strokes.last,
+                  let lastPoint = lastStroke.path.last else {
+                return nil
+            }
+
+            let canvasY = lastPoint.location.y
+
+            // 0-based page index from 1-based getPageIndex
+            let pageIndex = getPageIndex(for: canvasView) - 1
+
+            guard pageIndex >= 0, pageIndex < regionData.pageHeights.count else {
+                return nil
+            }
+
+            // Canvas bounds ≈ PDF points (see plan: Coordinate Mapping Notes)
+            let pageHeight = CGFloat(regionData.pageHeights[pageIndex])
+            let scaleFactor = canvasView.bounds.height / pageHeight
+            let pdfY = canvasY / scaleFactor
+
+            // Find matching region on this page
+            for region in regionData.regions {
+                if region.page == pageIndex
+                    && CGFloat(region.yStart) <= pdfY
+                    && pdfY < CGFloat(region.yEnd) {
+                    return region.label  // nil for stem
+                }
+            }
+
+            return nil
         }
 
         /// Extracts full PKStrokePoint data from new strokes and sends to server.
@@ -252,6 +295,7 @@ struct DrawingOverlayView: UIViewRepresentable {
             let pageNum = getPageIndex(for: canvasView)
 
             // Erase detected — send full snapshot of remaining strokes
+            // Don't re-detect part (stroke gone); send last known active part
             if allStrokes.count < previousCount {
                 let deletedCount = previousCount - allStrokes.count
                 lastSentStrokeCount[key] = allStrokes.count
@@ -261,7 +305,8 @@ struct DrawingOverlayView: UIViewRepresentable {
                     page: pageNum,
                     strokes: strokeData,
                     eventType: "erase",
-                    deletedCount: deletedCount
+                    deletedCount: deletedCount,
+                    partLabel: currentActivePart
                 )
                 return
             }
@@ -270,11 +315,17 @@ struct DrawingOverlayView: UIViewRepresentable {
             let newStrokes = allStrokes[previousCount...]
             lastSentStrokeCount[key] = allStrokes.count
 
+            // Detect active part from latest stroke position
+            if let detected = detectActivePart(for: canvasView) {
+                currentActivePart = detected
+            }
+
             let strokeData = strokePointData(from: newStrokes)
             AIService.shared.sendStrokes(
                 sessionId: strokeSessionId,
                 page: pageNum,
-                strokes: strokeData
+                strokes: strokeData,
+                partLabel: currentActivePart
             )
         }
 
