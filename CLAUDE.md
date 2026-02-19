@@ -72,6 +72,7 @@ All defined in `lib/database.py` → `init_db()`.
 | `documents` | Uploaded PDFs (filename, page_count, total_problems) |
 | `questions` | Extracted homework problems (document_id FK, number, label, text, parts JSONB, bboxes JSONB) |
 | `answer_keys` | Solution keys (question_id FK, part_label, answer) |
+| `question_figures` | Figure images from PDF reconstruction (question_id FK, filename, image_b64) |
 | `session_question_cache` | Cache: session → current question (session_id PK, question_id) |
 
 ## Key Data Flows
