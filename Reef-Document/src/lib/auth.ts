@@ -1,5 +1,6 @@
 import NextAuth from "next-auth"
 import { prisma } from "./db"
+import { isAdminEmail } from "./admin"
 import authConfig from "./auth.config"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -19,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const user = await prisma.user.findUnique({ where: { googleId: profile.sub } })
         if (user) {
           token.userId = user.id
-          token.dailyLimit = user.dailyLimit
+          token.dailyLimit = isAdminEmail(user.email) ? null : user.dailyLimit
         }
       }
       return token
