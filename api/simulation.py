@@ -29,9 +29,15 @@ class AnswerKeyEntry(BaseModel):
     answer: str
 
 
+class PartEntry(BaseModel):
+    label: str
+    text: str
+
+
 class StartRequest(BaseModel):
     problem_text: str
     answer_key: list[AnswerKeyEntry]
+    parts: list[PartEntry] = []
     label: str = "Problem 1"
     question_number: int = 1
     subject: str = "math"
@@ -105,15 +111,17 @@ async def simulation_start(req: StartRequest):
             doc_filename,
         )
 
+        parts_json = json.dumps([{"label": p.label, "text": p.text} for p in req.parts]) if req.parts else "[]"
         question_id = await conn.fetchval(
             """
-            INSERT INTO questions (document_id, number, label, text)
-            VALUES ($1, $2, $3, $4) RETURNING id
+            INSERT INTO questions (document_id, number, label, text, parts)
+            VALUES ($1, $2, $3, $4, $5::jsonb) RETURNING id
             """,
             document_id,
             req.question_number,
             req.label,
             req.problem_text,
+            parts_json,
         )
 
         for ak in req.answer_key:
@@ -132,6 +140,7 @@ async def simulation_start(req: StartRequest):
         "document_name": doc_filename,
         "question_number": req.question_number,
         "last_seen": datetime.now(timezone.utc).isoformat(),
+        "active_part": None,
     }
 
     _simulation_sessions[session_id] = {"document_id": document_id}
