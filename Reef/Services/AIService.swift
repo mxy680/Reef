@@ -56,7 +56,7 @@ class AIService {
     static let shared = AIService()
 
     #if DEBUG
-    private let baseURL = "https://reef.mxy680.net"
+    private let baseURL = "http://172.20.93.199:8000"
     #else
     private let baseURL = "https://api.studyreef.com"
     #endif
@@ -137,16 +137,27 @@ class AIService {
 
     /// Fire-and-forget JSON POST helper for stroke endpoints.
     private func postJSON(path: String, body: [String: Any]) {
-        guard let url = URL(string: baseURL + path) else { return }
+        guard let url = URL(string: baseURL + path) else {
+            print("[AIService] Bad URL: \(baseURL + path)")
+            return
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        session.dataTask(with: request) { _, _, _ in }.resume()
+        session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("[AIService] POST \(path) error: \(error)")
+            } else if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                let body = data.flatMap { String(data: $0, encoding: .utf8) } ?? "nil"
+                print("[AIService] POST \(path) status: \(http.statusCode) body: \(body.prefix(200))")
+            }
+        }.resume()
     }
 
     /// Notify server of session start.
     func connectStrokeSession(sessionId: String, documentName: String? = nil, questionNumber: Int? = nil) {
+        print("[AIService] connectStrokeSession session=\(sessionId.prefix(8)) doc=\(documentName ?? "nil") q=\(questionNumber ?? -1)")
         currentSessionId = sessionId
         var body: [String: Any] = [
             "session_id": sessionId,
@@ -200,7 +211,12 @@ class AIService {
 
     /// Connect to the SSE event stream to receive reasoning results and TTS notifications.
     func connectSSE(sessionId: String) {
-        guard sseTask == nil else { return }
+        // If already connected to a different session, disconnect first
+        if sseTask != nil {
+            if sseSessionId == sessionId { return }
+            print("[SSE] Switching session: \(sseSessionId?.prefix(8) ?? "nil") → \(sessionId.prefix(8))")
+            disconnectSSE()
+        }
         sseSessionId = sessionId
 
         guard let url = URL(string: baseURL + "/api/events?session_id=\(sessionId)") else {
@@ -223,7 +239,8 @@ class AIService {
                     let (bytes, response) = try await self.sseSession.bytes(for: request)
                     guard let httpResponse = response as? HTTPURLResponse,
                           httpResponse.statusCode == 200 else {
-                        print("[SSE] Bad status, retrying in \(backoff / 1_000_000_000)s")
+                        let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+                        print("[SSE] Bad status \(code), retrying in \(backoff / 1_000_000_000)s")
                         try await Task.sleep(nanoseconds: backoff)
                         backoff = min(backoff * 2, maxBackoff)
                         continue
@@ -233,23 +250,16 @@ class AIService {
                     print("[SSE] Connected for session=\(sessionId.prefix(8))...")
 
                     var eventType = ""
-                    var dataBuffer = ""
 
                     for try await line in bytes.lines {
-                        if line.isEmpty {
-                            // End of event — process it
-                            if !dataBuffer.isEmpty {
-                                await self.handleSSEEvent(type: eventType, data: dataBuffer)
-                            }
-                            eventType = ""
-                            dataBuffer = ""
-                        } else if line.hasPrefix(":") {
-                            // SSE comment (keepalive) — ignore
-                            continue
+                        if line.hasPrefix(":") || line.isEmpty {
+                            continue  // SSE comment or empty line — skip
                         } else if line.hasPrefix("event: ") {
                             eventType = String(line.dropFirst(7))
                         } else if line.hasPrefix("data: ") {
-                            dataBuffer += String(line.dropFirst(6))
+                            let data = String(line.dropFirst(6))
+                            await self.handleSSEEvent(type: eventType, data: data)
+                            eventType = ""
                         }
                     }
                 } catch {
