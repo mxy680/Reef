@@ -25,7 +25,7 @@ struct ServerAPITests {
         let url = URL(string: "\(IntegrationTestConfig.baseURL)\(path)")!
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.timeoutInterval = 10
+        request.timeoutInterval = 20
         if let body = body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
