@@ -1,0 +1,31 @@
+name: "Sign error — student flips sign when moving terms"
+subject: math
+
+problem:
+  document_name: "test_harness_math"
+  question_number: 3
+  label: "Problem 3"
+  text: "Solve for x: 2x - 7 = 3"
+  parts: []
+  answer_key:
+    - part_label: null
+      answer: "x = 5"
+
+steps:
+  - id: "start"
+    transcription: "2x - 7 = 3"
+    expect:
+      action: silent
+
+  - id: "wrong_sign"
+    transcription: "2x - 7 = 3\n2x = 3 - 7\n2x = -4"
+    expect:
+      action: either
+      if_speak:
+        constraints: [no_answer_reveal, graduated_intervention]
+
+  - id: "committed_error"
+    transcription: "2x - 7 = 3\n2x = 3 - 7\n2x = -4\nx = -2"
+    expect:
+      action: speak
+      constraints: [no_answer_reveal, graduated_intervention, brevity]

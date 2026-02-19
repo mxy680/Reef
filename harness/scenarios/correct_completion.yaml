@@ -1,0 +1,24 @@
+name: "Correct completion — tutor should acknowledge"
+subject: math
+
+problem:
+  document_name: "test_harness_math"
+  question_number: 4
+  label: "Problem 4"
+  text: "Simplify: (3x^2)(4x^3)"
+  parts: []
+  answer_key:
+    - part_label: null
+      answer: "12x^5"
+
+steps:
+  - id: "start"
+    transcription: "(3x^2)(4x^3)"
+    expect:
+      action: silent
+
+  - id: "complete"
+    transcription: "(3x^2)(4x^3)\n= 3 * 4 * x^(2+3)\n= 12x^5"
+    expect:
+      action: speak
+      constraints: [brevity, voice_readiness]

@@ -1,0 +1,29 @@
+name: "Linear equation — correct step-by-step progression"
+subject: math
+
+problem:
+  document_name: "test_harness_math"
+  question_number: 1
+  label: "Problem 1"
+  text: "Solve for x: 3x + 5 = 20"
+  parts: []
+  answer_key:
+    - part_label: null
+      answer: "x = 5"
+
+steps:
+  - id: "start"
+    transcription: "3x + 5 = 20"
+    expect:
+      action: silent
+
+  - id: "subtract"
+    transcription: "3x + 5 = 20\n3x = 20 - 5\n3x = 15"
+    expect:
+      action: silent
+
+  - id: "complete"
+    transcription: "3x + 5 = 20\n3x = 20 - 5\n3x = 15\nx = 5"
+    expect:
+      action: speak
+      constraints: [brevity, voice_readiness]

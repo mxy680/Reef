@@ -1,0 +1,34 @@
+name: "Silence baseline — student thinking, tutor should stay quiet"
+subject: math
+
+problem:
+  document_name: "test_harness_math"
+  question_number: 5
+  label: "Problem 5"
+  text: "Find the derivative of f(x) = 3x^4 - 2x^2 + x - 7"
+  parts: []
+  answer_key:
+    - part_label: null
+      answer: "f'(x) = 12x^3 - 4x + 1"
+
+steps:
+  - id: "start"
+    transcription: "f(x) = 3x^4 - 2x^2 + x - 7"
+    expect:
+      action: silent
+
+  - id: "partial_work"
+    transcription: "f(x) = 3x^4 - 2x^2 + x - 7\nf'(x) = 12x^3"
+    expect:
+      action: silent
+
+  - id: "more_progress"
+    transcription: "f(x) = 3x^4 - 2x^2 + x - 7\nf'(x) = 12x^3 - 4x"
+    expect:
+      action: silent
+
+  - id: "complete"
+    transcription: "f(x) = 3x^4 - 2x^2 + x - 7\nf'(x) = 12x^3 - 4x + 1"
+    expect:
+      action: speak
+      constraints: [brevity, voice_readiness]

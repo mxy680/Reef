@@ -97,6 +97,11 @@ app.include_router(reasoning_router)
 app.include_router(events_router)
 app.include_router(tts_stream_router)
 
+# Dev-only harness endpoint (trigger reasoning without debounce)
+if os.getenv("ENVIRONMENT") == "development":
+    from api.harness import router as harness_router
+    app.include_router(harness_router)
+
 
 @app.get("/health")
 async def health_check():
