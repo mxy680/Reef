@@ -109,6 +109,113 @@ class TestBuildContext:
         assert "Try factoring" in history["content"]
 
     @pytest.mark.anyio
+    async def test_active_part_scopes_answer_key(self, client, db):
+        sid = _sid()
+        doc_id = await db.fetchval(
+            "INSERT INTO documents (filename, page_count, total_problems) "
+            "VALUES ('multipart', 1, 1) RETURNING id"
+        )
+        q_parts = [
+            {"label": "a", "text": "Find x"},
+            {"label": "b", "text": "Find y"},
+            {"label": "c", "text": "Find z"},
+        ]
+        q_id = await db.fetchval(
+            "INSERT INTO questions (document_id, number, label, text, parts, figures, "
+            "annotation_indices, bboxes, answer_space_cm) "
+            "VALUES ($1, 1, 'Problem 1', 'Multi-part question', $2::jsonb, '[]'::jsonb, "
+            "'[]'::jsonb, '[]'::jsonb, 3.0) RETURNING id",
+            doc_id, __import__("json").dumps(q_parts),
+        )
+        await db.execute(
+            "INSERT INTO answer_keys (question_id, part_label, answer) VALUES ($1, 'a', 'x=1')",
+            q_id,
+        )
+        await db.execute(
+            "INSERT INTO answer_keys (question_id, part_label, answer) VALUES ($1, 'b', 'y=2')",
+            q_id,
+        )
+        await db.execute(
+            "INSERT INTO answer_keys (question_id, part_label, answer) VALUES ($1, 'c', 'z=3')",
+            q_id,
+        )
+        _active_sessions[sid] = {
+            "document_name": "multipart.pdf",
+            "question_number": 1,
+            "last_seen": "",
+            "active_part": "b",
+        }
+
+        resp = client.get(f"/api/reasoning-preview?session_id={sid}&page=1")
+        sections = resp.json()["sections"]
+        titles = [s["title"] for s in sections]
+
+        # Active part's answer key should be scoped
+        assert any("Answer Key (Part b)" in t for t in titles)
+        ak = next(s for s in sections if "Answer Key (Part b)" in s["title"])
+        assert "y=2" in ak["content"]
+        assert "x=1" not in ak["content"]
+
+        # Earlier part shown as reference
+        assert any("Previous Parts" in t for t in titles)
+        prev = next(s for s in sections if "Previous Parts" in s["title"])
+        assert "x=1" in prev["content"]
+
+        # Later part (c) should NOT appear in answer keys
+        for s in sections:
+            if "Answer Key" in s["title"] or "Previous Parts" in s["title"]:
+                assert "z=3" not in s["content"]
+
+        # Problem parts: c should be hidden, b should have marker
+        problem = next(s for s in sections if "Original Problem" in s["title"])
+        assert "\u2190 currently working on this part" in problem["content"]
+        assert "(c)" not in problem["content"]
+
+    @pytest.mark.anyio
+    async def test_no_active_part_shows_all(self, client, db):
+        sid = _sid()
+        doc_id = await db.fetchval(
+            "INSERT INTO documents (filename, page_count, total_problems) "
+            "VALUES ('nopart', 1, 1) RETURNING id"
+        )
+        q_parts = [
+            {"label": "a", "text": "Find x"},
+            {"label": "b", "text": "Find y"},
+        ]
+        q_id = await db.fetchval(
+            "INSERT INTO questions (document_id, number, label, text, parts, figures, "
+            "annotation_indices, bboxes, answer_space_cm) "
+            "VALUES ($1, 1, 'Problem 1', 'Multi-part', $2::jsonb, '[]'::jsonb, "
+            "'[]'::jsonb, '[]'::jsonb, 3.0) RETURNING id",
+            doc_id, __import__("json").dumps(q_parts),
+        )
+        await db.execute(
+            "INSERT INTO answer_keys (question_id, part_label, answer) VALUES ($1, 'a', 'x=1')",
+            q_id,
+        )
+        await db.execute(
+            "INSERT INTO answer_keys (question_id, part_label, answer) VALUES ($1, 'b', 'y=2')",
+            q_id,
+        )
+        # No active_part set (backward compat)
+        _active_sessions[sid] = {
+            "document_name": "nopart.pdf",
+            "question_number": 1,
+            "last_seen": "",
+            "active_part": None,
+        }
+
+        resp = client.get(f"/api/reasoning-preview?session_id={sid}&page=1")
+        sections = resp.json()["sections"]
+        titles = [s["title"] for s in sections]
+
+        # Should show unified "Answer Key" — not scoped
+        assert "Answer Key" in titles
+        ak = next(s for s in sections if s["title"] == "Answer Key")
+        assert "x=1" in ak["content"]
+        assert "y=2" in ak["content"]
+
+    @pytest.mark.anyio
     async def test_fallback_to_session_question_cache(self, client, db):
         sid = _sid()
         doc_id = await db.fetchval(

@@ -56,6 +56,57 @@ class TestConnect:
         assert sid1 not in _active_sessions
 
 
+class TestPartLabel:
+    def test_part_label_stored_in_active_sessions(self, client):
+        sid = _sid()
+        client.post("/api/strokes/connect", json={"session_id": sid})
+        assert _active_sessions[sid]["active_part"] is None
+
+        client.post("/api/strokes", json={
+            "session_id": sid,
+            "page": 1,
+            "strokes": [{"x": [1], "y": [2]}],
+            "event_type": "draw",
+            "part_label": "b",
+        })
+        assert _active_sessions[sid]["active_part"] == "b"
+
+    def test_part_label_omitted_backward_compatible(self, client):
+        sid = _sid()
+        client.post("/api/strokes/connect", json={"session_id": sid})
+
+        # Send strokes without part_label
+        client.post("/api/strokes", json={
+            "session_id": sid,
+            "page": 1,
+            "strokes": [{"x": [1], "y": [2]}],
+            "event_type": "draw",
+        })
+        # active_part should remain None
+        assert _active_sessions[sid]["active_part"] is None
+
+    def test_part_label_not_overwritten_by_none(self, client):
+        sid = _sid()
+        client.post("/api/strokes/connect", json={"session_id": sid})
+
+        # Set part_label to "a"
+        client.post("/api/strokes", json={
+            "session_id": sid,
+            "page": 1,
+            "strokes": [{"x": [1], "y": [2]}],
+            "part_label": "a",
+        })
+        assert _active_sessions[sid]["active_part"] == "a"
+
+        # Send without part_label — should keep "a"
+        client.post("/api/strokes", json={
+            "session_id": sid,
+            "page": 1,
+            "strokes": [{"x": [3], "y": [4]}],
+        })
+        assert _active_sessions[sid]["active_part"] == "a"
+
+
 class TestPostStrokes:
     def test_post_strokes_persists_in_db(self, client):
         sid = _sid()

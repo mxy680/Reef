@@ -46,6 +46,7 @@ class StrokesRequest(BaseModel):
     strokes: list = []
     event_type: str = "draw"
     deleted_count: int = 0
+    part_label: Optional[str] = None
 
 
 class ClearRequest(BaseModel):
@@ -68,6 +69,7 @@ async def strokes_connect(req: ConnectRequest):
         "document_name": req.document_name or "",
         "question_number": req.question_number,
         "last_seen": datetime.now(timezone.utc).isoformat(),
+        "active_part": None,
     }
     print(f"[strokes] session {req.session_id} connected (doc={req.document_name!r}, q={req.question_number}, evicted {len(stale)} stale)")
 
@@ -119,9 +121,11 @@ async def strokes_post(req: StrokesRequest):
     if req.event_type in ("draw", "erase"):
         schedule_transcribe(req.session_id, req.page)
 
-    # Update last_seen
+    # Update last_seen and active part
     if req.session_id in _active_sessions:
         _active_sessions[req.session_id]["last_seen"] = datetime.now(timezone.utc).isoformat()
+        if req.part_label is not None:
+            _active_sessions[req.session_id]["active_part"] = req.part_label
 
     return {"status": "ok"}
 
@@ -238,6 +242,7 @@ async def get_stroke_logs(
             key=lambda sid: _active_sessions[sid].get("last_seen", ""),
         ),
         "document_name": active_doc_name,
+        "question_number": _active_sessions.get(lookup_sid, {}).get("question_number") if lookup_sid else None,
         "matched_question_label": matched_question_label,
         "mathpix_session": get_session_info(session_id, page or 1) if session_id else None,
     }

@@ -46,6 +46,14 @@ Do NOT ask conceptual "teaching" questions about steps the student already compl
 
 The answer key is ONLY for when the student asks "is this right?" Never compare intermediate work to the answer key.
 
+## Multi-part questions
+
+When the context shows "currently working on part (X)", focus ONLY on that part:
+- Only check the answer key for part (X) — the context already filters this for you.
+- Do not comment on other parts' work.
+- "Previous Parts" shown in context are for reference only — do not flag errors in them.
+- When the student asks "is this right?", check only the active part.
+
 ## When to SPEAK — exactly 3 triggers
 
 You must be silent UNLESS one of these is true:
@@ -128,6 +136,31 @@ RESPONSE_SCHEMA = {
 }
 
 
+def _get_part_order(q_parts: list[dict]) -> list[str]:
+    """Flatten nested parts JSONB into ordered label list: ["a", "a.i", "a.ii", "b"]."""
+    order: list[str] = []
+    for p in q_parts:
+        label = p.get("label", "")
+        if label:
+            order.append(label)
+        # Recurse into nested subparts
+        subparts = p.get("parts", [])
+        if subparts:
+            for sub in subparts:
+                sub_label = sub.get("label", "")
+                if sub_label:
+                    order.append(f"{label}.{sub_label}")
+    return order
+
+
+def _is_later_part(label: str, active_part: str, part_order: list[str]) -> bool:
+    """True if label comes after active_part in ordering."""
+    try:
+        return part_order.index(label) > part_order.index(active_part)
+    except ValueError:
+        return False
+
+
 def _get_client() -> LLMClient:
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
@@ -157,8 +190,16 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
             """,
             session_id, page,
         )
+        # Read active part from session info
+        from api.strokes import _active_sessions
+        info = _active_sessions.get(session_id, {})
+        active_part = info.get("active_part")
+
         if tx_row and tx_row["text"]:
-            parts.append(f"## Student's Current Work\n{tx_row['text']}")
+            work_header = "## Student's Current Work"
+            if active_part:
+                work_header += f"\n**The student is currently working on part ({active_part}).**"
+            parts.append(f"{work_header}\n{tx_row['text']}")
         elif tx_row and not tx_row["text"]:
             # Diagram detected (Mathpix cleared text) — render strokes as image
             stroke_rows = await conn.fetch(
@@ -195,8 +236,6 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
         # Fallback: session_question_cache (persisted, may be stale)
         q_id = None
 
-        from api.strokes import _active_sessions
-        info = _active_sessions.get(session_id, {})
         doc_name = info.get("document_name", "")
         q_num = info.get("question_number")
         if doc_name and q_num is not None:
@@ -231,18 +270,46 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
             if isinstance(q_parts, str):
                 q_parts = json.loads(q_parts)
             if q_parts:
+                part_order = _get_part_order(q_parts)
                 for p in q_parts:
-                    parts.append(f"  ({p.get('label', '?')}) {p.get('text', '')}")
+                    label = p.get("label", "?")
+                    text = p.get("text", "")
+                    if active_part and label == active_part:
+                        parts.append(f"  ({label}) {text} \u2190 currently working on this part")
+                    elif active_part and _is_later_part(label, active_part, part_order):
+                        continue  # hide later parts
+                    else:
+                        parts.append(f"  ({label}) {text}")
 
             ak_rows = await conn.fetch(
                 "SELECT part_label, answer FROM answer_keys WHERE question_id = $1",
                 q_id,
             )
             if ak_rows:
-                ak_text = "\n".join(
-                    f"  {r['part_label'] or 'Main'}: {r['answer']}" for r in ak_rows
-                )
-                parts.append(f"## Answer Key\n{ak_text}")
+                if active_part and q_parts:
+                    # Scoped: show only active part's answer key
+                    active_ak = [r for r in ak_rows if r["part_label"] == active_part]
+                    earlier_ak = [
+                        r for r in ak_rows
+                        if r["part_label"] and r["part_label"] != active_part
+                        and not _is_later_part(r["part_label"], active_part, part_order)
+                    ]
+                    if active_ak:
+                        ak_text = "\n".join(
+                            f"  {r['part_label']}: {r['answer']}" for r in active_ak
+                        )
+                        parts.append(f"## Answer Key (Part {active_part})\n{ak_text}")
+                    if earlier_ak:
+                        prev_text = "\n".join(
+                            f"  {r['part_label']}: {r['answer']}" for r in earlier_ak
+                        )
+                        parts.append(f"## Previous Parts (completed \u2014 for reference only)\n{prev_text}")
+                else:
+                    # No active part — show all (backward compat)
+                    ak_text = "\n".join(
+                        f"  {r['part_label'] or 'Main'}: {r['answer']}" for r in ak_rows
+                    )
+                    parts.append(f"## Answer Key\n{ak_text}")
 
             # Question figures — decode from DB and attach as images
             fig_rows = await conn.fetch(
@@ -287,16 +354,22 @@ async def build_context_structured(session_id: str, page: int) -> list[dict]:
             """,
             session_id, page,
         )
+        # Read active part from session info
+        from api.strokes import _active_sessions
+        info = _active_sessions.get(session_id, {})
+        active_part = info.get("active_part")
+
         if tx_row and tx_row["text"]:
-            sections.append({"title": "Student's Current Work", "content": tx_row["text"]})
+            content = tx_row["text"]
+            if active_part:
+                content = f"**The student is currently working on part ({active_part}).**\n{content}"
+            sections.append({"title": "Student's Current Work", "content": content})
         elif tx_row and not tx_row["text"]:
             sections.append({"title": "Student Drawing", "content": "[Stroke rendering attached]"})
 
         # 2. Original problem + answer key
         q_id = None
 
-        from api.strokes import _active_sessions
-        info = _active_sessions.get(session_id, {})
         doc_name = info.get("document_name", "")
         q_num = info.get("question_number")
         if doc_name and q_num is not None:
@@ -331,8 +404,16 @@ async def build_context_structured(session_id: str, page: int) -> list[dict]:
             if isinstance(q_parts, str):
                 q_parts = json.loads(q_parts)
             if q_parts:
+                part_order = _get_part_order(q_parts)
                 for p in q_parts:
-                    problem_lines.append(f"  ({p.get('label', '?')}) {p.get('text', '')}")
+                    label = p.get("label", "?")
+                    text = p.get("text", "")
+                    if active_part and label == active_part:
+                        problem_lines.append(f"  ({label}) {text} \u2190 currently working on this part")
+                    elif active_part and _is_later_part(label, active_part, part_order):
+                        continue  # hide later parts
+                    else:
+                        problem_lines.append(f"  ({label}) {text}")
             sections.append({"title": f"Original Problem ({q_row['label']})", "content": "\n".join(problem_lines)})
 
             ak_rows = await conn.fetch(
@@ -340,10 +421,28 @@ async def build_context_structured(session_id: str, page: int) -> list[dict]:
                 q_id,
             )
             if ak_rows:
-                ak_text = "\n".join(
-                    f"  {r['part_label'] or 'Main'}: {r['answer']}" for r in ak_rows
-                )
-                sections.append({"title": "Answer Key", "content": ak_text})
+                if active_part and q_parts:
+                    active_ak = [r for r in ak_rows if r["part_label"] == active_part]
+                    earlier_ak = [
+                        r for r in ak_rows
+                        if r["part_label"] and r["part_label"] != active_part
+                        and not _is_later_part(r["part_label"], active_part, part_order)
+                    ]
+                    if active_ak:
+                        ak_text = "\n".join(
+                            f"  {r['part_label']}: {r['answer']}" for r in active_ak
+                        )
+                        sections.append({"title": f"Answer Key (Part {active_part})", "content": ak_text})
+                    if earlier_ak:
+                        prev_text = "\n".join(
+                            f"  {r['part_label']}: {r['answer']}" for r in earlier_ak
+                        )
+                        sections.append({"title": "Previous Parts (completed \u2014 for reference only)", "content": prev_text})
+                else:
+                    ak_text = "\n".join(
+                        f"  {r['part_label'] or 'Main'}: {r['answer']}" for r in ak_rows
+                    )
+                    sections.append({"title": "Answer Key", "content": ak_text})
 
             fig_count = await conn.fetchval(
                 "SELECT COUNT(*) FROM question_figures WHERE question_id = $1",
