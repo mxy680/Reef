@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reef - AI Tutoring for STEM Students</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;700;900&family=Lexend+Mega:wght@900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            epilogue: ['Epilogue', 'sans-serif'],
+            lexend: ['"Lexend Mega"', 'sans-serif'],
+          },
+          colors: {
+            body: '#F9F5F6',
+            coral: 'rgba(242, 115, 82, 0.4)',
+            'coral-solid': '#F27352',
+            teal: 'rgba(50, 172, 166, 0.3)',
+            'teal-solid': '#32ACA6',
+            'pink-cta': '#F9CEC5',
+            muted: '#777',
+          },
+          letterSpacing: {
+            'h1': '-2.4px',
+            'h2': '-1.6px',
+            'h3': '-1.12px',
+            'label': '-0.4px',
+          },
+          lineHeight: {
+            'h1': '72px',
+            'h2': '48px',
+            'h3': '33.6px',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body {
+      background-color: #F9F5F6;
+      font-family: 'Epilogue', sans-serif;
+    }
+    /* Marquee animation */
+    @keyframes marquee-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes marquee-right {
+      0% { transform: translateX(-50%); }
+      100% { transform: translateX(0); }
+    }
+    .marquee-left {
+      animation: marquee-left 60s linear infinite;
+    }
+    .marquee-right {
+      animation: marquee-right 60s linear infinite;
+    }
+    /* FAQ accordion */
+    .faq-item .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+    .faq-item.open .faq-answer {
+      max-height: 200px;
+      padding-top: 0 !important;
+      padding-bottom: 16px !important;
+    }
+    .faq-item .faq-arrow {
+      transition: transform 0.3s ease;
+    }
+    .faq-item.open .faq-arrow {
+      transform: rotate(90deg);
+    }
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body class="font-epilogue text-black">
+
+  <!-- ============ NAVBAR ============ -->
+  <header class="sticky top-0 z-50 bg-body/80 backdrop-blur-md">
+    <nav class="max-w-[1200px] mx-auto flex items-center justify-between px-6 py-4">
+      <a href="./" class="flex-shrink-0 flex items-center gap-2">
+        <img src="assets/images/logo-header.png" alt="Reef" class="h-10">
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#benefits" class="text-sm text-black/70 hover:text-black transition">Features</a>
+        <a href="#how-it-works" class="text-sm text-black/70 hover:text-black transition">How it works</a>
+        <a href="#faq" class="text-sm text-black/70 hover:text-black transition">FAQ</a>
+        <a href="#newsletter" class="text-sm font-medium text-black border border-black rounded-full px-5 py-2 hover:bg-black hover:text-white transition">Join the Beta</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="max-w-[1200px] mx-auto px-6 pt-20 pb-20">
+    <div class="flex flex-col items-center text-center gap-7">
+      <div class="max-w-[700px]">
+        <h1 class="text-[60px] font-black uppercase tracking-h1 leading-h1">Your Practice problems talk back</h1>
+        <p class="mt-5 text-sm leading-[21px] text-black/50 max-w-[500px] mx-auto">Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.</p>
+      </div>
+      <div class="flex items-center gap-5 mt-2">
+        <a href="https://tally.so/r/dWdM7z" class="inline-flex items-center gap-3 bg-coral px-5 py-3 text-sm font-medium text-black shadow-[4px_4px_0px_0px_rgb(0,0,0)] hover:shadow-[2px_2px_0px_0px_rgb(0,0,0)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all">
+          Join the Waitlist
+        </a>
+        <a href="https://instagram.com" class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium text-black hover:opacity-70 transition">
+          Stay in the loop
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="flex items-center gap-2 mt-2 text-sm text-black/50">
+        <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8.5" y="1.5" width="32" height="3" rx="1.5" fill="#CCFF6F" stroke="#000"/>
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M12.87 3A1.87 1.87 0 0 0 11 4.87v5.205c0 6.096 4.04 11.248 9.59 12.925C15.04 24.677 11 29.829 11 35.925v5.205A1.87 1.87 0 0 0 12.87 43h23.26A1.87 1.87 0 0 0 38 41.13v-5.205c0-6.096-4.04-11.248-9.59-12.925C33.96 21.323 38 16.171 38 10.075V4.87A1.87 1.87 0 0 0 36.13 3H12.87Z" fill="#fff" stroke="#000"/>
+          <rect x="8.5" y="41.5" width="32" height="3" rx="1.5" fill="#CCFF6F" stroke="#000"/>
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M13.451 13.855a1.312 1.312 0 0 0-1.076 1.895A13.116 13.116 0 0 0 23 22.953v8.491l-10.037 6.32A4.201 4.201 0 0 0 11 41.32a1.68 1.68 0 0 0 1.68 1.681h23.64A1.68 1.68 0 0 0 38 41.32a4.201 4.201 0 0 0-1.963-3.556L26 31.444v-8.507a13.355 13.355 0 0 0 9.5-5.437l1.58-2.895c.612-1.124-.262-2.48-1.539-2.386l-22.09 1.636Z" fill="#FF6610" stroke="#000"/>
+        </svg>
+        <span>Now recruiting beta testers. Completely free.</span>
+      </div>
+      <div class="mt-6 w-full max-w-[900px]">
+        <img src="assets/images/hero-screenshot.png" alt="Reef app screenshot" class="w-full rounded-lg shadow-2xl">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEM ============ -->
+  <section class="max-w-[1200px] mx-auto px-6 py-20">
+    <div class="flex flex-col items-center text-center gap-10">
+      <div class="max-w-[600px]">
+        <p class="font-lexend text-[10px] font-black uppercase tracking-label mb-4">Problem</p>
+        <h2 class="text-[40px] font-black uppercase tracking-h2 leading-h2">STUDYING SHOULDN'T FEEL THIS BROKEN</h2>
+        <p class="mt-4 text-sm leading-[21px] text-black/70">Every night, millions of students get stuck on practice problems with no one to help. They bounce between apps, lose focus, and give up before they actually learn.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+        <!-- Problem Card 1 -->
+        <div class="bg-white p-8 flex flex-col items-start gap-4">
+          <img src="assets/images/problem-icon.png" alt="" class="w-10 h-10">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">SWITCHING APPS KILLS YOUR FLOW</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">You're juggling a notes app, a PDF reader, and ChatGPT. Every context switch breaks your focus.</p>
+        </div>
+        <!-- Problem Card 2 -->
+        <div class="bg-white p-8 flex flex-col items-start gap-4">
+          <img src="assets/images/problem-icon.png" alt="" class="w-10 h-10">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">NO HELP WHEN YOU NEED IT MOST</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">Office hours are closed. Chatbots make you stop and type. By the time you get help, you've lost momentum.</p>
+        </div>
+        <!-- Problem Card 3 -->
+        <div class="bg-white p-8 flex flex-col items-start gap-4">
+          <img src="assets/images/problem-icon.png" alt="" class="w-10 h-10">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">PROGRESS FEELS INVISIBLE</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">You grind through problem sets for hours with no clear picture of what you've actually mastered.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section id="benefits" class="max-w-[1200px] mx-auto px-6 py-20">
+    <div class="flex flex-col items-center text-center gap-10">
+      <div class="max-w-[600px]">
+        <p class="font-lexend text-[10px] font-black uppercase tracking-label mb-4">FEATURES</p>
+        <h2 class="text-[40px] font-black uppercase tracking-h2 leading-h2">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
+        <p class="mt-4 text-sm leading-[21px] text-black/70">Notes, documents, AI tutoring, quizzes, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <!-- Feature 1 -->
+        <div class="bg-teal p-8 flex flex-col items-start gap-4 shadow-[8px_8px_0px_0px_rgb(0,0,0)]">
+          <img src="assets/images/feature-icon-1.png" alt="" class="w-12 h-12">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">PROACTIVE AI TUTORING</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">Reef reads your handwriting and delivers feedback during natural pauses. No prompts needed.</p>
+        </div>
+        <!-- Feature 2 -->
+        <div class="bg-teal p-8 flex flex-col items-start gap-4 shadow-[8px_8px_0px_0px_rgb(0,0,0)]">
+          <img src="assets/images/feature-icon-2.png" alt="" class="w-12 h-12">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">HANDWRITING RECOGNITION</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">Write math, chemistry, or prose with Apple Pencil. Reef transcribes instantly.</p>
+        </div>
+        <!-- Feature 3 -->
+        <div class="bg-teal p-8 flex flex-col items-start gap-4 shadow-[8px_8px_0px_0px_rgb(0,0,0)]">
+          <img src="assets/images/feature-icon-3.png" alt="" class="w-12 h-12">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">ALL YOUR MATERIALS IN ONE PLACE</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">Import PDFs, lecture slides, and photos. Organize by course, unit, and topic.</p>
+        </div>
+        <!-- Feature 4 -->
+        <div class="bg-teal p-8 flex flex-col items-start gap-4 shadow-[8px_8px_0px_0px_rgb(0,0,0)]">
+          <img src="assets/images/feature-icon-1.png" alt="" class="w-12 h-12">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">SMART EXAM GENERATION</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">Upload your course materials and Reef auto-generates practice exams. Multiple choice, free response, and more.</p>
+        </div>
+        <!-- Feature 5 -->
+        <div class="bg-teal p-8 flex flex-col items-start gap-4 shadow-[8px_8px_0px_0px_rgb(0,0,0)]">
+          <img src="assets/images/feature-icon-2.png" alt="" class="w-12 h-12">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">GAMIFIED PROGRESS TRACKING</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">Master topics to unlock marine species and build a personal reef that grows with you.</p>
+        </div>
+        <!-- Feature 6 -->
+        <div class="bg-teal p-8 flex flex-col items-start gap-4 shadow-[8px_8px_0px_0px_rgb(0,0,0)]">
+          <img src="assets/images/feature-icon-3.png" alt="" class="w-12 h-12">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3 text-left">BUILT FOR APPLE PENCIL</h3>
+          <p class="text-sm leading-[21px] text-black/70 text-left">Pressure sensitivity, palm rejection, and shape recognition. Feels like paper, works like magic.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SUBJECT MARQUEE ============ -->
+  <section class="py-10 overflow-hidden">
+    <div class="flex flex-col gap-4">
+      <!-- Row 1 - scrolls left -->
+      <div class="relative overflow-hidden">
+        <div class="flex items-center gap-6 marquee-left" style="width: max-content;">
+          <!-- 48 items duplicated for seamless loop -->
+          <div class="flex items-center gap-6">
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+          </div>
+          <!-- Duplicate for seamless loop -->
+          <div class="flex items-center gap-6">
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Row 2 - scrolls right -->
+      <div class="relative overflow-hidden">
+        <div class="flex items-center gap-6 marquee-right" style="width: max-content;">
+          <div class="flex items-center gap-6">
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+            <div class="flex-shrink-0 w-11 h-11"><img src="assets/images/subject-icon.png" alt="" class="w-full h-full object-contain"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BUILT FOR STEM ============ -->
+  <section class="max-w-[1200px] mx-auto px-6 py-16">
+    <div class="flex flex-col items-center text-center max-w-[600px] mx-auto">
+      <p class="font-lexend text-[10px] font-black uppercase tracking-label mb-4">BUILT FOR STEM</p>
+      <h2 class="text-[40px] font-black uppercase tracking-h2 leading-h2">WORKS ACROSS EVERY SUBJECT YOU'RE TAKING</h2>
+      <p class="mt-4 text-sm leading-[21px] text-black/70">From calculus problem sets to organic chemistry mechanisms, Reef understands the notation and concepts across all your courses.</p>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section id="how-it-works" class="max-w-[1200px] mx-auto px-6 py-20">
+    <div class="flex flex-col gap-20">
+      <!-- Step 1 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div class="flex flex-col gap-4">
+          <h3 class="text-[28px] font-black uppercase tracking-h3 leading-h3">UPLOAD YOUR COURSE MATERIALS</h3>
+          <p class="text-sm leading-[21px] text-black/70">Import PDFs, lecture slides, and photos from anywhere. Organize by course, unit, and topic.</p>
+        </div>
+        <div class="flex justify-center">
+          <img src="assets/images/how-it-works-1.png" alt="Upload course materials" class="w-full max-w-[400px]">
+        </div>
+      </div>
+      <!-- Step 2 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div class="flex justify-center md:order-first order-last">
+          <img src="assets/images/how-it-works-2.png" alt="Solve problems with AI" class="w-full max-w-[400px]">
+        </div>
+        <div class="flex flex-col gap-4">
+          <h2 class="text-[40px] font-black uppercase tracking-h2 leading-h2">SOLVE PROBLEMS WITH AI BY YOUR SIDE</h2>
+          <p class="text-sm leading-[21px] text-black/70">Write with Apple Pencil like normal. Reef watches your work and delivers feedback the moment you pause.</p>
+        </div>
+      </div>
+      <!-- Step 3 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div class="flex flex-col gap-4">
+          <h2 class="text-[40px] font-black uppercase tracking-h2 leading-h2">TRACK MASTERY, BUILD YOUR REEF</h2>
+          <p class="text-sm leading-[21px] text-black/70">Pass quizzes to unlock marine species. Watch your personal reef grow as your knowledge deepens.</p>
+        </div>
+        <div class="flex justify-center">
+          <img src="assets/images/how-it-works-3.png" alt="Track mastery" class="w-full max-w-[400px]">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section id="faq" class="max-w-[1200px] mx-auto px-6 py-20">
+    <div class="flex flex-col items-center text-center gap-10">
+      <div class="max-w-[600px]">
+        <p class="font-lexend text-[10px] font-black uppercase tracking-label mb-4">Faq</p>
+        <h2 class="text-[40px] font-black uppercase tracking-h2 leading-h2">Common questions answered clearly</h2>
+        <p class="mt-4 text-sm leading-[21px] text-black/70">Here are clear answers to the most common questions we get from students and educators using the platform.</p>
+      </div>
+      <div class="w-full max-w-[700px] flex flex-col gap-3">
+        <!-- FAQ Items -->
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">IS THERE A FREE TRIAL?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Yes. You can try Reef free for 14 days with full access to all features.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">IS MY DATA PRIVATE?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Your notes and documents stay on your device and in your private iCloud. We never use your work to train AI models.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">WHAT SUBJECTS DOES IT SUPPORT?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Any subject. Reef recognizes math notation, chemistry formulas, physics diagrams, and more.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">IS THIS JUST CHATGPT WITH FISH?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Rude. But no. ChatGPT waits for you to ask it something. Reef watches you work and jumps in when you're stuck, like a tutor who can read the room. Also, yes, there are fish.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">WILL I ACE ALL MY CLASSES?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Our lawyers said we can't guarantee that. But your 2am panic sessions will be significantly more productive.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">WILL THE AI JUDGE ME FOR MY HANDWRITING?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">No. It's seen worse. Much worse.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">IS THIS CHEATING?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Is having a tutor cheating? Is going to office hours cheating? Exactly.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">CAN IT HELP ME WITH ROCKET SCIENCE??</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Yes. Orbital mechanics, propulsion, the whole thing. We weren't kidding about STEM.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">WHAT IF I WANT A TUTOR WITH A BRITISH ACCENT?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Yes. We have that. You're welcome.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">CAN MY DOG STILL EAT MY HOMEWORK?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Your notes sync to iCloud. Your dog would need your Apple ID.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">WILL THIS BRING MY GPA BACK FROM THE DEAD?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">We're an app, not a necromancer. But we'll do what we can.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">IS IT GLUTEN FREE?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">It's an app. Yes.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">I SHOWED MY REEF TO MY MOM.</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">That's also not a question but we're proud of you.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">WHAT IF I KNOW MORE THAN THE AI?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">Sure you do.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">WHAT IF I'M A VISUAL LEARNER?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">There are fish. You'll be fine.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">DOES IT WORK IN THE BATHROOM?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">We're not asking where you study.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">WHAT IF I CRY WHILE STUDYING?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">The iPad is water resistant. You'll be fine.</p>
+          </div>
+        </div>
+        <div class="faq-item bg-white cursor-pointer" onclick="this.classList.toggle('open')">
+          <div class="flex items-center justify-between px-6 py-4">
+            <p class="text-xs font-black uppercase tracking-label text-left">OKAY BUT SERIOUSLY, SHOULD I DOWNLOAD THIS?</p>
+            <svg class="faq-arrow flex-shrink-0 ml-4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          </div>
+          <div class="faq-answer px-6 pb-4">
+            <p class="text-sm leading-[21px] text-black/70 text-left">You read this entire FAQ instead of studying. Yes. Immediately.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NEWSLETTER / BETA CTA ============ -->
+  <section id="newsletter" class="max-w-[1200px] mx-auto px-6 py-16">
+    <div class="bg-coral py-16 px-8 flex flex-col items-center text-center gap-6">
+      <div class="max-w-[500px]">
+        <h2 class="text-[40px] font-black uppercase tracking-h2 leading-h2">JOIN THE REEF BETA</h2>
+        <p class="mt-4 text-sm leading-[21px] text-black/70">Be the first to try Reef before it launches. You'll get free access to all features, early updates, and a direct line to shape what we build next.</p>
+      </div>
+      <div class="flex items-center gap-0 w-full max-w-[400px]">
+        <input type="email" placeholder="example@mail.com" class="flex-1 bg-white px-4 py-3 text-sm outline-none border border-black/10">
+        <button class="bg-black text-white px-4 py-3 flex items-center justify-center hover:bg-black/80 transition">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="max-w-[1200px] mx-auto px-6 py-10">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-8">
+        <a href="./" class="flex-shrink-0">
+          <img src="assets/images/logo-footer.png" alt="Reef" class="h-10">
+        </a>
+        <nav class="flex items-center gap-6">
+          <a href="#benefits" class="text-sm text-black/70 hover:text-black transition">Features</a>
+          <a href="#how-it-works" class="text-sm text-black/70 hover:text-black transition">How it works</a>
+          <a href="#faq" class="text-sm text-black/70 hover:text-black transition">FAQ</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-4">
+        <!-- Facebook -->
+        <a href="https://www.facebook.com/" class="text-muted hover:text-black transition">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </a>
+        <!-- Instagram -->
+        <a href="https://www.instagram.com/" class="text-muted hover:text-black transition">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        </a>
+        <!-- Snapchat -->
+        <a href="https://www.snapchat.com/" class="text-muted hover:text-black transition">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12.922-.214.04-.012.06-.012.06-.012.16-.045.24-.06.36-.06.24 0 .42.104.479.314.06.21-.075.435-.329.585-.254.15-1.33.75-1.424.825-.074.06-.148.165-.15.3v.06c.12 1.38.749 3.18 3.179 3.699.12.03.209.15.209.27 0 .18-.15.39-.749.54-.9.21-1.05.39-1.2.6-.15.209-.15.24-.3.54-.03.089-.06.15-.06.15-.15.63-.601.9-1.35.9-.27 0-.584-.04-.99-.15-.57-.15-.96-.24-1.621-.24-.12 0-.24.016-.36.015-1.68.075-2.88 1.17-2.988 1.275-.11.105-.12.1-.12.1-.09.09-.18.135-.27.135-.09 0-.18-.045-.27-.135 0 0-.01.005-.12-.1-.108-.105-1.308-1.2-2.988-1.275-.12 0-.24-.015-.36-.015-.66 0-1.05.09-1.62.24-.405.105-.72.15-.99.15-.75 0-1.2-.27-1.35-.9 0 0-.03-.06-.06-.15-.15-.3-.15-.33-.3-.54-.15-.21-.3-.39-1.2-.6-.6-.15-.75-.36-.75-.54 0-.12.089-.24.209-.27 2.43-.519 3.06-2.319 3.18-3.699v-.06c0-.135-.076-.24-.15-.3-.094-.075-1.17-.675-1.424-.825-.254-.15-.39-.375-.33-.585.06-.21.24-.314.48-.314.12 0 .2.016.36.06 0 0 .02 0 .06.012.263.09.622.214.922.214.198 0 .326-.045.4-.09-.007-.165-.017-.33-.03-.51l-.002-.06c-.105-1.628-.23-3.654.3-4.847C7.86 1.069 11.216.793 12.206.793z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="text-center mt-8 text-sm text-black/50">
+      &copy; 2026 Built by a CWRU student &#x1F420;
+    </div>
+  </footer>
+
+</body>
+</html>
