@@ -143,6 +143,20 @@ MODAL_TTS_URL               # Modal Kokoro TTS endpoint
 MODAL_EMBED_URL             # Modal MiniLM embeddings endpoint
 ```
 
+## Testing
+
+- **Run all tests**: `uv run python -m pytest tests/ -q`
+- **Unit only**: `uv run python -m pytest tests/unit/ -q` (fast, no DB needed)
+- **Integration only**: `uv run python -m pytest tests/integration/ -q` (requires local PostgreSQL on localhost:5432)
+- **E2E mode**: `REEF_TEST_MODE=e2e uv run python -m pytest tests/ -q` (real API calls, skips if keys missing)
+- **Test count**: 193 tests (112 unit, 81 integration)
+- **Fixtures**: `tests/integration/conftest.py` — creates/drops `reef_test` DB, provides `client` (TestClient with lifespan), `db` (direct asyncpg conn), `clean_state` (clears in-memory dicts)
+- **Test fixtures**: `tests/fixtures/` — recorded API responses (JSON, SSE, binary PCM) for contract mode
+- **Test helpers**: `tests/helpers.py` — `FakePool`/`FakeConn` (plain Python, not MagicMock), `load_fixture()`, response builders (`make_chat_completion`, `make_sse_stream`, `make_embed_response`)
+- **Async gotcha**: Never `await` app-level async functions (build_context, run_reasoning) directly from `@pytest.mark.anyio` tests — the app's asyncpg pool is on the TestClient's event loop, not the test's. Instead: test through HTTP endpoints, or `monkeypatch.setattr` `build_context`/`get_pool` and use `asyncio.run()` in sync tests.
+- **No unittest.mock**: Zero `unittest.mock` imports. Use `respx` (httpx interceptor for OpenAI SDK, Mathpix), `responses` (requests interceptor for Modal TTS/Embeddings), and `monkeypatch.setattr` (pytest-native) sparingly for function replacement.
+- **Toggle**: `REEF_TEST_MODE` env var (`contract` default, `e2e` for real APIs). Contract mode sets placeholder API keys in `tests/conftest.py`.
+
 ## Implementation Notes
 
 - **Debouncing**: transcription 500ms, reasoning 2.5s — both use asyncio.Task cancellation in `mathpix_client.py`
