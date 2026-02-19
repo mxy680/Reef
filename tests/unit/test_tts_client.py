@@ -1,43 +1,43 @@
 """Unit tests for lib/tts_client.py — Modal Kokoro TTS client."""
-from unittest.mock import MagicMock, patch
+import json
 
+import pytest
 import requests
+import responses
 
+from tests.conftest import REEF_TEST_MODE
+from tests.helpers import load_fixture
 from lib.tts_client import stream_tts
 
+TTS_URL = "https://fake-modal-tts.example.com/tts"
 
+
+@pytest.mark.skipif(REEF_TEST_MODE != "contract", reason="Contract tests only")
 class TestStreamTts:
-    def test_yields_pcm_chunks(self):
-        mock_resp = MagicMock()
-        mock_resp.iter_content.return_value = [b"chunk1", b"chunk2"]
+    @responses.activate
+    def test_yields_pcm_chunks(self, monkeypatch):
+        monkeypatch.setattr("lib.tts_client.MODAL_TTS_URL", TTS_URL)
+        pcm_bytes = load_fixture("modal_tts.bin")
+        responses.add(responses.POST, TTS_URL, body=pcm_bytes, status=200)
 
-        with patch("lib.tts_client.requests.post", return_value=mock_resp) as _:
-            result = list(stream_tts("hi"))
+        result = b"".join(stream_tts("hi"))
 
-        assert result == [b"chunk1", b"chunk2"]
+        assert result == pcm_bytes
 
-    def test_request_params(self):
-        mock_resp = MagicMock()
-        mock_resp.iter_content.return_value = []
+    @responses.activate
+    def test_request_params(self, monkeypatch):
+        monkeypatch.setattr("lib.tts_client.MODAL_TTS_URL", TTS_URL)
+        responses.add(responses.POST, TTS_URL, body=b"", status=200)
 
-        with patch("lib.tts_client.requests.post", return_value=mock_resp) as mock_post:
-            list(stream_tts("Hello"))
+        list(stream_tts("Hello", voice="af_heart", speed=0.95))
 
-        mock_post.assert_called_once_with(
-            mock_post.call_args[0][0],
-            json={"text": "Hello", "voice": "af_heart", "speed": 0.95},
-            stream=True,
-            timeout=60,
-        )
+        sent = json.loads(responses.calls[0].request.body)
+        assert sent == {"text": "Hello", "voice": "af_heart", "speed": 0.95}
 
-    def test_raises_on_http_error(self):
-        mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = requests.HTTPError("500 Server Error")
+    @responses.activate
+    def test_raises_on_http_error(self, monkeypatch):
+        monkeypatch.setattr("lib.tts_client.MODAL_TTS_URL", TTS_URL)
+        responses.add(responses.POST, TTS_URL, status=500)
 
-        with patch("lib.tts_client.requests.post", return_value=mock_resp):
-            gen = stream_tts("hi")
-            try:
-                next(gen)
-                assert False, "Expected HTTPError to be raised"
-            except requests.HTTPError:
-                pass
+        with pytest.raises(requests.HTTPError):
+            list(stream_tts("hi"))
