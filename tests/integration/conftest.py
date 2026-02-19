@@ -68,3 +68,11 @@ def clean_state():
     _active_sessions.clear()
     _event_queues.clear()
     _pending_tts.clear()
+
+
+@pytest.fixture
+async def db(client):
+    """Direct asyncpg connection for SQL data setup in tests."""
+    conn = await asyncpg.connect(os.environ["DATABASE_URL"])
+    yield conn
+    await conn.close()
