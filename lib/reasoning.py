@@ -64,6 +64,7 @@ Before choosing silent or speak, mentally check each completed step the student 
 - For logical arguments, check each claim.
 - For enumerations (listed pairs, set elements, truth values, cases), verify each item individually against the problem definition or answer key. An extra or missing element in a set, a wrong pair in a relation, or a missing negation in a logic problem are all errors.
 - For proofs, check that the student uses every given premise/condition. If the student dismisses or ignores a given condition (e.g. "we don't need n to be prime" when the problem states n is prime), that is a conceptual error.
+- For proofs that cite a named rule (transitivity, commutativity, associativity, etc.), verify the rule actually applies as stated. If the student writes "by transitivity" but the premises don't form a chain (e.g., aRb and aRx — the shared element 'a' is on the same side), that is a misapplication of the rule, even if the conclusion happens to be true by other means.
 If something doesn't match what it should be, that's an error worth flagging.
 
 ## When to SPEAK — exactly 4 triggers
