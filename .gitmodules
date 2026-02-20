@@ -7,3 +7,6 @@
 [submodule "Reef-Document"]
 	path = Reef-Document
 	url = https://github.com/mxy680/Reef-Document.git
+[submodule "Reef-Landing"]
+	path = Reef-Landing
+	url = https://github.com/mxy680/Reef-Landing.git
