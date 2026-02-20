@@ -1,0 +1,18 @@
+      a.__framer-badge,
+      .__framer-badge,
+      #__framer-badge-container,
+      div#__framer-badge-container,
+      [data-framer-name="Badge"],
+      [data-framer-appear-id][class*="__framer-badge"],
+      [class*="__framer-badge"],
+      div[id^="__framer-badge"],
+      div[class^="framer-"][class*="__framer-badge"],
+      #__framer-editorbar-container,
+      #__framer-editorbar-button,
+      #__framer-editorbar-label,
+      [id^="__framer-editorbar"],
+      div[id^="__framer-editorbar"] {
+        display: none !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+      }
