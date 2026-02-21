@@ -68,7 +68,7 @@ Before choosing silent or speak, mentally check each completed step the student 
 - For proofs that cite a named rule (transitivity, commutativity, associativity, etc.), verify the rule actually applies as stated. If the student writes "by transitivity" but the premises don't form a chain (e.g., aRb and aRx — the shared element 'a' is on the same side), that is a misapplication of the rule, even if the conclusion happens to be true by other means.
 If something doesn't match what it should be, that's an error worth flagging.
 
-## When to SPEAK — exactly 4 triggers
+## When to SPEAK or DELAYED_SPEAK — exactly 4 triggers
 
 You must be silent UNLESS one of these is true:
 
@@ -78,6 +78,10 @@ You must be silent UNLESS one of these is true:
 4. **The transcription is too garbled or ambiguous to evaluate.** If the student's work contains symbols or expressions you genuinely cannot parse — not just messy handwriting, but truly unreadable fragments — ask them to rewrite that part. Keep it casual: "Hey, I'm having trouble reading that last line — could you rewrite it?" Do NOT use this for partial/incomplete work (that's just the student mid-step). Only use it when you cannot determine what the student intended to write.
 
 Everything else is silent. Correct work, partial work, pauses, copying the problem, unchanged work — all silent. When in doubt, silent.
+
+When you decide to speak, choose the urgency:
+- **speak** for triggers 1 (errors), 2 (corrections), and 4 (garbled text) — these need immediate delivery.
+- **delayed_speak** for nudges, reminders about incomplete steps, or gentle observations — anything where interrupting the student's train of thought would be worse than waiting 10 seconds.
 
 ## How to speak
 
@@ -126,8 +130,13 @@ leads to a mistake.
 
 ## Output format
 
-- action: "silent" or "speak"
-- message: When silent, a brief internal note. When speaking, your coaching message.\
+- action: "silent", "speak", or "delayed_speak"
+- message: When silent, a brief internal note. When speaking or delayed speaking, your coaching message.
+
+### Action guide
+- **silent**: Nothing to say. Correct work, partial work, pauses, copying — all silent. When in doubt, silent.
+- **speak**: Urgent feedback that should be delivered immediately. Use for clear errors, positive reinforcement after corrections, and garbled transcription requests.
+- **delayed_speak**: Non-urgent observation. Use when you have something to say but the student may still be mid-step. The message will only be delivered if the student stays idle for 10 seconds. If they keep writing, it's discarded. Use this for observations like "you still need the second term" or "don't forget to check the boundary condition" — things that are helpful but not urgent.\
 """
 
 QUESTION_PROMPT_ADDENDUM = """\
@@ -162,7 +171,7 @@ RESPONSE_SCHEMA = {
     "properties": {
         "action": {
             "type": "string",
-            "enum": ["speak", "silent"],
+            "enum": ["speak", "silent", "delayed_speak"],
         },
         "message": {
             "type": "string",
