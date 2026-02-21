@@ -183,6 +183,26 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
     await asyncio.sleep(DEBOUNCE_SECONDS)
     _debounce_tasks.pop((session_id, page), None)
 
+    # Diagram mode: skip Mathpix, upsert empty transcription, schedule reasoning
+    from api.strokes import _active_sessions
+    info = _active_sessions.get(session_id, {})
+    if info.get("content_mode") == "diagram":
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO page_transcriptions (session_id, page, latex, text, confidence, updated_at)
+                    VALUES ($1, $2, '', '', 0, NOW())
+                    ON CONFLICT (session_id, page) DO UPDATE SET
+                        latex = '', text = '', confidence = 0, updated_at = NOW()
+                    """,
+                    session_id, page,
+                )
+        print(f"[mathpix] ({session_id}, page={page}): diagram mode, skipped Mathpix")
+        schedule_reasoning(session_id, page)
+        return
+
     try:
         _get_credentials()
     except RuntimeError:

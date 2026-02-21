@@ -115,6 +115,51 @@ class TestInvalidateSession:
             reasoning_task.cancel()
 
 
+class TestDiagramModeSkipsMathpix:
+    """When content_mode is 'diagram', transcription should skip Mathpix
+    and go straight to reasoning with an empty page_transcription."""
+
+    async def test_diagram_mode_skips_mathpix_upserts_empty(self, monkeypatch):
+        """Diagram mode should upsert page_transcriptions with empty text
+        and schedule reasoning without calling Mathpix."""
+        import asyncio
+
+        from tests.helpers import FakePool
+
+        pool = FakePool()
+        monkeypatch.setattr("lib.mathpix_client.get_pool", lambda: pool)
+
+        # Mock _active_sessions to return diagram mode via the import path
+        # _debounced_transcribe imports from api.strokes
+        mock_sessions = {"sid": {"content_mode": "diagram"}}
+        monkeypatch.setattr("api.strokes._active_sessions", mock_sessions)
+
+        # Track reasoning scheduling
+        reasoning_scheduled = []
+
+        def fake_schedule_reasoning(session_id, page):
+            reasoning_scheduled.append((session_id, page))
+
+        monkeypatch.setattr(
+            "lib.mathpix_client.schedule_reasoning",
+            fake_schedule_reasoning,
+        )
+
+        from lib.mathpix_client import _debounced_transcribe
+        monkeypatch.setattr("lib.mathpix_client.DEBOUNCE_SECONDS", 0)
+
+        await _debounced_transcribe("sid", 1)
+
+        # Should have upserted empty transcription
+        assert len(pool.conn.calls) == 1
+        query = pool.conn.calls[0][0]
+        assert "page_transcriptions" in query
+        assert "INSERT" in query
+
+        # Should have scheduled reasoning
+        assert ("sid", 1) in reasoning_scheduled
+
+
 class TestCleanupSessions:
     async def test_removes_all_pages_for_session(self):
         key1 = ("sid", 1)
