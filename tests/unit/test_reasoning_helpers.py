@@ -59,3 +59,76 @@ class TestIsLaterPart:
         order = ["a", "a.i", "a.ii", "b"]
         assert _is_later_part("b", "a.i", order) is True
         assert _is_later_part("a", "a.ii", order) is False
+
+
+from collections import deque
+from lib.mathpix_client import _erase_snapshots
+
+
+class TestEraseContextInBuildContext:
+    def test_erase_snapshots_included_in_context(self, monkeypatch):
+        """build_context should include Previously Erased Work section."""
+        import asyncio
+
+        class ContextConn:
+            async def fetchrow(self, query, *args):
+                if "page_transcriptions" in query:
+                    return {"latex": "x=1", "text": "x=1"}
+                if "session_question_cache" in query:
+                    return None
+                return None
+            async def fetch(self, query, *args):
+                return []
+            async def fetchval(self, query, *args):
+                return 0
+
+        class ContextPool:
+            def acquire(self):
+                from tests.helpers import _FakeAcquireCtx
+                return _FakeAcquireCtx(ContextConn())
+
+        monkeypatch.setattr("lib.reasoning.get_pool", lambda: ContextPool())
+        monkeypatch.setattr("api.strokes._active_sessions", {"sid": {}})
+
+        key = ("sid", 1)
+        _erase_snapshots[key] = deque(["x^2 + 3x = 0", "x^2 = -3x"], maxlen=3)
+
+        try:
+            from lib.reasoning import build_context
+            ctx = asyncio.run(build_context("sid", 1))
+            assert "Previously Erased Work" in ctx.text
+            assert "x^2 + 3x = 0" in ctx.text
+            assert "x^2 = -3x" in ctx.text
+            # Most recent should come first (reversed order)
+            assert ctx.text.index("x^2 = -3x") < ctx.text.index("x^2 + 3x = 0")
+        finally:
+            _erase_snapshots.pop(key, None)
+
+    def test_no_section_when_no_erases(self, monkeypatch):
+        """build_context should NOT include erase section when no snapshots."""
+        import asyncio
+
+        class ContextConn:
+            async def fetchrow(self, query, *args):
+                if "page_transcriptions" in query:
+                    return {"latex": "x=1", "text": "x=1"}
+                return None
+            async def fetch(self, query, *args):
+                return []
+            async def fetchval(self, query, *args):
+                return 0
+
+        class ContextPool:
+            def acquire(self):
+                from tests.helpers import _FakeAcquireCtx
+                return _FakeAcquireCtx(ContextConn())
+
+        monkeypatch.setattr("lib.reasoning.get_pool", lambda: ContextPool())
+        monkeypatch.setattr("api.strokes._active_sessions", {"sid": {}})
+
+        key = ("sid", 1)
+        _erase_snapshots.pop(key, None)
+
+        from lib.reasoning import build_context
+        ctx = asyncio.run(build_context("sid", 1))
+        assert "Previously Erased Work" not in ctx.text

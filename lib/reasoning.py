@@ -255,6 +255,19 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
                 images.append(png_bytes)
                 parts.append("## Student's Current Work\n[See attached image of student's drawing]")
 
+        # 1b. Previously erased work
+        from lib.mathpix_client import _erase_snapshots
+        erased = _erase_snapshots.get((session_id, page))
+        if erased:
+            lines = []
+            for i, text in enumerate(reversed(erased), 1):
+                lines.append(f"{i}. {text}")
+            parts.append(
+                "## Previously Erased Work (most recent first)\n"
+                "The student wrote and then erased the following:\n\n"
+                + "\n\n".join(lines)
+            )
+
         # 2. Original problem + answer key
         # Primary: _active_sessions (live truth from iOS connect request)
         # Fallback: session_question_cache (persisted, may be stale)
@@ -403,6 +416,17 @@ async def build_context_structured(session_id: str, page: int) -> list[dict]:
             sections.append({"title": "Student's Current Work", "content": content})
         elif tx_row and not tx_row["text"]:
             sections.append({"title": "Student Drawing", "content": "[Stroke rendering attached]"})
+
+        from lib.mathpix_client import _erase_snapshots
+        erased = _erase_snapshots.get((session_id, page))
+        if erased:
+            lines = []
+            for i, text in enumerate(reversed(erased), 1):
+                lines.append(f"{i}. {text}")
+            sections.append({
+                "title": "Previously Erased Work (most recent first)",
+                "content": "\n\n".join(lines),
+            })
 
         # 2. Original problem + answer key
         q_id = None
