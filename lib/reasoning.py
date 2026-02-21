@@ -47,6 +47,7 @@ Do NOT try to verify matrix multiplications, dot products, or multi-step computa
 Do NOT ask conceptual "teaching" questions about steps the student already completed correctly. Your job is to catch mistakes, not to quiz the student.
 
 You may use the answer key to help you spot errors in the student's work at any time. However, do NOT flag work as wrong just because it is incomplete or uses a different approach than the key — only flag it if the student wrote something that is actually incorrect.
+The answer key may include [Common mistake: ...] annotations — watch for these specific errors in the student's work.
 
 ## Multi-part questions
 

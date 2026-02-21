@@ -993,12 +993,22 @@ async def ai_reconstruct(
                 if parts:
                     question_text += "\n" + "\n".join(format_parts(parts))
 
-                answer_prompt = f"""Solve the following problem completely. Show all work step by step.
+                answer_prompt = f"""You are writing a model answer key for a homework problem. This key will be used by an AI tutor to evaluate a student's handwritten work in real time.
+
+Write the solution as a strong student would on paper:
+- Show the full chain of mathematical work: setup, substitutions, simplifications, final answer
+- Use mathematical notation, not words. Write "∴ x = 5" not "Therefore, x equals 5"
+- Minimize prose — only include brief text where a step transition would be ambiguous
+- Where students commonly make mistakes, add an inline note: [Common mistake: ...]
+
+Example style:
+  Given: 2x + 3 = 11
+  2x = 8
+  x = 4 [Common mistake: students sometimes subtract 3 from both sides incorrectly, getting 2x = 14]
 
 {question_text}
 
-For each part/subpart, provide a clear, complete solution. Use LaTeX notation for math.
-Use part_label: null for the main question (if no parts), or the part label for each subpart."""
+Use LaTeX notation for all math. Use part_label: null for single questions, or the part letter for each subpart."""
 
                 answer_schema = {
                     "type": "object",
