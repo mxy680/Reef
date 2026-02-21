@@ -9,6 +9,7 @@ import pytest
 import respx
 
 from lib.mathpix_client import (
+    DELAYED_SPEAK_SECONDS,
     MathpixSession,
     _debounce_tasks,
     _erase_snapshots,
@@ -396,3 +397,106 @@ class TestScheduleReasoningCancelsDelayed:
             if task:
                 task.cancel()
             delayed_task.cancel()
+
+
+class TestDebouncedReasoningDelayedSpeak:
+    async def test_delayed_speak_starts_timer(self, monkeypatch):
+        """When model returns delayed_speak, a timer task should be stored in _pending_delayed."""
+        monkeypatch.setattr("lib.mathpix_client.REASONING_DEBOUNCE_SECONDS", 0)
+        monkeypatch.setattr("lib.mathpix_client.DELAYED_SPEAK_SECONDS", 100)  # long so it doesn't fire
+
+        async def fake_run_reasoning(sid, page):
+            return {"action": "delayed_speak", "message": "Are you still thinking?"}
+
+        monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
+
+        pushed = []
+
+        async def fake_push(sid, action, message):
+            pushed.append((sid, action, message))
+
+        monkeypatch.setattr("api.reasoning.push_reasoning", fake_push)
+
+        key = ("sid", 1)
+        _pending_delayed.pop(key, None)
+
+        try:
+            from lib.mathpix_client import _debounced_reasoning
+            await _debounced_reasoning("sid", 1)
+
+            # Should NOT have pushed immediately
+            assert len(pushed) == 0
+            # Should have a pending task
+            assert key in _pending_delayed
+            assert not _pending_delayed[key].done()
+        finally:
+            task = _pending_delayed.pop(key, None)
+            if task:
+                task.cancel()
+
+    async def test_delayed_speak_fires_after_delay(self, monkeypatch):
+        """After DELAYED_SPEAK_SECONDS, the message should be pushed as 'speak'."""
+        monkeypatch.setattr("lib.mathpix_client.REASONING_DEBOUNCE_SECONDS", 0)
+        monkeypatch.setattr("lib.mathpix_client.DELAYED_SPEAK_SECONDS", 0.1)  # 100ms for test speed
+
+        async def fake_run_reasoning(sid, page):
+            return {"action": "delayed_speak", "message": "Still working on that?"}
+
+        monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
+
+        pushed = []
+
+        async def fake_push(sid, action, message):
+            pushed.append((sid, action, message))
+
+        monkeypatch.setattr("api.reasoning.push_reasoning", fake_push)
+
+        key = ("sid", 1)
+        _pending_delayed.pop(key, None)
+
+        try:
+            from lib.mathpix_client import _debounced_reasoning
+            await _debounced_reasoning("sid", 1)
+
+            # Not pushed yet
+            assert len(pushed) == 0
+
+            # Wait for delay to fire
+            await asyncio.sleep(0.2)
+
+            assert len(pushed) == 1
+            assert pushed[0] == ("sid", "speak", "Still working on that?")
+            assert key not in _pending_delayed
+        finally:
+            task = _pending_delayed.pop(key, None)
+            if task:
+                task.cancel()
+
+    async def test_speak_still_pushes_immediately(self, monkeypatch):
+        """Regular speak action should still push immediately (no delay)."""
+        monkeypatch.setattr("lib.mathpix_client.REASONING_DEBOUNCE_SECONDS", 0)
+
+        async def fake_run_reasoning(sid, page):
+            return {"action": "speak", "message": "Check that sign."}
+
+        monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
+
+        pushed = []
+
+        async def fake_push(sid, action, message):
+            pushed.append((sid, action, message))
+
+        monkeypatch.setattr("api.reasoning.push_reasoning", fake_push)
+
+        key = ("sid", 1)
+        try:
+            from lib.mathpix_client import _debounced_reasoning
+            await _debounced_reasoning("sid", 1)
+
+            assert len(pushed) == 1
+            assert pushed[0] == ("sid", "speak", "Check that sign.")
+            assert key not in _pending_delayed
+        finally:
+            task = _pending_delayed.pop(key, None)
+            if task:
+                task.cancel()

@@ -182,9 +182,34 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
         from api.reasoning import push_reasoning
 
         result = await run_reasoning(session_id, page)
-        await push_reasoning(session_id, result["action"], result["message"])
+        action = result["action"]
+        message = result["message"]
+
+        if action == "delayed_speak":
+            key = (session_id, page)
+            # Cancel any existing pending delayed
+            existing = _pending_delayed.pop(key, None)
+            if existing:
+                existing.cancel()
+            _pending_delayed[key] = asyncio.create_task(
+                _fire_delayed_speak(session_id, page, message)
+            )
+        else:
+            await push_reasoning(session_id, action, message)
     except Exception as e:
         print(f"[reasoning] error for ({session_id}, page={page}): {e}")
+
+
+async def _fire_delayed_speak(session_id: str, page: int, message: str) -> None:
+    """Wait DELAYED_SPEAK_SECONDS then push the message as 'speak'."""
+    await asyncio.sleep(DELAYED_SPEAK_SECONDS)
+    _pending_delayed.pop((session_id, page), None)
+    try:
+        from api.reasoning import push_reasoning
+        await push_reasoning(session_id, "speak", message)
+        print(f"[reasoning] delayed speak fired for ({session_id}, page={page}): {message[:60]}")
+    except Exception as e:
+        print(f"[reasoning] delayed speak error for ({session_id}, page={page}): {e}")
 
 
 # ── Whole-page transcription ──────────────────────────────
