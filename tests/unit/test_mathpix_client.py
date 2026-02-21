@@ -210,6 +210,100 @@ class TestCleanupSessions:
             reasoning_task_2.cancel()
 
 
+class TestEraseSnapshotCapture:
+    async def test_erase_event_captures_pre_erase_text(self, monkeypatch):
+        """When the most recent stroke event is an erase, the current
+        page_transcriptions.text should be snapshotted before Mathpix runs."""
+
+        class SnapshotConn:
+            def __init__(self):
+                self.calls = []
+
+            async def execute(self, query, *args):
+                self.calls.append(("execute", query, *args))
+
+            async def fetchrow(self, query, *args):
+                if "page_transcriptions" in query:
+                    return {"text": "x^2 + 3x = 0"}
+                return None
+
+            async def fetch(self, query, *args):
+                if "stroke_logs" in query:
+                    # Simulate LIMIT 1 ORDER BY received_at DESC: erase is most recent
+                    return [{"id": 2, "strokes": "[]", "event_type": "erase"}]
+                return []
+
+        class SnapshotPool:
+            def __init__(self):
+                self.conn = SnapshotConn()
+            def acquire(self):
+                from tests.helpers import _FakeAcquireCtx
+                return _FakeAcquireCtx(self.conn)
+
+        pool = SnapshotPool()
+        monkeypatch.setattr("lib.mathpix_client.get_pool", lambda: pool)
+        monkeypatch.setattr("lib.mathpix_client.DEBOUNCE_SECONDS", 0)
+
+        # Math mode (not diagram)
+        monkeypatch.setattr("api.strokes._active_sessions", {"sid": {"content_mode": "math"}})
+
+        # No Mathpix credentials — will skip to reasoning after snapshot
+        monkeypatch.delenv("MATHPIX_APP_ID", raising=False)
+        monkeypatch.delenv("MATHPIX_APP_KEY", raising=False)
+
+        # Stub reasoning
+        monkeypatch.setattr("lib.mathpix_client.schedule_reasoning", lambda sid, page: None)
+
+        from lib.mathpix_client import _erase_snapshots, _debounced_transcribe
+        key = ("sid", 1)
+        _erase_snapshots.pop(key, None)
+
+        try:
+            await _debounced_transcribe("sid", 1)
+            assert key in _erase_snapshots
+            assert list(_erase_snapshots[key]) == ["x^2 + 3x = 0"]
+        finally:
+            _erase_snapshots.pop(key, None)
+
+    async def test_no_snapshot_when_no_erase(self, monkeypatch):
+        """When the most recent event is a draw (not erase), no snapshot is taken."""
+
+        class DrawOnlyConn:
+            async def execute(self, query, *args):
+                pass
+            async def fetchrow(self, query, *args):
+                return None
+            async def fetch(self, query, *args):
+                if "stroke_logs" in query:
+                    # Simulate LIMIT 1 ORDER BY received_at DESC: most recent is draw
+                    return [{"id": 2, "strokes": "[]", "event_type": "draw"}]
+                return []
+
+        class DrawOnlyPool:
+            def __init__(self):
+                self.conn = DrawOnlyConn()
+            def acquire(self):
+                from tests.helpers import _FakeAcquireCtx
+                return _FakeAcquireCtx(self.conn)
+
+        monkeypatch.setattr("lib.mathpix_client.get_pool", lambda: DrawOnlyPool())
+        monkeypatch.setattr("lib.mathpix_client.DEBOUNCE_SECONDS", 0)
+        monkeypatch.setattr("api.strokes._active_sessions", {"sid": {"content_mode": "math"}})
+        monkeypatch.delenv("MATHPIX_APP_ID", raising=False)
+        monkeypatch.delenv("MATHPIX_APP_KEY", raising=False)
+        monkeypatch.setattr("lib.mathpix_client.schedule_reasoning", lambda sid, page: None)
+
+        from lib.mathpix_client import _erase_snapshots, _debounced_transcribe
+        key = ("sid", 1)
+        _erase_snapshots.pop(key, None)
+
+        try:
+            await _debounced_transcribe("sid", 1)
+            assert key not in _erase_snapshots
+        finally:
+            _erase_snapshots.pop(key, None)
+
+
 class TestEraseSnapshotCleanup:
     def test_invalidate_session_clears_erase_snapshots(self):
         key = ("sid", 1)

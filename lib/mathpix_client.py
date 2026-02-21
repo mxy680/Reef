@@ -212,6 +212,30 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
         schedule_reasoning(session_id, page)
         return
 
+    # Erase snapshot: if most recent stroke event is an erase, capture pre-erase text
+    pool = get_pool()
+    if pool:
+        async with pool.acquire() as conn:
+            last_event = await conn.fetch(
+                """
+                SELECT event_type FROM stroke_logs
+                WHERE session_id = $1 AND page = $2 AND event_type IN ('draw', 'erase')
+                ORDER BY received_at DESC LIMIT 1
+                """,
+                session_id, page,
+            )
+            if last_event and last_event[0]["event_type"] == "erase":
+                tx_row = await conn.fetchrow(
+                    "SELECT text FROM page_transcriptions WHERE session_id = $1 AND page = $2",
+                    session_id, page,
+                )
+                if tx_row and tx_row["text"]:
+                    key = (session_id, page)
+                    if key not in _erase_snapshots:
+                        _erase_snapshots[key] = deque(maxlen=3)
+                    _erase_snapshots[key].append(tx_row["text"])
+                    print(f"[mathpix] ({session_id}, page={page}): captured pre-erase snapshot")
+
     try:
         _get_credentials()
     except RuntimeError:
