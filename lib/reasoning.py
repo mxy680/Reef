@@ -110,7 +110,7 @@ Your message is read aloud via TTS. Write ONLY spoken English:
 
 You may receive images alongside the text:
 - **Question figures**: diagrams, charts, or tables from the original problem.
-- **Student drawing**: a rendered image of the student's strokes when their work is a diagram that couldn't be transcribed to text.
+- **Student drawing**: a rendered image of the student's strokes when they are using the diagram tool or their work couldn't be transcribed to text.
 
 ## Output format
 
