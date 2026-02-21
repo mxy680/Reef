@@ -20,6 +20,7 @@ from lib.mathpix_client import (
     create_session,
     get_or_create_session,
     invalidate_session,
+    schedule_reasoning,
 )
 from tests.helpers import load_fixture
 
@@ -370,3 +371,28 @@ class TestPendingDelayedCleanup:
             t1.cancel()
             t2.cancel()
             t3.cancel()
+
+
+class TestScheduleReasoningCancelsDelayed:
+    async def test_schedule_reasoning_cancels_pending_delayed(self, monkeypatch):
+        """When new reasoning is scheduled, any pending delayed-speak should be cancelled."""
+        key = ("sid", 1)
+        delayed_task = asyncio.ensure_future(asyncio.sleep(100))
+        _pending_delayed[key] = delayed_task
+
+        # Stub _debounced_reasoning so schedule_reasoning doesn't actually run reasoning
+        async def fake_debounced(sid, page):
+            await asyncio.sleep(100)
+
+        monkeypatch.setattr("lib.mathpix_client._debounced_reasoning", fake_debounced)
+
+        try:
+            schedule_reasoning("sid", 1)
+            assert key not in _pending_delayed
+            assert delayed_task.cancelling() > 0
+        finally:
+            _pending_delayed.pop(key, None)
+            task = _reasoning_tasks.pop(key, None)
+            if task:
+                task.cancel()
+            delayed_task.cancel()

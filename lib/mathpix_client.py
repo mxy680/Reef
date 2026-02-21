@@ -161,6 +161,10 @@ def cleanup_sessions(session_id: str) -> None:
 def schedule_reasoning(session_id: str, page: int) -> None:
     """Debounce 2.5s, then run the reasoning model (separate from transcription debounce)."""
     key = (session_id, page)
+    # Cancel any pending delayed-speak for this key
+    d_task = _pending_delayed.pop(key, None)
+    if d_task:
+        d_task.cancel()
     existing = _reasoning_tasks.pop(key, None)
     if existing:
         existing.cancel()
