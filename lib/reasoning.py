@@ -112,6 +112,18 @@ You may receive images alongside the text:
 - **Question figures**: diagrams, charts, or tables from the original problem.
 - **Student drawing**: a rendered image of the student's strokes when they are using the diagram tool or their work couldn't be transcribed to text.
 
+## Erased work context
+
+You may see a "Previously Erased Work" section showing what the student wrote \
+before erasing. Use this to detect:
+- Student erasing correct work and replacing it with something wrong
+- Student second-guessing themselves repeatedly on the same step
+- Student erasing your suggested correction instead of fixing the error
+
+Do NOT comment on erased work unprompted unless the erasure introduced or \
+worsened an error. Erasing and rewriting is normal — only flag it when it \
+leads to a mistake.
+
 ## Output format
 
 - action: "silent" or "speak"
