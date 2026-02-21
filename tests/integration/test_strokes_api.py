@@ -410,3 +410,51 @@ class TestDisconnectUnknown:
         resp = client.post("/api/strokes/disconnect", json={"session_id": sid})
         assert resp.status_code == 200
         assert resp.json()["status"] == "disconnected"
+
+
+class TestContentMode:
+    def test_content_mode_stored_in_active_sessions(self, client):
+        sid = _sid()
+        client.post("/api/strokes/connect", json={"session_id": sid})
+
+        client.post("/api/strokes", json={
+            "session_id": sid,
+            "page": 1,
+            "strokes": [{"x": [1], "y": [2]}],
+            "event_type": "draw",
+            "content_mode": "diagram",
+        })
+        assert _active_sessions[sid]["content_mode"] == "diagram"
+
+    def test_content_mode_defaults_to_math(self, client):
+        sid = _sid()
+        client.post("/api/strokes/connect", json={"session_id": sid})
+
+        client.post("/api/strokes", json={
+            "session_id": sid,
+            "page": 1,
+            "strokes": [{"x": [1], "y": [2]}],
+            "event_type": "draw",
+        })
+        assert _active_sessions[sid]["content_mode"] == "math"
+
+    def test_content_mode_not_overwritten_by_none(self, client):
+        sid = _sid()
+        client.post("/api/strokes/connect", json={"session_id": sid})
+
+        # Set to diagram
+        client.post("/api/strokes", json={
+            "session_id": sid,
+            "page": 1,
+            "strokes": [{"x": [1], "y": [2]}],
+            "content_mode": "diagram",
+        })
+        assert _active_sessions[sid]["content_mode"] == "diagram"
+
+        # Send without content_mode — should keep "diagram"
+        client.post("/api/strokes", json={
+            "session_id": sid,
+            "page": 1,
+            "strokes": [{"x": [3], "y": [4]}],
+        })
+        assert _active_sessions[sid]["content_mode"] == "diagram"

@@ -47,6 +47,7 @@ class StrokesRequest(BaseModel):
     event_type: str = "draw"
     deleted_count: int = 0
     part_label: Optional[str] = None
+    content_mode: Optional[str] = None
 
 
 class ClearRequest(BaseModel):
@@ -70,6 +71,7 @@ async def strokes_connect(req: ConnectRequest):
         "question_number": req.question_number,
         "last_seen": datetime.now(timezone.utc).isoformat(),
         "active_part": None,
+        "content_mode": "math",
     }
     print(f"[strokes] session {req.session_id} connected (doc={req.document_name!r}, q={req.question_number}, evicted {len(stale)} stale)")
 
@@ -126,6 +128,8 @@ async def strokes_post(req: StrokesRequest):
         _active_sessions[req.session_id]["last_seen"] = datetime.now(timezone.utc).isoformat()
         if req.part_label is not None:
             _active_sessions[req.session_id]["active_part"] = req.part_label
+        if req.content_mode is not None:
+            _active_sessions[req.session_id]["content_mode"] = req.content_mode
 
     return {"status": "ok"}
 
