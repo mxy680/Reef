@@ -336,7 +336,7 @@ class TestEraseSnapshotCleanup:
 
 
 class TestPendingDelayedCleanup:
-    def test_invalidate_session_cancels_pending_delayed(self):
+    async def test_invalidate_session_cancels_pending_delayed(self):
         key = ("sid", 1)
         delayed_task = asyncio.ensure_future(asyncio.sleep(100))
         _pending_delayed[key] = delayed_task
@@ -348,7 +348,7 @@ class TestPendingDelayedCleanup:
             _pending_delayed.pop(key, None)
             delayed_task.cancel()
 
-    def test_cleanup_sessions_cancels_all_pending_delayed(self):
+    async def test_cleanup_sessions_cancels_all_pending_delayed(self):
         key1 = ("sid", 1)
         key2 = ("sid", 2)
         other = ("other", 1)
