@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import json
 import os
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -37,6 +38,9 @@ _debounce_tasks: dict[tuple[str, int], asyncio.Task] = {}
 
 # (session_id, page) → pending reasoning asyncio.Task (separate debounce)
 _reasoning_tasks: dict[tuple[str, int], asyncio.Task] = {}
+
+# (session_id, page) → deque of pre-erase transcription texts (max 3, newest last)
+_erase_snapshots: dict[tuple[str, int], deque[str]] = {}
 
 
 def _get_credentials() -> tuple[str, str]:
@@ -86,6 +90,7 @@ def invalidate_session(session_id: str, page: int) -> None:
     key = (session_id, page)
     _sessions.pop(key, None)
     _last_stroke_hash.pop(key, None)
+    _erase_snapshots.pop(key, None)
     task = _debounce_tasks.pop(key, None)
     if task:
         task.cancel()
@@ -128,6 +133,10 @@ def cleanup_sessions(session_id: str) -> None:
     hash_keys = [k for k in _last_stroke_hash if k[0] == session_id]
     for key in hash_keys:
         _last_stroke_hash.pop(key, None)
+    # Clean up erase snapshots for this session
+    snap_keys = [k for k in _erase_snapshots if k[0] == session_id]
+    for key in snap_keys:
+        _erase_snapshots.pop(key, None)
     if keys_to_remove or r_keys:
         print(f"[mathpix] cleaned up {len(keys_to_remove)} session(s) for {session_id}")
 

@@ -1,6 +1,7 @@
 """Unit tests for lib/mathpix_client.py — Mathpix session management."""
 import asyncio
 import os
+from collections import deque
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -10,6 +11,7 @@ import respx
 from lib.mathpix_client import (
     MathpixSession,
     _debounce_tasks,
+    _erase_snapshots,
     _last_stroke_hash,
     _reasoning_tasks,
     _sessions,
@@ -206,3 +208,31 @@ class TestCleanupSessions:
             _reasoning_tasks.pop(key2, None)
             reasoning_task_1.cancel()
             reasoning_task_2.cancel()
+
+
+class TestEraseSnapshotCleanup:
+    def test_invalidate_session_clears_erase_snapshots(self):
+        key = ("sid", 1)
+        _erase_snapshots[key] = deque(["old work"], maxlen=3)
+        try:
+            invalidate_session("sid", 1)
+            assert key not in _erase_snapshots
+        finally:
+            _erase_snapshots.pop(key, None)
+
+    def test_cleanup_sessions_clears_all_pages(self):
+        key1 = ("sid", 1)
+        key2 = ("sid", 2)
+        other = ("other", 1)
+        _erase_snapshots[key1] = deque(["work1"], maxlen=3)
+        _erase_snapshots[key2] = deque(["work2"], maxlen=3)
+        _erase_snapshots[other] = deque(["keep"], maxlen=3)
+        try:
+            cleanup_sessions("sid")
+            assert key1 not in _erase_snapshots
+            assert key2 not in _erase_snapshots
+            assert other in _erase_snapshots
+        finally:
+            _erase_snapshots.pop(key1, None)
+            _erase_snapshots.pop(key2, None)
+            _erase_snapshots.pop(other, None)
