@@ -13,6 +13,7 @@ from lib.mathpix_client import (
     _debounce_tasks,
     _erase_snapshots,
     _last_stroke_hash,
+    _pending_delayed,
     _reasoning_tasks,
     _sessions,
     cleanup_sessions,
@@ -330,3 +331,42 @@ class TestEraseSnapshotCleanup:
             _erase_snapshots.pop(key1, None)
             _erase_snapshots.pop(key2, None)
             _erase_snapshots.pop(other, None)
+
+
+class TestPendingDelayedCleanup:
+    def test_invalidate_session_cancels_pending_delayed(self):
+        key = ("sid", 1)
+        delayed_task = asyncio.ensure_future(asyncio.sleep(100))
+        _pending_delayed[key] = delayed_task
+        try:
+            invalidate_session("sid", 1)
+            assert key not in _pending_delayed
+            assert delayed_task.cancelling() > 0
+        finally:
+            _pending_delayed.pop(key, None)
+            delayed_task.cancel()
+
+    def test_cleanup_sessions_cancels_all_pending_delayed(self):
+        key1 = ("sid", 1)
+        key2 = ("sid", 2)
+        other = ("other", 1)
+        t1 = asyncio.ensure_future(asyncio.sleep(100))
+        t2 = asyncio.ensure_future(asyncio.sleep(100))
+        t3 = asyncio.ensure_future(asyncio.sleep(100))
+        _pending_delayed[key1] = t1
+        _pending_delayed[key2] = t2
+        _pending_delayed[other] = t3
+        try:
+            cleanup_sessions("sid")
+            assert key1 not in _pending_delayed
+            assert key2 not in _pending_delayed
+            assert other in _pending_delayed
+            assert t1.cancelling() > 0
+            assert t2.cancelling() > 0
+        finally:
+            _pending_delayed.pop(key1, None)
+            _pending_delayed.pop(key2, None)
+            _pending_delayed.pop(other, None)
+            t1.cancel()
+            t2.cancel()
+            t3.cancel()

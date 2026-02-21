@@ -42,6 +42,11 @@ _reasoning_tasks: dict[tuple[str, int], asyncio.Task] = {}
 # (session_id, page) → deque of pre-erase transcription texts (max 3, newest last)
 _erase_snapshots: dict[tuple[str, int], deque[str]] = {}
 
+# (session_id, page) → pending delayed-speak asyncio.Task
+_pending_delayed: dict[tuple[str, int], asyncio.Task] = {}
+
+DELAYED_SPEAK_SECONDS = 10.0
+
 
 def _get_credentials() -> tuple[str, str]:
     app_id = os.environ.get("MATHPIX_APP_ID", "")
@@ -91,6 +96,9 @@ def invalidate_session(session_id: str, page: int) -> None:
     _sessions.pop(key, None)
     _last_stroke_hash.pop(key, None)
     _erase_snapshots.pop(key, None)
+    d_task = _pending_delayed.pop(key, None)
+    if d_task:
+        d_task.cancel()
     task = _debounce_tasks.pop(key, None)
     if task:
         task.cancel()
@@ -137,6 +145,12 @@ def cleanup_sessions(session_id: str) -> None:
     snap_keys = [k for k in _erase_snapshots if k[0] == session_id]
     for key in snap_keys:
         _erase_snapshots.pop(key, None)
+    # Clean up pending delayed-speak tasks for this session
+    delayed_keys = [k for k in _pending_delayed if k[0] == session_id]
+    for key in delayed_keys:
+        d_task = _pending_delayed.pop(key, None)
+        if d_task:
+            d_task.cancel()
     if keys_to_remove or r_keys:
         print(f"[mathpix] cleaned up {len(keys_to_remove)} session(s) for {session_id}")
 
