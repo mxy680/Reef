@@ -36,6 +36,7 @@ Reef/
 - Server→client push uses SSE (`GET /api/events`), not WebSockets. Voice uses REST POST (`/api/voice/question`). TTS uses chunked HTTP (`GET /api/tts/stream/{tts_id}`)
 - **Per-part reasoning**: `_active_sessions` stores `active_part` (from iOS `part_label`). `build_context` scopes answer keys to the active part, shows earlier parts as reference, hides later parts. `_get_part_order` / `_is_later_part` helpers in `lib/reasoning.py`
 - **Diagram tool**: `_active_sessions` stores `content_mode` ("math" or "diagram"). When "diagram", `_debounced_transcribe` skips Mathpix entirely, upserts empty `page_transcriptions`, and schedules reasoning directly. `build_context` renders strokes to PNG via `stroke_renderer.py` and sends to Qwen VL as an image. iOS sends `content_mode: "diagram"` in stroke POST when diagram tool is selected (`CanvasTool.diagram`).
+- **Erase awareness**: `_erase_snapshots` in `mathpix_client.py` (deque, max 3) captures pre-erase `page_transcriptions.text` each time an erase event is detected. `build_context` includes these in a "Previously Erased Work" section so the reasoning model can detect patterns like erasing correct work. Ephemeral in-memory state, cleaned up by `invalidate_session`/`cleanup_sessions`.
 
 ## Dashboard
 
