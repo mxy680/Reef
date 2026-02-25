@@ -43,9 +43,7 @@ _reasoning_tasks: dict[tuple[str, int], asyncio.Task] = {}
 _erase_snapshots: dict[tuple[str, int], deque[str]] = {}
 
 # (session_id, page) → pending delayed-speak asyncio.Task
-_pending_delayed: dict[tuple[str, int], asyncio.Task] = {}
-
-DELAYED_SPEAK_SECONDS = 10.0
+_pending_speak: dict[tuple[str, int], asyncio.Task] = {}
 
 
 def _get_credentials() -> tuple[str, str]:
@@ -96,7 +94,7 @@ def invalidate_session(session_id: str, page: int) -> None:
     _sessions.pop(key, None)
     _last_stroke_hash.pop(key, None)
     _erase_snapshots.pop(key, None)
-    d_task = _pending_delayed.pop(key, None)
+    d_task = _pending_speak.pop(key, None)
     if d_task:
         d_task.cancel()
     task = _debounce_tasks.pop(key, None)
@@ -145,10 +143,10 @@ def cleanup_sessions(session_id: str) -> None:
     snap_keys = [k for k in _erase_snapshots if k[0] == session_id]
     for key in snap_keys:
         _erase_snapshots.pop(key, None)
-    # Clean up pending delayed-speak tasks for this session
-    delayed_keys = [k for k in _pending_delayed if k[0] == session_id]
-    for key in delayed_keys:
-        d_task = _pending_delayed.pop(key, None)
+    # Clean up pending speak tasks for this session
+    speak_keys = [k for k in _pending_speak if k[0] == session_id]
+    for key in speak_keys:
+        d_task = _pending_speak.pop(key, None)
         if d_task:
             d_task.cancel()
     if keys_to_remove or r_keys:
@@ -161,8 +159,8 @@ def cleanup_sessions(session_id: str) -> None:
 def schedule_reasoning(session_id: str, page: int) -> None:
     """Debounce 2.5s, then run the reasoning model (separate from transcription debounce)."""
     key = (session_id, page)
-    # Cancel any pending delayed-speak for this key
-    d_task = _pending_delayed.pop(key, None)
+    # Cancel any pending delayed speak for this key (new strokes arrived)
+    d_task = _pending_speak.pop(key, None)
     if d_task:
         d_task.cancel()
     existing = _reasoning_tasks.pop(key, None)
@@ -184,30 +182,34 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
         result = await run_reasoning(session_id, page)
         action = result["action"]
         message = result["message"]
+        delay_ms = result.get("delay_ms", 0)
 
-        if action == "delayed_speak":
+        if action == "speak" and delay_ms > 0:
             key = (session_id, page)
-            # Cancel any existing pending delayed
-            existing = _pending_delayed.pop(key, None)
+            # Cancel any existing pending speak
+            existing = _pending_speak.pop(key, None)
             if existing:
                 existing.cancel()
-            _pending_delayed[key] = asyncio.create_task(
-                _fire_delayed_speak(session_id, page, message)
+            _pending_speak[key] = asyncio.create_task(
+                _fire_delayed_speak(session_id, page, message, delay_ms / 1000.0)
             )
-        else:
+        elif action == "speak":
             await push_reasoning(session_id, action, message)
+        # silent: do nothing (already logged to DB by run_reasoning)
     except Exception as e:
         print(f"[reasoning] error for ({session_id}, page={page}): {e}")
 
 
-async def _fire_delayed_speak(session_id: str, page: int, message: str) -> None:
-    """Wait DELAYED_SPEAK_SECONDS then push the message as 'speak'."""
-    await asyncio.sleep(DELAYED_SPEAK_SECONDS)
-    _pending_delayed.pop((session_id, page), None)
+async def _fire_delayed_speak(
+    session_id: str, page: int, message: str, delay_seconds: float
+) -> None:
+    """Wait delay_seconds then push the message as 'speak'."""
+    await asyncio.sleep(delay_seconds)
+    _pending_speak.pop((session_id, page), None)
     try:
         from api.reasoning import push_reasoning
         await push_reasoning(session_id, "speak", message)
-        print(f"[reasoning] delayed speak fired for ({session_id}, page={page}): {message[:60]}")
+        print(f"[reasoning] delayed speak fired ({delay_seconds:.1f}s) for ({session_id}, page={page}): {message[:60]}")
     except Exception as e:
         print(f"[reasoning] delayed speak error for ({session_id}, page={page}): {e}")
 

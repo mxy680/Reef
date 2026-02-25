@@ -127,6 +127,18 @@ async def init_db():
             ADD COLUMN IF NOT EXISTS question_text TEXT
         """)
         await conn.execute("""
+            ALTER TABLE reasoning_logs ADD COLUMN IF NOT EXISTS level INT
+        """)
+        await conn.execute("""
+            ALTER TABLE reasoning_logs ADD COLUMN IF NOT EXISTS error_type VARCHAR(20)
+        """)
+        await conn.execute("""
+            ALTER TABLE reasoning_logs ADD COLUMN IF NOT EXISTS delay_ms INT NOT NULL DEFAULT 0
+        """)
+        await conn.execute("""
+            ALTER TABLE reasoning_logs ADD COLUMN IF NOT EXISTS internal_reasoning TEXT
+        """)
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS page_transcriptions (
                 id SERIAL PRIMARY KEY,
                 session_id TEXT NOT NULL,

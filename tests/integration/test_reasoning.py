@@ -273,20 +273,31 @@ class TestRunReasoning:
             respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion('{"action": "speak", "message": "Try factoring."}'),
+                    json=make_chat_completion(
+                        '{"action": "speak", "level": 1, "error_type": "procedural", '
+                        '"delay_ms": 0, "message": "Try factoring.", '
+                        '"internal_reasoning": "Sign error in step 2"}'
+                    ),
                 )
             )
             result = asyncio.run(run_reasoning(_sid(), 1))
 
         assert result["action"] == "speak"
         assert result["message"] == "Try factoring."
+        assert result["level"] == 1
+        assert result["error_type"] == "procedural"
+        assert result["delay_ms"] == 0
 
         # Verify DB insert was called with correct action/message
         assert len(fake_pool.conn.calls) == 1
         call_args = fake_pool.conn.calls[0]
-        # Tuple: (query, session_id, page, context, action, message, ...)
+        # Tuple: (query, session_id, page, context, action, message, ..., level, error_type, delay_ms, internal_reasoning)
         assert call_args[4] == "speak"
         assert call_args[5] == "Try factoring."
+        assert call_args[9] == 1  # level
+        assert call_args[10] == "procedural"  # error_type
+        assert call_args[11] == 0  # delay_ms
+        assert call_args[12] == "Sign error in step 2"  # internal_reasoning
 
     def test_db_insert_has_token_counts(self, monkeypatch):
         from lib.reasoning import run_reasoning
@@ -302,14 +313,17 @@ class TestRunReasoning:
             respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion('{"action": "silent", "message": "Student is working"}'),
+                    json=make_chat_completion(
+                        '{"action": "silent", "message": "Student is working", '
+                        '"internal_reasoning": "No errors detected"}'
+                    ),
                 )
             )
             asyncio.run(run_reasoning(_sid(), 1))
 
         assert len(fake_pool.conn.calls) == 1
         call_args = fake_pool.conn.calls[0]
-        # Tuple: (query, sid, page, context, action, message, prompt_tokens, completion_tokens, cost)
+        # Tuple: (query, sid, page, context, action, message, prompt_tokens, completion_tokens, cost, level, error_type, delay_ms, internal_reasoning)
         prompt_tokens = call_args[6]
         completion_tokens = call_args[7]
         estimated_cost = call_args[8]
@@ -336,7 +350,10 @@ class TestRunQuestionReasoning:
             respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion('{"action": "silent", "message": "I would stay quiet"}'),
+                    json=make_chat_completion(
+                        '{"action": "silent", "message": "I would stay quiet", '
+                        '"internal_reasoning": "test"}'
+                    ),
                 )
             )
             result = asyncio.run(run_question_reasoning(_sid(), 1, "What is x?"))
@@ -357,18 +374,22 @@ class TestRunQuestionReasoning:
             respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion('{"action": "speak", "message": "x equals 5"}'),
+                    json=make_chat_completion(
+                        '{"action": "speak", "message": "x equals 5", '
+                        '"internal_reasoning": "answering question"}'
+                    ),
                 )
             )
             asyncio.run(run_question_reasoning(_sid(), 1, "What is x?"))
 
         assert len(fake_pool.conn.calls) == 1
         call_args = fake_pool.conn.calls[0]
-        # Tuple: (query, sid, page, context, action, message, pt, ct, cost, source, question_text)
+        # Tuple: (query, sid, page, context, action, message, pt, ct, cost, source, question_text, level, error_type, delay_ms, internal_reasoning)
         source = call_args[9]
         question_text = call_args[10]
         assert source == "voice_question"
         assert question_text == "What is x?"
+        assert call_args[13] == 0  # delay_ms forced to 0 for voice questions
 
 
 # ── TestRunQuestionReasoningStreaming ─────────────────────────────────

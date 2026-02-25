@@ -294,7 +294,8 @@ async def get_reasoning_logs(
             """
             SELECT id, session_id, page, created_at, action, message,
                    prompt_tokens, completion_tokens, estimated_cost,
-                   source, question_text
+                   source, question_text,
+                   level, error_type, delay_ms, internal_reasoning
             FROM reasoning_logs
             WHERE session_id = $1
             ORDER BY created_at DESC
@@ -329,6 +330,10 @@ async def get_reasoning_logs(
                 "estimated_cost": float(r["estimated_cost"]),
                 "source": r["source"],
                 "question_text": r["question_text"],
+                "level": r["level"],
+                "error_type": r["error_type"],
+                "delay_ms": r["delay_ms"],
+                "internal_reasoning": r["internal_reasoning"],
             }
             for r in rows
         ],

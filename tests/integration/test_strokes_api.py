@@ -315,16 +315,22 @@ class TestGetReasoningLogs:
     async def test_returns_inserted_logs(self, client, db):
         sid = _sid()
         await db.execute(
-            """INSERT INTO reasoning_logs (session_id, page, action, message, prompt_tokens, completion_tokens, estimated_cost)
-               VALUES ($1, 1, 'speak', 'Try factoring', 200, 100, 0.002)""",
+            """INSERT INTO reasoning_logs (session_id, page, action, message, prompt_tokens, completion_tokens, estimated_cost,
+                   level, error_type, delay_ms, internal_reasoning)
+               VALUES ($1, 1, 'speak', 'Try factoring', 200, 100, 0.002, 1, 'procedural', 3000, 'Sign error in step 2')""",
             sid,
         )
 
         resp = client.get(f"/api/reasoning-logs?session_id={sid}")
         data = resp.json()
         assert len(data["logs"]) == 1
-        assert data["logs"][0]["action"] == "speak"
-        assert data["logs"][0]["message"] == "Try factoring"
+        log = data["logs"][0]
+        assert log["action"] == "speak"
+        assert log["message"] == "Try factoring"
+        assert log["level"] == 1
+        assert log["error_type"] == "procedural"
+        assert log["delay_ms"] == 3000
+        assert log["internal_reasoning"] == "Sign error in step 2"
 
     @pytest.mark.anyio
     async def test_usage_aggregation(self, client, db):

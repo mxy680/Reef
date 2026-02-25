@@ -9,12 +9,11 @@ import pytest
 import respx
 
 from lib.mathpix_client import (
-    DELAYED_SPEAK_SECONDS,
     MathpixSession,
     _debounce_tasks,
     _erase_snapshots,
     _last_stroke_hash,
-    _pending_delayed,
+    _pending_speak,
     _reasoning_tasks,
     _sessions,
     cleanup_sessions,
@@ -335,51 +334,51 @@ class TestEraseSnapshotCleanup:
             _erase_snapshots.pop(other, None)
 
 
-class TestPendingDelayedCleanup:
-    async def test_invalidate_session_cancels_pending_delayed(self):
+class TestPendingSpeakCleanup:
+    async def test_invalidate_session_cancels_pending_speak(self):
         key = ("sid", 1)
         delayed_task = asyncio.ensure_future(asyncio.sleep(100))
-        _pending_delayed[key] = delayed_task
+        _pending_speak[key] = delayed_task
         try:
             invalidate_session("sid", 1)
-            assert key not in _pending_delayed
+            assert key not in _pending_speak
             assert delayed_task.cancelling() > 0
         finally:
-            _pending_delayed.pop(key, None)
+            _pending_speak.pop(key, None)
             delayed_task.cancel()
 
-    async def test_cleanup_sessions_cancels_all_pending_delayed(self):
+    async def test_cleanup_sessions_cancels_all_pending_speak(self):
         key1 = ("sid", 1)
         key2 = ("sid", 2)
         other = ("other", 1)
         t1 = asyncio.ensure_future(asyncio.sleep(100))
         t2 = asyncio.ensure_future(asyncio.sleep(100))
         t3 = asyncio.ensure_future(asyncio.sleep(100))
-        _pending_delayed[key1] = t1
-        _pending_delayed[key2] = t2
-        _pending_delayed[other] = t3
+        _pending_speak[key1] = t1
+        _pending_speak[key2] = t2
+        _pending_speak[other] = t3
         try:
             cleanup_sessions("sid")
-            assert key1 not in _pending_delayed
-            assert key2 not in _pending_delayed
-            assert other in _pending_delayed
+            assert key1 not in _pending_speak
+            assert key2 not in _pending_speak
+            assert other in _pending_speak
             assert t1.cancelling() > 0
             assert t2.cancelling() > 0
         finally:
-            _pending_delayed.pop(key1, None)
-            _pending_delayed.pop(key2, None)
-            _pending_delayed.pop(other, None)
+            _pending_speak.pop(key1, None)
+            _pending_speak.pop(key2, None)
+            _pending_speak.pop(other, None)
             t1.cancel()
             t2.cancel()
             t3.cancel()
 
 
 class TestScheduleReasoningCancelsDelayed:
-    async def test_schedule_reasoning_cancels_pending_delayed(self, monkeypatch):
+    async def test_schedule_reasoning_cancels_pending_speak(self, monkeypatch):
         """When new reasoning is scheduled, any pending delayed-speak should be cancelled."""
         key = ("sid", 1)
         delayed_task = asyncio.ensure_future(asyncio.sleep(100))
-        _pending_delayed[key] = delayed_task
+        _pending_speak[key] = delayed_task
 
         # Stub _debounced_reasoning so schedule_reasoning doesn't actually run reasoning
         async def fake_debounced(sid, page):
@@ -389,24 +388,23 @@ class TestScheduleReasoningCancelsDelayed:
 
         try:
             schedule_reasoning("sid", 1)
-            assert key not in _pending_delayed
+            assert key not in _pending_speak
             assert delayed_task.cancelling() > 0
         finally:
-            _pending_delayed.pop(key, None)
+            _pending_speak.pop(key, None)
             task = _reasoning_tasks.pop(key, None)
             if task:
                 task.cancel()
             delayed_task.cancel()
 
 
-class TestDebouncedReasoningDelayedSpeak:
-    async def test_delayed_speak_starts_timer(self, monkeypatch):
-        """When model returns delayed_speak, a timer task should be stored in _pending_delayed."""
+class TestDebouncedReasoningDelayMs:
+    async def test_delay_ms_starts_timer(self, monkeypatch):
+        """When model returns speak with delay_ms > 0, a timer task should be stored in _pending_speak."""
         monkeypatch.setattr("lib.mathpix_client.REASONING_DEBOUNCE_SECONDS", 0)
-        monkeypatch.setattr("lib.mathpix_client.DELAYED_SPEAK_SECONDS", 100)  # long so it doesn't fire
 
         async def fake_run_reasoning(sid, page):
-            return {"action": "delayed_speak", "message": "Are you still thinking?"}
+            return {"action": "speak", "message": "Are you still thinking?", "delay_ms": 10000}
 
         monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
 
@@ -418,7 +416,7 @@ class TestDebouncedReasoningDelayedSpeak:
         monkeypatch.setattr("api.reasoning.push_reasoning", fake_push)
 
         key = ("sid", 1)
-        _pending_delayed.pop(key, None)
+        _pending_speak.pop(key, None)
 
         try:
             from lib.mathpix_client import _debounced_reasoning
@@ -427,20 +425,19 @@ class TestDebouncedReasoningDelayedSpeak:
             # Should NOT have pushed immediately
             assert len(pushed) == 0
             # Should have a pending task
-            assert key in _pending_delayed
-            assert not _pending_delayed[key].done()
+            assert key in _pending_speak
+            assert not _pending_speak[key].done()
         finally:
-            task = _pending_delayed.pop(key, None)
+            task = _pending_speak.pop(key, None)
             if task:
                 task.cancel()
 
-    async def test_delayed_speak_fires_after_delay(self, monkeypatch):
-        """After DELAYED_SPEAK_SECONDS, the message should be pushed as 'speak'."""
+    async def test_delay_ms_fires_after_delay(self, monkeypatch):
+        """After delay_ms elapsed, the message should be pushed as 'speak'."""
         monkeypatch.setattr("lib.mathpix_client.REASONING_DEBOUNCE_SECONDS", 0)
-        monkeypatch.setattr("lib.mathpix_client.DELAYED_SPEAK_SECONDS", 0.1)  # 100ms for test speed
 
         async def fake_run_reasoning(sid, page):
-            return {"action": "delayed_speak", "message": "Still working on that?"}
+            return {"action": "speak", "message": "Still working on that?", "delay_ms": 100}
 
         monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
 
@@ -452,7 +449,7 @@ class TestDebouncedReasoningDelayedSpeak:
         monkeypatch.setattr("api.reasoning.push_reasoning", fake_push)
 
         key = ("sid", 1)
-        _pending_delayed.pop(key, None)
+        _pending_speak.pop(key, None)
 
         try:
             from lib.mathpix_client import _debounced_reasoning
@@ -461,23 +458,23 @@ class TestDebouncedReasoningDelayedSpeak:
             # Not pushed yet
             assert len(pushed) == 0
 
-            # Wait for delay to fire
+            # Wait for delay to fire (100ms + buffer)
             await asyncio.sleep(0.2)
 
             assert len(pushed) == 1
             assert pushed[0] == ("sid", "speak", "Still working on that?")
-            assert key not in _pending_delayed
+            assert key not in _pending_speak
         finally:
-            task = _pending_delayed.pop(key, None)
+            task = _pending_speak.pop(key, None)
             if task:
                 task.cancel()
 
-    async def test_speak_still_pushes_immediately(self, monkeypatch):
-        """Regular speak action should still push immediately (no delay)."""
+    async def test_speak_zero_delay_pushes_immediately(self, monkeypatch):
+        """speak with delay_ms=0 should push immediately (no timer)."""
         monkeypatch.setattr("lib.mathpix_client.REASONING_DEBOUNCE_SECONDS", 0)
 
         async def fake_run_reasoning(sid, page):
-            return {"action": "speak", "message": "Check that sign."}
+            return {"action": "speak", "message": "Check that sign.", "delay_ms": 0}
 
         monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
 
@@ -495,8 +492,8 @@ class TestDebouncedReasoningDelayedSpeak:
 
             assert len(pushed) == 1
             assert pushed[0] == ("sid", "speak", "Check that sign.")
-            assert key not in _pending_delayed
+            assert key not in _pending_speak
         finally:
-            task = _pending_delayed.pop(key, None)
+            task = _pending_speak.pop(key, None)
             if task:
                 task.cancel()
