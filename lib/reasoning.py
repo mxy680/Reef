@@ -114,6 +114,7 @@ When the context shows "currently working on part (X)", focus ONLY on that part:
 ## Verify before deciding
 
 Before choosing silent or speak, mentally check each completed step the student has written:
+- For EVERY term, compare the SIGN (positive/negative) against the original problem. A missing negative sign or flipped sign is one of the most common errors.
 - For tables, check each cell.
 - For equations, check each operation.
 - For logical arguments, check each claim.
