@@ -18,6 +18,7 @@ from lib.mathpix_client import (
     cleanup_sessions,
     get_session_info,
     invalidate_session,
+    schedule_reasoning,
     schedule_transcribe,
 )
 
@@ -122,9 +123,10 @@ async def strokes_post(req: StrokesRequest):
         )
     t_db = time.perf_counter()
 
-    # Whole-page transcription (debounced)
+    # Transcribe immediately + schedule reasoning (1.5s debounce)
     if req.event_type in ("draw", "erase"):
         schedule_transcribe(req.session_id, req.page)
+        schedule_reasoning(req.session_id, req.page)
 
     # Update last_seen and active part
     if req.session_id in _active_sessions:

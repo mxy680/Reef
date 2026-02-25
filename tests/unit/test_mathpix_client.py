@@ -125,7 +125,7 @@ class TestDiagramModeSkipsMathpix:
 
     async def test_diagram_mode_skips_mathpix_upserts_empty(self, monkeypatch):
         """Diagram mode should upsert page_transcriptions with empty text
-        and schedule reasoning without calling Mathpix."""
+        and signal transcription done without calling Mathpix."""
         import asyncio
 
         from tests.helpers import FakePool
@@ -134,34 +134,29 @@ class TestDiagramModeSkipsMathpix:
         monkeypatch.setattr("lib.mathpix_client.get_pool", lambda: pool)
 
         # Mock _active_sessions to return diagram mode via the import path
-        # _debounced_transcribe imports from api.strokes
+        # _run_transcribe imports from api.strokes
         mock_sessions = {"sid": {"content_mode": "diagram"}}
         monkeypatch.setattr("api.strokes._active_sessions", mock_sessions)
 
-        # Track reasoning scheduling
-        reasoning_scheduled = []
+        from lib.mathpix_client import _run_transcribe, _transcription_ready
 
-        def fake_schedule_reasoning(session_id, page):
-            reasoning_scheduled.append((session_id, page))
+        # Set up the event (normally done by schedule_transcribe)
+        key = ("sid", 1)
+        _transcription_ready[key] = asyncio.Event()
 
-        monkeypatch.setattr(
-            "lib.mathpix_client.schedule_reasoning",
-            fake_schedule_reasoning,
-        )
+        try:
+            await _run_transcribe("sid", 1)
 
-        from lib.mathpix_client import _debounced_transcribe
-        monkeypatch.setattr("lib.mathpix_client.DEBOUNCE_SECONDS", 0)
+            # Should have upserted empty transcription
+            assert len(pool.conn.calls) == 1
+            query = pool.conn.calls[0][0]
+            assert "page_transcriptions" in query
+            assert "INSERT" in query
 
-        await _debounced_transcribe("sid", 1)
-
-        # Should have upserted empty transcription
-        assert len(pool.conn.calls) == 1
-        query = pool.conn.calls[0][0]
-        assert "page_transcriptions" in query
-        assert "INSERT" in query
-
-        # Should have scheduled reasoning
-        assert ("sid", 1) in reasoning_scheduled
+            # Should have signaled transcription done
+            assert _transcription_ready[key].is_set()
+        finally:
+            _transcription_ready.pop(key, None)
 
 
 class TestCleanupSessions:
@@ -216,6 +211,7 @@ class TestEraseSnapshotCapture:
     async def test_erase_event_captures_pre_erase_text(self, monkeypatch):
         """When the most recent stroke event is an erase, the current
         page_transcriptions.text should be snapshotted before Mathpix runs."""
+        import asyncio
 
         class SnapshotConn:
             def __init__(self):
@@ -244,31 +240,30 @@ class TestEraseSnapshotCapture:
 
         pool = SnapshotPool()
         monkeypatch.setattr("lib.mathpix_client.get_pool", lambda: pool)
-        monkeypatch.setattr("lib.mathpix_client.DEBOUNCE_SECONDS", 0)
 
         # Math mode (not diagram)
         monkeypatch.setattr("api.strokes._active_sessions", {"sid": {"content_mode": "math"}})
 
-        # No Mathpix credentials — will skip to reasoning after snapshot
+        # No Mathpix credentials — will signal done after snapshot
         monkeypatch.delenv("MATHPIX_APP_ID", raising=False)
         monkeypatch.delenv("MATHPIX_APP_KEY", raising=False)
 
-        # Stub reasoning
-        monkeypatch.setattr("lib.mathpix_client.schedule_reasoning", lambda sid, page: None)
-
-        from lib.mathpix_client import _erase_snapshots, _debounced_transcribe
+        from lib.mathpix_client import _erase_snapshots, _run_transcribe, _transcription_ready
         key = ("sid", 1)
         _erase_snapshots.pop(key, None)
+        _transcription_ready[key] = asyncio.Event()
 
         try:
-            await _debounced_transcribe("sid", 1)
+            await _run_transcribe("sid", 1)
             assert key in _erase_snapshots
             assert list(_erase_snapshots[key]) == ["x^2 + 3x = 0"]
         finally:
             _erase_snapshots.pop(key, None)
+            _transcription_ready.pop(key, None)
 
     async def test_no_snapshot_when_no_erase(self, monkeypatch):
         """When the most recent event is a draw (not erase), no snapshot is taken."""
+        import asyncio
 
         class DrawOnlyConn:
             async def execute(self, query, *args):
@@ -289,21 +284,21 @@ class TestEraseSnapshotCapture:
                 return _FakeAcquireCtx(self.conn)
 
         monkeypatch.setattr("lib.mathpix_client.get_pool", lambda: DrawOnlyPool())
-        monkeypatch.setattr("lib.mathpix_client.DEBOUNCE_SECONDS", 0)
         monkeypatch.setattr("api.strokes._active_sessions", {"sid": {"content_mode": "math"}})
         monkeypatch.delenv("MATHPIX_APP_ID", raising=False)
         monkeypatch.delenv("MATHPIX_APP_KEY", raising=False)
-        monkeypatch.setattr("lib.mathpix_client.schedule_reasoning", lambda sid, page: None)
 
-        from lib.mathpix_client import _erase_snapshots, _debounced_transcribe
+        from lib.mathpix_client import _erase_snapshots, _run_transcribe, _transcription_ready
         key = ("sid", 1)
         _erase_snapshots.pop(key, None)
+        _transcription_ready[key] = asyncio.Event()
 
         try:
-            await _debounced_transcribe("sid", 1)
+            await _run_transcribe("sid", 1)
             assert key not in _erase_snapshots
         finally:
             _erase_snapshots.pop(key, None)
+            _transcription_ready.pop(key, None)
 
 
 class TestEraseSnapshotCleanup:

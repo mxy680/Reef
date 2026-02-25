@@ -20,8 +20,7 @@ import httpx
 from lib.database import get_pool
 
 MATHPIX_BASE = "https://api.mathpix.com"
-DEBOUNCE_SECONDS = 0.5
-REASONING_DEBOUNCE_SECONDS = 2.5
+REASONING_DEBOUNCE_SECONDS = 1.5
 
 
 @dataclass
@@ -45,6 +44,9 @@ _erase_snapshots: dict[tuple[str, int], deque[str]] = {}
 
 # (session_id, page) → pending delayed-speak asyncio.Task
 _pending_speak: dict[tuple[str, int], asyncio.Task] = {}
+
+# (session_id, page) → asyncio.Event set when transcription finishes
+_transcription_ready: dict[tuple[str, int], asyncio.Event] = {}
 
 
 def _get_credentials() -> tuple[str, str]:
@@ -95,6 +97,7 @@ def invalidate_session(session_id: str, page: int) -> None:
     _sessions.pop(key, None)
     _last_stroke_hash.pop(key, None)
     _erase_snapshots.pop(key, None)
+    _transcription_ready.pop(key, None)
     d_task = _pending_speak.pop(key, None)
     if d_task:
         d_task.cancel()
@@ -144,6 +147,10 @@ def cleanup_sessions(session_id: str) -> None:
     snap_keys = [k for k in _erase_snapshots if k[0] == session_id]
     for key in snap_keys:
         _erase_snapshots.pop(key, None)
+    # Clean up transcription events for this session
+    tx_keys = [k for k in _transcription_ready if k[0] == session_id]
+    for key in tx_keys:
+        _transcription_ready.pop(key, None)
     # Clean up pending speak tasks for this session
     speak_keys = [k for k in _pending_speak if k[0] == session_id]
     for key in speak_keys:
@@ -158,7 +165,7 @@ def cleanup_sessions(session_id: str) -> None:
 
 
 def schedule_reasoning(session_id: str, page: int) -> None:
-    """Debounce 2.5s, then run the reasoning model (separate from transcription debounce)."""
+    """Debounce 1.5s after last pen lift, wait for transcription, then reason."""
     key = (session_id, page)
     # Cancel any pending delayed speak for this key (new strokes arrived)
     d_task = _pending_speak.pop(key, None)
@@ -177,6 +184,18 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
     await asyncio.sleep(REASONING_DEBOUNCE_SECONDS)
     _reasoning_tasks.pop((session_id, page), None)
     t_debounce_end = time.perf_counter()
+
+    # Wait for transcription to finish (should already be done after 1.5s)
+    key = (session_id, page)
+    event = _transcription_ready.get(key)
+    t_wait_start = time.perf_counter()
+    if event and not event.is_set():
+        try:
+            await asyncio.wait_for(event.wait(), timeout=10.0)
+        except asyncio.TimeoutError:
+            print(f"[reasoning] transcription wait timed out for ({session_id}, page={page})")
+    t_wait_end = time.perf_counter()
+    waited_for_tx = t_wait_end - t_wait_start
 
     try:
         from lib.reasoning import run_reasoning
@@ -204,9 +223,10 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
         t_push_end = time.perf_counter()
         # silent: do nothing (already logged to DB by run_reasoning)
 
+        wait_str = f", tx_wait={waited_for_tx:.3f}s" if waited_for_tx > 0.01 else ""
         print(
             f"[latency] reasoning pipeline ({session_id}, p={page}): "
-            f"debounce={t_debounce_end - t_debounce_start:.1f}s, "
+            f"debounce={t_debounce_end - t_debounce_start:.1f}s{wait_str}, "
             f"reasoning={t_reasoning_end - t_reasoning_start:.1f}s, "
             f"push={t_push_end - t_push_start:.3f}s, "
             f"action={action}, delay={delay_ms}ms"
@@ -238,24 +258,32 @@ DIAGRAM_CONFIDENCE_THRESHOLD = 0.8   # below → diagram
 
 
 def schedule_transcribe(session_id: str, page: int) -> None:
-    """Debounce 500ms, then transcribe all visible strokes on this page."""
+    """Transcribe immediately on pen lift. Cancels any in-flight transcription."""
     key = (session_id, page)
     existing = _debounce_tasks.pop(key, None)
     if existing:
         existing.cancel()
+    # Reset the ready event so reasoning knows to wait
+    _transcription_ready[key] = asyncio.Event()
     _debounce_tasks[key] = asyncio.create_task(
-        _debounced_transcribe(session_id, page)
+        _run_transcribe(session_id, page)
     )
 
 
-async def _debounced_transcribe(session_id: str, page: int) -> None:
-    t_pipeline_start = time.perf_counter()
-    await asyncio.sleep(DEBOUNCE_SECONDS)
-    t_after_debounce = time.perf_counter()
+def _signal_transcription_done(session_id: str, page: int) -> None:
+    """Mark transcription as complete so reasoning can proceed."""
+    key = (session_id, page)
+    event = _transcription_ready.get(key)
+    if event:
+        event.set()
+
+
+async def _run_transcribe(session_id: str, page: int) -> None:
+    t_start = time.perf_counter()
 
     _debounce_tasks.pop((session_id, page), None)
 
-    # Diagram mode: skip Mathpix, upsert empty transcription, schedule reasoning
+    # Diagram mode: skip Mathpix, upsert empty transcription
     from api.strokes import _active_sessions
     info = _active_sessions.get(session_id, {})
     if info.get("content_mode") == "diagram":
@@ -272,7 +300,7 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
                     session_id, page,
                 )
         print(f"[mathpix] ({session_id}, page={page}): diagram mode, skipped Mathpix")
-        schedule_reasoning(session_id, page)
+        _signal_transcription_done(session_id, page)
         return
 
     # Erase snapshot: if most recent stroke event is an erase, capture pre-erase text
@@ -302,12 +330,13 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
     try:
         _get_credentials()
     except RuntimeError:
-        # No Mathpix credentials — still trigger reasoning
-        schedule_reasoning(session_id, page)
+        # No Mathpix credentials — signal done so reasoning can proceed
+        _signal_transcription_done(session_id, page)
         return
 
     pool = get_pool()
     if not pool:
+        _signal_transcription_done(session_id, page)
         return
 
     try:
@@ -355,7 +384,7 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
 
         if not all_x:
             print(f"[mathpix] ({session_id}, page={page}): no visible strokes, skipping")
-            schedule_reasoning(session_id, page)
+            _signal_transcription_done(session_id, page)
             return
 
         # 3. Hash visible stroke set — skip if unchanged
@@ -367,7 +396,7 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
                 f"[mathpix] ({session_id}, page={page}): strokes unchanged, skipping Mathpix call "
                 f"(fetch+hash={t_after_hash - t_fetch_strokes:.3f}s)"
             )
-            schedule_reasoning(session_id, page)
+            _signal_transcription_done(session_id, page)
             return
         _last_stroke_hash[key] = stroke_hash
 
@@ -456,16 +485,14 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
         )
         print(
             f"[latency] transcribe ({session_id}, p={page}): "
-            f"debounce={t_after_debounce - t_pipeline_start:.1f}s, "
             f"fetch+hash={t_after_hash - t_fetch_strokes:.3f}s, "
             f"mathpix_session={t_session - t_mathpix_start:.3f}s, "
             f"mathpix_api={t_mathpix_end - t_session:.3f}s, "
             f"db_upsert={t_upsert_end - t_upsert_start:.3f}s, "
-            f"total={t_upsert_end - t_pipeline_start:.1f}s"
+            f"total={t_upsert_end - t_start:.3f}s"
         )
-
-        # 7. Schedule reasoning
-        schedule_reasoning(session_id, page)
 
     except Exception as e:
         print(f"[mathpix] error for ({session_id}, page={page}): {e}")
+    finally:
+        _signal_transcription_done(session_id, page)
