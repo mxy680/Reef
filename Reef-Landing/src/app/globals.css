@@ -328,6 +328,12 @@
   background-color: rgb(249, 245, 246);
 }
 
+.faq-section .section-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .section-inner {
