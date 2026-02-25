@@ -25,7 +25,9 @@ class ReasoningContext:
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-REASONING_MODEL = "qwen/qwen3-vl-235b-a22b-instruct"
+CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
+REASONING_MODEL_VISION = "qwen/qwen3-vl-235b-a22b-instruct"  # OpenRouter (vision)
+REASONING_MODEL_TEXT = "qwen-3-235b-a22b-instruct-2507"       # Cerebras (fast, text-only)
 _model_override: str | None = None  # Set by benchmark script to avoid server restarts
 
 # Cost per token (Qwen3 VL 235B Instruct via OpenRouter)
@@ -296,16 +298,24 @@ def _is_later_part(label: str, active_part: str, part_order: list[str]) -> bool:
         return False
 
 
-def _get_client() -> LLMClient:
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENROUTER_API_KEY not set")
-    model = _model_override or REASONING_MODEL
-    return LLMClient(
-        api_key=api_key,
-        model=model,
-        base_url=OPENROUTER_BASE_URL,
-    )
+def _get_client(vision: bool = False) -> LLMClient:
+    """Return an LLM client. Uses fast Cerebras for text-only, OpenRouter for vision."""
+    if _model_override:
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise RuntimeError("OPENROUTER_API_KEY not set")
+        return LLMClient(api_key=api_key, model=_model_override, base_url=OPENROUTER_BASE_URL)
+
+    if vision:
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise RuntimeError("OPENROUTER_API_KEY not set")
+        return LLMClient(api_key=api_key, model=REASONING_MODEL_VISION, base_url=OPENROUTER_BASE_URL)
+    else:
+        api_key = os.getenv("CEREBRAS_API_KEY")
+        if not api_key:
+            raise RuntimeError("CEREBRAS_API_KEY not set")
+        return LLMClient(api_key=api_key, model=REASONING_MODEL_TEXT, base_url=CEREBRAS_BASE_URL)
 
 
 async def build_context(session_id: str, page: int) -> ReasoningContext:
@@ -690,7 +700,9 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     if not ctx.text:
         return {"action": "silent", "message": "No context available"}
 
-    client = _get_client()
+    has_images = bool(ctx.images)
+    client = _get_client(vision=has_images)
+    backend = "openrouter" if has_images else "cerebras"
 
     # Call LLM in a thread (blocking OpenAI SDK)
     t_llm_start = time.perf_counter()
@@ -760,6 +772,7 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     )
     print(
         f"[latency] run_reasoning ({session_id}, p={page}): "
+        f"backend={backend}, "
         f"build_context={t_after_ctx - t_run_start:.3f}s, "
         f"llm={t_llm_end - t_llm_start:.1f}s, "
         f"db_log={t_db_end - t_db_start:.3f}s, "
@@ -787,7 +800,8 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
     # Append the student's question
     context_text += f"\n\n## Student's Question\n\"{question}\""
 
-    client = _get_client()
+    has_images = bool(ctx.images)
+    client = _get_client(vision=has_images)
 
     raw = await asyncio.to_thread(
         client.generate,
@@ -871,7 +885,8 @@ async def run_question_reasoning_streaming(
 
     context_text += f"\n\n## Student's Question\n\"{question}\""
 
-    client = _get_client()
+    has_images = bool(ctx.images)
+    client = _get_client(vision=has_images)
 
     # Accumulate full raw response for logging
     raw_tokens: list[str] = []

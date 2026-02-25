@@ -243,6 +243,7 @@ class TestBuildContext:
 
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
 
 
 class TestRunReasoning:
@@ -270,7 +271,7 @@ class TestRunReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(OPENROUTER_URL).mock(
+            respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion(
@@ -310,7 +311,7 @@ class TestRunReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(OPENROUTER_URL).mock(
+            respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion(
@@ -347,7 +348,7 @@ class TestRunQuestionReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(OPENROUTER_URL).mock(
+            respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion(
@@ -371,7 +372,7 @@ class TestRunQuestionReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(OPENROUTER_URL).mock(
+            respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion(
@@ -422,7 +423,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(OPENROUTER_URL).mock(
+            respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
                     content=sse_bytes,
@@ -456,7 +457,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(OPENROUTER_URL).mock(
+            respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
                     content=sse_bytes,
@@ -486,7 +487,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(OPENROUTER_URL).mock(
+            respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(500, json={"error": "Internal Server Error"})
             )
             items = asyncio.run(run())
