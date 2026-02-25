@@ -35,7 +35,7 @@ var Transition = ({ value, children }) => {
 };
 var humanReadableVariantMap = { Alternative: "iFwbrC864", Solid: "beELMga99" };
 var Variants = motion.create(React.Fragment);
-var getProps = ({ height, id, label, link, newTab, width, ...props }) => {
+var getProps = ({ height, id, label, link, newTab, width, onUyxF8MkP4Change, onXy29tPt0iChange, ...props }) => {
   return { ...props, UyxF8MkP4: newTab ?? props.UyxF8MkP4, variant: humanReadableVariantMap[props.variant] ?? props.variant ?? "beELMga99", Xy29tPt0i: label ?? props.Xy29tPt0i ?? "Start for free", ylibWg5Df: link ?? props.ylibWg5Df };
 };
 var createLayoutDependency = (props, variants) => {
