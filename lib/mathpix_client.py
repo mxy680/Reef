@@ -182,7 +182,10 @@ def schedule_reasoning(session_id: str, page: int) -> None:
 async def _debounced_reasoning(session_id: str, page: int) -> None:
     t_debounce_start = time.perf_counter()
     await asyncio.sleep(REASONING_DEBOUNCE_SECONDS)
-    _reasoning_tasks.pop((session_id, page), None)
+    key = (session_id, page)
+    # Store reference to our own task so we can detect if we've been superseded
+    my_task = _reasoning_tasks.get(key)
+    _reasoning_tasks.pop(key, None)
     t_debounce_end = time.perf_counter()
 
     # Wait for transcription to finish (should already be done after 1.5s)
@@ -204,6 +207,13 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
         t_reasoning_start = time.perf_counter()
         result = await run_reasoning(session_id, page)
         t_reasoning_end = time.perf_counter()
+
+        # If new strokes arrived while we were reasoning, discard the result
+        new_task = _reasoning_tasks.get(key)
+        if new_task is not None and new_task is not my_task:
+            print(f"[reasoning] discarding stale result for ({session_id}, page={page}): new strokes arrived")
+            return
+
         action = result["action"]
         message = result["message"]
         delay_ms = result.get("delay_ms", 0)
