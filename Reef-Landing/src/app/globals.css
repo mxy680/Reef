@@ -36,6 +36,11 @@ header.framer-aw0er6 {
   width: 100% !important;
 }
 
+/* Footer: override Framer's fixed 1200px to full width */
+footer.framer-1fiw38h {
+  width: 100% !important;
+}
+
 .page-section {
   position: relative;
   width: 100%;
