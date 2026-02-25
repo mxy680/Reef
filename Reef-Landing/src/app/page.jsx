@@ -138,57 +138,89 @@ export default function Home() {
       {/* 5. Integrations Section */}
       <section className="page-section">
         <Integrations.Responsive />
+        <div className="section-inner integrations-built-for-stem">
+          <div className="section-header">
+            <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
+            <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
+            <p className="section-subtitle">
+              From calculus problem sets to organic chemistry mechanisms to circuit analysis, Reef understands the notation and concepts across all your STEM courses.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* 6. How It Works Section */}
       <section id="how-it-work-1" className="page-section section-bg-light">
         <div className="section-inner">
-          <div className="section-header">
-            <h2 className="section-heading">HOW IT WORKS</h2>
-          </div>
           <div className="how-it-works-steps">
-            {/* Step 1 */}
+            {/* Step 1: text left, image card right */}
             <div className="how-it-works-step">
-              <div className="step-image">
-                <img
-                  src="https://framerusercontent.com/images/n375GCjfb64K9jJZiBWWifyd9E.png"
-                  alt="Upload course materials"
-                />
-              </div>
               <div className="step-text">
-                <span className="step-number">Step 01</span>
                 <h3 className="step-heading">UPLOAD YOUR COURSE MATERIALS</h3>
                 <p className="step-body">
                   Import PDFs, lecture slides, and photos from anywhere. Organize by course, unit, and topic.
                 </p>
               </div>
+              <div className="step-card step-card-teal">
+                <div className="step-card-inner">
+                  <img
+                    src="https://framerusercontent.com/images/rbrs5BD6YqQE8Lxfiq0z819bbY.png"
+                    alt="Upload course materials"
+                  />
+                </div>
+              </div>
             </div>
-            {/* Step 2 */}
-            <div className="how-it-works-step reversed">
-              <div className="step-image">
-                <img
-                  src="https://framerusercontent.com/images/poYwCEJ7PbKUEZffe5cE5tU5LK0.png"
-                  alt="Solve problems with AI"
-                />
+
+            {/* Decorative arrow 1 → 2 */}
+            <div className="step-arrow step-arrow-right">
+              <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 10 C40 10, 80 50, 110 50" stroke="black" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                <path d="M98 42 L110 50 L100 58" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+            </div>
+
+            {/* Step 2: image card left, text right */}
+            <div className="how-it-works-step">
+              <div className="step-card step-card-coral">
+                <div className="step-card-inner">
+                  <img
+                    src="https://framerusercontent.com/images/sciUgoQBql5wKVM5ZcUqjqzKE.png"
+                    alt="Solve problems with AI"
+                  />
+                </div>
               </div>
               <div className="step-text">
-                <span className="step-number">Step 02</span>
-                <h2 className="step-heading">SOLVE PROBLEMS WITH AI BY YOUR SIDE</h2>
+                <h3 className="step-heading">SOLVE PROBLEMS WITH AI BY YOUR SIDE</h3>
                 <p className="step-body">
                   Write with Apple Pencil like normal. Reef watches your work and delivers feedback the moment you pause.
                 </p>
               </div>
             </div>
-            {/* Step 3 */}
+
+            {/* Decorative arrow 2 → 3 */}
+            <div className="step-arrow step-arrow-left">
+              <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M110 10 C80 10, 40 50, 10 50" stroke="black" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                <path d="M22 42 L10 50 L20 58" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+            </div>
+
+            {/* Step 3: text left, outlined card right */}
             <div className="how-it-works-step">
-              <div className="step-text" style={{ flex: "1" }}>
-                <span className="step-number">Step 03</span>
-                <h2 className="step-heading">TRACK MASTERY, BUILD YOUR REEF</h2>
+              <div className="step-text">
+                <h3 className="step-heading">TRACK MASTERY, BUILD YOUR REEF</h3>
                 <p className="step-body">
                   Pass quizzes to unlock marine species. Watch your personal reef grow as your knowledge deepens.
                 </p>
               </div>
-              <div style={{ flex: "1" }} />
+              <div className="step-card step-card-outline">
+                <div className="step-card-inner">
+                  <img
+                    src="https://framerusercontent.com/images/v6wZRssF6htlH2vkhNBcUBx8pEs.png"
+                    alt="Track mastery and build your reef"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

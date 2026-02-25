@@ -160,7 +160,7 @@
 .how-it-works-steps {
   display: flex;
   flex-direction: column;
-  gap: 80px;
+  gap: 60px;
 }
 
 .how-it-works-step {
@@ -170,44 +170,12 @@
   align-items: center;
 }
 
-.how-it-works-step.reversed {
-  flex-direction: row-reverse;
-}
-
-.step-image {
-  flex: 1;
-  min-width: 0;
-}
-
-.step-image img {
-  width: 100%;
-  border-radius: 12px;
-  border: 2px solid rgb(0, 0, 0);
-  box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
-  display: block;
-}
-
 .step-text {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.step-number {
-  font-family: 'Lexend Mega', sans-serif;
-  font-weight: 900;
-  font-size: 10px;
-  letter-spacing: -0.04em;
-  line-height: 1.2em;
-  color: rgb(0, 0, 0);
-  text-transform: uppercase;
-  background-color: rgba(50, 172, 166, 0.3);
-  border: 2px solid rgb(0, 0, 0);
-  padding: 8px 12px;
-  width: fit-content;
-  box-shadow: 4px 4px 0px 0px rgb(0, 0, 0);
 }
 
 .step-heading {
@@ -226,6 +194,78 @@
   letter-spacing: -0.04em;
   line-height: 1.5em;
   color: rgb(119, 119, 119);
+}
+
+/* Step illustration cards */
+.step-card {
+  flex: 0 0 500px;
+  width: 500px;
+  height: 360px;
+  border: 2px solid rgb(0, 0, 0);
+  box-shadow: 4px 4px 0px 0px rgb(0, 0, 0);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.step-card-teal {
+  background-color: rgb(218, 245, 240);
+}
+
+.step-card-coral {
+  background-color: rgb(253, 228, 219);
+}
+
+.step-card-outline {
+  background-color: transparent;
+}
+
+.step-card-inner {
+  width: 80%;
+  height: 80%;
+  background-color: rgb(255, 255, 255);
+  border-radius: 8px;
+  border: 2px solid rgb(0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.step-card-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.step-card-outline-inner {
+  width: 80%;
+  height: 80%;
+  border: 2px solid rgb(0, 0, 0);
+  border-radius: 8px;
+}
+
+/* Decorative arrows between steps */
+.step-arrow {
+  display: flex;
+  justify-content: center;
+  opacity: 0.6;
+}
+
+.step-arrow-right {
+  padding-left: 60%;
+}
+
+.step-arrow-left {
+  padding-right: 60%;
+}
+
+/* Integrations Built for STEM subsection */
+.integrations-built-for-stem {
+  padding-top: 0;
 }
 
 /* Pricing */
@@ -302,9 +342,20 @@
     font-size: 28px;
   }
 
-  .how-it-works-step,
-  .how-it-works-step.reversed {
+  .how-it-works-step {
     flex-direction: column;
+  }
+
+  .step-card {
+    flex: none;
+    width: 100%;
+    height: 280px;
+  }
+
+  .step-arrow-right,
+  .step-arrow-left {
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .problem-cards-row > * {
