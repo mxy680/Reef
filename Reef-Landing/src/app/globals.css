@@ -1,9 +1,30 @@
 /* Landing page layout styles */
 
+/* Framer design tokens (extracted from studyreef.com) */
+:root {
+  --token-14825bd6-f9b4-4846-afef-1af0cbf8c065: #000;
+  --token-10bc40bb-604b-41d4-b321-4b409afa6a9f: #eb8c73;
+  --token-e27a4cac-2b4d-4ad5-8c68-b6f48982239d: #f9f5f6;
+  --token-df3b0292-9153-4484-b1d6-f7e71cc31198: #15314b;
+  --token-8c15ab03-0228-43db-9adb-8c7e76c29ef3: #777;
+  --token-353de080-56da-4189-9321-c69d0ed1b3ed: #daf5f0;
+  --token-fdcc5b21-a997-46c1-a990-9f9c0159a383: #32aca6;
+  --token-735d697b-5a03-49fe-9b66-80e6a14713f9: #fff;
+  --token-d53d5eee-ff4d-4b1e-98d0-a707e3ce1541: #000;
+  --token-2433011a-35ae-4f0b-94e0-e8989014cf2c: #fff;
+  --token-a210fe28-308b-468e-9b17-12338c95bc8f: #fde4db;
+  --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #d6f3f1;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* Header: override Framer's fixed 1200px to full width */
+header.framer-aw0er6 {
+  width: 100% !important;
 }
 
 .page-section {
