@@ -705,6 +705,7 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     backend = "openrouter" if has_images else "cerebras"
 
     # Call LLM in a thread (blocking OpenAI SDK), fallback to OpenRouter if Cerebras fails
+    cerebras_kwargs = {"max_tokens": 2048} if backend == "cerebras" else {}
     t_llm_start = time.perf_counter()
     try:
         raw = await asyncio.to_thread(
@@ -714,6 +715,7 @@ async def run_reasoning(session_id: str, page: int) -> dict:
             response_schema=RESPONSE_SCHEMA,
             system_message=SYSTEM_PROMPT,
             temperature=0.3,
+            **cerebras_kwargs,
         )
     except Exception as e:
         if backend == "cerebras":
@@ -828,6 +830,7 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
     has_images = bool(ctx.images)
     client = _get_client(vision=has_images)
     backend = "openrouter" if has_images else "cerebras"
+    cerebras_kwargs = {"max_tokens": 2048} if backend == "cerebras" else {}
 
     try:
         raw = await asyncio.to_thread(
@@ -837,6 +840,7 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
             response_schema=RESPONSE_SCHEMA,
             system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
             temperature=0.3,
+            **cerebras_kwargs,
         )
     except Exception as e:
         if backend == "cerebras":

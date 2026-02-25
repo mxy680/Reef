@@ -78,6 +78,7 @@ class LLMClient:
         temperature: float | None = None,
         response_schema: dict | None = None,
         system_message: str | None = None,
+        max_tokens: int | None = None,
     ) -> str:
         """
         Generate text response, optionally with images.
@@ -114,6 +115,8 @@ class LLMClient:
         }
         if temperature is not None:
             kwargs["temperature"] = temperature
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
         if response_schema is not None:
             if self.use_json_schema:
                 kwargs["response_format"] = {
