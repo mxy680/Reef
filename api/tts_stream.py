@@ -52,6 +52,7 @@ def _split_sentences(text: str) -> list[str]:
 
 async def _fetch_tts_chunk(client: httpx.AsyncClient, api_key: str, text: str) -> bytes:
     """Fetch TTS audio for a single text chunk."""
+    t0 = time.perf_counter()
     resp = await client.post(
         DEEPINFRA_TTS_URL,
         headers={
@@ -68,6 +69,8 @@ async def _fetch_tts_chunk(client: httpx.AsyncClient, api_key: str, text: str) -
         timeout=30.0,
     )
     resp.raise_for_status()
+    t1 = time.perf_counter()
+    print(f"[latency] tts_chunk: {t1 - t0:.3f}s, {len(text)} chars, {len(resp.content)} bytes")
     return resp.content
 
 
@@ -125,6 +128,9 @@ async def tts_stream(tts_id: str):
     if not sentences:
         raise HTTPException(status_code=400, detail="No text to synthesize")
 
+    print(f"[latency] tts_stream start: {len(sentences)} sentences, {len(text)} chars")
+    t_tts_start = time.perf_counter()
+
     async def pcm_generator():
         async with httpx.AsyncClient() as client:
             # Fire all sentence requests concurrently
@@ -140,6 +146,7 @@ async def tts_stream(tts_id: str):
                         yield result
                 except Exception as e:
                     print(f"[tts_stream] Chunk {i} failed: {e}")
+        print(f"[latency] tts_stream done: {time.perf_counter() - t_tts_start:.3f}s total")
 
     return StreamingResponse(
         pcm_generator(),

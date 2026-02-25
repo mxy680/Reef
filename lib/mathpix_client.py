@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import json
 import os
+import time
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -172,18 +173,23 @@ def schedule_reasoning(session_id: str, page: int) -> None:
 
 
 async def _debounced_reasoning(session_id: str, page: int) -> None:
+    t_debounce_start = time.perf_counter()
     await asyncio.sleep(REASONING_DEBOUNCE_SECONDS)
     _reasoning_tasks.pop((session_id, page), None)
+    t_debounce_end = time.perf_counter()
 
     try:
         from lib.reasoning import run_reasoning
         from api.reasoning import push_reasoning
 
+        t_reasoning_start = time.perf_counter()
         result = await run_reasoning(session_id, page)
+        t_reasoning_end = time.perf_counter()
         action = result["action"]
         message = result["message"]
         delay_ms = result.get("delay_ms", 0)
 
+        t_push_start = time.perf_counter()
         if action == "speak" and delay_ms > 0:
             key = (session_id, page)
             # Cancel any existing pending speak
@@ -195,7 +201,16 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
             )
         elif action == "speak":
             await push_reasoning(session_id, action, message)
+        t_push_end = time.perf_counter()
         # silent: do nothing (already logged to DB by run_reasoning)
+
+        print(
+            f"[latency] reasoning pipeline ({session_id}, p={page}): "
+            f"debounce={t_debounce_end - t_debounce_start:.1f}s, "
+            f"reasoning={t_reasoning_end - t_reasoning_start:.1f}s, "
+            f"push={t_push_end - t_push_start:.3f}s, "
+            f"action={action}, delay={delay_ms}ms"
+        )
     except Exception as e:
         print(f"[reasoning] error for ({session_id}, page={page}): {e}")
 
@@ -234,7 +249,10 @@ def schedule_transcribe(session_id: str, page: int) -> None:
 
 
 async def _debounced_transcribe(session_id: str, page: int) -> None:
+    t_pipeline_start = time.perf_counter()
     await asyncio.sleep(DEBOUNCE_SECONDS)
+    t_after_debounce = time.perf_counter()
+
     _debounce_tasks.pop((session_id, page), None)
 
     # Diagram mode: skip Mathpix, upsert empty transcription, schedule reasoning
@@ -294,6 +312,7 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
 
     try:
         # 1. Fetch all draw/erase events and resolve visibility
+        t_fetch_strokes = time.perf_counter()
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
@@ -342,14 +361,20 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
         # 3. Hash visible stroke set — skip if unchanged
         stroke_hash = hashlib.sha256("\n".join(hash_parts).encode()).hexdigest()
         key = (session_id, page)
+        t_after_hash = time.perf_counter()
         if _last_stroke_hash.get(key) == stroke_hash:
-            print(f"[mathpix] ({session_id}, page={page}): strokes unchanged, skipping Mathpix call")
+            print(
+                f"[mathpix] ({session_id}, page={page}): strokes unchanged, skipping Mathpix call "
+                f"(fetch+hash={t_after_hash - t_fetch_strokes:.3f}s)"
+            )
             schedule_reasoning(session_id, page)
             return
         _last_stroke_hash[key] = stroke_hash
 
         # 4. Send all strokes to Mathpix in one request
+        t_mathpix_start = time.perf_counter()
         session = await get_or_create_session(session_id, page)
+        t_session = time.perf_counter()
 
         async with httpx.AsyncClient() as client:
             resp = await client.post(
@@ -368,6 +393,7 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
             )
             resp.raise_for_status()
             result = resp.json()
+        t_mathpix_end = time.perf_counter()
 
         # 5. Parse response
         latex = result.get("latex_styled", "") or result.get("text", "")
@@ -397,6 +423,7 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
         text = latex
 
         # 6. Upsert into page_transcriptions
+        t_upsert_start = time.perf_counter()
         line_data_json = json.dumps(raw_line_data) if raw_line_data else None
         async with pool.acquire() as conn:
             await conn.execute(
@@ -412,6 +439,7 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
                 """,
                 session_id, page, latex, text, confidence, line_data_json,
             )
+        t_upsert_end = time.perf_counter()
 
         from collections import Counter
         line_types = ""
@@ -425,6 +453,15 @@ async def _debounced_transcribe(session_id: str, page: int) -> None:
             f"content_type={content_type}, "
             f"line_data=[{line_types}], "
             f"latex={latex[:80]}"
+        )
+        print(
+            f"[latency] transcribe ({session_id}, p={page}): "
+            f"debounce={t_after_debounce - t_pipeline_start:.1f}s, "
+            f"fetch+hash={t_after_hash - t_fetch_strokes:.3f}s, "
+            f"mathpix_session={t_session - t_mathpix_start:.3f}s, "
+            f"mathpix_api={t_mathpix_end - t_session:.3f}s, "
+            f"db_upsert={t_upsert_end - t_upsert_start:.3f}s, "
+            f"total={t_upsert_end - t_pipeline_start:.1f}s"
         )
 
         # 7. Schedule reasoning

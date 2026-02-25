@@ -5,6 +5,7 @@ Works through any proxy without WebSocket upgrade.
 """
 
 import asyncio
+import time
 
 from fastapi import APIRouter, UploadFile, File, Form
 
@@ -32,9 +33,12 @@ async def voice_transcribe(
     if not audio_bytes:
         return {"error": "No audio received"}
 
+    t_start = time.perf_counter()
     print(f"[voice] Transcribing {len(audio_bytes)} bytes for session={session_id[:8]}...")
     text = await asyncio.to_thread(transcribe, audio_bytes)
+    t_transcribed = time.perf_counter()
     print(f"[voice] Transcription: {text}")
+    print(f"[latency] voice_transcribe: whisper={t_transcribed - t_start:.3f}s")
 
     # Store in DB
     pool = get_pool()
@@ -71,9 +75,12 @@ async def voice_question(
     if not audio_bytes:
         return {"error": "No audio received"}
 
+    t_start = time.perf_counter()
     print(f"[voice] Question: transcribing {len(audio_bytes)} bytes for session={session_id[:8]}...")
     text = await asyncio.to_thread(transcribe, audio_bytes)
+    t_transcribed = time.perf_counter()
     print(f"[voice] Question transcription: {text}")
+    print(f"[latency] voice_question: whisper={t_transcribed - t_start:.3f}s")
 
     # Store in DB
     pool = get_pool()

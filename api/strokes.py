@@ -6,6 +6,7 @@ each batch to the stroke_logs table in Postgres.
 """
 
 import json
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -101,6 +102,7 @@ async def strokes_disconnect(req: DisconnectRequest):
 
 @router.post("/api/strokes")
 async def strokes_post(req: StrokesRequest):
+    t_start = time.perf_counter()
     pool = get_pool()
     if pool is None:
         raise HTTPException(status_code=503, detail="Database not available")
@@ -118,6 +120,7 @@ async def strokes_post(req: StrokesRequest):
             req.deleted_count,
             req.user_id,
         )
+    t_db = time.perf_counter()
 
     # Whole-page transcription (debounced)
     if req.event_type in ("draw", "erase"):
@@ -130,6 +133,10 @@ async def strokes_post(req: StrokesRequest):
             _active_sessions[req.session_id]["active_part"] = req.part_label
         if req.content_mode is not None:
             _active_sessions[req.session_id]["content_mode"] = req.content_mode
+
+    t_end = time.perf_counter()
+    if t_end - t_start > 0.05:  # only log if >50ms
+        print(f"[latency] strokes_post: db={t_db - t_start:.3f}s, total={t_end - t_start:.3f}s")
 
     return {"status": "ok"}
 

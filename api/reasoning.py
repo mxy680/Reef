@@ -4,6 +4,8 @@ Called by mathpix_client.py when the reasoning model decides to "speak".
 Registers TTS text and publishes an SSE event so the client can stream audio.
 """
 
+import time
+
 from fastapi import APIRouter
 
 router = APIRouter()
@@ -21,13 +23,15 @@ async def push_reasoning(session_id: str, action: str, message: str) -> None:
     from api.tts_stream import register_tts
     from api.events import publish_event
 
+    t0 = time.perf_counter()
     tts_id = register_tts(message)
     await publish_event(session_id, "reasoning", {
         "action": action,
         "message": message,
         "tts_id": tts_id,
     })
-    print(f"[reasoning] Pushed to session={session_id}: {message[:60]}")
+    t1 = time.perf_counter()
+    print(f"[reasoning] Pushed to session={session_id} ({t1 - t0:.3f}s): {message[:60]}")
 
 
 async def push_reasoning_streaming(session_id: str) -> tuple[str, "asyncio.Queue"]:

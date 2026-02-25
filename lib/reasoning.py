@@ -11,6 +11,7 @@ import base64
 import json
 import os
 import re
+import time
 from dataclasses import dataclass, field
 
 from lib.database import get_pool
@@ -309,6 +310,7 @@ def _get_client() -> LLMClient:
 
 async def build_context(session_id: str, page: int) -> ReasoningContext:
     """Assemble reasoning context from transcription, problem/answer key, and history."""
+    t_ctx_start = time.perf_counter()
     pool = get_pool()
     if not pool:
         return ReasoningContext(text="")
@@ -318,6 +320,7 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
 
     async with pool.acquire() as conn:
         # 1. Page transcription
+        t_tx = time.perf_counter()
         tx_row = await conn.fetchrow(
             """
             SELECT latex, text FROM page_transcriptions
@@ -366,6 +369,8 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
                 images.append(png_bytes)
                 parts.append("## Student's Current Work\n[See attached image of student's drawing]")
 
+        t_after_tx = time.perf_counter()
+
         # 1b. Previously erased work
         from lib.mathpix_client import _erase_snapshots
         erased = _erase_snapshots.get((session_id, page))
@@ -382,6 +387,7 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
         # 2. Original problem + answer key
         # Primary: _active_sessions (live truth from iOS connect request)
         # Fallback: session_question_cache (persisted, may be stale)
+        t_problem_start = time.perf_counter()
         q_id = None
 
         doc_name = info.get("document_name", "")
@@ -468,6 +474,7 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
                 images.append(base64.b64decode(fig_row["image_b64"]))
 
         # 3. Last 5 reasoning interactions (session history)
+        t_history_start = time.perf_counter()
         history_rows = await conn.fetch(
             """
             SELECT action, message, internal_reasoning, source, created_at
@@ -515,6 +522,16 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
                     f"You MUST NOT say the same thing again. If the student fixed the issue you flagged, "
                     f"give brief reinforcement. If there is a NEW error, address THAT instead."
                 )
+
+    t_ctx_end = time.perf_counter()
+    print(
+        f"[latency] build_context ({session_id}, p={page}): "
+        f"transcription={t_after_tx - t_tx:.3f}s, "
+        f"problem+ak={t_history_start - t_problem_start:.3f}s, "
+        f"history={t_ctx_end - t_history_start:.3f}s, "
+        f"total={t_ctx_end - t_ctx_start:.3f}s, "
+        f"images={len(images)}"
+    )
 
     return ReasoningContext(text="\n\n".join(parts), images=images)
 
@@ -667,13 +684,16 @@ async def run_reasoning(session_id: str, page: int) -> dict:
 
     Returns {"action": "speak"|"silent", "message": "..."}.
     """
+    t_run_start = time.perf_counter()
     ctx = await build_context(session_id, page)
+    t_after_ctx = time.perf_counter()
     if not ctx.text:
         return {"action": "silent", "message": "No context available"}
 
     client = _get_client()
 
     # Call LLM in a thread (blocking OpenAI SDK)
+    t_llm_start = time.perf_counter()
     raw = await asyncio.to_thread(
         client.generate,
         prompt=ctx.text,
@@ -682,6 +702,7 @@ async def run_reasoning(session_id: str, page: int) -> dict:
         system_message=SYSTEM_PROMPT,
         temperature=0.3,
     )
+    t_llm_end = time.perf_counter()
 
     result = json.loads(raw)
     action = result.get("action", "silent")
@@ -713,6 +734,7 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     )
 
     # Log to DB
+    t_db_start = time.perf_counter()
     pool = get_pool()
     if pool:
         async with pool.acquire() as conn:
@@ -728,12 +750,20 @@ async def run_reasoning(session_id: str, page: int) -> dict:
                 prompt_tokens, completion_tokens, estimated_cost,
                 level, error_type, delay_ms, internal_reasoning,
             )
+    t_db_end = time.perf_counter()
 
     print(
         f"[reasoning] ({session_id}, page={page}): "
         f"action={action}, level={level}, delay={delay_ms}ms, "
         f"message={message[:80]}, "
         f"tokens={prompt_tokens}+{completion_tokens}, cost=${estimated_cost:.4f}"
+    )
+    print(
+        f"[latency] run_reasoning ({session_id}, p={page}): "
+        f"build_context={t_after_ctx - t_run_start:.3f}s, "
+        f"llm={t_llm_end - t_llm_start:.1f}s, "
+        f"db_log={t_db_end - t_db_start:.3f}s, "
+        f"total={t_db_end - t_run_start:.1f}s"
     )
 
     return {
