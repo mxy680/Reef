@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import "./globals.css"
 import Header from "../framer/header"
 import Footer from "../framer/footer"
@@ -12,6 +13,22 @@ import Accordion from "../framer/accordion"
 import Pattern from "../framer/pattern"
 
 export default function Home() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible")
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+    document.querySelectorAll(".scroll-reveal").forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
       {/* 1. Header */}
@@ -32,7 +49,14 @@ export default function Home() {
               <Button variant="Solid" label="Get Started" link="/signup" />
               <Button variant="Alternative" label="Log In" link="/auth" />
             </div>
-            <p className="hero-beta">🐟 Now in beta. Free to use.</p>
+            <p className="hero-beta">
+              <img
+                src="https://framerusercontent.com/images/DHBR4kTh0Cix8xWCRIMk7Aplds.png"
+                alt=""
+                style={{ width: 20, height: 20, display: "inline-block", verticalAlign: "middle", marginRight: 6 }}
+              />
+              Now in beta. Free to use.
+            </p>
             <img
               className="hero-image"
               src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
@@ -44,7 +68,7 @@ export default function Home() {
 
       {/* 3. Problem Section */}
       <section className="page-section section-bg-light">
-        <div className="section-inner">
+        <div className="section-inner scroll-reveal">
           <div className="section-header">
             <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">STUDYING SHOULDN&rsquo;T FEEL THIS BROKEN</h2>
@@ -77,7 +101,7 @@ export default function Home() {
 
       {/* 4. Features / Benefits Section */}
       <section id="benefits" className="page-section section-bg-white">
-        <div className="section-inner">
+        <div className="section-inner scroll-reveal">
           <div className="section-header">
             <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
@@ -151,7 +175,7 @@ export default function Home() {
 
       {/* 6. How It Works Section */}
       <section id="how-it-work-1" className="page-section section-bg-light">
-        <div className="section-inner">
+        <div className="section-inner scroll-reveal">
           <div className="how-it-works-steps">
             {/* Step 1: text left, image card right */}
             <div className="how-it-works-step">
@@ -228,7 +252,7 @@ export default function Home() {
 
       {/* 7. Pricing Section */}
       <section className="page-section section-bg-light">
-        <div className="section-inner">
+        <div className="section-inner scroll-reveal">
           <div className="section-header">
             <Badge fEv2mISRr="Pricing" />
             <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
@@ -279,7 +303,7 @@ export default function Home() {
 
       {/* 8. FAQ Section */}
       <section id="faq" className="page-section faq-section">
-        <div className="section-inner">
+        <div className="section-inner scroll-reveal">
           <div className="section-header">
             <Badge fEv2mISRr="Faq" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
@@ -291,7 +315,7 @@ export default function Home() {
 
       {/* 9. CTA / Newsletter Section */}
       <section className="page-section cta-section">
-        <div className="section-inner">
+        <div className="section-inner scroll-reveal">
           <div className="cta-card">
             <h2 className="cta-heading">GET STARTED WITH REEF</h2>
             <p className="cta-subtitle">

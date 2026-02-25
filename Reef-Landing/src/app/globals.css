@@ -16,10 +16,19 @@
   --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #d6f3f1;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* Consistent page background matching the original Framer site */
+body {
+  background-color: rgb(249, 245, 246);
 }
 
 /* Header: override Framer's fixed 1200px to full width */
@@ -36,12 +45,11 @@ header.framer-aw0er6 {
 .section-inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 80px 40px;
+  padding: 100px 40px;
 }
 
 /* Hero */
 .hero-section {
-  background-color: rgb(249, 245, 246);
   position: relative;
 }
 
@@ -110,9 +118,7 @@ header.framer-aw0er6 {
 }
 
 /* Problem / Features sections */
-.section-bg-light {
-  background-color: rgb(249, 245, 246);
-}
+/* section-bg-light inherits body background — no override needed */
 
 .section-bg-white {
   background-color: rgb(255, 255, 255);
@@ -124,7 +130,7 @@ header.framer-aw0er6 {
   align-items: center;
   text-align: center;
   gap: 20px;
-  margin-bottom: 60px;
+  margin-bottom: 100px;
 }
 
 .section-heading {
@@ -308,9 +314,6 @@ header.framer-aw0er6 {
 }
 
 /* CTA section */
-.cta-section {
-  background-color: rgb(249, 245, 246);
-}
 
 .cta-card {
   background-color: rgb(253, 228, 219);
@@ -345,14 +348,24 @@ header.framer-aw0er6 {
 }
 
 /* FAQ */
-.faq-section {
-  background-color: rgb(249, 245, 246);
-}
 
 .faq-section .section-inner {
+  max-width: 600px;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* Scroll reveal animations */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Responsive */
