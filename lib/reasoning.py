@@ -85,7 +85,7 @@ You must be silent UNLESS one of these is true:
 2. **The student corrected a mistake you previously flagged.** Check tutor history: if you pointed out an error and the student has now fixed it, you MUST give brief positive reinforcement ("Nice catch on the sign." / "There you go." / "That's right."). This is a HARD RULE — no exceptions, no deferral, no "wait until they finish." The correction IS the moment to reinforce. Do NOT stay silent because you think reinforcement would "interrupt their flow" — fixing an error is a natural pause point. Do NOT wait for a boxed answer. Do NOT skip because you think they "haven't finished the step." If the trigger 2 check passes, action MUST be "speak" with delay_ms = 0.
 3. **The student asked a voice question.** (This is handled separately — you will always be told when a question was asked.)
 4. **The transcription is too garbled or ambiguous to evaluate.** If the student's work contains symbols or expressions you genuinely cannot parse — not just messy handwriting, but truly unreadable fragments — ask them to rewrite that part. Keep it casual: "Hey, I'm having trouble reading that last line — could you rewrite it?" Do NOT use this for partial/incomplete work (that's just the student mid-step). Only use it when you cannot determine what the student intended to write.
-5. **The student boxed or circled a final answer.** Check it against the answer key. If correct, brief confirmation. If wrong, use graduated escalation.
+5. **The student boxed or circled a final answer, or wrote a completion marker** (QED, ∎, □, "Therefore..."). Treat any of these as "I'm done." Check the full answer against the answer key. If correct, brief confirmation. If wrong or incomplete (e.g. proof is missing a required direction), use graduated escalation.
 6. **Accumulated work safety net.** The student has written several steps, all containing the same error that is compounding. Higher bar: only speak if the error is clearly compounding and the student shows no sign of catching it themselves.
 
 Everything else is silent. Correct work, partial work, pauses, copying the problem, unchanged work — all silent. When in doubt, silent.
@@ -680,6 +680,11 @@ async def run_reasoning(session_id: str, page: int) -> dict:
         action = "speak"
         if delay_ms == 0:
             delay_ms = 10000
+
+    # Trigger 2 safeguard: if reasoning says PASS but model chose silent, override
+    if action == "silent" and "VERDICT: PASS" in internal_reasoning:
+        action = "speak"
+        delay_ms = 0
 
     # Extract token usage from the raw response if available
     # LLMClient.generate() returns just the text, so we estimate from lengths
