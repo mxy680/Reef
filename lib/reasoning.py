@@ -82,7 +82,7 @@ When you decide to speak, choose the appropriate level:
 You must be silent UNLESS one of these is true:
 
 1. **The student made an error** (see types above). Do not flag matrix computation results you haven't verified with certainty.
-2. **The student corrected a mistake you previously flagged.** Check tutor history: if you pointed out an error and the student has now fixed it, you MUST give brief positive reinforcement ("Nice catch on the sign." / "There you go." / "That's right."). This takes priority over everything — if the student just fixed a flagged error, give reinforcement, don't hunt for new errors. Set delay_ms = 0 for corrections.
+2. **The student corrected a mistake you previously flagged.** Check tutor history: if you pointed out an error and the student has now fixed it, you MUST give brief positive reinforcement ("Nice catch on the sign." / "There you go." / "That's right."). This is a HARD RULE — no exceptions, no deferral, no "wait until they finish." The correction IS the moment to reinforce. Do NOT stay silent because you think reinforcement would "interrupt their flow" — fixing an error is a natural pause point. Do NOT wait for a boxed answer. Do NOT skip because you think they "haven't finished the step." If the trigger 2 check passes, action MUST be "speak" with delay_ms = 0.
 3. **The student asked a voice question.** (This is handled separately — you will always be told when a question was asked.)
 4. **The transcription is too garbled or ambiguous to evaluate.** If the student's work contains symbols or expressions you genuinely cannot parse — not just messy handwriting, but truly unreadable fragments — ask them to rewrite that part. Keep it casual: "Hey, I'm having trouble reading that last line — could you rewrite it?" Do NOT use this for partial/incomplete work (that's just the student mid-step). Only use it when you cannot determine what the student intended to write.
 5. **The student boxed or circled a final answer.** Check it against the answer key. If correct, brief confirmation. If wrong, use graduated escalation.
@@ -183,7 +183,13 @@ Respond with a JSON object:
 - **error_type**: "procedural", "conceptual", or "strategic" (required when flagging an error; omit otherwise)
 - **delay_ms**: milliseconds to wait before delivering the message (0 for immediate)
 - **message**: When silent, a brief internal note. When speaking, your coaching message.
-- **internal_reasoning**: Brief chain-of-thought explaining your decision (always required). This is never shown to the student.
+- **internal_reasoning**: Chain-of-thought explaining your decision (always required, never shown to student). You MUST begin with this EXACT template before ANY other reasoning:
+
+  "TRIGGER 2 GATE: Last [speak] was: '[quote it]'. Was this an ERROR FLAG or REINFORCEMENT? [answer]. If ERROR FLAG: has the student fixed that specific error? [yes/no]. VERDICT: [PASS/FAIL]."
+
+  Rules: PASS only when last [speak] was an ERROR FLAG and the student has now fixed it. FAIL if last [speak] was REINFORCEMENT (already acknowledged), or if the error hasn't been fixed, or if there was no previous speak.
+  If verdict is PASS: STOP reasoning. Set action="speak", delay_ms=0, and write a one-sentence reinforcement. No "however" or "but" — the gate is final.
+  If verdict is FAIL: continue with normal error-checking reasoning.
 
 ### Action guide
 - **silent**: Nothing to say. Correct work, partial work, pauses, copying — all silent. When in doubt, silent. Message should be an internal note (not spoken).
@@ -459,7 +465,7 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
         # 3. Last 5 reasoning interactions (session history)
         history_rows = await conn.fetch(
             """
-            SELECT action, message, created_at FROM reasoning_logs
+            SELECT action, message, internal_reasoning, created_at FROM reasoning_logs
             WHERE session_id = $1 AND page = $2
             ORDER BY created_at DESC LIMIT 5
             """,
@@ -468,20 +474,30 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
         if history_rows:
             history_lines = []
             last_speak = None
+            last_speak_reasoning = None
             for r in reversed(history_rows):
                 history_lines.append(f"  [{r['action']}] {r['message'] or ''}")
             # Find last speak message (history_rows is DESC, so first speak is most recent)
             for r in history_rows:
                 if r["action"] == "speak":
                     last_speak = r["message"]
+                    last_speak_reasoning = r.get("internal_reasoning", "")
                     break
             parts.append(f"## Recent Tutor History\n" + "\n".join(history_lines))
             if last_speak:
+                reasoning_context = ""
+                if last_speak_reasoning:
+                    reasoning_context = (
+                        f"\nYour reasoning at the time: \"{last_speak_reasoning}\"\n"
+                        f"Compare the error described above to the student's CURRENT work. "
+                        f"If the student has fixed that specific error, trigger 2 applies — give reinforcement.\n"
+                    )
                 parts.append(
                     f"## IMPORTANT: Do Not Repeat Yourself\n"
                     f"Your last spoken message was: \"{last_speak}\"\n"
-                    f"You MUST NOT say this again. If the student fixed the issue you flagged, "
-                    f"either give brief reinforcement or stay silent. If there is a NEW error, address THAT instead."
+                    f"{reasoning_context}"
+                    f"You MUST NOT say the same thing again. If the student fixed the issue you flagged, "
+                    f"give brief reinforcement. If there is a NEW error, address THAT instead."
                 )
 
     return ReasoningContext(text="\n\n".join(parts), images=images)
@@ -615,7 +631,7 @@ async def build_context_structured(session_id: str, page: int) -> list[dict]:
         # 3. Last 5 reasoning interactions
         history_rows = await conn.fetch(
             """
-            SELECT action, message, created_at FROM reasoning_logs
+            SELECT action, message, internal_reasoning, created_at FROM reasoning_logs
             WHERE session_id = $1 AND page = $2
             ORDER BY created_at DESC LIMIT 5
             """,
