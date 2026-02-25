@@ -41,7 +41,7 @@ header.framer-aw0er6 {
 
 /* Hero */
 .hero-section {
-  background-color: rgb(255, 255, 255);
+  background-color: rgb(249, 245, 246);
   position: relative;
 }
 
@@ -69,6 +69,7 @@ header.framer-aw0er6 {
   line-height: 1.2em;
   color: rgb(0, 0, 0);
   max-width: 800px;
+  text-transform: uppercase;
 }
 
 .hero-subtitle {
