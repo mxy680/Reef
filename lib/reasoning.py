@@ -704,18 +704,36 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     client = _get_client(vision=has_images)
     backend = "openrouter" if has_images else "cerebras"
 
-    # Call LLM in a thread (blocking OpenAI SDK)
+    # Call LLM in a thread (blocking OpenAI SDK), fallback to OpenRouter if Cerebras fails
     t_llm_start = time.perf_counter()
-    raw = await asyncio.to_thread(
-        client.generate,
-        prompt=ctx.text,
-        images=ctx.images or None,
-        response_schema=RESPONSE_SCHEMA,
-        system_message=SYSTEM_PROMPT,
-        temperature=0.3,
-    )
+    try:
+        raw = await asyncio.to_thread(
+            client.generate,
+            prompt=ctx.text,
+            images=ctx.images or None,
+            response_schema=RESPONSE_SCHEMA,
+            system_message=SYSTEM_PROMPT,
+            temperature=0.3,
+        )
+    except Exception as e:
+        if backend == "cerebras":
+            print(f"[reasoning] Cerebras failed, falling back to OpenRouter: {e}")
+            client = _get_client(vision=True)
+            backend = "openrouter-fallback"
+            raw = await asyncio.to_thread(
+                client.generate,
+                prompt=ctx.text,
+                images=ctx.images or None,
+                response_schema=RESPONSE_SCHEMA,
+                system_message=SYSTEM_PROMPT,
+                temperature=0.3,
+            )
+        else:
+            raise
     t_llm_end = time.perf_counter()
 
+    # Fix invalid \uXXXX escapes from some backends (e.g. Cerebras)
+    raw = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', raw)
     result = json.loads(raw)
     action = result.get("action", "silent")
     message = result.get("message", "")
@@ -802,16 +820,33 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
 
     has_images = bool(ctx.images)
     client = _get_client(vision=has_images)
+    backend = "openrouter" if has_images else "cerebras"
 
-    raw = await asyncio.to_thread(
-        client.generate,
-        prompt=context_text,
-        images=ctx.images or None,
-        response_schema=RESPONSE_SCHEMA,
-        system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
-        temperature=0.3,
-    )
+    try:
+        raw = await asyncio.to_thread(
+            client.generate,
+            prompt=context_text,
+            images=ctx.images or None,
+            response_schema=RESPONSE_SCHEMA,
+            system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
+            temperature=0.3,
+        )
+    except Exception as e:
+        if backend == "cerebras":
+            print(f"[reasoning] Cerebras failed (question), falling back to OpenRouter: {e}")
+            client = _get_client(vision=True)
+            raw = await asyncio.to_thread(
+                client.generate,
+                prompt=context_text,
+                images=ctx.images or None,
+                response_schema=RESPONSE_SCHEMA,
+                system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
+                temperature=0.3,
+            )
+        else:
+            raise
 
+    raw = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', raw)
     result = json.loads(raw)
     # Force action to "speak" — the student asked a question, always respond
     action = "speak"
@@ -887,6 +922,7 @@ async def run_question_reasoning_streaming(
 
     has_images = bool(ctx.images)
     client = _get_client(vision=has_images)
+    backend = "openrouter" if has_images else "cerebras"
 
     # Accumulate full raw response for logging
     raw_tokens: list[str] = []
@@ -894,14 +930,17 @@ async def run_question_reasoning_streaming(
     found_marker = False
     message_buffer = ""
 
+    # Pick the stream generator; fallback to OpenRouter if Cerebras fails to connect
+    stream_gen = client.agenerate_stream(
+        prompt=context_text,
+        images=ctx.images or None,
+        response_schema=RESPONSE_SCHEMA,
+        system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
+        temperature=0.3,
+    )
+
     try:
-        async for token in client.agenerate_stream(
-            prompt=context_text,
-            images=ctx.images or None,
-            response_schema=RESPONSE_SCHEMA,
-            system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
-            temperature=0.3,
-        ):
+        async for token in stream_gen:
             raw_tokens.append(token)
 
             if not found_marker:
@@ -943,6 +982,7 @@ async def run_question_reasoning_streaming(
 
     # Parse full response for logging
     full_raw = "".join(raw_tokens)
+    full_raw = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', full_raw)
     level = None
     error_type = None
     internal_reasoning = ""
