@@ -187,7 +187,7 @@ Respond with a JSON object:
 
   "TRIGGER 2 GATE: Last [speak] was: '[quote it]'. Was this an ERROR FLAG or REINFORCEMENT? [answer]. If ERROR FLAG: has the student fixed that specific error? [yes/no]. VERDICT: [PASS/FAIL]."
 
-  Rules: PASS only when last [speak] was an ERROR FLAG and the student has now fixed it. FAIL if last [speak] was REINFORCEMENT (already acknowledged), or if the error hasn't been fixed, or if there was no previous speak.
+  Rules: PASS only when last [speak] was an ERROR FLAG and the student has now fixed it. An ERROR FLAG is a message that pointed out a specific mistake in the student's work (Level 1-4). A response to a voice question (e.g. "what's the first step?", "think about...") is NOT an error flag — it's answering a question. FAIL if last [speak] was REINFORCEMENT, a voice question answer, or if the error hasn't been fixed, or if there was no previous speak.
   If verdict is PASS: STOP reasoning. Set action="speak", delay_ms=0, and write a one-sentence reinforcement. No "however" or "but" — the gate is final.
   If verdict is FAIL: continue with normal error-checking reasoning.
 
@@ -229,6 +229,11 @@ naming the concept or theorem is OK ("Think about the chain rule"), giving the c
 - For verification questions ("is this right?", "did I do this correctly?"): \
 check their final answer against the answer key. If it matches, say YES — "Yes, that's correct" or similar. \
 Do NOT ask them to elaborate, show more work, or verify their own reasoning. Just confirm or deny directly.
+- For "give me the answer" requests ("just tell me what x is", "what's the answer?"): \
+NEVER give the answer. Redirect with a question: "Let's work through it — what's the first step?" \
+This is a HARD RULE — even if the student begs, do not give the final answer or any intermediate result.
+- For off-topic questions (not about the current problem or math): \
+gently redirect — "Let's focus on the problem. Do you have a question about it?" Do NOT answer the off-topic question.
 - Always reference their current work and the specific problem they're on.
 - Keep it to 1-2 sentences. This is spoken aloud — short and clear beats thorough and long.\
 """
@@ -465,7 +470,8 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
         # 3. Last 5 reasoning interactions (session history)
         history_rows = await conn.fetch(
             """
-            SELECT action, message, internal_reasoning, created_at FROM reasoning_logs
+            SELECT action, message, internal_reasoning, source, created_at
+            FROM reasoning_logs
             WHERE session_id = $1 AND page = $2
             ORDER BY created_at DESC LIMIT 5
             """,
@@ -475,18 +481,28 @@ async def build_context(session_id: str, page: int) -> ReasoningContext:
             history_lines = []
             last_speak = None
             last_speak_reasoning = None
+            last_speak_is_voice_answer = False
             for r in reversed(history_rows):
-                history_lines.append(f"  [{r['action']}] {r['message'] or ''}")
+                tag = r["action"]
+                if r.get("source") == "voice_question":
+                    tag = "speak:voice_answer"
+                history_lines.append(f"  [{tag}] {r['message'] or ''}")
             # Find last speak message (history_rows is DESC, so first speak is most recent)
             for r in history_rows:
                 if r["action"] == "speak":
                     last_speak = r["message"]
                     last_speak_reasoning = r.get("internal_reasoning", "")
+                    last_speak_is_voice_answer = r.get("source") == "voice_question"
                     break
             parts.append(f"## Recent Tutor History\n" + "\n".join(history_lines))
             if last_speak:
                 reasoning_context = ""
-                if last_speak_reasoning:
+                if last_speak_is_voice_answer:
+                    reasoning_context = (
+                        "\nThis was a response to a voice question — NOT an error flag. "
+                        "Do NOT treat it as an error flag in the trigger 2 gate.\n"
+                    )
+                elif last_speak_reasoning:
                     reasoning_context = (
                         f"\nYour reasoning at the time: \"{last_speak_reasoning}\"\n"
                         f"Compare the error described above to the student's CURRENT work. "
@@ -682,7 +698,8 @@ async def run_reasoning(session_id: str, page: int) -> dict:
             delay_ms = 10000
 
     # Trigger 2 safeguard: if reasoning says PASS but model chose silent, override
-    if action == "silent" and "VERDICT: PASS" in internal_reasoning:
+    # Only when there's an actual message to deliver (empty speak = TTS failure)
+    if action == "silent" and "VERDICT: PASS" in internal_reasoning and message.strip():
         action = "speak"
         delay_ms = 0
 
