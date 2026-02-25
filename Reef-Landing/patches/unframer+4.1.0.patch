@@ -1,0 +1,16 @@
+diff --git a/node_modules/unframer/dist/react.js b/node_modules/unframer/dist/react.js
+index 5cc6af9..a93a0c8 100644
+--- a/node_modules/unframer/dist/react.js
++++ b/node_modules/unframer/dist/react.js
+@@ -231,6 +231,11 @@ export function AdaptedLink({ href, nodeId, openInNewTab, smoothScroll, children
+     if (pathVariables) {
+         resolvedPath = replacePathParams(resolvedPath, pathVariables);
+     }
++    // Handle hash from href (e.g., anchor links like #benefits)
++    if (href?.hash && route?.elements) {
++        const hashId = route.elements[href.hash] || href.hash;
++        resolvedPath = resolvedPath + '#' + hashId;
++    }
+     if (isRelativeLink(resolvedPath) || isMailto(href)) {
+         return (_jsx(_Fragment, { children: React.cloneElement(children, {
+                 ...rest,

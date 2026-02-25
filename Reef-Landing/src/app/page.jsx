@@ -76,7 +76,7 @@ export default function Home() {
       </section>
 
       {/* 4. Features / Benefits Section */}
-      <section className="page-section section-bg-white">
+      <section id="benefits" className="page-section section-bg-white">
         <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
@@ -141,7 +141,7 @@ export default function Home() {
       </section>
 
       {/* 6. How It Works Section */}
-      <section className="page-section section-bg-light">
+      <section id="how-it-work-1" className="page-section section-bg-light">
         <div className="section-inner">
           <div className="section-header">
             <h2 className="section-heading">HOW IT WORKS</h2>
@@ -246,7 +246,7 @@ export default function Home() {
       </section>
 
       {/* 8. FAQ Section */}
-      <section className="page-section faq-section">
+      <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="Faq" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
