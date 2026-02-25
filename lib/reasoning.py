@@ -3,7 +3,7 @@
 Watches student handwritten math work via page transcriptions,
 decides whether to intervene, and produces coaching feedback for TTS.
 
-Uses Gemini 3 Flash Preview on OpenRouter for vision + structured inference.
+Uses GPT-4o on OpenRouter with structured JSON output.
 """
 
 import asyncio
@@ -25,16 +25,80 @@ class ReasoningContext:
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
-REASONING_MODEL_VISION = "qwen/qwen3-vl-235b-a22b-instruct"  # OpenRouter (vision)
-REASONING_MODEL_TEXT = "qwen-3-235b-a22b-instruct-2507"       # Cerebras (fast, text-only)
+REASONING_MODEL = "openai/gpt-4o"  # Single model for both text and vision
 _model_override: str | None = None  # Set by benchmark script to avoid server restarts
+_use_structured_output: bool = True  # JSON schema output (set False for punctuation parsing)
 
-# Cost per token (Qwen3 VL 235B Instruct via OpenRouter)
-PROMPT_COST_PER_TOKEN = 0.20 / 1_000_000
-COMPLETION_COST_PER_TOKEN = 0.88 / 1_000_000
+# JSON schema for structured output mode
+REASONING_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "action": {
+            "type": "string",
+            "enum": ["speak", "silent"],
+            "description": "Whether to speak to the student or stay silent.",
+        },
+        "message": {
+            "type": "string",
+            "description": "If speaking, what the student hears (TTS-ready English). If silent, a brief internal note.",
+        },
+        "delay_ms": {
+            "type": "integer",
+            "description": "Milliseconds to wait before speaking. 0 for immediate. 2000-15000 for delayed.",
+        },
+    },
+    "required": ["action", "message", "delay_ms"],
+    "additionalProperties": False,
+}
 
-SYSTEM_PROMPT = """\
+# Cost per token (GPT-4o via OpenRouter)
+PROMPT_COST_PER_TOKEN = 2.50 / 1_000_000
+COMPLETION_COST_PER_TOKEN = 10.00 / 1_000_000
+
+OUTPUT_FORMAT_PLAINTEXT = """\
+Respond with ONLY plain text. No JSON, no markdown, no labels, no prefixes.
+
+**CRITICAL: You MUST be silent most of the time.** The vast majority of your responses (80%+) should be SILENT. Only speak when one of the 6 triggers above is clearly met.
+
+**How silence vs speech works** — your ENTIRE response is controlled by the LAST character:
+- Response ends with a LETTER or NO punctuation → **SILENT** (student hears nothing)
+- Response ends with `.` → **SPEAK immediately**
+- Response ends with `..` → **SPEAK after 1 second**
+- Response ends with `...` → **SPEAK after 2 seconds**
+- Response ends with `....` → **SPEAK after 3 seconds**
+
+**When SILENT**: Write a brief internal note about what you observe (this is never spoken). Do NOT end it with a period, question mark, or exclamation mark. End with a plain word.
+
+**When SPEAKING**: Write what the student will hear aloud. End with the appropriate number of periods for timing.
+
+Examples:
+- `Student is working on step 2 correctly, no errors seen` ← SILENT (ends with letter)
+- `Partial work so far, waiting to see more` ← SILENT (ends with letter)
+- `Nice catch on the sign.` ← SPEAK immediately
+- `Take another look at that second term...` ← SPEAK after 2s delay
+- `Does that exponent look right....` ← SPEAK after 3s delay"""
+
+OUTPUT_FORMAT_STRUCTURED = """\
+Respond with a JSON object containing exactly three fields:
+
+- **action**: "speak" or "silent". Use "silent" (the default) unless one of the 6 triggers above is clearly met. The vast majority of your responses (80%+) should be "silent".
+- **message**: If action is "speak", write what the student will hear aloud (TTS-ready spoken English — no LaTeX, no symbols). If action is "silent", write a brief internal note about what you observe.
+- **delay_ms**: Milliseconds to wait before speaking. Use 0 for immediate (trigger 2 reinforcement, trigger 4 garbled text). Use 2000-5000 for clear errors. Use 5000-10000 for boxed answers or accumulated work. Use 10000-15000 for gentle nudges. Ignored when action is "silent" (set to 0).
+
+Examples:
+- {"action": "silent", "message": "Student is working on step 2 correctly, no errors seen", "delay_ms": 0}
+- {"action": "speak", "message": "Nice catch on the sign.", "delay_ms": 0}
+- {"action": "speak", "message": "Take another look at that second term.", "delay_ms": 2000}
+- {"action": "speak", "message": "Does that exponent look right?", "delay_ms": 3000}"""
+
+
+def _get_system_prompt(structured: bool = False) -> str:
+    """Return the system prompt with the appropriate output format instructions."""
+    fmt = OUTPUT_FORMAT_STRUCTURED if structured else OUTPUT_FORMAT_PLAINTEXT
+    return _SYSTEM_PROMPT_TEMPLATE.format(output_format_instructions=fmt)
+
+
+_SYSTEM_PROMPT_TEMPLATE = """\
 You are a math tutor observing a student's handwritten work on an iPad in real time. You have the original problem, the answer key, and the student's evolving work.
 
 ## Silence-first foundation
@@ -181,27 +245,7 @@ leads to a mistake.
 
 ## Output format
 
-Respond with ONLY plain text. No JSON, no markdown, no labels, no prefixes.
-
-**CRITICAL: You MUST be silent most of the time.** The vast majority of your responses (80%+) should be SILENT. Only speak when one of the 6 triggers above is clearly met.
-
-**How silence vs speech works** — your ENTIRE response is controlled by the LAST character:
-- Response ends with a LETTER or NO punctuation → **SILENT** (student hears nothing)
-- Response ends with `.` → **SPEAK immediately**
-- Response ends with `..` → **SPEAK after 1 second**
-- Response ends with `...` → **SPEAK after 2 seconds**
-- Response ends with `....` → **SPEAK after 3 seconds**
-
-**When SILENT**: Write a brief internal note about what you observe (this is never spoken). Do NOT end it with a period, question mark, or exclamation mark. End with a plain word.
-
-**When SPEAKING**: Write what the student will hear aloud. End with the appropriate number of periods for timing.
-
-Examples:
-- `Student is working on step 2 correctly, no errors seen` ← SILENT (ends with letter)
-- `Partial work so far, waiting to see more` ← SILENT (ends with letter)
-- `Nice catch on the sign.` ← SPEAK immediately
-- `Take another look at that second term...` ← SPEAK after 2s delay
-- `Does that exponent look right....` ← SPEAK after 3s delay
+{output_format_instructions}
 
 ## Style
 
@@ -210,6 +254,9 @@ Examples:
 - Conversational and warm, like a patient friend.
 - Reference what the student actually wrote.\
 """
+
+# Default for backward compat (used by token cost estimation, question reasoning, etc.)
+SYSTEM_PROMPT = _get_system_prompt(structured=False)
 
 QUESTION_PROMPT_ADDENDUM = """\
 
@@ -272,6 +319,24 @@ def _parse_response(raw: str) -> tuple[str, str, int]:
     return ("speak", message, delay_ms)
 
 
+def _parse_structured_response(raw: str) -> tuple[str, str, int]:
+    """Parse JSON structured output into (action, message, delay_ms)."""
+    text = raw.strip()
+    if not text:
+        return ("silent", "", 0)
+    try:
+        data = json.loads(text)
+        action = data.get("action", "silent")
+        message = data.get("message", "")
+        delay_ms = int(data.get("delay_ms", 0))
+        if action not in ("speak", "silent"):
+            action = "silent"
+        return (action, message, delay_ms)
+    except (json.JSONDecodeError, TypeError, ValueError) as e:
+        print(f"[reasoning] Failed to parse structured response, falling back to plaintext: {e}")
+        return _parse_response(text)
+
+
 def _get_part_order(q_parts: list[dict]) -> list[str]:
     """Flatten nested parts JSONB into ordered label list: ["a", "a.i", "a.ii", "b"]."""
     order: list[str] = []
@@ -299,23 +364,12 @@ def _is_later_part(label: str, active_part: str, part_order: list[str]) -> bool:
 
 
 def _get_client(vision: bool = False) -> LLMClient:
-    """Return an LLM client. Uses fast Cerebras for text-only, OpenRouter for vision."""
-    if _model_override:
-        api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key:
-            raise RuntimeError("OPENROUTER_API_KEY not set")
-        return LLMClient(api_key=api_key, model=_model_override, base_url=OPENROUTER_BASE_URL)
-
-    if vision:
-        api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key:
-            raise RuntimeError("OPENROUTER_API_KEY not set")
-        return LLMClient(api_key=api_key, model=REASONING_MODEL_VISION, base_url=OPENROUTER_BASE_URL)
-    else:
-        api_key = os.getenv("CEREBRAS_API_KEY")
-        if not api_key:
-            raise RuntimeError("CEREBRAS_API_KEY not set")
-        return LLMClient(api_key=api_key, model=REASONING_MODEL_TEXT, base_url=CEREBRAS_BASE_URL, use_json_schema=False)
+    """Return an LLM client. Single model (GPT-4o) for both text and vision."""
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY not set")
+    model = _model_override or REASONING_MODEL
+    return LLMClient(api_key=api_key, model=model, base_url=OPENROUTER_BASE_URL)
 
 
 async def build_context(session_id: str, page: int) -> ReasoningContext:
@@ -701,36 +755,27 @@ async def run_reasoning(session_id: str, page: int) -> dict:
         return {"action": "silent", "message": "No context available"}
 
     has_images = bool(ctx.images)
+    use_structured = _use_structured_output
     client = _get_client(vision=has_images)
-    backend = "openrouter" if has_images else "cerebras"
+    backend = "openrouter"
+    sys_prompt = _get_system_prompt(structured=use_structured)
 
-    # Call LLM — fallback to OpenRouter if Cerebras fails
+    # Call LLM
     t_llm_start = time.perf_counter()
-    try:
-        raw = await asyncio.to_thread(
-            client.generate,
-            prompt=ctx.text,
-            images=ctx.images or None,
-            system_message=SYSTEM_PROMPT,
-            temperature=0.3,
-        )
-    except Exception as e:
-        if backend == "cerebras":
-            print(f"[reasoning] Cerebras failed, falling back to OpenRouter: {e}")
-            client = _get_client(vision=True)
-            backend = "openrouter-fallback"
-            raw = await asyncio.to_thread(
-                client.generate,
-                prompt=ctx.text,
-                images=ctx.images or None,
-                system_message=SYSTEM_PROMPT,
-                temperature=0.3,
-            )
-        else:
-            raise
+    raw = await asyncio.to_thread(
+        client.generate,
+        prompt=ctx.text,
+        images=ctx.images or None,
+        system_message=sys_prompt,
+        temperature=0.3,
+        response_schema=REASONING_SCHEMA if use_structured else None,
+    )
     t_llm_end = time.perf_counter()
 
-    action, message, delay_ms = _parse_response(raw)
+    if use_structured:
+        action, message, delay_ms = _parse_structured_response(raw)
+    else:
+        action, message, delay_ms = _parse_response(raw)
 
     # Estimate tokens for cost tracking
     prompt_tokens = len(ctx.text.split()) + len(SYSTEM_PROMPT.split())
@@ -794,32 +839,23 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
 
     has_images = bool(ctx.images)
     client = _get_client(vision=has_images)
-    backend = "openrouter" if has_images else "cerebras"
+    use_structured = _use_structured_output
+    sys_prompt = _get_system_prompt(structured=use_structured) + QUESTION_PROMPT_ADDENDUM
 
-    try:
-        raw = await asyncio.to_thread(
-            client.generate,
-            prompt=context_text,
-            images=ctx.images or None,
-            system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
-            temperature=0.3,
-        )
-    except Exception as e:
-        if backend == "cerebras":
-            print(f"[reasoning] Cerebras failed (question), falling back to OpenRouter: {e}")
-            client = _get_client(vision=True)
-            raw = await asyncio.to_thread(
-                client.generate,
-                prompt=context_text,
-                images=ctx.images or None,
-                system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
-                temperature=0.3,
-            )
-        else:
-            raise
+    raw = await asyncio.to_thread(
+        client.generate,
+        prompt=context_text,
+        images=ctx.images or None,
+        system_message=sys_prompt,
+        temperature=0.3,
+        response_schema=REASONING_SCHEMA if use_structured else None,
+    )
 
     # Force action to "speak" — the student asked a question, always respond
-    _, message, _ = _parse_response(raw)
+    if use_structured:
+        _, message, _ = _parse_structured_response(raw)
+    else:
+        _, message, _ = _parse_response(raw)
     if not message:
         message = raw.strip()
     action = "speak"
@@ -894,10 +930,11 @@ async def run_question_reasoning_streaming(
     raw_tokens: list[str] = []
     message_buffer = ""
 
+    # Streaming always uses plaintext format (can't stream structured JSON)
     stream_gen = client.agenerate_stream(
         prompt=context_text,
         images=ctx.images or None,
-        system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
+        system_message=_get_system_prompt(structured=False) + QUESTION_PROMPT_ADDENDUM,
         temperature=0.3,
     )
 

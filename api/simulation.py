@@ -25,15 +25,17 @@ _simulation_sessions: dict[str, dict] = {}
 
 class ModelOverrideRequest(BaseModel):
     model_id: str | None = None  # None to clear override
+    structured_output: bool = False  # Use JSON schema instead of punctuation parsing
 
 
 @router.post("/set-model")
 async def simulation_set_model(req: ModelOverrideRequest):
     """Override the reasoning model at runtime (dev-only, for benchmarking)."""
     reasoning_module._model_override = req.model_id
+    reasoning_module._use_structured_output = req.structured_output
     active = req.model_id or reasoning_module.REASONING_MODEL
-    print(f"[simulation] Model override: {active}")
-    return {"model": active, "is_override": req.model_id is not None}
+    print(f"[simulation] Model override: {active}, structured_output={req.structured_output}")
+    return {"model": active, "is_override": req.model_id is not None, "structured_output": req.structured_output}
 
 
 # -- Request/Response models --------------------------------------------------

@@ -243,7 +243,6 @@ class TestBuildContext:
 
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
 
 
 class TestRunReasoning:
@@ -271,10 +270,10 @@ class TestRunReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(CEREBRAS_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion("Try factoring."),
+                    json=make_chat_completion('{"action": "speak", "message": "Try factoring.", "delay_ms": 0}'),
                 )
             )
             result = asyncio.run(run_reasoning(_sid(), 1))
@@ -302,11 +301,11 @@ class TestRunReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(CEREBRAS_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion(
-                        "Student is working, no errors detected"
+                        '{"action": "silent", "message": "Student is working, no errors detected", "delay_ms": 0}'
                     ),
                 )
             )
@@ -338,10 +337,10 @@ class TestRunQuestionReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(CEREBRAS_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion("I would stay quiet"),
+                    json=make_chat_completion('{"action": "silent", "message": "I would stay quiet", "delay_ms": 0}'),
                 )
             )
             result = asyncio.run(run_question_reasoning(_sid(), 1, "What is x?"))
@@ -360,10 +359,10 @@ class TestRunQuestionReasoning:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         with respx.mock:
-            respx.post(CEREBRAS_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion("x equals 5."),
+                    json=make_chat_completion('{"action": "speak", "message": "x equals 5.", "delay_ms": 0}'),
                 )
             )
             asyncio.run(run_question_reasoning(_sid(), 1, "What is x?"))
@@ -406,7 +405,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(CEREBRAS_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     content=sse_bytes,
@@ -440,7 +439,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(CEREBRAS_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
                     content=sse_bytes,
@@ -470,7 +469,7 @@ class TestRunQuestionReasoningStreaming:
             return items
 
         with respx.mock:
-            respx.post(CEREBRAS_URL).mock(
+            respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(500, json={"error": "Internal Server Error"})
             )
             items = asyncio.run(run())
