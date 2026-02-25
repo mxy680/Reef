@@ -274,31 +274,22 @@ class TestRunReasoning:
             respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion(
-                        '{"action": "speak", "level": 1, "error_type": "procedural", '
-                        '"delay_ms": 0, "message": "Try factoring.", '
-                        '"internal_reasoning": "Sign error in step 2"}'
-                    ),
+                    json=make_chat_completion("Try factoring."),
                 )
             )
             result = asyncio.run(run_reasoning(_sid(), 1))
 
         assert result["action"] == "speak"
         assert result["message"] == "Try factoring."
-        assert result["level"] == 1
-        assert result["error_type"] == "procedural"
         assert result["delay_ms"] == 0
 
         # Verify DB insert was called with correct action/message
         assert len(fake_pool.conn.calls) == 1
         call_args = fake_pool.conn.calls[0]
-        # Tuple: (query, session_id, page, context, action, message, ..., level, error_type, delay_ms, internal_reasoning)
+        # Tuple: (query, session_id, page, context, action, message, pt, ct, cost, delay_ms)
         assert call_args[4] == "speak"
         assert call_args[5] == "Try factoring."
-        assert call_args[9] == 1  # level
-        assert call_args[10] == "procedural"  # error_type
-        assert call_args[11] == 0  # delay_ms
-        assert call_args[12] == "Sign error in step 2"  # internal_reasoning
+        assert call_args[9] == 0  # delay_ms
 
     def test_db_insert_has_token_counts(self, monkeypatch):
         from lib.reasoning import run_reasoning
@@ -315,8 +306,7 @@ class TestRunReasoning:
                 return_value=httpx.Response(
                     200,
                     json=make_chat_completion(
-                        '{"action": "silent", "message": "Student is working", '
-                        '"internal_reasoning": "No errors detected"}'
+                        "Student is working, no errors detected"
                     ),
                 )
             )
@@ -351,14 +341,12 @@ class TestRunQuestionReasoning:
             respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion(
-                        '{"action": "silent", "message": "I would stay quiet", '
-                        '"internal_reasoning": "test"}'
-                    ),
+                    json=make_chat_completion("I would stay quiet"),
                 )
             )
             result = asyncio.run(run_question_reasoning(_sid(), 1, "What is x?"))
 
+        # Voice questions always force speak regardless of model output
         assert result["action"] == "speak"
 
     def test_source_voice_question(self, monkeypatch):
@@ -375,22 +363,19 @@ class TestRunQuestionReasoning:
             respx.post(CEREBRAS_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion(
-                        '{"action": "speak", "message": "x equals 5", '
-                        '"internal_reasoning": "answering question"}'
-                    ),
+                    json=make_chat_completion("x equals 5."),
                 )
             )
             asyncio.run(run_question_reasoning(_sid(), 1, "What is x?"))
 
         assert len(fake_pool.conn.calls) == 1
         call_args = fake_pool.conn.calls[0]
-        # Tuple: (query, sid, page, context, action, message, pt, ct, cost, source, question_text, level, error_type, delay_ms, internal_reasoning)
+        # Tuple: (query, sid, page, context, action, message, pt, ct, cost, source, question_text, delay_ms)
         source = call_args[9]
         question_text = call_args[10]
         assert source == "voice_question"
         assert question_text == "What is x?"
-        assert call_args[13] == 0  # delay_ms forced to 0 for voice questions
+        assert call_args[11] == 0  # delay_ms forced to 0 for voice questions
 
 
 # ── TestRunQuestionReasoningStreaming ─────────────────────────────────
@@ -408,10 +393,8 @@ class TestRunQuestionReasoningStreaming:
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
         sse_bytes = make_sse_stream([
-            '{"action": "speak", "message": "',
             "First sentence. ",
             "Second sentence.",
-            '"}',
         ])
 
         async def run():
@@ -446,7 +429,7 @@ class TestRunQuestionReasoningStreaming:
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
-        sse_bytes = make_sse_stream(['{"action":"speak","message":"Hello."}'])
+        sse_bytes = make_sse_stream(["Hello."])
 
         async def run():
             queue = asyncio.Queue()

@@ -117,16 +117,16 @@ class LLMClient:
             kwargs["temperature"] = temperature
         if max_tokens is not None:
             kwargs["max_tokens"] = max_tokens
-        if response_schema is not None:
-            if self.use_json_schema:
-                kwargs["response_format"] = {
-                    "type": "json_schema",
-                    "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
-                }
-            else:
-                kwargs["response_format"] = {"type": "json_object"}
+        if response_schema is not None and self.use_json_schema:
+            kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
+            }
 
         response = self.client.chat.completions.create(**kwargs)
+        finish_reason = response.choices[0].finish_reason if response.choices else None
+        if finish_reason == "length":
+            print(f"[llm_client] WARNING: response truncated (finish_reason=length), model={self.model}")
         return response.choices[0].message.content
 
     def generate_stream(
@@ -160,14 +160,11 @@ class LLMClient:
         }
         if temperature is not None:
             kwargs["temperature"] = temperature
-        if response_schema is not None:
-            if self.use_json_schema:
-                kwargs["response_format"] = {
-                    "type": "json_schema",
-                    "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
-                }
-            else:
-                kwargs["response_format"] = {"type": "json_object"}
+        if response_schema is not None and self.use_json_schema:
+            kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
+            }
 
         stream = self.client.chat.completions.create(**kwargs)
         for chunk in stream:
@@ -205,14 +202,11 @@ class LLMClient:
         }
         if temperature is not None:
             kwargs["temperature"] = temperature
-        if response_schema is not None:
-            if self.use_json_schema:
-                kwargs["response_format"] = {
-                    "type": "json_schema",
-                    "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
-                }
-            else:
-                kwargs["response_format"] = {"type": "json_object"}
+        if response_schema is not None and self.use_json_schema:
+            kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
+            }
 
         stream = await self.async_client.chat.completions.create(**kwargs)
         async for chunk in stream:

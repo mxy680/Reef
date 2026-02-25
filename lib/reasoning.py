@@ -180,25 +180,25 @@ leads to a mistake.
 
 ## Output format
 
-Respond with a JSON object:
-- **action**: "silent" or "speak"
-- **level**: 1-4 (required when action is "speak" for error triggers; omit for reinforcement/garbled)
-- **error_type**: "procedural", "conceptual", or "strategic" (required when flagging an error; omit otherwise)
-- **delay_ms**: milliseconds to wait before delivering the message (0 for immediate)
-- **message**: When silent, a brief internal note. When speaking, your coaching message.
-- **internal_reasoning**: Chain-of-thought explaining your decision (always required, never shown to student). You MUST begin with this EXACT template before ANY other reasoning:
+Respond with ONLY your spoken message as plain text. No JSON, no markdown, no labels.
 
-  "TRIGGER 2 GATE: Last [speak] was: '[quote it]'. Was this an ERROR FLAG or REINFORCEMENT? [answer]. If ERROR FLAG: has the student fixed that specific error? [yes/no]. VERDICT: [PASS/FAIL]."
+**Silence vs speech** — controlled by how you end your message:
+- End with NO punctuation → you stay SILENT (internal note only, student hears nothing)
+- End with `.` → speak IMMEDIATELY (0ms delay)
+- End with `..` → speak after 1 second delay
+- End with `...` → speak after 2 seconds delay
+- End with `....` → speak after 3 seconds delay
+- (Each extra period = +1 second)
 
-  Rules: PASS only when last [speak] was an ERROR FLAG and the student has now fixed it. An ERROR FLAG is a message that pointed out a specific mistake in the student's work (Level 1-4). A response to a voice question (e.g. "what's the first step?", "think about...") is NOT an error flag — it's answering a question. FAIL if last [speak] was REINFORCEMENT, a voice question answer, or if the error hasn't been fixed, or if there was no previous speak.
-  If verdict is PASS: Set action="speak", delay_ms=0, and write a one-sentence reinforcement. Then CONTINUE scanning the student's CURRENT work for any NEW errors (different from the one just fixed). If you find a new error, append a second sentence that flags it — for example: "Nice catch on the sign. Now check your final solutions — what values make each factor zero?" This way the student gets reinforcement AND the new error doesn't go unnoticed.
-  If verdict is FAIL: continue with normal error-checking reasoning.
+Use delay when the student might self-correct. Use immediate (single `.`) for positive reinforcement (trigger 2) and garbled text (trigger 4).
 
-### Action guide
-- **silent**: Nothing to say. Correct work, partial work, pauses, copying — all silent. When in doubt, silent. Message should be an internal note (not spoken).
-- **speak**: Feedback to deliver to the student. Set delay_ms to control timing. Message WILL be read aloud.
+**Trigger 2 check**: Before anything else, check if your last spoken message flagged an error and the student has now fixed it. If so, give brief reinforcement ending with `.` (immediate). Then continue checking for new errors.
 
-CRITICAL: If your internal_reasoning concludes you should speak (e.g. "I should give reinforcement", "I must flag this error"), then action MUST be "speak", not "silent". Do not write a spoken message and then set action to "silent" — that contradicts your own reasoning.
+Examples:
+- Silent (student working correctly): `Student is solving step 2, no errors`
+- Immediate speak (reinforcement): `Nice catch on the sign.`
+- Delayed speak (flagging error): `Take another look at that second term...`
+- Longer delay (gentle nudge): `Does that exponent look right....`
 
 ## Style
 
@@ -241,36 +241,32 @@ gently redirect — "Let's focus on the problem. Do you have a question about it
 - Keep it to 1-2 sentences. This is spoken aloud — short and clear beats thorough and long.\
 """
 
-RESPONSE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "internal_reasoning": {
-            "type": "string",
-        },
-        "action": {
-            "type": "string",
-            "enum": ["silent", "speak"],
-        },
-        "level": {
-            "anyOf": [
-                {"type": "integer", "enum": [1, 2, 3, 4]},
-                {"type": "null"},
-            ],
-        },
-        "error_type": {
-            "anyOf": [
-                {"type": "string", "enum": ["procedural", "conceptual", "strategic"]},
-                {"type": "null"},
-            ],
-        },
-        "delay_ms": {
-            "type": "integer",
-        },
-        "message": {
-            "type": "string",
-        },
-    },
-}
+def _parse_response(raw: str) -> tuple[str, str, int]:
+    """Parse plain-text LLM response into (action, message, delay_ms).
+
+    Convention:
+    - Ends with no punctuation → silent
+    - Ends with '.' → speak immediately (0ms)
+    - Each extra '.' adds 1 second of delay
+    """
+    text = raw.strip()
+    if not text:
+        return ("silent", "", 0)
+
+    # Count trailing periods
+    stripped = text.rstrip(".")
+    dot_count = len(text) - len(stripped)
+
+    if dot_count == 0:
+        # No trailing period → silent
+        return ("silent", text, 0)
+
+    # Has trailing periods → speak
+    # 1 dot = 0ms, 2 dots = 1000ms, 3 dots = 2000ms, etc.
+    delay_ms = max(0, (dot_count - 1)) * 1000
+    # Clean message: keep one period at the end
+    message = stripped.rstrip() + "."
+    return ("speak", message, delay_ms)
 
 
 def _get_part_order(q_parts: list[dict]) -> list[str]:
@@ -296,6 +292,7 @@ def _is_later_part(label: str, active_part: str, part_order: list[str]) -> bool:
         return part_order.index(label) > part_order.index(active_part)
     except ValueError:
         return False
+
 
 
 def _get_client(vision: bool = False) -> LLMClient:
@@ -704,18 +701,15 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     client = _get_client(vision=has_images)
     backend = "openrouter" if has_images else "cerebras"
 
-    # Call LLM in a thread (blocking OpenAI SDK), fallback to OpenRouter if Cerebras fails
-    cerebras_kwargs = {"max_tokens": 2048} if backend == "cerebras" else {}
+    # Call LLM — fallback to OpenRouter if Cerebras fails
     t_llm_start = time.perf_counter()
     try:
         raw = await asyncio.to_thread(
             client.generate,
             prompt=ctx.text,
             images=ctx.images or None,
-            response_schema=RESPONSE_SCHEMA,
             system_message=SYSTEM_PROMPT,
             temperature=0.3,
-            **cerebras_kwargs,
         )
     except Exception as e:
         if backend == "cerebras":
@@ -726,7 +720,6 @@ async def run_reasoning(session_id: str, page: int) -> dict:
                 client.generate,
                 prompt=ctx.text,
                 images=ctx.images or None,
-                response_schema=RESPONSE_SCHEMA,
                 system_message=SYSTEM_PROMPT,
                 temperature=0.3,
             )
@@ -734,39 +727,11 @@ async def run_reasoning(session_id: str, page: int) -> dict:
             raise
     t_llm_end = time.perf_counter()
 
-    # Fix invalid \uXXXX escapes from some backends (e.g. Cerebras)
-    raw = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', raw)
-    try:
-        result = json.loads(raw)
-    except json.JSONDecodeError as e:
-        # Log the raw output around the error position for debugging
-        pos = e.pos or 0
-        snippet = repr(raw[max(0, pos-50):pos+50])
-        print(f"[reasoning] JSON parse error at pos {pos}, snippet: {snippet}")
-        raise
-    action = result.get("action", "silent")
-    message = result.get("message", "")
-    level = result.get("level")
-    error_type = result.get("error_type")
-    delay_ms = result.get("delay_ms", 0)
-    internal_reasoning = result.get("internal_reasoning", "")
+    action, message, delay_ms = _parse_response(raw)
 
-    # Normalize: delayed_speak from old models → speak with delay
-    if action == "delayed_speak":
-        action = "speak"
-        if delay_ms == 0:
-            delay_ms = 10000
-
-    # Trigger 2 safeguard: if reasoning says PASS but model chose silent, override
-    # Only when there's an actual message to deliver (empty speak = TTS failure)
-    if action == "silent" and "VERDICT: PASS" in internal_reasoning and message.strip():
-        action = "speak"
-        delay_ms = 0
-
-    # Extract token usage from the raw response if available
-    # LLMClient.generate() returns just the text, so we estimate from lengths
+    # Estimate tokens for cost tracking
     prompt_tokens = len(ctx.text.split()) + len(SYSTEM_PROMPT.split())
-    completion_tokens = len(message.split())
+    completion_tokens = len(raw.split())
     estimated_cost = (
         prompt_tokens * PROMPT_COST_PER_TOKEN
         + completion_tokens * COMPLETION_COST_PER_TOKEN
@@ -782,18 +747,18 @@ async def run_reasoning(session_id: str, page: int) -> dict:
                 INSERT INTO reasoning_logs
                     (session_id, page, context, action, message,
                      prompt_tokens, completion_tokens, estimated_cost,
-                     level, error_type, delay_ms, internal_reasoning)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                     delay_ms)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 """,
                 session_id, page, ctx.text, action, message,
                 prompt_tokens, completion_tokens, estimated_cost,
-                level, error_type, delay_ms, internal_reasoning,
+                delay_ms,
             )
     t_db_end = time.perf_counter()
 
     print(
         f"[reasoning] ({session_id}, page={page}): "
-        f"action={action}, level={level}, delay={delay_ms}ms, "
+        f"action={action}, delay={delay_ms}ms, "
         f"message={message[:80]}, "
         f"tokens={prompt_tokens}+{completion_tokens}, cost=${estimated_cost:.4f}"
     )
@@ -809,10 +774,7 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     return {
         "action": action,
         "message": message,
-        "level": level,
-        "error_type": error_type,
         "delay_ms": delay_ms,
-        "internal_reasoning": internal_reasoning,
     }
 
 
@@ -830,17 +792,14 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
     has_images = bool(ctx.images)
     client = _get_client(vision=has_images)
     backend = "openrouter" if has_images else "cerebras"
-    cerebras_kwargs = {"max_tokens": 2048} if backend == "cerebras" else {}
 
     try:
         raw = await asyncio.to_thread(
             client.generate,
             prompt=context_text,
             images=ctx.images or None,
-            response_schema=RESPONSE_SCHEMA,
             system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
             temperature=0.3,
-            **cerebras_kwargs,
         )
     except Exception as e:
         if backend == "cerebras":
@@ -850,30 +809,26 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
                 client.generate,
                 prompt=context_text,
                 images=ctx.images or None,
-                response_schema=RESPONSE_SCHEMA,
                 system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
                 temperature=0.3,
             )
         else:
             raise
 
-    raw = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', raw)
-    result = json.loads(raw)
     # Force action to "speak" — the student asked a question, always respond
+    _, message, _ = _parse_response(raw)
+    if not message:
+        message = raw.strip()
     action = "speak"
-    message = result.get("message", "")
-    level = result.get("level")
-    error_type = result.get("error_type")
-    internal_reasoning = result.get("internal_reasoning", "")
 
     prompt_tokens = len(context_text.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
-    completion_tokens = len(message.split())
+    completion_tokens = len(raw.split())
     estimated_cost = (
         prompt_tokens * PROMPT_COST_PER_TOKEN
         + completion_tokens * COMPLETION_COST_PER_TOKEN
     )
 
-    # Log to DB with source="voice_question"
+    # Log to DB
     pool = get_pool()
     if pool:
         async with pool.acquire() as conn:
@@ -882,14 +837,12 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
                 INSERT INTO reasoning_logs
                     (session_id, page, context, action, message,
                      prompt_tokens, completion_tokens, estimated_cost,
-                     source, question_text,
-                     level, error_type, delay_ms, internal_reasoning)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                     source, question_text, delay_ms)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 """,
                 session_id, page, context_text, action, message,
                 prompt_tokens, completion_tokens, estimated_cost,
-                "voice_question", question,
-                level, error_type, 0, internal_reasoning,
+                "voice_question", question, 0,
             )
 
     print(
@@ -922,8 +875,8 @@ async def run_question_reasoning_streaming(
 ) -> None:
     """Stream LLM response and feed sentences to tts_queue as they're detected.
 
-    Parses streaming JSON to extract message content, detects sentence
-    boundaries, and puts each complete sentence into the queue for TTS.
+    Plain text output — no JSON parsing needed. Detects sentence boundaries
+    and puts each complete sentence into the queue for TTS.
     Sends None sentinel when done.
     """
     ctx = await build_context(session_id, page)
@@ -933,19 +886,14 @@ async def run_question_reasoning_streaming(
 
     has_images = bool(ctx.images)
     client = _get_client(vision=has_images)
-    backend = "openrouter" if has_images else "cerebras"
 
     # Accumulate full raw response for logging
     raw_tokens: list[str] = []
-    # State for JSON message extraction
-    found_marker = False
     message_buffer = ""
 
-    # Pick the stream generator; fallback to OpenRouter if Cerebras fails to connect
     stream_gen = client.agenerate_stream(
         prompt=context_text,
         images=ctx.images or None,
-        response_schema=RESPONSE_SCHEMA,
         system_message=SYSTEM_PROMPT + QUESTION_PROMPT_ADDENDUM,
         temperature=0.3,
     )
@@ -953,37 +901,14 @@ async def run_question_reasoning_streaming(
     try:
         async for token in stream_gen:
             raw_tokens.append(token)
+            message_buffer += token
+            message_buffer = _flush_sentences(message_buffer, tts_queue)
 
-            if not found_marker:
-                # Look for "message": " marker in accumulated response
-                accumulated = "".join(raw_tokens)
-                marker = '"message": "'
-                marker_alt = '"message":"'
-                idx = accumulated.find(marker)
-                if idx == -1:
-                    idx = accumulated.find(marker_alt)
-                    if idx != -1:
-                        marker = marker_alt
-                if idx != -1:
-                    found_marker = True
-                    # Everything after the marker opening quote is message content
-                    after_marker = accumulated[idx + len(marker):]
-                    message_buffer = after_marker
-                    message_buffer = _flush_sentences(message_buffer, tts_queue)
-            else:
-                # We're inside the message value — accumulate and flush sentences
-                message_buffer += token
-                message_buffer = _flush_sentences(message_buffer, tts_queue)
-
-        # Flush remaining buffer (strip trailing "} from JSON)
-        remainder = message_buffer.rstrip()
-        for suffix in ('"}', '"'):
-            if remainder.endswith(suffix):
-                remainder = remainder[:-len(suffix)]
-                break
+        # Flush remaining buffer (strip trailing delay dots)
+        remainder = message_buffer.rstrip(".")
         remainder = remainder.strip()
         if remainder:
-            tts_queue.put_nowait(remainder)
+            tts_queue.put_nowait(remainder + ".")
 
     except Exception as e:
         print(f"[reasoning] Streaming failed: {e}")
@@ -991,25 +916,14 @@ async def run_question_reasoning_streaming(
         # Always send sentinel so TTS endpoint stops waiting
         await tts_queue.put(None)
 
-    # Parse full response for logging
     full_raw = "".join(raw_tokens)
-    full_raw = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', full_raw)
-    level = None
-    error_type = None
-    internal_reasoning = ""
-    try:
-        result = json.loads(full_raw)
-        message = result.get("message", "")
-        level = result.get("level")
-        error_type = result.get("error_type")
-        internal_reasoning = result.get("internal_reasoning", "")
-    except json.JSONDecodeError:
-        message = full_raw
-        print(f"[reasoning] Warning: could not parse streaming JSON: {full_raw[:100]}")
-
+    _, message, _ = _parse_response(full_raw)
+    if not message:
+        message = full_raw.strip()
     action = "speak"
+
     prompt_tokens = len(context_text.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
-    completion_tokens = len(message.split())
+    completion_tokens = len(full_raw.split())
     estimated_cost = (
         prompt_tokens * PROMPT_COST_PER_TOKEN
         + completion_tokens * COMPLETION_COST_PER_TOKEN
@@ -1023,14 +937,12 @@ async def run_question_reasoning_streaming(
                 INSERT INTO reasoning_logs
                     (session_id, page, context, action, message,
                      prompt_tokens, completion_tokens, estimated_cost,
-                     source, question_text,
-                     level, error_type, delay_ms, internal_reasoning)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                     source, question_text, delay_ms)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 """,
                 session_id, page, context_text, action, message,
                 prompt_tokens, completion_tokens, estimated_cost,
-                "voice_question", question,
-                level, error_type, 0, internal_reasoning,
+                "voice_question", question, 0,
             )
 
     print(
