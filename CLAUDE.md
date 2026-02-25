@@ -122,8 +122,9 @@ iOS POST /api/voice/question (multipart: audio + session_id + page)
 | Service | Purpose | File |
 |---------|---------|------|
 | **OpenRouter** (Gemini 3 Flash Preview) | PDF grouping, question extraction, answer keys, quiz gen, LaTeX fixing | `api/index.py` |
+| **OpenRouter** (Qwen3 VL 235B Instruct) | Adaptive tutoring reasoning (vision + text) | `lib/reasoning.py` |
 | **Mathpix** | Handwriting transcription (whole-page, 5-min session TTL) | `lib/mathpix_client.py` |
-| **Groq** (Whisper + reasoning model) | Voice transcription + adaptive tutoring | `lib/groq_transcribe.py`, `lib/reasoning.py` |
+| **Groq** (Whisper) | Voice transcription | `lib/groq_transcribe.py` |
 | **Modal** (GPU endpoints) | Surya layout (T4), Kokoro TTS (T4), MiniLM embeddings (CPU) | `lib/surya_client.py`, `lib/tts_client.py`, `lib/embedding_client.py` |
 | **DeepInfra** (Kokoro 82M) | TTS for reasoning feedback | `api/reasoning.py` |
 

@@ -188,7 +188,7 @@ Respond with a JSON object:
   "TRIGGER 2 GATE: Last [speak] was: '[quote it]'. Was this an ERROR FLAG or REINFORCEMENT? [answer]. If ERROR FLAG: has the student fixed that specific error? [yes/no]. VERDICT: [PASS/FAIL]."
 
   Rules: PASS only when last [speak] was an ERROR FLAG and the student has now fixed it. An ERROR FLAG is a message that pointed out a specific mistake in the student's work (Level 1-4). A response to a voice question (e.g. "what's the first step?", "think about...") is NOT an error flag — it's answering a question. FAIL if last [speak] was REINFORCEMENT, a voice question answer, or if the error hasn't been fixed, or if there was no previous speak.
-  If verdict is PASS: STOP reasoning. Set action="speak", delay_ms=0, and write a one-sentence reinforcement. No "however" or "but" — the gate is final.
+  If verdict is PASS: Set action="speak", delay_ms=0, and write a one-sentence reinforcement. Then CONTINUE scanning the student's CURRENT work for any NEW errors (different from the one just fixed). If you find a new error, append a second sentence that flags it — for example: "Nice catch on the sign. Now check your final solutions — what values make each factor zero?" This way the student gets reinforcement AND the new error doesn't go unnoticed.
   If verdict is FAIL: continue with normal error-checking reasoning.
 
 ### Action guide

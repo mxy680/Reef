@@ -1002,13 +1002,14 @@ Write the solution as a strong student would on paper:
 - Where students commonly make mistakes, add an inline note: [Common mistake: ...]
 
 Example style:
-  Given: 2x + 3 = 11
-  2x = 8
-  x = 4 [Common mistake: students sometimes subtract 3 from both sides incorrectly, getting 2x = 14]
+  Given: $2x + 3 = 11$
+  $2x = 8$
+  $x = 4$ [Common mistake: students sometimes subtract 3 from both sides incorrectly, getting $2x = 14$]
 
 {question_text}
 
-Use LaTeX notation for all math. Use part_label: null for single questions, or the part letter for each subpart."""
+IMPORTANT: Wrap ALL mathematical expressions in $...$ delimiters for inline math or $$...$$ for display math. Never write bare LaTeX commands — every \\frac, \\cdot, \\int, etc. must be inside delimiters.
+Use part_label: null for single questions, or the part letter for each subpart."""
 
                 answer_schema = {
                     "type": "object",

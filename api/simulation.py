@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from lib.database import get_pool
+import lib.reasoning as reasoning_module
 from lib.reasoning import run_reasoning, run_question_reasoning
 from api.strokes import _active_sessions
 
@@ -20,6 +21,19 @@ router = APIRouter(prefix="/api/simulation", tags=["simulation"])
 
 # session_id -> {"document_id": int}
 _simulation_sessions: dict[str, dict] = {}
+
+
+class ModelOverrideRequest(BaseModel):
+    model_id: str | None = None  # None to clear override
+
+
+@router.post("/set-model")
+async def simulation_set_model(req: ModelOverrideRequest):
+    """Override the reasoning model at runtime (dev-only, for benchmarking)."""
+    reasoning_module._model_override = req.model_id
+    active = req.model_id or reasoning_module.REASONING_MODEL
+    print(f"[simulation] Model override: {active}")
+    return {"model": active, "is_override": req.model_id is not None}
 
 
 # -- Request/Response models --------------------------------------------------

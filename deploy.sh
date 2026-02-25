@@ -17,7 +17,7 @@ rsync -az --delete \
     . "$SERVER:$REMOTE_DIR/"
 
 echo "==> Building and deploying ..."
-ssh "$SERVER" "cd $REMOTE_DIR && docker compose build app && docker compose up -d"
+ssh "$SERVER" "cd $REMOTE_DIR && docker compose build app && docker compose up -d app db caddy"
 
 echo "==> Checking status ..."
 ssh "$SERVER" "cd $REMOTE_DIR && docker compose ps"
