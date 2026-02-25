@@ -161,14 +161,16 @@ export default function Home() {
 
       {/* 5. Integrations Section */}
       <section className="page-section">
-        <Integrations.Responsive />
-        <div className="section-inner integrations-built-for-stem">
-          <div className="section-header">
-            <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
-            <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
-            <p className="section-subtitle">
-              From calculus problem sets to organic chemistry mechanisms to circuit analysis, Reef understands the notation and concepts across all your STEM courses.
-            </p>
+        <div className="section-inner">
+          <div className="integrations-card scroll-reveal">
+            <Integrations.Responsive style={{ width: "100%" }} />
+            <div className="integrations-text">
+              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
+              <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
+              <p className="section-subtitle">
+                From calculus problem sets to organic chemistry mechanisms to circuit analysis, Reef understands the notation and concepts across all your STEM courses.
+              </p>
+            </div>
           </div>
         </div>
       </section>
