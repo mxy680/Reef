@@ -315,7 +315,7 @@ def _get_client(vision: bool = False) -> LLMClient:
         api_key = os.getenv("CEREBRAS_API_KEY")
         if not api_key:
             raise RuntimeError("CEREBRAS_API_KEY not set")
-        return LLMClient(api_key=api_key, model=REASONING_MODEL_TEXT, base_url=CEREBRAS_BASE_URL)
+        return LLMClient(api_key=api_key, model=REASONING_MODEL_TEXT, base_url=CEREBRAS_BASE_URL, use_json_schema=False)
 
 
 async def build_context(session_id: str, page: int) -> ReasoningContext:
@@ -734,7 +734,14 @@ async def run_reasoning(session_id: str, page: int) -> dict:
 
     # Fix invalid \uXXXX escapes from some backends (e.g. Cerebras)
     raw = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', raw)
-    result = json.loads(raw)
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError as e:
+        # Log the raw output around the error position for debugging
+        pos = e.pos or 0
+        snippet = repr(raw[max(0, pos-50):pos+50])
+        print(f"[reasoning] JSON parse error at pos {pos}, snippet: {snippet}")
+        raise
     action = result.get("action", "silent")
     message = result.get("message", "")
     level = result.get("level")
