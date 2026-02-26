@@ -3,7 +3,7 @@
 Watches student handwritten math work via page transcriptions,
 decides whether to intervene, and produces coaching feedback for TTS.
 
-Uses GPT-4o on OpenRouter with structured JSON output.
+Uses Qwen3 VL 235B on OpenRouter with streaming early-exit for silent responses.
 """
 
 import asyncio
@@ -25,9 +25,13 @@ class ReasoningContext:
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-REASONING_MODEL = "openai/gpt-4o"  # Single model for both text and vision
+REASONING_MODEL = "qwen/qwen3-vl-235b-a22b-instruct"
+FALLBACK_MODEL = "openai/gpt-4o"  # Used for voice question timeout fallback
 _model_override: str | None = None  # Set by benchmark script to avoid server restarts
 _use_structured_output: bool = True  # JSON schema output (set False for punctuation parsing)
+
+# OpenRouter provider routing — sort by latency to avoid GPU routing lottery
+OPENROUTER_PROVIDER_CONFIG = {"sort": "latency", "allow_fallbacks": True}
 
 # JSON schema for structured output mode
 REASONING_SCHEMA = {
@@ -51,9 +55,12 @@ REASONING_SCHEMA = {
     "additionalProperties": False,
 }
 
-# Cost per token (GPT-4o via OpenRouter)
-PROMPT_COST_PER_TOKEN = 2.50 / 1_000_000
-COMPLETION_COST_PER_TOKEN = 10.00 / 1_000_000
+# Cost per token (Qwen3 VL 235B via OpenRouter)
+PROMPT_COST_PER_TOKEN = 0.18 / 1_000_000
+COMPLETION_COST_PER_TOKEN = 0.18 / 1_000_000
+# GPT-4o costs for fallback tracking
+_FALLBACK_PROMPT_COST = 2.50 / 1_000_000
+_FALLBACK_COMPLETION_COST = 10.00 / 1_000_000
 
 OUTPUT_FORMAT_PLAINTEXT = """\
 Respond with ONLY plain text. No JSON, no markdown, no labels, no prefixes.
@@ -363,13 +370,13 @@ def _is_later_part(label: str, active_part: str, part_order: list[str]) -> bool:
 
 
 
-def _get_client(vision: bool = False) -> LLMClient:
-    """Return an LLM client. Single model (GPT-4o) for both text and vision."""
+def _get_client(vision: bool = False, model: str | None = None) -> LLMClient:
+    """Return an LLM client for reasoning."""
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise RuntimeError("OPENROUTER_API_KEY not set")
-    model = _model_override or REASONING_MODEL
-    return LLMClient(api_key=api_key, model=model, base_url=OPENROUTER_BASE_URL)
+    resolved_model = model or _model_override or REASONING_MODEL
+    return LLMClient(api_key=api_key, model=resolved_model, base_url=OPENROUTER_BASE_URL)
 
 
 async def build_context(session_id: str, page: int) -> ReasoningContext:
@@ -743,10 +750,29 @@ async def build_context_structured(session_id: str, page: int) -> list[dict]:
     return sections
 
 
-async def run_reasoning(session_id: str, page: int) -> dict:
-    """Run the reasoning model and log the result.
+def _detect_action_from_partial_json(accumulated: str) -> str | None:
+    """Try to detect action from partial JSON streaming response.
 
-    Returns {"action": "speak"|"silent", "message": "..."}.
+    Looks for "action": "silent" or "action": "speak" in the accumulated tokens.
+    Returns "silent", "speak", or None if not yet determinable.
+    """
+    lower = accumulated.lower()
+    # Match "action" followed by colon and quoted value
+    match = re.search(r'"action"\s*:\s*"(silent|speak)"', lower)
+    if match:
+        return match.group(1)
+    return None
+
+
+async def run_reasoning(session_id: str, page: int) -> dict:
+    """Run the reasoning model with streaming early-exit and log the result.
+
+    Uses streaming to detect "silent" responses early and short-circuit,
+    avoiding the need to wait for the full response (~70-80% of calls).
+    8s timeout caps worst-case latency with safe "silent" default.
+
+    Returns {"action": "speak"|"silent", "message": "...", "delay_ms": N,
+             "early_exit": bool, "ttft": float}.
     """
     t_run_start = time.perf_counter()
     ctx = await build_context(session_id, page)
@@ -757,29 +783,66 @@ async def run_reasoning(session_id: str, page: int) -> dict:
     has_images = bool(ctx.images)
     use_structured = _use_structured_output
     client = _get_client(vision=has_images)
-    backend = "openrouter"
     sys_prompt = _get_system_prompt(structured=use_structured)
 
-    # Call LLM
+    # Stream with early-exit
+    raw_tokens: list[str] = []
+    action_detected: str | None = None
+    early_exit = False
+    timed_out = False
+    t_first_token: float | None = None
+
     t_llm_start = time.perf_counter()
-    raw = await asyncio.to_thread(
-        client.generate,
-        prompt=ctx.text,
-        images=ctx.images or None,
-        system_message=sys_prompt,
-        temperature=0.3,
-        response_schema=REASONING_SCHEMA if use_structured else None,
-    )
+    try:
+        async with asyncio.timeout(8.0):
+            async for token in client.agenerate_stream(
+                prompt=ctx.text,
+                images=ctx.images or None,
+                system_message=sys_prompt,
+                temperature=0.3,
+                response_schema=REASONING_SCHEMA if use_structured else None,
+                extra_body={"provider": OPENROUTER_PROVIDER_CONFIG},
+            ):
+                if t_first_token is None:
+                    t_first_token = time.perf_counter()
+                raw_tokens.append(token)
+
+                # Try to detect action from partial structured JSON
+                if action_detected is None and use_structured:
+                    accumulated = "".join(raw_tokens)
+                    action_detected = _detect_action_from_partial_json(accumulated)
+
+                    if action_detected == "silent":
+                        early_exit = True
+                        break
+    except TimeoutError:
+        timed_out = True
+        print(f"[reasoning] ({session_id}, page={page}): 8s timeout — defaulting to silent")
     t_llm_end = time.perf_counter()
 
-    if use_structured:
-        action, message, delay_ms = _parse_structured_response(raw)
+    ttft = (t_first_token - t_llm_start) if t_first_token else None
+
+    # Parse the response
+    full_raw = "".join(raw_tokens)
+    if timed_out:
+        action, message, delay_ms = "silent", "Timeout — safe default", 0
+    elif early_exit:
+        action, message, delay_ms = "silent", full_raw.strip() or "Early exit", 0
+        # Try to extract the message field from partial JSON
+        try:
+            msg_match = re.search(r'"message"\s*:\s*"([^"]*)"', full_raw)
+            if msg_match:
+                message = msg_match.group(1)
+        except Exception:
+            pass
+    elif use_structured:
+        action, message, delay_ms = _parse_structured_response(full_raw)
     else:
-        action, message, delay_ms = _parse_response(raw)
+        action, message, delay_ms = _parse_response(full_raw)
 
     # Estimate tokens for cost tracking
     prompt_tokens = len(ctx.text.split()) + len(SYSTEM_PROMPT.split())
-    completion_tokens = len(raw.split())
+    completion_tokens = len(full_raw.split())
     estimated_cost = (
         prompt_tokens * PROMPT_COST_PER_TOKEN
         + completion_tokens * COMPLETION_COST_PER_TOKEN
@@ -804,17 +867,19 @@ async def run_reasoning(session_id: str, page: int) -> dict:
             )
     t_db_end = time.perf_counter()
 
+    ttft_str = f"{ttft:.2f}s" if ttft is not None else "n/a"
     print(
         f"[reasoning] ({session_id}, page={page}): "
         f"action={action}, delay={delay_ms}ms, "
+        f"early_exit={early_exit}, ttft={ttft_str}, "
         f"message={message[:80]}, "
         f"tokens={prompt_tokens}+{completion_tokens}, cost=${estimated_cost:.4f}"
     )
     print(
         f"[latency] run_reasoning ({session_id}, p={page}): "
-        f"backend={backend}, "
         f"build_context={t_after_ctx - t_run_start:.3f}s, "
         f"llm={t_llm_end - t_llm_start:.1f}s, "
+        f"ttft={ttft_str}, early_exit={early_exit}, "
         f"db_log={t_db_end - t_db_start:.3f}s, "
         f"total={t_db_end - t_run_start:.1f}s"
     )
@@ -823,11 +888,17 @@ async def run_reasoning(session_id: str, page: int) -> dict:
         "action": action,
         "message": message,
         "delay_ms": delay_ms,
+        "early_exit": early_exit,
+        "ttft": ttft,
     }
 
 
 async def run_question_reasoning(session_id: str, page: int, question: str) -> dict:
     """Run the reasoning model in response to a student's voice question.
+
+    Uses provider routing for lower latency. Falls back to GPT-4o if
+    the primary model times out (6s), since the student asked a question
+    and we can't stay silent.
 
     Returns {"action": "speak", "message": "..."}.
     """
@@ -838,18 +909,39 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
     context_text += f"\n\n## Student's Question\n\"{question}\""
 
     has_images = bool(ctx.images)
-    client = _get_client(vision=has_images)
     use_structured = _use_structured_output
     sys_prompt = _get_system_prompt(structured=use_structured) + QUESTION_PROMPT_ADDENDUM
 
-    raw = await asyncio.to_thread(
-        client.generate,
-        prompt=context_text,
-        images=ctx.images or None,
-        system_message=sys_prompt,
-        temperature=0.3,
-        response_schema=REASONING_SCHEMA if use_structured else None,
-    )
+    # Try primary model with timeout, fall back to GPT-4o
+    used_fallback = False
+    t_llm_start = time.perf_counter()
+    try:
+        client = _get_client(vision=has_images)
+        raw = await asyncio.wait_for(
+            asyncio.to_thread(
+                client.generate,
+                prompt=context_text,
+                images=ctx.images or None,
+                system_message=sys_prompt,
+                temperature=0.3,
+                response_schema=REASONING_SCHEMA if use_structured else None,
+                extra_body={"provider": OPENROUTER_PROVIDER_CONFIG},
+            ),
+            timeout=6.0,
+        )
+    except (TimeoutError, asyncio.TimeoutError):
+        print(f"[reasoning] QUESTION ({session_id}, page={page}): primary model timeout, falling back to {FALLBACK_MODEL}")
+        used_fallback = True
+        client = _get_client(vision=has_images, model=FALLBACK_MODEL)
+        raw = await asyncio.to_thread(
+            client.generate,
+            prompt=context_text,
+            images=ctx.images or None,
+            system_message=sys_prompt,
+            temperature=0.3,
+            response_schema=REASONING_SCHEMA if use_structured else None,
+        )
+    t_llm_end = time.perf_counter()
 
     # Force action to "speak" — the student asked a question, always respond
     if use_structured:
@@ -862,10 +954,16 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
 
     prompt_tokens = len(context_text.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
     completion_tokens = len(raw.split())
-    estimated_cost = (
-        prompt_tokens * PROMPT_COST_PER_TOKEN
-        + completion_tokens * COMPLETION_COST_PER_TOKEN
-    )
+    if used_fallback:
+        estimated_cost = (
+            prompt_tokens * _FALLBACK_PROMPT_COST
+            + completion_tokens * _FALLBACK_COMPLETION_COST
+        )
+    else:
+        estimated_cost = (
+            prompt_tokens * PROMPT_COST_PER_TOKEN
+            + completion_tokens * COMPLETION_COST_PER_TOKEN
+        )
 
     # Log to DB
     pool = get_pool()
@@ -884,9 +982,11 @@ async def run_question_reasoning(session_id: str, page: int, question: str) -> d
                 "voice_question", question, 0,
             )
 
+    fallback_str = f" [FALLBACK={FALLBACK_MODEL}]" if used_fallback else ""
     print(
         f"[reasoning] QUESTION ({session_id}, page={page}): "
         f"q=\"{question[:60]}\", answer={message[:80]}, "
+        f"llm={t_llm_end - t_llm_start:.1f}s{fallback_str}, "
         f"tokens={prompt_tokens}+{completion_tokens}, cost=${estimated_cost:.4f}"
     )
 
@@ -917,6 +1017,8 @@ async def run_question_reasoning_streaming(
     Plain text output — no JSON parsing needed. Detects sentence boundaries
     and puts each complete sentence into the queue for TTS.
     Sends None sentinel when done.
+
+    Falls back to GPT-4o if no first token received within 6 seconds.
     """
     ctx = await build_context(session_id, page)
     context_text = ctx.text if ctx.text else "No problem context available."
@@ -929,17 +1031,29 @@ async def run_question_reasoning_streaming(
     # Accumulate full raw response for logging
     raw_tokens: list[str] = []
     message_buffer = ""
+    used_fallback = False
+    t_first_token: float | None = None
 
     # Streaming always uses plaintext format (can't stream structured JSON)
-    stream_gen = client.agenerate_stream(
-        prompt=context_text,
-        images=ctx.images or None,
-        system_message=_get_system_prompt(structured=False) + QUESTION_PROMPT_ADDENDUM,
-        temperature=0.3,
-    )
+    sys_prompt = _get_system_prompt(structured=False) + QUESTION_PROMPT_ADDENDUM
 
+    t_llm_start = time.perf_counter()
     try:
-        async for token in stream_gen:
+        got_first_token = False
+        async for token in client.agenerate_stream(
+            prompt=context_text,
+            images=ctx.images or None,
+            system_message=sys_prompt,
+            temperature=0.3,
+            extra_body={"provider": OPENROUTER_PROVIDER_CONFIG},
+        ):
+            if not got_first_token:
+                t_first_token = time.perf_counter()
+                ttft = t_first_token - t_llm_start
+                if ttft > 6.0:
+                    # Too slow — fall back to GPT-4o
+                    raise TimeoutError("First token took too long")
+                got_first_token = True
             raw_tokens.append(token)
             message_buffer += token
             message_buffer = _flush_sentences(message_buffer, tts_queue)
@@ -950,11 +1064,37 @@ async def run_question_reasoning_streaming(
         if remainder:
             tts_queue.put_nowait(remainder + ".")
 
-    except Exception as e:
-        print(f"[reasoning] Streaming failed: {e}")
+    except (TimeoutError, Exception) as e:
+        is_timeout = isinstance(e, TimeoutError)
+        if is_timeout and not raw_tokens:
+            # No tokens received — fall back to GPT-4o non-streaming
+            print(f"[reasoning] STREAM QUESTION ({session_id}, page={page}): first-token timeout, falling back to {FALLBACK_MODEL}")
+            used_fallback = True
+            try:
+                fallback_client = _get_client(vision=has_images, model=FALLBACK_MODEL)
+                raw = await asyncio.to_thread(
+                    fallback_client.generate,
+                    prompt=context_text,
+                    images=ctx.images or None,
+                    system_message=sys_prompt,
+                    temperature=0.3,
+                )
+                # Push entire response as one sentence
+                _, fb_msg, _ = _parse_response(raw)
+                if not fb_msg:
+                    fb_msg = raw.strip()
+                if fb_msg:
+                    tts_queue.put_nowait(fb_msg)
+                raw_tokens = [raw]
+            except Exception as fb_e:
+                print(f"[reasoning] Fallback also failed: {fb_e}")
+        elif not is_timeout:
+            print(f"[reasoning] Streaming failed: {e}")
     finally:
         # Always send sentinel so TTS endpoint stops waiting
         await tts_queue.put(None)
+
+    t_llm_end = time.perf_counter()
 
     full_raw = "".join(raw_tokens)
     _, message, _ = _parse_response(full_raw)
@@ -964,10 +1104,16 @@ async def run_question_reasoning_streaming(
 
     prompt_tokens = len(context_text.split()) + len(SYSTEM_PROMPT.split()) + len(QUESTION_PROMPT_ADDENDUM.split())
     completion_tokens = len(full_raw.split())
-    estimated_cost = (
-        prompt_tokens * PROMPT_COST_PER_TOKEN
-        + completion_tokens * COMPLETION_COST_PER_TOKEN
-    )
+    if used_fallback:
+        estimated_cost = (
+            prompt_tokens * _FALLBACK_PROMPT_COST
+            + completion_tokens * _FALLBACK_COMPLETION_COST
+        )
+    else:
+        estimated_cost = (
+            prompt_tokens * PROMPT_COST_PER_TOKEN
+            + completion_tokens * COMPLETION_COST_PER_TOKEN
+        )
 
     pool = get_pool()
     if pool:
@@ -985,8 +1131,11 @@ async def run_question_reasoning_streaming(
                 "voice_question", question, 0,
             )
 
+    fallback_str = f" [FALLBACK={FALLBACK_MODEL}]" if used_fallback else ""
+    ttft_str = f"{t_first_token - t_llm_start:.2f}s" if t_first_token else "n/a"
     print(
         f"[reasoning] STREAM QUESTION ({session_id}, page={page}): "
         f"q=\"{question[:60]}\", answer={message[:80]}, "
+        f"llm={t_llm_end - t_llm_start:.1f}s, ttft={ttft_str}{fallback_str}, "
         f"tokens={prompt_tokens}+{completion_tokens}, cost=${estimated_cost:.4f}"
     )
