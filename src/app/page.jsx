@@ -426,7 +426,7 @@ export default function Home() {
       </section>
 
       {/* 10. Footer */}
-      <FooterResponsive />
+      <FooterResponsive style={{ backgroundColor: "rgb(255, 229, 217)" }} />
     </>
   )
 }
