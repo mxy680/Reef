@@ -379,6 +379,12 @@ footer.framer-1fiw38h {
   max-width: 380px;
 }
 
+/* Ghost/outline style for pricing card CTA buttons */
+.pricing-cards-row .framer-CQKIS.framer-2m28gd {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* CTA section */
 
 .cta-card {
