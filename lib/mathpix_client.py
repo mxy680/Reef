@@ -48,6 +48,9 @@ _pending_speak: dict[tuple[str, int], asyncio.Task] = {}
 # (session_id, page) → asyncio.Event set when transcription finishes
 _transcription_ready: dict[tuple[str, int], asyncio.Event] = {}
 
+# (session_id, page) → asyncio.Task running run_reasoning() eagerly (starts after transcription)
+_eager_reasoning_tasks: dict[tuple[str, int], asyncio.Task] = {}
+
 
 def _get_credentials() -> tuple[str, str]:
     app_id = os.environ.get("MATHPIX_APP_ID", "")
@@ -107,6 +110,9 @@ def invalidate_session(session_id: str, page: int) -> None:
     r_task = _reasoning_tasks.pop(key, None)
     if r_task:
         r_task.cancel()
+    e_task = _eager_reasoning_tasks.pop(key, None)
+    if e_task:
+        e_task.cancel()
     print(f"[mathpix] invalidated session ({session_id}, page={page})")
 
 
@@ -139,6 +145,12 @@ def cleanup_sessions(session_id: str) -> None:
         r_task = _reasoning_tasks.pop(key, None)
         if r_task:
             r_task.cancel()
+    # Clean up eager reasoning tasks for this session
+    eager_keys = [k for k in _eager_reasoning_tasks if k[0] == session_id]
+    for key in eager_keys:
+        e_task = _eager_reasoning_tasks.pop(key, None)
+        if e_task:
+            e_task.cancel()
     # Clean up stroke hashes for this session
     hash_keys = [k for k in _last_stroke_hash if k[0] == session_id]
     for key in hash_keys:
@@ -188,24 +200,33 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
     _reasoning_tasks.pop(key, None)
     t_debounce_end = time.perf_counter()
 
-    # Wait for transcription to finish (should already be done after 1.5s)
-    key = (session_id, page)
-    event = _transcription_ready.get(key)
-    t_wait_start = time.perf_counter()
-    if event and not event.is_set():
-        try:
-            await asyncio.wait_for(event.wait(), timeout=10.0)
-        except asyncio.TimeoutError:
-            print(f"[reasoning] transcription wait timed out for ({session_id}, page={page})")
-    t_wait_end = time.perf_counter()
-    waited_for_tx = t_wait_end - t_wait_start
+    # Try to use the eager reasoning result (started when transcription completed)
+    eager_task = _eager_reasoning_tasks.pop(key, None)
+    t_reasoning_start = time.perf_counter()
+    eager_hit = False
 
     try:
         from lib.reasoning import run_reasoning
         from api.reasoning import push_reasoning
 
-        t_reasoning_start = time.perf_counter()
-        result = await run_reasoning(session_id, page)
+        if eager_task and not eager_task.cancelled():
+            try:
+                result = await asyncio.wait_for(eager_task, timeout=10.0)
+                eager_hit = True
+            except (asyncio.TimeoutError, asyncio.CancelledError, Exception) as e:
+                print(f"[reasoning] eager task failed/timeout, running fresh ({session_id}, page={page}): {e}")
+                result = await run_reasoning(session_id, page)
+        else:
+            # No eager task (e.g. cancelled between transcription and debounce) — run fresh
+            # Still wait for transcription to be done
+            event = _transcription_ready.get(key)
+            if event and not event.is_set():
+                try:
+                    await asyncio.wait_for(event.wait(), timeout=10.0)
+                except asyncio.TimeoutError:
+                    print(f"[reasoning] transcription wait timed out ({session_id}, page={page})")
+            result = await run_reasoning(session_id, page)
+
         t_reasoning_end = time.perf_counter()
 
         # If new strokes arrived while we were reasoning, discard the result
@@ -237,11 +258,11 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
         ttft = result.get("ttft")
         ttft_str = f", ttft={ttft:.2f}s" if ttft is not None else ""
         early_str = f", early_exit=true" if early_exit else ""
-        wait_str = f", tx_wait={waited_for_tx:.3f}s" if waited_for_tx > 0.01 else ""
+        eager_str = " (eager, precomputed)" if eager_hit else ""
         print(
             f"[latency] reasoning pipeline ({session_id}, p={page}): "
-            f"debounce={t_debounce_end - t_debounce_start:.1f}s{wait_str}, "
-            f"reasoning={t_reasoning_end - t_reasoning_start:.1f}s{ttft_str}{early_str}, "
+            f"debounce={t_debounce_end - t_debounce_start:.1f}s, "
+            f"reasoning={t_reasoning_end - t_reasoning_start:.1f}s{eager_str}{ttft_str}{early_str}, "
             f"push={t_push_end - t_push_start:.3f}s, "
             f"action={action}, delay={delay_ms}ms"
         )
@@ -277,6 +298,10 @@ def schedule_transcribe(session_id: str, page: int) -> None:
     existing = _debounce_tasks.pop(key, None)
     if existing:
         existing.cancel()
+    # Cancel eager reasoning (will restart after new transcription completes)
+    eager = _eager_reasoning_tasks.pop(key, None)
+    if eager:
+        eager.cancel()
     # Reset the ready event so reasoning knows to wait
     _transcription_ready[key] = asyncio.Event()
     _debounce_tasks[key] = asyncio.create_task(
@@ -290,6 +315,31 @@ def _signal_transcription_done(session_id: str, page: int) -> None:
     event = _transcription_ready.get(key)
     if event:
         event.set()
+    # Start eager reasoning with fresh transcription
+    _start_eager_reasoning(session_id, page)
+
+
+def _start_eager_reasoning(session_id: str, page: int) -> None:
+    """Cancel any previous eager task and start a new one."""
+    key = (session_id, page)
+    old = _eager_reasoning_tasks.pop(key, None)
+    if old:
+        old.cancel()
+    _eager_reasoning_tasks[key] = asyncio.create_task(
+        _run_eager_reasoning(session_id, page)
+    )
+
+
+async def _run_eager_reasoning(session_id: str, page: int) -> dict:
+    """Run reasoning eagerly. Result is consumed by _debounced_reasoning."""
+    try:
+        from lib.reasoning import run_reasoning
+        return await run_reasoning(session_id, page)
+    except asyncio.CancelledError:
+        raise
+    except Exception as e:
+        print(f"[reasoning] eager reasoning error ({session_id}, page={page}): {e}")
+        return {"action": "silent", "message": f"Eager reasoning failed: {e}"}
 
 
 async def _run_transcribe(session_id: str, page: int) -> None:

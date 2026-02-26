@@ -11,11 +11,14 @@ import respx
 from lib.mathpix_client import (
     MathpixSession,
     _debounce_tasks,
+    _eager_reasoning_tasks,
     _erase_snapshots,
     _last_stroke_hash,
     _pending_speak,
     _reasoning_tasks,
     _sessions,
+    _signal_transcription_done,
+    _transcription_ready,
     cleanup_sessions,
     create_session,
     get_or_create_session,
@@ -98,8 +101,10 @@ class TestInvalidateSession:
         _last_stroke_hash[key] = "abc123"
         debounce_task = asyncio.ensure_future(asyncio.sleep(100))
         reasoning_task = asyncio.ensure_future(asyncio.sleep(100))
+        eager_task = asyncio.ensure_future(asyncio.sleep(100))
         _debounce_tasks[key] = debounce_task
         _reasoning_tasks[key] = reasoning_task
+        _eager_reasoning_tasks[key] = eager_task
 
         try:
             invalidate_session("sid", 1)
@@ -108,15 +113,19 @@ class TestInvalidateSession:
             assert key not in _last_stroke_hash
             assert key not in _debounce_tasks
             assert key not in _reasoning_tasks
+            assert key not in _eager_reasoning_tasks
             assert debounce_task.cancelling() > 0
             assert reasoning_task.cancelling() > 0
+            assert eager_task.cancelling() > 0
         finally:
             _sessions.pop(key, None)
             _last_stroke_hash.pop(key, None)
             _debounce_tasks.pop(key, None)
             _reasoning_tasks.pop(key, None)
+            _eager_reasoning_tasks.pop(key, None)
             debounce_task.cancel()
             reasoning_task.cancel()
+            eager_task.cancel()
 
 
 class TestDiagramModeSkipsMathpix:
@@ -492,3 +501,156 @@ class TestDebouncedReasoningDelayMs:
             task = _pending_speak.pop(key, None)
             if task:
                 task.cancel()
+
+
+class TestEagerReasoning:
+    async def test_signal_transcription_done_starts_eager_task(self, monkeypatch):
+        """_signal_transcription_done should start an eager reasoning task."""
+        reasoning_calls = []
+
+        async def fake_run_reasoning(sid, page):
+            reasoning_calls.append((sid, page))
+            return {"action": "silent", "message": ""}
+
+        monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
+
+        key = ("sid", 1)
+        _transcription_ready[key] = asyncio.Event()
+        _eager_reasoning_tasks.pop(key, None)
+
+        try:
+            _signal_transcription_done("sid", 1)
+
+            # Event should be set
+            assert _transcription_ready[key].is_set()
+            # Eager task should exist
+            assert key in _eager_reasoning_tasks
+            task = _eager_reasoning_tasks[key]
+            assert not task.done()
+
+            # Let it complete
+            result = await task
+            assert result == {"action": "silent", "message": ""}
+            assert reasoning_calls == [("sid", 1)]
+        finally:
+            _transcription_ready.pop(key, None)
+            t = _eager_reasoning_tasks.pop(key, None)
+            if t and not t.done():
+                t.cancel()
+
+    async def test_debounced_reasoning_uses_eager_result(self, monkeypatch):
+        """_debounced_reasoning should await the eager task instead of calling run_reasoning fresh."""
+        monkeypatch.setattr("lib.mathpix_client.REASONING_DEBOUNCE_SECONDS", 0)
+
+        fresh_calls = []
+
+        async def fake_run_reasoning(sid, page):
+            fresh_calls.append((sid, page))
+            return {"action": "silent", "message": "fresh"}
+
+        monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
+
+        pushed = []
+
+        async def fake_push(sid, action, message):
+            pushed.append((sid, action, message))
+
+        monkeypatch.setattr("api.reasoning.push_reasoning", fake_push)
+
+        key = ("sid", 1)
+
+        # Pre-populate an eager task with a ready result
+        async def eager_coro():
+            return {"action": "speak", "message": "eager result", "delay_ms": 0}
+
+        _eager_reasoning_tasks[key] = asyncio.create_task(eager_coro())
+        # Let the eager task complete
+        await asyncio.sleep(0)
+
+        try:
+            from lib.mathpix_client import _debounced_reasoning
+            await _debounced_reasoning("sid", 1)
+
+            # Should have used the eager result, not called run_reasoning fresh
+            assert len(fresh_calls) == 0
+            assert len(pushed) == 1
+            assert pushed[0] == ("sid", "speak", "eager result")
+        finally:
+            _eager_reasoning_tasks.pop(key, None)
+            _pending_speak.pop(key, None)
+
+    async def test_debounced_reasoning_falls_back_on_cancelled_eager(self, monkeypatch):
+        """If eager task was cancelled, _debounced_reasoning should run reasoning fresh."""
+        monkeypatch.setattr("lib.mathpix_client.REASONING_DEBOUNCE_SECONDS", 0)
+
+        async def fake_run_reasoning(sid, page):
+            return {"action": "silent", "message": "fresh fallback"}
+
+        monkeypatch.setattr("lib.reasoning.run_reasoning", fake_run_reasoning)
+        monkeypatch.setattr("api.reasoning.push_reasoning", lambda *a: None)
+
+        key = ("sid", 1)
+        # Set transcription ready so the fallback path doesn't block
+        _transcription_ready[key] = asyncio.Event()
+        _transcription_ready[key].set()
+        # No eager task
+        _eager_reasoning_tasks.pop(key, None)
+
+        try:
+            from lib.mathpix_client import _debounced_reasoning
+            await _debounced_reasoning("sid", 1)
+            # Should complete without error (fell back to fresh reasoning)
+        finally:
+            _transcription_ready.pop(key, None)
+            _eager_reasoning_tasks.pop(key, None)
+
+    async def test_schedule_transcribe_cancels_eager_task(self, monkeypatch):
+        """schedule_transcribe should cancel any in-flight eager reasoning."""
+        key = ("sid", 1)
+        eager_task = asyncio.ensure_future(asyncio.sleep(100))
+        _eager_reasoning_tasks[key] = eager_task
+
+        # Stub _run_transcribe so schedule_transcribe doesn't actually transcribe
+        async def fake_transcribe(sid, page):
+            pass
+
+        monkeypatch.setattr("lib.mathpix_client._run_transcribe", fake_transcribe)
+
+        from lib.mathpix_client import schedule_transcribe
+
+        try:
+            schedule_transcribe("sid", 1)
+            assert key not in _eager_reasoning_tasks
+            assert eager_task.cancelling() > 0
+        finally:
+            _eager_reasoning_tasks.pop(key, None)
+            _debounce_tasks.pop(key, None)
+            _transcription_ready.pop(key, None)
+            eager_task.cancel()
+
+
+class TestEagerReasoningCleanup:
+    async def test_cleanup_sessions_cancels_eager_tasks(self):
+        key1 = ("sid", 1)
+        key2 = ("sid", 2)
+        other = ("other", 1)
+        t1 = asyncio.ensure_future(asyncio.sleep(100))
+        t2 = asyncio.ensure_future(asyncio.sleep(100))
+        t3 = asyncio.ensure_future(asyncio.sleep(100))
+        _eager_reasoning_tasks[key1] = t1
+        _eager_reasoning_tasks[key2] = t2
+        _eager_reasoning_tasks[other] = t3
+        try:
+            cleanup_sessions("sid")
+            assert key1 not in _eager_reasoning_tasks
+            assert key2 not in _eager_reasoning_tasks
+            assert other in _eager_reasoning_tasks
+            assert t1.cancelling() > 0
+            assert t2.cancelling() > 0
+        finally:
+            _eager_reasoning_tasks.pop(key1, None)
+            _eager_reasoning_tasks.pop(key2, None)
+            _eager_reasoning_tasks.pop(other, None)
+            t1.cancel()
+            t2.cancel()
+            t3.cancel()
