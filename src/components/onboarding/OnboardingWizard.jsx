@@ -11,10 +11,10 @@ import StepSubjects from "./StepSubjects"
 import StepReferral from "./StepReferral"
 
 const colors = {
-  tealSoft: "rgb(214, 243, 241)",
+  blueSoft: "rgb(215, 233, 244)",
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
-  slateBlueSoft: "rgb(225, 232, 245)",
+  peach: "rgb(255, 229, 217)",
 }
 
 const slideVariants = {
@@ -74,7 +74,7 @@ export default function OnboardingWizard({ user }) {
       style={{
         width: "100%",
         minHeight: "100vh",
-        backgroundColor: colors.tealSoft,
+        backgroundColor: colors.blueSoft,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

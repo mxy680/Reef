@@ -10,15 +10,13 @@ import { createClient } from "../../lib/supabase/client"
 const fontFamily = `"Epilogue", sans-serif`
 
 const colors = {
-  coral: "rgb(235, 140, 115)",
-  teal: "rgb(50, 172, 166)",
+  blue: "rgb(95, 168, 211)",
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
-  deepSea: "rgb(21, 49, 75)",
+  steel: "rgb(27, 73, 101)",
   gray: "rgb(119, 119, 119)",
-  tealSoft: "rgb(214, 243, 241)",
-  slateBlue: "rgb(165, 185, 220)",
-  slateBlueSoft: "rgb(225, 232, 245)",
+  blueSoft: "rgb(215, 233, 244)",
+  peach: "rgb(255, 229, 217)",
 }
 
 const staggerBase = 0.3
@@ -71,7 +69,7 @@ export default function SignupPage() {
       style={{
         width: "100%",
         minHeight: "100vh",
-        backgroundColor: colors.tealSoft,
+        backgroundColor: colors.blueSoft,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -98,7 +96,7 @@ export default function SignupPage() {
           fontWeight: 600,
           fontSize: 14,
           letterSpacing: "-0.02em",
-          color: colors.deepSea,
+          color: colors.steel,
           textDecoration: "none",
           cursor: "pointer",
           opacity: 0.6,
@@ -137,7 +135,7 @@ export default function SignupPage() {
               lineHeight: "1.2em",
               letterSpacing: "-0.04em",
               textTransform: "uppercase",
-              color: colors.deepSea,
+              color: colors.steel,
               margin: 0,
               marginBottom: 6,
               textAlign: "center",
@@ -224,7 +222,7 @@ export default function SignupPage() {
             onClick={handleMagicLink}
             disabled={loading}
             whileHover={{
-              backgroundColor: "rgb(220, 90, 60)",
+              backgroundColor: "rgb(27, 73, 101)",
               boxShadow: "2px 2px 0px 0px rgb(0, 0, 0)",
             }}
             whileTap={{
@@ -236,7 +234,7 @@ export default function SignupPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: colors.coral,
+              backgroundColor: colors.blue,
               border: `2px solid ${colors.black}`,
               borderRadius: 0,
               padding: "14px 16px",
@@ -275,7 +273,7 @@ export default function SignupPage() {
             <a
               href="/auth"
               style={{
-                color: colors.teal,
+                color: colors.blue,
                 textDecoration: "none",
                 cursor: "pointer",
                 fontWeight: 700,
@@ -309,7 +307,7 @@ export default function SignupPage() {
               gap: 8,
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.teal} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.blue} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             <span
@@ -318,7 +316,7 @@ export default function SignupPage() {
                 fontWeight: 500,
                 fontSize: 13,
                 letterSpacing: "-0.02em",
-                color: colors.deepSea,
+                color: colors.steel,
                 opacity: 0.7,
               }}
             >

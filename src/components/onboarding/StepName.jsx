@@ -6,12 +6,11 @@ import InputField from "../signup/InputField"
 const fontFamily = `"Epilogue", sans-serif`
 
 const colors = {
-  coral: "rgb(235, 140, 115)",
+  blue: "rgb(95, 168, 211)",
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
-  deepSea: "rgb(21, 49, 75)",
+  steel: "rgb(27, 73, 101)",
   gray: "rgb(119, 119, 119)",
-  slateBlue: "rgb(165, 185, 220)",
 }
 
 export default function StepName({ value, onChange, onNext }) {
@@ -34,7 +33,7 @@ export default function StepName({ value, onChange, onNext }) {
           lineHeight: "1.2em",
           letterSpacing: "-0.04em",
           textTransform: "uppercase",
-          color: colors.deepSea,
+          color: colors.steel,
           margin: 0,
           marginBottom: 8,
         }}
@@ -73,7 +72,7 @@ export default function StepName({ value, onChange, onNext }) {
         style={{
           width: "100%",
           height: 48,
-          backgroundColor: value.trim() ? colors.coral : "rgb(230, 230, 230)",
+          backgroundColor: value.trim() ? colors.blue : "rgb(230, 230, 230)",
           border: `2px solid ${colors.black}`,
           borderRadius: 0,
           boxShadow: `4px 4px 0px 0px ${colors.black}`,

@@ -1,8 +1,7 @@
 "use client"
 
 const colors = {
-  teal: "rgb(50, 172, 166)",
-  slateBlue: "rgb(165, 185, 220)",
+  blue: "rgb(95, 168, 211)",
   gray: "rgb(200, 200, 200)",
 }
 
@@ -16,8 +15,8 @@ export default function ProgressBar({ step, total = 3 }) {
             width: 10,
             height: 10,
             borderRadius: "50%",
-            backgroundColor: i <= step ? colors.teal : "transparent",
-            border: `2px solid ${i <= step ? colors.teal : colors.gray}`,
+            backgroundColor: i <= step ? colors.blue : "transparent",
+            border: `2px solid ${i <= step ? colors.blue : colors.gray}`,
             transition: "all 0.3s ease",
           }}
         />

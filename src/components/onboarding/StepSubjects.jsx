@@ -5,13 +5,11 @@ import { motion } from "framer-motion"
 const fontFamily = `"Epilogue", sans-serif`
 
 const colors = {
-  coral: "rgb(235, 140, 115)",
-  teal: "rgb(50, 172, 166)",
+  blue: "rgb(95, 168, 211)",
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
-  deepSea: "rgb(21, 49, 75)",
+  steel: "rgb(27, 73, 101)",
   gray: "rgb(119, 119, 119)",
-  slateBlue: "rgb(165, 185, 220)",
 }
 
 const SUBJECTS = [
@@ -58,7 +56,7 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
           lineHeight: "1.2em",
           letterSpacing: "-0.04em",
           textTransform: "uppercase",
-          color: colors.deepSea,
+          color: colors.steel,
           margin: 0,
           marginBottom: 8,
         }}
@@ -99,14 +97,14 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
               transition={{ type: "spring", bounce: 0.3, duration: 0.3 }}
               style={{
                 padding: "8px 16px",
-                backgroundColor: selected ? colors.teal : colors.white,
-                border: `2px solid ${selected ? colors.teal : colors.black}`,
+                backgroundColor: selected ? colors.blue : colors.white,
+                border: `2px solid ${selected ? colors.blue : colors.black}`,
                 borderRadius: 999,
                 fontFamily,
                 fontWeight: 600,
                 fontSize: 13,
                 letterSpacing: "-0.04em",
-                color: selected ? colors.white : colors.deepSea,
+                color: selected ? colors.white : colors.steel,
                 cursor: "pointer",
               }}
             >
@@ -144,7 +142,7 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
           style={{
             padding: "12px 32px",
-            backgroundColor: canContinue ? colors.coral : "rgb(230, 230, 230)",
+            backgroundColor: canContinue ? colors.blue : "rgb(230, 230, 230)",
             border: `2px solid ${colors.black}`,
             borderRadius: 0,
             boxShadow: `4px 4px 0px 0px ${colors.black}`,
