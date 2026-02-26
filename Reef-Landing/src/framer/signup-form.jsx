@@ -210,6 +210,7 @@ function SignupForm(props) {
 						length: 120,
 					}).map((_, i) => (
 						<div
+							key={i}
 							style={{
 								position: "absolute",
 								width: 4,
@@ -267,6 +268,7 @@ function SignupForm(props) {
 						"No credit card required",
 					].map((text, i) => (
 						<div
+							key={i}
 							style={{
 								display: "flex",
 								alignItems: "center",

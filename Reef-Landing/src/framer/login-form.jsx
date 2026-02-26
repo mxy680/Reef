@@ -208,6 +208,7 @@ function LoginForm(props) {
 						length: 120,
 					}).map((_, i) => (
 						<div
+							key={i}
 							style={{
 								position: "absolute",
 								width: 4,
@@ -265,6 +266,7 @@ function LoginForm(props) {
 						"Guides without giving answers",
 					].map((text, i) => (
 						<div
+							key={i}
 							style={{
 								display: "flex",
 								alignItems: "center",
