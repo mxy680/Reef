@@ -34,8 +34,13 @@ export default function OAuthButton({ provider, label, delay = 0 }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay, ease: "easeOut" }}
-      whileHover={{ y: -2, boxShadow: "3px 3px 0px 0px rgb(0, 0, 0)" }}
+      whileHover={{
+        y: -2,
+        boxShadow: "4px 4px 0px 0px rgb(0, 0, 0)",
+        backgroundColor: "rgb(245, 245, 245)",
+      }}
       whileTap={{ y: 2, boxShadow: "0px 0px 0px 0px rgb(0, 0, 0)" }}
+      transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
       style={{
         flex: 1,
         height: 48,

@@ -248,12 +248,10 @@ export default function SignupForm() {
           <motion.button
             type="button"
             whileHover={{
-              backgroundColor: colors.teal,
-              y: 2,
+              backgroundColor: "rgb(220, 90, 60)",
               boxShadow: "2px 2px 0px 0px rgb(0, 0, 0)",
             }}
             whileTap={{
-              y: 4,
               boxShadow: "0px 0px 0px 0px rgb(0, 0, 0)",
             }}
             transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
