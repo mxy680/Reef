@@ -1,7 +1,7 @@
 "use client"
 
-import LoginForm from "../../framer/login-form"
+import LoginPage from "../../components/login/LoginPage"
 
 export default function AuthPage() {
-  return <LoginForm.Responsive />
+  return <LoginPage />
 }

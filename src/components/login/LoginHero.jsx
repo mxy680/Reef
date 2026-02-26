@@ -6,21 +6,18 @@ const fontFamily = `"Epilogue", sans-serif`
 
 const colors = {
   coral: "rgb(235, 140, 115)",
-  teal: "rgb(50, 172, 166)",
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
   deepSea: "rgb(21, 49, 75)",
-  tealSoft: "rgb(214, 243, 241)",
   coralSoft: "rgb(253, 228, 219)",
 }
 
 const valueProps = [
-  "Free during beta \u2014 all features included",
-  "Works with any subject or textbook",
-  "No credit card required",
+  "Sees your handwriting in real-time",
+  "Understands your thought process",
+  "Guides without giving answers",
 ]
 
-// 6x6 grid, wave in diagonally
 function GridPattern() {
   const size = 6
   return (
@@ -59,13 +56,13 @@ function CheckIcon() {
   )
 }
 
-export default function SignupHero() {
+export default function LoginHero() {
   return (
     <div
-      className="signup-hero-panel"
+      className="login-hero-panel"
       style={{
         flex: 1,
-        backgroundColor: colors.tealSoft,
+        backgroundColor: colors.coralSoft,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -119,7 +116,7 @@ export default function SignupHero() {
             overflow: "hidden",
             backgroundColor: colors.white,
             marginBottom: 28,
-            transform: "rotate(-2deg)",
+            transform: "rotate(2deg)",
           }}
         >
           <img
@@ -149,7 +146,7 @@ export default function SignupHero() {
             marginBottom: 28,
           }}
         >
-          AI-powered tutoring that adapts to how you think.
+          Your AI study partner that watches you work and guides you.
         </motion.p>
 
         {/* Value props */}
