@@ -1,8 +1,8 @@
 // -- Configurable palette -----------------------------------------
 // Change these three values to re-theme the entire site.
-export const primary = "#5FA8D3"     // buttons, CTAs, links, selected states
-export const accent  = "#1B4965"     // headings, hover states, badges, tags
-export const surface = "#FFE5D9"     // highlighted sections, soft fills
+export const primary = "#2A6F8E"     // buttons, CTAs, links, key interactive elements
+export const accent  = "#7EC8C8"     // tags, badges, hover states, progress bars, secondary highlights
+export const surface = "#FFE5D9"     // highlighted sections, feature cards, soft fills
 
 // -- Fixed palette ------------------------------------------------
 export const white   = "#ffffff"
