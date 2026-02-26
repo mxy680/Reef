@@ -240,12 +240,12 @@ footer.framer-1fiw38h {
 .how-it-works-step {
   display: flex;
   flex-direction: row;
-  gap: 60px;
+  gap: 100px;
   align-items: center;
 }
 
 .step-text {
-  flex: 1;
+  flex: 0 0 400px;
   min-width: 0;
   max-width: 400px;
   display: flex;
@@ -273,11 +273,10 @@ footer.framer-1fiw38h {
 
 /* Step illustration cards */
 .step-card {
-  flex: 0 0 500px;
-  width: 500px;
-  height: 360px;
-  border: 2px solid rgb(0, 0, 0);
-  box-shadow: 4px 4px 0px 0px rgb(0, 0, 0);
+  flex: 1 1 0px;
+  height: 450px;
+  border: 4px solid rgb(0, 0, 0);
+  box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -302,7 +301,7 @@ footer.framer-1fiw38h {
   height: 80%;
   background-color: rgb(255, 255, 255);
   border-radius: 8px;
-  border: 2px solid rgb(0, 0, 0);
+  border: 4px solid rgb(0, 0, 0);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -319,7 +318,7 @@ footer.framer-1fiw38h {
 .step-card-outline-inner {
   width: 80%;
   height: 80%;
-  border: 2px solid rgb(0, 0, 0);
+  border: 4px solid rgb(0, 0, 0);
   border-radius: 8px;
 }
 
@@ -445,7 +444,7 @@ footer.framer-1fiw38h {
   .step-card {
     flex: none;
     width: 100%;
-    height: 280px;
+    height: 320px;
   }
 
   .step-arrow-right,
