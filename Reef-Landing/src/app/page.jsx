@@ -34,8 +34,27 @@ export default function Home() {
     const onScroll = () => requestAnimationFrame(updateHeroTilt)
     window.addEventListener("scroll", onScroll, { passive: true })
 
+    // Intercept hash-link clicks for smooth scrolling
+    // Framer's Link component triggers full Next.js route navigations for
+    // anchor links, which causes a page remount instead of a scroll.
+    const handleClick = (e) => {
+      const link = e.target.closest("a[href]")
+      if (!link) return
+      const href = link.getAttribute("href")
+      if (!href || !href.startsWith("/#")) return
+      const id = href.slice(2)
+      const target = document.getElementById(id)
+      if (!target) return
+      e.preventDefault()
+      e.stopPropagation()
+      target.scrollIntoView({ behavior: "smooth" })
+      history.replaceState(null, "", href)
+    }
+    document.addEventListener("click", handleClick, true)
+
     return () => {
       window.removeEventListener("scroll", onScroll)
+      document.removeEventListener("click", handleClick, true)
     }
   }, [updateHeroTilt])
 

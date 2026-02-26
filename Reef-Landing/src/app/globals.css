@@ -16,7 +16,15 @@
   --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #d6f3f1;
 }
 
-/* scroll-behavior removed — Lenis handles smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide "Log In" text link from header nav and footer nav */
+.framer-eJKH2 .framer-182bq1x-container,
+.framer-lf0af2-container {
+  display: none !important;
+}
 
 * {
   box-sizing: border-box;
