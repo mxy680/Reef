@@ -211,7 +211,7 @@ export default function Home() {
                 <span className="step-badge">Step 1</span>
                 <h3 className="step-heading">UPLOAD YOUR COURSE MATERIALS</h3>
                 <p className="step-body">
-                  Drop in your syllabus, lecture slides, homework PDFs, or even photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. Your answer keys are extracted automatically — the AI uses them to check your work in real time.
+                  Drop in your syllabus, lecture slides, homework PDFs, or even photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. If a document has an answer key, it&rsquo;s extracted automatically — the AI uses it to check your work in real time.
                 </p>
               </div>
               <div className="step-card step-card-teal">
@@ -247,7 +247,7 @@ export default function Home() {
                 <span className="step-badge">Step 2</span>
                 <h3 className="step-heading">SOLVE PROBLEMS WITH AI BY YOUR SIDE</h3>
                 <p className="step-body">
-                  Open a homework and start writing with Apple Pencil — just like you would on paper. Reef&rsquo;s AI reads your handwriting in real time. When you pause, it checks your work against the answer key and speaks feedback out loud, like a tutor sitting next to you. No typing, no prompting, no breaking your flow.
+                  Open a homework and start writing with Apple Pencil — just like you would on paper. Reef&rsquo;s AI reads your handwriting in real time, understands the math and science behind it, and talks to you about your work out loud. It&rsquo;s a conversational tutor that guides you through mistakes, asks follow-up questions, and nudges you in the right direction — all without you ever leaving the page.
                 </p>
               </div>
             </div>
