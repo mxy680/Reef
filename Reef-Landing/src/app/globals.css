@@ -16,9 +16,7 @@
   --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #d6f3f1;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* scroll-behavior removed — Lenis handles smooth scrolling */
 
 * {
   box-sizing: border-box;

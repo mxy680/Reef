@@ -1,5 +1,7 @@
 import "../framer/styles.css"
+import "lenis/dist/lenis.css"
 import "./globals.css"
+import SmoothScroll from "../components/smooth-scroll"
 
 export const metadata = {
   title: "Reef — AI Tutoring for STEM Students",
@@ -10,7 +12,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SmoothScroll>{children}</SmoothScroll>
+      </body>
     </html>
   )
 }
