@@ -1,0 +1,35 @@
+{
+  "jsx": true,
+  "components": {
+    "badge": "https://framer.com/m/Badge-g8EREp.js@1ILJOTLkX2Zcr0vaStYX",
+    "testimonials-slider": "https://framer.com/m/Testimonials-Slider-FPtLTQ.js@SXbGiRMVuOXbj6qRA2TQ",
+    "testimonials-card": "https://framer.com/m/Testimonials-Card-drJBOS.js@ICwb34AEbdczDlHZVnyJ",
+    "features-card": "https://framer.com/m/Features-Card-bs6m9F.js@kyokBYobMHgAuxygGRtj",
+    "pattern": "https://framer.com/m/Pattern-mRGv0I.js@bSYxfOsiZMGaFhGaUc0k",
+    "button": "https://framer.com/m/Button-DScLE3.js@puzTr8YVuyDoWq6Y3iFh",
+    "navigation-link": "https://framer.com/m/Navigation-Link-HqCXug.js@TV9NCEmco57WxJActyZA",
+    "brand-logo": "https://framer.com/m/Brand-Logo-NX9Te2.js@jEF0oaMfu18iG8m6gxa8",
+    "pricing-card": "https://framer.com/m/Pricing-Card-uu0mke.js@0DcbGRquFbpzTgsoSJem",
+    "question": "https://framer.com/m/Question-lOr4ng.js@oX1eJYFn8GyZLsfLDCdc",
+    "accordion": "https://framer.com/m/Accordion-jrck3D.js@xw6WRASlWY4n5x3ZzhxR",
+    "social-icon": "https://framer.com/m/Social-Icon-xipjNo.js@WCWsjfwnAqsQOd1XXXLp",
+    "header": "https://framer.com/m/Header-unk4dD.js@qQeD1xLIdWy0w3qMq7hO",
+    "footer": "https://framer.com/m/Footer-hxwb5f.js@Fz56VXx5hUhkpzCMBe2D",
+    "hamburger-menu": "https://framer.com/m/Hamburger-Menu-zcfzT5.js@TkUZioDWylaRDXOFlHCr",
+    "navigation": "https://framer.com/m/Navigation-upbcAK.js@fqcgI7WEjviIsjieWX2S",
+    "integrations": "https://framer.com/m/Integrations-dhud5a.js@cRtK8y8OfdfPTkWNwpDb",
+    "button-form": "https://framer.com/m/Button-Form-Q59bjN.js@fQr5csclaUCy01VNBND4",
+    "login-form": "https://framer.com/m/LoginForm-VKzJiz.js@9TxbLMxGui4YYRXf1qgY",
+    "signup-form": "https://framer.com/m/SignupForm-hBgh3e.js@9DZC1Mp1vfYwcfdgNLNM"
+  },
+  "outDir": "src/framer",
+  "breakpoints": {
+    "base": 0,
+    "sm": 320,
+    "md": 810,
+    "lg": 1200,
+    "xl": 1200,
+    "2xl": 1536
+  },
+  "componentInstancesInIndexPage": []
+}

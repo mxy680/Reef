@@ -1,0 +1,440 @@
+/* Landing page layout styles */
+
+/* Framer design tokens (extracted from studyreef.com) */
+:root {
+  --token-14825bd6-f9b4-4846-afef-1af0cbf8c065: #000;
+  --token-10bc40bb-604b-41d4-b321-4b409afa6a9f: #eb8c73;
+  --token-e27a4cac-2b4d-4ad5-8c68-b6f48982239d: #f9f5f6;
+  --token-df3b0292-9153-4484-b1d6-f7e71cc31198: #15314b;
+  --token-8c15ab03-0228-43db-9adb-8c7e76c29ef3: #777;
+  --token-353de080-56da-4189-9321-c69d0ed1b3ed: #daf5f0;
+  --token-fdcc5b21-a997-46c1-a990-9f9c0159a383: #32aca6;
+  --token-735d697b-5a03-49fe-9b66-80e6a14713f9: #fff;
+  --token-d53d5eee-ff4d-4b1e-98d0-a707e3ce1541: #000;
+  --token-2433011a-35ae-4f0b-94e0-e8989014cf2c: #fff;
+  --token-a210fe28-308b-468e-9b17-12338c95bc8f: #fde4db;
+  --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #d6f3f1;
+}
+
+/* scroll-behavior removed — Lenis handles smooth scrolling */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Consistent page background matching the original Framer site */
+body {
+  background-color: rgb(249, 245, 246);
+}
+
+/* Header: override Framer's fixed 1200px to full width */
+header.framer-aw0er6 {
+  width: 100% !important;
+}
+
+/* Footer: override Framer's fixed 1200px to full width */
+footer.framer-1fiw38h {
+  width: 100% !important;
+}
+
+.page-section {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 40px;
+}
+
+/* Hero */
+.hero-section {
+  position: relative;
+}
+
+.hero-pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 32px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-heading {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 900;
+  font-size: 60px;
+  letter-spacing: -0.04em;
+  line-height: 1.2em;
+  color: rgb(0, 0, 0);
+  max-width: 800px;
+  text-transform: uppercase;
+}
+
+.hero-subtitle {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.04em;
+  line-height: 1.5em;
+  color: rgb(119, 119, 119);
+  max-width: 600px;
+}
+
+.hero-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hero-beta {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.04em;
+  line-height: 1.5em;
+  color: rgb(119, 119, 119);
+}
+
+.hero-image {
+  width: 100%;
+  max-width: 900px;
+  border-radius: 12px;
+  border: 2px solid rgb(0, 0, 0);
+  box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
+  display: block;
+}
+
+/* Problem / Features sections */
+/* section-bg-light inherits body background — no override needed */
+
+.section-bg-white {
+  background-color: rgb(255, 255, 255);
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+  margin-bottom: 100px;
+}
+
+.section-heading {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 900;
+  font-size: 40px;
+  letter-spacing: -0.04em;
+  line-height: 1.2em;
+  color: rgb(0, 0, 0);
+  max-width: 700px;
+  text-transform: uppercase;
+}
+
+.section-subtitle {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.04em;
+  line-height: 1.5em;
+  color: rgb(119, 119, 119);
+  max-width: 600px;
+}
+
+/* Problem cards row */
+.problem-cards-row {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.problem-cards-row > * {
+  flex: 1;
+  min-width: 280px;
+  max-width: 380px;
+}
+
+/* Features cards grid */
+.features-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.features-cards-row {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+/* How it works */
+.how-it-works-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+}
+
+.how-it-works-step {
+  display: flex;
+  flex-direction: row;
+  gap: 60px;
+  align-items: center;
+}
+
+.step-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.step-heading {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+  line-height: 1.2em;
+  color: rgb(0, 0, 0);
+}
+
+.step-body {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.04em;
+  line-height: 1.5em;
+  color: rgb(119, 119, 119);
+}
+
+/* Step illustration cards */
+.step-card {
+  flex: 0 0 500px;
+  width: 500px;
+  height: 360px;
+  border: 2px solid rgb(0, 0, 0);
+  box-shadow: 4px 4px 0px 0px rgb(0, 0, 0);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.step-card-teal {
+  background-color: rgb(218, 245, 240);
+}
+
+.step-card-coral {
+  background-color: rgb(253, 228, 219);
+}
+
+.step-card-outline {
+  background-color: transparent;
+}
+
+.step-card-inner {
+  width: 80%;
+  height: 80%;
+  background-color: rgb(255, 255, 255);
+  border-radius: 8px;
+  border: 2px solid rgb(0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.step-card-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.step-card-outline-inner {
+  width: 80%;
+  height: 80%;
+  border: 2px solid rgb(0, 0, 0);
+  border-radius: 8px;
+}
+
+/* Decorative arrows between steps */
+.step-arrow {
+  display: flex;
+  justify-content: center;
+  opacity: 0.6;
+}
+
+.step-arrow-right {
+  padding-left: 60%;
+}
+
+.step-arrow-left {
+  padding-right: 60%;
+}
+
+/* Integrations card (matches live Framer bordered card) */
+.integrations-card {
+  background-color: rgb(255, 255, 255);
+  border: 2px solid rgb(0, 0, 0);
+  box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 40px;
+  gap: 40px;
+}
+
+.integrations-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+}
+
+/* Pricing */
+.pricing-cards-row {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.pricing-cards-row > * {
+  flex: 1;
+  min-width: 280px;
+  max-width: 380px;
+}
+
+/* CTA section */
+
+.cta-card {
+  background-color: rgb(253, 228, 219);
+  border: 2px solid rgb(0, 0, 0);
+  box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
+  border-radius: 12px;
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 32px;
+}
+
+.cta-heading {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 900;
+  font-size: 40px;
+  letter-spacing: -0.04em;
+  line-height: 1.2em;
+  color: rgb(0, 0, 0);
+}
+
+.cta-subtitle {
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.04em;
+  line-height: 1.5em;
+  color: rgb(0, 0, 0);
+  max-width: 600px;
+}
+
+/* FAQ */
+
+.faq-section .section-inner {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Scroll reveal animations */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .section-inner {
+    padding: 60px 24px;
+  }
+
+  .hero-heading {
+    font-size: 40px;
+  }
+
+  .section-heading {
+    font-size: 28px;
+  }
+
+  .how-it-works-step {
+    flex-direction: column;
+  }
+
+  .step-card {
+    flex: none;
+    width: 100%;
+    height: 280px;
+  }
+
+  .step-arrow-right,
+  .step-arrow-left {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .problem-cards-row > * {
+    max-width: 100%;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+  }
+
+  .cta-card {
+    padding: 60px 32px;
+  }
+
+  .cta-heading {
+    font-size: 28px;
+  }
+
+  .pricing-cards-row > * {
+    max-width: 100%;
+  }
+}
