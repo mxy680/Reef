@@ -11,7 +11,7 @@
 Reef/
 ├── Reef-Server/    — Python FastAPI backend (submodule) → see Reef-Server/CLAUDE.md
 ├── Reef-iOS/       — iPad SwiftUI app (submodule) → see Reef-iOS/CLAUDE.md
-├── Reef-Web/       — Next.js landing page (submodule)
+├── Reef-Web/       — Next.js landing page
 ├── Reef-Document/  — Document processing (submodule)
 ├── dashboard/      — Next.js debug dashboard (gitignored, local only)
 ├── test-ios/       — Appium iOS Simulator testing (helper script + venv)
