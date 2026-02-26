@@ -72,21 +72,26 @@ footer.framer-1fiw38h {
   z-index: 1;
 }
 
-/* Hero entrance animation — scale-up + fade matching live Framer site */
-@keyframes heroAppear {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* Hero entrance — matches live Framer spring animation exactly:
+   opacity: fast fade 0→1 in ~200ms
+   scale: spring 0.5 → 1.04 (overshoot) → 1 in ~500ms
+   both start after ~300ms delay */
+@keyframes heroFadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes heroScaleSpring {
+  0% { transform: scale(0.5); }
+  65% { transform: scale(1.04); }
+  100% { transform: scale(1); }
 }
 
 .hero-content {
   opacity: 0;
-  animation: heroAppear 0.8s ease-out forwards;
+  transform: scale(0.5);
+  animation:
+    heroFadeIn 0.2s ease-out 0.3s forwards,
+    heroScaleSpring 0.5s ease-out 0.3s forwards;
 }
 
 .hero-heading {
