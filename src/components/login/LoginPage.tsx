@@ -6,18 +6,9 @@ import { motion } from "framer-motion"
 import InputField from "../signup/InputField"
 import OAuthButton from "../signup/OAuthButton"
 import { createClient } from "../../lib/supabase/client"
+import { colors } from "../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
-
-const colors = {
-  blue: "rgb(95, 168, 211)",
-  black: "rgb(0, 0, 0)",
-  white: "rgb(255, 255, 255)",
-  steel: "rgb(27, 73, 101)",
-  gray: "rgb(119, 119, 119)",
-  peach: "rgb(255, 229, 217)",
-  blueSoft: "rgb(255, 229, 217)",
-}
 
 const staggerBase = 0.3
 const staggerStep = 0.05
@@ -69,7 +60,7 @@ export default function LoginPage() {
       style={{
         width: "100%",
         minHeight: "100vh",
-        backgroundColor: colors.peach,
+        backgroundColor: colors.surface,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -96,7 +87,7 @@ export default function LoginPage() {
           fontWeight: 600,
           fontSize: 14,
           letterSpacing: "-0.02em",
-          color: colors.steel,
+          color: colors.accent,
           textDecoration: "none",
           cursor: "pointer",
           opacity: 0.6,
@@ -135,7 +126,7 @@ export default function LoginPage() {
               lineHeight: "1.2em",
               letterSpacing: "-0.04em",
               textTransform: "uppercase",
-              color: colors.steel,
+              color: colors.accent,
               margin: 0,
               marginBottom: 6,
               textAlign: "center",
@@ -153,7 +144,7 @@ export default function LoginPage() {
               fontSize: 15,
               lineHeight: "1.5em",
               letterSpacing: "-0.04em",
-              color: colors.gray,
+              color: colors.gray600,
               margin: 0,
               textAlign: "center",
             }}
@@ -170,20 +161,20 @@ export default function LoginPage() {
 
         {/* Divider */}
         <FadeUp index={3} style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, backgroundColor: "rgb(95, 168, 211)" }} />
+          <div style={{ flex: 1, height: 1, backgroundColor: colors.primary }} />
           <span
             style={{
               fontFamily,
               fontWeight: 600,
               fontSize: 12,
               letterSpacing: "0.08em",
-              color: colors.gray,
+              color: colors.gray600,
               textTransform: "uppercase",
             }}
           >
             OR
           </span>
-          <div style={{ flex: 1, height: 1, backgroundColor: "rgb(95, 168, 211)" }} />
+          <div style={{ flex: 1, height: 1, backgroundColor: colors.primary }} />
         </FadeUp>
 
         {/* Email */}
@@ -210,7 +201,7 @@ export default function LoginPage() {
                 fontFamily,
                 fontWeight: 500,
                 fontSize: 13,
-                color: "rgb(27, 73, 101)",
+                color: colors.accent,
                 margin: "0 0 12px 0",
               }}
             >
@@ -222,11 +213,11 @@ export default function LoginPage() {
             onClick={handleMagicLink}
             disabled={loading}
             whileHover={{
-              backgroundColor: "rgb(27, 73, 101)",
-              boxShadow: "2px 2px 0px 0px rgb(0, 0, 0)",
+              backgroundColor: colors.accent,
+              boxShadow: `2px 2px 0px 0px ${colors.black}`,
             }}
             whileTap={{
-              boxShadow: "0px 0px 0px 0px rgb(0, 0, 0)",
+              boxShadow: `0px 0px 0px 0px ${colors.black}`,
             }}
             transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
             style={{
@@ -234,7 +225,7 @@ export default function LoginPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: colors.blue,
+              backgroundColor: colors.primary,
               border: `2px solid ${colors.black}`,
               borderRadius: 0,
               padding: "14px 16px",
@@ -264,7 +255,7 @@ export default function LoginPage() {
               fontSize: 14,
               lineHeight: "1.5em",
               letterSpacing: "-0.04em",
-              color: colors.gray,
+              color: colors.gray600,
               textAlign: "center",
               margin: 0,
             }}
@@ -273,7 +264,7 @@ export default function LoginPage() {
             <a
               href="/signup"
               style={{
-                color: colors.blue,
+                color: colors.primary,
                 textDecoration: "none",
                 cursor: "pointer",
                 fontWeight: 700,

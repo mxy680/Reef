@@ -5,18 +5,9 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { createClient } from "../../lib/supabase/client"
 import { getProfile } from "../../lib/api"
+import { colors } from "../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
-
-const colors = {
-  coral: "rgb(235, 140, 115)",
-  teal: "rgb(50, 172, 166)",
-  black: "rgb(0, 0, 0)",
-  white: "rgb(255, 255, 255)",
-  deepSea: "rgb(21, 49, 75)",
-  gray: "rgb(119, 119, 119)",
-  tealSoft: "rgb(214, 243, 241)",
-}
 
 const GRADE_LABELS = {
   middle_school: "Middle School",
@@ -71,7 +62,7 @@ export default function DashboardPage() {
       style={{
         width: "100%",
         minHeight: "100vh",
-        backgroundColor: colors.tealSoft,
+        backgroundColor: colors.surface,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -105,7 +96,7 @@ export default function DashboardPage() {
             lineHeight: "1.2em",
             letterSpacing: "-0.04em",
             textTransform: "uppercase",
-            color: colors.deepSea,
+            color: colors.accent,
             margin: 0,
             marginBottom: 8,
           }}
@@ -121,7 +112,7 @@ export default function DashboardPage() {
             fontFamily,
             fontWeight: 500,
             fontSize: 15,
-            color: colors.gray,
+            color: colors.gray600,
             letterSpacing: "-0.04em",
             margin: 0,
             marginBottom: 28,
@@ -147,8 +138,8 @@ export default function DashboardPage() {
                 key={subject}
                 style={{
                   padding: "6px 14px",
-                  backgroundColor: colors.teal,
-                  border: `2px solid ${colors.teal}`,
+                  backgroundColor: colors.accent,
+                  border: `2px solid ${colors.accent}`,
                   borderRadius: 999,
                   fontFamily,
                   fontWeight: 600,
@@ -169,7 +160,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           whileHover={{
-            backgroundColor: "rgb(235, 235, 235)",
+            backgroundColor: colors.gray100,
             boxShadow: `2px 2px 0px 0px ${colors.black}`,
           }}
           whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
@@ -184,7 +175,7 @@ export default function DashboardPage() {
             fontWeight: 600,
             fontSize: 15,
             letterSpacing: "-0.04em",
-            color: colors.deepSea,
+            color: colors.accent,
             cursor: "pointer",
           }}
         >

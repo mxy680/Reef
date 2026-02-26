@@ -33,23 +33,13 @@ import { ContextProviders } from "unframer";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { addPropertyControls, ControlType } from "unframer";
 import { useState } from "react";
+import { colors } from "../lib/colors";
 var fontFamily = `"Epilogue", sans-serif`;
-var colors = {
-	coral: "rgb(235, 140, 115)",
-	teal: "rgb(50, 172, 166)",
-	black: "rgb(0, 0, 0)",
-	white: "rgb(255, 255, 255)",
-	background: "rgb(249, 245, 246)",
-	deepSea: "rgb(21, 49, 75)",
-	gray: "rgb(119, 119, 119)",
-	coralSoft: "rgb(253, 228, 219)",
-	tealSoft: "rgb(214, 243, 241)",
-};
 var primaryButton = {
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
-	backgroundColor: colors.coral,
+	backgroundColor: colors.primary,
 	border: "2px solid rgb(0, 0, 0)",
 	borderRadius: "0px",
 	padding: "12px 16px",
@@ -90,7 +80,7 @@ var inputInner = {
 	fontSize: 16,
 	lineHeight: "1.2",
 	letterSpacing: "-0.04em",
-	color: colors.deepSea,
+	color: colors.accent,
 	padding: 0,
 	margin: 0,
 	appearance: "none",
@@ -102,7 +92,7 @@ function InputField({ type = "text", placeholder, value, onChange }) {
 		<div
 			style={{
 				...inputWrapper,
-				boxShadow: focused ? `0 0 0 2px ${colors.teal}` : "none",
+				boxShadow: focused ? `0 0 0 2px ${colors.accent}` : "none",
 			}}
 		>
 			<input
@@ -185,7 +175,7 @@ function SignupForm(props) {
 			<div
 				style={{
 					flex: 1,
-					backgroundColor: colors.tealSoft,
+					backgroundColor: colors.surface,
 					display: "flex",
 					flexDirection: "column",
 					justifyContent: "center",
@@ -239,7 +229,7 @@ function SignupForm(props) {
 							lineHeight: "1em",
 							letterSpacing: "-0.04em",
 							textTransform: "uppercase",
-							color: colors.deepSea,
+							color: colors.accent,
 							margin: 0,
 							marginBottom: 24,
 						}}
@@ -253,7 +243,7 @@ function SignupForm(props) {
 							fontSize: 18,
 							lineHeight: "1.5em",
 							letterSpacing: "-0.04em",
-							color: colors.deepSea,
+							color: colors.accent,
 							margin: 0,
 							marginBottom: 48,
 						}}
@@ -281,7 +271,7 @@ function SignupForm(props) {
 									width: 28,
 									height: 28,
 									borderRadius: "0px",
-									backgroundColor: colors.coral,
+									backgroundColor: colors.primary,
 									border: "2px solid rgb(0, 0, 0)",
 									boxShadow: "3px 3px 0px 0px rgb(0, 0, 0)",
 									display: "flex",
@@ -310,7 +300,7 @@ function SignupForm(props) {
 									fontSize: 16,
 									lineHeight: "1.5em",
 									letterSpacing: "-0.04em",
-									color: colors.deepSea,
+									color: colors.accent,
 									textAlign: "left",
 								}}
 							>
@@ -348,7 +338,7 @@ function SignupForm(props) {
 							lineHeight: "1.2em",
 							letterSpacing: "-0.04em",
 							textTransform: "uppercase",
-							color: colors.deepSea,
+							color: colors.accent,
 							margin: 0,
 							marginBottom: 8,
 							textAlign: "center",
@@ -363,7 +353,7 @@ function SignupForm(props) {
 							fontSize: 16,
 							lineHeight: "1.5em",
 							letterSpacing: "-0.04em",
-							color: colors.gray,
+							color: colors.gray600,
 							margin: 0,
 							marginBottom: 32,
 							textAlign: "center",
@@ -404,7 +394,7 @@ function SignupForm(props) {
 									fontWeight: 500,
 									fontSize: 16,
 									letterSpacing: "-0.04em",
-									color: colors.deepSea,
+									color: colors.accent,
 								}}
 							>
 								{"Google"}
@@ -436,7 +426,7 @@ function SignupForm(props) {
 									fontWeight: 500,
 									fontSize: 16,
 									letterSpacing: "-0.04em",
-									color: colors.deepSea,
+									color: colors.accent,
 								}}
 							>
 								{"Apple"}
@@ -464,7 +454,7 @@ function SignupForm(props) {
 								fontWeight: 500,
 								fontSize: 14,
 								letterSpacing: "-0.04em",
-								color: colors.gray,
+								color: colors.gray600,
 								textTransform: "uppercase",
 							}}
 						>
@@ -484,7 +474,7 @@ function SignupForm(props) {
 							fontWeight: 500,
 							fontSize: 14,
 							letterSpacing: "-0.04em",
-							color: colors.deepSea,
+							color: colors.accent,
 							marginBottom: 8,
 							display: "block",
 						}}
@@ -509,7 +499,7 @@ function SignupForm(props) {
 							fontWeight: 500,
 							fontSize: 14,
 							letterSpacing: "-0.04em",
-							color: colors.deepSea,
+							color: colors.accent,
 							marginBottom: 8,
 							display: "block",
 						}}
@@ -534,7 +524,7 @@ function SignupForm(props) {
 							fontWeight: 500,
 							fontSize: 14,
 							letterSpacing: "-0.04em",
-							color: colors.deepSea,
+							color: colors.accent,
 							marginBottom: 8,
 							display: "block",
 						}}
@@ -561,7 +551,7 @@ function SignupForm(props) {
 						style={{
 							...primaryButton,
 							width: "100%",
-							backgroundColor: isHovered ? colors.teal : colors.coral,
+							backgroundColor: isHovered ? colors.accent : colors.primary,
 							marginBottom: 24,
 						}}
 					>
@@ -574,7 +564,7 @@ function SignupForm(props) {
 							fontSize: 14,
 							lineHeight: "1.5em",
 							letterSpacing: "-0.04em",
-							color: colors.gray,
+							color: colors.gray600,
 							textAlign: "center",
 							margin: 0,
 						}}
@@ -583,7 +573,7 @@ function SignupForm(props) {
 						<a
 							href={loginLink}
 							style={{
-								color: colors.teal,
+								color: colors.accent,
 								textDecoration: "none",
 								cursor: "pointer",
 								fontWeight: 700,

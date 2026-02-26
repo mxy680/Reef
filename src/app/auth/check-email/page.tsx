@@ -1,18 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { colors } from "../../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
-
-const colors = {
-  coral: "rgb(235, 140, 115)",
-  teal: "rgb(50, 172, 166)",
-  black: "rgb(0, 0, 0)",
-  white: "rgb(255, 255, 255)",
-  deepSea: "rgb(21, 49, 75)",
-  gray: "rgb(119, 119, 119)",
-  coralSoft: "rgb(253, 228, 219)",
-}
 
 function MailIcon() {
   return (
@@ -21,7 +12,7 @@ function MailIcon() {
       height="48"
       viewBox="0 0 24 24"
       fill="none"
-      stroke={colors.coral}
+      stroke={colors.primary}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -38,7 +29,7 @@ export default function CheckEmailPage() {
       style={{
         width: "100%",
         minHeight: "100vh",
-        backgroundColor: colors.coralSoft,
+        backgroundColor: colors.surface,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -65,7 +56,7 @@ export default function CheckEmailPage() {
           fontWeight: 600,
           fontSize: 14,
           letterSpacing: "-0.02em",
-          color: colors.deepSea,
+          color: colors.accent,
           textDecoration: "none",
           cursor: "pointer",
           opacity: 0.6,
@@ -114,7 +105,7 @@ export default function CheckEmailPage() {
             lineHeight: "1.2em",
             letterSpacing: "-0.04em",
             textTransform: "uppercase",
-            color: colors.deepSea,
+            color: colors.accent,
             margin: 0,
             marginBottom: 12,
           }}
@@ -132,7 +123,7 @@ export default function CheckEmailPage() {
             fontSize: 15,
             lineHeight: "1.6em",
             letterSpacing: "-0.04em",
-            color: colors.gray,
+            color: colors.gray600,
             margin: 0,
             marginBottom: 28,
           }}
@@ -150,7 +141,7 @@ export default function CheckEmailPage() {
             fontWeight: 600,
             fontSize: 14,
             letterSpacing: "-0.04em",
-            color: colors.coral,
+            color: colors.primary,
             textDecoration: "none",
             cursor: "pointer",
           }}

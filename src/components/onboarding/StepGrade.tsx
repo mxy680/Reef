@@ -1,16 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { colors } from "../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
-
-const colors = {
-  blue: "rgb(95, 168, 211)",
-  black: "rgb(0, 0, 0)",
-  white: "rgb(255, 255, 255)",
-  steel: "rgb(27, 73, 101)",
-  gray: "rgb(119, 119, 119)",
-}
 
 const GRADES = [
   { value: "middle_school", label: "Middle School" },
@@ -36,7 +29,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
           lineHeight: "1.2em",
           letterSpacing: "-0.04em",
           textTransform: "uppercase",
-          color: colors.steel,
+          color: colors.accent,
           margin: 0,
           marginBottom: 8,
         }}
@@ -48,7 +41,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
           fontFamily,
           fontWeight: 500,
           fontSize: 14,
-          color: colors.gray,
+          color: colors.gray600,
           letterSpacing: "-0.04em",
           margin: 0,
           marginBottom: 24,
@@ -71,7 +64,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
               style={{
                 width: "100%",
                 padding: "14px 18px",
-                backgroundColor: selected ? colors.blue : colors.white,
+                backgroundColor: selected ? colors.primary : colors.white,
                 border: `2px solid ${colors.black}`,
                 borderRadius: 0,
                 boxShadow: selected
@@ -81,7 +74,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
                 fontWeight: 600,
                 fontSize: 15,
                 letterSpacing: "-0.04em",
-                color: selected ? colors.white : colors.steel,
+                color: selected ? colors.white : colors.accent,
                 cursor: "pointer",
                 textAlign: "left",
               }}
@@ -103,7 +96,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
             fontWeight: 600,
             fontSize: 14,
             letterSpacing: "-0.04em",
-            color: colors.gray,
+            color: colors.gray600,
             cursor: "pointer",
             padding: 0,
           }}
@@ -120,7 +113,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
           style={{
             padding: "12px 32px",
-            backgroundColor: value ? colors.blue : "rgb(255, 229, 217)",
+            backgroundColor: value ? colors.primary : colors.surface,
             border: `2px solid ${colors.black}`,
             borderRadius: 0,
             boxShadow: `4px 4px 0px 0px ${colors.black}`,
@@ -129,7 +122,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
             fontSize: 15,
             letterSpacing: "-0.04em",
             textTransform: "uppercase",
-            color: value ? colors.white : colors.gray,
+            color: value ? colors.white : colors.gray600,
             cursor: value ? "pointer" : "not-allowed",
           }}
         >

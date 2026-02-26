@@ -9,13 +9,7 @@ import StepName from "./StepName"
 import StepGrade from "./StepGrade"
 import StepSubjects from "./StepSubjects"
 import StepReferral from "./StepReferral"
-
-const colors = {
-  blueSoft: "rgb(255, 229, 217)",
-  black: "rgb(0, 0, 0)",
-  white: "rgb(255, 255, 255)",
-  peach: "rgb(255, 229, 217)",
-}
+import { colors } from "../../lib/colors"
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -74,7 +68,7 @@ export default function OnboardingWizard({ user }: { user: { id: string; email: 
       style={{
         width: "100%",
         minHeight: "100vh",
-        backgroundColor: colors.blueSoft,
+        backgroundColor: colors.surface,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

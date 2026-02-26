@@ -2,16 +2,9 @@
 
 import { motion } from "framer-motion"
 import InputField from "../signup/InputField"
+import { colors } from "../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
-
-const colors = {
-  blue: "rgb(95, 168, 211)",
-  black: "rgb(0, 0, 0)",
-  white: "rgb(255, 255, 255)",
-  steel: "rgb(27, 73, 101)",
-  gray: "rgb(119, 119, 119)",
-}
 
 export default function StepName({ value, onChange, onNext }: { value: string; onChange: (v: string) => void; onNext: () => void }) {
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -33,7 +26,7 @@ export default function StepName({ value, onChange, onNext }: { value: string; o
           lineHeight: "1.2em",
           letterSpacing: "-0.04em",
           textTransform: "uppercase",
-          color: colors.steel,
+          color: colors.accent,
           margin: 0,
           marginBottom: 8,
         }}
@@ -45,7 +38,7 @@ export default function StepName({ value, onChange, onNext }: { value: string; o
           fontFamily,
           fontWeight: 500,
           fontSize: 14,
-          color: colors.gray,
+          color: colors.gray600,
           letterSpacing: "-0.04em",
           margin: 0,
           marginBottom: 24,
@@ -72,7 +65,7 @@ export default function StepName({ value, onChange, onNext }: { value: string; o
         style={{
           width: "100%",
           height: 48,
-          backgroundColor: value.trim() ? colors.blue : "rgb(255, 229, 217)",
+          backgroundColor: value.trim() ? colors.primary : colors.surface,
           border: `2px solid ${colors.black}`,
           borderRadius: 0,
           boxShadow: `4px 4px 0px 0px ${colors.black}`,
@@ -81,7 +74,7 @@ export default function StepName({ value, onChange, onNext }: { value: string; o
           fontSize: 15,
           letterSpacing: "-0.04em",
           textTransform: "uppercase",
-          color: value.trim() ? colors.white : colors.gray,
+          color: value.trim() ? colors.white : colors.gray600,
           cursor: value.trim() ? "pointer" : "not-allowed",
         }}
       >

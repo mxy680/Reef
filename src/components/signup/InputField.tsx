@@ -1,13 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { colors } from "../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
-
-const colors = {
-  black: "rgb(0, 0, 0)",
-  deepSea: "rgb(27, 73, 101)",
-}
 
 export default function InputField({ type = "text", placeholder, value, onChange, name }: { type?: string; placeholder: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; name?: string }) {
   const [showPassword, setShowPassword] = useState(false)
@@ -25,7 +21,7 @@ export default function InputField({ type = "text", placeholder, value, onChange
         alignItems: "center",
         padding: "0 18px",
         boxSizing: "border-box",
-        backgroundColor: "rgb(255, 255, 255)",
+        backgroundColor: colors.white,
       }}
     >
       <input
@@ -45,7 +41,7 @@ export default function InputField({ type = "text", placeholder, value, onChange
           fontSize: 16,
           lineHeight: "1.2",
           letterSpacing: "-0.04em",
-          color: colors.deepSea,
+          color: colors.accent,
           padding: 0,
           margin: 0,
         }}
@@ -62,7 +58,7 @@ export default function InputField({ type = "text", placeholder, value, onChange
             padding: 4,
             display: "flex",
             alignItems: "center",
-            color: "rgb(119, 119, 119)",
+            color: colors.gray600,
             flexShrink: 0,
           }}
           aria-label={showPassword ? "Hide password" : "Show password"}

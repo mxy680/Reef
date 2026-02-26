@@ -1,9 +1,6 @@
 "use client"
 
-const colors = {
-  blue: "rgb(95, 168, 211)",
-  gray: "rgb(200, 200, 200)",
-}
+import { colors } from "../../lib/colors"
 
 export default function ProgressBar({ step, total = 3 }: { step: number; total?: number }) {
   return (
@@ -15,8 +12,8 @@ export default function ProgressBar({ step, total = 3 }: { step: number; total?:
             width: 10,
             height: 10,
             borderRadius: "50%",
-            backgroundColor: i <= step ? colors.blue : "transparent",
-            border: `2px solid ${i <= step ? colors.blue : colors.gray}`,
+            backgroundColor: i <= step ? colors.primary : "transparent",
+            border: `2px solid ${i <= step ? colors.primary : colors.gray400}`,
             transition: "all 0.3s ease",
           }}
         />

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { createClient } from "../../lib/supabase/client"
+import { colors } from "../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
 
@@ -46,11 +47,11 @@ export default function OAuthButton({ provider, label, delay = 0 }: { provider: 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{
-        backgroundColor: "rgb(235, 235, 235)",
-        boxShadow: "2px 2px 0px 0px rgb(0, 0, 0)",
+        backgroundColor: colors.gray100,
+        boxShadow: `2px 2px 0px 0px ${colors.black}`,
       }}
       whileTap={{
-        boxShadow: "0px 0px 0px 0px rgb(0, 0, 0)",
+        boxShadow: `0px 0px 0px 0px ${colors.black}`,
       }}
       transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
       style={{
@@ -60,16 +61,16 @@ export default function OAuthButton({ provider, label, delay = 0 }: { provider: 
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
-        backgroundColor: "rgb(255, 255, 255)",
-        border: "2px solid rgb(0, 0, 0)",
+        backgroundColor: colors.white,
+        border: `2px solid ${colors.black}`,
         borderRadius: 0,
-        boxShadow: "4px 4px 0px 0px rgb(0, 0, 0)",
+        boxShadow: `4px 4px 0px 0px ${colors.black}`,
         cursor: "pointer",
         fontFamily,
         fontWeight: 500,
         fontSize: 16,
         letterSpacing: "-0.04em",
-        color: "rgb(21, 49, 75)",
+        color: colors.accent,
       }}
     >
       <Icon />

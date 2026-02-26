@@ -6,18 +6,9 @@ import { motion } from "framer-motion"
 import InputField from "./InputField"
 import OAuthButton from "./OAuthButton"
 import { createClient } from "../../lib/supabase/client"
+import { colors } from "../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
-
-const colors = {
-  blue: "rgb(95, 168, 211)",
-  black: "rgb(0, 0, 0)",
-  white: "rgb(255, 255, 255)",
-  steel: "rgb(27, 73, 101)",
-  gray: "rgb(119, 119, 119)",
-  blueSoft: "rgb(255, 229, 217)",
-  peach: "rgb(255, 229, 217)",
-}
 
 const staggerBase = 0.3
 const staggerStep = 0.05
@@ -69,7 +60,7 @@ export default function SignupPage() {
       style={{
         width: "100%",
         minHeight: "100vh",
-        backgroundColor: colors.blueSoft,
+        backgroundColor: colors.surface,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -96,7 +87,7 @@ export default function SignupPage() {
           fontWeight: 600,
           fontSize: 14,
           letterSpacing: "-0.02em",
-          color: colors.steel,
+          color: colors.accent,
           textDecoration: "none",
           cursor: "pointer",
           opacity: 0.6,
@@ -135,7 +126,7 @@ export default function SignupPage() {
               lineHeight: "1.2em",
               letterSpacing: "-0.04em",
               textTransform: "uppercase",
-              color: colors.steel,
+              color: colors.accent,
               margin: 0,
               marginBottom: 6,
               textAlign: "center",
@@ -153,7 +144,7 @@ export default function SignupPage() {
               fontSize: 15,
               lineHeight: "1.5em",
               letterSpacing: "-0.04em",
-              color: colors.gray,
+              color: colors.gray600,
               margin: 0,
               textAlign: "center",
             }}
@@ -170,20 +161,20 @@ export default function SignupPage() {
 
         {/* Divider */}
         <FadeUp index={3} style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, backgroundColor: "rgb(95, 168, 211)" }} />
+          <div style={{ flex: 1, height: 1, backgroundColor: colors.primary }} />
           <span
             style={{
               fontFamily,
               fontWeight: 600,
               fontSize: 12,
               letterSpacing: "0.08em",
-              color: colors.gray,
+              color: colors.gray600,
               textTransform: "uppercase",
             }}
           >
             OR
           </span>
-          <div style={{ flex: 1, height: 1, backgroundColor: "rgb(95, 168, 211)" }} />
+          <div style={{ flex: 1, height: 1, backgroundColor: colors.primary }} />
         </FadeUp>
 
         {/* Email */}
@@ -210,7 +201,7 @@ export default function SignupPage() {
                 fontFamily,
                 fontWeight: 500,
                 fontSize: 13,
-                color: "rgb(27, 73, 101)",
+                color: colors.accent,
                 margin: "0 0 12px 0",
               }}
             >
@@ -222,11 +213,11 @@ export default function SignupPage() {
             onClick={handleMagicLink}
             disabled={loading}
             whileHover={{
-              backgroundColor: "rgb(27, 73, 101)",
-              boxShadow: "2px 2px 0px 0px rgb(0, 0, 0)",
+              backgroundColor: colors.accent,
+              boxShadow: `2px 2px 0px 0px ${colors.black}`,
             }}
             whileTap={{
-              boxShadow: "0px 0px 0px 0px rgb(0, 0, 0)",
+              boxShadow: `0px 0px 0px 0px ${colors.black}`,
             }}
             transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
             style={{
@@ -234,7 +225,7 @@ export default function SignupPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: colors.blue,
+              backgroundColor: colors.primary,
               border: `2px solid ${colors.black}`,
               borderRadius: 0,
               padding: "14px 16px",
@@ -264,7 +255,7 @@ export default function SignupPage() {
               fontSize: 14,
               lineHeight: "1.5em",
               letterSpacing: "-0.04em",
-              color: colors.gray,
+              color: colors.gray600,
               textAlign: "center",
               margin: 0,
             }}
@@ -273,7 +264,7 @@ export default function SignupPage() {
             <a
               href="/auth"
               style={{
-                color: colors.blue,
+                color: colors.primary,
                 textDecoration: "none",
                 cursor: "pointer",
                 fontWeight: 700,
@@ -307,7 +298,7 @@ export default function SignupPage() {
               gap: 8,
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.blue} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             <span
@@ -316,7 +307,7 @@ export default function SignupPage() {
                 fontWeight: 500,
                 fontSize: 13,
                 letterSpacing: "-0.02em",
-                color: colors.steel,
+                color: colors.accent,
                 opacity: 0.7,
               }}
             >

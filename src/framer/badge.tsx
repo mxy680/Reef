@@ -168,7 +168,7 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 							"--border-right-width": "2px",
 							"--border-style": "solid",
 							"--border-top-width": "2px",
-							backgroundColor: "rgba(50, 172, 166, 0.3)",
+							backgroundColor: "var(--color-accent-30, rgba(27, 73, 101, 0.3))",
 							boxShadow:
 								"4px 4px 0px 0px var(--token-14825bd6-f9b4-4846-afef-1af0cbf8c065, rgb(0, 0, 0))",
 							...style,
