@@ -1,24 +1,22 @@
 /* Landing page layout styles */
 
-/* Framer design tokens (extracted from studyreef.com) */
+/* Framer design tokens — restricted to 3-color palette + black/white */
 :root {
   --token-14825bd6-f9b4-4846-afef-1af0cbf8c065: #000;
-  --token-10bc40bb-604b-41d4-b321-4b409afa6a9f: #eb8c73;
-  --token-e27a4cac-2b4d-4ad5-8c68-b6f48982239d: #f9f5f6;
-  --token-df3b0292-9153-4484-b1d6-f7e71cc31198: #15314b;
-  --token-8c15ab03-0228-43db-9adb-8c7e76c29ef3: #777;
-  --token-353de080-56da-4189-9321-c69d0ed1b3ed: #daf5f0;
-  --token-fdcc5b21-a997-46c1-a990-9f9c0159a383: #32aca6;
+  --token-10bc40bb-604b-41d4-b321-4b409afa6a9f: #FFE5D9;
+  --token-e27a4cac-2b4d-4ad5-8c68-b6f48982239d: #fff;
+  --token-df3b0292-9153-4484-b1d6-f7e71cc31198: #1B4965;
+  --token-8c15ab03-0228-43db-9adb-8c7e76c29ef3: #1B4965;
+  --token-353de080-56da-4189-9321-c69d0ed1b3ed: #FFE5D9;
+  --token-fdcc5b21-a997-46c1-a990-9f9c0159a383: #5FA8D3;
   --token-735d697b-5a03-49fe-9b66-80e6a14713f9: #fff;
   --token-d53d5eee-ff4d-4b1e-98d0-a707e3ce1541: #000;
   --token-2433011a-35ae-4f0b-94e0-e8989014cf2c: #fff;
-  --token-a210fe28-308b-468e-9b17-12338c95bc8f: #fde4db;
-  --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #d6f3f1;
+  --token-a210fe28-308b-468e-9b17-12338c95bc8f: #FFE5D9;
+  --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #FFE5D9;
   --token-steel: #1B4965;
   --token-blue: #5FA8D3;
   --token-peach: #FFE5D9;
-  --token-blue-soft: #D7E9F4;
-  --token-steel-soft: #D6E1E8;
 }
 
 html {
@@ -39,7 +37,7 @@ html {
 
 /* Consistent page background matching the original Framer site */
 body {
-  background-color: rgb(249, 245, 246);
+  background-color: rgb(255, 255, 255);
 }
 
 /* Header: override Framer's fixed 1200px to full width */
@@ -125,7 +123,7 @@ footer.framer-1fiw38h {
   font-size: 18px;
   letter-spacing: -0.04em;
   line-height: 1.5em;
-  color: rgb(119, 119, 119);
+  color: rgb(27, 73, 101);
   max-width: 490px;
 }
 
@@ -144,7 +142,7 @@ footer.framer-1fiw38h {
   font-size: 14px;
   letter-spacing: -0.04em;
   line-height: 1.5em;
-  color: rgb(119, 119, 119);
+  color: rgb(27, 73, 101);
 }
 
 .hero-image-wrapper {
@@ -165,7 +163,7 @@ footer.framer-1fiw38h {
   display: block;
   border: 3px solid rgb(0, 0, 0);
   border-radius: 12px;
-  background-color: rgb(249, 245, 246);
+  background-color: rgb(255, 255, 255);
   transform: rotateX(12deg);
   transform-origin: bottom center;
   will-change: transform;
@@ -204,7 +202,7 @@ footer.framer-1fiw38h {
   font-size: 18px;
   letter-spacing: -0.04em;
   line-height: 1.5em;
-  color: rgb(119, 119, 119);
+  color: rgb(27, 73, 101);
   max-width: 600px;
 }
 
@@ -289,7 +287,7 @@ footer.framer-1fiw38h {
   font-size: 13px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgb(119, 119, 119);
+  color: rgb(27, 73, 101);
 }
 
 .step-heading {
@@ -307,7 +305,7 @@ footer.framer-1fiw38h {
   font-size: 18px;
   letter-spacing: -0.04em;
   line-height: 1.5em;
-  color: rgb(119, 119, 119);
+  color: rgb(27, 73, 101);
 }
 
 /* Step illustration cards */
@@ -324,7 +322,7 @@ footer.framer-1fiw38h {
 }
 
 .step-card-blue {
-  background-color: rgb(215, 233, 244);
+  background-color: rgb(95, 168, 211);
 }
 
 .step-card-peach {
@@ -332,7 +330,7 @@ footer.framer-1fiw38h {
 }
 
 .step-card-steel {
-  background-color: rgb(214, 225, 232);
+  background-color: rgb(27, 73, 101);
 }
 
 .step-card-inner {
@@ -431,7 +429,7 @@ footer.framer-1fiw38h {
 /* CTA section */
 
 .cta-card {
-  background-color: rgb(253, 228, 219);
+  background-color: rgb(255, 229, 217);
   border: 2px solid rgb(0, 0, 0);
   box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
   border-radius: 12px;
@@ -494,7 +492,7 @@ footer.framer-1fiw38h {
 }
 
 .newsletter-input::placeholder {
-  color: rgb(160, 160, 160);
+  color: rgb(95, 168, 211);
 }
 
 .newsletter-btn {

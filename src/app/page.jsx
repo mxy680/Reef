@@ -149,7 +149,7 @@ export default function Home() {
       <section className="page-section section-bg-light">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(215, 233, 244)" }} />
+            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(95, 168, 211)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
             <h2 className="section-heading">STUDYING SHOULDN&rsquo;T FEEL THIS BROKEN</h2>
             <p className="section-subtitle">
               Every night, millions of students get stuck on practice problems with no one to help. They bounce between apps, lose focus, and give up before they actually learn.
@@ -182,7 +182,7 @@ export default function Home() {
       <section id="benefits" className="page-section section-bg-light">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(214, 225, 232)" }} />
+            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(27, 73, 101)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
             <p className="section-subtitle">
               Notes, documents, AI tutoring, quizzes, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.
@@ -201,7 +201,7 @@ export default function Home() {
                 variant="Single"
                 headline="HANDWRITING RECOGNITION"
                 subline="Write math, chemistry, or prose with Apple Pencil. Reef transcribes instantly."
-                background="rgb(252, 249, 247)"
+                background="rgb(255, 255, 255)"
               />
             </div>
             {/* Row 2 */}
@@ -210,7 +210,7 @@ export default function Home() {
                 variant="Single"
                 headline="ALL YOUR MATERIALS IN ONE PLACE"
                 subline="Import PDFs, lecture slides, and photos. Organize by course, unit, and topic."
-                background="rgb(252, 249, 247)"
+                background="rgb(255, 255, 255)"
               />
               <FeaturesCard
                 variant="Double"
@@ -231,7 +231,7 @@ export default function Home() {
                 variant="Single"
                 headline="BUILT FOR APPLE PENCIL"
                 subline="Pressure sensitivity, palm rejection, and shape recognition. Feels like paper, works like magic."
-                background="rgb(252, 249, 247)"
+                background="rgb(255, 255, 255)"
               />
             </div>
           </div>
@@ -340,7 +340,7 @@ export default function Home() {
       <section className="page-section section-bg-light pricing-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "rgb(215, 233, 244)" }} />
+            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "rgb(95, 168, 211)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
             <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
             <p className="section-subtitle">
               Whether you&rsquo;re testing the waters with one class or going all in across your entire course load, Reef has a plan that fits your semester.
@@ -351,7 +351,7 @@ export default function Home() {
               title="SHORE"
               description="Dip your toes in with one course and core study tools."
               price="$0"
-              background="rgb(237, 246, 250)"
+              background="rgb(255, 229, 217)"
               buttonLabel="Step In"
               feature1="1 course"
               feature2="5 homeworks"
@@ -363,7 +363,7 @@ export default function Home() {
               title="Reef"
               description="Plenty of power for most students, all semester long."
               price="$9.99"
-              background="rgb(255, 244, 240)"
+              background="rgb(95, 168, 211)"
               buttonLabel="Dive In"
               feature1="5 courses"
               feature2="50 homeworks"
@@ -375,7 +375,7 @@ export default function Home() {
               title="Abyss"
               description="No limits. For students who never want to hit a wall."
               price="$29.99"
-              background="rgb(228, 236, 242)"
+              background="rgb(27, 73, 101)"
               buttonLabel="Go Deep"
               feature1="Unlimited courses"
               feature2="Unlimited homeworks"
@@ -391,7 +391,7 @@ export default function Home() {
       <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(214, 225, 232)" }} />
+            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(27, 73, 101)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
@@ -403,7 +403,7 @@ export default function Home() {
       <section className="page-section cta-section">
         <div className="section-inner">
           <div className="cta-card" style={{ backgroundColor: "rgb(255, 229, 217)" }}>
-            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(215, 233, 244)" }} />
+            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(255, 229, 217)" }} />
             <h2 className="cta-heading">STAY IN THE LOOP</h2>
             <p className="cta-subtitle">
               Get early access, product updates, and study tips delivered straight to your inbox.
