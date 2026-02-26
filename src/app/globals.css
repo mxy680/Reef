@@ -14,8 +14,11 @@
   --token-2433011a-35ae-4f0b-94e0-e8989014cf2c: #fff;
   --token-a210fe28-308b-468e-9b17-12338c95bc8f: #fde4db;
   --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #d6f3f1;
-  --token-slate-blue: #A5B9DC;
-  --token-slate-blue-soft: #E1E8F5;
+  --token-steel: #1B4965;
+  --token-blue: #5FA8D3;
+  --token-peach: #FFE5D9;
+  --token-blue-soft: #D7E9F4;
+  --token-steel-soft: #D6E1E8;
 }
 
 html {
@@ -157,12 +160,15 @@ footer.framer-1fiw38h {
 }
 
 .hero-image {
-  width: 100%;
+  width: 104%;
   height: 100%;
+  margin: -2% 0 0 -2%;
   display: block;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   background-color: rgb(249, 245, 246);
+  transform: rotateX(4deg);
+  transform-origin: bottom center;
 }
 
 /* Problem / Features sections */
@@ -317,16 +323,16 @@ footer.framer-1fiw38h {
   overflow: hidden;
 }
 
-.step-card-teal {
-  background-color: rgb(218, 245, 240);
+.step-card-blue {
+  background-color: rgb(215, 233, 244);
 }
 
-.step-card-coral {
-  background-color: rgb(253, 228, 219);
+.step-card-peach {
+  background-color: rgb(255, 229, 217);
 }
 
-.step-card-slate {
-  background-color: rgb(225, 232, 245);
+.step-card-steel {
+  background-color: rgb(214, 225, 232);
 }
 
 .step-card-inner {
@@ -507,7 +513,7 @@ footer.framer-1fiw38h {
 }
 
 .newsletter-btn:hover {
-  background-color: rgb(50, 172, 166);
+  background-color: rgb(95, 168, 211);
 }
 
 .newsletter-btn:active {
