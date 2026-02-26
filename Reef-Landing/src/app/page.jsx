@@ -35,7 +35,7 @@ export default function Home() {
     window.addEventListener("scroll", onScroll, { passive: true })
 
     // Custom smooth scroll with configurable duration (slower than native)
-    function smoothScrollTo(element, duration = 1200) {
+    function smoothScrollTo(element, duration = 700) {
       const headerOffset = 80
       const targetY = element.getBoundingClientRect().top + window.scrollY - headerOffset
       const startY = window.scrollY
