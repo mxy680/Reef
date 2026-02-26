@@ -11,7 +11,7 @@ import StepSubjects from "./StepSubjects"
 import StepReferral from "./StepReferral"
 
 const colors = {
-  blueSoft: "rgb(215, 233, 244)",
+  blueSoft: "rgb(255, 229, 217)",
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
   peach: "rgb(255, 229, 217)",

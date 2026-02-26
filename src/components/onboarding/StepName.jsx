@@ -10,7 +10,7 @@ const colors = {
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
   steel: "rgb(27, 73, 101)",
-  gray: "rgb(119, 119, 119)",
+  gray: "rgb(27, 73, 101)",
 }
 
 export default function StepName({ value, onChange, onNext }) {
@@ -72,7 +72,7 @@ export default function StepName({ value, onChange, onNext }) {
         style={{
           width: "100%",
           height: 48,
-          backgroundColor: value.trim() ? colors.blue : "rgb(230, 230, 230)",
+          backgroundColor: value.trim() ? colors.blue : "rgb(255, 229, 217)",
           border: `2px solid ${colors.black}`,
           borderRadius: 0,
           boxShadow: `4px 4px 0px 0px ${colors.black}`,

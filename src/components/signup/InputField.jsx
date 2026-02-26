@@ -6,7 +6,7 @@ const fontFamily = `"Epilogue", sans-serif`
 
 const colors = {
   black: "rgb(0, 0, 0)",
-  deepSea: "rgb(21, 49, 75)",
+  deepSea: "rgb(27, 73, 101)",
 }
 
 export default function InputField({ type = "text", placeholder, value, onChange, name }) {
@@ -62,7 +62,7 @@ export default function InputField({ type = "text", placeholder, value, onChange
             padding: 4,
             display: "flex",
             alignItems: "center",
-            color: "rgb(119, 119, 119)",
+            color: "rgb(27, 73, 101)",
             flexShrink: 0,
           }}
           aria-label={showPassword ? "Hide password" : "Show password"}

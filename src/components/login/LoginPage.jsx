@@ -14,9 +14,9 @@ const colors = {
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
   steel: "rgb(27, 73, 101)",
-  gray: "rgb(119, 119, 119)",
+  gray: "rgb(27, 73, 101)",
   peach: "rgb(255, 229, 217)",
-  blueSoft: "rgb(215, 233, 244)",
+  blueSoft: "rgb(255, 229, 217)",
 }
 
 const staggerBase = 0.3
@@ -170,7 +170,7 @@ export default function LoginPage() {
 
         {/* Divider */}
         <FadeUp index={3} style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, backgroundColor: "rgba(0,0,0,0.12)" }} />
+          <div style={{ flex: 1, height: 1, backgroundColor: "rgb(95, 168, 211)" }} />
           <span
             style={{
               fontFamily,
@@ -183,7 +183,7 @@ export default function LoginPage() {
           >
             OR
           </span>
-          <div style={{ flex: 1, height: 1, backgroundColor: "rgba(0,0,0,0.12)" }} />
+          <div style={{ flex: 1, height: 1, backgroundColor: "rgb(95, 168, 211)" }} />
         </FadeUp>
 
         {/* Email */}
@@ -210,7 +210,7 @@ export default function LoginPage() {
                 fontFamily,
                 fontWeight: 500,
                 fontSize: 13,
-                color: "rgb(220, 60, 60)",
+                color: "rgb(27, 73, 101)",
                 margin: "0 0 12px 0",
               }}
             >

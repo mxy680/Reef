@@ -9,7 +9,7 @@ const colors = {
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
   steel: "rgb(27, 73, 101)",
-  gray: "rgb(119, 119, 119)",
+  gray: "rgb(27, 73, 101)",
 }
 
 const SOURCES = [
@@ -124,7 +124,7 @@ export default function StepReferral({ value, onChange, onSubmit, onBack, submit
           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
           style={{
             padding: "12px 32px",
-            backgroundColor: canSubmit ? colors.blue : "rgb(230, 230, 230)",
+            backgroundColor: canSubmit ? colors.blue : "rgb(255, 229, 217)",
             border: `2px solid ${colors.black}`,
             borderRadius: 0,
             boxShadow: `4px 4px 0px 0px ${colors.black}`,
