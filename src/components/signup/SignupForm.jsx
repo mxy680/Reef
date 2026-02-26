@@ -54,7 +54,6 @@ export default function SignupForm() {
     <div
       className="signup-form-panel"
       style={{
-        flex: 1,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",

@@ -16,6 +16,10 @@ export default function LoginPage() {
           background-color: rgb(255, 255, 255);
         }
 
+        .login-form-panel {
+          flex: 1;
+        }
+
         .login-mobile-header {
           display: none;
         }

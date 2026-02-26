@@ -43,7 +43,6 @@ export default function LoginForm() {
     <div
       className="login-form-panel"
       style={{
-        flex: 1,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",

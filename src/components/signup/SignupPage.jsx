@@ -16,6 +16,10 @@ export default function SignupPage() {
           background-color: rgb(255, 255, 255);
         }
 
+        .signup-form-panel {
+          flex: 1;
+        }
+
         .signup-mobile-header {
           display: none;
         }
