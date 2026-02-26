@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import "./globals.css"
 import Badge from "../framer/badge"
@@ -75,6 +75,25 @@ export default function Home() {
     }
   }, [])
 
+  const heroRef = useRef(null)
+
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el) return
+    const MAX_ROTATE = 12
+    function onScroll() {
+      const rect = el.getBoundingClientRect()
+      const viewH = window.innerHeight
+      // progress: 0 when element top is at bottom of viewport, 1 when top reaches top
+      const progress = Math.min(Math.max(1 - rect.top / viewH, 0), 1)
+      const angle = MAX_ROTATE * (1 - progress)
+      el.style.transform = `rotateX(${angle}deg)`
+    }
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
   return (
     <>
       {/* 1. Header */}
@@ -87,7 +106,7 @@ export default function Home() {
         </div>
         <div className="section-inner">
           <div className="hero-content">
-            <Badge fEv2mISRr="NOW IN BETA" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
+            <Badge fEv2mISRr="NOW IN BETA" style={{ backgroundColor: "rgb(255, 229, 217)" }} />
             <h1 className="hero-heading">Stay afloat this finals season.</h1>
             <p className="hero-subtitle">
               Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.
@@ -121,7 +140,7 @@ export default function Home() {
             </p>
           </div>
           <div className="hero-image-wrapper">
-            <div className="hero-image" />
+            <div ref={heroRef} className="hero-image" />
           </div>
         </div>
       </section>
@@ -130,7 +149,7 @@ export default function Home() {
       <section className="page-section section-bg-light">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
+            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(215, 233, 244)" }} />
             <h2 className="section-heading">STUDYING SHOULDN&rsquo;T FEEL THIS BROKEN</h2>
             <p className="section-subtitle">
               Every night, millions of students get stuck on practice problems with no one to help. They bounce between apps, lose focus, and give up before they actually learn.
@@ -163,7 +182,7 @@ export default function Home() {
       <section id="benefits" className="page-section section-bg-light">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(165, 185, 220)" }} />
+            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(214, 225, 232)" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
             <p className="section-subtitle">
               Notes, documents, AI tutoring, quizzes, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.
@@ -225,7 +244,7 @@ export default function Home() {
           <div className="integrations-card">
             <IntegrationsResponsive style={{ width: "100%" }} />
             <div className="integrations-text">
-              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
+              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(255, 229, 217)" }} />
               <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
               <p className="section-subtitle">
                 From calculus problem sets to organic chemistry mechanisms to circuit analysis, Reef understands the notation and concepts across all your STEM courses.
@@ -248,7 +267,7 @@ export default function Home() {
                   Drop in your syllabus, lecture slides, homework PDFs, or even photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. If a document has an answer key, it&rsquo;s extracted automatically so the AI can check your work in real time.
                 </p>
               </div>
-              <div className="step-card step-card-teal">
+              <div className="step-card step-card-blue">
                 <div className="step-card-inner">
                   <img
                     src="https://framerusercontent.com/images/rbrs5BD6YqQE8Lxfiq0z819bbY.png"
@@ -269,7 +288,7 @@ export default function Home() {
 
             {/* Step 2: image card left, text right */}
             <div className="how-it-works-step">
-              <div className="step-card step-card-coral">
+              <div className="step-card step-card-peach">
                 <div className="step-card-inner">
                   <img
                     src="https://framerusercontent.com/images/sciUgoQBql5wKVM5ZcUqjqzKE.png"
@@ -304,7 +323,7 @@ export default function Home() {
                   After working through problems, take auto-generated quizzes to prove what you know. Each topic you master unlocks a new marine species in your personal reef, a living visualization of your progress. Over time, you can see exactly which concepts are solid and which need more work.
                 </p>
               </div>
-              <div className="step-card step-card-slate">
+              <div className="step-card step-card-steel">
                 <div className="step-card-inner">
                   <img
                     src="https://framerusercontent.com/images/v6wZRssF6htlH2vkhNBcUBx8pEs.png"
@@ -321,7 +340,7 @@ export default function Home() {
       <section className="page-section section-bg-light pricing-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
+            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "rgb(215, 233, 244)" }} />
             <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
             <p className="section-subtitle">
               Whether you&rsquo;re testing the waters with one class or going all in across your entire course load, Reef has a plan that fits your semester.
@@ -332,7 +351,7 @@ export default function Home() {
               title="SHORE"
               description="Dip your toes in with one course and core study tools."
               price="$0"
-              background="rgb(243, 250, 249)"
+              background="rgb(237, 246, 250)"
               buttonLabel="Step In"
               feature1="1 course"
               feature2="5 homeworks"
@@ -344,7 +363,7 @@ export default function Home() {
               title="Reef"
               description="Plenty of power for most students, all semester long."
               price="$9.99"
-              background="rgb(252, 244, 240)"
+              background="rgb(255, 244, 240)"
               buttonLabel="Dive In"
               feature1="5 courses"
               feature2="50 homeworks"
@@ -356,7 +375,7 @@ export default function Home() {
               title="Abyss"
               description="No limits. For students who never want to hit a wall."
               price="$29.99"
-              background="rgb(225, 232, 245)"
+              background="rgb(228, 236, 242)"
               buttonLabel="Go Deep"
               feature1="Unlimited courses"
               feature2="Unlimited homeworks"
@@ -372,7 +391,7 @@ export default function Home() {
       <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(165, 185, 220)" }} />
+            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(214, 225, 232)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
@@ -383,8 +402,8 @@ export default function Home() {
       {/* 9. Newsletter Section */}
       <section className="page-section cta-section">
         <div className="section-inner">
-          <div className="cta-card">
-            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
+          <div className="cta-card" style={{ backgroundColor: "rgb(255, 229, 217)" }}>
+            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(215, 233, 244)" }} />
             <h2 className="cta-heading">STAY IN THE LOOP</h2>
             <p className="cta-subtitle">
               Get early access, product updates, and study tips delivered straight to your inbox.
