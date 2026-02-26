@@ -1,16 +1,18 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
+import dynamic from "next/dynamic"
 import "./globals.css"
-import Header from "../framer/header"
-import Footer from "../framer/footer"
 import Badge from "../framer/badge"
 import Button from "../framer/button"
 import FeaturesCard from "../framer/features-card"
-import Integrations from "../framer/integrations"
 import PricingCard from "../framer/pricing-card"
-import Accordion from "../framer/accordion"
-import Pattern from "../framer/pattern"
+
+const HeaderResponsive = dynamic(() => import("../framer/header").then(m => m.default.Responsive), { ssr: false })
+const FooterResponsive = dynamic(() => import("../framer/footer").then(m => m.default.Responsive), { ssr: false })
+const IntegrationsResponsive = dynamic(() => import("../framer/integrations").then(m => m.default.Responsive), { ssr: false })
+const AccordionResponsive = dynamic(() => import("../framer/accordion").then(m => m.default.Responsive), { ssr: false })
+const PatternResponsive = dynamic(() => import("../framer/pattern").then(m => m.default.Responsive), { ssr: false })
 
 export default function Home() {
   const heroImageRef = useRef(null)
@@ -40,12 +42,12 @@ export default function Home() {
   return (
     <>
       {/* 1. Header */}
-      <Header.Responsive />
+      <HeaderResponsive />
 
       {/* 2. Hero */}
       <section className="page-section hero-section">
         <div className="hero-pattern">
-          <Pattern.Responsive style={{ width: "100%", height: "100%" }} />
+          <PatternResponsive style={{ width: "100%", height: "100%" }} />
         </div>
         <div className="section-inner">
           <div className="hero-content">
@@ -187,7 +189,7 @@ export default function Home() {
       <section className="page-section">
         <div className="section-inner">
           <div className="integrations-card">
-            <Integrations.Responsive style={{ width: "100%" }} />
+            <IntegrationsResponsive style={{ width: "100%" }} />
             <div className="integrations-text">
               <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
               <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
@@ -337,7 +339,7 @@ export default function Home() {
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
-          <Accordion.Responsive />
+          <AccordionResponsive />
         </div>
       </section>
 
@@ -355,7 +357,7 @@ export default function Home() {
       </section>
 
       {/* 10. Footer */}
-      <Footer.Responsive />
+      <FooterResponsive />
     </>
   )
 }
