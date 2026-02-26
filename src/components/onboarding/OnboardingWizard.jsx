@@ -8,8 +8,7 @@ import ProgressBar from "./ProgressBar"
 import StepName from "./StepName"
 import StepGrade from "./StepGrade"
 import StepSubjects from "./StepSubjects"
-
-const fontFamily = `"Epilogue", sans-serif`
+import StepReferral from "./StepReferral"
 
 const colors = {
   tealSoft: "rgb(214, 243, 241)",
@@ -38,6 +37,7 @@ export default function OnboardingWizard({ user }) {
     name: "",
     grade: "",
     subjects: [],
+    referral_source: "",
   })
 
   function goNext() {
@@ -58,6 +58,7 @@ export default function OnboardingWizard({ user }) {
         email: user.email,
         grade: formData.grade,
         subjects: formData.subjects,
+        referral_source: formData.referral_source,
         onboarding_completed: true,
       })
       document.cookie = "reef_onboarded=true; path=/; max-age=31536000"
@@ -96,7 +97,7 @@ export default function OnboardingWizard({ user }) {
           overflow: "hidden",
         }}
       >
-        <ProgressBar step={step} />
+        <ProgressBar step={step} total={4} />
 
         <AnimatePresence mode="wait" custom={direction}>
           {step === 0 && (
@@ -149,6 +150,25 @@ export default function OnboardingWizard({ user }) {
               <StepSubjects
                 value={formData.subjects}
                 onChange={(subjects) => setFormData((d) => ({ ...d, subjects }))}
+                onNext={goNext}
+                onBack={goBack}
+              />
+            </motion.div>
+          )}
+
+          {step === 3 && (
+            <motion.div
+              key="referral"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+            >
+              <StepReferral
+                value={formData.referral_source}
+                onChange={(referral_source) => setFormData((d) => ({ ...d, referral_source }))}
                 onSubmit={handleSubmit}
                 onBack={goBack}
                 submitting={submitting}

@@ -13,34 +13,17 @@ const colors = {
   gray: "rgb(119, 119, 119)",
 }
 
-const SUBJECTS = [
-  "Algebra",
-  "Geometry",
-  "Precalculus",
-  "Calculus",
-  "Statistics",
-  "Linear Algebra",
-  "Trigonometry",
-  "Differential Equations",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "Computer Science",
-  "Economics",
-  "Engineering",
-  "Accounting",
+const SOURCES = [
+  { value: "social_media", label: "Social Media" },
+  { value: "friend_family", label: "Friend or Family" },
+  { value: "teacher_school", label: "Teacher or School" },
+  { value: "google", label: "Google Search" },
+  { value: "youtube", label: "YouTube" },
+  { value: "other", label: "Other" },
 ]
 
-export default function StepSubjects({ value, onChange, onNext, onBack }) {
-  function toggle(subject) {
-    if (value.includes(subject)) {
-      onChange(value.filter((s) => s !== subject))
-    } else {
-      onChange([...value, subject])
-    }
-  }
-
-  const canContinue = value.length >= 1
+export default function StepReferral({ value, onChange, onSubmit, onBack, submitting }) {
+  const canSubmit = !!value && !submitting
 
   return (
     <motion.div
@@ -62,7 +45,7 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
           marginBottom: 8,
         }}
       >
-        What subjects do you need help with?
+        How did you hear about us?
       </h2>
       <p
         style={{
@@ -75,41 +58,39 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
           marginBottom: 24,
         }}
       >
-        Select at least one. You can always change these later.
+        This helps us understand how students find Reef.
       </p>
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          marginBottom: 28,
-        }}
-      >
-        {SUBJECTS.map((subject) => {
-          const selected = value.includes(subject)
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+        {SOURCES.map((source) => {
+          const selected = value === source.value
           return (
             <motion.button
-              key={subject}
+              key={source.value}
               type="button"
-              onClick={() => toggle(subject)}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", bounce: 0.3, duration: 0.3 }}
+              onClick={() => onChange(source.value)}
+              whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}` }}
+              whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
+              transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
               style={{
-                padding: "8px 16px",
+                width: "100%",
+                padding: "14px 18px",
                 backgroundColor: selected ? colors.teal : colors.white,
-                border: `2px solid ${selected ? colors.teal : colors.black}`,
-                borderRadius: 999,
+                border: `2px solid ${colors.black}`,
+                borderRadius: 0,
+                boxShadow: selected
+                  ? `3px 3px 0px 0px ${colors.black}`
+                  : `4px 4px 0px 0px ${colors.black}`,
                 fontFamily,
                 fontWeight: 600,
-                fontSize: 13,
+                fontSize: 15,
                 letterSpacing: "-0.04em",
                 color: selected ? colors.white : colors.deepSea,
                 cursor: "pointer",
+                textAlign: "left",
               }}
             >
-              {subject}
+              {source.label}
             </motion.button>
           )
         })}
@@ -119,6 +100,7 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
         <button
           type="button"
           onClick={onBack}
+          disabled={submitting}
           style={{
             background: "none",
             border: "none",
@@ -127,7 +109,7 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
             fontSize: 14,
             letterSpacing: "-0.04em",
             color: colors.gray,
-            cursor: "pointer",
+            cursor: submitting ? "not-allowed" : "pointer",
             padding: 0,
           }}
         >
@@ -136,14 +118,14 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
 
         <motion.button
           type="button"
-          onClick={onNext}
-          disabled={!canContinue}
-          whileHover={canContinue ? { boxShadow: `2px 2px 0px 0px ${colors.black}` } : {}}
-          whileTap={canContinue ? { boxShadow: `0px 0px 0px 0px ${colors.black}` } : {}}
+          onClick={onSubmit}
+          disabled={!canSubmit}
+          whileHover={canSubmit ? { boxShadow: `2px 2px 0px 0px ${colors.black}` } : {}}
+          whileTap={canSubmit ? { boxShadow: `0px 0px 0px 0px ${colors.black}` } : {}}
           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
           style={{
             padding: "12px 32px",
-            backgroundColor: canContinue ? colors.coral : "rgb(230, 230, 230)",
+            backgroundColor: canSubmit ? colors.coral : "rgb(230, 230, 230)",
             border: `2px solid ${colors.black}`,
             borderRadius: 0,
             boxShadow: `4px 4px 0px 0px ${colors.black}`,
@@ -152,11 +134,11 @@ export default function StepSubjects({ value, onChange, onNext, onBack }) {
             fontSize: 15,
             letterSpacing: "-0.04em",
             textTransform: "uppercase",
-            color: canContinue ? colors.white : colors.gray,
-            cursor: canContinue ? "pointer" : "not-allowed",
+            color: canSubmit ? colors.white : colors.gray,
+            cursor: canSubmit ? "pointer" : "not-allowed",
           }}
         >
-          Continue
+          {submitting ? "Saving..." : "Get Started"}
         </motion.button>
       </div>
     </motion.div>
