@@ -51,27 +51,35 @@ function GridPattern() {
   )
 }
 
-// Each creature swims along its own looping path via x/y keyframes
-function SwimmingCreature({ src, alt, width, x, y, rotate, duration, delay, flip }) {
+const SIZE = 80
+
+// Drifts continuously from right to left across the panel with gentle vertical wobble
+function DriftingCreature({ src, alt, top, duration, delay, wobble = 15 }) {
   return (
     <motion.img
       src={src}
       alt={alt}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1, x, y, rotate }}
+      initial={{ x: 700, opacity: 0 }}
+      animate={{
+        x: [700, -100],
+        y: [0, wobble, -wobble, wobble, 0],
+        rotate: [0, 2, -2, 2, 0],
+        opacity: [0, 1, 1, 1, 0],
+      }}
       transition={{
-        opacity: { duration: 0.6, delay },
-        x: { duration, repeat: Infinity, ease: "easeInOut", delay },
-        y: { duration, repeat: Infinity, ease: "easeInOut", delay },
-        rotate: { duration, repeat: Infinity, ease: "easeInOut", delay },
+        x: { duration, repeat: Infinity, ease: "linear", delay },
+        y: { duration: duration / 2, repeat: Infinity, ease: "easeInOut", delay },
+        rotate: { duration: duration / 2, repeat: Infinity, ease: "easeInOut", delay },
+        opacity: { duration, repeat: Infinity, times: [0, 0.05, 0.5, 0.95, 1], ease: "linear", delay },
       }}
       style={{
         position: "absolute",
+        top,
+        left: 0,
         zIndex: 2,
-        width,
+        width: SIZE,
         height: "auto",
         pointerEvents: "none",
-        transform: flip ? "scaleX(-1)" : undefined,
       }}
     />
   )
@@ -104,75 +112,11 @@ export default function SignupHero() {
     >
       <GridPattern />
 
-      {/* Fish: drifts right-to-left across the top */}
-      <div style={{ position: "absolute", top: "6%", right: "0%", zIndex: 2 }}>
-        <SwimmingCreature
-          src="/fish.png"
-          alt=""
-          width={100}
-          x={[0, -60, -140, -200, -260, -200, -140, -60, 0]}
-          y={[0, -20, -10, 15, 30, 15, -10, -20, 0]}
-          rotate={[0, -3, -2, 2, 3, 2, -1, -3, 0]}
-          duration={20}
-          delay={0.4}
-        />
-      </div>
-
-      {/* Turtle: slow cruise left-to-right across the bottom */}
-      <div style={{ position: "absolute", bottom: "8%", left: "0%", zIndex: 2 }}>
-        <SwimmingCreature
-          src="/turtle.png"
-          alt=""
-          width={110}
-          x={[0, 50, 120, 200, 260, 200, 120, 50, 0]}
-          y={[0, -12, -8, 5, 15, 8, -5, -12, 0]}
-          rotate={[0, 2, 3, 2, 0, -2, -3, -2, 0]}
-          duration={24}
-          delay={0.5}
-        />
-      </div>
-
-      {/* Jellyfish: gentle vertical drift on the left side */}
-      <div style={{ position: "absolute", top: "20%", left: "6%", zIndex: 2 }}>
-        <SwimmingCreature
-          src="/jellyfish.png"
-          alt=""
-          width={75}
-          x={[0, 20, 50, 70, 50, 20, 0, -20, 0]}
-          y={[0, -40, -60, -30, 20, 60, 40, 10, 0]}
-          rotate={[0, 2, 1, -1, -2, -1, 1, 2, 0]}
-          duration={18}
-          delay={0.6}
-        />
-      </div>
-
-      {/* Seahorse: drifts down the right edge */}
-      <div style={{ position: "absolute", top: "35%", right: "8%", zIndex: 2 }}>
-        <SwimmingCreature
-          src="/seahorse.png"
-          alt=""
-          width={65}
-          x={[0, -30, -70, -100, -70, -30, 0, 20, 0]}
-          y={[0, -30, -10, 30, 70, 100, 70, 20, 0]}
-          rotate={[0, -3, -2, 1, 3, 2, -1, -3, 0]}
-          duration={22}
-          delay={0.7}
-        />
-      </div>
-
-      {/* Starfish: slow diagonal drift near bottom-center */}
-      <div style={{ position: "absolute", bottom: "15%", left: "38%", zIndex: 2 }}>
-        <SwimmingCreature
-          src="/starfish.png"
-          alt=""
-          width={60}
-          x={[0, 40, 80, 100, 80, 40, 0, -30, 0]}
-          y={[0, -20, -40, -20, 10, 30, 20, 5, 0]}
-          rotate={[0, 8, 15, 8, 0, -8, -15, -8, 0]}
-          duration={26}
-          delay={0.8}
-        />
-      </div>
+      <DriftingCreature src="/fish.png" alt="" top="5%" duration={14} delay={0} wobble={12} />
+      <DriftingCreature src="/jellyfish.png" alt="" top="25%" duration={18} delay={3} wobble={18} />
+      <DriftingCreature src="/seahorse.png" alt="" top="45%" duration={22} delay={7} wobble={10} />
+      <DriftingCreature src="/turtle.png" alt="" top="65%" duration={16} delay={5} wobble={14} />
+      <DriftingCreature src="/starfish.png" alt="" top="82%" duration={20} delay={10} wobble={8} />
 
       <div style={{ position: "relative", zIndex: 3, textAlign: "center", maxWidth: 400 }}>
         {/* REEF letters stagger in */}
