@@ -80,13 +80,13 @@ export default function Home() {
               </svg>
               Now in beta. Free to use.
             </p>
-            <img
-              ref={heroImageRef}
-              className="hero-image"
-              src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
-              alt="Reef app on iPad"
-            />
           </div>
+          <img
+            ref={heroImageRef}
+            className="hero-image"
+            src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
+            alt="Reef app on iPad"
+          />
         </div>
       </section>
 

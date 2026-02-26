@@ -112,7 +112,7 @@ footer.framer-1fiw38h {
   letter-spacing: -0.04em;
   line-height: 1.5em;
   color: rgb(119, 119, 119);
-  max-width: 600px;
+  max-width: 490px;
 }
 
 .hero-buttons {
@@ -136,6 +136,7 @@ footer.framer-1fiw38h {
 .hero-image {
   width: 100%;
   max-width: 900px;
+  margin: 0 auto;
   display: block;
   transform: perspective(1200px) scale(0.937) rotateX(15.67deg);
   will-change: transform;
