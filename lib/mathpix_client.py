@@ -233,11 +233,15 @@ async def _debounced_reasoning(session_id: str, page: int) -> None:
         t_push_end = time.perf_counter()
         # silent: do nothing (already logged to DB by run_reasoning)
 
+        early_exit = result.get("early_exit", False)
+        ttft = result.get("ttft")
+        ttft_str = f", ttft={ttft:.2f}s" if ttft is not None else ""
+        early_str = f", early_exit=true" if early_exit else ""
         wait_str = f", tx_wait={waited_for_tx:.3f}s" if waited_for_tx > 0.01 else ""
         print(
             f"[latency] reasoning pipeline ({session_id}, p={page}): "
             f"debounce={t_debounce_end - t_debounce_start:.1f}s{wait_str}, "
-            f"reasoning={t_reasoning_end - t_reasoning_start:.1f}s, "
+            f"reasoning={t_reasoning_end - t_reasoning_start:.1f}s{ttft_str}{early_str}, "
             f"push={t_push_end - t_push_start:.3f}s, "
             f"action={action}, delay={delay_ms}ms"
         )
