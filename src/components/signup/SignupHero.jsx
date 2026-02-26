@@ -6,12 +6,9 @@ const fontFamily = `"Epilogue", sans-serif`
 
 const colors = {
   coral: "rgb(235, 140, 115)",
-  teal: "rgb(50, 172, 166)",
   black: "rgb(0, 0, 0)",
-  white: "rgb(255, 255, 255)",
   deepSea: "rgb(21, 49, 75)",
   tealSoft: "rgb(214, 243, 241)",
-  coralSoft: "rgb(253, 228, 219)",
 }
 
 const valueProps = [
@@ -80,7 +77,7 @@ export default function SignupHero() {
 
       <div style={{ position: "relative", zIndex: 3, textAlign: "center", maxWidth: 420 }}>
         {/* REEF letters stagger in */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 20 }}>
           {"REEF".split("").map((letter, i) => (
             <motion.span
               key={i}
@@ -107,46 +104,20 @@ export default function SignupHero() {
           ))}
         </div>
 
-        {/* Product screenshot in neo-brutalist frame */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          style={{
-            border: `3px solid ${colors.black}`,
-            boxShadow: `6px 6px 0px 0px ${colors.black}`,
-            borderRadius: 0,
-            overflow: "hidden",
-            backgroundColor: colors.white,
-            marginBottom: 28,
-            transform: "rotate(-2deg)",
-          }}
-        >
-          <img
-            src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
-            alt="Reef app on iPad"
-            style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
-            }}
-          />
-        </motion.div>
-
         {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
           style={{
             fontFamily,
             fontWeight: 500,
-            fontSize: 16,
+            fontSize: 18,
             lineHeight: "1.5em",
             letterSpacing: "-0.04em",
             color: colors.deepSea,
             margin: 0,
-            marginBottom: 28,
+            marginBottom: 40,
           }}
         >
           AI-powered tutoring that adapts to how you think.
