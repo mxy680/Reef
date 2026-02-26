@@ -20,6 +20,7 @@ export default function InputField({ type = "text", placeholder, value, onChange
         height: 48,
         border: `2px solid ${colors.black}`,
         borderRadius: 999,
+        boxShadow: `4px 4px 0px 0px ${colors.black}`,
         display: "flex",
         alignItems: "center",
         padding: "0 18px",
