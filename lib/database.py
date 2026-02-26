@@ -30,6 +30,7 @@ async def init_db():
         await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS grade TEXT")
         await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS subjects JSONB DEFAULT '[]'::jsonb")
         await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE")
+        await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS referral_source TEXT")
 
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS stroke_logs (

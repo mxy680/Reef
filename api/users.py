@@ -35,16 +35,17 @@ async def upsert_profile(
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO user_profiles (apple_user_id, display_name, email, grade, subjects, onboarding_completed)
-            VALUES ($1, $2, $3, $4, $5::jsonb, COALESCE($6, FALSE))
+            INSERT INTO user_profiles (apple_user_id, display_name, email, grade, subjects, onboarding_completed, referral_source)
+            VALUES ($1, $2, $3, $4, $5::jsonb, COALESCE($6, FALSE), $7)
             ON CONFLICT (apple_user_id) DO UPDATE SET
                 display_name = COALESCE($2, user_profiles.display_name),
                 email = COALESCE($3, user_profiles.email),
                 grade = COALESCE($4, user_profiles.grade),
                 subjects = COALESCE($5::jsonb, user_profiles.subjects),
                 onboarding_completed = COALESCE($6, user_profiles.onboarding_completed),
+                referral_source = COALESCE($7, user_profiles.referral_source),
                 updated_at = NOW()
-            RETURNING apple_user_id, display_name, email, grade, subjects, onboarding_completed
+            RETURNING apple_user_id, display_name, email, grade, subjects, onboarding_completed, referral_source
             """,
             user_id,
             body.display_name,
@@ -52,6 +53,7 @@ async def upsert_profile(
             body.grade,
             subjects_json,
             body.onboarding_completed,
+            body.referral_source,
         )
 
     return UserProfileResponse(
@@ -61,6 +63,7 @@ async def upsert_profile(
         grade=row["grade"],
         subjects=json.loads(row["subjects"]) if row["subjects"] else [],
         onboarding_completed=row["onboarding_completed"] or False,
+        referral_source=row["referral_source"],
     )
 
 
@@ -75,7 +78,7 @@ async def get_profile(authorization: str = Header(...)):
 
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT apple_user_id, display_name, email, grade, subjects, onboarding_completed FROM user_profiles WHERE apple_user_id = $1",
+            "SELECT apple_user_id, display_name, email, grade, subjects, onboarding_completed, referral_source FROM user_profiles WHERE apple_user_id = $1",
             user_id,
         )
 
@@ -89,6 +92,7 @@ async def get_profile(authorization: str = Header(...)):
         grade=row["grade"],
         subjects=json.loads(row["subjects"]) if row["subjects"] else [],
         onboarding_completed=row["onboarding_completed"] or False,
+        referral_source=row["referral_source"],
     )
 
 

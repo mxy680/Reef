@@ -9,6 +9,7 @@ class UserProfileRequest(BaseModel):
     grade: str | None = None
     subjects: list[str] | None = None
     onboarding_completed: bool | None = None
+    referral_source: str | None = None
 
 
 class UserProfileResponse(BaseModel):
@@ -18,3 +19,4 @@ class UserProfileResponse(BaseModel):
     grade: str | None = None
     subjects: list[str] | None = None
     onboarding_completed: bool = False
+    referral_source: str | None = None
