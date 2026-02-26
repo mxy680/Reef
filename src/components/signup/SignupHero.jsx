@@ -78,11 +78,11 @@ export default function SignupHero() {
     >
       <GridPattern />
 
-      <motion.img src="/fish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.4 }} style={{ position: "absolute", top: "6%", right: "8%", width: 70, height: "auto", zIndex: 2, pointerEvents: "none" }} />
-      <motion.img src="/jellyfish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.5 }} style={{ position: "absolute", top: "22%", left: "5%", width: 55, height: "auto", zIndex: 2, pointerEvents: "none" }} />
-      <motion.img src="/turtle.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.6 }} style={{ position: "absolute", bottom: "8%", left: "6%", width: 75, height: "auto", zIndex: 2, pointerEvents: "none" }} />
-      <motion.img src="/seahorse.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.7 }} style={{ position: "absolute", bottom: "25%", right: "6%", width: 50, height: "auto", zIndex: 2, pointerEvents: "none" }} />
-      <motion.img src="/starfish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.8 }} style={{ position: "absolute", bottom: "5%", right: "35%", width: 45, height: "auto", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/fish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.4 }} style={{ position: "absolute", top: "6%", right: "8%", width: 70, height: 70, objectFit: "contain", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/jellyfish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.5 }} style={{ position: "absolute", top: "22%", left: "5%", width: 70, height: 70, objectFit: "contain", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/turtle.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.6 }} style={{ position: "absolute", bottom: "8%", left: "6%", width: 70, height: 70, objectFit: "contain", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/seahorse.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.7 }} style={{ position: "absolute", bottom: "25%", right: "6%", width: 70, height: 70, objectFit: "contain", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/starfish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.8 }} style={{ position: "absolute", bottom: "5%", right: "35%", width: 70, height: 70, objectFit: "contain", zIndex: 2, pointerEvents: "none" }} />
 
       <div style={{ position: "relative", zIndex: 3, textAlign: "center", maxWidth: 400 }}>
         {/* REEF letters stagger in */}
