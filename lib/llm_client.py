@@ -79,6 +79,7 @@ class LLMClient:
         response_schema: dict | None = None,
         system_message: str | None = None,
         max_tokens: int | None = None,
+        extra_body: dict | None = None,
     ) -> str:
         """
         Generate text response, optionally with images.
@@ -122,6 +123,8 @@ class LLMClient:
                 "type": "json_schema",
                 "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
             }
+        if extra_body:
+            kwargs["extra_body"] = extra_body
 
         response = self.client.chat.completions.create(**kwargs)
         finish_reason = response.choices[0].finish_reason if response.choices else None
@@ -136,6 +139,7 @@ class LLMClient:
         temperature: float | None = None,
         response_schema: dict | None = None,
         system_message: str | None = None,
+        extra_body: dict | None = None,
     ):
         """Yield text chunks as they arrive from the model."""
         content: list[dict] = [{"type": "text", "text": prompt}]
@@ -165,6 +169,8 @@ class LLMClient:
                 "type": "json_schema",
                 "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
             }
+        if extra_body:
+            kwargs["extra_body"] = extra_body
 
         stream = self.client.chat.completions.create(**kwargs)
         for chunk in stream:
@@ -178,6 +184,7 @@ class LLMClient:
         temperature: float | None = None,
         response_schema: dict | None = None,
         system_message: str | None = None,
+        extra_body: dict | None = None,
     ):
         """Async generator that yields text chunks as they arrive."""
         content: list[dict] = [{"type": "text", "text": prompt}]
@@ -207,6 +214,8 @@ class LLMClient:
                 "type": "json_schema",
                 "json_schema": {"name": "response", "strict": True, "schema": _make_strict(response_schema)},
             }
+        if extra_body:
+            kwargs["extra_body"] = extra_body
 
         stream = await self.async_client.chat.completions.create(**kwargs)
         async for chunk in stream:
