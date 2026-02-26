@@ -1,41 +1,30 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
 
 const fontFamily = `"Epilogue", sans-serif`
 
 const colors = {
-  teal: "rgb(50, 172, 166)",
   black: "rgb(0, 0, 0)",
   deepSea: "rgb(21, 49, 75)",
 }
 
 export default function InputField({ type = "text", placeholder, value, onChange, name }) {
-  const [focused, setFocused] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const isPassword = type === "password"
 
   return (
-    <motion.div
-      animate={{
-        borderColor: focused ? colors.teal : colors.black,
-        boxShadow: focused
-          ? `3px 3px 0px 0px ${colors.teal}`
-          : "0px 0px 0px 0px transparent",
-      }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
+    <div
       style={{
         width: "100%",
         height: 48,
         border: `2px solid ${colors.black}`,
-        borderRadius: 0,
+        borderRadius: 999,
         display: "flex",
         alignItems: "center",
-        padding: "0 14px",
+        padding: "0 18px",
         boxSizing: "border-box",
         backgroundColor: "rgb(255, 255, 255)",
-        position: "relative",
       }}
     >
       <input
@@ -44,8 +33,6 @@ export default function InputField({ type = "text", placeholder, value, onChange
         value={value}
         onChange={onChange}
         name={name}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         style={{
           width: "100%",
           height: "100%",
@@ -93,6 +80,6 @@ export default function InputField({ type = "text", placeholder, value, onChange
           )}
         </button>
       )}
-    </motion.div>
+    </div>
   )
 }
