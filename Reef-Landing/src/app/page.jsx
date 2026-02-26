@@ -34,21 +34,10 @@ export default function Home() {
     const onScroll = () => requestAnimationFrame(updateHeroTilt)
     window.addEventListener("scroll", onScroll, { passive: true })
 
-    // Custom smooth scroll with configurable duration (slower than native)
-    function smoothScrollTo(element, duration = 700) {
+    function smoothScrollTo(element) {
       const headerOffset = 80
-      const targetY = element.getBoundingClientRect().top + window.scrollY - headerOffset
-      const startY = window.scrollY
-      const diff = targetY - startY
-      const startTime = performance.now()
-      function step(currentTime) {
-        const elapsed = currentTime - startTime
-        const t = Math.min(elapsed / duration, 1)
-        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-        window.scrollTo(0, startY + diff * ease)
-        if (t < 1) requestAnimationFrame(step)
-      }
-      requestAnimationFrame(step)
+      const top = element.getBoundingClientRect().top + window.scrollY - headerOffset
+      window.scrollTo({ top, behavior: "smooth" })
     }
 
     // Extract hash from any URL format and scroll to it
