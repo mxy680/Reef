@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import "./globals.css"
 import Header from "../framer/header"
 import Footer from "../framer/footer"
@@ -13,6 +13,19 @@ import Accordion from "../framer/accordion"
 import Pattern from "../framer/pattern"
 
 export default function Home() {
+  const heroImageRef = useRef(null)
+
+  // Scroll-linked tilt animation on hero iPad image
+  // Matches live Framer site: tilted back at top, flattens as you scroll
+  const updateHeroTilt = useCallback(() => {
+    const img = heroImageRef.current
+    if (!img) return
+    const t = Math.min(1, window.scrollY / 800)
+    const rotateX = 15.67 * (1 - t)
+    const scale = 0.937 + 0.063 * t
+    img.style.transform = `perspective(1200px) scale(${scale}) rotateX(${rotateX}deg)`
+  }, [])
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -26,8 +39,17 @@ export default function Home() {
       { threshold: 0.1 }
     )
     document.querySelectorAll(".scroll-reveal").forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
+
+    // Hero tilt: run once on mount + on every scroll frame
+    updateHeroTilt()
+    const onScroll = () => requestAnimationFrame(updateHeroTilt)
+    window.addEventListener("scroll", onScroll, { passive: true })
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("scroll", onScroll)
+    }
+  }, [updateHeroTilt])
 
   return (
     <>
@@ -73,6 +95,7 @@ export default function Home() {
               Now in beta. Free to use.
             </p>
             <img
+              ref={heroImageRef}
               className="hero-image"
               src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
               alt="Reef app on iPad"
