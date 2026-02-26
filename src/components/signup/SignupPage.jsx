@@ -76,8 +76,40 @@ export default function SignupPage() {
         justifyContent: "center",
         padding: "40px 24px",
         boxSizing: "border-box",
+        position: "relative",
       }}
     >
+      {/* Back to home */}
+      <motion.a
+        href="/"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        style={{
+          position: "absolute",
+          top: 28,
+          left: 28,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontFamily,
+          fontWeight: 600,
+          fontSize: 14,
+          letterSpacing: "-0.02em",
+          color: colors.deepSea,
+          textDecoration: "none",
+          cursor: "pointer",
+          opacity: 0.6,
+        }}
+        whileHover={{ opacity: 1 }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5" />
+          <path d="m12 19-7-7 7-7" />
+        </svg>
+        Home
+      </motion.a>
+
       {/* Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
