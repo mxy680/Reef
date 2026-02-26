@@ -51,40 +51,6 @@ function GridPattern() {
   )
 }
 
-const SIZE = 80
-
-// Drifts continuously from right to left across the panel with gentle vertical wobble
-function DriftingCreature({ src, alt, top, duration, delay, wobble = 15 }) {
-  return (
-    <motion.img
-      src={src}
-      alt={alt}
-      initial={{ x: 700, opacity: 0 }}
-      animate={{
-        x: [700, -100],
-        y: [0, wobble, -wobble, wobble, 0],
-        rotate: [0, 2, -2, 2, 0],
-        opacity: [0, 1, 1, 1, 0],
-      }}
-      transition={{
-        x: { duration, repeat: Infinity, ease: "linear", delay },
-        y: { duration: duration / 2, repeat: Infinity, ease: "easeInOut", delay },
-        rotate: { duration: duration / 2, repeat: Infinity, ease: "easeInOut", delay },
-        opacity: { duration, repeat: Infinity, times: [0, 0.05, 0.5, 0.95, 1], ease: "linear", delay },
-      }}
-      style={{
-        position: "absolute",
-        top,
-        left: 0,
-        zIndex: 2,
-        width: SIZE,
-        height: "auto",
-        pointerEvents: "none",
-      }}
-    />
-  )
-}
-
 function CheckIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -112,11 +78,11 @@ export default function SignupHero() {
     >
       <GridPattern />
 
-      <DriftingCreature src="/fish.png" alt="" top="5%" duration={14} delay={0} wobble={12} />
-      <DriftingCreature src="/jellyfish.png" alt="" top="25%" duration={18} delay={3} wobble={18} />
-      <DriftingCreature src="/seahorse.png" alt="" top="45%" duration={22} delay={7} wobble={10} />
-      <DriftingCreature src="/turtle.png" alt="" top="65%" duration={16} delay={5} wobble={14} />
-      <DriftingCreature src="/starfish.png" alt="" top="82%" duration={20} delay={10} wobble={8} />
+      <motion.img src="/fish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.4 }} style={{ position: "absolute", top: "6%", right: "8%", width: 70, height: "auto", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/jellyfish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.5 }} style={{ position: "absolute", top: "22%", left: "5%", width: 55, height: "auto", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/turtle.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.6 }} style={{ position: "absolute", bottom: "8%", left: "6%", width: 75, height: "auto", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/seahorse.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.7 }} style={{ position: "absolute", bottom: "25%", right: "6%", width: 50, height: "auto", zIndex: 2, pointerEvents: "none" }} />
+      <motion.img src="/starfish.png" alt="" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.8 }} style={{ position: "absolute", bottom: "5%", right: "35%", width: 45, height: "auto", zIndex: 2, pointerEvents: "none" }} />
 
       <div style={{ position: "relative", zIndex: 3, textAlign: "center", maxWidth: 400 }}>
         {/* REEF letters stagger in */}
