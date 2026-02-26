@@ -14,7 +14,7 @@ const colors = {
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
   steel: "rgb(27, 73, 101)",
-  gray: "rgb(27, 73, 101)",
+  gray: "rgb(119, 119, 119)",
   peach: "rgb(255, 229, 217)",
   blueSoft: "rgb(255, 229, 217)",
 }

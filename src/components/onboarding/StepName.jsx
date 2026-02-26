@@ -10,7 +10,7 @@ const colors = {
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
   steel: "rgb(27, 73, 101)",
-  gray: "rgb(27, 73, 101)",
+  gray: "rgb(119, 119, 119)",
 }
 
 export default function StepName({ value, onChange, onNext }) {

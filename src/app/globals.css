@@ -123,7 +123,7 @@ footer.framer-1fiw38h {
   font-size: 18px;
   letter-spacing: -0.04em;
   line-height: 1.5em;
-  color: rgb(27, 73, 101);
+  color: rgb(119, 119, 119);
   max-width: 490px;
 }
 
@@ -142,7 +142,7 @@ footer.framer-1fiw38h {
   font-size: 14px;
   letter-spacing: -0.04em;
   line-height: 1.5em;
-  color: rgb(27, 73, 101);
+  color: rgb(119, 119, 119);
 }
 
 .hero-image-wrapper {
@@ -202,7 +202,7 @@ footer.framer-1fiw38h {
   font-size: 18px;
   letter-spacing: -0.04em;
   line-height: 1.5em;
-  color: rgb(27, 73, 101);
+  color: rgb(119, 119, 119);
   max-width: 600px;
 }
 
@@ -287,7 +287,7 @@ footer.framer-1fiw38h {
   font-size: 13px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgb(27, 73, 101);
+  color: rgb(119, 119, 119);
 }
 
 .step-heading {
@@ -305,7 +305,7 @@ footer.framer-1fiw38h {
   font-size: 18px;
   letter-spacing: -0.04em;
   line-height: 1.5em;
-  color: rgb(27, 73, 101);
+  color: rgb(119, 119, 119);
 }
 
 /* Step illustration cards */
@@ -330,7 +330,7 @@ footer.framer-1fiw38h {
 }
 
 .step-card-steel {
-  background-color: rgb(27, 73, 101);
+  background-color: rgb(119, 119, 119);
 }
 
 .step-card-inner {
@@ -492,7 +492,7 @@ footer.framer-1fiw38h {
 }
 
 .newsletter-input::placeholder {
-  color: rgb(95, 168, 211);
+  color: rgb(160, 160, 160);
 }
 
 .newsletter-btn {

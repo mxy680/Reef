@@ -62,7 +62,7 @@ export default function InputField({ type = "text", placeholder, value, onChange
             padding: 4,
             display: "flex",
             alignItems: "center",
-            color: "rgb(27, 73, 101)",
+            color: "rgb(119, 119, 119)",
             flexShrink: 0,
           }}
           aria-label={showPassword ? "Hide password" : "Show password"}

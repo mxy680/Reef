@@ -2,7 +2,7 @@
 
 const colors = {
   blue: "rgb(95, 168, 211)",
-  gray: "rgb(255, 229, 217)",
+  gray: "rgb(200, 200, 200)",
 }
 
 export default function ProgressBar({ step, total = 3 }) {
