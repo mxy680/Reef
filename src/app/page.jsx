@@ -123,7 +123,7 @@ export default function Home() {
           <div className="hero-image-wrapper">
             <img
               className="hero-image"
-              src="https://placehold.co/1320x743/1a1a2e/ccff6f?text=Coming+Soon&font=raleway"
+              src="https://placehold.co/1320x743/f9f5f6/e0dada?text=&font=raleway"
               alt="Reef app preview"
             />
           </div>
