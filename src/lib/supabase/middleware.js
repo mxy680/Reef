@@ -32,7 +32,7 @@ export async function updateSession(request) {
   const { pathname } = request.nextUrl
 
   // Redirect unauthenticated users away from protected routes
-  if (!user && pathname.startsWith("/onboarding")) {
+  if (!user && (pathname.startsWith("/onboarding") || pathname.startsWith("/dashboard"))) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth"
     return NextResponse.redirect(url)
@@ -41,7 +41,8 @@ export async function updateSession(request) {
   // Redirect authenticated users away from auth pages
   if (user && (pathname === "/auth" || pathname === "/signup")) {
     const url = request.nextUrl.clone()
-    url.pathname = "/onboarding"
+    const onboarded = request.cookies.get("reef_onboarded")?.value === "true"
+    url.pathname = onboarded ? "/dashboard" : "/onboarding"
     return NextResponse.redirect(url)
   }
 
