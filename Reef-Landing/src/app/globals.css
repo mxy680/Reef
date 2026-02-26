@@ -172,20 +172,34 @@ footer.framer-1fiw38h {
   max-width: 380px;
 }
 
-/* Features cards grid */
+/* Features cards grid — match live Framer site's 900px container */
 .features-cards-grid {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .features-cards-row {
   display: flex;
   flex-direction: row;
-  gap: 24px;
+  gap: 20px;
   justify-content: center;
   flex-wrap: wrap;
   align-items: stretch;
+}
+
+/* Override Framer's fixed widths — use flex sizing for responsive 2:1 ratio */
+.features-cards-row > .framer-1f6l56w {
+  height: auto !important;
+  width: auto !important;
+  flex: 1 1 0 !important;
+  min-width: 0;
+}
+
+.features-cards-row > .framer-v-1uq5497.framer-1f6l56w {
+  flex: 2 1 0 !important;
 }
 
 /* How it works */
