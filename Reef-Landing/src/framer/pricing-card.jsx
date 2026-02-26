@@ -990,7 +990,7 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 											width: "100%",
 										},
 										UyxF8MkP4: QraNpMhse2,
-										variant: matchVariant("iFwbrC864"),
+										variant: matchVariant("beELMga99"),
 										width: "100%",
 										Xy29tPt0i: jQxAXhNZP2,
 										Y3kwMmSe8: XMg8onXK12,

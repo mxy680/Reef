@@ -34,6 +34,46 @@ export default function Home() {
     const onScroll = () => requestAnimationFrame(updateHeroTilt)
     window.addEventListener("scroll", onScroll, { passive: true })
 
+    // Custom smooth scroll with configurable duration (slower than native)
+    function smoothScrollTo(element, duration = 1200) {
+      const headerOffset = 80
+      const targetY = element.getBoundingClientRect().top + window.scrollY - headerOffset
+      const startY = window.scrollY
+      const diff = targetY - startY
+      const startTime = performance.now()
+      function step(currentTime) {
+        const elapsed = currentTime - startTime
+        const t = Math.min(elapsed / duration, 1)
+        const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+        window.scrollTo(0, startY + diff * ease)
+        if (t < 1) requestAnimationFrame(step)
+      }
+      requestAnimationFrame(step)
+    }
+
+    // Extract hash from any URL format and scroll to it
+    function scrollToHash(url) {
+      let hash = null
+      if (typeof url === "string") {
+        if (url.startsWith("/#")) hash = url.slice(2)
+        else if (url.startsWith("#")) hash = url.slice(1)
+        else {
+          try {
+            const parsed = new URL(url, window.location.origin)
+            if (parsed.origin === window.location.origin && parsed.hash) {
+              hash = parsed.hash.slice(1)
+            }
+          } catch {}
+        }
+      }
+      if (!hash) return false
+      const target = document.getElementById(hash)
+      if (!target) return false
+      smoothScrollTo(target)
+      window.history.replaceState(null, "", `/#${hash}`)
+      return true
+    }
+
     // Intercept hash-link clicks for smooth scrolling
     // Framer's Link component triggers full Next.js route navigations for
     // anchor links, which causes a page remount instead of a scroll.
@@ -41,20 +81,26 @@ export default function Home() {
       const link = e.target.closest("a[href]")
       if (!link) return
       const href = link.getAttribute("href")
-      if (!href || !href.startsWith("/#")) return
-      const id = href.slice(2)
-      const target = document.getElementById(id)
-      if (!target) return
-      e.preventDefault()
-      e.stopPropagation()
-      target.scrollIntoView({ behavior: "smooth" })
-      history.replaceState(null, "", href)
+      if (!href) return
+      if (scrollToHash(href)) {
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }
     }
     document.addEventListener("click", handleClick, true)
+
+    // Backup: intercept programmatic navigation (Framer's router may use pushState)
+    const originalPushState = window.history.pushState.bind(window.history)
+    window.history.pushState = function (state, title, url) {
+      if (scrollToHash(url)) return
+      return originalPushState(state, title, url)
+    }
 
     return () => {
       window.removeEventListener("scroll", onScroll)
       document.removeEventListener("click", handleClick, true)
+      window.history.pushState = originalPushState
     }
   }, [updateHeroTilt])
 

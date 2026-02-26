@@ -402,6 +402,11 @@ footer.framer-1fiw38h {
   justify-content: flex-start !important;
 }
 
+/* Pricing card buttons: white primary style */
+.pricing-cards-row .framer-CQKIS.framer-2m28gd {
+  background-color: rgb(255, 255, 255) !important;
+}
+
 /* CTA section */
 
 .cta-card {
