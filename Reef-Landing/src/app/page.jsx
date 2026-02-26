@@ -287,7 +287,7 @@ export default function Home() {
       <section className="page-section section-bg-light pricing-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="Pricing" />
+            <Badge fEv2mISRr="PRICING" />
             <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
             <p className="section-subtitle">
               Whether you&rsquo;re testing the waters with one class or going all in across your entire course load, Reef has a plan that fits your semester.
@@ -338,7 +338,7 @@ export default function Home() {
       <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="Faq" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
+            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
