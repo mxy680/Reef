@@ -1,7 +1,7 @@
 "use client"
 
-import SignupForm from "../../framer/signup-form"
+import SignupPage from "../../components/signup/SignupPage"
 
-export default function SignupPage() {
-  return <SignupForm.Responsive />
+export default function Signup() {
+  return <SignupPage />
 }
