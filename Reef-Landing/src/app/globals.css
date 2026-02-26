@@ -72,6 +72,28 @@ footer.framer-1fiw38h {
   z-index: 1;
 }
 
+/* Hero entrance — matches live Framer spring animation exactly:
+   opacity: fast fade 0→1 in ~200ms
+   scale: spring 0.5 → 1.04 (overshoot) → 1 in ~500ms
+   both start after ~300ms delay */
+@keyframes heroFadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes heroScaleSpring {
+  0% { transform: scale(0.5); }
+  65% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+.hero-content {
+  opacity: 0;
+  transform: scale(0.5);
+  animation:
+    heroFadeIn 0.2s ease-out 0.3s forwards,
+    heroScaleSpring 0.5s ease-out 0.3s forwards;
+}
+
 .hero-heading {
   font-family: 'Epilogue', sans-serif;
   font-weight: 900;
@@ -79,7 +101,7 @@ footer.framer-1fiw38h {
   letter-spacing: -0.04em;
   line-height: 1.2em;
   color: rgb(0, 0, 0);
-  max-width: 800px;
+  max-width: 700px;
   text-transform: uppercase;
 }
 
@@ -90,7 +112,7 @@ footer.framer-1fiw38h {
   letter-spacing: -0.04em;
   line-height: 1.5em;
   color: rgb(119, 119, 119);
-  max-width: 600px;
+  max-width: 490px;
 }
 
 .hero-buttons {
@@ -114,10 +136,10 @@ footer.framer-1fiw38h {
 .hero-image {
   width: 100%;
   max-width: 900px;
-  border-radius: 12px;
-  border: 2px solid rgb(0, 0, 0);
-  box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
+  margin: 0 auto;
   display: block;
+  transform: perspective(1200px) scale(0.937) rotateX(15.67deg);
+  will-change: transform;
 }
 
 /* Problem / Features sections */
@@ -143,8 +165,7 @@ footer.framer-1fiw38h {
   letter-spacing: -0.04em;
   line-height: 1.2em;
   color: rgb(0, 0, 0);
-  max-width: 700px;
-  text-transform: uppercase;
+  max-width: 500px;
 }
 
 .section-subtitle {
@@ -172,20 +193,41 @@ footer.framer-1fiw38h {
   max-width: 380px;
 }
 
-/* Features cards grid */
+/* Problem card text alignment — Framer's text prop overrides children
+   that carry center alignment, so force it via CSS */
+.framer-CAKEG.framer-v-1h7jz2a h3,
+.framer-CAKEG.framer-v-1h7jz2a p {
+  text-align: center !important;
+}
+
+/* Features cards grid — match live Framer site's 900px container */
 .features-cards-grid {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .features-cards-row {
   display: flex;
   flex-direction: row;
-  gap: 24px;
+  gap: 20px;
   justify-content: center;
   flex-wrap: wrap;
   align-items: stretch;
+}
+
+/* Override Framer's fixed widths — use flex sizing for responsive 2:1 ratio */
+.features-cards-row > .framer-1f6l56w {
+  height: auto !important;
+  width: auto !important;
+  flex: 1 1 0 !important;
+  min-width: 0;
+}
+
+.features-cards-row > .framer-v-1uq5497.framer-1f6l56w {
+  flex: 2 1 0 !important;
 }
 
 /* How it works */
@@ -198,13 +240,14 @@ footer.framer-1fiw38h {
 .how-it-works-step {
   display: flex;
   flex-direction: row;
-  gap: 60px;
+  gap: 100px;
   align-items: center;
 }
 
 .step-text {
-  flex: 1;
+  flex: 0 0 400px;
   min-width: 0;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -230,11 +273,10 @@ footer.framer-1fiw38h {
 
 /* Step illustration cards */
 .step-card {
-  flex: 0 0 500px;
-  width: 500px;
-  height: 360px;
-  border: 2px solid rgb(0, 0, 0);
-  box-shadow: 4px 4px 0px 0px rgb(0, 0, 0);
+  flex: 1 1 0px;
+  height: 450px;
+  border: 4px solid rgb(0, 0, 0);
+  box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -251,7 +293,7 @@ footer.framer-1fiw38h {
 }
 
 .step-card-outline {
-  background-color: transparent;
+  background-color: rgb(218, 245, 240);
 }
 
 .step-card-inner {
@@ -259,7 +301,7 @@ footer.framer-1fiw38h {
   height: 80%;
   background-color: rgb(255, 255, 255);
   border-radius: 8px;
-  border: 2px solid rgb(0, 0, 0);
+  border: 4px solid rgb(0, 0, 0);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -276,7 +318,7 @@ footer.framer-1fiw38h {
 .step-card-outline-inner {
   width: 80%;
   height: 80%;
-  border: 2px solid rgb(0, 0, 0);
+  border: 4px solid rgb(0, 0, 0);
   border-radius: 8px;
 }
 
@@ -284,7 +326,7 @@ footer.framer-1fiw38h {
 .step-arrow {
   display: flex;
   justify-content: center;
-  opacity: 0.6;
+  opacity: 1;
 }
 
 .step-arrow-right {
@@ -318,6 +360,10 @@ footer.framer-1fiw38h {
 }
 
 /* Pricing */
+.pricing-section .section-heading {
+  max-width: 550px;
+}
+
 .pricing-cards-row {
   display: flex;
   flex-direction: row;
@@ -355,6 +401,7 @@ footer.framer-1fiw38h {
   letter-spacing: -0.04em;
   line-height: 1.2em;
   color: rgb(0, 0, 0);
+  max-width: 470px;
 }
 
 .cta-subtitle {
@@ -374,18 +421,6 @@ footer.framer-1fiw38h {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-/* Scroll reveal animations */
-.scroll-reveal {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.scroll-reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 /* Responsive */
@@ -409,7 +444,7 @@ footer.framer-1fiw38h {
   .step-card {
     flex: none;
     width: 100%;
-    height: 280px;
+    height: 320px;
   }
 
   .step-arrow-right,

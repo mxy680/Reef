@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import "./globals.css"
 import Header from "../framer/header"
 import Footer from "../framer/footer"
@@ -13,21 +13,29 @@ import Accordion from "../framer/accordion"
 import Pattern from "../framer/pattern"
 
 export default function Home() {
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible")
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.1 }
-    )
-    document.querySelectorAll(".scroll-reveal").forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+  const heroImageRef = useRef(null)
+
+  // Scroll-linked tilt animation on hero iPad image
+  // Matches live Framer site: tilted back at top, flattens as you scroll
+  const updateHeroTilt = useCallback(() => {
+    const img = heroImageRef.current
+    if (!img) return
+    const t = Math.min(1, window.scrollY / 800)
+    const rotateX = 15.67 * (1 - t)
+    const scale = 0.937 + 0.063 * t
+    img.style.transform = `perspective(1200px) scale(${scale}) rotateX(${rotateX}deg)`
   }, [])
+
+  useEffect(() => {
+    // Hero tilt: run once on mount + on every scroll frame
+    updateHeroTilt()
+    const onScroll = () => requestAnimationFrame(updateHeroTilt)
+    window.addEventListener("scroll", onScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+    }
+  }, [updateHeroTilt])
 
   return (
     <>
@@ -72,18 +80,19 @@ export default function Home() {
               </svg>
               Now in beta. Free to use.
             </p>
-            <img
-              className="hero-image"
-              src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
-              alt="Reef app on iPad"
-            />
           </div>
+          <img
+            ref={heroImageRef}
+            className="hero-image"
+            src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
+            alt="Reef app on iPad"
+          />
         </div>
       </section>
 
       {/* 3. Problem Section */}
       <section className="page-section section-bg-light">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">STUDYING SHOULDN&rsquo;T FEEL THIS BROKEN</h2>
@@ -116,7 +125,7 @@ export default function Home() {
 
       {/* 4. Features / Benefits Section */}
       <section id="benefits" className="page-section section-bg-light">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
@@ -177,7 +186,7 @@ export default function Home() {
       {/* 5. Integrations Section */}
       <section className="page-section">
         <div className="section-inner">
-          <div className="integrations-card scroll-reveal">
+          <div className="integrations-card">
             <Integrations.Responsive style={{ width: "100%" }} />
             <div className="integrations-text">
               <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
@@ -192,7 +201,7 @@ export default function Home() {
 
       {/* 6. How It Works Section */}
       <section id="how-it-work-1" className="page-section section-bg-light">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="how-it-works-steps">
             {/* Step 1: text left, image card right */}
             <div className="how-it-works-step">
@@ -270,8 +279,8 @@ export default function Home() {
       </section>
 
       {/* 7. Pricing Section */}
-      <section className="page-section section-bg-light">
-        <div className="section-inner scroll-reveal">
+      <section className="page-section section-bg-light pricing-section">
+        <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="Pricing" />
             <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
@@ -322,7 +331,7 @@ export default function Home() {
 
       {/* 8. FAQ Section */}
       <section id="faq" className="page-section faq-section">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="Faq" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
@@ -334,7 +343,7 @@ export default function Home() {
 
       {/* 9. CTA / Newsletter Section */}
       <section className="page-section cta-section">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="cta-card">
             <h2 className="cta-heading">GET STARTED WITH REEF</h2>
             <p className="cta-subtitle">
