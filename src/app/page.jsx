@@ -105,7 +105,7 @@ export default function Home() {
         </div>
         <div className="section-inner">
           <div className="hero-content">
-            <Badge fEv2mISRr="AI STUDY APP" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
+            <Badge fEv2mISRr="NOW IN BETA" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
             <h1 className="hero-heading">Stay afloat this finals season.</h1>
             <p className="hero-subtitle">
               Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.
