@@ -400,15 +400,44 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 9. CTA / Newsletter Section */}
+      {/* 9. Social / Community Section */}
       <section className="page-section cta-section">
         <div className="section-inner">
           <div className="cta-card">
-            <h2 className="cta-heading">GET STARTED WITH REEF</h2>
+            <h2 className="cta-heading">FOLLOW ALONG</h2>
             <p className="cta-subtitle">
-              Create your free account and start learning smarter today. Get access to all features, early updates, and a direct line to shape what we build next.
+              Stay in the loop — follow us on socials for updates, tips, and behind-the-scenes looks at what we're building.
             </p>
-            <Button variant="Solid" label="Sign Up Free" link="/signup" />
+            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+              {/* Instagram */}
+              <a href="https://www.instagram.com/studyreef" target="_blank" rel="noopener noreferrer" className="social-link">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+              </a>
+              {/* TikTok */}
+              <a href="https://www.tiktok.com/@studyreef" target="_blank" rel="noopener noreferrer" className="social-link">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.88-2.88 2.89 2.89 0 0 1 2.88-2.88c.28 0 .54.04.79.1v-3.52a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.05a8.27 8.27 0 0 0 4.76 1.5V7.12a4.83 4.83 0 0 1-1-.43z" />
+                </svg>
+              </a>
+              {/* Twitter / X */}
+              <a href="https://x.com/studyreef" target="_blank" rel="noopener noreferrer" className="social-link">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+              {/* LinkedIn */}
+              <a href="https://www.linkedin.com/company/studyreef" target="_blank" rel="noopener noreferrer" className="social-link">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                  <rect x="2" y="9" width="4" height="12" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </section>

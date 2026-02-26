@@ -442,6 +442,32 @@ footer.framer-1fiw38h {
   max-width: 600px;
 }
 
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid rgb(0, 0, 0);
+  box-shadow: 3px 3px 0px 0px rgb(0, 0, 0);
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.social-link:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px 0px rgb(0, 0, 0);
+  background-color: rgb(50, 172, 166);
+  color: rgb(255, 255, 255);
+}
+
+.social-link:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px rgb(0, 0, 0);
+}
+
 /* FAQ */
 
 .faq-section .section-inner {
