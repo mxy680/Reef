@@ -27,26 +27,12 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible")
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.1 }
-    )
-    document.querySelectorAll(".scroll-reveal").forEach((el) => observer.observe(el))
-
     // Hero tilt: run once on mount + on every scroll frame
     updateHeroTilt()
     const onScroll = () => requestAnimationFrame(updateHeroTilt)
     window.addEventListener("scroll", onScroll, { passive: true })
 
     return () => {
-      observer.disconnect()
       window.removeEventListener("scroll", onScroll)
     }
   }, [updateHeroTilt])
@@ -106,7 +92,7 @@ export default function Home() {
 
       {/* 3. Problem Section */}
       <section className="page-section section-bg-light">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">STUDYING SHOULDN&rsquo;T FEEL THIS BROKEN</h2>
@@ -139,7 +125,7 @@ export default function Home() {
 
       {/* 4. Features / Benefits Section */}
       <section id="benefits" className="page-section section-bg-light">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
@@ -200,7 +186,7 @@ export default function Home() {
       {/* 5. Integrations Section */}
       <section className="page-section">
         <div className="section-inner">
-          <div className="integrations-card scroll-reveal">
+          <div className="integrations-card">
             <Integrations.Responsive style={{ width: "100%" }} />
             <div className="integrations-text">
               <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
@@ -215,7 +201,7 @@ export default function Home() {
 
       {/* 6. How It Works Section */}
       <section id="how-it-work-1" className="page-section section-bg-light">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="how-it-works-steps">
             {/* Step 1: text left, image card right */}
             <div className="how-it-works-step">
@@ -294,7 +280,7 @@ export default function Home() {
 
       {/* 7. Pricing Section */}
       <section className="page-section section-bg-light pricing-section">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="Pricing" />
             <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
@@ -345,7 +331,7 @@ export default function Home() {
 
       {/* 8. FAQ Section */}
       <section id="faq" className="page-section faq-section">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="Faq" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
@@ -357,7 +343,7 @@ export default function Home() {
 
       {/* 9. CTA / Newsletter Section */}
       <section className="page-section cta-section">
-        <div className="section-inner scroll-reveal">
+        <div className="section-inner">
           <div className="cta-card">
             <h2 className="cta-heading">GET STARTED WITH REEF</h2>
             <p className="cta-subtitle">
