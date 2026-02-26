@@ -23,7 +23,7 @@
 }} Props
 
  */
-import { routes } from "./chunks/chunk-VG7AXKTA.js";
+import { routes } from "./chunks/chunk-VG7AXKTA";
 
 // virtual:badge
 import { Fragment as Fragment2 } from "react";
@@ -314,7 +314,7 @@ import { jsx } from "react/jsx-runtime";
 var locales = [];
 var defaultResponsiveVariants = {};
 /** @type {function(Props): any} */
-function ComponentWithRoot({ locale, ...rest }) {
+function ComponentWithRoot({ locale = "", ...rest }) {
 	return (
 		<ContextProviders
 			routes={routes}

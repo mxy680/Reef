@@ -1,6 +1,6 @@
 const API_URL = process.env.NEXT_PUBLIC_REEF_API_URL || "http://localhost:8000"
 
-export async function getProfile(userId) {
+export async function getProfile(userId: string) {
   const res = await fetch(`${API_URL}/users/profile`, {
     headers: { Authorization: `Bearer ${userId}` },
   })
@@ -9,7 +9,7 @@ export async function getProfile(userId) {
   return res.json()
 }
 
-export async function upsertProfile(userId, data) {
+export async function upsertProfile(userId: string, data: Record<string, unknown>) {
   const res = await fetch(`${API_URL}/users/profile`, {
     method: "PUT",
     headers: {

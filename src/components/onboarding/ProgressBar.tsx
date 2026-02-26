@@ -5,7 +5,7 @@ const colors = {
   gray: "rgb(200, 200, 200)",
 }
 
-export default function ProgressBar({ step, total = 3 }) {
+export default function ProgressBar({ step, total = 3 }: { step: number; total?: number }) {
   return (
     <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 32 }}>
       {Array.from({ length: total }, (_, i) => (

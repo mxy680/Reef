@@ -9,8 +9,8 @@ export function useSmoothScroll() {
   return useContext(SmoothScrollContext)
 }
 
-export default function SmoothScroll({ children }) {
-  const lenisRef = useRef(null)
+export default function SmoothScroll({ children }: { children: React.ReactNode }) {
+  const lenisRef = useRef<Lenis | null>(null)
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -20,7 +20,7 @@ export default function SmoothScroll({ children }) {
     })
     lenisRef.current = lenis
 
-    function raf(time) {
+    function raf(time: number) {
       lenis.raf(time)
       requestAnimationFrame(raf)
     }

@@ -9,7 +9,7 @@ const colors = {
   deepSea: "rgb(27, 73, 101)",
 }
 
-export default function InputField({ type = "text", placeholder, value, onChange, name }) {
+export default function InputField({ type = "text", placeholder, value, onChange, name }: { type?: string; placeholder: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; name?: string }) {
   const [showPassword, setShowPassword] = useState(false)
   const isPassword = type === "password"
 

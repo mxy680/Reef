@@ -13,8 +13,8 @@ const colors = {
   gray: "rgb(119, 119, 119)",
 }
 
-export default function StepName({ value, onChange, onNext }) {
-  function handleKeyDown(e) {
+export default function StepName({ value, onChange, onNext }: { value: string; onChange: (v: string) => void; onNext: () => void }) {
+  function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && value.trim()) onNext()
   }
 

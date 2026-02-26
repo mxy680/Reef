@@ -30,8 +30,8 @@ const SUBJECTS = [
   "Accounting",
 ]
 
-export default function StepSubjects({ value, onChange, onNext, onBack }) {
-  function toggle(subject) {
+export default function StepSubjects({ value, onChange, onNext, onBack }: { value: string[]; onChange: (v: string[]) => void; onNext: () => void; onBack: () => void }) {
+  function toggle(subject: string) {
     if (value.includes(subject)) {
       onChange(value.filter((s) => s !== subject))
     } else {

@@ -9,7 +9,7 @@ export const metadata = {
     "Reef watches your work in real-time and gives personalized, step-by-step guidance — like having a tutor who never sleeps.",
 }
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>

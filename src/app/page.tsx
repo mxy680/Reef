@@ -17,15 +17,15 @@ const PatternResponsive = dynamic(() => import("../framer/pattern").then(m => m.
 export default function Home() {
   useEffect(() => {
 
-    function smoothScrollTo(element) {
+    function smoothScrollTo(element: HTMLElement) {
       const headerOffset = 80
       const top = element.getBoundingClientRect().top + window.scrollY - headerOffset
       window.scrollTo({ top, behavior: "smooth" })
     }
 
     // Extract hash from any URL format and scroll to it
-    function scrollToHash(url) {
-      let hash = null
+    function scrollToHash(url: string | URL | null | undefined) {
+      let hash: string | null = null
       if (typeof url === "string") {
         if (url.startsWith("/#")) hash = url.slice(2)
         else if (url.startsWith("#")) hash = url.slice(1)
@@ -49,8 +49,8 @@ export default function Home() {
     // Intercept hash-link clicks for smooth scrolling
     // Framer's Link component triggers full Next.js route navigations for
     // anchor links, which causes a page remount instead of a scroll.
-    const handleClick = (e) => {
-      const link = e.target.closest("a[href]")
+    const handleClick = (e: Event) => {
+      const link = (e.target as HTMLElement).closest("a[href]")
       if (!link) return
       const href = link.getAttribute("href")
       if (!href) return
@@ -64,9 +64,9 @@ export default function Home() {
 
     // Backup: intercept programmatic navigation (Framer's router may use pushState)
     const originalPushState = window.history.pushState.bind(window.history)
-    window.history.pushState = function (state, title, url) {
+    window.history.pushState = function (state: any, title: string, url?: string | URL | null) {
       if (scrollToHash(url)) return
-      return originalPushState(state, title, url)
+      return originalPushState(state, title, url!)
     }
 
     return () => {
@@ -75,7 +75,7 @@ export default function Home() {
     }
   }, [])
 
-  const heroRef = useRef(null)
+  const heroRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const el = heroRef.current

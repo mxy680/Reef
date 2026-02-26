@@ -22,10 +22,10 @@
 }} Props
 
  */
-import { stdin_default } from "./chunks/chunk-F7NMXMNT.js";
-import "./chunks/chunk-I5UJFPX7.js";
-import "./chunks/chunk-H3CR5NCT.js";
-import { routes } from "./chunks/chunk-VG7AXKTA.js";
+import { stdin_default } from "./chunks/chunk-F7NMXMNT";
+import "./chunks/chunk-I5UJFPX7";
+import "./chunks/chunk-H3CR5NCT";
+import { routes } from "./chunks/chunk-VG7AXKTA";
 
 // virtual:accordion
 import { Fragment as Fragment2 } from "react";
@@ -453,7 +453,7 @@ import { jsx } from "react/jsx-runtime";
 var locales = [];
 var defaultResponsiveVariants = {};
 /** @type {function(Props): any} */
-function ComponentWithRoot({ locale, ...rest }) {
+function ComponentWithRoot({ locale = "", ...rest }) {
 	return (
 		<ContextProviders
 			routes={routes}

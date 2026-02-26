@@ -28,10 +28,10 @@
 }} Props
 
  */
-import { stdin_default } from "./chunks/chunk-DNUIZVT6.js";
-import "./chunks/chunk-MMET2FZU.js";
-import "./chunks/chunk-H3CR5NCT.js";
-import { routes } from "./chunks/chunk-VG7AXKTA.js";
+import { stdin_default } from "./chunks/chunk-DNUIZVT6";
+import "./chunks/chunk-MMET2FZU";
+import "./chunks/chunk-H3CR5NCT";
+import { routes } from "./chunks/chunk-VG7AXKTA";
 
 // virtual:button
 import { Fragment } from "react";
@@ -41,7 +41,7 @@ import { jsx } from "react/jsx-runtime";
 var locales = [];
 var defaultResponsiveVariants = {};
 /** @type {function(Props): any} */
-function ComponentWithRoot({ locale, ...rest }) {
+function ComponentWithRoot({ locale = "", ...rest }) {
 	return (
 		<ContextProviders
 			routes={routes}

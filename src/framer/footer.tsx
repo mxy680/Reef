@@ -23,11 +23,11 @@
 }} Props
 
  */
-import { stdin_default as stdin_default4 } from "./chunks/chunk-S6ZR3ZZF.js";
-import { stdin_default } from "./chunks/chunk-PBFQBE6N.js";
-import { stdin_default as stdin_default2 } from "./chunks/chunk-LY4LQ73V.js";
-import { stdin_default as stdin_default3 } from "./chunks/chunk-265SXJWQ.js";
-import { routes } from "./chunks/chunk-VG7AXKTA.js";
+import { stdin_default as stdin_default4 } from "./chunks/chunk-S6ZR3ZZF";
+import { stdin_default } from "./chunks/chunk-PBFQBE6N";
+import { stdin_default as stdin_default2 } from "./chunks/chunk-LY4LQ73V";
+import { stdin_default as stdin_default3 } from "./chunks/chunk-265SXJWQ";
+import { routes } from "./chunks/chunk-VG7AXKTA";
 
 // virtual:footer
 import { Fragment as Fragment2 } from "react";
@@ -1431,7 +1431,7 @@ import { jsx } from "react/jsx-runtime";
 var locales = [];
 var defaultResponsiveVariants = {};
 /** @type {function(Props): any} */
-function ComponentWithRoot({ locale, ...rest }) {
+function ComponentWithRoot({ locale = "", ...rest }) {
 	return (
 		<ContextProviders
 			routes={routes}

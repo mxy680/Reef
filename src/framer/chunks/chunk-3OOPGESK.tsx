@@ -5,7 +5,7 @@ import {
   className,
   css,
   fonts
-} from "./chunk-H3CR5NCT.js";
+} from "./chunk-H3CR5NCT";
 
 // /:https://framerusercontent.com/modules/rpX8t5vaXjhcEjMaVb04/ICwb34AEbdczDlHZVnyJ/npEU6mdxl.js
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";

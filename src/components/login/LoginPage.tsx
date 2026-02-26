@@ -22,11 +22,11 @@ const colors = {
 const staggerBase = 0.3
 const staggerStep = 0.05
 
-function getDelay(index) {
+function getDelay(index: number) {
   return staggerBase + index * staggerStep
 }
 
-function FadeUp({ index, children, style }) {
+function FadeUp({ index, children, style }: { index: number; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}

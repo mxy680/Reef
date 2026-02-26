@@ -31,9 +31,9 @@ import {
 	className as className2,
 	css as css2,
 	fonts as fonts2,
-} from "./chunks/chunk-YKD4AROT.js";
-import { className, css, fonts } from "./chunks/chunk-H3CR5NCT.js";
-import { routes } from "./chunks/chunk-VG7AXKTA.js";
+} from "./chunks/chunk-YKD4AROT";
+import { className, css, fonts } from "./chunks/chunk-H3CR5NCT";
+import { routes } from "./chunks/chunk-VG7AXKTA";
 
 // virtual:features-card
 import { Fragment as Fragment2 } from "react";
@@ -593,7 +593,7 @@ import { jsx } from "react/jsx-runtime";
 var locales = [];
 var defaultResponsiveVariants = {};
 /** @type {function(Props): any} */
-function ComponentWithRoot({ locale, ...rest }) {
+function ComponentWithRoot({ locale = "", ...rest }) {
 	return (
 		<ContextProviders
 			routes={routes}

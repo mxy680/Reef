@@ -20,7 +20,7 @@ const GRADES = [
   { value: "other", label: "Other" },
 ]
 
-export default function StepGrade({ value, onChange, onNext, onBack }) {
+export default function StepGrade({ value, onChange, onNext, onBack }: { value: string; onChange: (v: string) => void; onNext: () => void; onBack: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}

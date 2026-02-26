@@ -18,18 +18,18 @@ const colors = {
 }
 
 const slideVariants = {
-  enter: (direction) => ({
+  enter: (direction: number) => ({
     x: direction > 0 ? 80 : -80,
     opacity: 0,
   }),
   center: { x: 0, opacity: 1 },
-  exit: (direction) => ({
+  exit: (direction: number) => ({
     x: direction > 0 ? -80 : 80,
     opacity: 0,
   }),
 }
 
-export default function OnboardingWizard({ user }) {
+export default function OnboardingWizard({ user }: { user: { id: string; email: string } }) {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)

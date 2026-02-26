@@ -21,7 +21,7 @@ const SOURCES = [
   { value: "other", label: "Other" },
 ]
 
-export default function StepReferral({ value, onChange, onSubmit, onBack, submitting }) {
+export default function StepReferral({ value, onChange, onSubmit, onBack, submitting }: { value: string; onChange: (v: string) => void; onSubmit: () => void; onBack: () => void; submitting: boolean }) {
   const canSubmit = !!value && !submitting
 
   return (

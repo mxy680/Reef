@@ -5,12 +5,12 @@ import {
   className as className2,
   css as css2,
   fonts as fonts2
-} from "./chunk-I5UJFPX7.js";
+} from "./chunk-I5UJFPX7";
 import {
   className,
   css,
   fonts
-} from "./chunk-H3CR5NCT.js";
+} from "./chunk-H3CR5NCT";
 
 // /:https://framerusercontent.com/modules/nKs40NYs72tmUAVvhnSk/oX1eJYFn8GyZLsfLDCdc/W4WlcRW8N.js
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";

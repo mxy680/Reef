@@ -26,7 +26,7 @@ function AppleIcon() {
 
 const icons = { google: GoogleIcon, apple: AppleIcon }
 
-export default function OAuthButton({ provider, label, delay = 0 }) {
+export default function OAuthButton({ provider, label, delay = 0 }: { provider: "google" | "apple"; label: string; delay?: number }) {
   const Icon = icons[provider]
 
   async function handleOAuth() {

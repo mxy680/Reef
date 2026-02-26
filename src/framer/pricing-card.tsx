@@ -49,16 +49,16 @@ import {
 	className as className3,
 	css as css3,
 	fonts as fonts3,
-} from "./chunks/chunk-I5UJFPX7.js";
+} from "./chunks/chunk-I5UJFPX7";
 import {
 	className as className2,
 	css as css2,
 	fonts as fonts2,
-} from "./chunks/chunk-YKD4AROT.js";
-import { stdin_default } from "./chunks/chunk-DNUIZVT6.js";
-import "./chunks/chunk-MMET2FZU.js";
-import { className, css, fonts } from "./chunks/chunk-H3CR5NCT.js";
-import { routes } from "./chunks/chunk-VG7AXKTA.js";
+} from "./chunks/chunk-YKD4AROT";
+import { stdin_default } from "./chunks/chunk-DNUIZVT6";
+import "./chunks/chunk-MMET2FZU";
+import { className, css, fonts } from "./chunks/chunk-H3CR5NCT";
+import { routes } from "./chunks/chunk-VG7AXKTA";
 
 // virtual:pricing-card
 import { Fragment as Fragment2 } from "react";
@@ -1251,7 +1251,7 @@ import { jsx } from "react/jsx-runtime";
 var locales = [];
 var defaultResponsiveVariants = {};
 /** @type {function(Props): any} */
-function ComponentWithRoot({ locale, ...rest }) {
+function ComponentWithRoot({ locale = "", ...rest }) {
 	return (
 		<ContextProviders
 			routes={routes}

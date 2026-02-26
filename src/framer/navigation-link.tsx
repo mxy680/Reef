@@ -25,8 +25,8 @@
 }} Props
 
  */
-import { stdin_default } from "./chunks/chunk-LY4LQ73V.js";
-import { routes } from "./chunks/chunk-VG7AXKTA.js";
+import { stdin_default } from "./chunks/chunk-LY4LQ73V";
+import { routes } from "./chunks/chunk-VG7AXKTA";
 
 // virtual:navigation-link
 import { Fragment } from "react";
@@ -36,7 +36,7 @@ import { jsx } from "react/jsx-runtime";
 var locales = [];
 var defaultResponsiveVariants = {};
 /** @type {function(Props): any} */
-function ComponentWithRoot({ locale, ...rest }) {
+function ComponentWithRoot({ locale = "", ...rest }) {
 	return (
 		<ContextProviders
 			routes={routes}

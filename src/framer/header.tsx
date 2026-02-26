@@ -23,15 +23,15 @@
 }} Props
 
  */
-import { stdin_default as stdin_default4 } from "./chunks/chunk-KUO36J2R.js";
-import { stdin_default as stdin_default3 } from "./chunks/chunk-GUJIID4K.js";
-import { stdin_default } from "./chunks/chunk-PBFQBE6N.js";
-import "./chunks/chunk-DNUIZVT6.js";
-import "./chunks/chunk-MMET2FZU.js";
-import "./chunks/chunk-H3CR5NCT.js";
-import "./chunks/chunk-LY4LQ73V.js";
-import { stdin_default as stdin_default2 } from "./chunks/chunk-265SXJWQ.js";
-import { routes } from "./chunks/chunk-VG7AXKTA.js";
+import { stdin_default as stdin_default4 } from "./chunks/chunk-KUO36J2R";
+import { stdin_default as stdin_default3 } from "./chunks/chunk-GUJIID4K";
+import { stdin_default } from "./chunks/chunk-PBFQBE6N";
+import "./chunks/chunk-DNUIZVT6";
+import "./chunks/chunk-MMET2FZU";
+import "./chunks/chunk-H3CR5NCT";
+import "./chunks/chunk-LY4LQ73V";
+import { stdin_default as stdin_default2 } from "./chunks/chunk-265SXJWQ";
+import { routes } from "./chunks/chunk-VG7AXKTA";
 
 // virtual:header
 import { Fragment as Fragment2 } from "react";
@@ -661,7 +661,7 @@ import { jsx } from "react/jsx-runtime";
 var locales = [];
 var defaultResponsiveVariants = {};
 /** @type {function(Props): any} */
-function ComponentWithRoot({ locale, ...rest }) {
+function ComponentWithRoot({ locale = "", ...rest }) {
 	return (
 		<ContextProviders
 			routes={routes}
