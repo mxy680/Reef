@@ -208,9 +208,10 @@ export default function Home() {
             {/* Step 1: text left, image card right */}
             <div className="how-it-works-step">
               <div className="step-text">
+                <span className="step-badge">Step 1</span>
                 <h3 className="step-heading">UPLOAD YOUR COURSE MATERIALS</h3>
                 <p className="step-body">
-                  Import PDFs, lecture slides, and photos from anywhere. Organize by course, unit, and topic.
+                  Drop in your syllabus, lecture slides, homework PDFs, or even photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. Your answer keys are extracted automatically — the AI uses them to check your work in real time.
                 </p>
               </div>
               <div className="step-card step-card-teal">
@@ -243,9 +244,10 @@ export default function Home() {
                 </div>
               </div>
               <div className="step-text">
+                <span className="step-badge">Step 2</span>
                 <h3 className="step-heading">SOLVE PROBLEMS WITH AI BY YOUR SIDE</h3>
                 <p className="step-body">
-                  Write with Apple Pencil like normal. Reef watches your work and delivers feedback the moment you pause.
+                  Open a homework and start writing with Apple Pencil — just like you would on paper. Reef&rsquo;s AI reads your handwriting in real time. When you pause, it checks your work against the answer key and speaks feedback out loud, like a tutor sitting next to you. No typing, no prompting, no breaking your flow.
                 </p>
               </div>
             </div>
@@ -262,9 +264,10 @@ export default function Home() {
             {/* Step 3: text left, outlined card right */}
             <div className="how-it-works-step">
               <div className="step-text">
+                <span className="step-badge">Step 3</span>
                 <h3 className="step-heading">TRACK MASTERY, BUILD YOUR REEF</h3>
                 <p className="step-body">
-                  Pass quizzes to unlock marine species. Watch your personal reef grow as your knowledge deepens.
+                  After working through problems, take auto-generated quizzes to prove what you know. Each topic you master unlocks a new marine species in your personal reef — a living visualization of your progress. Over time, you can see exactly which concepts are solid and which need more work.
                 </p>
               </div>
               <div className="step-card step-card-outline">

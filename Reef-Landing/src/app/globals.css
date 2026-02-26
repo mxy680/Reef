@@ -253,6 +253,15 @@ footer.framer-1fiw38h {
   gap: 20px;
 }
 
+.step-badge {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(119, 119, 119);
+}
+
 .step-heading {
   font-family: 'Epilogue', sans-serif;
   font-weight: 900;
