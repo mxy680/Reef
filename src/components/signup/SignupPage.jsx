@@ -133,25 +133,10 @@ export default function SignupPage() {
         </FadeUp>
 
         {/* Name */}
-        <FadeUp index={4}>
-          <label
-            style={{
-              fontFamily,
-              fontWeight: 600,
-              fontSize: 13,
-              letterSpacing: "-0.02em",
-              color: colors.deepSea,
-              marginBottom: 6,
-              display: "block",
-            }}
-          >
-            Name
-          </label>
-        </FadeUp>
-        <FadeUp index={5} style={{ marginBottom: 14 }}>
+        <FadeUp index={4} style={{ marginBottom: 14 }}>
           <InputField
             type="text"
-            placeholder="Your full name"
+            placeholder="Full name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             name="name"
@@ -159,25 +144,10 @@ export default function SignupPage() {
         </FadeUp>
 
         {/* Email */}
-        <FadeUp index={6}>
-          <label
-            style={{
-              fontFamily,
-              fontWeight: 600,
-              fontSize: 13,
-              letterSpacing: "-0.02em",
-              color: colors.deepSea,
-              marginBottom: 6,
-              display: "block",
-            }}
-          >
-            Email
-          </label>
-        </FadeUp>
-        <FadeUp index={7} style={{ marginBottom: 14 }}>
+        <FadeUp index={5} style={{ marginBottom: 14 }}>
           <InputField
             type="email"
-            placeholder="Enter your email"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             name="email"
@@ -185,25 +155,10 @@ export default function SignupPage() {
         </FadeUp>
 
         {/* Password */}
-        <FadeUp index={8}>
-          <label
-            style={{
-              fontFamily,
-              fontWeight: 600,
-              fontSize: 13,
-              letterSpacing: "-0.02em",
-              color: colors.deepSea,
-              marginBottom: 6,
-              display: "block",
-            }}
-          >
-            Password
-          </label>
-        </FadeUp>
-        <FadeUp index={9} style={{ marginBottom: 22 }}>
+        <FadeUp index={6} style={{ marginBottom: 22 }}>
           <InputField
             type="password"
-            placeholder="Create a password"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             name="password"
@@ -214,7 +169,7 @@ export default function SignupPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: getDelay(10), ease: "easeOut" }}
+          transition={{ duration: 0.35, delay: getDelay(7), ease: "easeOut" }}
           style={{ marginBottom: 20 }}
         >
           <motion.button
@@ -253,7 +208,7 @@ export default function SignupPage() {
         </motion.div>
 
         {/* Login link */}
-        <FadeUp index={11}>
+        <FadeUp index={8}>
           <p
             style={{
               fontFamily,

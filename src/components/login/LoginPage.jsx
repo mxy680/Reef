@@ -131,22 +131,7 @@ export default function LoginPage() {
         </FadeUp>
 
         {/* Email */}
-        <FadeUp index={4}>
-          <label
-            style={{
-              fontFamily,
-              fontWeight: 600,
-              fontSize: 13,
-              letterSpacing: "-0.02em",
-              color: colors.deepSea,
-              marginBottom: 6,
-              display: "block",
-            }}
-          >
-            Email
-          </label>
-        </FadeUp>
-        <FadeUp index={5} style={{ marginBottom: 22 }}>
+        <FadeUp index={4} style={{ marginBottom: 22 }}>
           <InputField
             type="email"
             placeholder="Enter your email"
@@ -160,7 +145,7 @@ export default function LoginPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: getDelay(6), ease: "easeOut" }}
+          transition={{ duration: 0.35, delay: getDelay(5), ease: "easeOut" }}
           style={{ marginBottom: 20 }}
         >
           <motion.button
@@ -199,7 +184,7 @@ export default function LoginPage() {
         </motion.div>
 
         {/* Signup link */}
-        <FadeUp index={7}>
+        <FadeUp index={6}>
           <p
             style={{
               fontFamily,
