@@ -229,7 +229,7 @@ export default function Home() {
           <div className="integrations-card">
             <IntegrationsResponsive style={{ width: "100%" }} />
             <div className="integrations-text">
-              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
+              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "rgb(195, 177, 225)" }} />
               <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
               <p className="section-subtitle">
                 From calculus problem sets to organic chemistry mechanisms to circuit analysis, Reef understands the notation and concepts across all your STEM courses.
