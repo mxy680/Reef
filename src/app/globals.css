@@ -564,4 +564,20 @@ footer.framer-1fiw38h {
   .pricing-cards-row > * {
     max-width: 100%;
   }
+
+  /* Stack features cards vertically on mobile */
+  .features-cards-row {
+    flex-direction: column;
+  }
+
+  .features-cards-row > .framer-1f6l56w,
+  .features-cards-row > .framer-v-1uq5497.framer-1f6l56w {
+    flex: none !important;
+    width: 100% !important;
+  }
+
+  .step-text {
+    flex: none;
+    max-width: 100%;
+  }
 }
