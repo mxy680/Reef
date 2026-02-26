@@ -260,6 +260,7 @@ class TestRunReasoning:
         assert result["message"] == "No context available"
 
     def test_speak_logged_to_db(self, monkeypatch):
+        """run_reasoning now uses streaming — mock with SSE response."""
         from lib.reasoning import run_reasoning
 
         async def fake_build_context(sid, page):
@@ -269,11 +270,18 @@ class TestRunReasoning:
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
+        sse_bytes = make_sse_stream([
+            '{"action": "speak", ',
+            '"message": "Try factoring.", ',
+            '"delay_ms": 0}',
+        ])
+
         with respx.mock:
             respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion('{"action": "speak", "message": "Try factoring.", "delay_ms": 0}'),
+                    content=sse_bytes,
+                    headers={"content-type": "text/event-stream"},
                 )
             )
             result = asyncio.run(run_reasoning(_sid(), 1))
@@ -290,6 +298,37 @@ class TestRunReasoning:
         assert call_args[5] == "Try factoring."
         assert call_args[9] == 0  # delay_ms
 
+    def test_silent_early_exit(self, monkeypatch):
+        """Streaming detects 'silent' action and exits early."""
+        from lib.reasoning import run_reasoning
+
+        async def fake_build_context(sid, page):
+            return ReasoningContext(text="x squared")
+
+        fake_pool = FakePool()
+        monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
+        monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
+
+        # The stream starts with action: silent — should early-exit
+        sse_bytes = make_sse_stream([
+            '{"action": "silent", ',
+            '"message": "Student is working correctly", ',
+            '"delay_ms": 0}',
+        ])
+
+        with respx.mock:
+            respx.post(OPENROUTER_URL).mock(
+                return_value=httpx.Response(
+                    200,
+                    content=sse_bytes,
+                    headers={"content-type": "text/event-stream"},
+                )
+            )
+            result = asyncio.run(run_reasoning(_sid(), 1))
+
+        assert result["action"] == "silent"
+        assert result["early_exit"] is True
+
     def test_db_insert_has_token_counts(self, monkeypatch):
         from lib.reasoning import run_reasoning
 
@@ -300,20 +339,25 @@ class TestRunReasoning:
         monkeypatch.setattr("lib.reasoning.build_context", fake_build_context)
         monkeypatch.setattr("lib.reasoning.get_pool", lambda: fake_pool)
 
+        sse_bytes = make_sse_stream([
+            '{"action": "silent", ',
+            '"message": "Student is working, no errors detected", ',
+            '"delay_ms": 0}',
+        ])
+
         with respx.mock:
             respx.post(OPENROUTER_URL).mock(
                 return_value=httpx.Response(
                     200,
-                    json=make_chat_completion(
-                        '{"action": "silent", "message": "Student is working, no errors detected", "delay_ms": 0}'
-                    ),
+                    content=sse_bytes,
+                    headers={"content-type": "text/event-stream"},
                 )
             )
             asyncio.run(run_reasoning(_sid(), 1))
 
         assert len(fake_pool.conn.calls) == 1
         call_args = fake_pool.conn.calls[0]
-        # Tuple: (query, sid, page, context, action, message, prompt_tokens, completion_tokens, cost, level, error_type, delay_ms, internal_reasoning)
+        # Tuple: (query, sid, page, context, action, message, prompt_tokens, completion_tokens, cost, delay_ms)
         prompt_tokens = call_args[6]
         completion_tokens = call_args[7]
         estimated_cost = call_args[8]
