@@ -146,7 +146,7 @@ export default function Home() {
       </section>
 
       {/* 3. Problem Section */}
-      <section className="page-section section-bg-light">
+      <section className="page-section section-bg-peach">
         <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(95, 168, 211)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
@@ -179,7 +179,7 @@ export default function Home() {
       </section>
 
       {/* 4. Features / Benefits Section */}
-      <section id="benefits" className="page-section section-bg-light">
+      <section id="benefits" className="page-section">
         <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(27, 73, 101)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
@@ -255,7 +255,7 @@ export default function Home() {
       </section>
 
       {/* 6. How It Works Section */}
-      <section id="how-it-work-1" className="page-section section-bg-light">
+      <section id="how-it-work-1" className="page-section section-bg-peach">
         <div className="section-inner">
           <div className="how-it-works-steps">
             {/* Step 1: text left, image card right */}
@@ -288,7 +288,7 @@ export default function Home() {
 
             {/* Step 2: image card left, text right */}
             <div className="how-it-works-step">
-              <div className="step-card step-card-peach">
+              <div className="step-card step-card-white">
                 <div className="step-card-inner">
                   <img
                     src="https://framerusercontent.com/images/sciUgoQBql5wKVM5ZcUqjqzKE.png"
@@ -337,7 +337,7 @@ export default function Home() {
       </section>
 
       {/* 7. Pricing Section */}
-      <section className="page-section section-bg-light pricing-section">
+      <section className="page-section pricing-section">
         <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "rgb(95, 168, 211)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
@@ -351,7 +351,7 @@ export default function Home() {
               title="SHORE"
               description="Dip your toes in with one course and core study tools."
               price="$0"
-              background="rgb(255, 229, 217)"
+              background="rgb(255, 255, 255)"
               buttonLabel="Step In"
               feature1="1 course"
               feature2="5 homeworks"
@@ -363,7 +363,7 @@ export default function Home() {
               title="Reef"
               description="Plenty of power for most students, all semester long."
               price="$9.99"
-              background="rgb(95, 168, 211)"
+              background="rgb(255, 229, 217)"
               buttonLabel="Dive In"
               feature1="5 courses"
               feature2="50 homeworks"
@@ -375,7 +375,7 @@ export default function Home() {
               title="Abyss"
               description="No limits. For students who never want to hit a wall."
               price="$29.99"
-              background="rgb(27, 73, 101)"
+              background="rgb(95, 168, 211)"
               buttonLabel="Go Deep"
               feature1="Unlimited courses"
               feature2="Unlimited homeworks"
@@ -388,7 +388,7 @@ export default function Home() {
       </section>
 
       {/* 8. FAQ Section */}
-      <section id="faq" className="page-section faq-section">
+      <section id="faq" className="page-section faq-section section-bg-peach">
         <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(27, 73, 101)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
@@ -403,7 +403,7 @@ export default function Home() {
       <section className="page-section cta-section">
         <div className="section-inner">
           <div className="cta-card" style={{ backgroundColor: "rgb(255, 229, 217)" }}>
-            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(255, 229, 217)" }} />
+            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(27, 73, 101)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
             <h2 className="cta-heading">STAY IN THE LOOP</h2>
             <p className="cta-subtitle">
               Get early access, product updates, and study tips delivered straight to your inbox.

@@ -169,8 +169,10 @@ footer.framer-1fiw38h {
   will-change: transform;
 }
 
-/* Problem / Features sections */
-/* section-bg-light inherits body background — no override needed */
+/* Alternating section backgrounds for visual rhythm */
+.section-bg-peach {
+  background-color: rgb(255, 229, 217);
+}
 
 .section-bg-white {
   background-color: rgb(255, 255, 255);
@@ -327,6 +329,10 @@ footer.framer-1fiw38h {
 
 .step-card-peach {
   background-color: rgb(255, 229, 217);
+}
+
+.step-card-white {
+  background-color: rgb(255, 255, 255);
 }
 
 .step-card-steel {
