@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect } from "react"
 import dynamic from "next/dynamic"
 import "./globals.css"
 import Badge from "../framer/badge"
@@ -15,24 +15,7 @@ const AccordionResponsive = dynamic(() => import("../framer/accordion").then(m =
 const PatternResponsive = dynamic(() => import("../framer/pattern").then(m => m.default.Responsive), { ssr: false })
 
 export default function Home() {
-  const heroImageRef = useRef(null)
-
-  // Scroll-linked tilt animation on hero iPad image
-  // Matches live Framer site: tilted back at top, flattens as you scroll
-  const updateHeroTilt = useCallback(() => {
-    const img = heroImageRef.current
-    if (!img) return
-    const t = Math.min(1, window.scrollY / 800)
-    const rotateX = 15.67 * (1 - t)
-    const scale = 0.937 + 0.063 * t
-    img.style.transform = `perspective(1200px) scale(${scale}) rotateX(${rotateX}deg)`
-  }, [])
-
   useEffect(() => {
-    // Hero tilt: run once on mount + on every scroll frame
-    updateHeroTilt()
-    const onScroll = () => requestAnimationFrame(updateHeroTilt)
-    window.addEventListener("scroll", onScroll, { passive: true })
 
     function smoothScrollTo(element) {
       const headerOffset = 80
@@ -87,11 +70,10 @@ export default function Home() {
     }
 
     return () => {
-      window.removeEventListener("scroll", onScroll)
       document.removeEventListener("click", handleClick, true)
       window.history.pushState = originalPushState
     }
-  }, [updateHeroTilt])
+  }, [])
 
   return (
     <>
@@ -139,7 +121,6 @@ export default function Home() {
             </p>
           </div>
           <img
-            ref={heroImageRef}
             className="hero-image"
             src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
             alt="Reef app on iPad"
