@@ -144,17 +144,22 @@ footer.framer-1fiw38h {
 
 .hero-image-wrapper {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 40px auto 0;
   position: relative;
   z-index: 1;
   aspect-ratio: 16 / 9;
   overflow: hidden;
+  border-radius: 12px;
+  perspective: 1200px;
 }
 
 .hero-image {
-  width: 100%;
+  width: 104%;
+  margin: -2% 0 0 -2%;
   display: block;
+  transform: rotateX(4deg);
+  transform-origin: bottom center;
 }
 
 /* Problem / Features sections */
