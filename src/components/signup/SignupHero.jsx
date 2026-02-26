@@ -51,38 +51,11 @@ function GridPattern() {
   )
 }
 
-function FishSvg({ color = colors.coral }) {
+function FloatingCreature({ src, alt, width, style, delay }) {
   return (
-    <svg width="48" height="32" viewBox="0 0 48 32" fill="none">
-      <ellipse cx="22" cy="16" rx="16" ry="11" fill={color} stroke={colors.black} strokeWidth="2" />
-      <polygon points="38,16 48,6 48,26" fill={color} stroke={colors.black} strokeWidth="2" strokeLinejoin="round" />
-      <circle cx="14" cy="13" r="2.5" fill={colors.white} stroke={colors.black} strokeWidth="1.5" />
-      <circle cx="14.5" cy="12.5" r="1" fill={colors.black} />
-      <path d="M8 16 Q12 19 18 16" stroke={colors.black} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function TurtleSvg({ color = colors.teal }) {
-  return (
-    <svg width="52" height="38" viewBox="0 0 52 38" fill="none">
-      <ellipse cx="26" cy="20" rx="16" ry="12" fill={color} stroke={colors.black} strokeWidth="2" />
-      <path d="M18 20 Q22 12 26 10 Q30 12 34 20" stroke={colors.black} strokeWidth="1.5" fill="none" />
-      <line x1="26" y1="10" x2="26" y2="32" stroke={colors.black} strokeWidth="1.5" />
-      <line x1="18" y1="20" x2="34" y2="20" stroke={colors.black} strokeWidth="1.5" />
-      <ellipse cx="42" cy="18" rx="5" ry="3.5" fill={color} stroke={colors.black} strokeWidth="2" />
-      <circle cx="44" cy="17" r="1.2" fill={colors.black} />
-      <ellipse cx="16" cy="30" rx="4" ry="3" fill={color} stroke={colors.black} strokeWidth="1.5" />
-      <ellipse cx="36" cy="30" rx="4" ry="3" fill={color} stroke={colors.black} strokeWidth="1.5" />
-      <ellipse cx="14" cy="14" rx="4" ry="3" fill={color} stroke={colors.black} strokeWidth="1.5" />
-      <ellipse cx="38" cy="14" rx="4" ry="3" fill={color} stroke={colors.black} strokeWidth="1.5" />
-    </svg>
-  )
-}
-
-function FloatingCreature({ children, style, delay }) {
-  return (
-    <motion.div
+    <motion.img
+      src={src}
+      alt={alt}
       initial={{ opacity: 0 }}
       animate={{
         opacity: 1,
@@ -97,11 +70,12 @@ function FloatingCreature({ children, style, delay }) {
       style={{
         position: "absolute",
         zIndex: 2,
+        width,
+        height: "auto",
+        pointerEvents: "none",
         ...style,
       }}
-    >
-      {children}
-    </motion.div>
+    />
   )
 }
 
@@ -132,12 +106,20 @@ export default function SignupHero() {
     >
       <GridPattern />
 
-      <FloatingCreature style={{ top: "10%", right: "8%" }} delay={0.4}>
-        <FishSvg color={colors.coral} />
-      </FloatingCreature>
-      <FloatingCreature style={{ bottom: "12%", left: "5%" }} delay={0.5}>
-        <TurtleSvg color={colors.teal} />
-      </FloatingCreature>
+      <FloatingCreature
+        src="/fish.png"
+        alt="Decorative fish"
+        width={80}
+        style={{ top: "10%", right: "8%" }}
+        delay={0.4}
+      />
+      <FloatingCreature
+        src="/turtle.png"
+        alt="Decorative turtle"
+        width={90}
+        style={{ bottom: "12%", left: "5%" }}
+        delay={0.5}
+      />
 
       <div style={{ position: "relative", zIndex: 3, textAlign: "center", maxWidth: 400 }}>
         {/* REEF letters stagger in */}
