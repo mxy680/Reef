@@ -38,9 +38,7 @@ function FadeUp({ index, children, style }) {
 }
 
 export default function SignupPage() {
-  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
 
   return (
     <div
@@ -132,19 +130,8 @@ export default function SignupPage() {
           <div style={{ flex: 1, height: 1, backgroundColor: "rgba(0,0,0,0.12)" }} />
         </FadeUp>
 
-        {/* Name */}
-        <FadeUp index={4} style={{ marginBottom: 14 }}>
-          <InputField
-            type="text"
-            placeholder="Full name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            name="name"
-          />
-        </FadeUp>
-
         {/* Email */}
-        <FadeUp index={5} style={{ marginBottom: 14 }}>
+        <FadeUp index={4} style={{ marginBottom: 22 }}>
           <InputField
             type="email"
             placeholder="Email"
@@ -154,22 +141,11 @@ export default function SignupPage() {
           />
         </FadeUp>
 
-        {/* Password */}
-        <FadeUp index={6} style={{ marginBottom: 22 }}>
-          <InputField
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            name="password"
-          />
-        </FadeUp>
-
         {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: getDelay(7), ease: "easeOut" }}
+          transition={{ duration: 0.35, delay: getDelay(5), ease: "easeOut" }}
           style={{ marginBottom: 20 }}
         >
           <motion.button
@@ -208,7 +184,7 @@ export default function SignupPage() {
         </motion.div>
 
         {/* Login link */}
-        <FadeUp index={8}>
+        <FadeUp index={6}>
           <p
             style={{
               fontFamily,
