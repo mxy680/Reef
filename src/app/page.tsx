@@ -12,7 +12,7 @@ const HeaderResponsive = dynamic(() => import("../framer/header").then(m => m.de
 const FooterResponsive = dynamic(() => import("../framer/footer").then(m => m.default.Responsive), { ssr: false })
 const IntegrationsResponsive = dynamic(() => import("../framer/integrations").then(m => m.default.Responsive), { ssr: false })
 const AccordionResponsive = dynamic(() => import("../framer/accordion").then(m => m.default.Responsive), { ssr: false })
-const PatternResponsive = dynamic(() => import("../framer/pattern").then(m => m.default.Responsive), { ssr: false })
+
 
 export default function Home() {
   useEffect(() => {
@@ -101,9 +101,6 @@ export default function Home() {
 
       {/* 2. Hero */}
       <section className="page-section hero-section">
-        <div className="hero-pattern">
-          <PatternResponsive style={{ width: "100%", height: "100%" }} />
-        </div>
         <div className="section-inner">
           <div className="hero-content">
             <Badge fEv2mISRr="NOW IN BETA" style={{ backgroundColor: "rgb(255, 229, 217)" }} />
@@ -146,10 +143,10 @@ export default function Home() {
       </section>
 
       {/* 3. Problem Section */}
-      <section className="page-section section-bg-peach">
+      <section className="page-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(95, 168, 211)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
+            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "rgb(95, 168, 211)", "--framer-text-color": "#fff" }} />
             <h2 className="section-heading">STUDYING SHOULDN&rsquo;T FEEL THIS BROKEN</h2>
             <p className="section-subtitle">
               Every night, millions of students get stuck on practice problems with no one to help. They bounce between apps, lose focus, and give up before they actually learn.
@@ -182,7 +179,7 @@ export default function Home() {
       <section id="benefits" className="page-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(27, 73, 101)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
+            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(27, 73, 101)", "--framer-text-color": "#fff" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
             <p className="section-subtitle">
               Notes, documents, AI tutoring, quizzes, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.
@@ -255,7 +252,7 @@ export default function Home() {
       </section>
 
       {/* 6. How It Works Section */}
-      <section id="how-it-work-1" className="page-section section-bg-peach">
+      <section id="how-it-work-1" className="page-section">
         <div className="section-inner">
           <div className="how-it-works-steps">
             {/* Step 1: text left, image card right */}
@@ -340,7 +337,7 @@ export default function Home() {
       <section className="page-section pricing-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "rgb(95, 168, 211)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
+            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "rgb(95, 168, 211)", "--framer-text-color": "#fff" }} />
             <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
             <p className="section-subtitle">
               Whether you&rsquo;re testing the waters with one class or going all in across your entire course load, Reef has a plan that fits your semester.
@@ -388,10 +385,10 @@ export default function Home() {
       </section>
 
       {/* 8. FAQ Section */}
-      <section id="faq" className="page-section faq-section section-bg-peach">
+      <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(27, 73, 101)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
+            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(27, 73, 101)", "--framer-text-color": "#fff" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
@@ -402,8 +399,8 @@ export default function Home() {
       {/* 9. Newsletter Section */}
       <section className="page-section cta-section">
         <div className="section-inner">
-          <div className="cta-card" style={{ backgroundColor: "rgb(255, 229, 217)" }}>
-            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(27, 73, 101)", "--token-14825bd6-f9b4-4846-afef-1af0cbf8c065": "#fff" }} />
+          <div className="cta-card">
+            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(27, 73, 101)", "--framer-text-color": "#fff" }} />
             <h2 className="cta-heading">STAY IN THE LOOP</h2>
             <p className="cta-subtitle">
               Get early access, product updates, and study tips delivered straight to your inbox.
@@ -426,7 +423,7 @@ export default function Home() {
       </section>
 
       {/* 10. Footer */}
-      <FooterResponsive style={{ backgroundColor: "rgb(255, 229, 217)" }} />
+      <FooterResponsive />
     </>
   )
 }

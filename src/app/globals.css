@@ -17,7 +17,7 @@
   --token-10bc40bb-604b-41d4-b321-4b409afa6a9f: var(--color-surface);
   --token-e27a4cac-2b4d-4ad5-8c68-b6f48982239d: var(--color-white);
   --token-df3b0292-9153-4484-b1d6-f7e71cc31198: var(--color-accent);
-  --token-8c15ab03-0228-43db-9adb-8c7e76c29ef3: var(--color-accent);
+  --token-8c15ab03-0228-43db-9adb-8c7e76c29ef3: var(--color-gray-600);
   --token-353de080-56da-4189-9321-c69d0ed1b3ed: var(--color-surface);
   --token-fdcc5b21-a997-46c1-a990-9f9c0159a383: var(--color-primary);
   --token-735d697b-5a03-49fe-9b66-80e6a14713f9: var(--color-white);
@@ -46,9 +46,12 @@ html {
   padding: 0;
 }
 
-/* Consistent page background matching the original Framer site */
+/* Consistent page background with gridded pattern */
 body {
   background-color: var(--color-white);
+  background-image: url("https://framerusercontent.com/images/kB9wfjUtE4XH1RkCtvnZKagmq8.svg");
+  background-size: 187.5px 187.5px;
+  background-repeat: repeat;
 }
 
 /* Header: override Framer's fixed 1200px to full width */
@@ -446,7 +449,7 @@ footer.framer-1fiw38h {
 /* CTA section */
 
 .cta-card {
-  background-color: var(--color-surface);
+  background-color: var(--color-white);
   border: 2px solid var(--color-black);
   box-shadow: 8px 8px 0px 0px var(--color-black);
   border-radius: 12px;
