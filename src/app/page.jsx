@@ -120,11 +120,13 @@ export default function Home() {
               Now in beta. Free to use.
             </p>
           </div>
-          <img
-            className="hero-image"
-            src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
-            alt="Reef app on iPad"
-          />
+          <div className="hero-image-wrapper">
+            <img
+              className="hero-image"
+              src="https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png"
+              alt="Reef app on iPad"
+            />
+          </div>
         </div>
       </section>
 

@@ -141,15 +141,20 @@ footer.framer-1fiw38h {
   color: rgb(119, 119, 119);
 }
 
-.hero-image {
+.hero-image-wrapper {
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
   border: 2px solid rgb(0, 0, 0);
   box-shadow: 8px 8px 0px 0px rgb(0, 0, 0);
   border-radius: 12px;
-  will-change: transform;
+}
+
+.hero-image {
+  width: 100%;
+  display: block;
 }
 
 /* Problem / Features sections */
