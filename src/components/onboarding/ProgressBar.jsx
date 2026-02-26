@@ -2,7 +2,7 @@
 
 const colors = {
   teal: "rgb(50, 172, 166)",
-  lavender: "rgb(195, 177, 225)",
+  slateBlue: "rgb(165, 185, 220)",
   gray: "rgb(200, 200, 200)",
 }
 
