@@ -54,26 +54,6 @@ export default function LoginPage() {
         boxSizing: "border-box",
       }}
     >
-      {/* Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        style={{ marginBottom: 32 }}
-      >
-        <span
-          style={{
-            fontFamily,
-            fontWeight: 900,
-            fontSize: 32,
-            letterSpacing: "-0.04em",
-            color: colors.deepSea,
-          }}
-        >
-          REEF
-        </span>
-      </motion.div>
-
       {/* Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
