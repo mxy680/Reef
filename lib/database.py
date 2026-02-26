@@ -26,6 +26,11 @@ async def init_db():
                 updated_at TIMESTAMPTZ DEFAULT NOW()
             )
         """)
+        # Migrations: add onboarding columns to user_profiles
+        await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS grade TEXT")
+        await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS subjects JSONB DEFAULT '[]'::jsonb")
+        await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE")
+
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS stroke_logs (
                 id SERIAL PRIMARY KEY,

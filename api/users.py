@@ -1,5 +1,7 @@
 """User profile endpoints."""
 
+import json
+
 from fastapi import APIRouter, HTTPException, Header
 from lib.database import get_pool
 from lib.models import UserProfileRequest, UserProfileResponse
@@ -8,7 +10,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 def _get_user_id(authorization: str) -> str:
-    """Extract Apple user ID from 'Bearer <apple_user_id>' header."""
+    """Extract user ID from 'Bearer <user_id>' header."""
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
     user_id = authorization[7:].strip()
@@ -28,27 +30,37 @@ async def upsert_profile(
         raise HTTPException(status_code=503, detail="Database not available")
 
     user_id = _get_user_id(authorization)
+    subjects_json = json.dumps(body.subjects) if body.subjects is not None else None
 
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO user_profiles (apple_user_id, display_name, email)
-            VALUES ($1, $2, $3)
+            INSERT INTO user_profiles (apple_user_id, display_name, email, grade, subjects, onboarding_completed)
+            VALUES ($1, $2, $3, $4, $5::jsonb, COALESCE($6, FALSE))
             ON CONFLICT (apple_user_id) DO UPDATE SET
                 display_name = COALESCE($2, user_profiles.display_name),
                 email = COALESCE($3, user_profiles.email),
+                grade = COALESCE($4, user_profiles.grade),
+                subjects = COALESCE($5::jsonb, user_profiles.subjects),
+                onboarding_completed = COALESCE($6, user_profiles.onboarding_completed),
                 updated_at = NOW()
-            RETURNING apple_user_id, display_name, email
+            RETURNING apple_user_id, display_name, email, grade, subjects, onboarding_completed
             """,
             user_id,
             body.display_name,
             body.email,
+            body.grade,
+            subjects_json,
+            body.onboarding_completed,
         )
 
     return UserProfileResponse(
         apple_user_id=row["apple_user_id"],
         display_name=row["display_name"],
         email=row["email"],
+        grade=row["grade"],
+        subjects=json.loads(row["subjects"]) if row["subjects"] else [],
+        onboarding_completed=row["onboarding_completed"] or False,
     )
 
 
@@ -63,7 +75,7 @@ async def get_profile(authorization: str = Header(...)):
 
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT apple_user_id, display_name, email FROM user_profiles WHERE apple_user_id = $1",
+            "SELECT apple_user_id, display_name, email, grade, subjects, onboarding_completed FROM user_profiles WHERE apple_user_id = $1",
             user_id,
         )
 
@@ -74,6 +86,9 @@ async def get_profile(authorization: str = Header(...)):
         apple_user_id=row["apple_user_id"],
         display_name=row["display_name"],
         email=row["email"],
+        grade=row["grade"],
+        subjects=json.loads(row["subjects"]) if row["subjects"] else [],
+        onboarding_completed=row["onboarding_completed"] or False,
     )
 
 
