@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import InputField from "./InputField"
 import OAuthButton from "./OAuthButton"
+import { createClient } from "../../lib/supabase/client"
 
 const fontFamily = `"Epilogue", sans-serif`
 
@@ -39,6 +41,28 @@ function FadeUp({ index, children, style }) {
 
 export default function SignupPage() {
   const [email, setEmail] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const router = useRouter()
+
+  async function handleMagicLink() {
+    if (!email) return
+    setLoading(true)
+    setError(null)
+    const supabase = createClient()
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+    setLoading(false)
+    if (otpError) {
+      setError(otpError.message)
+    } else {
+      router.push("/auth/check-email")
+    }
+  }
 
   return (
     <div
@@ -148,8 +172,23 @@ export default function SignupPage() {
           transition={{ duration: 0.35, delay: getDelay(5), ease: "easeOut" }}
           style={{ marginBottom: 20 }}
         >
+          {error && (
+            <p
+              style={{
+                fontFamily,
+                fontWeight: 500,
+                fontSize: 13,
+                color: "rgb(220, 60, 60)",
+                margin: "0 0 12px 0",
+              }}
+            >
+              {error}
+            </p>
+          )}
           <motion.button
             type="button"
+            onClick={handleMagicLink}
+            disabled={loading}
             whileHover={{
               backgroundColor: "rgb(220, 90, 60)",
               boxShadow: "2px 2px 0px 0px rgb(0, 0, 0)",
@@ -174,12 +213,13 @@ export default function SignupPage() {
               lineHeight: "1.5em",
               letterSpacing: "-0.04em",
               color: colors.black,
-              cursor: "pointer",
+              cursor: loading ? "default" : "pointer",
               boxSizing: "border-box",
               userSelect: "none",
+              opacity: loading ? 0.7 : 1,
             }}
           >
-            Create Account
+            {loading ? "Sending link..." : "Create Account"}
           </motion.button>
         </motion.div>
 

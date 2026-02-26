@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { createClient } from "../../lib/supabase/client"
 
 const fontFamily = `"Epilogue", sans-serif`
 
@@ -28,9 +29,20 @@ const icons = { google: GoogleIcon, apple: AppleIcon }
 export default function OAuthButton({ provider, label, delay = 0 }) {
   const Icon = icons[provider]
 
+  async function handleOAuth() {
+    const supabase = createClient()
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+  }
+
   return (
     <motion.button
       type="button"
+      onClick={handleOAuth}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{
