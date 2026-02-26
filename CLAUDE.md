@@ -30,7 +30,8 @@ Reef/
 ## Server (Reef-Server)
 
 - Always restart the local dev server after making changes to Reef-Server code — do this BEFORE running tests, not after
-- **Reasoning model**: GPT-4o via OpenRouter (`openai/gpt-4o`) with structured JSON output. Uses `OPENROUTER_API_KEY`. Single model for both text and image reasoning (no more Cerebras split). Switched from Qwen3 VL 235B — see `docs/plans/2026-02-25-model-benchmark.json`.
+- **Reasoning model**: Qwen3 VL 235B via OpenRouter (`qwen/qwen3-vl-235b-a22b-instruct`) with structured JSON output + streaming early-exit. Uses `OPENROUTER_API_KEY`. Single model for both text and image reasoning. GPT-4o (`openai/gpt-4o`) used as timeout fallback for voice questions only. See `docs/plans/2026-02-25-model-benchmark.json`.
+- **Streaming early-exit**: `run_reasoning()` streams responses and detects "silent" action from partial JSON, breaking immediately (~70-80% of calls). 8s hard timeout defaults to silent. Provider routing (`sort: latency`) mitigates OpenRouter GPU lottery.
 - `reasoning_logs` table must be cleared alongside `stroke_logs` on any delete/clear operation
 - Transcription is whole-page: all visible strokes sent to Mathpix in one request, result stored in `page_transcriptions`. No clustering.
 - Reasoning output sent to iOS via SSE `event: reasoning` with `tts_id` for audio — only when action is "speak"
