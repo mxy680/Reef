@@ -293,7 +293,7 @@ export default function Home() {
       </section>
 
       {/* 7. Pricing Section */}
-      <section className="page-section section-bg-light">
+      <section className="page-section section-bg-light pricing-section">
         <div className="section-inner scroll-reveal">
           <div className="section-header">
             <Badge fEv2mISRr="Pricing" />

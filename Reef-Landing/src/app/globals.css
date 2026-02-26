@@ -107,7 +107,7 @@ footer.framer-1fiw38h {
   letter-spacing: -0.04em;
   line-height: 1.2em;
   color: rgb(0, 0, 0);
-  max-width: 800px;
+  max-width: 700px;
   text-transform: uppercase;
 }
 
@@ -172,8 +172,7 @@ footer.framer-1fiw38h {
   letter-spacing: -0.04em;
   line-height: 1.2em;
   color: rgb(0, 0, 0);
-  max-width: 700px;
-  text-transform: uppercase;
+  max-width: 500px;
 }
 
 .section-subtitle {
@@ -248,6 +247,7 @@ footer.framer-1fiw38h {
 .step-text {
   flex: 1;
   min-width: 0;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -361,6 +361,10 @@ footer.framer-1fiw38h {
 }
 
 /* Pricing */
+.pricing-section .section-heading {
+  max-width: 550px;
+}
+
 .pricing-cards-row {
   display: flex;
   flex-direction: row;
@@ -398,6 +402,7 @@ footer.framer-1fiw38h {
   letter-spacing: -0.04em;
   line-height: 1.2em;
   color: rgb(0, 0, 0);
+  max-width: 470px;
 }
 
 .cta-subtitle {
