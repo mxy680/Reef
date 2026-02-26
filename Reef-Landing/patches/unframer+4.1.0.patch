@@ -1,3 +1,45 @@
+diff --git a/node_modules/unframer/dist/framer.js b/node_modules/unframer/dist/framer.js
+index 21ef51a..1e2921b 100644
+--- a/node_modules/unframer/dist/framer.js
++++ b/node_modules/unframer/dist/framer.js
+@@ -7838,7 +7838,7 @@ function PopChild({
+   const {
+     nonce,
+   } = useContext(MotionConfigContext,);
+-  const childRef = children.props?.ref ?? children?.ref;
++  const childRef = children.props?.ref;
+   const composedRef = useComposedRefs(ref, childRef,);
+   useInsertionEffect(() => {
+     const {
+@@ -34266,7 +34266,7 @@ function createHook(forwardedRef,) {
+     }
+     return React.Children.map(children, (child) => {
+       if (React.isValidElement(child,)) {
+-        const ownRef = 'ref' in child ? child.ref : void 0;
++        const ownRef = child.props?.ref;
+         updateIfNeeded(state.forwardedRef, ownRef,);
+         const newProps = isFunction(props,) ? props(child.props,) : props;
+         return React.cloneElement(
+@@ -36738,7 +36738,7 @@ function useReplaceNestedLinks(children, scopeId, nodeId, href, propsAddedByLink
+         onKeyDown,
+         as: childProps.as && maybeReplaceAnchorWithSpan(childProps.as,),
+       };
+-      const ref = 'ref' in child ? child.ref : void 0;
++      const ref = child.props?.ref;
+       return createElement(tag, // We need to pass the ref here again, otherwise it will be lost
+       {
+         ...props,
+@@ -38204,8 +38204,8 @@ var Link = /* @__PURE__ */ withChildrenCanSuspend(/* @__PURE__ */ forwardRef(fun
+     resolveSlugsWithSuspense2,
+     preload,
+   ],);
+-  const hasRef = isValidElement(children,) && 'ref' in children;
+-  const observerRef = useObserverRef(hasRef ? children.ref : void 0,);
++  const hasRef = isValidElement(children,) && (children.props?.ref != null);
++  const observerRef = useObserverRef(hasRef ? children.props.ref : void 0,);
+   const {
+     navigate,
+     preload: preloadFn,
 diff --git a/node_modules/unframer/dist/react.js b/node_modules/unframer/dist/react.js
 index 5cc6af9..a93a0c8 100644
 --- a/node_modules/unframer/dist/react.js
