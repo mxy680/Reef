@@ -11,6 +11,7 @@ const colors = {
   white: "rgb(255, 255, 255)",
   deepSea: "rgb(21, 49, 75)",
   gray: "rgb(119, 119, 119)",
+  lavender: "rgb(195, 177, 225)",
 }
 
 const GRADES = [

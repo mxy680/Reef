@@ -167,7 +167,7 @@ export default function Home() {
       <section id="benefits" className="page-section section-bg-light">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
+            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "rgb(195, 177, 225)" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
             <p className="section-subtitle">
               Notes, documents, AI tutoring, quizzes, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.
@@ -308,7 +308,7 @@ export default function Home() {
                   After working through problems, take auto-generated quizzes to prove what you know. Each topic you master unlocks a new marine species in your personal reef, a living visualization of your progress. Over time, you can see exactly which concepts are solid and which need more work.
                 </p>
               </div>
-              <div className="step-card step-card-outline">
+              <div className="step-card step-card-lavender">
                 <div className="step-card-inner">
                   <img
                     src="https://framerusercontent.com/images/v6wZRssF6htlH2vkhNBcUBx8pEs.png"
@@ -325,7 +325,7 @@ export default function Home() {
       <section className="page-section section-bg-light pricing-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="PRICING" />
+            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
             <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
             <p className="section-subtitle">
               Whether you&rsquo;re testing the waters with one class or going all in across your entire course load, Reef has a plan that fits your semester.
@@ -360,7 +360,7 @@ export default function Home() {
               title="Abyss"
               description="No limits. For students who never want to hit a wall."
               price="$29.99"
-              background="rgb(237, 243, 250)"
+              background="rgb(237, 229, 245)"
               buttonLabel="Go Deep"
               feature1="Unlimited courses"
               feature2="Unlimited homeworks"
@@ -376,7 +376,7 @@ export default function Home() {
       <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(235, 140, 115)" }} />
+            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "rgb(195, 177, 225)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>

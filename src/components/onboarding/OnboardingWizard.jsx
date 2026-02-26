@@ -14,6 +14,7 @@ const colors = {
   tealSoft: "rgb(214, 243, 241)",
   black: "rgb(0, 0, 0)",
   white: "rgb(255, 255, 255)",
+  lavenderSoft: "rgb(237, 229, 245)",
 }
 
 const slideVariants = {

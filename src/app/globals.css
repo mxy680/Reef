@@ -14,6 +14,8 @@
   --token-2433011a-35ae-4f0b-94e0-e8989014cf2c: #fff;
   --token-a210fe28-308b-468e-9b17-12338c95bc8f: #fde4db;
   --token-d36aad84-9b3d-413c-8fd5-32faf475503f: #d6f3f1;
+  --token-lavender: #C3B1E1;
+  --token-lavender-soft: #EDE5F5;
 }
 
 html {
@@ -322,8 +324,8 @@ footer.framer-1fiw38h {
   background-color: rgb(253, 228, 219);
 }
 
-.step-card-outline {
-  background-color: rgb(218, 245, 240);
+.step-card-lavender {
+  background-color: rgb(237, 229, 245);
 }
 
 .step-card-inner {

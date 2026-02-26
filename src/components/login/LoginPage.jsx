@@ -17,6 +17,8 @@ const colors = {
   deepSea: "rgb(21, 49, 75)",
   gray: "rgb(119, 119, 119)",
   coralSoft: "rgb(253, 228, 219)",
+  lavender: "rgb(195, 177, 225)",
+  lavenderSoft: "rgb(237, 229, 245)",
 }
 
 const staggerBase = 0.3
