@@ -104,72 +104,72 @@ export default function SignupHero() {
     >
       <GridPattern />
 
-      {/* Fish: swims a lazy oval in the upper-right area */}
-      <div style={{ position: "absolute", top: "8%", right: "6%", zIndex: 2 }}>
+      {/* Fish: drifts right-to-left across the top */}
+      <div style={{ position: "absolute", top: "6%", right: "0%", zIndex: 2 }}>
         <SwimmingCreature
           src="/fish.png"
           alt=""
-          width={70}
-          x={[0, -40, -60, -40, 0, 30, 40, 30, 0]}
-          y={[0, -15, 0, 20, 30, 20, 0, -15, 0]}
-          rotate={[0, -5, -3, 3, 5, 3, -2, -5, 0]}
-          duration={12}
+          width={100}
+          x={[0, -60, -140, -200, -260, -200, -140, -60, 0]}
+          y={[0, -20, -10, 15, 30, 15, -10, -20, 0]}
+          rotate={[0, -3, -2, 2, 3, 2, -1, -3, 0]}
+          duration={20}
           delay={0.4}
         />
       </div>
 
-      {/* Turtle: cruises across the lower-left */}
-      <div style={{ position: "absolute", bottom: "10%", left: "3%", zIndex: 2 }}>
+      {/* Turtle: slow cruise left-to-right across the bottom */}
+      <div style={{ position: "absolute", bottom: "8%", left: "0%", zIndex: 2 }}>
         <SwimmingCreature
           src="/turtle.png"
           alt=""
-          width={80}
-          x={[0, 30, 60, 80, 60, 30, 0, -15, 0]}
-          y={[0, -10, -5, 5, 15, 10, 5, -5, 0]}
-          rotate={[0, 3, 5, 3, 0, -3, -5, -3, 0]}
-          duration={14}
+          width={110}
+          x={[0, 50, 120, 200, 260, 200, 120, 50, 0]}
+          y={[0, -12, -8, 5, 15, 8, -5, -12, 0]}
+          rotate={[0, 2, 3, 2, 0, -2, -3, -2, 0]}
+          duration={24}
           delay={0.5}
         />
       </div>
 
-      {/* Jellyfish: bobs up and down in the left area */}
-      <div style={{ position: "absolute", top: "30%", left: "4%", zIndex: 2 }}>
+      {/* Jellyfish: gentle vertical drift on the left side */}
+      <div style={{ position: "absolute", top: "20%", left: "6%", zIndex: 2 }}>
         <SwimmingCreature
           src="/jellyfish.png"
           alt=""
-          width={50}
-          x={[0, 8, 15, 8, 0, -8, -15, -8, 0]}
-          y={[0, -20, -10, 10, 25, 10, -10, -20, 0]}
-          rotate={[0, 2, 0, -2, 0, 2, 0, -2, 0]}
-          duration={10}
+          width={75}
+          x={[0, 20, 50, 70, 50, 20, 0, -20, 0]}
+          y={[0, -40, -60, -30, 20, 60, 40, 10, 0]}
+          rotate={[0, 2, 1, -1, -2, -1, 1, 2, 0]}
+          duration={18}
           delay={0.6}
         />
       </div>
 
-      {/* Seahorse: drifts gently in the right-center */}
-      <div style={{ position: "absolute", top: "55%", right: "5%", zIndex: 2 }}>
+      {/* Seahorse: drifts down the right edge */}
+      <div style={{ position: "absolute", top: "35%", right: "8%", zIndex: 2 }}>
         <SwimmingCreature
           src="/seahorse.png"
           alt=""
-          width={45}
-          x={[0, -12, -20, -12, 0, 12, 20, 12, 0]}
-          y={[0, -15, -25, -15, 0, 10, 0, -10, 0]}
-          rotate={[0, -4, -2, 2, 4, 2, -2, -4, 0]}
-          duration={11}
+          width={65}
+          x={[0, -30, -70, -100, -70, -30, 0, 20, 0]}
+          y={[0, -30, -10, 30, 70, 100, 70, 20, 0]}
+          rotate={[0, -3, -2, 1, 3, 2, -1, -3, 0]}
+          duration={22}
           delay={0.7}
         />
       </div>
 
-      {/* Starfish: slow tumble near bottom-center */}
-      <div style={{ position: "absolute", bottom: "5%", left: "42%", zIndex: 2 }}>
+      {/* Starfish: slow diagonal drift near bottom-center */}
+      <div style={{ position: "absolute", bottom: "15%", left: "38%", zIndex: 2 }}>
         <SwimmingCreature
           src="/starfish.png"
           alt=""
-          width={40}
-          x={[0, 15, 25, 15, 0, -15, -25, -15, 0]}
-          y={[0, -8, 0, 8, 0, -8, 0, 8, 0]}
-          rotate={[0, 10, 20, 10, 0, -10, -20, -10, 0]}
-          duration={16}
+          width={60}
+          x={[0, 40, 80, 100, 80, 40, 0, -30, 0]}
+          y={[0, -20, -40, -20, 10, 30, 20, 5, 0]}
+          rotate={[0, 8, 15, 8, 0, -8, -15, -8, 0]}
+          duration={26}
           delay={0.8}
         />
       </div>
