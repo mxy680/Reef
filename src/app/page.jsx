@@ -404,6 +404,7 @@ export default function Home() {
       <section className="page-section cta-section">
         <div className="section-inner">
           <div className="cta-card">
+            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "rgb(218, 245, 240)" }} />
             <h2 className="cta-heading">STAY IN THE LOOP</h2>
             <p className="cta-subtitle">
               Get early access, product updates, and study tips delivered straight to your inbox.
