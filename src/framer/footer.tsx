@@ -142,7 +142,7 @@ AutoCopyright.defaultProps = {
 	color: "#999999",
 	fontSize: 14,
 	font: {
-		family: "Inter",
+		family: "Epilogue",
 	},
 };
 AutoCopyright.displayName = "Auto Copyright";
@@ -150,7 +150,7 @@ addPropertyControls2(AutoCopyright, {
 	font: {
 		type: ControlType2.Font,
 		title: "Font",
-		defaultValue: "Inter",
+		defaultValue: "Epilogue",
 		controls: "extended",
 	},
 	color: {
