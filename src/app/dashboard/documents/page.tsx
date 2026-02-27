@@ -542,13 +542,10 @@ function DeleteConfirmModal({
           >
             Cancel
           </button>
-          <motion.button
+          <button
             type="button"
             onClick={() => { setDeleting(true); onConfirm() }}
             disabled={deleting}
-            whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}`, x: 2, y: 2 }}
-            whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}`, x: 4, y: 4 }}
-            transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
             style={{
               padding: "10px 24px",
               backgroundColor: "#C62828",
@@ -564,7 +561,7 @@ function DeleteConfirmModal({
             }}
           >
             {deleting ? "Deleting..." : "Delete"}
-          </motion.button>
+          </button>
         </div>
       </motion.div>
     </motion.div>
