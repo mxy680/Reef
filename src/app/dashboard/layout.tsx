@@ -33,7 +33,7 @@ const cardStyle: React.CSSProperties = {
 
 function LoadingSkeleton() {
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.accent }}>
       {/* Sidebar skeleton */}
       <div
         style={{
@@ -101,7 +101,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const marginLeft = sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.accent }}>
       <DashboardSidebar />
       <motion.div
         initial={false}
