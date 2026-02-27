@@ -4,9 +4,6 @@
 [submodule "Reef-Server"]
 	path = Reef-Server
 	url = https://github.com/mxy680/Reef-Server.git
-[submodule "Reef-Document"]
-	path = Reef-Document
-	url = https://github.com/mxy680/Reef-Document.git
 [submodule "Reef-Web"]
 	path = Reef-Web
 	url = https://github.com/mxy680/Reef-Web.git
