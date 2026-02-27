@@ -193,6 +193,7 @@ export default function DashboardSidebar() {
 
   return (
     <motion.aside
+      initial={false}
       animate={{ width: sidebarWidth }}
       transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
       style={{

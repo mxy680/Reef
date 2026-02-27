@@ -104,6 +104,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
       <DashboardSidebar />
       <motion.div
+        initial={false}
         animate={{ marginLeft: marginLeft + 36 }}
         transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
         style={{ flex: 1, display: "flex", flexDirection: "column" }}
