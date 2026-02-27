@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { upsertProfile } from "../../lib/api"
+import { upsertProfile } from "../../lib/profiles"
 import ProgressBar from "./ProgressBar"
 import StepName from "./StepName"
 import StepGrade from "./StepGrade"
@@ -48,7 +48,7 @@ export default function OnboardingWizard({ user }: { user: { id: string; email: 
   async function handleSubmit() {
     setSubmitting(true)
     try {
-      await upsertProfile(user.id, {
+      await upsertProfile({
         display_name: formData.name,
         email: user.email,
         grade: formData.grade,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "../../lib/supabase/client"
-import { getProfile } from "../../lib/api"
+import { getProfile } from "../../lib/profiles"
 import OnboardingWizard from "../../components/onboarding/OnboardingWizard"
 
 export default function OnboardingPage() {
@@ -21,7 +21,7 @@ export default function OnboardingPage() {
       }
 
       try {
-        const profile = await getProfile(u.id)
+        const profile = await getProfile()
         if (profile?.onboarding_completed) {
           document.cookie = "reef_onboarded=true; path=/; max-age=31536000"
           router.push("/dashboard")

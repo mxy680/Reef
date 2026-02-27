@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "../../lib/supabase/client"
-import { getProfile } from "../../lib/api"
+import { getProfile } from "../../lib/profiles"
 import { motion } from "framer-motion"
 import { colors } from "../../lib/colors"
 import { DashboardProvider, useDashboard, type DashboardProfile } from "../../components/dashboard/DashboardContext"
@@ -144,7 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
 
       try {
-        const p = await getProfile(user.id)
+        const p = await getProfile()
         if (!p || !p.onboarding_completed) {
           router.push("/onboarding")
           return
