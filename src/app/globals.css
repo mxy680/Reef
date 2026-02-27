@@ -61,7 +61,12 @@ html {
 
 .framer-CQKIS.framer-v-1o9coa1.framer-2m28gd {
   background-color: var(--color-white) !important;
-  border: 2px solid var(--color-black) !important;
+  --border-bottom-width: 2px !important;
+  --border-top-width: 2px !important;
+  --border-left-width: 2px !important;
+  --border-right-width: 2px !important;
+  --border-color: var(--color-black) !important;
+  --border-style: solid !important;
   box-shadow: 4px 4px 0px 0px var(--color-black) !important;
   opacity: 1 !important;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
