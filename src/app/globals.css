@@ -58,6 +58,11 @@ html {
   border: 2px solid var(--color-black) !important;
   box-shadow: 4px 4px 0px 0px var(--color-black) !important;
   opacity: 1 !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.framer-CQKIS.framer-v-1o9coa1.framer-2m28gd:hover {
+  box-shadow: 2px 2px 0px 0px var(--color-black) !important;
+  transform: translate(2px, 2px);
 }
 .framer-CQKIS.framer-v-1o9coa1 .framer-1c74ag0 {
   --extracted-r6o4lv: var(--color-black) !important;
