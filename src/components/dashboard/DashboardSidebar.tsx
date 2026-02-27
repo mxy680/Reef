@@ -319,7 +319,7 @@ export default function DashboardSidebar() {
           )}
         </motion.div>
 
-        {/* Other */}
+        {/* Socials */}
         <motion.div
           style={{
             ...footerRowStyle,
@@ -327,7 +327,7 @@ export default function DashboardSidebar() {
             padding: collapsed ? "8px 0" : "8px 6px",
           }}
           whileHover={{ backgroundColor: colors.gray100 }}
-          title={collapsed ? "Other" : undefined}
+          title={collapsed ? "Socials" : undefined}
         >
           <div
             style={{
@@ -342,10 +342,10 @@ export default function DashboardSidebar() {
               flexShrink: 0,
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke={colors.black} strokeWidth="2.5" strokeLinecap="round">
-              <circle cx="3" cy="8" r="0.5" fill={colors.black} />
-              <circle cx="8" cy="8" r="0.5" fill={colors.black} />
-              <circle cx="13" cy="8" r="0.5" fill={colors.black} />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4l11.733 16h4.267l-11.733-16z" />
+              <path d="M4 20l6.768-6.768" />
+              <path d="M20 4l-6.768 6.768" />
             </svg>
           </div>
           {!collapsed && (
@@ -360,7 +360,7 @@ export default function DashboardSidebar() {
                   color: colors.black,
                 }}
               >
-                Other
+                Socials
               </span>
               <ChevronRight />
             </>
