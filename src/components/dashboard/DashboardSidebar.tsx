@@ -202,7 +202,7 @@ export default function DashboardSidebar() {
         <img
           src="/reef-logo.png"
           alt="Reef logo"
-          style={{ width: 28, height: 28, flexShrink: 0 }}
+          style={{ width: 36, height: 36, flexShrink: 0 }}
         />
         {!collapsed && (
           <span
