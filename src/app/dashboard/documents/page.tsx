@@ -371,9 +371,13 @@ function DocumentCard({
       }}
     >
       {/* 3-dot menu */}
-      <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5 }}>
+      <div
+        style={{ position: "absolute", top: 8, right: 8, zIndex: 5 }}
+        onMouseEnter={() => setMenuOpen(true)}
+        onMouseLeave={() => setMenuOpen(false)}
+      >
         <button
-          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
+          onClick={(e) => { e.stopPropagation() }}
           style={{
             display: "flex",
             alignItems: "center",
