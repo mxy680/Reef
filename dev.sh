@@ -6,14 +6,21 @@
 
 cd "$(dirname "$0")"
 
+cleanup() {
+  rm -f .next/dev/lock
+  pkill -P $$ 2>/dev/null
+  echo ""
+  echo "Dev server stopped."
+  exit 0
+}
+trap cleanup INT TERM
+
 while true; do
+  rm -f .next/dev/lock
   npx next dev --webpack
   EXIT=$?
   if [ $EXIT -eq 130 ] || [ $EXIT -eq 137 ]; then
-    # Ctrl+C (SIGINT=130) or SIGKILL=137 — user wants to stop
-    echo ""
-    echo "Dev server stopped."
-    exit 0
+    cleanup
   fi
   echo ""
   echo "[dev server exited with code $EXIT — restarting in 1s...]"
