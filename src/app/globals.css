@@ -40,6 +40,17 @@ html {
   display: none !important;
 }
 
+/* Button colors — Solid = primary, Alternative = white */
+[data-framer-name="Solid"].framer-2m28gd {
+  background-color: var(--color-primary) !important;
+}
+
+[data-framer-name="Alternative"].framer-2m28gd {
+  background-color: var(--color-white) !important;
+  border: 2px solid var(--color-black);
+  box-shadow: 4px 4px 0px 0px var(--color-black);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
