@@ -1,4 +1,6 @@
-import { getDocument } from "pdfjs-dist/webpack.mjs"
+import { getDocument, GlobalWorkerOptions, version } from "pdfjs-dist"
+
+GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`
 
 const THUMBNAIL_WIDTH = 400 // 2x retina for ~200px card width
 
