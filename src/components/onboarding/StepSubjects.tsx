@@ -85,14 +85,15 @@ export default function StepSubjects({ value, onChange, onNext, onBack }: { valu
               key={subject}
               type="button"
               onClick={() => toggle(subject)}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", bounce: 0.3, duration: 0.3 }}
+              whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}`, y: 1, x: 1 }}
+              whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}`, y: 3, x: 3 }}
+              transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
               style={{
                 padding: "8px 16px",
                 backgroundColor: selected ? colors.primary : colors.white,
-                border: `2px solid ${selected ? colors.primary : colors.black}`,
+                border: `2px solid ${colors.black}`,
                 borderRadius: 999,
+                boxShadow: `3px 3px 0px 0px ${colors.black}`,
                 fontFamily,
                 fontWeight: 600,
                 fontSize: 13,
