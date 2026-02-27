@@ -179,9 +179,112 @@ function formatDate(iso: string) {
   })
 }
 
+function ConfirmModal({
+  email,
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  email: string
+  onConfirm: () => void
+  onCancel: () => void
+  loading: boolean
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0,0,0,0.4)",
+      }}
+      onClick={onCancel}
+    >
+      <div
+        style={{
+          ...cardStyle,
+          maxWidth: 420,
+          width: "90%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3
+          style={{
+            fontFamily,
+            fontWeight: 800,
+            fontSize: 16,
+            color: colors.black,
+            margin: 0,
+          }}
+        >
+          Remove User
+        </h3>
+        <p
+          style={{
+            fontFamily,
+            fontWeight: 500,
+            fontSize: 13,
+            color: colors.gray600,
+            margin: 0,
+            lineHeight: 1.5,
+          }}
+        >
+          Permanently delete <strong style={{ color: colors.black }}>{email}</strong>? This removes
+          their account, all documents, and courses.
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            style={{
+              fontFamily,
+              fontWeight: 700,
+              fontSize: 13,
+              padding: "8px 18px",
+              borderRadius: 8,
+              border: `1.5px solid ${colors.gray500}`,
+              backgroundColor: colors.white,
+              color: colors.black,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              fontFamily,
+              fontWeight: 700,
+              fontSize: 13,
+              padding: "8px 18px",
+              borderRadius: 8,
+              border: `1.5px solid #ef4444`,
+              backgroundColor: "#ef4444",
+              color: colors.white,
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.6 : 1,
+            }}
+          >
+            {loading ? "Removing…" : "Remove"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const [data, setData] = useState<AdminData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetch("/api/admin/stats")
@@ -192,6 +295,50 @@ export default function AdminPage() {
       .then(setData)
       .catch((e) => setError(e.message))
   }, [])
+
+  // Determine admin's own user ID (to hide their Remove button)
+  const adminEmail = "markshteyn1@gmail.com"
+  const currentUserId = data?.users.find((u) => u.email === adminEmail)?.id
+
+  async function handleDelete(userId: string) {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `HTTP ${res.status}`)
+      }
+      // Update local state
+      setData((prev) => {
+        if (!prev) return prev
+        const removedUser = prev.users.find((u) => u.id === userId)
+        const updatedUsers = prev.users.filter((u) => u.id !== userId)
+        const updatedDocs = prev.documents.filter((d) => d.user_id !== userId)
+        const removedDocCount = removedUser?.documents_count || 0
+        // Recompute status counts from remaining docs
+        const statusCounts: Record<string, number> = {}
+        for (const d of updatedDocs) {
+          const s = d.status || "unknown"
+          statusCounts[s] = (statusCounts[s] || 0) + 1
+        }
+        return {
+          users: updatedUsers,
+          documents: updatedDocs,
+          stats: {
+            ...prev.stats,
+            totalUsers: updatedUsers.length,
+            totalDocuments: prev.stats.totalDocuments - removedDocCount,
+            statusCounts,
+          },
+        }
+      })
+    } catch (e: any) {
+      alert(`Failed to remove user: ${e.message}`)
+    } finally {
+      setDeleting(false)
+      setDeleteTarget(null)
+    }
+  }
 
   if (error) {
     return (
@@ -272,6 +419,7 @@ export default function AdminPage() {
                 <th style={thStyle}>Subjects</th>
                 <th style={thStyle}>Docs</th>
                 <th style={thStyle}>Joined</th>
+                <th style={thStyle}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -283,11 +431,31 @@ export default function AdminPage() {
                   <td style={tdStyle}>{u.subjects?.join(", ") || "—"}</td>
                   <td style={{ ...tdStyle, fontWeight: 700 }}>{u.documents_count}</td>
                   <td style={tdStyle}>{u.created_at ? formatDate(u.created_at) : "—"}</td>
+                  <td style={tdStyle}>
+                    {u.id !== currentUserId && (
+                      <button
+                        onClick={() => setDeleteTarget(u)}
+                        style={{
+                          fontFamily,
+                          fontWeight: 700,
+                          fontSize: 11,
+                          padding: "4px 12px",
+                          borderRadius: 6,
+                          border: `1.5px solid #ef4444`,
+                          backgroundColor: "transparent",
+                          color: "#ef4444",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td style={{ ...tdStyle, color: colors.gray500 }} colSpan={6}>
+                  <td style={{ ...tdStyle, color: colors.gray500 }} colSpan={7}>
                     No users found
                   </td>
                 </tr>
@@ -345,6 +513,15 @@ export default function AdminPage() {
           </table>
         </div>
       </div>
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <ConfirmModal
+          email={deleteTarget.email || deleteTarget.id}
+          onConfirm={() => handleDelete(deleteTarget.id)}
+          onCancel={() => setDeleteTarget(null)}
+          loading={deleting}
+        />
+      )}
     </motion.div>
   )
 }
