@@ -26,9 +26,9 @@ function SkeletonBlock({ width, height }: { width: string | number; height: numb
 
 const cardStyle: React.CSSProperties = {
   backgroundColor: colors.white,
-  border: `1.5px solid ${colors.gray400}`,
+  border: `1.5px solid ${colors.gray500}`,
   borderRadius: 16,
-  boxShadow: `3px 3px 0px 0px ${colors.gray400}`,
+  boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
 }
 
 function LoadingSkeleton() {
@@ -117,9 +117,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             padding: 32,
             margin: "16px 16px 16px 0",
             backgroundColor: colors.white,
-            border: `1.5px solid ${colors.gray400}`,
+            border: `1.5px solid ${colors.gray500}`,
             borderRadius: 16,
-            boxShadow: `3px 3px 0px 0px ${colors.gray400}`,
+            boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
           }}
         >
           {children}
