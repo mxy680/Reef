@@ -312,10 +312,8 @@ function DocumentCard({
     >
       {/* 3-dot menu */}
       <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5 }}>
-        <motion.button
+        <button
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
           style={{
             display: "flex",
             alignItems: "center",
@@ -330,7 +328,7 @@ function DocumentCard({
           }}
         >
           <DotsIcon />
-        </motion.button>
+        </button>
         <AnimatePresence>
           {menuOpen && (
             <DropdownMenu
