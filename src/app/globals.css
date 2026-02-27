@@ -622,15 +622,15 @@ footer.framer-1fiw38h {
   color: var(--color-white);
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.15s ease;
+  transition: opacity 0.15s ease;
 }
 
 .newsletter-btn:hover {
-  transform: scale(0.9);
+  opacity: 0.7;
 }
 
 .newsletter-btn:active {
-  transform: scale(0.82);
+  opacity: 0.5;
 }
 
 /* FAQ */
