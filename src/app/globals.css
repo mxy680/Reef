@@ -93,13 +93,14 @@ html {
   padding: 0;
 }
 
-/* Consistent page background with gridded pattern */
+/* Page background */
 body {
   background-color: var(--color-white);
   position: relative;
 }
 
-body::before {
+/* Dotted grid — landing page only */
+.landing-dots::before {
   content: "";
   position: fixed;
   inset: 0;

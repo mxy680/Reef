@@ -116,7 +116,7 @@ export default function Home() {
   }, [])
 
   return (
-    <>
+    <div className="landing-dots">
       {/* 1. Header */}
       <HeaderResponsive />
 
@@ -424,6 +424,6 @@ export default function Home() {
 
       {/* 10. Footer */}
       <FooterResponsive />
-    </>
+    </div>
   )
 }
