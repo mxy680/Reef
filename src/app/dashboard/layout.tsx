@@ -9,7 +9,6 @@ import { colors } from "../../lib/colors"
 import { DashboardProvider, useDashboard, type DashboardProfile } from "../../components/dashboard/DashboardContext"
 import DashboardSidebar, { SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_COLLAPSED } from "../../components/dashboard/DashboardSidebar"
 import DashboardHeader from "../../components/dashboard/DashboardHeader"
-const BG = "#F7F7F8"
 
 function SkeletonBlock({ width, height }: { width: string | number; height: number }) {
   return (
@@ -33,7 +32,7 @@ const cardStyle: React.CSSProperties = {
 
 function LoadingSkeleton() {
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#E8F3F3" }}>
+    <div className="dotted-grid" style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white }}>
       {/* Sidebar skeleton */}
       <div
         style={{
@@ -101,7 +100,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const marginLeft = sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#E8F3F3" }}>
+    <div className="dotted-grid" style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white }}>
       <DashboardSidebar />
       <motion.div
         initial={false}

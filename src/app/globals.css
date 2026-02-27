@@ -99,8 +99,9 @@ body {
   position: relative;
 }
 
-/* Dotted grid — landing page only */
-.landing-dots::before {
+/* Dotted grid background */
+.landing-dots::before,
+.dotted-grid::before {
   content: "";
   position: fixed;
   inset: 0;
