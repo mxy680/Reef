@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../lib/colors"
-import { uploadDocument } from "../../lib/documents"
 import { createClient } from "../../lib/supabase/client"
 import { useDashboard } from "./DashboardContext"
 
@@ -31,12 +30,21 @@ const PAGE_TITLES: Record<string, string> = {
 
 // -- SVG Icons ---------------------------------------------------------------
 
-function UploadIcon() {
+function SearchIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="9" y1="13" x2="9" y2="3" />
-      <polyline points="4,7 9,2 14,7" />
-      <line x1="3" y1="16" x2="15" y2="16" />
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="9" r="6" />
+      <line x1="13.5" y1="13.5" x2="17" y2="17" />
+    </svg>
+  )
+}
+
+function HelpIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="8" />
+      <path d="M7.5 7.5 C7.5 6 8.5 5 10 5 C11.5 5 12.5 6 12.5 7.5 C12.5 9 10 9.5 10 11" />
+      <circle cx="10" cy="14" r="0.5" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -122,94 +130,26 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
   )
 }
 
-function QuickUploadButton() {
-  const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const [toast, setToast] = useState<string | null>(null)
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      await uploadDocument(file)
-      setToast("Uploaded successfully!")
-      setTimeout(() => setToast(null), 2500)
-      router.push("/dashboard/documents")
-    } catch {
-      setToast("Upload failed")
-      setTimeout(() => setToast(null), 2500)
-    } finally {
-      setUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ""
-    }
-  }
-
+function HeaderIconButton({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   return (
-    <>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf"
-        style={{ display: "none" }}
-        onChange={handleUpload}
-      />
-      <motion.button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.97 }}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "6px 14px",
-          backgroundColor: colors.primary,
-          color: colors.white,
-          border: `1.5px solid ${colors.black}`,
-          borderRadius: 999,
-          boxShadow: `2px 2px 0px 0px ${colors.black}`,
-          fontFamily,
-          fontWeight: 700,
-          fontSize: 13,
-          letterSpacing: "-0.02em",
-          cursor: uploading ? "wait" : "pointer",
-          opacity: uploading ? 0.7 : 1,
-        }}
-      >
-        <UploadIcon />
-        {uploading ? "Uploading..." : "Upload"}
-      </motion.button>
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              right: 24,
-              padding: "8px 16px",
-              backgroundColor: toast.includes("failed") ? "#e74c3c" : colors.primary,
-              color: colors.white,
-              borderRadius: 8,
-              border: `1.5px solid ${colors.black}`,
-              boxShadow: `2px 2px 0px 0px ${colors.black}`,
-              fontFamily,
-              fontWeight: 600,
-              fontSize: 13,
-              zIndex: 100,
-            }}
-          >
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+    <motion.button
+      onClick={onClick}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.95 }}
+      style={{
+        position: "relative",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: 4,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: colors.gray600,
+      }}
+    >
+      {children}
+    </motion.button>
   )
 }
 
@@ -466,7 +406,12 @@ export default function DashboardHeader() {
 
       {/* Right — Actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <QuickUploadButton />
+        <HeaderIconButton>
+          <SearchIcon />
+        </HeaderIconButton>
+        <HeaderIconButton>
+          <HelpIcon />
+        </HeaderIconButton>
         <NotificationBell count={0} />
         <StreakIndicator streak={0} />
         <ProfileDropdown />
