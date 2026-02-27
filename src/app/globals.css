@@ -653,8 +653,8 @@ footer.framer-1fiw38h {
   left: 50%;
   width: 10px;
   height: 10px;
-  border-right: 3.5px solid var(--color-white);
-  border-bottom: 3.5px solid var(--color-white);
+  border-right: 3px solid var(--color-white);
+  border-bottom: 3px solid var(--color-white);
   transform: translate(-60%, -50%) rotate(-45deg);
 }
 /* FAQ */
