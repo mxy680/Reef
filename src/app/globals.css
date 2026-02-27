@@ -110,7 +110,7 @@ body {
   background-repeat: repeat;
   opacity: 0.5;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 }
 
 /* Header: override Framer's fixed 1200px to full width */
