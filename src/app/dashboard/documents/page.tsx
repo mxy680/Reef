@@ -6,30 +6,20 @@ import { colors } from "../../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
 
-type DocStatus = "completed" | "processing" | "failed"
-
 interface MockDocument {
   id: string
   filename: string
-  status: DocStatus
-  problems: number | null
   pages: number
   date: string
 }
 
 const MOCK_DOCUMENTS: MockDocument[] = [
-  { id: "1", filename: "Calculus II Midterm", status: "completed", problems: 12, pages: 4, date: "Feb 25, 2026" },
-  { id: "2", filename: "Linear Algebra HW3", status: "completed", problems: 8, pages: 2, date: "Feb 23, 2026" },
-  { id: "3", filename: "Physics Quiz 5", status: "processing", problems: null, pages: 1, date: "Feb 22, 2026" },
-  { id: "4", filename: "Differential Equations Final", status: "failed", problems: null, pages: 6, date: "Feb 20, 2026" },
-  { id: "5", filename: "Statistics Problem Set", status: "completed", problems: 15, pages: 3, date: "Feb 18, 2026" },
+  { id: "1", filename: "Calculus II Midterm", pages: 4, date: "Feb 25, 2026" },
+  { id: "2", filename: "Linear Algebra HW3", pages: 2, date: "Feb 23, 2026" },
+  { id: "3", filename: "Physics Quiz 5", pages: 1, date: "Feb 22, 2026" },
+  { id: "4", filename: "Differential Equations Final", pages: 6, date: "Feb 20, 2026" },
+  { id: "5", filename: "Statistics Problem Set", pages: 3, date: "Feb 18, 2026" },
 ]
-
-const STATUS_COLORS: Record<DocStatus, { bg: string; text: string; dot: string }> = {
-  completed: { bg: "#E6F4EA", text: "#1E7E34", dot: "#1E7E34" },
-  processing: { bg: "#FFF8E1", text: "#B8860B", dot: "#B8860B" },
-  failed: { bg: "#FDECEA", text: "#C62828", dot: "#C62828" },
-}
 
 // Each doc gets a unique thumbnail "sketch" — faint lines simulating handwritten content
 const THUMBNAIL_SKETCHES: Record<string, React.ReactNode> = {
@@ -101,15 +91,13 @@ const THUMBNAIL_SKETCHES: Record<string, React.ReactNode> = {
   ),
 }
 
-function DocumentThumbnail({ docId, status }: { docId: string; status: DocStatus }) {
-  const isProcessing = status === "processing"
-  const isFailed = status === "failed"
+function DocumentThumbnail({ docId }: { docId: string }) {
   return (
     <div
       style={{
         width: "100%",
         aspectRatio: "8.5 / 11",
-        backgroundColor: isFailed ? "#FDF6F5" : isProcessing ? "#FFFDF5" : "#FAFAFA",
+        backgroundColor: "#FAFAFA",
         borderRadius: 8,
         border: `1px solid ${colors.gray100}`,
         position: "relative",
@@ -146,69 +134,7 @@ function DocumentThumbnail({ docId, status }: { docId: string; status: DocStatus
       >
         {THUMBNAIL_SKETCHES[docId]}
       </svg>
-      {/* Processing shimmer overlay */}
-      {isProcessing && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%)",
-            animation: "shimmer 2s ease-in-out infinite",
-          }}
-        />
-      )}
-      {/* Failed overlay */}
-      {isFailed && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "rgba(253,236,234,0.5)",
-          }}
-        >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C62828" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="15" y1="9" x2="9" y2="15" />
-            <line x1="9" y1="9" x2="15" y2="15" />
-          </svg>
-        </div>
-      )}
     </div>
-  )
-}
-
-function StatusBadge({ status }: { status: DocStatus }) {
-  const c = STATUS_COLORS[status]
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 5,
-        padding: "3px 8px",
-        backgroundColor: c.bg,
-        borderRadius: 999,
-        fontFamily,
-        fontWeight: 600,
-        fontSize: 11,
-        letterSpacing: "-0.04em",
-        color: c.text,
-      }}
-    >
-      <span
-        style={{
-          width: 5,
-          height: 5,
-          borderRadius: "50%",
-          backgroundColor: c.dot,
-          flexShrink: 0,
-        }}
-      />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
   )
 }
 
@@ -301,7 +227,7 @@ function DocumentCard({ doc, index }: { doc: MockDocument; index: number }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
-      whileHover={{ y: -4, boxShadow: `5px 5px 0px 0px ${colors.gray500}` }}
+      whileHover={{ y: -4, boxShadow: `5px 5px 0px 0px ${colors.gray500}`, transition: { duration: 0.15 } }}
       style={{
         backgroundColor: colors.white,
         border: `1.5px solid ${colors.gray500}`,
@@ -315,7 +241,7 @@ function DocumentCard({ doc, index }: { doc: MockDocument; index: number }) {
     >
       {/* Thumbnail */}
       <div style={{ padding: "14px 14px 0" }}>
-        <DocumentThumbnail docId={doc.id} status={doc.status} />
+        <DocumentThumbnail docId={doc.id} />
       </div>
 
       {/* Info */}
@@ -328,7 +254,7 @@ function DocumentCard({ doc, index }: { doc: MockDocument; index: number }) {
             fontSize: 13,
             letterSpacing: "-0.04em",
             color: colors.black,
-            marginBottom: 6,
+            marginBottom: 4,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -337,42 +263,17 @@ function DocumentCard({ doc, index }: { doc: MockDocument; index: number }) {
           {doc.filename}
         </div>
 
-        {/* Status + meta row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 6,
-          }}
-        >
-          <StatusBadge status={doc.status} />
-          <span
-            style={{
-              fontFamily,
-              fontWeight: 500,
-              fontSize: 11,
-              letterSpacing: "-0.04em",
-              color: colors.gray500,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {doc.problems != null ? `${doc.problems} problems` : `${doc.pages} pg`}
-          </span>
-        </div>
-
-        {/* Date */}
+        {/* Pages + Date */}
         <div
           style={{
             fontFamily,
             fontWeight: 500,
             fontSize: 11,
             letterSpacing: "-0.04em",
-            color: colors.gray400,
-            marginTop: 6,
+            color: colors.gray500,
           }}
         >
-          {doc.date}
+          {doc.pages} {doc.pages === 1 ? "page" : "pages"} · {doc.date}
         </div>
       </div>
     </motion.div>
@@ -434,14 +335,6 @@ export default function DocumentsPage() {
 
   return (
     <>
-      {/* Shimmer keyframes for processing cards */}
-      <style>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-      `}</style>
-
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
