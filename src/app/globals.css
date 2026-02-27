@@ -43,7 +43,6 @@ html {
 /* Button colors — Solid = primary, Alternative = white */
 .framer-CQKIS.framer-2m28gd {
   background-color: var(--color-primary) !important;
-  border: 2px solid var(--color-black) !important;
   opacity: 1 !important;
 }
 .framer-CQKIS.framer-2m28gd .framer-1c74ag0 {
@@ -56,6 +55,8 @@ html {
 
 .framer-CQKIS.framer-v-1o9coa1.framer-2m28gd {
   background-color: var(--color-white) !important;
+  border: 2px solid var(--color-black) !important;
+  box-shadow: 4px 4px 0px 0px var(--color-black) !important;
   opacity: 1 !important;
 }
 .framer-CQKIS.framer-v-1o9coa1 .framer-1c74ag0 {
