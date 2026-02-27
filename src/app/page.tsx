@@ -264,7 +264,7 @@ export default function Home() {
                   Drop in your syllabus, lecture slides, homework PDFs, or even photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. If a document has an answer key, it&rsquo;s extracted automatically so the AI can check your work in real time.
                 </p>
               </div>
-              <div className="step-card step-card-blue" />
+              <div className="step-card step-card-surface" />
             </div>
 
             {/* Decorative arrow 1 → 2 */}
@@ -306,7 +306,7 @@ export default function Home() {
                   After working through problems, take auto-generated quizzes to prove what you know. Each topic you master unlocks a new marine species in your personal reef, a living visualization of your progress. Over time, you can see exactly which concepts are solid and which need more work.
                 </p>
               </div>
-              <div className="step-card step-card-surface" />
+              <div className="step-card step-card-blue" />
             </div>
           </div>
         </div>
