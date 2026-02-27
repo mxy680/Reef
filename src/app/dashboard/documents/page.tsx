@@ -292,8 +292,8 @@ function DocumentCard({
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
+      animate={menuOpen ? { opacity: 1, boxShadow: `2px 2px 0px 0px ${colors.gray500}`, x: 2, y: 2 } : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: menuOpen ? 0 : 0.1 + index * 0.05 }}
       whileHover={doc.status === "completed" ? { boxShadow: `2px 2px 0px 0px ${colors.gray500}`, x: 2, y: 2, transition: { duration: 0.15 } } : {}}
       whileTap={doc.status === "completed" ? { boxShadow: `0px 0px 0px 0px ${colors.gray500}`, x: 4, y: 4, transition: { duration: 0.1 } } : {}}
       onClick={() => onClick(doc)}
