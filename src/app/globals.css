@@ -44,6 +44,7 @@ html {
 .framer-CQKIS.framer-2m28gd {
   background-color: var(--color-primary) !important;
   box-shadow: 4px 4px 0px 0px var(--color-black) !important;
+  border-radius: 12px !important;
   opacity: 1 !important;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
