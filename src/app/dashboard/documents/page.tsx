@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../../lib/colors"
 import { listDocuments, uploadDocument, getDocumentDownloadUrl, deleteDocument, LimitError, type Document } from "../../../lib/documents"
+import { getUserTier, getLimits } from "../../../lib/limits"
 
 const fontFamily = `"Epilogue", sans-serif`
 
@@ -590,6 +591,7 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Document | null>(null)
+  const [maxDocuments, setMaxDocuments] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchDocuments = useCallback(async () => {
@@ -601,6 +603,14 @@ export default function DocumentsPage() {
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  // Load tier limits
+  useEffect(() => {
+    getUserTier().then((tier) => {
+      const limits = getLimits(tier)
+      if (limits.maxDocuments !== Infinity) setMaxDocuments(limits.maxDocuments)
+    })
   }, [])
 
   // Initial load
@@ -721,9 +731,28 @@ export default function DocumentsPage() {
                 letterSpacing: "-0.04em",
                 color: colors.gray600,
                 margin: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
               }}
             >
               Upload and manage your study documents.
+              {!loading && maxDocuments !== null && (
+                <span
+                  style={{
+                    fontFamily,
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: "-0.04em",
+                    color: documents.length >= maxDocuments ? "#C62828" : colors.gray500,
+                    backgroundColor: documents.length >= maxDocuments ? "#FDECEA" : colors.gray100,
+                    padding: "3px 10px",
+                    borderRadius: 20,
+                  }}
+                >
+                  {documents.length} / {maxDocuments}
+                </span>
+              )}
             </p>
           </div>
           {!loading && documents.length > 0 && <UploadButton onClick={triggerUpload} />}
