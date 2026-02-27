@@ -530,8 +530,7 @@ footer.framer-1fiw38h {
   background-color: var(--color-white) !important;
   box-shadow: 4px 4px 0px 0px var(--color-black) !important;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
-  width: fit-content !important;
-  align-self: flex-start !important;
+  width: auto !important;
 }
 .pricing-cards-row .framer-CQKIS.framer-2m28gd:hover {
   box-shadow: 2px 2px 0px 0px var(--color-black) !important;
