@@ -1,9 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { createClient } from "../../lib/supabase/client"
 import { colors } from "../../lib/colors"
 import { useDashboard } from "./DashboardContext"
 import NavItem from "./NavItem"
@@ -125,11 +123,11 @@ function ChevronRight() {
   )
 }
 
-function GearIcon() {
+function SettingsGearIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={colors.gray400} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="10" cy="10" r="3" />
-      <path d="M10 1 L10 4 M10 16 L10 19 M1 10 L4 10 M16 10 L19 10 M3.5 3.5 L5.6 5.6 M14.4 14.4 L16.5 16.5 M16.5 3.5 L14.4 5.6 M5.6 14.4 L3.5 16.5" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={colors.gray400} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   )
 }
@@ -146,15 +144,7 @@ const footerRowStyle: React.CSSProperties = {
 }
 
 export default function DashboardSidebar() {
-  const router = useRouter()
   const { profile } = useDashboard()
-
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    document.cookie = "reef_onboarded=; path=/; max-age=0"
-    router.push("/auth")
-  }
 
   return (
     <aside
@@ -244,11 +234,10 @@ export default function DashboardSidebar() {
           </span>
         </motion.div>
 
-        {/* Sign out */}
+        {/* Other */}
         <motion.div
           style={footerRowStyle}
           whileHover={{ backgroundColor: colors.gray100 }}
-          onClick={handleSignOut}
         >
           <div
             style={{
@@ -263,10 +252,10 @@ export default function DashboardSidebar() {
               flexShrink: 0,
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke={colors.black} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3" />
-              <polyline points="10,4 14,8 10,12" />
-              <line x1="14" y1="8" x2="6" y2="8" />
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke={colors.black} strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="3" cy="8" r="0.5" fill={colors.black} />
+              <circle cx="8" cy="8" r="0.5" fill={colors.black} />
+              <circle cx="13" cy="8" r="0.5" fill={colors.black} />
             </svg>
           </div>
           <span
@@ -279,7 +268,7 @@ export default function DashboardSidebar() {
               color: colors.black,
             }}
           >
-            Sign Out
+            Other
           </span>
           <ChevronRight />
         </motion.div>
@@ -309,7 +298,7 @@ export default function DashboardSidebar() {
             >
               {profile.display_name}
             </span>
-            <GearIcon />
+            <SettingsGearIcon />
           </motion.div>
         </Link>
       </div>
