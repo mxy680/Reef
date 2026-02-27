@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { colors } from "../../../lib/colors"
 
@@ -40,11 +41,8 @@ export default function CheckEmailPage() {
       }}
     >
       {/* Back to home */}
-      <motion.a
+      <Link
         href="/"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
         style={{
           position: "absolute",
           top: 28,
@@ -61,14 +59,13 @@ export default function CheckEmailPage() {
           cursor: "pointer",
           opacity: 0.6,
         }}
-        whileHover={{ opacity: 1 }}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5" />
           <path d="m12 19-7-7 7-7" />
         </svg>
         Home
-      </motion.a>
+      </Link>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
