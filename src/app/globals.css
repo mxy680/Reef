@@ -297,6 +297,14 @@ footer.framer-1fiw38h {
   flex: 2 1 0 !important;
 }
 
+/* Double feature card image area — blank white box */
+.features-cards-row .framer-iyuun0,
+.features-cards-row .framer-iyuun0 * {
+  background: var(--color-white) !important;
+  background-image: none !important;
+  border-radius: 8px;
+}
+
 /* How it works */
 .how-it-works-steps {
   display: flex;
