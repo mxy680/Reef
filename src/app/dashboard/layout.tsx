@@ -112,8 +112,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
         <main
           style={{
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
             overflowY: "auto",
             padding: 32,
             margin: "12px 12px 12px 0",

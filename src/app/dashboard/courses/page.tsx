@@ -714,8 +714,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        flex: 1,
-        padding: "24px",
+        padding: "80px 24px",
         border: `2px dashed ${colors.gray400}`,
         borderRadius: 16,
         marginTop: 8,
@@ -881,7 +880,6 @@ export default function CoursesPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.1 }}
-        style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
       >
         {/* Header */}
         <div
