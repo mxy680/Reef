@@ -2,15 +2,15 @@
 
 /* Semantic color tokens — edit these three to re-theme the site */
 :root {
-  --color-primary: #2A6F8E;
-  --color-accent:  #7EC8C8;
-  --color-surface: #FFE5D9;
+  --color-primary: #5B9EAD;
+  --color-accent:  #A8D5D5;
+  --color-surface: #FCEBD5;
   --color-white:   #ffffff;
   --color-black:   #000000;
   --color-gray-600: rgb(119, 119, 119);
   --color-gray-400: rgb(160, 160, 160);
   --color-gray-100: rgb(235, 235, 235);
-  --color-accent-30: rgba(126, 200, 200, 0.3);
+  --color-accent-30: rgba(168, 213, 213, 0.3);
 
   /* Framer design tokens — mapped to semantic vars for backwards compat */
   --token-14825bd6-f9b4-4846-afef-1af0cbf8c065: var(--color-black);
