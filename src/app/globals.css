@@ -586,7 +586,7 @@ footer.framer-1fiw38h {
   border-radius: 999px;
   box-shadow: 4px 4px 0px 0px var(--color-black);
   background-color: var(--color-white);
-  padding: 6px 6px 6px 24px;
+  padding: 6px 10px 6px 24px;
   box-sizing: border-box;
 }
 
@@ -622,15 +622,17 @@ footer.framer-1fiw38h {
   color: var(--color-white);
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.1s ease, opacity 0.15s ease;
+  box-shadow: 3px 3px 0px 0px var(--color-black);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .newsletter-btn:hover {
-  opacity: 0.85;
+  box-shadow: 1px 1px 0px 0px var(--color-black);
+  transform: translate(2px, 2px);
 }
 
 .newsletter-btn:active {
-  transform: scale(0.9);
+  transform: translate(2px, 2px) scale(0.95);
 }
 
 /* FAQ */
