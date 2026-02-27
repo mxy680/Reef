@@ -30,7 +30,7 @@ export class LimitError extends Error {
   }
 }
 
-export async function uploadDocument(file: File): Promise<Document> {
+export async function uploadDocument(file: File, thumbnail?: Blob): Promise<Document> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -78,7 +78,16 @@ export async function uploadDocument(file: File): Promise<Document> {
     throw uploadError
   }
 
-  // 3. Fire-and-forget POST to processing API route
+  // 3. Upload thumbnail if provided
+  if (thumbnail) {
+    const thumbPath = `${user.id}/${document.id}/thumbnail.png`
+    await supabase.storage
+      .from("documents")
+      .upload(thumbPath, thumbnail, { contentType: "image/png" })
+      .catch(() => {}) // non-critical
+  }
+
+  // 4. Fire-and-forget POST to processing API route
   fetch("/api/documents/process", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -127,4 +136,31 @@ export async function deleteDocument(docId: string): Promise<void> {
     .eq("id", docId)
 
   if (error) throw error
+}
+
+export async function getDocumentThumbnailUrls(
+  docIds: string[]
+): Promise<Record<string, string>> {
+  if (docIds.length === 0) return {}
+
+  const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return {}
+
+  const paths = docIds.map((id) => `${user.id}/${id}/thumbnail.png`)
+  const { data } = await supabase.storage
+    .from("documents")
+    .createSignedUrls(paths, 60 * 60)
+
+  if (!data) return {}
+
+  const result: Record<string, string> = {}
+  data.forEach((item, i) => {
+    if (!item.error && item.signedUrl) {
+      result[docIds[i]] = item.signedUrl
+    }
+  })
+  return result
 }

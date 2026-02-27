@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../../lib/colors"
-import { listDocuments, uploadDocument, getDocumentDownloadUrl, deleteDocument, LimitError, type Document } from "../../../lib/documents"
+import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentThumbnailUrls, deleteDocument, LimitError, type Document } from "../../../lib/documents"
+import { generateThumbnail } from "../../../lib/pdf-thumbnail"
 import { getUserTier, getLimits } from "../../../lib/limits"
 
 const fontFamily = `"Epilogue", sans-serif`
@@ -111,7 +112,7 @@ function DropdownMenu({ onDelete, onClose }: { onDelete: () => void; onClose: ()
 
 // ─── Document Thumbnail ──────────────────────────────────
 
-function DocumentThumbnail({ status }: { status: Document["status"] }) {
+function DocumentThumbnail({ status, thumbnailUrl }: { status: Document["status"]; thumbnailUrl?: string }) {
   return (
     <div
       style={{
@@ -127,26 +128,42 @@ function DocumentThumbnail({ status }: { status: Document["status"] }) {
         justifyContent: "center",
       }}
     >
-      {/* Ruled lines background */}
-      <svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 100 140"
-        preserveAspectRatio="none"
-        style={{ position: "absolute", inset: 0 }}
-      >
-        {Array.from({ length: 16 }, (_, i) => (
-          <line
-            key={i}
-            x1="12"
-            y1={20 + i * 7.5}
-            x2="88"
-            y2={20 + i * 7.5}
-            stroke={colors.gray100}
-            strokeWidth="0.5"
-          />
-        ))}
-      </svg>
+      {thumbnailUrl ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={thumbnailUrl}
+          alt=""
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "top",
+          }}
+        />
+      ) : (
+        /* Ruled lines placeholder */
+        <svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 100 140"
+          preserveAspectRatio="none"
+          style={{ position: "absolute", inset: 0 }}
+        >
+          {Array.from({ length: 16 }, (_, i) => (
+            <line
+              key={i}
+              x1="12"
+              y1={20 + i * 7.5}
+              x2="88"
+              y2={20 + i * 7.5}
+              stroke={colors.gray100}
+              strokeWidth="0.5"
+            />
+          ))}
+        </svg>
+      )}
 
       {status === "processing" && (
         <div
@@ -241,11 +258,13 @@ function UploadButton({ onClick }: { onClick: () => void }) {
 function DocumentCard({
   doc,
   index,
+  thumbnailUrl,
   onDelete,
   onClick,
 }: {
   doc: Document
   index: number
+  thumbnailUrl?: string
   onDelete: (d: Document) => void
   onClick: (d: Document) => void
 }) {
@@ -324,7 +343,7 @@ function DocumentCard({
 
       {/* Thumbnail */}
       <div style={{ padding: "14px 14px 0" }}>
-        <DocumentThumbnail status={doc.status} />
+        <DocumentThumbnail status={doc.status} thumbnailUrl={thumbnailUrl} />
       </div>
 
       {/* Info */}
@@ -588,12 +607,19 @@ export default function DocumentsPage() {
   const [toast, setToast] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Document | null>(null)
   const [maxDocuments, setMaxDocuments] = useState<number | null>(null)
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchDocuments = useCallback(async () => {
     try {
       const data = await listDocuments()
       setDocuments(data)
+
+      // Fetch thumbnail URLs for all documents
+      if (data.length > 0) {
+        const urls = await getDocumentThumbnailUrls(data.map((d) => d.id))
+        setThumbnails((prev) => ({ ...prev, ...urls }))
+      }
     } catch (err) {
       console.error("Failed to fetch documents:", err)
     } finally {
@@ -638,7 +664,22 @@ export default function DocumentsPage() {
     }
 
     try {
-      const doc = await uploadDocument(file)
+      // Generate thumbnail from the PDF before uploading
+      let thumbnailBlob: Blob | undefined
+      try {
+        thumbnailBlob = await generateThumbnail(file)
+      } catch {
+        // Non-critical — upload proceeds without thumbnail
+      }
+
+      const doc = await uploadDocument(file, thumbnailBlob)
+
+      // Store local thumbnail URL for immediate display
+      if (thumbnailBlob) {
+        const localUrl = URL.createObjectURL(thumbnailBlob)
+        setThumbnails((prev) => ({ ...prev, [doc.id]: localUrl }))
+      }
+
       // Optimistically add the new document to the list
       setDocuments(prev => [doc, ...prev])
       setToast("Document uploading — processing will begin shortly")
@@ -799,6 +840,7 @@ export default function DocumentsPage() {
                 key={doc.id}
                 doc={doc}
                 index={i}
+                thumbnailUrl={thumbnails[doc.id]}
                 onDelete={setDeleteTarget}
                 onClick={handleCardClick}
               />
