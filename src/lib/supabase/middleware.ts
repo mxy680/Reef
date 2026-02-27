@@ -30,12 +30,27 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+  const ADMIN_EMAIL = "markshteyn1@gmail.com"
 
   // Redirect unauthenticated users away from protected routes
   if (!user && (pathname.startsWith("/onboarding") || pathname.startsWith("/dashboard"))) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth"
     return NextResponse.redirect(url)
+  }
+
+  // Block non-admin users from /dashboard/admin
+  if (pathname.startsWith("/dashboard/admin")) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/auth"
+      return NextResponse.redirect(url)
+    }
+    if (user.email !== ADMIN_EMAIL) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/dashboard"
+      return NextResponse.redirect(url)
+    }
   }
 
   // Redirect authenticated users away from auth pages

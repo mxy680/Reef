@@ -149,7 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           router.push("/onboarding")
           return
         }
-        setProfile(p)
+        setProfile({ ...p, email: p.email ?? "" })
         setUserId(user.id)
       } catch {
         router.push("/onboarding")

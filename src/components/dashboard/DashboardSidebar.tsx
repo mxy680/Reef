@@ -43,6 +43,15 @@ function CoursesIcon() {
   )
 }
 
+function AdminIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 1 L18 5 V10 C18 14.4 14.5 18 10 19 C5.5 18 2 14.4 2 10 V5 Z" />
+      <polyline points="7,10 9.5,12.5 13.5,7.5" />
+    </svg>
+  )
+}
+
 function SettingsIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -68,6 +77,8 @@ function ReefIcon() {
     </svg>
   )
 }
+
+const ADMIN_EMAIL = "markshteyn1@gmail.com"
 
 const NAV_ITEMS = [
   { href: "/dashboard/documents", label: "Documents", icon: <DocumentsIcon /> },
@@ -272,6 +283,12 @@ export default function DashboardSidebar() {
         {NAV_ITEMS.map((item) => (
           <NavItem key={item.href} {...item} collapsed={collapsed} />
         ))}
+        {profile.email === ADMIN_EMAIL && (
+          <>
+            <div style={{ height: 1, backgroundColor: colors.gray100, margin: "6px 0" }} />
+            <NavItem href="/dashboard/admin" label="Admin" icon={<AdminIcon />} collapsed={collapsed} />
+          </>
+        )}
       </nav>
 
       {/* Footer */}

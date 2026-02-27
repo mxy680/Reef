@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useCallback } from "react"
 
 export interface DashboardProfile {
   display_name: string
+  email: string
   grade: string
   subjects: string[]
   onboarding_completed: boolean
