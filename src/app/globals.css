@@ -44,11 +44,22 @@ html {
 [data-framer-name="Solid"].framer-2m28gd {
   background-color: var(--color-primary) !important;
 }
+[data-framer-name="Solid"].framer-2m28gd .framer-1c74ag0 {
+  --extracted-r6o4lv: var(--color-white) !important;
+  --framer-text-color: var(--color-white) !important;
+}
 
 [data-framer-name="Alternative"].framer-2m28gd {
   background-color: var(--color-white) !important;
-  border: 2px solid var(--color-black);
-  box-shadow: 4px 4px 0px 0px var(--color-black);
+  border: 2px solid var(--color-black) !important;
+  box-shadow: 4px 4px 0px 0px var(--color-black) !important;
+  opacity: 1 !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-framer-name="Alternative"].framer-2m28gd:hover {
+  box-shadow: 2px 2px 0px 0px var(--color-black) !important;
+  transform: translate(2px, 2px);
 }
 
 * {
