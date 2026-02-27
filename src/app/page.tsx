@@ -124,7 +124,7 @@ export default function Home() {
       <section className="page-section hero-section">
         <div className="section-inner">
           <div className="hero-content">
-            <Badge fEv2mISRr="NOW IN BETA" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="ONLY ON IPAD" style={{ backgroundColor: "var(--color-accent)" }} />
             <h1 className="hero-heading">Stay afloat this finals season.</h1>
             <p className="hero-subtitle">
               Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.
