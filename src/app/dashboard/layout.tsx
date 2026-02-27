@@ -85,7 +85,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       <motion.div
         animate={{ marginLeft }}
         transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
-        style={{ flex: 1, display: "flex", flexDirection: "column" }}
+        style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 16px 0" }}
       >
         <DashboardHeader />
         <main
@@ -94,8 +94,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             overflowY: "auto",
             padding: 32,
             backgroundColor: BG,
-            borderTopLeftRadius: 16,
-            borderBottom: `1px solid ${colors.gray100}`,
+            borderRadius: 16,
+            border: `1px solid ${colors.gray100}`,
           }}
         >
           {children}

@@ -30,7 +30,6 @@ export default function DashboardHeader() {
     <header
       style={{
         height: 64,
-        backgroundColor: colors.white,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
