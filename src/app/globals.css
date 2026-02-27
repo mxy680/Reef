@@ -586,7 +586,7 @@ footer.framer-1fiw38h {
   border-radius: 999px;
   box-shadow: 4px 4px 0px 0px var(--color-black);
   background-color: var(--color-white);
-  padding: 4px 4px 4px 24px;
+  padding: 6px 6px 6px 24px;
   box-sizing: border-box;
 }
 
@@ -622,17 +622,15 @@ footer.framer-1fiw38h {
   color: var(--color-white);
   cursor: pointer;
   flex-shrink: 0;
-  box-shadow: 3px 3px 0px 0px var(--color-black);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: transform 0.1s ease, opacity 0.15s ease;
 }
 
 .newsletter-btn:hover {
-  box-shadow: 1px 1px 0px 0px var(--color-black);
-  transform: translate(2px, 2px);
+  opacity: 0.85;
 }
 
 .newsletter-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
 }
 
 /* FAQ */
