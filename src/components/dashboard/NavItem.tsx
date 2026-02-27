@@ -41,7 +41,7 @@ export default function NavItem({
           fontSize: 15,
           letterSpacing: "-0.04em",
           color: colors.black,
-          backgroundColor: colors.surface,
+          backgroundColor: colors.accent,
           border: `2px solid ${colors.black}`,
           borderRadius: 10,
           boxShadow: `3px 3px 0px 0px ${colors.black}`,
