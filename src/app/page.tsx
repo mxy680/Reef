@@ -15,6 +15,27 @@ const AccordionResponsive = dynamic(() => import("../framer/accordion").then(m =
 
 
 export default function Home() {
+  // Patch Framer nav links — ResolveLinks drops the hash fragment
+  useEffect(() => {
+    const linkMap: Record<string, string> = {
+      Features: "/#benefits",
+      "How it works": "/#how-it-work-1",
+      FAQ: "/#faq",
+    }
+    const patchLinks = () => {
+      document.querySelectorAll("nav a, header a").forEach((a) => {
+        const text = a.textContent?.trim()
+        if (text && linkMap[text] && a.getAttribute("href") === "/") {
+          a.setAttribute("href", linkMap[text])
+        }
+      })
+    }
+    patchLinks()
+    const observer = new MutationObserver(patchLinks)
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+
   useEffect(() => {
 
     function smoothScrollTo(element: HTMLElement) {
