@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { colors } from "../../lib/colors"
 import { useDashboard } from "./DashboardContext"
 import NavItem from "./NavItem"
@@ -181,28 +181,29 @@ export default function DashboardSidebar() {
         left: 0,
         height: "100vh",
         backgroundColor: colors.white,
-        borderRight: `2px solid ${colors.black}`,
         display: "flex",
         flexDirection: "column",
         zIndex: 50,
         overflow: "hidden",
       }}
     >
-      {/* Logo + Toggle */}
+      {/* Logo + Toggle — matches header height */}
       <div
         style={{
-          padding: collapsed ? "24px 0 20px" : "24px 20px 20px",
+          height: 64,
+          padding: collapsed ? "0 14px" : "0 20px",
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "flex-start",
           gap: 10,
-          position: "relative",
+          borderBottom: `1px solid ${colors.gray100}`,
+          flexShrink: 0,
         }}
       >
         <img
           src="/reef-logo.png"
           alt="Reef logo"
-          style={{ width: 36, height: 36, flexShrink: 0 }}
+          style={{ width: 28, height: 28, flexShrink: 0 }}
         />
         {!collapsed && (
           <span
@@ -219,57 +220,30 @@ export default function DashboardSidebar() {
             Reef
           </span>
         )}
-        {!collapsed && (
-          <motion.button
-            onClick={toggleSidebar}
-            whileHover={{ backgroundColor: colors.gray100 }}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              borderRadius: 6,
-              width: 28,
-              height: 28,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              padding: 0,
-            }}
-            title="Collapse sidebar"
-          >
-            <SidebarToggleIcon />
-          </motion.button>
-        )}
+        <motion.button
+          onClick={toggleSidebar}
+          whileHover={{ backgroundColor: colors.gray100 }}
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            borderRadius: 6,
+            width: 28,
+            height: 28,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            padding: 0,
+          }}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <SidebarToggleIcon />
+        </motion.button>
       </div>
 
-      {/* Expand button when collapsed */}
-      {collapsed && (
-        <div style={{ display: "flex", justifyContent: "center", paddingBottom: 8 }}>
-          <motion.button
-            onClick={toggleSidebar}
-            whileHover={{ backgroundColor: colors.gray100 }}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              borderRadius: 6,
-              width: 36,
-              height: 36,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-            }}
-            title="Expand sidebar"
-          >
-            <SidebarToggleIcon />
-          </motion.button>
-        </div>
-      )}
-
       {/* Nav */}
-      <nav style={{ flex: 1, padding: collapsed ? "0 10px" : "0 14px", display: "flex", flexDirection: "column", gap: 6 }}>
+      <nav style={{ flex: 1, padding: collapsed ? "12px 10px 0" : "12px 14px 0", display: "flex", flexDirection: "column", gap: 6 }}>
         {NAV_ITEMS.map((item) => (
           <NavItem key={item.href} {...item} collapsed={collapsed} />
         ))}
