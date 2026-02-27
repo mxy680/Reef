@@ -49,7 +49,7 @@ export default function StepSubjects({ value, onChange, onNext, onBack }: { valu
           lineHeight: "1.2em",
           letterSpacing: "-0.04em",
           textTransform: "uppercase",
-          color: colors.accent,
+          color: colors.black,
           margin: 0,
           marginBottom: 8,
         }}
@@ -97,7 +97,7 @@ export default function StepSubjects({ value, onChange, onNext, onBack }: { valu
                 fontWeight: 600,
                 fontSize: 13,
                 letterSpacing: "-0.04em",
-                color: selected ? colors.white : colors.accent,
+                color: selected ? colors.white : colors.black,
                 cursor: "pointer",
               }}
             >
@@ -130,14 +130,14 @@ export default function StepSubjects({ value, onChange, onNext, onBack }: { valu
           type="button"
           onClick={onNext}
           disabled={!canContinue}
-          whileHover={canContinue ? { boxShadow: `2px 2px 0px 0px ${colors.black}` } : {}}
-          whileTap={canContinue ? { boxShadow: `0px 0px 0px 0px ${colors.black}` } : {}}
+          whileHover={canContinue ? { boxShadow: `2px 2px 0px 0px ${colors.black}`, y: 2, x: 2 } : {}}
+          whileTap={canContinue ? { boxShadow: `0px 0px 0px 0px ${colors.black}`, y: 4, x: 4 } : {}}
           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
           style={{
             padding: "12px 32px",
             backgroundColor: canContinue ? colors.primary : colors.surface,
             border: `2px solid ${colors.black}`,
-            borderRadius: 0,
+            borderRadius: 12,
             boxShadow: `4px 4px 0px 0px ${colors.black}`,
             fontFamily,
             fontWeight: 700,

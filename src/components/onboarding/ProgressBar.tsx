@@ -12,8 +12,8 @@ export default function ProgressBar({ step, total = 3 }: { step: number; total?:
             width: 10,
             height: 10,
             borderRadius: "50%",
-            backgroundColor: i <= step ? colors.primary : "transparent",
-            border: `2px solid ${i <= step ? colors.primary : colors.gray400}`,
+            backgroundColor: i <= step ? colors.primary : colors.white,
+            border: `2px solid ${colors.black}`,
             transition: "all 0.3s ease",
           }}
         />

@@ -26,7 +26,7 @@ export default function StepName({ value, onChange, onNext }: { value: string; o
           lineHeight: "1.2em",
           letterSpacing: "-0.04em",
           textTransform: "uppercase",
-          color: colors.accent,
+          color: colors.black,
           margin: 0,
           marginBottom: 8,
         }}
@@ -59,15 +59,15 @@ export default function StepName({ value, onChange, onNext }: { value: string; o
         type="button"
         onClick={onNext}
         disabled={!value.trim()}
-        whileHover={value.trim() ? { boxShadow: `2px 2px 0px 0px ${colors.black}` } : {}}
-        whileTap={value.trim() ? { boxShadow: `0px 0px 0px 0px ${colors.black}` } : {}}
+        whileHover={value.trim() ? { boxShadow: `2px 2px 0px 0px ${colors.black}`, y: 2, x: 2 } : {}}
+        whileTap={value.trim() ? { boxShadow: `0px 0px 0px 0px ${colors.black}`, y: 4, x: 4 } : {}}
         transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
         style={{
           width: "100%",
           height: 48,
           backgroundColor: value.trim() ? colors.primary : colors.surface,
           border: `2px solid ${colors.black}`,
-          borderRadius: 0,
+          borderRadius: 12,
           boxShadow: `4px 4px 0px 0px ${colors.black}`,
           fontFamily,
           fontWeight: 700,

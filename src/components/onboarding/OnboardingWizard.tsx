@@ -86,6 +86,7 @@ export default function OnboardingWizard({ user }: { user: { id: string; email: 
           maxWidth: "100%",
           backgroundColor: colors.white,
           border: `2px solid ${colors.black}`,
+          borderRadius: 12,
           boxShadow: `6px 6px 0px 0px ${colors.black}`,
           padding: "48px 36px",
           boxSizing: "border-box",

@@ -29,7 +29,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
           lineHeight: "1.2em",
           letterSpacing: "-0.04em",
           textTransform: "uppercase",
-          color: colors.accent,
+          color: colors.black,
           margin: 0,
           marginBottom: 8,
         }}
@@ -58,15 +58,15 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
               key={grade.value}
               type="button"
               onClick={() => onChange(grade.value)}
-              whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}` }}
-              whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
+              whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}`, y: 2, x: 2 }}
+              whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}`, y: 4, x: 4 }}
               transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
               style={{
                 width: "100%",
                 padding: "14px 18px",
                 backgroundColor: selected ? colors.primary : colors.white,
                 border: `2px solid ${colors.black}`,
-                borderRadius: 0,
+                borderRadius: 12,
                 boxShadow: selected
                   ? `3px 3px 0px 0px ${colors.black}`
                   : `4px 4px 0px 0px ${colors.black}`,
@@ -74,7 +74,7 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
                 fontWeight: 600,
                 fontSize: 15,
                 letterSpacing: "-0.04em",
-                color: selected ? colors.white : colors.accent,
+                color: selected ? colors.white : colors.black,
                 cursor: "pointer",
                 textAlign: "left",
               }}
@@ -108,14 +108,14 @@ export default function StepGrade({ value, onChange, onNext, onBack }: { value: 
           type="button"
           onClick={onNext}
           disabled={!value}
-          whileHover={value ? { boxShadow: `2px 2px 0px 0px ${colors.black}` } : {}}
-          whileTap={value ? { boxShadow: `0px 0px 0px 0px ${colors.black}` } : {}}
+          whileHover={value ? { boxShadow: `2px 2px 0px 0px ${colors.black}`, y: 2, x: 2 } : {}}
+          whileTap={value ? { boxShadow: `0px 0px 0px 0px ${colors.black}`, y: 4, x: 4 } : {}}
           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
           style={{
             padding: "12px 32px",
             backgroundColor: value ? colors.primary : colors.surface,
             border: `2px solid ${colors.black}`,
-            borderRadius: 0,
+            borderRadius: 12,
             boxShadow: `4px 4px 0px 0px ${colors.black}`,
             fontFamily,
             fontWeight: 700,
