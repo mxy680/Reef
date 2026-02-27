@@ -93,9 +93,10 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             flex: 1,
             overflowY: "auto",
             padding: 32,
-            backgroundColor: BG,
+            backgroundColor: colors.white,
             borderRadius: 16,
-            border: `1px solid ${colors.gray100}`,
+            border: `2px solid ${colors.black}`,
+            boxShadow: `4px 4px 0px 0px ${colors.black}`,
           }}
         >
           {children}
