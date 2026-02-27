@@ -302,6 +302,7 @@ footer.framer-1fiw38h {
   width: 60% !important;
   height: 70% !important;
   margin: auto;
+  margin-right: 24px;
   background: var(--color-white) !important;
   background-image: none !important;
   border-radius: 8px;
