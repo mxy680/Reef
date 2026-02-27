@@ -626,11 +626,11 @@ footer.framer-1fiw38h {
 }
 
 .newsletter-btn:hover {
-  filter: brightness(0.8);
+  filter: brightness(0.9);
 }
 
 .newsletter-btn:active {
-  filter: brightness(0.6);
+  filter: brightness(0.8);
 }
 
 /* FAQ */
