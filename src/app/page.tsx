@@ -146,7 +146,7 @@ export default function Home() {
       <section className="page-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "var(--color-surface)" }} />
             <h2 className="section-heading">STUDYING SHOULDN&rsquo;T FEEL THIS BROKEN</h2>
             <p className="section-subtitle">
               Every night, millions of students get stuck on practice problems with no one to help. They bounce between apps, lose focus, and give up before they actually learn.
@@ -241,7 +241,7 @@ export default function Home() {
           <div className="integrations-card">
             <IntegrationsResponsive style={{ width: "100%" }} />
             <div className="integrations-text">
-              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "var(--color-accent)" }} />
+              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "var(--color-surface)" }} />
               <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
               <p className="section-subtitle">
                 From calculus problem sets to organic chemistry mechanisms to circuit analysis, Reef understands the notation and concepts across all your STEM courses.
@@ -367,7 +367,7 @@ export default function Home() {
       <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "var(--color-surface)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
