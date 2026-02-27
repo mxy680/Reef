@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../../lib/colors"
-import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentThumbnailUrls, deleteDocument, LimitError, type Document } from "../../../lib/documents"
+import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentThumbnailUrls, deleteDocument, renameDocument, duplicateDocument, LimitError, type Document } from "../../../lib/documents"
 import { generateThumbnail } from "../../../lib/pdf-thumbnail"
 import { getUserTier, getLimits } from "../../../lib/limits"
 
@@ -54,7 +54,40 @@ function AlertIcon() {
 
 // ─── Dropdown Menu ────────────────────────────────────────
 
-function DropdownMenu({ onDelete, onClose }: { onDelete: () => void; onClose: () => void }) {
+const menuItemStyle: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  padding: "8px 14px",
+  background: "none",
+  border: "none",
+  fontFamily,
+  fontWeight: 600,
+  fontSize: 13,
+  letterSpacing: "-0.04em",
+  color: colors.black,
+  cursor: "pointer",
+  textAlign: "left",
+}
+
+function DropdownMenu({
+  onRename,
+  onDownload,
+  onMoveToCourse,
+  onDuplicate,
+  onShare,
+  onViewDetails,
+  onDelete,
+  onClose,
+}: {
+  onRename: () => void
+  onDownload: () => void
+  onMoveToCourse: () => void
+  onDuplicate: () => void
+  onShare: () => void
+  onViewDetails: () => void
+  onDelete: () => void
+  onClose: () => void
+}) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -64,6 +97,15 @@ function DropdownMenu({ onDelete, onClose }: { onDelete: () => void; onClose: ()
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [onClose])
+
+  const items = [
+    { label: "Rename", action: onRename },
+    { label: "Download", action: onDownload },
+    { label: "Move to Course", action: onMoveToCourse },
+    { label: "Duplicate", action: onDuplicate },
+    { label: "Share", action: onShare },
+    { label: "View Details", action: onViewDetails },
+  ]
 
   return (
     <motion.div
@@ -82,27 +124,27 @@ function DropdownMenu({ onDelete, onClose }: { onDelete: () => void; onClose: ()
         boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
         overflow: "hidden",
         zIndex: 10,
-        minWidth: 120,
+        minWidth: 160,
       }}
     >
+      {items.map((item) => (
+        <button
+          key={item.label}
+          onClick={(e) => { e.stopPropagation(); item.action(); onClose() }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.gray100)}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+          style={menuItemStyle}
+        >
+          {item.label}
+        </button>
+      ))}
+      {/* Divider */}
+      <div style={{ height: 1, backgroundColor: colors.gray100, margin: "2px 0" }} />
       <button
         onClick={(e) => { e.stopPropagation(); onDelete(); onClose() }}
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FDECEA")}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-        style={{
-          display: "block",
-          width: "100%",
-          padding: "8px 14px",
-          background: "none",
-          border: "none",
-          fontFamily,
-          fontWeight: 600,
-          fontSize: 13,
-          letterSpacing: "-0.04em",
-          color: "#C62828",
-          cursor: "pointer",
-          textAlign: "left",
-        }}
+        style={{ ...menuItemStyle, color: "#C62828" }}
       >
         Delete
       </button>
@@ -260,15 +302,30 @@ function DocumentCard({
   index,
   thumbnailUrl,
   onDelete,
+  onRename,
+  onDownload,
+  onDuplicate,
+  onMoveToCourse,
+  onShare,
+  onViewDetails,
   onClick,
 }: {
   doc: Document
   index: number
   thumbnailUrl?: string
   onDelete: (d: Document) => void
+  onRename: (d: Document) => void
+  onDownload: (d: Document) => void
+  onDuplicate: (d: Document) => void
+  onMoveToCourse: (d: Document) => void
+  onShare: (d: Document) => void
+  onViewDetails: (d: Document) => void
   onClick: (d: Document) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const dateStr = new Date(doc.created_at).toLocaleDateString("en-US", {
     month: "short",
@@ -289,13 +346,16 @@ function DocumentCard({
     return dateStr
   }
 
+  const hoverStyle = { boxShadow: `2px 2px 0px 0px ${colors.gray500}`, x: 2, y: 2 }
+  const defaultShadow = `4px 4px 0px 0px ${doc.status === "failed" ? "#E57373" : colors.gray500}`
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={menuOpen ? { opacity: 1, boxShadow: `2px 2px 0px 0px ${colors.gray500}`, x: 2, y: 2 } : { opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: menuOpen ? 0 : 0.1 + index * 0.05 }}
-      whileHover={doc.status === "completed" ? { boxShadow: `2px 2px 0px 0px ${colors.gray500}`, x: 2, y: 2, transition: { duration: 0.15 } } : {}}
-      whileTap={doc.status === "completed" ? { boxShadow: `0px 0px 0px 0px ${colors.gray500}`, x: 4, y: 4, transition: { duration: 0.1 } } : {}}
+      initial={mounted ? false : { opacity: 0, y: 16 }}
+      animate={menuOpen ? { opacity: 1, ...hoverStyle } : { opacity: 1, y: 0, x: 0, boxShadow: defaultShadow }}
+      transition={{ duration: mounted ? 0.15 : 0.3, delay: mounted ? 0 : 0.1 + index * 0.05 }}
+      whileHover={!menuOpen && doc.status === "completed" ? { ...hoverStyle, transition: { duration: 0.15 } } : {}}
+      whileTap={!menuOpen && doc.status === "completed" ? { boxShadow: `0px 0px 0px 0px ${colors.gray500}`, x: 4, y: 4, transition: { duration: 0.1 } } : {}}
       onClick={() => onClick(doc)}
       style={{
         position: "relative",
@@ -332,6 +392,12 @@ function DocumentCard({
         <AnimatePresence>
           {menuOpen && (
             <DropdownMenu
+              onRename={() => onRename(doc)}
+              onDownload={() => onDownload(doc)}
+              onDuplicate={() => onDuplicate(doc)}
+              onMoveToCourse={() => onMoveToCourse(doc)}
+              onShare={() => onShare(doc)}
+              onViewDetails={() => onViewDetails(doc)}
               onDelete={() => onDelete(doc)}
               onClose={() => setMenuOpen(false)}
             />
@@ -584,6 +650,266 @@ function DeleteConfirmModal({
   )
 }
 
+// ─── Rename Modal ─────────────────────────────────────────
+
+function RenameModal({
+  doc,
+  onConfirm,
+  onClose,
+}: {
+  doc: Document
+  onConfirm: (newName: string) => void
+  onClose: () => void
+}) {
+  const baseName = doc.filename.replace(/\.pdf$/i, "")
+  const [value, setValue] = useState(baseName)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    inputRef.current?.select()
+  }, [])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.3)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100,
+        padding: 24,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        transition={{ duration: 0.25 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 380,
+          maxWidth: "100%",
+          backgroundColor: colors.white,
+          border: `2px solid ${colors.black}`,
+          borderRadius: 12,
+          boxShadow: `6px 6px 0px 0px ${colors.black}`,
+          padding: "32px 28px",
+          boxSizing: "border-box",
+        }}
+      >
+        <h3
+          style={{
+            fontFamily,
+            fontWeight: 900,
+            fontSize: 20,
+            letterSpacing: "-0.04em",
+            color: colors.black,
+            margin: 0,
+            marginBottom: 16,
+          }}
+        >
+          Rename Document
+        </h3>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && value.trim()) onConfirm(value.trim() + ".pdf")
+          }}
+          style={{
+            width: "100%",
+            padding: "10px 14px",
+            fontFamily,
+            fontWeight: 600,
+            fontSize: 14,
+            letterSpacing: "-0.04em",
+            color: colors.black,
+            border: `1.5px solid ${colors.gray400}`,
+            borderRadius: 8,
+            outline: "none",
+            boxSizing: "border-box",
+            marginBottom: 20,
+          }}
+        />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              padding: "10px 20px",
+              background: "none",
+              border: "none",
+              fontFamily,
+              fontWeight: 600,
+              fontSize: 14,
+              letterSpacing: "-0.04em",
+              color: colors.gray600,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => { if (value.trim()) onConfirm(value.trim() + ".pdf") }}
+            disabled={!value.trim()}
+            style={{
+              padding: "10px 24px",
+              backgroundColor: colors.primary,
+              border: `2px solid ${colors.black}`,
+              borderRadius: 10,
+              boxShadow: `4px 4px 0px 0px ${colors.black}`,
+              fontFamily,
+              fontWeight: 700,
+              fontSize: 14,
+              letterSpacing: "-0.04em",
+              color: colors.white,
+              cursor: value.trim() ? "pointer" : "not-allowed",
+              opacity: value.trim() ? 1 : 0.5,
+            }}
+          >
+            Rename
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ─── Details Modal ────────────────────────────────────────
+
+function DetailsModal({ doc, onClose }: { doc: Document; onClose: () => void }) {
+  const displayName = doc.filename.replace(/\.pdf$/i, "")
+  const dateStr = new Date(doc.created_at).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+
+  const rows = [
+    { label: "Filename", value: doc.filename },
+    { label: "Status", value: doc.status.charAt(0).toUpperCase() + doc.status.slice(1) },
+    { label: "Pages", value: doc.page_count != null ? String(doc.page_count) : "—" },
+    { label: "Problems", value: doc.problem_count != null ? String(doc.problem_count) : "—" },
+    { label: "Uploaded", value: dateStr },
+    { label: "ID", value: doc.id },
+  ]
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.3)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100,
+        padding: 24,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        transition={{ duration: 0.25 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 400,
+          maxWidth: "100%",
+          backgroundColor: colors.white,
+          border: `2px solid ${colors.black}`,
+          borderRadius: 12,
+          boxShadow: `6px 6px 0px 0px ${colors.black}`,
+          padding: "32px 28px",
+          boxSizing: "border-box",
+        }}
+      >
+        <h3
+          style={{
+            fontFamily,
+            fontWeight: 900,
+            fontSize: 20,
+            letterSpacing: "-0.04em",
+            color: colors.black,
+            margin: 0,
+            marginBottom: 20,
+          }}
+        >
+          {displayName}
+        </h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {rows.map((row) => (
+            <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span
+                style={{
+                  fontFamily,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  letterSpacing: "-0.04em",
+                  color: colors.gray600,
+                }}
+              >
+                {row.label}
+              </span>
+              <span
+                style={{
+                  fontFamily,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  letterSpacing: "-0.04em",
+                  color: colors.black,
+                  textAlign: "right",
+                  maxWidth: "60%",
+                  wordBreak: "break-all",
+                }}
+              >
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              padding: "10px 24px",
+              backgroundColor: colors.gray100,
+              border: `2px solid ${colors.black}`,
+              borderRadius: 10,
+              boxShadow: `4px 4px 0px 0px ${colors.black}`,
+              fontFamily,
+              fontWeight: 700,
+              fontSize: 14,
+              letterSpacing: "-0.04em",
+              color: colors.black,
+              cursor: "pointer",
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 // ─── Shimmer Keyframes (injected once) ────────────────────
 
 function ShimmerStyle() {
@@ -604,6 +930,8 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Document | null>(null)
+  const [renameTarget, setRenameTarget] = useState<Document | null>(null)
+  const [detailsTarget, setDetailsTarget] = useState<Document | null>(null)
   const [maxDocuments, setMaxDocuments] = useState<number | null>(null)
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -714,6 +1042,55 @@ export default function DocumentsPage() {
       console.error("Failed to delete document:", err)
       setToast("Something went wrong")
     }
+  }
+
+  async function handleRename(newFilename: string) {
+    if (!renameTarget) return
+    try {
+      await renameDocument(renameTarget.id, newFilename)
+      setToast("Document renamed")
+      setRenameTarget(null)
+      await fetchDocuments()
+    } catch (err) {
+      console.error("Failed to rename document:", err)
+      setToast("Something went wrong")
+    }
+  }
+
+  async function handleDownload(doc: Document) {
+    try {
+      const url = await getDocumentDownloadUrl(doc.id)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = doc.filename
+      a.click()
+    } catch (err) {
+      console.error("Failed to download document:", err)
+      setToast("Failed to download")
+    }
+  }
+
+  async function handleDuplicate(doc: Document) {
+    try {
+      const newDoc = await duplicateDocument(doc.id)
+      setToast("Document duplicated")
+      // Copy thumbnail locally
+      if (thumbnails[doc.id]) {
+        setThumbnails((prev) => ({ ...prev, [newDoc.id]: prev[doc.id] }))
+      }
+      await fetchDocuments()
+    } catch (err) {
+      console.error("Failed to duplicate document:", err)
+      setToast("Something went wrong")
+    }
+  }
+
+  function handleMoveToCourse() {
+    setToast("Move to Course — coming soon")
+  }
+
+  function handleShare() {
+    setToast("Share — coming soon")
   }
 
   return (
@@ -840,6 +1217,12 @@ export default function DocumentsPage() {
                 index={i}
                 thumbnailUrl={thumbnails[doc.id]}
                 onDelete={setDeleteTarget}
+                onRename={setRenameTarget}
+                onDownload={handleDownload}
+                onDuplicate={handleDuplicate}
+                onMoveToCourse={handleMoveToCourse}
+                onShare={handleShare}
+                onViewDetails={setDetailsTarget}
                 onClick={handleCardClick}
               />
             ))}
@@ -854,6 +1237,27 @@ export default function DocumentsPage() {
             doc={deleteTarget}
             onConfirm={handleDelete}
             onClose={() => setDeleteTarget(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Rename modal */}
+      <AnimatePresence>
+        {renameTarget && (
+          <RenameModal
+            doc={renameTarget}
+            onConfirm={handleRename}
+            onClose={() => setRenameTarget(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Details modal */}
+      <AnimatePresence>
+        {detailsTarget && (
+          <DetailsModal
+            doc={detailsTarget}
+            onClose={() => setDetailsTarget(null)}
           />
         )}
       </AnimatePresence>

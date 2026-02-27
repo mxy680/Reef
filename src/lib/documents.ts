@@ -138,6 +138,56 @@ export async function deleteDocument(docId: string): Promise<void> {
   if (error) throw error
 }
 
+export async function renameDocument(docId: string, filename: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from("documents")
+    .update({ filename })
+    .eq("id", docId)
+
+  if (error) throw error
+}
+
+export async function duplicateDocument(docId: string): Promise<Document> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  // Get the original document
+  const { data: original, error: fetchError } = await supabase
+    .from("documents")
+    .select("*")
+    .eq("id", docId)
+    .single()
+
+  if (fetchError) throw fetchError
+
+  // Create new DB row with "Copy of" prefix
+  const newFilename = original.filename.replace(/\.pdf$/i, "") + " (Copy).pdf"
+  const { data: doc, error: insertError } = await supabase
+    .from("documents")
+    .insert({ user_id: user.id, filename: newFilename, status: original.status, page_count: original.page_count, problem_count: original.problem_count })
+    .select()
+    .single()
+
+  if (insertError) throw insertError
+  const newDoc = doc as Document
+
+  // Copy storage files
+  const prefix = `${user.id}/${docId}`
+  const { data: files } = await supabase.storage.from("documents").list(prefix)
+
+  if (files) {
+    for (const file of files) {
+      await supabase.storage
+        .from("documents")
+        .copy(`${prefix}/${file.name}`, `${user.id}/${newDoc.id}/${file.name}`)
+    }
+  }
+
+  return newDoc
+}
+
 export async function getDocumentThumbnailUrls(
   docIds: string[]
 ): Promise<Record<string, string>> {
