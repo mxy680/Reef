@@ -30,6 +30,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     case analytics = "Analytics"
     case tutors = "Tutors"
     case settings = "Settings"
+    case admin = "Admin"
 
     var id: String { rawValue }
 
@@ -40,6 +41,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .analytics: return "chart.line.uptrend.xyaxis"
         case .tutors: return "figure.surfing"
         case .settings: return "gearshape.fill"
+        case .admin: return "shield.fill"
         }
     }
 }
@@ -151,6 +153,8 @@ struct HomeView: View {
             AnalyticsView(colorScheme: effectiveColorScheme)
         } else if selectedItem == .tutors {
             TutorsView(colorScheme: effectiveColorScheme)
+        } else if selectedItem == .admin {
+            AdminDashboardView(colorScheme: effectiveColorScheme, userIdentifier: authManager.userIdentifier ?? "")
         } else if selectedItem == .myReef {
             // Placeholder for unimplemented sections
             VStack(spacing: 16) {
@@ -306,6 +310,31 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
             .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+
+            // Admin tab (only for admin user)
+            if authManager.userEmail == "markshteyn1@gmail.com" {
+                Button {
+                    selectedItem = .admin
+                    selectedCourse = nil
+                    selectedCourseSubPage = nil
+                } label: {
+                    HStack {
+                        Label(SidebarItem.admin.rawValue, systemImage: SidebarItem.admin.icon)
+                            .font(.quicksand(17, weight: .medium))
+                            .foregroundColor(Color.adaptiveText(for: effectiveColorScheme))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(selectedItem == .admin ? Color.deepTeal.opacity(0.1) : Color.clear)
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+            }
         }
 
         // SECTION B: Courses (always visible)
