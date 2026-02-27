@@ -80,7 +80,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const marginLeft = sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white }}>
       <DashboardSidebar />
       <motion.div
         animate={{ marginLeft }}
@@ -93,6 +93,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             flex: 1,
             overflowY: "auto",
             padding: 32,
+            backgroundColor: BG,
+            borderTopLeftRadius: 16,
+            borderBottom: `1px solid ${colors.gray100}`,
           }}
         >
           {children}

@@ -181,7 +181,6 @@ export default function DashboardSidebar() {
         left: 0,
         height: "100vh",
         backgroundColor: colors.white,
-        borderRight: `1px solid ${colors.gray100}`,
         display: "flex",
         flexDirection: "column",
         zIndex: 50,
@@ -197,7 +196,6 @@ export default function DashboardSidebar() {
           alignItems: "center",
           justifyContent: collapsed ? "center" : "flex-start",
           gap: 10,
-          borderBottom: `1px solid ${colors.gray100}`,
           flexShrink: 0,
         }}
       >

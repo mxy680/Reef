@@ -30,7 +30,6 @@ export default function DashboardHeader() {
     <header
       style={{
         height: 64,
-        borderBottom: `1px solid ${colors.gray100}`,
         backgroundColor: colors.white,
         display: "flex",
         alignItems: "center",
