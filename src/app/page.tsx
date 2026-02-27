@@ -192,6 +192,7 @@ export default function Home() {
                 variant="Double"
                 headline="PROACTIVE AI TUTORING"
                 subline="Reef reads your handwriting and delivers feedback during natural pauses. No prompts needed."
+                background="var(--color-surface)"
                 image={{ src: "https://framerusercontent.com/images/y5nwVpIi7OrrXnUMddYmFpfR8w.png", alt: "AI Tutoring" }}
               />
               <FeaturesCard
@@ -213,6 +214,7 @@ export default function Home() {
                 variant="Double"
                 headline="SMART EXAM GENERATION"
                 subline="Upload your course materials and Reef auto-generates practice exams. Multiple choice, free response, and more."
+                background="var(--color-accent)"
                 image={{ src: "https://framerusercontent.com/images/f60AUC3qCLYakCUJvA05aCTSxY.png", alt: "Smart Exam Generation" }}
               />
             </div>
@@ -222,6 +224,7 @@ export default function Home() {
                 variant="Double"
                 headline="GAMIFIED PROGRESS TRACKING"
                 subline="Master topics to unlock marine species and build a personal reef that grows with you."
+                background="var(--color-primary)"
                 image={{ src: "https://framerusercontent.com/images/KyGJt180mUl3faZpD14pmQaXfAs.png", alt: "Gamified Progress Tracking" }}
               />
               <FeaturesCard
