@@ -34,6 +34,12 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Round all Framer cards, badges, and accordion items */
+.framer-1lyq2hd { border-radius: 12px !important; }  /* Badges */
+.framer-1f6l56w { border-radius: 12px !important; }  /* Feature cards */
+.framer-armj4 { border-radius: 12px !important; }     /* Pricing cards */
+.framer-1jl4vm1 { border-radius: 12px !important; }   /* FAQ accordion items */
+
 /* Hide "Log In" text link from header nav and footer nav */
 .framer-eJKH2 .framer-182bq1x-container,
 .framer-lf0af2-container {
