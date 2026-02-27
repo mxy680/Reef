@@ -144,14 +144,14 @@ function CourseCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
-      whileHover={{ y: -2, boxShadow: `4px 4px 0px 0px ${colors.gray500}` }}
-      whileTap={{ y: 1, boxShadow: `1px 1px 0px 0px ${colors.gray500}` }}
+      whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.gray500}` }}
+      whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.gray500}` }}
       style={{
         position: "relative",
         backgroundColor: colors.white,
         border: `1.5px solid ${colors.gray500}`,
         borderRadius: 16,
-        boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
+        boxShadow: `4px 4px 0px 0px ${colors.gray500}`,
         padding: "24px 20px",
         cursor: "default",
         overflow: "hidden",
@@ -262,8 +262,8 @@ function AddCourseCard({ onClick }: { onClick: () => void }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.05 }}
-      whileHover={{ y: -2, borderColor: colors.gray500 }}
-      whileTap={{ y: 1 }}
+      whileHover={{ borderColor: colors.gray500 }}
+      whileTap={{ borderColor: colors.gray600 }}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -432,9 +432,9 @@ function CourseModal({
                 key={em}
                 type="button"
                 onClick={() => setEmoji(em)}
-                whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}`, y: 1, x: 1 }}
-                whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}`, y: 3, x: 3 }}
-                transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+                whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}` }}
+                whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
+                transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                 style={{
                   width: 40,
                   height: 40,
@@ -519,8 +519,8 @@ function CourseModal({
             type="button"
             onClick={handleSubmit}
             disabled={!canSave || saving}
-            whileHover={canSave ? { boxShadow: `2px 2px 0px 0px ${colors.black}`, y: 2, x: 2 } : {}}
-            whileTap={canSave ? { boxShadow: `0px 0px 0px 0px ${colors.black}`, y: 4, x: 4 } : {}}
+            whileHover={canSave ? { boxShadow: `2px 2px 0px 0px ${colors.black}` } : {}}
+            whileTap={canSave ? { boxShadow: `0px 0px 0px 0px ${colors.black}` } : {}}
             transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
             style={{
               padding: "10px 24px",
@@ -642,8 +642,8 @@ function DeleteConfirmModal({
             type="button"
             onClick={() => { setDeleting(true); onConfirm() }}
             disabled={deleting}
-            whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}`, y: 2, x: 2 }}
-            whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}`, y: 4, x: 4 }}
+            whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}` }}
+            whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
             transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
             style={{
               padding: "10px 24px",
@@ -747,8 +747,9 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       </p>
       <motion.button
         onClick={onAdd}
-        whileHover={{ y: -2, boxShadow: `4px 4px 0px 0px ${colors.black}` }}
-        whileTap={{ y: 1, boxShadow: `1px 1px 0px 0px ${colors.black}` }}
+        whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}` }}
+        whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
+        transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -762,7 +763,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           letterSpacing: "-0.04em",
           border: `1.5px solid ${colors.black}`,
           borderRadius: 10,
-          boxShadow: `3px 3px 0px 0px ${colors.black}`,
+          boxShadow: `4px 4px 0px 0px ${colors.black}`,
           cursor: "pointer",
         }}
       >
@@ -939,8 +940,9 @@ export default function CoursesPage() {
           {!loading && courses.length > 0 && (
             <motion.button
               onClick={openCreate}
-              whileHover={{ y: -2, boxShadow: `4px 4px 0px 0px ${colors.black}` }}
-              whileTap={{ y: 1, boxShadow: `1px 1px 0px 0px ${colors.black}` }}
+              whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}` }}
+              whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
+              transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -954,7 +956,7 @@ export default function CoursesPage() {
                 letterSpacing: "-0.04em",
                 border: `1.5px solid ${colors.black}`,
                 borderRadius: 10,
-                boxShadow: `3px 3px 0px 0px ${colors.black}`,
+                boxShadow: `4px 4px 0px 0px ${colors.black}`,
                 cursor: "pointer",
               }}
             >

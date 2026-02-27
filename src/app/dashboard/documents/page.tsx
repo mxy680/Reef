@@ -196,8 +196,9 @@ function UploadButton({ onClick }: { onClick: () => void }) {
   return (
     <motion.button
       onClick={onClick}
-      whileHover={{ y: -2, boxShadow: `4px 4px 0px 0px ${colors.black}` }}
-      whileTap={{ y: 1, boxShadow: `1px 1px 0px 0px ${colors.black}` }}
+      whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}` }}
+      whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
+      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -211,7 +212,7 @@ function UploadButton({ onClick }: { onClick: () => void }) {
         letterSpacing: "-0.04em",
         border: `1.5px solid ${colors.black}`,
         borderRadius: 10,
-        boxShadow: `3px 3px 0px 0px ${colors.black}`,
+        boxShadow: `4px 4px 0px 0px ${colors.black}`,
         cursor: "pointer",
       }}
     >
