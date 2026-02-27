@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext } from "react"
+import { createContext, useContext, useState, useCallback } from "react"
 
 export interface DashboardProfile {
   display_name: string
@@ -12,6 +12,8 @@ export interface DashboardProfile {
 export interface DashboardContextValue {
   profile: DashboardProfile
   userId: string
+  sidebarOpen: boolean
+  toggleSidebar: () => void
 }
 
 const DashboardContext = createContext<DashboardContextValue | null>(null)
@@ -21,10 +23,13 @@ export function DashboardProvider({
   value,
 }: {
   children: React.ReactNode
-  value: DashboardContextValue
+  value: Omit<DashboardContextValue, "sidebarOpen" | "toggleSidebar">
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const toggleSidebar = useCallback(() => setSidebarOpen((o) => !o), [])
+
   return (
-    <DashboardContext.Provider value={value}>
+    <DashboardContext.Provider value={{ ...value, sidebarOpen, toggleSidebar }}>
       {children}
     </DashboardContext.Provider>
   )

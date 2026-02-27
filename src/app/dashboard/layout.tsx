@@ -4,12 +4,11 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "../../lib/supabase/client"
 import { getProfile } from "../../lib/api"
+import { motion } from "framer-motion"
 import { colors } from "../../lib/colors"
-import { DashboardProvider, type DashboardProfile } from "../../components/dashboard/DashboardContext"
-import DashboardSidebar from "../../components/dashboard/DashboardSidebar"
+import { DashboardProvider, useDashboard, type DashboardProfile } from "../../components/dashboard/DashboardContext"
+import DashboardSidebar, { SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_COLLAPSED } from "../../components/dashboard/DashboardSidebar"
 import DashboardHeader from "../../components/dashboard/DashboardHeader"
-
-const SIDEBAR_WIDTH = 260
 const BG = "#F7F7F8"
 
 function SkeletonBlock({ width, height }: { width: string | number; height: number }) {
@@ -31,7 +30,7 @@ function LoadingSkeleton() {
       {/* Sidebar skeleton */}
       <div
         style={{
-          width: SIDEBAR_WIDTH,
+          width: SIDEBAR_WIDTH_OPEN,
           minHeight: "100vh",
           backgroundColor: colors.white,
           borderRight: `1px solid ${colors.gray100}`,
@@ -76,6 +75,33 @@ function LoadingSkeleton() {
   )
 }
 
+function DashboardInner({ children }: { children: React.ReactNode }) {
+  const { sidebarOpen } = useDashboard()
+  const marginLeft = sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
+      <DashboardSidebar />
+      <motion.div
+        animate={{ marginLeft }}
+        transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+        style={{ flex: 1, display: "flex", flexDirection: "column" }}
+      >
+        <DashboardHeader />
+        <main
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: 32,
+          }}
+        >
+          {children}
+        </main>
+      </motion.div>
+    </div>
+  )
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [profile, setProfile] = useState<DashboardProfile | null>(null)
@@ -115,21 +141,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <DashboardProvider value={{ profile, userId }}>
-      <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
-        <DashboardSidebar />
-        <div style={{ flex: 1, marginLeft: SIDEBAR_WIDTH, display: "flex", flexDirection: "column" }}>
-          <DashboardHeader />
-          <main
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              padding: 32,
-            }}
-          >
-            {children}
-          </main>
-        </div>
-      </div>
+      <DashboardInner>{children}</DashboardInner>
     </DashboardProvider>
   )
 }

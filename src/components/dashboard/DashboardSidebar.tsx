@@ -1,12 +1,15 @@
 "use client"
 
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../lib/colors"
 import { useDashboard } from "./DashboardContext"
 import NavItem from "./NavItem"
 
 const fontFamily = `"Epilogue", sans-serif`
+
+export const SIDEBAR_WIDTH_OPEN = 260
+export const SIDEBAR_WIDTH_COLLAPSED = 68
 
 function OverviewIcon() {
   return (
@@ -132,6 +135,25 @@ function SettingsGearIcon() {
   )
 }
 
+function ToggleIcon({ open }: { open: boolean }) {
+  return (
+    <motion.svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      stroke={colors.gray600}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      animate={{ rotate: open ? 0 : 180 }}
+      transition={{ type: "spring", bounce: 0.25, duration: 0.35 }}
+    >
+      <polyline points="12,4 6,9 12,14" />
+    </motion.svg>
+  )
+}
+
 const footerRowStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
@@ -141,103 +163,175 @@ const footerRowStyle: React.CSSProperties = {
   cursor: "pointer",
   borderRadius: 8,
   transition: "background-color 0.12s",
+  overflow: "hidden",
+  whiteSpace: "nowrap",
 }
 
 export default function DashboardSidebar() {
-  const { profile } = useDashboard()
+  const { profile, sidebarOpen, toggleSidebar } = useDashboard()
+  const collapsed = !sidebarOpen
+  const sidebarWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_OPEN
 
   return (
-    <aside
+    <motion.aside
+      animate={{ width: sidebarWidth }}
+      transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
       style={{
         position: "fixed",
         top: 0,
         left: 0,
-        width: 260,
         height: "100vh",
         backgroundColor: colors.white,
         borderRight: `2px solid ${colors.black}`,
         display: "flex",
         flexDirection: "column",
         zIndex: 50,
+        overflow: "hidden",
       }}
     >
-      {/* Logo */}
+      {/* Logo + Toggle */}
       <div
         style={{
-          padding: "24px 20px 20px",
+          padding: collapsed ? "24px 0 20px" : "24px 20px 20px",
           display: "flex",
           alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
           gap: 10,
+          position: "relative",
         }}
       >
         <img
           src="/reef-logo.png"
           alt="Reef logo"
-          style={{ width: 28, height: 28 }}
+          style={{ width: 28, height: 28, flexShrink: 0 }}
         />
-        <span
-          style={{
-            fontFamily,
-            fontWeight: 900,
-            fontSize: 24,
-            letterSpacing: "-0.04em",
-            textTransform: "uppercase",
-            color: colors.black,
-          }}
-        >
-          Reef
-        </span>
+        {!collapsed && (
+          <span
+            style={{
+              fontFamily,
+              fontWeight: 900,
+              fontSize: 24,
+              letterSpacing: "-0.04em",
+              textTransform: "uppercase",
+              color: colors.black,
+              flex: 1,
+            }}
+          >
+            Reef
+          </span>
+        )}
+        {!collapsed && (
+          <motion.button
+            onClick={toggleSidebar}
+            whileHover={{ backgroundColor: colors.gray100 }}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              borderRadius: 6,
+              width: 28,
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              padding: 0,
+            }}
+            title="Collapse sidebar"
+          >
+            <ToggleIcon open={true} />
+          </motion.button>
+        )}
       </div>
 
+      {/* Expand button when collapsed */}
+      {collapsed && (
+        <div style={{ display: "flex", justifyContent: "center", paddingBottom: 8 }}>
+          <motion.button
+            onClick={toggleSidebar}
+            whileHover={{ backgroundColor: colors.gray100 }}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              borderRadius: 6,
+              width: 36,
+              height: 36,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
+            title="Expand sidebar"
+          >
+            <ToggleIcon open={false} />
+          </motion.button>
+        </div>
+      )}
+
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "0 14px", display: "flex", flexDirection: "column", gap: 6 }}>
+      <nav style={{ flex: 1, padding: collapsed ? "0 10px" : "0 14px", display: "flex", flexDirection: "column", gap: 6 }}>
         {NAV_ITEMS.map((item) => (
-          <NavItem key={item.href} {...item} />
+          <NavItem key={item.href} {...item} collapsed={collapsed} />
         ))}
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: "0 14px 16px", display: "flex", flexDirection: "column", gap: 2 }}>
+      <div style={{ padding: collapsed ? "0 10px 16px" : "0 14px 16px", display: "flex", flexDirection: "column", gap: 2 }}>
         {/* Upgrade */}
         <motion.div
-          style={footerRowStyle}
+          style={{
+            ...footerRowStyle,
+            justifyContent: collapsed ? "center" : "flex-start",
+            padding: collapsed ? "8px 0" : "8px 6px",
+          }}
           whileHover={{ backgroundColor: colors.gray100 }}
+          title={collapsed ? "Upgrade" : undefined}
         >
           <UpgradeIcon />
-          <span
-            style={{
-              flex: 1,
-              fontFamily,
-              fontWeight: 700,
-              fontSize: 14,
-              letterSpacing: "-0.04em",
-              color: colors.black,
-            }}
-          >
-            Upgrade
-          </span>
-          <span
-            style={{
-              padding: "3px 8px",
-              backgroundColor: colors.surface,
-              border: `2px solid ${colors.black}`,
-              borderRadius: 6,
-              fontFamily,
-              fontWeight: 800,
-              fontSize: 10,
-              letterSpacing: "0.02em",
-              color: colors.black,
-              textTransform: "uppercase",
-            }}
-          >
-            Free Beta
-          </span>
+          {!collapsed && (
+            <>
+              <span
+                style={{
+                  flex: 1,
+                  fontFamily,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  letterSpacing: "-0.04em",
+                  color: colors.black,
+                }}
+              >
+                Upgrade
+              </span>
+              <span
+                style={{
+                  padding: "3px 8px",
+                  backgroundColor: colors.surface,
+                  border: `2px solid ${colors.black}`,
+                  borderRadius: 6,
+                  fontFamily,
+                  fontWeight: 800,
+                  fontSize: 10,
+                  letterSpacing: "0.02em",
+                  color: colors.black,
+                  textTransform: "uppercase",
+                }}
+              >
+                Free Beta
+              </span>
+            </>
+          )}
         </motion.div>
 
         {/* Other */}
         <motion.div
-          style={footerRowStyle}
+          style={{
+            ...footerRowStyle,
+            justifyContent: collapsed ? "center" : "flex-start",
+            padding: collapsed ? "8px 0" : "8px 6px",
+          }}
           whileHover={{ backgroundColor: colors.gray100 }}
+          title={collapsed ? "Other" : undefined}
         >
           <div
             style={{
@@ -258,50 +352,63 @@ export default function DashboardSidebar() {
               <circle cx="13" cy="8" r="0.5" fill={colors.black} />
             </svg>
           </div>
-          <span
-            style={{
-              flex: 1,
-              fontFamily,
-              fontWeight: 700,
-              fontSize: 14,
-              letterSpacing: "-0.04em",
-              color: colors.black,
-            }}
-          >
-            Other
-          </span>
-          <ChevronRight />
+          {!collapsed && (
+            <>
+              <span
+                style={{
+                  flex: 1,
+                  fontFamily,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  letterSpacing: "-0.04em",
+                  color: colors.black,
+                }}
+              >
+                Other
+              </span>
+              <ChevronRight />
+            </>
+          )}
         </motion.div>
 
         {/* User */}
         <Link
           href="/dashboard/settings"
           style={{ textDecoration: "none" }}
+          title={collapsed ? profile.display_name : undefined}
         >
           <motion.div
-            style={footerRowStyle}
+            style={{
+              ...footerRowStyle,
+              justifyContent: collapsed ? "center" : "flex-start",
+              padding: collapsed ? "8px 0" : "8px 6px",
+            }}
             whileHover={{ backgroundColor: colors.gray100 }}
           >
             <UserAvatar name={profile.display_name} />
-            <span
-              style={{
-                flex: 1,
-                fontFamily,
-                fontWeight: 700,
-                fontSize: 14,
-                letterSpacing: "-0.04em",
-                color: colors.black,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {profile.display_name}
-            </span>
-            <SettingsGearIcon />
+            {!collapsed && (
+              <>
+                <span
+                  style={{
+                    flex: 1,
+                    fontFamily,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    letterSpacing: "-0.04em",
+                    color: colors.black,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {profile.display_name}
+                </span>
+                <SettingsGearIcon />
+              </>
+            )}
           </motion.div>
         </Link>
       </div>
-    </aside>
+    </motion.aside>
   )
 }
