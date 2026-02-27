@@ -298,11 +298,18 @@ footer.framer-1fiw38h {
 }
 
 /* Double feature card image area — blank white box */
-.features-cards-row .framer-iyuun0,
-.features-cards-row .framer-iyuun0 * {
+.features-cards-row .framer-iyuun0 {
+  width: 60% !important;
+  height: 70% !important;
+  margin: auto;
   background: var(--color-white) !important;
   background-image: none !important;
   border-radius: 8px;
+}
+
+.features-cards-row .framer-iyuun0 * {
+  background: var(--color-white) !important;
+  background-image: none !important;
 }
 
 /* How it works */
