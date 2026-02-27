@@ -618,15 +618,17 @@ footer.framer-1fiw38h {
   height: 44px;
   border-radius: 50%;
   border: 2px solid var(--color-black);
-  background-color: var(--color-black);
+  background-color: var(--color-primary);
   color: var(--color-white);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  box-shadow: 3px 3px 0px 0px var(--color-black);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .newsletter-btn:hover {
-  background-color: var(--color-primary);
+  box-shadow: 1px 1px 0px 0px var(--color-black);
+  transform: translate(2px, 2px);
 }
 
 .newsletter-btn:active {
