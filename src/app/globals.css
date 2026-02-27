@@ -70,6 +70,7 @@ header.framer-aw0er6 {
   background-color: transparent !important;
   position: relative;
   z-index: 1;
+  margin-bottom: 24px;
 }
 
 /* Hide header's internal pattern — body::before provides the grid */
