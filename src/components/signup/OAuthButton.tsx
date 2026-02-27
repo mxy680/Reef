@@ -47,11 +47,14 @@ export default function OAuthButton({ provider, label, delay = 0 }: { provider: 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{
-        backgroundColor: colors.gray100,
         boxShadow: `2px 2px 0px 0px ${colors.black}`,
+        y: 2,
+        x: 2,
       }}
       whileTap={{
         boxShadow: `0px 0px 0px 0px ${colors.black}`,
+        y: 4,
+        x: 4,
       }}
       transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
       style={{
@@ -63,14 +66,14 @@ export default function OAuthButton({ provider, label, delay = 0 }: { provider: 
         gap: 10,
         backgroundColor: colors.white,
         border: `2px solid ${colors.black}`,
-        borderRadius: 0,
+        borderRadius: 12,
         boxShadow: `4px 4px 0px 0px ${colors.black}`,
         cursor: "pointer",
         fontFamily,
-        fontWeight: 500,
+        fontWeight: 600,
         fontSize: 16,
         letterSpacing: "-0.04em",
-        color: colors.accent,
+        color: colors.black,
       }}
     >
       <Icon />

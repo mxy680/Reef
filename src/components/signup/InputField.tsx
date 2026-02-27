@@ -15,7 +15,7 @@ export default function InputField({ type = "text", placeholder, value, onChange
         width: "100%",
         height: 48,
         border: `2px solid ${colors.black}`,
-        borderRadius: 999,
+        borderRadius: 12,
         boxShadow: `2px 2px 0px 0px ${colors.black}`,
         display: "flex",
         alignItems: "center",
@@ -41,7 +41,7 @@ export default function InputField({ type = "text", placeholder, value, onChange
           fontSize: 16,
           lineHeight: "1.2",
           letterSpacing: "-0.04em",
-          color: colors.accent,
+          color: colors.black,
           padding: 0,
           margin: 0,
         }}

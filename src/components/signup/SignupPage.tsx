@@ -87,7 +87,7 @@ export default function SignupPage() {
           fontWeight: 600,
           fontSize: 14,
           letterSpacing: "-0.02em",
-          color: colors.accent,
+          color: colors.black,
           textDecoration: "none",
           cursor: "pointer",
           opacity: 0.6,
@@ -111,6 +111,7 @@ export default function SignupPage() {
           maxWidth: "100%",
           backgroundColor: colors.white,
           border: `2px solid ${colors.black}`,
+          borderRadius: 12,
           boxShadow: `6px 6px 0px 0px ${colors.black}`,
           padding: "40px 36px",
           boxSizing: "border-box",
@@ -126,7 +127,7 @@ export default function SignupPage() {
               lineHeight: "1.2em",
               letterSpacing: "-0.04em",
               textTransform: "uppercase",
-              color: colors.accent,
+              color: colors.black,
               margin: 0,
               marginBottom: 6,
               textAlign: "center",
@@ -201,7 +202,7 @@ export default function SignupPage() {
                 fontFamily,
                 fontWeight: 500,
                 fontSize: 13,
-                color: colors.accent,
+                color: "#d32f2f",
                 margin: "0 0 12px 0",
               }}
             >
@@ -213,11 +214,14 @@ export default function SignupPage() {
             onClick={handleMagicLink}
             disabled={loading}
             whileHover={{
-              backgroundColor: colors.accent,
               boxShadow: `2px 2px 0px 0px ${colors.black}`,
+              y: 2,
+              x: 2,
             }}
             whileTap={{
               boxShadow: `0px 0px 0px 0px ${colors.black}`,
+              y: 4,
+              x: 4,
             }}
             transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
             style={{
@@ -227,15 +231,15 @@ export default function SignupPage() {
               justifyContent: "center",
               backgroundColor: colors.primary,
               border: `2px solid ${colors.black}`,
-              borderRadius: 0,
+              borderRadius: 12,
               padding: "14px 16px",
               boxShadow: `4px 4px 0px 0px ${colors.black}`,
               fontFamily,
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: 16,
               lineHeight: "1.5em",
               letterSpacing: "-0.04em",
-              color: colors.black,
+              color: colors.white,
               cursor: loading ? "default" : "pointer",
               boxSizing: "border-box",
               userSelect: "none",
@@ -307,8 +311,7 @@ export default function SignupPage() {
                 fontWeight: 500,
                 fontSize: 13,
                 letterSpacing: "-0.02em",
-                color: colors.accent,
-                opacity: 0.7,
+                color: colors.gray600,
               }}
             >
               {text}

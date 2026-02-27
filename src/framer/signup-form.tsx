@@ -40,34 +40,35 @@ var primaryButton = {
 	alignItems: "center",
 	justifyContent: "center",
 	backgroundColor: colors.primary,
-	border: "2px solid rgb(0, 0, 0)",
-	borderRadius: "0px",
+	border: `2px solid ${colors.black}`,
+	borderRadius: "12px",
 	padding: "12px 16px",
-	boxShadow: "4px 4px 0px 0px rgb(0, 0, 0)",
+	boxShadow: `4px 4px 0px 0px ${colors.black}`,
 	fontFamily,
-	fontWeight: 500,
+	fontWeight: 700,
 	fontSize: "16px",
 	lineHeight: "1.5em",
 	letterSpacing: "-0.04em",
-	color: colors.black,
+	color: colors.white,
 	cursor: "pointer",
-	transition: "background-color 0.2s ease",
+	transition: "box-shadow 0.2s ease, transform 0.2s ease",
 	textAlign: "center",
 	boxSizing: "border-box",
 	userSelect: "none",
 };
 var inputWrapper = {
 	width: "100%",
-	height: 40,
-	backgroundColor: "rgba(187, 187, 187, 0.15)",
-	borderRadius: 10,
-	border: "none",
+	height: 48,
+	backgroundColor: colors.white,
+	borderRadius: 12,
+	border: `2px solid ${colors.black}`,
+	boxShadow: `2px 2px 0px 0px ${colors.black}`,
 	display: "flex",
 	alignItems: "center",
-	padding: 12,
+	padding: "0 18px",
 	boxSizing: "border-box",
 	overflow: "hidden",
-	transition: "background 0.2s, box-shadow 0.2s",
+	transition: "box-shadow 0.2s",
 };
 var inputInner = {
 	width: "100%",
@@ -80,7 +81,7 @@ var inputInner = {
 	fontSize: 16,
 	lineHeight: "1.2",
 	letterSpacing: "-0.04em",
-	color: colors.accent,
+	color: colors.black,
 	padding: 0,
 	margin: 0,
 	appearance: "none",
@@ -229,7 +230,7 @@ function SignupForm(props) {
 							lineHeight: "1em",
 							letterSpacing: "-0.04em",
 							textTransform: "uppercase",
-							color: colors.accent,
+							color: colors.black,
 							margin: 0,
 							marginBottom: 24,
 						}}
@@ -243,7 +244,7 @@ function SignupForm(props) {
 							fontSize: 18,
 							lineHeight: "1.5em",
 							letterSpacing: "-0.04em",
-							color: colors.accent,
+							color: colors.gray600,
 							margin: 0,
 							marginBottom: 48,
 						}}
@@ -270,10 +271,10 @@ function SignupForm(props) {
 								style={{
 									width: 28,
 									height: 28,
-									borderRadius: "0px",
+									borderRadius: "8px",
 									backgroundColor: colors.primary,
-									border: "2px solid rgb(0, 0, 0)",
-									boxShadow: "3px 3px 0px 0px rgb(0, 0, 0)",
+									border: `2px solid ${colors.black}`,
+									boxShadow: `3px 3px 0px 0px ${colors.black}`,
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
@@ -300,7 +301,7 @@ function SignupForm(props) {
 									fontSize: 16,
 									lineHeight: "1.5em",
 									letterSpacing: "-0.04em",
-									color: colors.accent,
+									color: colors.black,
 									textAlign: "left",
 								}}
 							>
@@ -338,7 +339,7 @@ function SignupForm(props) {
 							lineHeight: "1.2em",
 							letterSpacing: "-0.04em",
 							textTransform: "uppercase",
-							color: colors.accent,
+							color: colors.black,
 							margin: 0,
 							marginBottom: 8,
 							textAlign: "center",
@@ -373,28 +374,30 @@ function SignupForm(props) {
 							onMouseLeave={() => setGoogleHover(false)}
 							style={{
 								flex: 1,
-								height: 40,
+								height: 48,
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
 								gap: 10,
-								backgroundColor: googleHover
-									? "rgba(187,187,187,0.15)"
-									: colors.white,
-								border: "1px solid rgba(0,0,0,0.12)",
-								borderRadius: 10,
+								backgroundColor: colors.white,
+								border: `2px solid ${colors.black}`,
+								borderRadius: 12,
+								boxShadow: googleHover
+									? `2px 2px 0px 0px ${colors.black}`
+									: `4px 4px 0px 0px ${colors.black}`,
+								transform: googleHover ? "translate(2px, 2px)" : "none",
 								cursor: "pointer",
-								transition: "background-color 0.15s ease",
+								transition: "box-shadow 0.2s ease, transform 0.2s ease",
 							}}
 						>
 							<GoogleIcon />
 							<span
 								style={{
 									fontFamily,
-									fontWeight: 500,
+									fontWeight: 600,
 									fontSize: 16,
 									letterSpacing: "-0.04em",
-									color: colors.accent,
+									color: colors.black,
 								}}
 							>
 								{"Google"}
@@ -405,28 +408,30 @@ function SignupForm(props) {
 							onMouseLeave={() => setAppleHover(false)}
 							style={{
 								flex: 1,
-								height: 40,
+								height: 48,
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
 								gap: 10,
-								backgroundColor: appleHover
-									? "rgba(187,187,187,0.15)"
-									: colors.white,
-								border: "1px solid rgba(0,0,0,0.12)",
-								borderRadius: 10,
+								backgroundColor: colors.white,
+								border: `2px solid ${colors.black}`,
+								borderRadius: 12,
+								boxShadow: appleHover
+									? `2px 2px 0px 0px ${colors.black}`
+									: `4px 4px 0px 0px ${colors.black}`,
+								transform: appleHover ? "translate(2px, 2px)" : "none",
 								cursor: "pointer",
-								transition: "background-color 0.15s ease",
+								transition: "box-shadow 0.2s ease, transform 0.2s ease",
 							}}
 						>
 							<AppleIcon />
 							<span
 								style={{
 									fontFamily,
-									fontWeight: 500,
+									fontWeight: 600,
 									fontSize: 16,
 									letterSpacing: "-0.04em",
-									color: colors.accent,
+									color: colors.black,
 								}}
 							>
 								{"Apple"}
@@ -445,7 +450,7 @@ function SignupForm(props) {
 							style={{
 								flex: 1,
 								height: 1,
-								backgroundColor: "rgba(0,0,0,0.1)",
+								backgroundColor: colors.gray100,
 							}}
 						/>
 						<span
@@ -464,17 +469,17 @@ function SignupForm(props) {
 							style={{
 								flex: 1,
 								height: 1,
-								backgroundColor: "rgba(0,0,0,0.1)",
+								backgroundColor: colors.gray100,
 							}}
 						/>
 					</div>
 					<label
 						style={{
 							fontFamily,
-							fontWeight: 500,
+							fontWeight: 600,
 							fontSize: 14,
 							letterSpacing: "-0.04em",
-							color: colors.accent,
+							color: colors.black,
 							marginBottom: 8,
 							display: "block",
 						}}
@@ -496,10 +501,10 @@ function SignupForm(props) {
 					<label
 						style={{
 							fontFamily,
-							fontWeight: 500,
+							fontWeight: 600,
 							fontSize: 14,
 							letterSpacing: "-0.04em",
-							color: colors.accent,
+							color: colors.black,
 							marginBottom: 8,
 							display: "block",
 						}}
@@ -521,10 +526,10 @@ function SignupForm(props) {
 					<label
 						style={{
 							fontFamily,
-							fontWeight: 500,
+							fontWeight: 600,
 							fontSize: 14,
 							letterSpacing: "-0.04em",
-							color: colors.accent,
+							color: colors.black,
 							marginBottom: 8,
 							display: "block",
 						}}
@@ -551,7 +556,10 @@ function SignupForm(props) {
 						style={{
 							...primaryButton,
 							width: "100%",
-							backgroundColor: isHovered ? colors.accent : colors.primary,
+							boxShadow: isHovered
+								? `2px 2px 0px 0px ${colors.black}`
+								: `4px 4px 0px 0px ${colors.black}`,
+							transform: isHovered ? "translate(2px, 2px)" : "none",
 							marginBottom: 24,
 						}}
 					>
@@ -573,7 +581,7 @@ function SignupForm(props) {
 						<a
 							href={loginLink}
 							style={{
-								color: colors.accent,
+								color: colors.primary,
 								textDecoration: "none",
 								cursor: "pointer",
 								fontWeight: 700,
