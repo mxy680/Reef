@@ -92,7 +92,12 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: "24px 32px",
+            padding: 32,
+            margin: "12px 12px 12px 0",
+            backgroundColor: colors.white,
+            border: `1.5px solid ${colors.gray400}`,
+            borderRadius: 16,
+            boxShadow: `3px 3px 0px 0px ${colors.gray400}`,
           }}
         >
           {children}
