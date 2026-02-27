@@ -11,26 +11,6 @@ const fontFamily = `"Epilogue", sans-serif`
 export const SIDEBAR_WIDTH_OPEN = 260
 export const SIDEBAR_WIDTH_COLLAPSED = 68
 
-function OverviewIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="7" height="7" rx="1" />
-      <rect x="11" y="2" width="7" height="7" rx="1" />
-      <rect x="2" y="11" width="7" height="7" rx="1" />
-      <rect x="11" y="11" width="7" height="7" rx="1" />
-    </svg>
-  )
-}
-
-function SessionsIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="10" cy="10" r="8" />
-      <polyline points="10,5 10,10 14,12" />
-    </svg>
-  )
-}
-
 function DocumentsIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -42,20 +22,60 @@ function DocumentsIcon() {
   )
 }
 
-function SettingsIcon() {
+function AnalyticsIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="10" cy="10" r="3" />
-      <path d="M10 1 L10 4 M10 16 L10 19 M1 10 L4 10 M16 10 L19 10 M3.5 3.5 L5.6 5.6 M14.4 14.4 L16.5 16.5 M16.5 3.5 L14.4 5.6 M5.6 14.4 L3.5 16.5" />
+      <line x1="4" y1="16" x2="4" y2="10" />
+      <line x1="8" y1="16" x2="8" y2="6" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <line x1="16" y1="16" x2="16" y2="4" />
+    </svg>
+  )
+}
+
+function CoursesIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 4 L10 8 L18 4 L10 0 Z" />
+      <path d="M2 4 V12 L10 16 L18 12 V4" />
+      <line x1="10" y1="8" x2="10" y2="16" />
+    </svg>
+  )
+}
+
+function SettingsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
+function BillingIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="4" width="18" height="13" rx="2" />
+      <line x1="1" y1="9" x2="19" y2="9" />
+    </svg>
+  )
+}
+
+function ReefIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 18 C10 18 2 14 2 8 C2 5 4 3 6 3 C8 3 10 5 10 5 C10 5 12 3 14 3 C16 3 18 5 18 8 C18 14 10 18 10 18 Z" />
     </svg>
   )
 }
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Overview", icon: <OverviewIcon /> },
-  { href: "/dashboard/sessions", label: "Sessions", icon: <SessionsIcon /> },
   { href: "/dashboard/documents", label: "Documents", icon: <DocumentsIcon /> },
+  { href: "/dashboard/analytics", label: "Analytics", icon: <AnalyticsIcon /> },
+  { href: "/dashboard/courses", label: "Courses", icon: <CoursesIcon /> },
   { href: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
+  { href: "/dashboard/billing", label: "Billing", icon: <BillingIcon /> },
+  { href: "/dashboard/reef", label: "My Reef", icon: <ReefIcon /> },
 ]
 
 function UpgradeIcon() {

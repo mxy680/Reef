@@ -5,7 +5,7 @@ import { colors } from "../../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
 
-export default function SessionsPage() {
+export default function MyReefPage() {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -31,7 +31,7 @@ export default function SessionsPage() {
           marginBottom: 12,
         }}
       >
-        Sessions
+        My Reef
       </h2>
       <p
         style={{
@@ -43,7 +43,7 @@ export default function SessionsPage() {
           margin: 0,
         }}
       >
-        Your study sessions will appear here. Coming soon.
+        Your reef ecosystem and unlocked species. Coming soon.
       </p>
     </motion.div>
   )

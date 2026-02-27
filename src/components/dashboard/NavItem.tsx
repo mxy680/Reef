@@ -19,10 +19,7 @@ export default function NavItem({
   collapsed?: boolean
 }) {
   const pathname = usePathname()
-  const isActive =
-    href === "/dashboard"
-      ? pathname === "/dashboard"
-      : pathname.startsWith(href)
+  const isActive = pathname.startsWith(href)
 
   if (isActive) {
     return (

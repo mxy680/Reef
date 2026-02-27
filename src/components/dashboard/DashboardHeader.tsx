@@ -15,10 +15,13 @@ const GRADE_LABELS: Record<string, string> = {
 }
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Overview",
-  "/dashboard/sessions": "Sessions",
+  "/dashboard": "Documents",
   "/dashboard/documents": "Documents",
+  "/dashboard/analytics": "Analytics",
+  "/dashboard/courses": "Courses",
   "/dashboard/settings": "Settings",
+  "/dashboard/billing": "Billing",
+  "/dashboard/reef": "My Reef",
 }
 
 export default function DashboardHeader() {
