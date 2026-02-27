@@ -196,8 +196,8 @@ function UploadButton({ onClick }: { onClick: () => void }) {
   return (
     <motion.button
       onClick={onClick}
-      whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}` }}
-      whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
+      whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.black}`, x: 2, y: 2 }}
+      whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}`, x: 4, y: 4 }}
       transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
       style={{
         display: "inline-flex",
@@ -228,12 +228,13 @@ function DocumentCard({ doc, index }: { doc: MockDocument; index: number }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
-      whileHover={{ y: -4, boxShadow: `5px 5px 0px 0px ${colors.gray500}`, transition: { duration: 0.15 } }}
+      whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.gray500}`, x: 2, y: 2 }}
+      whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.gray500}`, x: 4, y: 4 }}
       style={{
         backgroundColor: colors.white,
         border: `1.5px solid ${colors.gray500}`,
         borderRadius: 14,
-        boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
+        boxShadow: `4px 4px 0px 0px ${colors.gray500}`,
         overflow: "hidden",
         cursor: "pointer",
         display: "flex",
