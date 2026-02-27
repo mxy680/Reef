@@ -367,7 +367,7 @@ function LoadingSkeleton() {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fill, minmax(180px, 220px))",
         gap: 20,
         marginTop: 8,
       }}
@@ -732,7 +732,7 @@ export default function DocumentsPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(180px, 220px))",
               gap: 20,
             }}
           >
