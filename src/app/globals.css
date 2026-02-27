@@ -372,8 +372,12 @@ footer.framer-1fiw38h {
   background-color: var(--color-white);
 }
 
-.step-card-steel {
-  background-color: var(--color-gray-600);
+.step-card-accent {
+  background-color: var(--color-accent);
+}
+
+.step-card-surface {
+  background-color: var(--color-surface);
 }
 
 .step-card-inner {

@@ -264,14 +264,7 @@ export default function Home() {
                   Drop in your syllabus, lecture slides, homework PDFs, or even photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. If a document has an answer key, it&rsquo;s extracted automatically so the AI can check your work in real time.
                 </p>
               </div>
-              <div className="step-card step-card-blue">
-                <div className="step-card-inner">
-                  <img
-                    src="https://framerusercontent.com/images/rbrs5BD6YqQE8Lxfiq0z819bbY.png"
-                    alt="Upload course materials"
-                  />
-                </div>
-              </div>
+              <div className="step-card step-card-blue" />
             </div>
 
             {/* Decorative arrow 1 → 2 */}
@@ -285,14 +278,7 @@ export default function Home() {
 
             {/* Step 2: image card left, text right */}
             <div className="how-it-works-step">
-              <div className="step-card step-card-white">
-                <div className="step-card-inner">
-                  <img
-                    src="https://framerusercontent.com/images/sciUgoQBql5wKVM5ZcUqjqzKE.png"
-                    alt="Solve problems with AI"
-                  />
-                </div>
-              </div>
+              <div className="step-card step-card-accent" />
               <div className="step-text">
                 <span className="step-badge">Step 2</span>
                 <h3 className="step-heading">SOLVE PROBLEMS WITH AI BY YOUR SIDE</h3>
@@ -320,14 +306,7 @@ export default function Home() {
                   After working through problems, take auto-generated quizzes to prove what you know. Each topic you master unlocks a new marine species in your personal reef, a living visualization of your progress. Over time, you can see exactly which concepts are solid and which need more work.
                 </p>
               </div>
-              <div className="step-card step-card-steel">
-                <div className="step-card-inner">
-                  <img
-                    src="https://framerusercontent.com/images/v6wZRssF6htlH2vkhNBcUBx8pEs.png"
-                    alt="Track mastery and build your reef"
-                  />
-                </div>
-              </div>
+              <div className="step-card step-card-surface" />
             </div>
           </div>
         </div>
