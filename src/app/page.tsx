@@ -80,7 +80,7 @@ export default function Home() {
   useEffect(() => {
     const el = heroRef.current
     if (!el) return
-    const MAX_ROTATE = 20
+    const MAX_ROTATE = 30
     function onScroll() {
       const rect = el.getBoundingClientRect()
       const viewH = window.innerHeight

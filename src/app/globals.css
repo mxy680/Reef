@@ -201,7 +201,7 @@ footer.framer-1fiw38h {
   border-radius: 16px;
   background-color: var(--color-white);
   box-shadow: 10px 10px 0px 0px var(--color-black);
-  transform: rotateX(20deg);
+  transform: rotateX(30deg);
   transform-origin: bottom center;
   will-change: transform;
 }
