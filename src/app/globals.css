@@ -633,6 +633,10 @@ footer.framer-1fiw38h {
   filter: brightness(0.8);
 }
 
+/* FAQ — tint arrow icons to primary color */
+.framer-B8Htz .framer-1bfywue img {
+  filter: invert(58%) sepia(30%) saturate(500%) hue-rotate(150deg) brightness(90%) contrast(90%) !important;
+}
 /* FAQ */
 
 .faq-section .section-inner {
