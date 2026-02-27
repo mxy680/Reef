@@ -71,11 +71,11 @@ function ReefIcon() {
 
 const NAV_ITEMS = [
   { href: "/dashboard/documents", label: "Documents", icon: <DocumentsIcon /> },
-  { href: "/dashboard/analytics", label: "Analytics", icon: <AnalyticsIcon /> },
   { href: "/dashboard/courses", label: "Courses", icon: <CoursesIcon /> },
-  { href: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
-  { href: "/dashboard/billing", label: "Billing", icon: <BillingIcon /> },
+  { href: "/dashboard/analytics", label: "Analytics", icon: <AnalyticsIcon /> },
   { href: "/dashboard/reef", label: "My Reef", icon: <ReefIcon /> },
+  { href: "/dashboard/billing", label: "Billing", icon: <BillingIcon /> },
+  { href: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
 ]
 
 function UpgradeIcon() {
