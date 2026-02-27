@@ -34,9 +34,9 @@ export default function DashboardHeader() {
       style={{
         height: 64,
         backgroundColor: colors.white,
-        border: `2px solid ${colors.black}`,
+        border: `1.5px solid ${colors.gray400}`,
         borderRadius: 16,
-        boxShadow: `4px 4px 0px 0px ${colors.black}`,
+        boxShadow: `3px 3px 0px 0px ${colors.gray400}`,
         margin: "12px 12px 0 0",
         display: "flex",
         alignItems: "center",
