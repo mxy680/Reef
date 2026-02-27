@@ -74,7 +74,7 @@ export default function DashboardSidebar() {
         width: 260,
         height: "100vh",
         backgroundColor: colors.white,
-        borderRight: `1px solid ${colors.gray100}`,
+        borderRight: `2px solid ${colors.black}`,
         display: "flex",
         flexDirection: "column",
         zIndex: 50,
@@ -83,7 +83,7 @@ export default function DashboardSidebar() {
       {/* Logo */}
       <div
         style={{
-          padding: "24px 20px",
+          padding: "24px 20px 20px",
         }}
       >
         <span
@@ -101,31 +101,38 @@ export default function DashboardSidebar() {
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "0 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+      <nav style={{ flex: 1, padding: "0 14px", display: "flex", flexDirection: "column", gap: 6 }}>
         {NAV_ITEMS.map((item) => (
           <NavItem key={item.href} {...item} />
         ))}
       </nav>
 
       {/* Sign out */}
-      <div style={{ padding: "16px 12px" }}>
+      <div style={{ padding: "16px 14px" }}>
         <motion.button
           type="button"
           onClick={handleSignOut}
-          whileHover={{ backgroundColor: colors.gray100 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{
+            boxShadow: `2px 2px 0px 0px ${colors.black}`,
+            y: -1,
+          }}
+          whileTap={{
+            boxShadow: `0px 0px 0px 0px ${colors.black}`,
+            y: 2,
+          }}
           transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
           style={{
             width: "100%",
-            backgroundColor: "transparent",
-            border: "none",
-            borderRadius: 8,
+            backgroundColor: colors.white,
+            border: `2px solid ${colors.black}`,
+            borderRadius: 10,
             padding: "10px 16px",
+            boxShadow: `3px 3px 0px 0px ${colors.black}`,
             fontFamily,
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: 14,
             letterSpacing: "-0.04em",
-            color: colors.gray600,
+            color: colors.black,
             cursor: "pointer",
           }}
         >

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { motion } from "framer-motion"
 import { colors } from "../../lib/colors"
 
 const fontFamily = `"Epilogue", sans-serif`
@@ -22,36 +23,48 @@ export default function NavItem({
       : pathname.startsWith(href)
 
   return (
-    <Link
-      href={href}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "10px 14px",
-        textDecoration: "none",
-        fontFamily,
-        fontWeight: isActive ? 700 : 500,
-        fontSize: 15,
-        letterSpacing: "-0.04em",
-        color: isActive ? colors.black : colors.gray600,
-        backgroundColor: isActive ? colors.gray100 : "transparent",
-        borderRadius: 8,
-        transition: "background-color 0.15s, color 0.15s",
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.backgroundColor = colors.gray100
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.backgroundColor = "transparent"
-        }
-      }}
+    <motion.div
+      whileHover={isActive ? {} : { y: -1 }}
+      whileTap={isActive ? {} : { y: 1 }}
+      transition={{ type: "spring", bounce: 0.3, duration: 0.3 }}
     >
-      {icon}
-      {label}
-    </Link>
+      <Link
+        href={href}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "10px 14px",
+          textDecoration: "none",
+          fontFamily,
+          fontWeight: 700,
+          fontSize: 15,
+          letterSpacing: "-0.04em",
+          color: colors.black,
+          backgroundColor: isActive ? colors.surface : colors.white,
+          border: `2px solid ${colors.black}`,
+          borderRadius: 10,
+          boxShadow: isActive
+            ? `3px 3px 0px 0px ${colors.black}`
+            : "none",
+          transition: "background-color 0.15s, box-shadow 0.15s",
+        }}
+        onMouseEnter={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.backgroundColor = colors.surface
+            e.currentTarget.style.boxShadow = `2px 2px 0px 0px ${colors.black}`
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.backgroundColor = colors.white
+            e.currentTarget.style.boxShadow = "none"
+          }
+        }}
+      >
+        {icon}
+        {label}
+      </Link>
+    </motion.div>
   )
 }
