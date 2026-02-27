@@ -34,12 +34,14 @@ export default function DashboardHeader() {
       style={{
         height: 64,
         backgroundColor: colors.white,
-        borderBottom: `2px solid ${colors.black}`,
-        boxShadow: `0px 4px 0px 0px ${colors.black}`,
+        border: `2px solid ${colors.black}`,
+        borderRadius: 16,
+        boxShadow: `4px 4px 0px 0px ${colors.black}`,
+        margin: "12px 12px 0 0",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 32px",
+        padding: "0 24px",
         position: "relative",
         zIndex: 1,
       }}

@@ -197,12 +197,13 @@ export default function DashboardSidebar() {
       transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        height: "100vh",
+        top: 12,
+        left: 12,
+        height: "calc(100vh - 24px)",
         backgroundColor: colors.white,
-        borderRight: `2px solid ${colors.black}`,
-        boxShadow: `4px 0px 0px 0px ${colors.black}`,
+        border: `2px solid ${colors.black}`,
+        borderRadius: 16,
+        boxShadow: `4px 4px 0px 0px ${colors.black}`,
         display: "flex",
         flexDirection: "column",
         zIndex: 50,
