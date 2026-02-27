@@ -200,6 +200,9 @@ footer.framer-1fiw38h {
   border: 3px solid var(--color-black);
   border-radius: 12px;
   background-color: var(--color-white);
+  background-image: url("https://framerusercontent.com/images/28E4wGiqpajUZYTPMvIOS9l2XE.png?scale-down-to=2048");
+  background-size: cover;
+  background-position: center top;
   transform: rotateX(12deg);
   transform-origin: bottom center;
   will-change: transform;
