@@ -228,8 +228,8 @@ function DocumentCard({ doc, index }: { doc: MockDocument; index: number }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
-      whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.gray500}`, x: 2, y: 2 }}
-      whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.gray500}`, x: 4, y: 4 }}
+      whileHover={{ boxShadow: `2px 2px 0px 0px ${colors.gray500}`, x: 2, y: 2, transition: { duration: 0.15 } }}
+      whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.gray500}`, x: 4, y: 4, transition: { duration: 0.1 } }}
       style={{
         backgroundColor: colors.white,
         border: `1.5px solid ${colors.gray500}`,
