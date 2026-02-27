@@ -741,6 +741,34 @@ export default function DocumentsPage() {
               gap: 20,
             }}
           >
+            <motion.button
+              onClick={triggerUpload}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.05 }}
+              whileHover={{ borderColor: colors.gray500, transition: { duration: 0.15 } }}
+              whileTap={{ borderColor: colors.gray600, transition: { duration: 0.1 } }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                backgroundColor: "transparent",
+                border: `2px dashed ${colors.gray400}`,
+                borderRadius: 14,
+                padding: "24px 20px",
+                cursor: "pointer",
+                color: colors.gray500,
+                fontFamily,
+                fontWeight: 600,
+                fontSize: 14,
+                letterSpacing: "-0.04em",
+              }}
+            >
+              <UploadIcon />
+              Upload
+            </motion.button>
             {documents.map((doc, i) => (
               <DocumentCard
                 key={doc.id}
