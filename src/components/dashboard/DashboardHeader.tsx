@@ -30,7 +30,7 @@ export default function DashboardHeader() {
     <header
       style={{
         height: 64,
-        borderBottom: `2px solid ${colors.black}`,
+        borderBottom: `1px solid ${colors.gray100}`,
         backgroundColor: colors.white,
         display: "flex",
         alignItems: "center",
@@ -66,13 +66,13 @@ export default function DashboardHeader() {
         <span
           style={{
             padding: "4px 10px",
-            backgroundColor: colors.accent,
+            backgroundColor: colors.gray100,
             borderRadius: 999,
             fontFamily,
             fontWeight: 600,
             fontSize: 12,
             letterSpacing: "-0.04em",
-            color: colors.white,
+            color: colors.gray600,
           }}
         >
           {GRADE_LABELS[profile.grade] || profile.grade}

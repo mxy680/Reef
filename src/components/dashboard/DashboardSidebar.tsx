@@ -11,10 +11,10 @@ const fontFamily = `"Epilogue", sans-serif`
 function OverviewIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="7" height="7" />
-      <rect x="11" y="2" width="7" height="7" />
-      <rect x="2" y="11" width="7" height="7" />
-      <rect x="11" y="11" width="7" height="7" />
+      <rect x="2" y="2" width="7" height="7" rx="1" />
+      <rect x="11" y="2" width="7" height="7" rx="1" />
+      <rect x="2" y="11" width="7" height="7" rx="1" />
+      <rect x="11" y="11" width="7" height="7" rx="1" />
     </svg>
   )
 }
@@ -74,7 +74,7 @@ export default function DashboardSidebar() {
         width: 260,
         height: "100vh",
         backgroundColor: colors.white,
-        borderRight: `2px solid ${colors.black}`,
+        borderRight: `1px solid ${colors.gray100}`,
         display: "flex",
         flexDirection: "column",
         zIndex: 50,
@@ -84,7 +84,6 @@ export default function DashboardSidebar() {
       <div
         style={{
           padding: "24px 20px",
-          borderBottom: `2px solid ${colors.black}`,
         }}
       >
         <span
@@ -94,7 +93,7 @@ export default function DashboardSidebar() {
             fontSize: 24,
             letterSpacing: "-0.04em",
             textTransform: "uppercase",
-            color: colors.primary,
+            color: colors.black,
           }}
         >
           Reef
@@ -102,35 +101,31 @@ export default function DashboardSidebar() {
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, paddingTop: 16, display: "flex", flexDirection: "column", gap: 4 }}>
+      <nav style={{ flex: 1, padding: "0 12px", display: "flex", flexDirection: "column", gap: 2 }}>
         {NAV_ITEMS.map((item) => (
           <NavItem key={item.href} {...item} />
         ))}
       </nav>
 
       {/* Sign out */}
-      <div style={{ padding: "16px 20px", borderTop: `2px solid ${colors.black}` }}>
+      <div style={{ padding: "16px 12px" }}>
         <motion.button
           type="button"
           onClick={handleSignOut}
-          whileHover={{
-            backgroundColor: colors.gray100,
-            boxShadow: `2px 2px 0px 0px ${colors.black}`,
-          }}
-          whileTap={{ boxShadow: `0px 0px 0px 0px ${colors.black}` }}
-          transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+          whileHover={{ backgroundColor: colors.gray100 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
           style={{
             width: "100%",
-            backgroundColor: colors.white,
-            border: `2px solid ${colors.black}`,
-            borderRadius: 0,
+            backgroundColor: "transparent",
+            border: "none",
+            borderRadius: 8,
             padding: "10px 16px",
-            boxShadow: `4px 4px 0px 0px ${colors.black}`,
             fontFamily,
             fontWeight: 600,
             fontSize: 14,
             letterSpacing: "-0.04em",
-            color: colors.primary,
+            color: colors.gray600,
             cursor: "pointer",
           }}
         >

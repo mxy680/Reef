@@ -24,8 +24,9 @@ export default function SettingsPage() {
       transition={{ duration: 0.35, delay: 0.1 }}
       style={{
         backgroundColor: colors.white,
-        border: `2px solid ${colors.black}`,
-        boxShadow: `4px 4px 0px 0px ${colors.black}`,
+        border: `1px solid ${colors.gray100}`,
+        borderRadius: 12,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         padding: "48px 36px",
         maxWidth: 500,
       }}
@@ -117,14 +118,13 @@ export default function SettingsPage() {
                   key={subject}
                   style={{
                     padding: "6px 14px",
-                    backgroundColor: colors.accent,
-                    border: `2px solid ${colors.accent}`,
+                    backgroundColor: colors.gray100,
                     borderRadius: 999,
                     fontFamily,
                     fontWeight: 600,
                     fontSize: 13,
                     letterSpacing: "-0.04em",
-                    color: colors.white,
+                    color: colors.gray600,
                   }}
                 >
                   {subject}

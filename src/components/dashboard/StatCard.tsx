@@ -23,8 +23,9 @@ export default function StatCard({
         flex: 1,
         minWidth: 180,
         backgroundColor: colors.white,
-        border: `2px solid ${colors.black}`,
-        boxShadow: `4px 4px 0px 0px ${colors.black}`,
+        border: `1px solid ${colors.gray100}`,
+        borderRadius: 12,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         padding: "24px 20px",
       }}
     >

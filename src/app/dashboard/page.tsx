@@ -48,14 +48,13 @@ export default function DashboardPage() {
               key={subject}
               style={{
                 padding: "6px 14px",
-                backgroundColor: colors.accent,
-                border: `2px solid ${colors.accent}`,
+                backgroundColor: colors.gray100,
                 borderRadius: 999,
                 fontFamily,
                 fontWeight: 600,
                 fontSize: 13,
                 letterSpacing: "-0.04em",
-                color: colors.white,
+                color: colors.gray600,
               }}
             >
               {subject}

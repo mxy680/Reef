@@ -9,8 +9,8 @@ import { DashboardProvider, type DashboardProfile } from "../../components/dashb
 import DashboardSidebar from "../../components/dashboard/DashboardSidebar"
 import DashboardHeader from "../../components/dashboard/DashboardHeader"
 
-const fontFamily = `"Epilogue", sans-serif`
 const SIDEBAR_WIDTH = 260
+const BG = "#F7F7F8"
 
 function SkeletonBlock({ width, height }: { width: string | number; height: number }) {
   return (
@@ -19,7 +19,7 @@ function SkeletonBlock({ width, height }: { width: string | number; height: numb
         width,
         height,
         backgroundColor: colors.gray100,
-        borderRadius: 4,
+        borderRadius: 8,
       }}
     />
   )
@@ -27,14 +27,14 @@ function SkeletonBlock({ width, height }: { width: string | number; height: numb
 
 function LoadingSkeleton() {
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
       {/* Sidebar skeleton */}
       <div
         style={{
           width: SIDEBAR_WIDTH,
           minHeight: "100vh",
           backgroundColor: colors.white,
-          borderRight: `2px solid ${colors.black}`,
+          borderRight: `1px solid ${colors.gray100}`,
           padding: "24px 20px",
           boxSizing: "border-box",
           display: "flex",
@@ -43,7 +43,7 @@ function LoadingSkeleton() {
         }}
       >
         <SkeletonBlock width={80} height={28} />
-        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
           {[1, 2, 3, 4].map((i) => (
             <SkeletonBlock key={i} width="100%" height={36} />
           ))}
@@ -54,7 +54,7 @@ function LoadingSkeleton() {
         <div
           style={{
             height: 64,
-            borderBottom: `2px solid ${colors.black}`,
+            borderBottom: `1px solid ${colors.gray100}`,
             backgroundColor: colors.white,
             padding: "0 32px",
             display: "flex",
@@ -115,7 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <DashboardProvider value={{ profile, userId }}>
-      <div style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.surface }}>
+      <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
         <DashboardSidebar />
         <div style={{ flex: 1, marginLeft: SIDEBAR_WIDTH, display: "flex", flexDirection: "column" }}>
           <DashboardHeader />
