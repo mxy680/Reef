@@ -1,4 +1,5 @@
 import { createClient } from "./supabase/client"
+import { getUserTier, getLimits } from "./limits"
 
 export interface Document {
   id: string
@@ -22,10 +23,38 @@ export async function listDocuments(): Promise<Document[]> {
   return data as Document[]
 }
 
+export class LimitError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "LimitError"
+  }
+}
+
 export async function uploadDocument(file: File): Promise<Document> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
+
+  // Enforce tier limits
+  const tier = await getUserTier()
+  const limits = getLimits(tier)
+
+  // File size check
+  const maxBytes = limits.maxFileSizeMB * 1024 * 1024
+  if (file.size > maxBytes) {
+    throw new LimitError(`File too large — max ${limits.maxFileSizeMB} MB on the free plan`)
+  }
+
+  // Document count check
+  const { count, error: countError } = await supabase
+    .from("documents")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+
+  if (countError) throw countError
+  if ((count ?? 0) >= limits.maxDocuments) {
+    throw new LimitError("Document limit reached — upgrade to upload more")
+  }
 
   // 1. Create DB row
   const { data: doc, error: insertError } = await supabase

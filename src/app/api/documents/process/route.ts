@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "../../../../lib/supabase/server"
-import { createServiceClient } from "../../../../lib/supabase/server"
+import { createClient, createServiceClient } from "../../../../lib/supabase/server"
+import { getUserTier, getLimits } from "../../../../lib/limits"
 
 const REEF_SERVER_URL = process.env.NEXT_PUBLIC_REEF_API_URL || "http://localhost:8000"
 
@@ -16,6 +16,21 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Enforce document count limit
+    const tier = await getUserTier()
+    const limits = getLimits(tier)
+    const { count, error: countError } = await supabase
+      .from("documents")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+
+    if (countError) {
+      return NextResponse.json({ error: "Failed to check document count" }, { status: 500 })
+    }
+    if ((count ?? 0) > limits.maxDocuments) {
+      return NextResponse.json({ error: "Document limit reached" }, { status: 403 })
     }
 
     // Service role client for updates (bypasses RLS)

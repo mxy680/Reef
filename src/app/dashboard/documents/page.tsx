@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../../lib/colors"
-import { listDocuments, uploadDocument, getDocumentDownloadUrl, deleteDocument, type Document } from "../../../lib/documents"
+import { listDocuments, uploadDocument, getDocumentDownloadUrl, deleteDocument, LimitError, type Document } from "../../../lib/documents"
 
 const fontFamily = `"Epilogue", sans-serif`
 
@@ -637,8 +637,12 @@ export default function DocumentsPage() {
       setDocuments(prev => [doc, ...prev])
       setToast("Document uploading — processing will begin shortly")
     } catch (err) {
-      console.error("Upload failed:", err)
-      setToast("Upload failed — please try again")
+      if (err instanceof LimitError) {
+        setToast(err.message)
+      } else {
+        console.error("Upload failed:", err)
+        setToast("Upload failed — please try again")
+      }
     }
   }
 
