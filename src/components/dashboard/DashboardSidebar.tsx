@@ -201,6 +201,8 @@ export default function DashboardSidebar() {
         left: 0,
         height: "100vh",
         backgroundColor: colors.white,
+        borderRight: `2px solid ${colors.black}`,
+        boxShadow: `4px 0px 0px 0px ${colors.black}`,
         display: "flex",
         flexDirection: "column",
         zIndex: 50,

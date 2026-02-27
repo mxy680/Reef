@@ -33,10 +33,15 @@ export default function DashboardHeader() {
     <header
       style={{
         height: 64,
+        backgroundColor: colors.white,
+        borderBottom: `2px solid ${colors.black}`,
+        boxShadow: `0px 4px 0px 0px ${colors.black}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         padding: "0 32px",
+        position: "relative",
+        zIndex: 1,
       }}
     >
       <h1
