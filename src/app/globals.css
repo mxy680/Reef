@@ -633,22 +633,18 @@ footer.framer-1fiw38h {
   filter: brightness(0.8);
 }
 
-/* FAQ — recolor arrow icons to exact primary */
+/* FAQ — recolor arrow icons to match newsletter button */
 .framer-B8Htz .framer-1bfywue {
   position: relative;
-  border-radius: 50%;
-  overflow: hidden;
+  width: 40px !important;
+  height: 40px !important;
+  background: var(--color-primary) !important;
+  border: 2px solid var(--color-black) !important;
+  border-radius: 50% !important;
+  aspect-ratio: 1 !important;
 }
 .framer-B8Htz .framer-1bfywue img {
   visibility: hidden !important;
-}
-.framer-B8Htz .framer-1bfywue::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--color-primary);
-  border-radius: 50%;
-  border: 2px solid var(--color-black);
 }
 .framer-B8Htz .framer-1bfywue::after {
   content: "";
