@@ -24,16 +24,25 @@ function SkeletonBlock({ width, height }: { width: string | number; height: numb
   )
 }
 
+const cardStyle: React.CSSProperties = {
+  backgroundColor: colors.white,
+  border: `1.5px solid ${colors.gray400}`,
+  borderRadius: 16,
+  boxShadow: `3px 3px 0px 0px ${colors.gray400}`,
+}
+
 function LoadingSkeleton() {
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: BG }}>
       {/* Sidebar skeleton */}
       <div
         style={{
+          ...cardStyle,
           width: SIDEBAR_WIDTH_OPEN,
-          minHeight: "100vh",
-          backgroundColor: colors.white,
-          borderRight: `1px solid ${colors.gray100}`,
+          position: "fixed",
+          top: 16,
+          left: 16,
+          height: "calc(100vh - 32px)",
           padding: "24px 20px",
           boxSizing: "border-box",
           display: "flex",
@@ -48,21 +57,33 @@ function LoadingSkeleton() {
           ))}
         </div>
       </div>
-      {/* Main skeleton */}
-      <div style={{ flex: 1 }}>
+      {/* Main column */}
+      <div style={{ flex: 1, marginLeft: SIDEBAR_WIDTH_OPEN + 36, display: "flex", flexDirection: "column" }}>
+        {/* Header skeleton */}
         <div
           style={{
+            ...cardStyle,
             height: 64,
-            borderBottom: `1px solid ${colors.gray100}`,
-            backgroundColor: colors.white,
-            padding: "0 32px",
+            margin: "16px 16px 0 0",
+            padding: "0 24px",
             display: "flex",
             alignItems: "center",
           }}
         >
           <SkeletonBlock width={140} height={24} />
         </div>
-        <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Content skeleton */}
+        <div
+          style={{
+            ...cardStyle,
+            flex: 1,
+            margin: "16px 16px 16px 0",
+            padding: 32,
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
           <SkeletonBlock width={260} height={32} />
           <div style={{ display: "flex", gap: 16 }}>
             {[1, 2, 3].map((i) => (
