@@ -525,14 +525,11 @@ footer.framer-1fiw38h {
   justify-content: flex-start !important;
 }
 
-/* Pricing card buttons: white bg, black text, 3D effect, compact */
+/* Pricing card buttons: white bg, black text, 3D effect */
 .pricing-cards-row .framer-CQKIS.framer-2m28gd {
   background-color: var(--color-white) !important;
-  border: 2px solid var(--color-black) !important;
   box-shadow: 4px 4px 0px 0px var(--color-black) !important;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
-  padding: 8px 16px !important;
-  height: auto !important;
   width: auto !important;
 }
 .pricing-cards-row .framer-CQKIS.framer-2m28gd:hover {
