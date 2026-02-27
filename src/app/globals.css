@@ -476,7 +476,7 @@ footer.framer-1fiw38h {
 /* CTA section */
 
 .cta-card {
-  background-color: var(--color-white);
+  background-color: var(--color-surface);
   border: 2px solid var(--color-black);
   box-shadow: 8px 8px 0px 0px var(--color-black);
   border-radius: 12px;
