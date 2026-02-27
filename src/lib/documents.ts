@@ -9,6 +9,7 @@ export interface Document {
   page_count: number | null
   problem_count: number | null
   error_message: string | null
+  course_id: string | null
   created_at: string
 }
 
@@ -136,6 +137,39 @@ export async function deleteDocument(docId: string): Promise<void> {
     .eq("id", docId)
 
   if (error) throw error
+}
+
+export async function moveDocumentToCourse(docId: string, courseId: string | null): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from("documents")
+    .update({ course_id: courseId })
+    .eq("id", docId)
+
+  if (error) throw error
+}
+
+export async function getDocumentShareUrl(docId: string): Promise<string> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  // Try output.pdf first, fall back to original.pdf
+  const { data, error } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(`${user.id}/${docId}/output.pdf`, 7 * 24 * 60 * 60) // 7 days
+
+  if (error) {
+    // Fall back to original
+    const { data: fallback, error: fallbackError } = await supabase.storage
+      .from("documents")
+      .createSignedUrl(`${user.id}/${docId}/original.pdf`, 7 * 24 * 60 * 60)
+
+    if (fallbackError) throw fallbackError
+    return fallback.signedUrl
+  }
+
+  return data.signedUrl
 }
 
 export async function renameDocument(docId: string, filename: string): Promise<void> {
