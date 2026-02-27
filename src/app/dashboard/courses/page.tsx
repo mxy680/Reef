@@ -185,7 +185,6 @@ function CourseCard({
             borderRadius: 8,
             border: `1.5px solid ${colors.gray400}`,
             backgroundColor: colors.white,
-            boxShadow: `2px 2px 0px 0px ${colors.gray500}`,
             color: colors.gray500,
             cursor: "pointer",
           }}
