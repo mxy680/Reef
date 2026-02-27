@@ -198,9 +198,9 @@ export default function DashboardSidebar() {
       transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
       style={{
         position: "fixed",
-        top: 16,
-        left: 16,
-        height: "calc(100vh - 32px)",
+        top: 12,
+        left: 12,
+        height: "calc(100vh - 24px)",
         backgroundColor: colors.white,
         border: `1.5px solid ${colors.gray500}`,
         borderRadius: 16,

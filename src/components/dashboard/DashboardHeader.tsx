@@ -37,7 +37,7 @@ export default function DashboardHeader() {
         border: `1.5px solid ${colors.gray500}`,
         borderRadius: 16,
         boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
-        margin: "16px 16px 0 0",
+        margin: "12px 12px 0 0",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",

@@ -40,9 +40,9 @@ function LoadingSkeleton() {
           ...cardStyle,
           width: SIDEBAR_WIDTH_OPEN,
           position: "fixed",
-          top: 16,
-          left: 16,
-          height: "calc(100vh - 32px)",
+          top: 12,
+          left: 12,
+          height: "calc(100vh - 24px)",
           padding: "24px 20px",
           boxSizing: "border-box",
           display: "flex",
@@ -58,13 +58,13 @@ function LoadingSkeleton() {
         </div>
       </div>
       {/* Main column */}
-      <div style={{ flex: 1, marginLeft: SIDEBAR_WIDTH_OPEN + 36, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, marginLeft: SIDEBAR_WIDTH_OPEN + 28, display: "flex", flexDirection: "column" }}>
         {/* Header skeleton */}
         <div
           style={{
             ...cardStyle,
             height: 64,
-            margin: "16px 16px 0 0",
+            margin: "12px 12px 0 0",
             padding: "0 24px",
             display: "flex",
             alignItems: "center",
@@ -77,7 +77,7 @@ function LoadingSkeleton() {
           style={{
             ...cardStyle,
             flex: 1,
-            margin: "16px 16px 16px 0",
+            margin: "12px 12px 12px 0",
             padding: 32,
             display: "flex",
             flexDirection: "column",
@@ -105,7 +105,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       <DashboardSidebar />
       <motion.div
         initial={false}
-        animate={{ marginLeft: marginLeft + 36 }}
+        animate={{ marginLeft: marginLeft + 28 }}
         transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
         style={{ flex: 1, display: "flex", flexDirection: "column" }}
       >
@@ -115,7 +115,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             flex: 1,
             overflowY: "auto",
             padding: 32,
-            margin: "16px 16px 16px 0",
+            margin: "12px 12px 12px 0",
             backgroundColor: colors.white,
             border: `1.5px solid ${colors.gray500}`,
             borderRadius: 16,
