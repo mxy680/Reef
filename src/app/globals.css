@@ -48,6 +48,9 @@ html {
   --extracted-r6o4lv: var(--color-white) !important;
   --framer-text-color: var(--color-white) !important;
 }
+.framer-CQKIS .framer-1c74ag0 p {
+  font-weight: 700 !important;
+}
 
 [data-framer-name="Alternative"].framer-2m28gd {
   background-color: var(--color-white) !important;
