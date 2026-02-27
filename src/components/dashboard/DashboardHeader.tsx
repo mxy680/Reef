@@ -31,15 +31,6 @@ const PAGE_TITLES: Record<string, string> = {
 
 // -- SVG Icons ---------------------------------------------------------------
 
-function SearchIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke={colors.gray500} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8" cy="8" r="5" />
-      <line x1="12" y1="12" x2="16" y2="16" />
-    </svg>
-  )
-}
-
 function UploadIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -472,46 +463,6 @@ export default function DashboardHeader() {
     >
       {/* Left — Breadcrumbs */}
       <Breadcrumbs pathname={pathname} />
-
-      {/* Center — Search */}
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: 280,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            height: 36,
-            padding: "0 12px",
-            backgroundColor: colors.gray100,
-            border: `1.5px solid ${colors.gray400}`,
-            borderRadius: 8,
-          }}
-        >
-          <SearchIcon />
-          <input
-            type="text"
-            placeholder="Search documents, courses..."
-            style={{
-              flex: 1,
-              border: "none",
-              outline: "none",
-              backgroundColor: "transparent",
-              fontFamily,
-              fontWeight: 500,
-              fontSize: 13,
-              letterSpacing: "-0.02em",
-              color: colors.black,
-            }}
-          />
-        </div>
-      </div>
 
       {/* Right — Actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
