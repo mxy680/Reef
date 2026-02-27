@@ -40,6 +40,7 @@ from api.strokes import router as strokes_router
 from api.voice import router as voice_router
 from api.reasoning import router as reasoning_router
 from api.events import router as events_router
+from api.admin import router as admin_router
 from api.tts_stream import router as tts_stream_router, cleanup_stale_tts
 
 from lib.surya_client import detect_layout
@@ -96,6 +97,7 @@ app.include_router(voice_router)
 app.include_router(reasoning_router)
 app.include_router(events_router)
 app.include_router(tts_stream_router)
+app.include_router(admin_router)
 
 if os.getenv("ENVIRONMENT") == "development":
     from api.simulation import router as simulation_router
