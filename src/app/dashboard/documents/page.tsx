@@ -84,7 +84,7 @@ function DropdownMenu({ onDelete, onClose }: { onDelete: () => void; onClose: ()
       }}
     >
       <button
-        onClick={() => { onDelete(); onClose() }}
+        onClick={(e) => { e.stopPropagation(); onDelete(); onClose() }}
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FDECEA")}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
         style={{
