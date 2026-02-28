@@ -1,0 +1,132 @@
+//
+//  Note.swift
+//  Reef
+//
+
+import Foundation
+import SwiftData
+
+// MARK: - Assignment Status
+
+/// Status of question extraction for assignment mode
+enum AssignmentStatus: String, Codable {
+    case none        // Not an assignment (assignment mode not enabled)
+    case processing  // Questions are being extracted
+    case completed   // Questions extracted successfully
+    case failed      // Extraction failed
+}
+
+// MARK: - Extracted Question
+
+/// Represents a single extracted question from an assignment
+struct ExtractedQuestion: Codable, Identifiable {
+    var id: UUID = UUID()
+    let questionNumber: Int
+    let pdfFileName: String  // Local filename for the question PDF
+    var regionData: ProblemRegionData?
+}
+
+@Model
+class Note: Hashable {
+    static func == (lhs: Note, rhs: Note) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    var id: UUID = UUID()
+    var name: String              // User-editable display name
+    var fileName: String          // Original file name with extension
+    var fileExtension: String     // Extension for type detection
+    var dateAdded: Date = Date()
+    var lastOpenedAt: Date?       // Track when document was last opened
+    var course: Course?           // Relationship to parent course
+    var extractedText: String?    // Full text content from PDF for search
+    var isTextExtracted: Bool = false // Track if extraction was attempted
+    var extractionStatusRaw: String = ExtractionStatus.pending.rawValue
+    var extractionMethodRaw: String?
+    var ocrConfidence: Double?
+    var isVectorIndexed: Bool = false
+    var isAssignment: Bool = false
+
+    // Assignment mode properties
+    var assignmentStatusRaw: String = AssignmentStatus.none.rawValue
+    var extractedQuestionsData: Data?  // JSON-encoded [ExtractedQuestion]
+    var assignmentJobId: String?  // Server job ID for polling
+
+    var assignmentStatus: AssignmentStatus {
+        get { AssignmentStatus(rawValue: assignmentStatusRaw) ?? .none }
+        set { assignmentStatusRaw = newValue.rawValue }
+    }
+
+    var extractedQuestions: [ExtractedQuestion] {
+        get {
+            guard let data = extractedQuestionsData else { return [] }
+            return (try? JSONDecoder().decode([ExtractedQuestion].self, from: data)) ?? []
+        }
+        set {
+            extractedQuestionsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    /// True if assignment processing is in progress
+    var isAssignmentProcessing: Bool {
+        isAssignment && assignmentStatus == .processing
+    }
+
+    /// True if assignment is ready (questions extracted)
+    var isAssignmentReady: Bool {
+        isAssignment && assignmentStatus == .completed && !extractedQuestions.isEmpty
+    }
+
+    var extractionStatus: ExtractionStatus {
+        get { ExtractionStatus(rawValue: extractionStatusRaw) ?? .pending }
+        set { extractionStatusRaw = newValue.rawValue }
+    }
+
+    var extractionMethod: ExtractionMethod? {
+        get { extractionMethodRaw.flatMap { ExtractionMethod(rawValue: $0) } }
+        set { extractionMethodRaw = newValue?.rawValue }
+    }
+
+    var fileType: FileType {
+        switch fileExtension.lowercased() {
+        case "pdf": return .pdf
+        case "jpg", "jpeg", "png", "heic": return .image
+        default: return .document
+        }
+    }
+
+    var fileTypeIcon: String {
+        switch fileType {
+        case .pdf: return "doc.fill"
+        case .image: return "photo.fill"
+        case .document: return "doc.text.fill"
+        }
+    }
+
+    enum FileType: String, Codable {
+        case pdf, image, document
+    }
+
+    /// True if any background processing for AI features is still in progress
+    var isProcessingForAI: Bool {
+        extractionStatus == .extracting ||
+        (extractionStatus == .completed && !isVectorIndexed)
+    }
+
+    /// True when all AI processing is complete and AI features are ready to use
+    var isAIReady: Bool {
+        extractionStatus == .completed &&
+        isVectorIndexed
+    }
+
+    init(name: String, fileName: String, fileExtension: String, course: Course? = nil) {
+        self.name = name
+        self.fileName = fileName
+        self.fileExtension = fileExtension
+        self.course = course
+    }
+}
