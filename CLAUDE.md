@@ -12,7 +12,6 @@ Reef/
 ├── Reef-Server/    — Python FastAPI backend (submodule) → see Reef-Server/CLAUDE.md
 ├── Reef-iOS/       — iPad SwiftUI app (submodule) → see Reef-iOS/CLAUDE.md
 ├── Reef-Web/       — Next.js landing page + document processing (submodule)
-├── test-ios/       — Appium iOS Simulator testing (helper script + venv)
 └── docs/plans/     — Design docs (gitignored, local only)
 ```
 
@@ -40,18 +39,6 @@ Reef/
 - **Diagram tool**: `_active_sessions` stores `content_mode` ("math" or "diagram"). When "diagram", `_debounced_transcribe` skips Mathpix entirely, upserts empty `page_transcriptions`, and schedules reasoning directly. `build_context` renders strokes to PNG via `stroke_renderer.py` and sends to Qwen VL as an image. iOS sends `content_mode: "diagram"` in stroke POST when diagram tool is selected (`CanvasTool.diagram`).
 - **Erase awareness**: `_erase_snapshots` in `mathpix_client.py` (deque, max 3) captures pre-erase `page_transcriptions.text` each time an erase event is detected. `build_context` includes these in a "Previously Erased Work" section so the reasoning model can detect patterns like erasing correct work. Ephemeral in-memory state, cleaned up by `invalidate_session`/`cleanup_sessions`.
 - **Delay-based speak**: `_pending_speak` in `mathpix_client.py` holds speak messages with `delay_ms > 0`. If new strokes arrive (triggering `schedule_reasoning`), the pending message is cancelled. After the delay, it's pushed as a normal `speak` SSE. Model returns structured JSON `{"action": "speak"|"silent", "message": "...", "delay_ms": N}`. iOS sees no change — only `speak` events reach the client.
-
-## Appium iOS Testing (test-ios/)
-
-- Helper script: `python3 test-ios/appium_helper.py <command>`
-- Commands: `start`, `snapshot`, `screenshot <file>`, `tap <id>`, `type <id> <text>`, `swipe <dir>`, `stop`
-- `start` boots the iPad Pro 11" simulator, launches Appium, and creates a session — run once per testing session
-- `snapshot` returns the XML UI tree (equivalent to Playwright's `browser_snapshot`)
-- Uses a venv at `test-ios/.venv` for the Appium Python client — the script auto-switches to it
-- Appium 2.19.0 with xcuitest driver 7.35.1; state saved in `test-ios/.appium_state.json`
-- App must be built for simulator first: `xcodebuild -project Reef-iOS/Reef.xcodeproj -scheme Reef -configuration Debug -derivedDataPath Reef-iOS/DerivedData -sdk iphonesimulator -arch arm64 build`
-- System dialogs (e.g. Apple sign-in) are outside the app's view hierarchy and won't appear in `snapshot`
-- Always `stop` when done to kill Appium server and free the session
 
 ## Submodules
 
