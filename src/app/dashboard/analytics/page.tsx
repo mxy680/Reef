@@ -53,7 +53,7 @@ function WeeklyActivityChart() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.3 }}
-      style={cardStyle}
+      style={{ ...cardStyle, display: "flex", flexDirection: "column" }}
     >
       <div
         style={{
@@ -80,7 +80,7 @@ function WeeklyActivityChart() {
         Daily study minutes this week
       </div>
 
-      <div style={{ overflowX: "auto" }}>
+      <div style={{ overflowX: "auto", flex: 1, display: "flex", alignItems: "flex-end" }}>
         <svg
           viewBox={`0 0 ${totalW + 40} ${chartH + 32}`}
           width="100%"
@@ -169,7 +169,7 @@ function TimeBySubject() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.35 }}
-      style={cardStyle}
+      style={{ ...cardStyle, display: "flex", flexDirection: "column" }}
     >
       <div
         style={{
@@ -196,7 +196,7 @@ function TimeBySubject() {
         Total hours studied
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
         {SUBJECTS.map((subject, i) => {
           const pct = maxHours > 0 ? (subject.hours / maxHours) * 100 : 0
           return (
@@ -352,7 +352,7 @@ function MasteryBySubject() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.4 }}
-      style={cardStyle}
+      style={{ ...cardStyle, display: "flex", flexDirection: "column" }}
     >
       <div
         style={{
@@ -385,6 +385,8 @@ function MasteryBySubject() {
           gridTemplateColumns: "1fr 1fr",
           gap: 16,
           justifyItems: "center",
+          flex: 1,
+          alignContent: "center",
         }}
       >
         {SUBJECTS.map((subject, i) => (
@@ -409,7 +411,7 @@ function RecentSessions() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.45 }}
-      style={cardStyle}
+      style={{ ...cardStyle, display: "flex", flexDirection: "column" }}
     >
       <div
         style={{
@@ -622,18 +624,18 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* Two-column masonry layout */}
-      <div style={{ display: "flex", gap: 16 }}>
-        {/* Left column */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
-          <WeeklyActivityChart />
-          <MasteryBySubject />
-        </div>
-        {/* Right column */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
-          <TimeBySubject />
-          <RecentSessions />
-        </div>
+      {/* Bento grid — cards stretch to fill each row */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
+        }}
+      >
+        <WeeklyActivityChart />
+        <TimeBySubject />
+        <MasteryBySubject />
+        <RecentSessions />
       </div>
     </div>
   )
