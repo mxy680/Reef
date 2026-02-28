@@ -15,8 +15,6 @@ step()  { printf "\n${BOLD}%s${NC}\n" "$1"; }
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
-# ── Prerequisites ──────────────────────────────────────────────
-
 step "Checking prerequisites..."
 
 command -v git   >/dev/null || fail "git not found"
@@ -29,61 +27,33 @@ info "node $(node --version)"
 info "pnpm $(pnpm --version)"
 info "uv $(uv --version | awk '{print $2}')"
 
-# Xcode is optional — only needed for iOS builds
 if command -v xcodebuild >/dev/null; then
     info "xcode $(xcodebuild -version 2>/dev/null | head -1)"
 else
     warn "Xcode not found — iOS builds will be unavailable"
 fi
 
-# ── Submodules ─────────────────────────────────────────────────
-
-step "Initializing submodules..."
-
-git submodule update --init --recursive 2>&1 || {
-    warn "Some submodules failed to init (this is OK if Reef-iOS is a private repo)"
-}
-
-for sub in Reef-Server Reef-Web Reef-iOS; do
-    if [ -d "$ROOT/$sub/.git" ] || [ -f "$ROOT/$sub/.git" ]; then
-        info "$sub checked out"
-    else
-        warn "$sub not available"
-    fi
-done
-
-# ── Reef-Server (Python/FastAPI) ───────────────────────────────
-
 if [ -d "$ROOT/Reef-Server" ] && [ -f "$ROOT/Reef-Server/pyproject.toml" ]; then
     step "Setting up Reef-Server..."
-
     cd "$ROOT/Reef-Server"
     uv sync
     info "Python dependencies installed"
-
     if [ ! -f .env ]; then
         cp .env.example .env
         warn "Created .env from .env.example — fill in your API keys"
     else
         info ".env already exists"
     fi
-
     cd "$ROOT"
 fi
-
-# ── Reef-Web (Next.js) ────────────────────────────────────────
 
 if [ -d "$ROOT/Reef-Web" ] && [ -f "$ROOT/Reef-Web/package.json" ]; then
     step "Setting up Reef-Web..."
-
     cd "$ROOT/Reef-Web"
     pnpm install
     info "Node dependencies installed"
-
     cd "$ROOT"
 fi
-
-# ── Done ───────────────────────────────────────────────────────
 
 step "Setup complete!"
 echo ""

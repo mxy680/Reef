@@ -9,9 +9,9 @@
 
 ```
 Reef/
-├── Reef-Server/    — Python FastAPI backend (submodule) → see Reef-Server/CLAUDE.md
-├── Reef-iOS/       — iPad SwiftUI app (submodule) → see Reef-iOS/CLAUDE.md
-├── Reef-Web/       — Next.js landing page + document processing (submodule)
+├── Reef-Server/    — Python FastAPI backend → see Reef-Server/CLAUDE.md
+├── Reef-iOS/       — iPad SwiftUI app → see Reef-iOS/CLAUDE.md
+├── Reef-Web/       — Next.js landing page + document processing
 └── docs/plans/     — Design docs (gitignored, local only)
 ```
 
@@ -40,6 +40,3 @@ Reef/
 - **Erase awareness**: `_erase_snapshots` in `mathpix_client.py` (deque, max 3) captures pre-erase `page_transcriptions.text` each time an erase event is detected. `build_context` includes these in a "Previously Erased Work" section so the reasoning model can detect patterns like erasing correct work. Ephemeral in-memory state, cleaned up by `invalidate_session`/`cleanup_sessions`.
 - **Delay-based speak**: `_pending_speak` in `mathpix_client.py` holds speak messages with `delay_ms > 0`. If new strokes arrive (triggering `schedule_reasoning`), the pending message is cancelled. After the delay, it's pushed as a normal `speak` SSE. Model returns structured JSON `{"action": "speak"|"silent", "message": "...", "delay_ms": N}`. iOS sees no change — only `speak` events reach the client.
 
-## Submodules
-
-- Commit inside each submodule first, then `git add <submodule>` in parent repo
