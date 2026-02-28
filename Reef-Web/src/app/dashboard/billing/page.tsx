@@ -106,7 +106,8 @@ function PlanCard({ name, price, features, highlighted }: { name: string; price:
 
 export default function BillingPage() {
   return (
-    <div style={{ maxWidth: 560 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 200px)" }}>
+      <div style={{ width: "100%", maxWidth: 560 }}>
       {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -123,6 +124,7 @@ export default function BillingPage() {
             color: colors.black,
             margin: 0,
             marginBottom: 6,
+            textAlign: "center",
           }}
         >
           Billing
@@ -135,6 +137,7 @@ export default function BillingPage() {
             letterSpacing: "-0.04em",
             color: colors.gray600,
             margin: 0,
+            textAlign: "center",
           }}
         >
           Plans and payment
@@ -256,6 +259,7 @@ export default function BillingPage() {
           </motion.div>
         </div>
       </motion.div>
+      </div>
     </div>
   )
 }

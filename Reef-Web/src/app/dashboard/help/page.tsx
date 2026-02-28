@@ -87,7 +87,8 @@ function HelpTopicRow({ icon, label, delay }: { icon: React.ReactNode; label: st
 
 export default function HelpPage() {
   return (
-    <div style={{ maxWidth: 560 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 200px)" }}>
+      <div style={{ width: "100%", maxWidth: 560 }}>
       {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -104,6 +105,7 @@ export default function HelpPage() {
             color: colors.black,
             margin: 0,
             marginBottom: 6,
+            textAlign: "center",
           }}
         >
           Help
@@ -116,6 +118,7 @@ export default function HelpPage() {
             letterSpacing: "-0.04em",
             color: colors.gray600,
             margin: 0,
+            textAlign: "center",
           }}
         >
           Guides, FAQs, and support
@@ -261,6 +264,7 @@ export default function HelpPage() {
           </div>
         </div>
       </motion.div>
+      </div>
     </div>
   )
 }
