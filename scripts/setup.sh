@@ -12,7 +12,7 @@ warn()  { printf "${YELLOW}!${NC} %s\n" "$1"; }
 fail()  { printf "${RED}✗${NC} %s\n" "$1"; exit 1; }
 step()  { printf "\n${BOLD}%s${NC}\n" "$1"; }
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 step "Checking prerequisites..."
