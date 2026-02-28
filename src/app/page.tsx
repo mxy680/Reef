@@ -130,8 +130,8 @@ export default function Home() {
               Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.
             </p>
             <div className="hero-buttons">
-              <Button variant="Solid" label="Get Started" link="/signup" />
-              <Button variant="Alternative" label="Log In" link="/auth" />
+              <Button variant="Solid" label="Download" link="/signup" />
+              <Button variant="Alternative" label="Watch Demo" link="#demo" />
             </div>
             <p className="hero-beta">
               <svg
