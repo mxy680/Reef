@@ -1,0 +1,17 @@
+api.studyreef.com {
+    reverse_proxy app:8000 {
+        transport http {
+            read_timeout 620s
+            write_timeout 620s
+        }
+    }
+}
+
+dev.studyreef.com {
+    reverse_proxy 172.18.0.1:8001 {
+        transport http {
+            read_timeout 620s
+            write_timeout 620s
+        }
+    }
+}
