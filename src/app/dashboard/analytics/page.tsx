@@ -23,9 +23,6 @@ const RECENT_SESSIONS = [
   { subject: "Linear Algebra", date: "Feb 27", duration: "28 min", pages: 4 },
   { subject: "Calculus II", date: "Feb 26", duration: "55 min", pages: 5 },
   { subject: "Physics II", date: "Feb 25", duration: "18 min", pages: 1 },
-  { subject: "Organic Chemistry", date: "Feb 25", duration: "42 min", pages: 3 },
-  { subject: "Linear Algebra", date: "Feb 24", duration: "38 min", pages: 2 },
-  { subject: "Calculus II", date: "Feb 23", duration: "22 min", pages: 2 },
 ]
 
 // ─── Shared Styles ────────────────────────────────────────
@@ -80,7 +77,7 @@ function WeeklyActivityChart() {
         Daily study minutes this week
       </div>
 
-      <div style={{ overflowX: "auto", flex: 1, display: "flex", alignItems: "flex-end" }}>
+      <div style={{ overflowX: "auto" }}>
         <svg
           viewBox={`0 0 ${totalW + 40} ${chartH + 32}`}
           width="100%"
@@ -196,7 +193,7 @@ function TimeBySubject() {
         Total hours studied
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {SUBJECTS.map((subject, i) => {
           const pct = maxHours > 0 ? (subject.hours / maxHours) * 100 : 0
           return (
@@ -385,8 +382,6 @@ function MasteryBySubject() {
           gridTemplateColumns: "1fr 1fr",
           gap: 16,
           justifyItems: "center",
-          flex: 1,
-          alignContent: "center",
         }}
       >
         {SUBJECTS.map((subject, i) => (
@@ -633,9 +628,9 @@ export default function AnalyticsPage() {
         }}
       >
         <WeeklyActivityChart />
+        <RecentSessions />
         <TimeBySubject />
         <MasteryBySubject />
-        <RecentSessions />
       </div>
     </div>
   )
