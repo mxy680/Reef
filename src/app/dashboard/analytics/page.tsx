@@ -574,7 +574,7 @@ export default function AnalyticsPage() {
       </motion.div>
 
       {/* Stat cards row */}
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
         {[
           { label: "Total Study Time", value: "12.0 hrs", delay: 0.18 },
           { label: "Sessions This Week", value: "18", delay: 0.22 },
@@ -588,7 +588,7 @@ export default function AnalyticsPage() {
             transition={{ duration: 0.35, delay: stat.delay }}
             style={{
               ...cardStyle,
-              flex: 1,
+              flex: "1 1 140px",
               padding: "20px 16px",
             }}
           >
@@ -619,11 +619,11 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* Bento grid — cards stretch to fill each row */}
+      {/* Bento grid — cards stretch to fill each row, single-column on narrow screens */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "repeat(auto-fit, minmax(max(280px, calc(50% - 8px)), 1fr))",
           gap: 16,
         }}
       >
