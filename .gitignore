@@ -7,3 +7,4 @@ mathpix/
 server-old/
 ios-old/
 *.png
+!Reef-iOS/Reef/Assets.xcassets/**/*.png
