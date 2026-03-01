@@ -66,6 +66,7 @@ export async function GET() {
       display_name: u.display_name,
       grade: u.grade,
       subjects: u.subjects,
+      onboarding_completed: u.onboarding_completed ?? false,
       documents_count: docsPerUser[u.id] || 0,
       created_at: u.created_at,
     })),
