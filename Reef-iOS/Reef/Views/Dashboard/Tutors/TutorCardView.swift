@@ -30,9 +30,9 @@ struct TutorCardView: View {
                         .fill(tintColor.opacity(isActive ? 0.2 : 0.1))
 
                     Text(tutor.emoji)
-                        .font(.system(size: 56))
+                        .font(.system(size: 42))
                 }
-                .frame(height: 130)
+                .frame(height: 90)
                 .padding(.horizontal, 14)
                 .padding(.top, 14)
 
@@ -126,7 +126,7 @@ struct TutorCardView: View {
                 .padding(.horizontal, 14)
                 .padding(.bottom, 14)
             }
-            .frame(width: 240, height: 380)
+            .frame(width: 240, height: 300)
             .background(ReefColors.white)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(

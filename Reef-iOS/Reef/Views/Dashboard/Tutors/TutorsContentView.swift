@@ -28,9 +28,9 @@ final class TutorsViewModel {
         activeTutorId = UserDefaults.standard.string(forKey: "reef_active_tutor_id")
         await fetchTutors()
 
-        // Default to first tutor if none selected
-        if activeTutorId == nil, let first = tutors.first {
-            activeTutorId = first.id
+        // Default to Kai if none selected
+        if activeTutorId == nil {
+            activeTutorId = "tutor-kai"
         }
     }
 
@@ -173,24 +173,13 @@ struct TutorsContentView: View {
                 Button {
                     viewModel.showQuiz = true
                 } label: {
-                    HStack(spacing: 5) {
+                    HStack(spacing: 6) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                         Text("Find Your Tutor")
-                            .font(.epilogue(12, weight: .bold))
-                            .tracking(-0.04 * 12)
                     }
-                    .foregroundStyle(ReefColors.primary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
-                    .background(ReefColors.primary.opacity(0.1))
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule()
-                            .stroke(ReefColors.primary.opacity(0.25), lineWidth: 1)
-                    )
                 }
-                .buttonStyle(.plain)
+                .reefStyle(.primary)
             }
 
             HStack(spacing: 10) {
@@ -226,7 +215,7 @@ struct TutorsContentView: View {
                 ForEach(0..<3, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 16)
                         .fill(ReefColors.gray100)
-                        .frame(width: 240, height: 380)
+                        .frame(width: 240, height: 300)
                 }
             }
             .padding(.horizontal, 4)
