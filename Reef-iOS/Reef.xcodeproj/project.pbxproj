@@ -33,6 +33,7 @@
 		D7A9B727B2FBE1AD3097BBE2 /* DashboardHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170FD0C938538B1F376C2AA2 /* DashboardHeader.swift */; };
 		E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */; };
 		FAD30BC870E2887DE6695C42 /* DashboardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8299119962039796C4D85BD2 /* DashboardCard.swift */; };
+		FB01AE23D4C8B7F1A2E30901 /* MantaRayIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB01AE23D4C8B7F1A2E30911 /* MantaRayIcon.swift */; };
 		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
 		AA10BF01C3D7A1E2F4B5C601 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */; };
 		AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */; };
@@ -68,6 +69,7 @@
 		B88CBB5BEEC17E13645026BF /* DashboardSidebar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardSidebar.swift; sourceTree = "<group>"; };
 		D023F5ED102A820961A8A65C /* DashboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		E2A242632736FB9BEE170074 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		FB01AE23D4C8B7F1A2E30911 /* MantaRayIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MantaRayIcon.swift; sourceTree = "<group>"; };
 		E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggedInView.swift; sourceTree = "<group>"; };
 		E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
@@ -100,6 +102,7 @@
 			isa = PBXGroup;
 			children = (
 				585B9AFB26D4C25AB8FFF803 /* Colors.swift */,
+				FB01AE23D4C8B7F1A2E30911 /* MantaRayIcon.swift */,
 				E2A242632736FB9BEE170074 /* Typography.swift */,
 				37CB64D67A4227D8D98F7032 /* Components */,
 			);
@@ -358,6 +361,7 @@
 				D7A9B727B2FBE1AD3097BBE2 /* DashboardHeader.swift in Sources */,
 				D4EB4081AFF5DF086F720507 /* DashboardView.swift in Sources */,
 				FAD30BC870E2887DE6695C42 /* DashboardCard.swift in Sources */,
+				FB01AE23D4C8B7F1A2E30901 /* MantaRayIcon.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
