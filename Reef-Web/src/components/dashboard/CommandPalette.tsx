@@ -278,7 +278,7 @@ export default function CommandPalette() {
         </div>
 
         {/* Results */}
-        <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
+        <div ref={listRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 0" }}>
           {loading && (
             <div
               style={{
