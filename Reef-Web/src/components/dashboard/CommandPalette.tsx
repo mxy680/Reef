@@ -108,6 +108,14 @@ export default function CommandPalette() {
       })
   }, [commandPaletteOpen, fetched])
 
+  // Lock body scroll while open
+  useEffect(() => {
+    if (!commandPaletteOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => { document.body.style.overflow = prev }
+  }, [commandPaletteOpen])
+
   // Reset state when closing
   useEffect(() => {
     if (!commandPaletteOpen) {
@@ -278,7 +286,7 @@ export default function CommandPalette() {
         </div>
 
         {/* Results */}
-        <div ref={listRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "10px 0" }}>
+        <div ref={listRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: "10px 0" }}>
           {loading && (
             <div
               style={{
