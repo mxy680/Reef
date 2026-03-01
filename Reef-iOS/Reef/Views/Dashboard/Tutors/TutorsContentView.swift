@@ -211,6 +211,8 @@ struct TutorsContentView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .padding(.trailing, 4)
+                .padding(.bottom, 4)
             }
 
             HStack(spacing: 10) {
