@@ -264,7 +264,7 @@ export default function DashboardSidebar() {
       >
         {!collapsed && (
           <img
-            src="/reef-logo.png"
+            src="https://framerusercontent.com/images/VULGMuxuEsrUntAhBaeYTbweq3I.png"
             alt="Reef logo"
             style={{ width: 28, height: 28, flexShrink: 0 }}
           />
