@@ -55,6 +55,14 @@ if [ -d "$ROOT/Reef-Web" ] && [ -f "$ROOT/Reef-Web/package.json" ]; then
     cd "$ROOT"
 fi
 
+if [ -d "$ROOT/Reef-iOS/Reef.xcodeproj" ]; then
+    step "Opening Reef-iOS in Xcode..."
+    open "$ROOT/Reef-iOS/Reef.xcodeproj"
+    info "Opened Reef.xcodeproj"
+else
+    warn "Reef-iOS project not found — skipping Xcode"
+fi
+
 step "Setup complete!"
 echo ""
 echo "  Start the server:  cd Reef-Server && uv run uvicorn api.index:app --reload"
