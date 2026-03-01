@@ -64,7 +64,7 @@ struct AuthView: View {
 
                             // Email field
                             ReefTextField(
-                                placeholder: isSignUp ? "Email" : "Enter your email",
+                                placeholder: "name@example.com",
                                 text: $email
                             )
                             .padding(.bottom, 22)
