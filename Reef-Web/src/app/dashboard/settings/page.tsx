@@ -205,6 +205,7 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
         borderRadius: 16,
         boxShadow: `4px 4px 0px 0px ${colors.gray500}`,
         padding: "28px 24px",
+        minWidth: 0,
         ...style,
       }}
     >
@@ -330,10 +331,12 @@ function ProfileTab({
   profile,
   setProfile,
   setToast,
+  isMobile,
 }: {
   profile: ReturnType<typeof useDashboard>["profile"]
   setProfile: ReturnType<typeof useDashboard>["setProfile"]
   setToast: (msg: string) => void
+  isMobile: boolean
 }) {
   const [name, setName] = useState(profile.display_name)
   const [grade, setGrade] = useState(profile.grade)
@@ -397,7 +400,7 @@ function ProfileTab({
   const completionPct = Math.round((completedFields / 4) * 100)
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 20 }}>
       {/* Personal Info — spans left column */}
       <Card>
         <SectionHeader>Personal Info</SectionHeader>
@@ -513,7 +516,7 @@ function ProfileTab({
       </Card>
 
       {/* Education — full width */}
-      <Card style={{ gridColumn: "span 2" }}>
+      <Card style={{ gridColumn: isMobile ? undefined : "span 2" }}>
         <SectionHeader>Education</SectionHeader>
 
         {/* Grade */}
@@ -599,7 +602,7 @@ function ProfileTab({
 
 // ─── Preferences Tab ──────────────────────────────────────
 
-function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
+function PreferencesTab({ setToast, isMobile }: { setToast: (msg: string) => void; isMobile: boolean }) {
   const [darkMode, setDarkMode] = useState(false)
   const [focusWeakAreas, setFocusWeakAreas] = useState(true)
   const [defaultDifficulty, setDefaultDifficulty] = useState("medium")
@@ -609,7 +612,7 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
   const [weeklyDigest, setWeeklyDigest] = useState(true)
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 20 }}>
       {/* Appearance */}
       <Card>
         <SectionHeader>Appearance</SectionHeader>
@@ -699,10 +702,10 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
       </Card>
 
       {/* Study Preferences — full width */}
-      <Card style={{ gridColumn: "span 2" }}>
+      <Card style={{ gridColumn: isMobile ? undefined : "span 2" }}>
         <SectionHeader>Study Preferences</SectionHeader>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 24 }}>
           {/* Left column */}
           <div>
             {/* Focus on weak areas */}
@@ -906,14 +909,14 @@ function LinkRow({
 
 // ─── Privacy Tab ──────────────────────────────────────────
 
-function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
+function PrivacyTab({ setToast, isMobile }: { setToast: (msg: string) => void; isMobile: boolean }) {
   const [usageAnalytics, setUsageAnalytics] = useState(true)
   const [crashReports, setCrashReports] = useState(true)
   const [personalizedAds, setPersonalizedAds] = useState(false)
   const [thirdPartySharing, setThirdPartySharing] = useState(false)
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 20 }}>
       {/* Analytics */}
       <Card>
         <SectionHeader>Analytics</SectionHeader>
@@ -1043,9 +1046,9 @@ function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
 
 // ─── About Tab ────────────────────────────────────────────
 
-function AboutTab() {
+function AboutTab({ isMobile }: { isMobile: boolean }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 20 }}>
       {/* App Info */}
       <Card>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
@@ -1218,9 +1221,9 @@ function AboutTab() {
       </Card>
 
       {/* Legal — full width */}
-      <Card style={{ gridColumn: "span 2" }}>
+      <Card style={{ gridColumn: isMobile ? undefined : "span 2" }}>
         <SectionHeader>Legal</SectionHeader>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <LinkRow
             icon={
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1269,18 +1272,20 @@ function AccountTab({
   handleSignOut,
   signingOut,
   setShowDeleteModal,
+  isMobile,
 }: {
   profile: ReturnType<typeof useDashboard>["profile"]
   handleSignOut: () => void
   signingOut: boolean
   setShowDeleteModal: (v: boolean) => void
+  isMobile: boolean
 }) {
   const tier: Tier = "shore"
   const limits = TIER_LIMITS[tier]
   const info = TIER_INFO[tier]
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 20 }}>
       {/* Plan */}
       <Card>
         <SectionHeader>Your Plan</SectionHeader>
@@ -1407,9 +1412,9 @@ function AccountTab({
       </Card>
 
       {/* Compare Plans — full width */}
-      <Card style={{ gridColumn: "span 2" }}>
+      <Card style={{ gridColumn: isMobile ? undefined : "span 2" }}>
         <SectionHeader>Compare Plans</SectionHeader>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12 }}>
           {(["shore", "reef", "abyss"] as Tier[]).map((t) => {
             const tInfo = TIER_INFO[t]
             const tLimits = TIER_LIMITS[t]
@@ -1459,10 +1464,10 @@ function AccountTab({
       </Card>
 
       {/* Actions */}
-      <Card style={{ gridColumn: "span 2" }}>
+      <Card style={{ gridColumn: isMobile ? undefined : "span 2" }}>
         <SectionHeader>Actions</SectionHeader>
 
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12 }}>
           <motion.button
             onClick={handleSignOut} disabled={signingOut}
             whileHover={{ backgroundColor: colors.gray100 }}
@@ -1500,7 +1505,7 @@ function AccountTab({
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { profile, setProfile } = useDashboard()
+  const { profile, setProfile, isMobile } = useDashboard()
   const [activeTab, setActiveTab] = useState<Tab>("profile")
   const [toast, setToast] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -1541,7 +1546,7 @@ export default function SettingsPage() {
           </h2>
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: isMobile ? 6 : 10, overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 4 }}>
             {TABS.map((tab) => {
               const active = activeTab === tab.key
               return (
@@ -1553,16 +1558,17 @@ export default function SettingsPage() {
                   transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    padding: "10px 20px", cursor: "pointer",
+                    padding: isMobile ? "10px 14px" : "10px 20px", cursor: "pointer",
                     fontFamily, fontWeight: 700, fontSize: 14, letterSpacing: "-0.04em",
                     border: `2px solid ${colors.black}`, borderRadius: 10,
                     backgroundColor: active ? colors.primary : colors.white,
                     color: active ? colors.white : colors.black,
                     boxShadow: active ? `3px 3px 0px 0px ${colors.black}` : `4px 4px 0px 0px ${colors.black}`,
+                    flexShrink: 0,
                   }}
                 >
                   {tab.icon}
-                  {tab.label}
+                  {!isMobile && tab.label}
                 </motion.button>
               )
             })}
@@ -1581,19 +1587,19 @@ export default function SettingsPage() {
               style={{ height: "auto" }}
             >
               {activeTab === "profile" && (
-                <ProfileTab profile={profile} setProfile={setProfile} setToast={setToast} />
+                <ProfileTab profile={profile} setProfile={setProfile} setToast={setToast} isMobile={isMobile} />
               )}
               {activeTab === "preferences" && (
-                <PreferencesTab setToast={setToast} />
+                <PreferencesTab setToast={setToast} isMobile={isMobile} />
               )}
               {activeTab === "privacy" && (
-                <PrivacyTab setToast={setToast} />
+                <PrivacyTab setToast={setToast} isMobile={isMobile} />
               )}
               {activeTab === "about" && (
-                <AboutTab />
+                <AboutTab isMobile={isMobile} />
               )}
               {activeTab === "account" && (
-                <AccountTab profile={profile} handleSignOut={handleSignOut} signingOut={signingOut} setShowDeleteModal={setShowDeleteModal} />
+                <AccountTab profile={profile} handleSignOut={handleSignOut} signingOut={signingOut} setShowDeleteModal={setShowDeleteModal} isMobile={isMobile} />
               )}
             </motion.div>
           </AnimatePresence>
