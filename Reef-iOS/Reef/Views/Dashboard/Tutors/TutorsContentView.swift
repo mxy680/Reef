@@ -173,13 +173,24 @@ struct TutorsContentView: View {
                 Button {
                     viewModel.showQuiz = true
                 } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 10, weight: .semibold))
                         Text("Find Your Tutor")
+                            .font(.epilogue(12, weight: .bold))
+                            .tracking(-0.04 * 12)
                     }
+                    .foregroundStyle(ReefColors.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(ReefColors.primary.opacity(0.1))
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(ReefColors.primary.opacity(0.25), lineWidth: 1)
+                    )
                 }
-                .reefStyle(.primary)
+                .buttonStyle(.plain)
             }
 
             HStack(spacing: 10) {
@@ -215,7 +226,7 @@ struct TutorsContentView: View {
                 ForEach(0..<3, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 16)
                         .fill(ReefColors.gray100)
-                        .frame(width: 240, height: 300)
+                        .frame(width: 220, height: 240)
                 }
             }
             .padding(.horizontal, 4)
