@@ -11,6 +11,7 @@ final class AuthManager {
     var isLoading = false
     var errorMessage: String?
     var magicLinkSent = false
+    var magicLinkEmail = ""
 
     var isAuthenticated: Bool { session != nil }
 
@@ -149,6 +150,7 @@ final class AuthManager {
                     email: email,
                     redirectTo: URL(string: "reef://auth-callback")
                 )
+                magicLinkEmail = email
                 magicLinkSent = true
             } catch {
                 errorMessage = error.localizedDescription

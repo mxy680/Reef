@@ -32,7 +32,7 @@ struct AuthView: View {
                                     .padding(.bottom, 6)
                                     .fadeUp(index: 1)
 
-                                Text("We sent a magic link to **\(email)**")
+                                Text("We sent a magic link to \(authManager.magicLinkEmail)")
                                     .reefBody()
                                     .multilineTextAlignment(.center)
                                     .padding(.bottom, 28)
