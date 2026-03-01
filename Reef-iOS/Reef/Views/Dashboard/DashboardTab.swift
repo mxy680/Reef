@@ -5,6 +5,7 @@ enum DashboardTab: String, CaseIterable, Identifiable {
     case analytics
     case myReef
     case library
+    case tutors
     case settings
 
     var id: String { rawValue }
@@ -15,6 +16,7 @@ enum DashboardTab: String, CaseIterable, Identifiable {
         case .analytics: "Analytics"
         case .myReef: "My Reef"
         case .library: "Library"
+        case .tutors: "Tutors"
         case .settings: "Settings"
         }
     }
@@ -25,11 +27,12 @@ enum DashboardTab: String, CaseIterable, Identifiable {
         case .analytics: "chart.bar"
         case .myReef: "heart"
         case .library: "books.vertical"
+        case .tutors: "person.2"
         case .settings: "gearshape"
         }
     }
 
     static var mainTabs: [DashboardTab] {
-        [.documents, .analytics, .myReef, .library]
+        [.documents, .analytics, .myReef, .library, .tutors]
     }
 }
