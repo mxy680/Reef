@@ -131,6 +131,7 @@ struct AuthView: View {
                                             .tracking(-0.04 * 14)
                                             .foregroundStyle(ReefColors.primary)
                                     }
+                                    .buttonStyle(.plain)
                                 }
                                 .fadeUp(index: 6)
                             }

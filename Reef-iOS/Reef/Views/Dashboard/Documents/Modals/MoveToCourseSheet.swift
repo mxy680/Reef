@@ -128,6 +128,7 @@ struct MoveToCourseSheet: View {
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
                 .foregroundStyle(ReefColors.gray600)
+                .buttonStyle(.plain)
             }
             .padding(.top, 20)
         }

@@ -55,6 +55,7 @@ struct DetailsSheet: View {
                                 .offset(x: 4, y: 4)
                         )
                 }
+                .buttonStyle(.plain)
             }
             .padding(.top, 24)
         }
