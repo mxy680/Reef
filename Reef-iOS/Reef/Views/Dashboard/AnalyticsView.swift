@@ -55,13 +55,14 @@ struct AnalyticsView: View {
     @State private var appeared = false
 
     var body: some View {
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 16) {
                 headerSection
                 statCardsRow
-                chartsGrid
+                chartRowTop
+                chartRowBottom
             }
-            .padding(20)
+            .padding(4)
         }
         .onAppear { appeared = true }
     }
@@ -80,18 +81,16 @@ struct AnalyticsView: View {
                 .tracking(-0.04 * 14)
                 .foregroundStyle(ReefColors.gray600)
         }
+        .padding(.horizontal, 4)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
         .animation(.easeOut(duration: 0.35).delay(0.1), value: appeared)
     }
 
-    // MARK: - Stat Cards
+    // MARK: - Stat Cards (4 across)
 
     private var statCardsRow: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: 16),
-            GridItem(.flexible(), spacing: 16),
-        ], spacing: 16) {
+        HStack(spacing: 12) {
             ForEach(Array(statItems.enumerated()), id: \.element.id) { index, stat in
                 statCard(stat, index: index)
             }
@@ -106,28 +105,30 @@ struct AnalyticsView: View {
                 .foregroundStyle(ReefColors.gray600)
 
             Text(stat.value)
-                .font(.epilogue(28, weight: .bold))
-                .tracking(-0.04 * 28)
+                .font(.epilogue(26, weight: .bold))
+                .tracking(-0.04 * 26)
                 .foregroundStyle(ReefColors.black)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
-        .padding(.vertical, 20)
+        .padding(.vertical, 18)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
         .animation(.easeOut(duration: 0.35).delay(0.18 + Double(index) * 0.04), value: appeared)
     }
 
-    // MARK: - Charts Grid
+    // MARK: - Chart rows
 
-    private var chartsGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: 16),
-            GridItem(.flexible(), spacing: 16),
-        ], spacing: 16) {
+    private var chartRowTop: some View {
+        HStack(alignment: .top, spacing: 12) {
             WeeklyActivityCard(appeared: appeared)
             RecentSessionsCard(appeared: appeared)
+        }
+    }
+
+    private var chartRowBottom: some View {
+        HStack(alignment: .top, spacing: 12) {
             TimeBySubjectCard(appeared: appeared)
             MasteryBySubjectCard(appeared: appeared)
         }
@@ -154,11 +155,10 @@ private struct WeeklyActivityCard: View {
                 .padding(.bottom, 20)
 
             WeeklyBarChart()
-                .frame(height: 160)
+                .frame(height: 152)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 24)
+        .padding(20)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
@@ -171,10 +171,10 @@ private struct WeeklyBarChart: View {
         GeometryReader { geo in
             let maxMinutes = weeklyMinutes.max() ?? 1
             let barCount = CGFloat(weeklyMinutes.count)
-            let spacing: CGFloat = 12
+            let spacing: CGFloat = 10
             let totalSpacing = spacing * (barCount - 1)
             let barWidth = (geo.size.width - totalSpacing) / barCount
-            let chartHeight = geo.size.height - 24 // leave room for labels
+            let chartHeight = geo.size.height - 24
 
             Canvas { context, size in
                 // Grid lines
@@ -193,7 +193,7 @@ private struct WeeklyBarChart: View {
                     let y = chartHeight - barH
                     let barColor = minutes == 0 ? ReefColors.gray100 : ReefColors.primary
 
-                    let bar = Path(roundedRect: CGRect(x: x, y: y, width: barWidth, height: barH), cornerRadius: 6)
+                    let bar = Path(roundedRect: CGRect(x: x, y: y, width: barWidth, height: max(barH, 4)), cornerRadius: 5)
                     context.fill(bar, with: .color(barColor))
 
                     // Day label
@@ -249,8 +249,7 @@ private struct TimeBySubjectCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 24)
+        .padding(20)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
@@ -323,8 +322,7 @@ private struct MasteryBySubjectCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 24)
+        .padding(20)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
@@ -343,18 +341,15 @@ private struct DonutRing: View {
     var body: some View {
         VStack(spacing: 6) {
             ZStack {
-                // Background ring
                 Circle()
                     .stroke(ReefColors.gray100, lineWidth: strokeWidth)
 
-                // Progress ring
                 Circle()
                     .trim(from: 0, to: appeared ? CGFloat(subject.mastery) / 100.0 : 0)
                     .stroke(subject.color, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(.easeOut(duration: 0.7).delay(0.5 + Double(index) * 0.1), value: appeared)
 
-                // Percentage text
                 Text("\(subject.mastery)%")
                     .font(.epilogue(13, weight: .bold))
                     .tracking(-0.04 * 13)
@@ -367,7 +362,7 @@ private struct DonutRing: View {
                 .tracking(-0.04 * 11)
                 .foregroundStyle(ReefColors.gray600)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 72)
+                .frame(maxWidth: 80)
         }
     }
 }
@@ -408,8 +403,7 @@ private struct RecentSessionsCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 24)
+        .padding(20)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
@@ -418,7 +412,6 @@ private struct RecentSessionsCard: View {
 
     private func sessionRow(_ session: SessionData, color: Color) -> some View {
         HStack {
-            // Left: dot + subject + date
             HStack(spacing: 10) {
                 Circle()
                     .fill(color)
@@ -440,7 +433,6 @@ private struct RecentSessionsCard: View {
 
             Spacer()
 
-            // Right: duration + pages
             HStack(spacing: 16) {
                 Text(session.duration)
                     .font(.epilogue(13, weight: .semiBold))
