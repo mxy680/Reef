@@ -146,19 +146,32 @@ struct TutorQuizPopup: View {
             }
             .padding(.bottom, 24)
 
-            OnboardingNavigation(
-                backLabel: step > 0 ? "Back" : nil,
-                forwardLabel: "Continue",
-                canAdvance: answers[step] != nil,
-                onBack: step > 0 ? {
-                    direction = .leading
-                    withAnimation { step -= 1 }
-                } : nil,
-                onForward: {
+            HStack {
+                if step > 0 {
+                    Button {
+                        direction = .leading
+                        withAnimation { step -= 1 }
+                    } label: {
+                        Text("Back")
+                            .font(.epilogue(14, weight: .semiBold))
+                            .tracking(-0.04 * 14)
+                            .foregroundStyle(ReefColors.gray600)
+                    }
+                }
+
+                Spacer()
+
+                Button {
                     direction = .trailing
                     withAnimation { step += 1 }
+                } label: {
+                    Text("Continue")
                 }
-            )
+                .reefStyle(.primary)
+                .frame(maxWidth: 160)
+                .disabled(answers[step] == nil)
+                .opacity(answers[step] != nil ? 1 : 0.5)
+            }
         }
     }
 

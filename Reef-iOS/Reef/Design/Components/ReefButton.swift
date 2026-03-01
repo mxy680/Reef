@@ -94,7 +94,7 @@ struct ReefCompactButtonStyle: ButtonStyle {
                 x: pressed ? 3 : 0,
                 y: pressed ? 3 : 0
             )
-            .animation(.spring(duration: 0.3, bounce: 0.2), value: pressed)
+            .animation(.spring(duration: 0.2, bounce: 0.1), value: pressed)
     }
 }
 

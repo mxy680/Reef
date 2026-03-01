@@ -79,6 +79,7 @@ struct TutorCardView: View {
                                 .font(.system(size: 9, weight: .bold))
                             Text(isSpeaking ? "Stop" : "Voice")
                         }
+                        .frame(minWidth: 56)
                     }
                     .reefCompactStyle(.secondary)
 

@@ -72,6 +72,7 @@ struct TutorSpotlightView: View {
                                 .font(.system(size: 10, weight: .bold))
                             Text(isSpeaking ? "Stop" : "Preview Voice")
                         }
+                        .frame(minWidth: 100)
                     }
                     .reefCompactStyle(.secondary)
 
