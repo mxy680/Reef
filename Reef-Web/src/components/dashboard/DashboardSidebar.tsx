@@ -78,6 +78,28 @@ function ReefIcon() {
   )
 }
 
+function LibraryIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 2 V18" />
+      <path d="M8 2 V18" />
+      <path d="M12 2 V18" />
+      <path d="M15 2 L18 18" />
+      <line x1="2" y1="18" x2="18" y2="18" />
+    </svg>
+  )
+}
+
+function HelpIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="8" />
+      <path d="M7.5 7.5 C7.5 5.5 9 4.5 10 4.5 C11.5 4.5 13 5.5 12.5 7.5 C12 9 10 9.5 10 11" />
+      <circle cx="10" cy="14" r="0.5" fill="currentColor" />
+    </svg>
+  )
+}
+
 const ADMIN_EMAIL = "markshteyn1@gmail.com"
 
 const NAV_ITEMS = [
@@ -85,8 +107,14 @@ const NAV_ITEMS = [
   { href: "/dashboard/courses", label: "Courses", icon: <CoursesIcon /> },
   { href: "/dashboard/analytics", label: "Analytics", icon: <AnalyticsIcon /> },
   { href: "/dashboard/reef", label: "My Reef", icon: <ReefIcon /> },
+  { href: "/dashboard/library", label: "Library", icon: <LibraryIcon /> },
+]
+
+const BOTTOM_NAV_ITEMS = [
+  { href: "/dashboard/help", label: "Help", icon: <HelpIcon /> },
   { href: "/dashboard/billing", label: "Billing", icon: <BillingIcon /> },
   { href: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
+  { href: "/dashboard/admin", label: "Admin", icon: <AdminIcon />, adminOnly: true },
 ]
 
 function UpgradeIcon() {
@@ -283,12 +311,10 @@ export default function DashboardSidebar() {
         {NAV_ITEMS.map((item) => (
           <NavItem key={item.href} {...item} collapsed={collapsed} />
         ))}
-        {profile.email === ADMIN_EMAIL && (
-          <>
-            <div style={{ height: 1, backgroundColor: colors.gray100, margin: "6px 0" }} />
-            <NavItem href="/dashboard/admin" label="Admin" icon={<AdminIcon />} collapsed={collapsed} />
-          </>
-        )}
+        <div style={{ height: 1, backgroundColor: colors.gray100, margin: "6px 0" }} />
+        {BOTTOM_NAV_ITEMS.filter((item) => !item.adminOnly || profile.email === ADMIN_EMAIL).map((item) => (
+          <NavItem key={item.href} {...item} collapsed={collapsed} />
+        ))}
       </nav>
 
       {/* Footer */}
