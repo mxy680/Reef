@@ -57,9 +57,18 @@ struct DeleteCourseSheet: View {
             }
             .padding(.top, 24)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(32)
-        .presentationDetents([.height(200)])
-        .presentationBackground(.white)
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(ReefColors.black, lineWidth: 2)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(ReefColors.black)
+                .offset(x: 4, y: 4)
+        )
+        .frame(maxWidth: 400)
     }
 }

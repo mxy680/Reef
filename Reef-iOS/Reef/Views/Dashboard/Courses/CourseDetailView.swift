@@ -11,8 +11,8 @@ final class CourseDetailViewModel {
     var isLoading = true
     var toastMessage: String?
 
-    var deleteTarget: Course?
-    var editTarget: Course?
+    var showDelete = false
+    var showEdit = false
 
     init(course: Course) {
         self.course = course
@@ -124,33 +124,63 @@ struct CourseDetailView: View {
         .task { await viewModel.fetchData() }
         .id(courseId)
         // Modals
-        .sheet(item: $viewModel.deleteTarget) { _ in
-            DeleteCourseSheet(
-                course: viewModel.course,
-                onConfirm: {
-                    Task {
-                        if await viewModel.deleteCourse() {
-                            onCourseDeleted()
+        .overlay {
+            if viewModel.showDelete || viewModel.showEdit {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showDelete = false
+                            viewModel.showEdit = false
                         }
                     }
-                },
-                onClose: { viewModel.deleteTarget = nil }
-            )
-        }
-        .sheet(item: $viewModel.editTarget) { _ in
-            EditCourseSheet(
-                course: viewModel.course,
-                onConfirm: { name, emoji in
-                    Task {
-                        if await viewModel.updateCourse(name: name, emoji: emoji) {
-                            viewModel.editTarget = nil
-                            onCourseUpdated()
+
+                if viewModel.showDelete {
+                    DeleteCourseSheet(
+                        course: viewModel.course,
+                        onConfirm: {
+                            Task {
+                                if await viewModel.deleteCourse() {
+                                    onCourseDeleted()
+                                }
+                            }
+                        },
+                        onClose: {
+                            withAnimation(.spring(duration: 0.2)) {
+                                viewModel.showDelete = false
+                            }
                         }
-                    }
-                },
-                onClose: { viewModel.editTarget = nil }
-            )
+                    )
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .padding(32)
+                }
+
+                if viewModel.showEdit {
+                    EditCourseSheet(
+                        course: viewModel.course,
+                        onConfirm: { name, emoji in
+                            Task {
+                                if await viewModel.updateCourse(name: name, emoji: emoji) {
+                                    withAnimation(.spring(duration: 0.2)) {
+                                        viewModel.showEdit = false
+                                    }
+                                    onCourseUpdated()
+                                }
+                            }
+                        },
+                        onClose: {
+                            withAnimation(.spring(duration: 0.2)) {
+                                viewModel.showEdit = false
+                            }
+                        }
+                    )
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .padding(32)
+                }
+            }
         }
+        .animation(.spring(duration: 0.2), value: viewModel.showDelete)
+        .animation(.spring(duration: 0.2), value: viewModel.showEdit)
         // Toast
         .overlay(alignment: .bottomTrailing) {
             if let message = viewModel.toastMessage {
@@ -180,7 +210,7 @@ struct CourseDetailView: View {
 
             HStack(spacing: 8) {
                 Button {
-                    viewModel.editTarget = viewModel.course
+                    withAnimation(.spring(duration: 0.2)) { viewModel.showEdit = true }
                 } label: {
                     Image(systemName: "pencil")
                         .font(.system(size: 14, weight: .semibold))
@@ -196,7 +226,7 @@ struct CourseDetailView: View {
                 .buttonStyle(.plain)
 
                 Button {
-                    viewModel.deleteTarget = viewModel.course
+                    withAnimation(.spring(duration: 0.2)) { viewModel.showDelete = true }
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 14, weight: .semibold))
