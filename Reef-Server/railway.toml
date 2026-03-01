@@ -1,3 +1,0 @@
-[deploy]
-# 10 minute request timeout for long-running Surya + Gemini pipeline
-requestTimeout = 600

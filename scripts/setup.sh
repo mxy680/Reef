@@ -20,31 +20,15 @@ step "Checking prerequisites..."
 command -v git   >/dev/null || fail "git not found"
 command -v node  >/dev/null || fail "node not found (install via brew install node)"
 command -v pnpm  >/dev/null || fail "pnpm not found (install via npm install -g pnpm)"
-command -v uv    >/dev/null || fail "uv not found (install via brew install uv)"
 
 info "git $(git --version | awk '{print $3}')"
 info "node $(node --version)"
 info "pnpm $(pnpm --version)"
-info "uv $(uv --version | awk '{print $2}')"
 
 if command -v xcodebuild >/dev/null; then
     info "xcode $(xcodebuild -version 2>/dev/null | head -1)"
 else
     warn "Xcode not found — iOS builds will be unavailable"
-fi
-
-if [ -d "$ROOT/Reef-Server" ] && [ -f "$ROOT/Reef-Server/pyproject.toml" ]; then
-    step "Setting up Reef-Server..."
-    cd "$ROOT/Reef-Server"
-    uv sync
-    info "Python dependencies installed"
-    if [ ! -f .env ]; then
-        cp .env.example .env
-        warn "Created .env from .env.example — fill in your API keys"
-    else
-        info ".env already exists"
-    fi
-    cd "$ROOT"
 fi
 
 if [ -d "$ROOT/Reef-Web" ] && [ -f "$ROOT/Reef-Web/package.json" ]; then
@@ -65,7 +49,5 @@ fi
 
 step "Setup complete!"
 echo ""
-echo "  Start the server:  cd Reef-Server && uv run uvicorn api.index:app --reload"
 echo "  Start the web app: cd Reef-Web && pnpm dev"
-echo "  Run server tests:  cd Reef-Server && uv run python -m pytest tests/ -q"
 echo ""
