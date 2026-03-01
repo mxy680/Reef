@@ -211,6 +211,7 @@ struct TutorsContentView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .padding(.top, 4)
                 .padding(.trailing, 4)
                 .padding(.bottom, 4)
             }

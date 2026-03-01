@@ -72,7 +72,7 @@ struct TutorQuizPopup: View {
         ZStack {
             // Dimmed backdrop
             Color.black.opacity(0.4)
-                .ignoresSafeArea()
+                .clipShape(RoundedRectangle(cornerRadius: 16))
                 .onTapGesture { onDismiss() }
 
             // Popup card
