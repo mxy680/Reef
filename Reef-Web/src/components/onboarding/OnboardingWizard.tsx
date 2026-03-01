@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { upsertProfile } from "../../lib/profiles"
+import { upsertProfile, Profile } from "../../lib/profiles"
 import ProgressBar from "./ProgressBar"
 import StepName from "./StepName"
 import StepGrade from "./StepGrade"
@@ -23,27 +23,54 @@ const slideVariants = {
   }),
 }
 
-export default function OnboardingWizard({ user }: { user: { id: string; email: string } }) {
+function getInitialStep(profile: Profile | null): number {
+  if (!profile) return 0
+  if (!profile.display_name) return 0
+  if (!profile.grade) return 1
+  if (!profile.subjects || profile.subjects.length === 0) return 2
+  if (!profile.referral_source) return 3
+  return 3
+}
+
+interface Props {
+  user: { id: string; email: string }
+  partialProfile: Profile | null
+}
+
+export default function OnboardingWizard({ user, partialProfile }: Props) {
   const router = useRouter()
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(() => getInitialStep(partialProfile))
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    name: "",
-    grade: "",
-    subjects: [],
-    referral_source: "",
+    name: partialProfile?.display_name ?? "",
+    grade: partialProfile?.grade ?? "",
+    subjects: partialProfile?.subjects ?? [],
+    referral_source: partialProfile?.referral_source ?? "",
   })
 
   function goNext() {
     setDirection(1)
-    setStep((s) => s + 1)
+    setStep((s) => {
+      const next = s + 1
+      savePartialProgress(next)
+      return next
+    })
   }
 
   function goBack() {
     setDirection(-1)
     setStep((s) => s - 1)
+  }
+
+  function savePartialProgress(nextStep: number) {
+    const fields: Record<string, unknown> = { onboarding_completed: false }
+    if (nextStep > 0) fields.display_name = formData.name
+    if (nextStep > 1) fields.grade = formData.grade
+    if (nextStep > 2) fields.subjects = formData.subjects
+    fields.email = user.email
+    upsertProfile(fields).catch(() => {})
   }
 
   async function handleSubmit() {
