@@ -7,11 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		098520296C758F9F622A6187 /* DashboardSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B88CBB5BEEC17E13645026BF /* DashboardSidebar.swift */; };
 		2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC4262B97357102BF9818098 /* ReefApp.swift */; };
 		4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */; };
 		4B77DE746EC133DCDE98D407 /* ReefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC10B33BD05613452B10A19 /* ReefCard.swift */; };
 		53A8FAA539972BE884E9A543 /* Epilogue-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */; };
 		5764F13B61C5FBD9B17D28DD /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = ECE996E3DB8403B5ED787530 /* Supabase */; };
+		5C6D658BCBC2AA3D1A4BC3FD /* DashboardTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C51B1EE623A0ACAC5E67AE /* DashboardTab.swift */; };
 		611EB261C6B4D00B6ADA902E /* Epilogue-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */; };
 		689EDB34F09D6D2BB8CED1D2 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A601472A53F2EEA6CDC28FBB /* Supabase.swift */; };
 		8081686831DE310C575DC5EA /* ReefTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */; };
@@ -26,8 +28,11 @@
 		D07E9FEAC5D7A2AD66303B45 /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206F870E71C6B2391213AE78 /* AppleSignInCoordinator.swift */; };
 		D127D837D809C7679D5F1098 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E68361F46DF0D0B0951ECE8 /* AuthView.swift */; };
 		D29EC142A3431E5CA3D29869 /* Epilogue-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 60BB4D786D5BD94C884A3D33 /* Epilogue-SemiBold.ttf */; };
+		D4EB4081AFF5DF086F720507 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D023F5ED102A820961A8A65C /* DashboardView.swift */; };
 		D76683C3BC8B3E2C1170517A /* Epilogue-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */; };
+		D7A9B727B2FBE1AD3097BBE2 /* DashboardHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170FD0C938538B1F376C2AA2 /* DashboardHeader.swift */; };
 		E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */; };
+		FAD30BC870E2887DE6695C42 /* DashboardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8299119962039796C4D85BD2 /* DashboardCard.swift */; };
 		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
 /* End PBXBuildFile section */
 
@@ -35,26 +40,31 @@
 		0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleIcon.swift; sourceTree = "<group>"; };
 		0F2272F12753F94D68D47474 /* ReefDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefDivider.swift; sourceTree = "<group>"; };
 		12B67D53D01AE43D3B31BDEE /* ReefButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefButton.swift; sourceTree = "<group>"; };
+		170FD0C938538B1F376C2AA2 /* DashboardHeader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
 		1CC10B33BD05613452B10A19 /* ReefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefCard.swift; sourceTree = "<group>"; };
 		206F870E71C6B2391213AE78 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
 		2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
 		2FEBC9D0D9B06F74E3F564A1 /* Reef.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Reef.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		32C51B1EE623A0ACAC5E67AE /* DashboardTab.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardTab.swift; sourceTree = "<group>"; };
 		3F68AC1C3432E326DB646676 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Black.ttf"; sourceTree = "<group>"; };
 		585B9AFB26D4C25AB8FFF803 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		60BB4D786D5BD94C884A3D33 /* Epilogue-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-SemiBold.ttf"; sourceTree = "<group>"; };
 		7601EE91C6C7F4218ED01B97 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		8299119962039796C4D85BD2 /* DashboardCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardCard.swift; sourceTree = "<group>"; };
 		8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Bold.ttf"; sourceTree = "<group>"; };
 		8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Medium.ttf"; sourceTree = "<group>"; };
 		9E68361F46DF0D0B0951ECE8 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		A601472A53F2EEA6CDC28FBB /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
 		AC4262B97357102BF9818098 /* ReefApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefApp.swift; sourceTree = "<group>"; };
 		B1C1085150D25A8BA7D81D2B /* Reef.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Reef.entitlements; sourceTree = "<group>"; };
+		B88CBB5BEEC17E13645026BF /* DashboardSidebar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardSidebar.swift; sourceTree = "<group>"; };
+		D023F5ED102A820961A8A65C /* DashboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		E2A242632736FB9BEE170074 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggedInView.swift; sourceTree = "<group>"; };
 		E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
-		"TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +114,7 @@
 				1CC10B33BD05613452B10A19 /* ReefCard.swift */,
 				0F2272F12753F94D68D47474 /* ReefDivider.swift */,
 				E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */,
+				8299119962039796C4D85BD2 /* DashboardCard.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -140,6 +151,7 @@
 			children = (
 				E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */,
 				D38D8310566A59D632087B38 /* Auth */,
+				F5990CE8BB917741B731D23A /* Dashboard */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -187,12 +199,16 @@
 			);
 			sourceTree = "<group>";
 		};
-		"TEMP_194A531D-E200-46EB-B54F-AEB7B7E7507C" /* Reef-iOS */ = {
+		F5990CE8BB917741B731D23A /* Dashboard */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B" /* Secrets.xcconfig */,
+				32C51B1EE623A0ACAC5E67AE /* DashboardTab.swift */,
+				B88CBB5BEEC17E13645026BF /* DashboardSidebar.swift */,
+				170FD0C938538B1F376C2AA2 /* DashboardHeader.swift */,
+				D023F5ED102A820961A8A65C /* DashboardView.swift */,
 			);
-			path = "Reef-iOS";
+			name = Dashboard;
+			path = Dashboard;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -249,6 +265,7 @@
 				7DDE570BD922A527B8FF276B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 18C69EFE0AF9128BD3588C6A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -291,6 +308,11 @@
 				8081686831DE310C575DC5EA /* ReefTextField.swift in Sources */,
 				689EDB34F09D6D2BB8CED1D2 /* Supabase.swift in Sources */,
 				92722784C33A0E7DAA072BDA /* Typography.swift in Sources */,
+				5C6D658BCBC2AA3D1A4BC3FD /* DashboardTab.swift in Sources */,
+				098520296C758F9F622A6187 /* DashboardSidebar.swift in Sources */,
+				D7A9B727B2FBE1AD3097BBE2 /* DashboardHeader.swift in Sources */,
+				D4EB4081AFF5DF086F720507 /* DashboardView.swift in Sources */,
+				FAD30BC870E2887DE6695C42 /* DashboardCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -318,7 +340,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B" /* Secrets.xcconfig */;
+			baseConfigurationReference = TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -384,7 +406,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B" /* Secrets.xcconfig */;
+			baseConfigurationReference = TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
