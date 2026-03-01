@@ -10,8 +10,8 @@ from lib.question_to_latex import (
     quiz_question_to_latex,
 )
 
-
 # ── _fix_json_latex_escapes ──────────────────────────────────
+
 
 class TestFixJsonLatexEscapes:
     def test_tab_text(self):
@@ -39,6 +39,7 @@ class TestFixJsonLatexEscapes:
 
 # ── _sanitize_text ───────────────────────────────────────────
 
+
 class TestSanitizeText:
     def test_strips_control_chars(self):
         result = _sanitize_text("a\x01b\x02c")
@@ -57,6 +58,7 @@ class TestSanitizeText:
 
 
 # ── _render_figures ──────────────────────────────────────────
+
 
 class TestRenderFigures:
     def test_empty_list(self):
@@ -81,6 +83,7 @@ class TestRenderFigures:
 
 # ── question_to_latex ────────────────────────────────────────
 
+
 class TestQuestionToLatex:
     def test_text_only(self):
         q = Question(number=1, text="Solve for x.")
@@ -96,7 +99,6 @@ class TestQuestionToLatex:
         )
         result = question_to_latex(q)
         # Stem should NOT have vspace when parts are present
-        lines = result.split("\n")
         # vspace only appears inside parts, not at top level after stem
         stem_section = result.split("\\needspace")[0]
         assert "\\vspace{3.0cm}" not in stem_section
@@ -114,6 +116,7 @@ class TestQuestionToLatex:
 
 
 # ── _render_part ─────────────────────────────────────────────
+
 
 class TestRenderPart:
     def test_depth_zero_no_adjustwidth(self):
@@ -148,6 +151,7 @@ class TestRenderPart:
 
 
 # ── quiz_question_to_latex ───────────────────────────────────
+
 
 class TestQuizQuestionToLatex:
     def test_header_format(self):

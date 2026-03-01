@@ -60,9 +60,7 @@ class LLMClient:
         """
         api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise ValueError(
-                "API key required. Set OPENAI_API_KEY env var or pass api_key."
-            )
+            raise ValueError("API key required. Set OPENAI_API_KEY env var or pass api_key.")
         kwargs: dict = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
@@ -100,10 +98,12 @@ class LLMClient:
             for img_bytes in images:
                 b64 = base64.b64encode(img_bytes).decode()
                 mime = "image/png" if img_bytes[:4] == b"\x89PNG" else "image/jpeg"
-                content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{mime};base64,{b64}"},
-                })
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime};base64,{b64}"},
+                    }
+                )
 
         messages: list[dict] = []
         if system_message:
@@ -147,10 +147,12 @@ class LLMClient:
             for img_bytes in images:
                 b64 = base64.b64encode(img_bytes).decode()
                 mime = "image/png" if img_bytes[:4] == b"\x89PNG" else "image/jpeg"
-                content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{mime};base64,{b64}"},
-                })
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime};base64,{b64}"},
+                    }
+                )
 
         messages: list[dict] = []
         if system_message:
@@ -192,10 +194,12 @@ class LLMClient:
             for img_bytes in images:
                 b64 = base64.b64encode(img_bytes).decode()
                 mime = "image/png" if img_bytes[:4] == b"\x89PNG" else "image/jpeg"
-                content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{mime};base64,{b64}"},
-                })
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime};base64,{b64}"},
+                    }
+                )
 
         messages: list[dict] = []
         if system_message:

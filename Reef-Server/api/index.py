@@ -7,35 +7,38 @@ Provides:
 - Problem grouping using Gemini
 """
 
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, Query, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse
-import json
-import os
-import io
 import asyncio
 import base64
-from pathlib import Path
-from datetime import datetime
-import time
+import io
+import json
+import os
 
 # Import lib modules
 import sys
+import time
+from contextlib import asynccontextmanager
+from datetime import datetime
+from pathlib import Path
+
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pydantic import BaseModel
 import re
 from collections import defaultdict, deque
 from dataclasses import dataclass
-import numpy as np
-from lib.models import ProblemGroup, GroupProblemsResponse, Question, QuestionBatch
-from lib.question_to_latex import question_to_latex, _sanitize_text
-from lib.database import init_db, close_db, get_pool
 
-from lib.surya_client import detect_layout
-from PIL import Image, ImageDraw, ImageFont
 import fitz  # PyMuPDF
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+
+from lib.database import close_db, get_pool, init_db
+from lib.models import GroupProblemsResponse, ProblemGroup, Question, QuestionBatch
+from lib.question_to_latex import question_to_latex
+from lib.surya_client import detect_layout
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -57,7 +60,7 @@ app = FastAPI(
     title="Reef Server",
     description="PDF reconstruction and embedding service for Reef iOS app",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -73,16 +76,13 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "reef-server",
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "service": "reef-server", "version": "1.0.0"}
 
 
 @dataclass
 class SyntheticBox:
     """Mimics Surya's LayoutBox interface for injected detections."""
+
     bbox: list[float]
     label: str
 
@@ -114,9 +114,9 @@ def detect_uncovered_figures(page_img: Image.Image, layout_bboxes) -> list[list[
     margin_tb = int(h * 0.04)
     margin_lr = int(w * 0.03)
     gray[:margin_tb, :] = 255
-    gray[h - margin_tb:, :] = 255
+    gray[h - margin_tb :, :] = 255
     gray[:, :margin_lr] = 255
-    gray[:, w - margin_lr:] = 255
+    gray[:, w - margin_lr :] = 255
 
     # Compute block density grid
     rows = h // BLOCK
@@ -124,7 +124,7 @@ def detect_uncovered_figures(page_img: Image.Image, layout_bboxes) -> list[list[
     active = np.zeros((rows, cols), dtype=bool)
     for r in range(rows):
         for c in range(cols):
-            patch = gray[r * BLOCK:(r + 1) * BLOCK, c * BLOCK:(c + 1) * BLOCK]
+            patch = gray[r * BLOCK : (r + 1) * BLOCK, c * BLOCK : (c + 1) * BLOCK]
             density = np.mean(patch < 230)
             if density > DENSITY_THRESH:
                 active[r, c] = True
@@ -199,19 +199,14 @@ def annotate_page(img: Image.Image, layout_result, scale: int = 2, start_index: 
 
         # Draw thick outline
         for i in range(3):
-            draw.rectangle(
-                [(x1 - i, y1 - i), (x2 + i, y2 + i)],
-                outline=rgb,
-                width=2
-            )
+            draw.rectangle([(x1 - i, y1 - i), (x2 + i, y2 + i)], outline=rgb, width=2)
 
         # Draw index label
         label = str(current_index)
         label_y = max(y1 - 60, 5)  # Don't go above image
         text_bbox = draw.textbbox((x1, label_y), label, font=font)
         padding = 10
-        label_rect = (text_bbox[0] - padding, text_bbox[1] - padding,
-                     text_bbox[2] + padding, text_bbox[3] + padding)
+        label_rect = (text_bbox[0] - padding, text_bbox[1] - padding, text_bbox[2] + padding, text_bbox[3] + padding)
         draw.rectangle(label_rect, fill=rgb)
         draw.text((x1, label_y), label, fill="white", font=font)
 
@@ -250,7 +245,7 @@ async def ai_annotate(
 
         # Convert all pages to images at 96 DPI (what Surya expects)
         images = []
-        mat = fitz.Matrix(96/72, 96/72)
+        mat = fitz.Matrix(96 / 72, 96 / 72)
         for page_num in range(num_pages):
             pdf_page = doc[page_num]
             pix = pdf_page.get_pixmap(matrix=mat)
@@ -307,7 +302,7 @@ async def ai_annotate(
                 "Content-Disposition": f"inline; filename={output_filename}",
                 "X-Saved-Path": str(output_path),
                 "X-Page-Count": str(num_pages),
-            }
+            },
         )
 
     except HTTPException:
@@ -359,7 +354,7 @@ async def ai_group_problems(
 
         # Convert all pages to images at 96 DPI (what Surya expects)
         images = []
-        mat = fitz.Matrix(96/72, 96/72)
+        mat = fitz.Matrix(96 / 72, 96 / 72)
         for page_num in range(num_pages):
             pdf_page = doc[page_num]
             pix = pdf_page.get_pixmap(matrix=mat)
@@ -388,6 +383,7 @@ async def ai_group_problems(
 
         # Call Gemini (via OpenRouter) with annotated images and prompt
         from lib.llm_client import LLMClient
+
         prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
         llm_client = LLMClient(
             api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -537,8 +533,8 @@ async def ai_reconstruct(
         t0 = time.perf_counter()
         surya_images = []
         hires_images = []
-        surya_mat = fitz.Matrix(SURYA_DPI/72, SURYA_DPI/72)
-        hires_mat = fitz.Matrix(CROP_DPI/72, CROP_DPI/72)
+        surya_mat = fitz.Matrix(SURYA_DPI / 72, SURYA_DPI / 72)
+        hires_mat = fitz.Matrix(CROP_DPI / 72, CROP_DPI / 72)
         for page_num in range(num_pages):
             pdf_page = doc[page_num]
             # 192 DPI for Surya
@@ -548,12 +544,12 @@ async def ai_reconstruct(
             pix = pdf_page.get_pixmap(matrix=hires_mat)
             hires_images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
         doc.close()
-        print(f"  [timing] PDF rendering ({num_pages} pages): {time.perf_counter()-t0:.2f}s")
+        print(f"  [timing] PDF rendering ({num_pages} pages): {time.perf_counter() - t0:.2f}s")
 
         # Run Surya layout detection via Modal GPU
         t0 = time.perf_counter()
         layout_results = await asyncio.to_thread(detect_layout, surya_images)
-        print(f"  [timing] Surya layout detection (Modal GPU): {time.perf_counter()-t0:.2f}s")
+        print(f"  [timing] Surya layout detection (Modal GPU): {time.perf_counter() - t0:.2f}s")
 
         # Detect figures missed by Surya (pixel-based gap detection)
         t0 = time.perf_counter()
@@ -561,7 +557,7 @@ async def ai_reconstruct(
             uncovered = detect_uncovered_figures(img, layout_result.bboxes)
             for bbox in uncovered:
                 layout_result.bboxes.append(SyntheticBox(bbox=bbox, label="Picture"))
-                print(f"  [reconstruct] Detected uncovered figure on page {page_idx+1}: {bbox}")
+                print(f"  [reconstruct] Detected uncovered figure on page {page_idx + 1}: {bbox}")
 
         # Annotate each page with continuous indexing
         annotated_pages = []
@@ -578,7 +574,7 @@ async def ai_reconstruct(
             buf = io.BytesIO()
             page.save(buf, format="JPEG", quality=85)
             page_images.append(buf.getvalue())
-        print(f"  [timing] Figure detection + annotation + JPEG encode: {time.perf_counter()-t0:.2f}s")
+        print(f"  [timing] Figure detection + annotation + JPEG encode: {time.perf_counter() - t0:.2f}s")
 
         # Debug: save annotated pages as PDF
         if debug:
@@ -594,6 +590,7 @@ async def ai_reconstruct(
 
         # Create LLM client once for grouping, extraction, and compilation fix attempts
         from lib.llm_client import LLMClient
+
         llm_client = LLMClient(
             api_key=os.getenv("OPENROUTER_API_KEY"),
             model="google/gemini-3-flash-preview",
@@ -610,18 +607,16 @@ async def ai_reconstruct(
             response_schema=GroupProblemsResponse.model_json_schema(),
         )
         group_result = GroupProblemsResponse.model_validate_json(raw_response)
-        print(f"  [timing] Gemini problem grouping: {time.perf_counter()-t0:.2f}s")
+        print(f"  [timing] Gemini problem grouping: {time.perf_counter() - t0:.2f}s")
 
         # Sort problems by first annotation index to preserve document order
-        group_result.problems.sort(key=lambda p: min(p.annotation_indices) if p.annotation_indices else float('inf'))
+        group_result.problems.sort(key=lambda p: min(p.annotation_indices) if p.annotation_indices else float("inf"))
 
         # Debug: save labels (problem groupings) as JSON
         if debug:
             labels_dir = data_dir / "labels"
             labels_dir.mkdir(parents=True, exist_ok=True)
-            (labels_dir / f"{base_name}.json").write_text(
-                group_result.model_dump_json(indent=2)
-            )
+            (labels_dir / f"{base_name}.json").write_text(group_result.model_dump_json(indent=2))
 
         # Build bbox index: annotation_index -> (page_number, bbox, label)
         bbox_index: dict[int, tuple[int, list[float], str]] = {}
@@ -639,10 +634,7 @@ async def ai_reconstruct(
 
         for idx, (page_num, bbox, label) in bbox_index.items():
             if idx not in assigned and label in FIGURE_LABELS:
-                best_problem = min(
-                    group_result.problems,
-                    key=lambda p: min(abs(idx - i) for i in p.annotation_indices)
-                )
+                best_problem = min(group_result.problems, key=lambda p: min(abs(idx - i) for i in p.annotation_indices))
                 best_problem.annotation_indices.append(idx)
                 best_problem.annotation_indices.sort()
                 print(f"  [reconstruct] Rescued orphan figure {idx} ({label}) -> {best_problem.label}")
@@ -713,7 +705,9 @@ async def ai_reconstruct(
             extraction_images, image_data, figure_filenames, figure_mappings = _get_extraction_images(problems[0])
 
             labels_str = ", ".join(p.label for p in problems)
-            print(f"  [reconstruct] Group [{labels_str}]: {len(extraction_images)} pages ({len(figure_filenames)} figures) from indices {problems[0].annotation_indices}")
+            print(
+                f"  [reconstruct] Group [{labels_str}]: {len(extraction_images)} pages ({len(figure_filenames)} figures) from indices {problems[0].annotation_indices}"
+            )
 
             if not extraction_images:
                 return [(p.label, "% No regions found", {}, None) for p in problems]
@@ -724,12 +718,12 @@ async def ai_reconstruct(
                 extract_prompt += f"\n\n## Target Problem\nExtract ONLY **{problems[0].label}** from the annotated page images. The pages show numbered red bounding boxes — focus on the content within the relevant boxes. Other content on the page is context only."
             else:
                 labels = [p.label for p in problems]
-                nums = [re.findall(r"\d+", l)[0] for l in labels if re.findall(r"\d+", l)]
+                nums = [re.findall(r"\d+", lbl)[0] for lbl in labels if re.findall(r"\d+", lbl)]
                 extract_prompt += f"\n\n## Multiple Problems — CRITICAL\nThis image contains {len(labels)} SEPARATE numbered problems. Each one MUST be its own top-level Question object in the `questions` array.\n\nProblems to extract: {', '.join(labels)}\nExpected problem numbers: {', '.join(nums)}\n\nRules:\n- Return exactly {len(labels)} Question objects.\n- Each Question has its own `number` field matching the problem number shown in the document.\n- Do NOT nest different problem numbers as sub-parts of another question. Problem 9 is NOT a sub-part of Problem 8 — it is a separate question.\n- Only use `parts` for actual labeled sub-questions within a single problem (e.g. a, b, c)."
 
             if figure_filenames:
                 extract_prompt += "\n\nFigure files available for this problem:\n" + "\n".join(figure_mappings)
-                extract_prompt += "\n\nThese figures were detected adjacent to this problem. Include them in the `figures` list if the question needs them to be answerable — even if the question text doesn't explicitly say \"see figure.\""
+                extract_prompt += '\n\nThese figures were detected adjacent to this problem. Include them in the `figures` list if the question needs them to be answerable — even if the question text doesn\'t explicitly say "see figure."'
 
             # Choose schema: single Question or QuestionBatch
             if len(problems) == 1:
@@ -801,7 +795,7 @@ async def ai_reconstruct(
         t0 = time.perf_counter()
         group_tasks = [reconstruct_group(probs) for probs in crop_groups.values()]
         group_results_nested = await asyncio.gather(*group_tasks)
-        print(f"  [timing] Gemini question extraction ({len(group_tasks)} groups): {time.perf_counter()-t0:.2f}s")
+        print(f"  [timing] Gemini question extraction ({len(group_tasks)} groups): {time.perf_counter() - t0:.2f}s")
 
         # Flatten and reorder to match original problem order
         results_by_label: dict[str, tuple] = {}
@@ -816,9 +810,7 @@ async def ai_reconstruct(
         if questions:
             structured_dir = data_dir / "structured"
             structured_dir.mkdir(parents=True, exist_ok=True)
-            (structured_dir / f"{base_name}.json").write_text(
-                json.dumps(questions, indent=2)
-            )
+            (structured_dir / f"{base_name}.json").write_text(json.dumps(questions, indent=2))
             print(f"  [extract] Saved {len(questions)} structured questions to data/structured/{base_name}.json")
 
         # Store document, questions, and bounding boxes in database
@@ -833,7 +825,9 @@ async def ai_reconstruct(
                     INSERT INTO documents (filename, page_count, total_problems)
                     VALUES ($1, $2, $3) RETURNING id
                     """,
-                    base_name, num_pages, len(group_result.problems),
+                    base_name,
+                    num_pages,
+                    len(group_result.problems),
                 )
 
                 for problem, (label, latex, image_data_dict, q_dict) in zip(group_result.problems, results):
@@ -879,10 +873,14 @@ async def ai_reconstruct(
                                 INSERT INTO question_figures (question_id, filename, image_b64)
                                 VALUES ($1, $2, $3)
                                 """,
-                                qid, fig_name, image_data_dict[fig_name],
+                                qid,
+                                fig_name,
+                                image_data_dict[fig_name],
                             )
 
-            print(f"  [db] Stored document {document_id} with {len(question_ids)} questions in {time.perf_counter()-t0:.2f}s")
+            print(
+                f"  [db] Stored document {document_id} with {len(question_ids)} questions in {time.perf_counter() - t0:.2f}s"
+            )
 
         # Generate answer keys in parallel via Gemini 3 Flash Preview
         if pool and question_ids:
@@ -956,12 +954,16 @@ Use part_label: null for single questions, or the part letter for each subpart."
                         break
                     except Exception as exc:
                         last_exc = exc
-                        wait = 2 ** attempt
-                        print(f"  [answer_key] {problem.label}: attempt {attempt+1}/{max_retries} failed — {exc}, retrying in {wait}s")
+                        wait = 2**attempt
+                        print(
+                            f"  [answer_key] {problem.label}: attempt {attempt + 1}/{max_retries} failed — {exc}, retrying in {wait}s"
+                        )
                         await asyncio.sleep(wait)
                 else:
                     # All retries exhausted — store a placeholder so no question is left without an answer key
-                    print(f"  [answer_key] {problem.label}: all {max_retries} attempts failed — {last_exc}, storing fallback")
+                    print(
+                        f"  [answer_key] {problem.label}: all {max_retries} attempts failed — {last_exc}, storing fallback"
+                    )
                     async with pool.acquire() as conn:
                         await conn.execute(
                             """
@@ -990,38 +992,32 @@ Use part_label: null for single questions, or the part letter for each subpart."
             answer_tasks = []
             for problem, (label, latex, img_data, q_dict) in zip(group_result.problems, results):
                 if q_dict is not None and label in question_ids:
-                    answer_tasks.append(
-                        generate_answer_key(problem, q_dict, question_ids[label])
-                    )
+                    answer_tasks.append(generate_answer_key(problem, q_dict, question_ids[label]))
 
             await asyncio.gather(*answer_tasks)
-            print(f"  [timing] Answer key generation ({len(answer_tasks)} problems): {time.perf_counter()-t0:.2f}s")
+            print(f"  [timing] Answer key generation ({len(answer_tasks)} problems): {time.perf_counter() - t0:.2f}s")
 
         # Compile each LaTeX result to PDF in parallel
         from lib.latex_compiler import LaTeXCompiler
+
         compiler = LaTeXCompiler()
 
-        async def compile_problem(problem_num: int, label: str, latex: str, image_data: dict[str, str], question_dict: dict | None) -> tuple[str, bytes | None, dict | None]:
+        async def compile_problem(
+            problem_num: int, label: str, latex: str, image_data: dict[str, str], question_dict: dict | None
+        ) -> tuple[str, bytes | None, dict | None]:
             """Compile a single problem's LaTeX to PDF. On failure, ask LLM to fix the LaTeX and retry once."""
             header = f"Problem {problem_num}"
             content = f"\\textbf{{\\large {header}}}\n\n{latex}"
             print(f"  [compile] {label}: {len(latex)} chars, images={list(image_data.keys()) or 'none'}")
             try:
-                pdf_bytes = await asyncio.to_thread(
-                    compiler.compile_latex, content, image_data=image_data or None
-                )
+                pdf_bytes = await asyncio.to_thread(compiler.compile_latex, content, image_data=image_data or None)
                 return (label, pdf_bytes, question_dict)
             except Exception as e:
                 print(f"  [compile] {label}: FAILED — {e}")
                 # Try LLM fix
                 try:
-                    fix_prompt = LATEX_FIX_PROMPT.format(
-                        latex_body=latex,
-                        error_message=str(e)[:2000]
-                    )
-                    fixed_latex = await asyncio.to_thread(
-                        llm_client.generate, prompt=fix_prompt
-                    )
+                    fix_prompt = LATEX_FIX_PROMPT.format(latex_body=latex, error_message=str(e)[:2000])
+                    fixed_latex = await asyncio.to_thread(llm_client.generate, prompt=fix_prompt)
                     fixed_content = f"\\textbf{{\\large {header}}}\n\n{fixed_latex}"
                     pdf_bytes = await asyncio.to_thread(
                         compiler.compile_latex, fixed_content, image_data=image_data or None
@@ -1035,13 +1031,17 @@ Use part_label: null for single questions, or the part letter for each subpart."
                     return (label, pdf_bytes, None)  # No regions for fallback
 
         t0 = time.perf_counter()
-        compile_tasks = [compile_problem(i + 1, label, latex, image_data, q_dict) for i, (p, (label, latex, image_data, q_dict)) in enumerate(zip(group_result.problems, results))]
+        compile_tasks = [
+            compile_problem(i + 1, label, latex, image_data, q_dict)
+            for i, (p, (label, latex, image_data, q_dict)) in enumerate(zip(group_result.problems, results))
+        ]
         compiled = await asyncio.gather(*compile_tasks)
-        print(f"  [timing] LaTeX compilation ({len(compile_tasks)} problems): {time.perf_counter()-t0:.2f}s")
+        print(f"  [timing] LaTeX compilation ({len(compile_tasks)} problems): {time.perf_counter() - t0:.2f}s")
 
         if split:
             # Return individual problem PDFs as JSON with region metadata
             from lib.region_extractor import extract_question_regions
+
             problem_pdfs = []
             for i, (label, pdf_bytes, question_dict) in enumerate(compiled):
                 entry = {
@@ -1057,12 +1057,10 @@ Use part_label: null for single questions, or the part letter for each subpart."
                     entry["page_heights"] = []
                     entry["regions"] = []
                 problem_pdfs.append(entry)
-            print(f"  [timing] TOTAL pipeline: {time.perf_counter()-t_pipeline:.2f}s")
-            return JSONResponse({
-                "problems": problem_pdfs,
-                "total_problems": len(problem_pdfs),
-                "page_count": num_pages
-            })
+            print(f"  [timing] TOTAL pipeline: {time.perf_counter() - t_pipeline:.2f}s")
+            return JSONResponse(
+                {"problems": problem_pdfs, "total_problems": len(problem_pdfs), "page_count": num_pages}
+            )
 
         # Merge all per-problem PDFs into one
         merged = fitz.open()
@@ -1083,7 +1081,7 @@ Use part_label: null for single questions, or the part letter for each subpart."
             output_path.write_bytes(merged_bytes)
 
         # Return the merged PDF
-        print(f"  [timing] TOTAL pipeline: {time.perf_counter()-t_pipeline:.2f}s")
+        print(f"  [timing] TOTAL pipeline: {time.perf_counter() - t_pipeline:.2f}s")
         output = io.BytesIO(merged_bytes)
 
         return StreamingResponse(
@@ -1093,12 +1091,10 @@ Use part_label: null for single questions, or the part letter for each subpart."
                 "Content-Disposition": f"inline; filename={output_filename}",
                 "X-Problem-Count": str(len(group_result.problems)),
                 "X-Page-Count": str(num_pages),
-            }
+            },
         )
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-

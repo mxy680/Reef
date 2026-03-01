@@ -1,4 +1,5 @@
 """Integration tests for /ai/embed?mode=prod — production embedding endpoint."""
+
 import json
 
 import responses

@@ -42,4 +42,5 @@ dev = [
     "fonttools>=4.50.0",
     "respx>=0.22",
     "responses>=0.25",
+    "ruff>=0.9.0",
 ]
