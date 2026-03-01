@@ -1,4 +1,4 @@
-import GoogleSignIn
+@preconcurrency import GoogleSignIn
 import SwiftUI
 
 @main

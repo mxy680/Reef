@@ -1,7 +1,7 @@
 import AuthenticationServices
 import CryptoKit
 import Foundation
-import GoogleSignIn
+@preconcurrency import GoogleSignIn
 import Supabase
 
 @Observable
