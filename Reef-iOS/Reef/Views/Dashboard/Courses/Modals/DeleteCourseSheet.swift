@@ -57,7 +57,9 @@ struct DeleteCourseSheet: View {
             }
             .padding(.top, 24)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(32)
         .presentationDetents([.height(200)])
+        .presentationBackground(.white)
     }
 }

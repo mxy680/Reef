@@ -89,8 +89,10 @@ struct EditCourseSheet: View {
             }
             .padding(.top, 20)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .padding(28)
         .presentationDetents([.height(240)])
+        .presentationBackground(.white)
         .onAppear { isNameFocused = true }
     }
 
