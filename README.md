@@ -6,7 +6,6 @@ AI-Powered Study App — Monorepo.
 
 | Directory | Description |
 |-----------|-------------|
-| Reef-iOS | iPad app (SwiftUI) |
 | Reef-Server | FastAPI backend |
 | Reef-Web | Next.js landing page + document processing |
 
