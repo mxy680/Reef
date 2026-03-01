@@ -36,22 +36,27 @@ struct DashboardView: View {
 
     @ViewBuilder
     private var contentArea: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(selectedTab.label)
-                .font(.epilogue(28, weight: .black))
-                .tracking(-0.04 * 28)
-                .foregroundStyle(ReefColors.black)
+        switch selectedTab {
+        case .documents:
+            DocumentsContentView()
+        default:
+            VStack(alignment: .leading, spacing: 16) {
+                Text(selectedTab.label)
+                    .font(.epilogue(28, weight: .black))
+                    .tracking(-0.04 * 28)
+                    .foregroundStyle(ReefColors.black)
 
-            Text("Coming soon")
-                .font(.epilogue(15, weight: .medium))
-                .tracking(-0.04 * 15)
-                .foregroundStyle(ReefColors.gray600)
+                Text("Coming soon")
+                    .font(.epilogue(15, weight: .medium))
+                    .tracking(-0.04 * 15)
+                    .foregroundStyle(ReefColors.gray600)
 
-            Spacer()
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(32)
+            .dashboardCard()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(32)
-        .dashboardCard()
     }
 }
 
