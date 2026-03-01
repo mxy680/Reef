@@ -5,7 +5,7 @@ struct ReefTextField: View {
     @Binding var text: String
 
     var body: some View {
-        TextField(placeholder, text: $text)
+        TextField(placeholder, text: $text, prompt: Text(placeholder).foregroundStyle(ReefColors.gray500))
             .font(.epilogue(16, weight: .medium))
             .tracking(-0.04 * 16)
             .foregroundStyle(ReefColors.black)
