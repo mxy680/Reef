@@ -9,6 +9,7 @@ struct AuthView: View {
             ReefColors.surface
                 .ignoresSafeArea()
 
+            GeometryReader { geo in
             ScrollView {
                 VStack(spacing: 0) {
                     Spacer(minLength: 60)
@@ -125,8 +126,9 @@ struct AuthView: View {
 
                     Spacer(minLength: 60)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
                 .padding(.horizontal, 24)
+            }
             }
         }
     }
