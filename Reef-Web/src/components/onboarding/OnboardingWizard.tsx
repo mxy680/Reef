@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { upsertProfile, Profile } from "../../lib/profiles"
+import { upsertProfile, Profile, ProfileUpsert } from "../../lib/profiles"
 import ProgressBar from "./ProgressBar"
 import StepName from "./StepName"
 import StepGrade from "./StepGrade"
@@ -51,12 +51,10 @@ export default function OnboardingWizard({ user, partialProfile }: Props) {
   })
 
   function goNext() {
+    const next = step + 1
     setDirection(1)
-    setStep((s) => {
-      const next = s + 1
-      savePartialProgress(next)
-      return next
-    })
+    setStep(next)
+    savePartialProgress(next)
   }
 
   function goBack() {
@@ -65,11 +63,10 @@ export default function OnboardingWizard({ user, partialProfile }: Props) {
   }
 
   function savePartialProgress(nextStep: number) {
-    const fields: Record<string, unknown> = { onboarding_completed: false }
+    const fields: ProfileUpsert = { onboarding_completed: false, email: user.email }
     if (nextStep > 0) fields.display_name = formData.name
     if (nextStep > 1) fields.grade = formData.grade
     if (nextStep > 2) fields.subjects = formData.subjects
-    fields.email = user.email
     upsertProfile(fields).catch(() => {})
   }
 
