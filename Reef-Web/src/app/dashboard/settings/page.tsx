@@ -390,9 +390,15 @@ function ProfileTab({
     )
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawCreatedAt = (profile as any).created_at as string | undefined
+  const memberSince = rawCreatedAt ? new Date(rawCreatedAt).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "February 2026"
+  const completedFields = [profile.display_name, profile.email, profile.grade, profile.subjects.length > 0].filter(Boolean).length
+  const completionPct = Math.round((completedFields / 4) * 100)
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Name & Email row */}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      {/* Personal Info — spans left column */}
       <Card>
         <SectionHeader>Personal Info</SectionHeader>
 
@@ -438,16 +444,76 @@ function ProfileTab({
         </div>
 
         {/* Email */}
-        <div>
+        <div style={{ marginBottom: 20 }}>
           <FieldLabel>Email</FieldLabel>
           <span style={{ fontFamily, fontWeight: 700, fontSize: 16, letterSpacing: "-0.04em", color: colors.black }}>
             {profile.email}
           </span>
         </div>
+
+        {/* Member Since */}
+        <div>
+          <FieldLabel>Member Since</FieldLabel>
+          <span style={{ fontFamily, fontWeight: 700, fontSize: 16, letterSpacing: "-0.04em", color: colors.black }}>
+            {memberSince}
+          </span>
+        </div>
       </Card>
 
-      {/* Grade & Subjects */}
+      {/* Profile Completion — right column */}
       <Card>
+        <SectionHeader>Profile Completion</SectionHeader>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "8px 0" }}>
+          {/* Circular progress */}
+          <div style={{ position: "relative", width: 100, height: 100 }}>
+            <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: "rotate(-90deg)" }}>
+              <circle cx="50" cy="50" r="42" fill="none" stroke={colors.gray100} strokeWidth="8" />
+              <motion.circle
+                cx="50" cy="50" r="42" fill="none" stroke={colors.primary} strokeWidth="8"
+                strokeLinecap="round" strokeDasharray={2 * Math.PI * 42}
+                initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
+                animate={{ strokeDashoffset: 2 * Math.PI * 42 * (1 - completionPct / 100) }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </svg>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontFamily, fontWeight: 900, fontSize: 22, letterSpacing: "-0.04em", color: colors.black }}>{completionPct}%</span>
+            </div>
+          </div>
+          <div style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600, textAlign: "center" }}>
+            {completionPct === 100 ? "Your profile is complete!" : "Complete your profile to get personalized study recommendations"}
+          </div>
+          {/* Checklist */}
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+            {[
+              { label: "Display name", done: !!profile.display_name },
+              { label: "Email verified", done: !!profile.email },
+              { label: "Grade level", done: !!profile.grade },
+              { label: "Subjects selected", done: profile.subjects.length > 0 },
+            ].map((item) => (
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
+                  backgroundColor: item.done ? colors.primary : colors.gray100,
+                  border: item.done ? "none" : `1.5px solid ${colors.gray400}`,
+                }}>
+                  {item.done && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontFamily, fontWeight: 600, fontSize: 13, letterSpacing: "-0.04em", color: item.done ? colors.black : colors.gray500 }}>
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* Education — full width */}
+      <Card style={{ gridColumn: "span 2" }}>
         <SectionHeader>Education</SectionHeader>
 
         {/* Grade */}
@@ -538,9 +604,12 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
   const [focusWeakAreas, setFocusWeakAreas] = useState(true)
   const [defaultDifficulty, setDefaultDifficulty] = useState("medium")
   const [defaultQuestionCount, setDefaultQuestionCount] = useState(10)
+  const [emailNotifs, setEmailNotifs] = useState(true)
+  const [studyReminders, setStudyReminders] = useState(false)
+  const [weeklyDigest, setWeeklyDigest] = useState(true)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
       {/* Appearance */}
       <Card>
         <SectionHeader>Appearance</SectionHeader>
@@ -599,95 +668,154 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
         </div>
       </Card>
 
-      {/* Study Preferences */}
+      {/* Notifications */}
       <Card>
+        <SectionHeader>Notifications</SectionHeader>
+
+        <ToggleRow
+          title="Email Notifications"
+          description="Get notified about quiz results and updates"
+          value={emailNotifs}
+          onChange={(v) => { setEmailNotifs(v); setToast(v ? "Email notifications enabled" : "Email notifications disabled") }}
+        />
+
+        <Divider />
+
+        <ToggleRow
+          title="Study Reminders"
+          description="Daily reminders to keep your streak going"
+          value={studyReminders}
+          onChange={(v) => { setStudyReminders(v); setToast(v ? "Reminders enabled" : "Reminders disabled") }}
+        />
+
+        <Divider />
+
+        <ToggleRow
+          title="Weekly Digest"
+          description="Summary of your progress every Sunday"
+          value={weeklyDigest}
+          onChange={(v) => { setWeeklyDigest(v); setToast(v ? "Weekly digest enabled" : "Weekly digest disabled") }}
+        />
+      </Card>
+
+      {/* Study Preferences — full width */}
+      <Card style={{ gridColumn: "span 2" }}>
         <SectionHeader>Study Preferences</SectionHeader>
 
-        {/* Focus on weak areas */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+          {/* Left column */}
           <div>
-            <div style={{ fontFamily, fontWeight: 700, fontSize: 15, letterSpacing: "-0.04em", color: colors.black, marginBottom: 2 }}>
-              Focus on Weak Areas
+            {/* Focus on weak areas */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+              <div>
+                <div style={{ fontFamily, fontWeight: 700, fontSize: 15, letterSpacing: "-0.04em", color: colors.black, marginBottom: 2 }}>
+                  Focus on Weak Areas
+                </div>
+                <div style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600 }}>
+                  Prioritize topics you struggle with
+                </div>
+              </div>
+              <motion.button
+                onClick={() => setFocusWeakAreas(!focusWeakAreas)}
+                whileTap={{ scale: 0.9 }}
+                style={{
+                  width: 52, height: 30, borderRadius: 999, border: "none",
+                  backgroundColor: focusWeakAreas ? colors.primary : colors.gray100,
+                  cursor: "pointer", position: "relative", padding: 0, flexShrink: 0, marginLeft: 16,
+                }}
+              >
+                <motion.div
+                  animate={{ x: focusWeakAreas ? 24 : 4 }}
+                  transition={{ type: "spring", bounce: 0.3, duration: 0.35 }}
+                  style={{
+                    width: 22, height: 22, borderRadius: 999,
+                    backgroundColor: colors.white, position: "absolute", top: 4,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  }}
+                />
+              </motion.button>
             </div>
-            <div style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600 }}>
-              Prioritize topics you struggle with in quizzes
+
+            {/* Default difficulty */}
+            <div>
+              <FieldLabel>Default Quiz Difficulty</FieldLabel>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["easy", "medium", "hard"].map((d) => {
+                  const selected = defaultDifficulty === d
+                  return (
+                    <motion.button
+                      key={d} type="button" onClick={() => setDefaultDifficulty(d)}
+                      whileHover={{ y: -1 }} whileTap={{ y: 1 }}
+                      style={{
+                        flex: 1, padding: "10px 0", backgroundColor: selected ? colors.primary : colors.white,
+                        border: `1.5px solid ${selected ? colors.primary : colors.gray400}`, borderRadius: 10,
+                        fontFamily, fontWeight: 600, fontSize: 13, letterSpacing: "-0.04em",
+                        color: selected ? colors.white : colors.black, cursor: "pointer",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {d}
+                    </motion.button>
+                  )
+                })}
+              </div>
             </div>
           </div>
-          <motion.button
-            onClick={() => setFocusWeakAreas(!focusWeakAreas)}
-            whileTap={{ scale: 0.9 }}
-            style={{
-              width: 52, height: 30, borderRadius: 999, border: "none",
-              backgroundColor: focusWeakAreas ? colors.primary : colors.gray100,
-              cursor: "pointer", position: "relative", padding: 0,
-            }}
-          >
-            <motion.div
-              animate={{ x: focusWeakAreas ? 24 : 4 }}
-              transition={{ type: "spring", bounce: 0.3, duration: 0.35 }}
-              style={{
-                width: 22, height: 22, borderRadius: 999,
-                backgroundColor: colors.white, position: "absolute", top: 4,
-                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-              }}
-            />
-          </motion.button>
-        </div>
 
-        {/* Default difficulty */}
-        <div style={{ marginBottom: 24 }}>
-          <FieldLabel>Default Quiz Difficulty</FieldLabel>
-          <div style={{ display: "flex", gap: 8 }}>
-            {["easy", "medium", "hard"].map((d) => {
-              const selected = defaultDifficulty === d
-              return (
+          {/* Right column */}
+          <div>
+            {/* Default question count */}
+            <div style={{ marginBottom: 24 }}>
+              <FieldLabel>Default Question Count</FieldLabel>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <motion.button
-                  key={d} type="button" onClick={() => setDefaultDifficulty(d)}
-                  whileHover={{ y: -1 }} whileTap={{ y: 1 }}
+                  onClick={() => setDefaultQuestionCount(Math.max(5, defaultQuestionCount - 5))}
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   style={{
-                    flex: 1, padding: "10px 0", backgroundColor: selected ? colors.primary : colors.white,
-                    border: `1.5px solid ${selected ? colors.primary : colors.gray400}`, borderRadius: 10,
-                    fontFamily, fontWeight: 600, fontSize: 13, letterSpacing: "-0.04em",
-                    color: selected ? colors.white : colors.black, cursor: "pointer",
-                    textTransform: "capitalize",
+                    width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                    border: `1.5px solid ${colors.gray400}`, backgroundColor: colors.white, cursor: "pointer",
+                    fontFamily, fontWeight: 800, fontSize: 18, color: colors.black,
                   }}
                 >
-                  {d}
+                  −
                 </motion.button>
-              )
-            })}
-          </div>
-        </div>
+                <span style={{ fontFamily, fontWeight: 800, fontSize: 20, letterSpacing: "-0.04em", color: colors.black, minWidth: 40, textAlign: "center" }}>
+                  {defaultQuestionCount}
+                </span>
+                <motion.button
+                  onClick={() => setDefaultQuestionCount(Math.min(50, defaultQuestionCount + 5))}
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  style={{
+                    width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                    border: `1.5px solid ${colors.gray400}`, backgroundColor: colors.white, cursor: "pointer",
+                    fontFamily, fontWeight: 800, fontSize: 18, color: colors.black,
+                  }}
+                >
+                  +
+                </motion.button>
+              </div>
+            </div>
 
-        {/* Default question count */}
-        <div>
-          <FieldLabel>Default Question Count</FieldLabel>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <motion.button
-              onClick={() => setDefaultQuestionCount(Math.max(5, defaultQuestionCount - 5))}
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              style={{
-                width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-                border: `1.5px solid ${colors.gray400}`, backgroundColor: colors.white, cursor: "pointer",
-                fontFamily, fontWeight: 800, fontSize: 18, color: colors.black,
-              }}
-            >
-              −
-            </motion.button>
-            <span style={{ fontFamily, fontWeight: 800, fontSize: 20, letterSpacing: "-0.04em", color: colors.black, minWidth: 40, textAlign: "center" }}>
-              {defaultQuestionCount}
-            </span>
-            <motion.button
-              onClick={() => setDefaultQuestionCount(Math.min(50, defaultQuestionCount + 5))}
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              style={{
-                width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-                border: `1.5px solid ${colors.gray400}`, backgroundColor: colors.white, cursor: "pointer",
-                fontFamily, fontWeight: 800, fontSize: 18, color: colors.black,
-              }}
-            >
-              +
-            </motion.button>
+            {/* Timer preference */}
+            <div>
+              <FieldLabel>Quiz Timer</FieldLabel>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[{ v: "off", l: "Off" }, { v: "relaxed", l: "Relaxed" }, { v: "strict", l: "Strict" }].map(({ v, l }) => (
+                  <motion.button
+                    key={v} type="button"
+                    whileHover={{ y: -1 }} whileTap={{ y: 1 }}
+                    style={{
+                      flex: 1, padding: "10px 0", backgroundColor: v === "off" ? colors.primary : colors.white,
+                      border: `1.5px solid ${v === "off" ? colors.primary : colors.gray400}`, borderRadius: 10,
+                      fontFamily, fontWeight: 600, fontSize: 13, letterSpacing: "-0.04em",
+                      color: v === "off" ? colors.white : colors.black, cursor: "pointer",
+                    }}
+                  >
+                    {l}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </Card>
@@ -781,9 +909,11 @@ function LinkRow({
 function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
   const [usageAnalytics, setUsageAnalytics] = useState(true)
   const [crashReports, setCrashReports] = useState(true)
+  const [personalizedAds, setPersonalizedAds] = useState(false)
+  const [thirdPartySharing, setThirdPartySharing] = useState(false)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
       {/* Analytics */}
       <Card>
         <SectionHeader>Analytics</SectionHeader>
@@ -802,6 +932,27 @@ function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
           description="Automatically send crash reports to help us fix bugs"
           value={crashReports}
           onChange={(v) => { setCrashReports(v); setToast(v ? "Crash reports enabled" : "Crash reports disabled") }}
+        />
+      </Card>
+
+      {/* Data Sharing */}
+      <Card>
+        <SectionHeader>Data Sharing</SectionHeader>
+
+        <ToggleRow
+          title="Personalized Experience"
+          description="Use your study patterns to improve recommendations"
+          value={personalizedAds}
+          onChange={(v) => { setPersonalizedAds(v); setToast(v ? "Personalization enabled" : "Personalization disabled") }}
+        />
+
+        <Divider />
+
+        <ToggleRow
+          title="Third-Party Sharing"
+          description="Share anonymized data with research partners"
+          value={thirdPartySharing}
+          onChange={(v) => { setThirdPartySharing(v); setToast(v ? "Third-party sharing enabled" : "Third-party sharing disabled") }}
         />
       </Card>
 
@@ -846,12 +997,44 @@ function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
             </svg>
             What We Collect
           </motion.button>
+
+          <motion.button
+            whileHover={{ backgroundColor: colors.gray100 }}
+            onClick={() => setToast("Request submitted — we'll process it within 30 days")}
+            style={{
+              display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+              backgroundColor: "transparent", border: `1.5px solid ${colors.gray400}`, borderRadius: 10,
+              fontFamily, fontWeight: 600, fontSize: 14, letterSpacing: "-0.04em", color: colors.black,
+              cursor: "pointer", width: "100%", textAlign: "left",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            Request Data Deletion
+          </motion.button>
         </div>
+      </Card>
 
-        <Divider />
-
-        <div style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600, lineHeight: 1.5 }}>
-          We only collect data necessary to provide and improve Reef. Your documents and study content are never shared with third parties. You can request a full export or deletion of your data at any time.
+      {/* Privacy Notice */}
+      <Card>
+        <SectionHeader>Privacy Notice</SectionHeader>
+        <div style={{ fontFamily, fontWeight: 500, fontSize: 14, letterSpacing: "-0.04em", color: colors.gray600, lineHeight: 1.6, marginBottom: 16 }}>
+          We only collect data necessary to provide and improve Reef. Your documents and study content are never shared with third parties.
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {[
+            { icon: "🔒", text: "End-to-end encryption for documents" },
+            { icon: "🚫", text: "No data sold to advertisers" },
+            { icon: "📍", text: "Data stored in US-based servers" },
+            { icon: "⏱️", text: "30-day data deletion guarantee" },
+          ].map((item) => (
+            <div key={item.text} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 16 }}>{item.icon}</span>
+              <span style={{ fontFamily, fontWeight: 600, fontSize: 13, letterSpacing: "-0.04em", color: colors.black }}>{item.text}</span>
+            </div>
+          ))}
         </div>
       </Card>
     </div>
@@ -862,7 +1045,7 @@ function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
 
 function AboutTab() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
       {/* App Info */}
       <Card>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
@@ -880,12 +1063,58 @@ function AboutTab() {
               Reef
             </div>
             <div style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600 }}>
-              Version 1.0.0
+              Version 1.0.0 (Build 42)
             </div>
           </div>
         </div>
         <div style={{ fontFamily, fontWeight: 500, fontSize: 14, letterSpacing: "-0.04em", color: colors.gray600, lineHeight: 1.6 }}>
           Reef is your AI-powered study companion. Upload documents, organize courses, and master your material with intelligent quizzes and analytics.
+        </div>
+        <Divider />
+        <div style={{ display: "flex", gap: 16 }}>
+          {[
+            { label: "Platform", value: "Web" },
+            { label: "Environment", value: "Production" },
+          ].map((item) => (
+            <div key={item.label} style={{ flex: 1 }}>
+              <div style={{ fontFamily, fontWeight: 500, fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase", color: colors.gray500, marginBottom: 4 }}>{item.label}</div>
+              <div style={{ fontFamily, fontWeight: 700, fontSize: 14, letterSpacing: "-0.04em", color: colors.black }}>{item.value}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* What's New */}
+      <Card>
+        <SectionHeader>{"What's New"}</SectionHeader>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {[
+            { version: "1.0.0", date: "Feb 2026", items: ["Document upload & management", "Course organization", "AI-powered quizzes", "Study analytics dashboard"] },
+          ].map((release) => (
+            <div key={release.version}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <span style={{
+                  padding: "3px 10px", backgroundColor: colors.accent, border: `1.5px solid ${colors.black}`,
+                  borderRadius: 8, fontFamily, fontWeight: 800, fontSize: 12, letterSpacing: "-0.04em", color: colors.black,
+                }}>
+                  v{release.version}
+                </span>
+                <span style={{ fontFamily, fontWeight: 500, fontSize: 12, letterSpacing: "-0.04em", color: colors.gray500 }}>
+                  {release.date}
+                </span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {release.items.map((item) => (
+                  <div key={item} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: colors.primary, flexShrink: 0 }} />
+                    <span style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600 }}>
+                      {item}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </Card>
 
@@ -926,6 +1155,15 @@ function AboutTab() {
             label="Report a Bug"
             href="mailto:bugs@studyreef.com?subject=Bug Report"
           />
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            }
+            label="Send Feedback"
+            href="mailto:feedback@studyreef.com?subject=Feedback"
+          />
         </div>
       </Card>
 
@@ -965,13 +1203,24 @@ function AboutTab() {
             href="https://discord.gg/studyreef"
             external
           />
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.13C5.12 19.56 12 19.56 12 19.56s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.43z" />
+                <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
+              </svg>
+            }
+            label="YouTube"
+            href="https://youtube.com/@studyreef"
+            external
+          />
         </div>
       </Card>
 
-      {/* Legal */}
-      <Card>
+      {/* Legal — full width */}
+      <Card style={{ gridColumn: "span 2" }}>
         <SectionHeader>Legal</SectionHeader>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
           <LinkRow
             icon={
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1016,10 +1265,12 @@ function AboutTab() {
 // ─── Account Tab ──────────────────────────────────────────
 
 function AccountTab({
+  profile,
   handleSignOut,
   signingOut,
   setShowDeleteModal,
 }: {
+  profile: ReturnType<typeof useDashboard>["profile"]
   handleSignOut: () => void
   signingOut: boolean
   setShowDeleteModal: (v: boolean) => void
@@ -1029,7 +1280,7 @@ function AccountTab({
   const info = TIER_INFO[tier]
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
       {/* Plan */}
       <Card>
         <SectionHeader>Your Plan</SectionHeader>
@@ -1082,19 +1333,144 @@ function AccountTab({
         </motion.button>
       </Card>
 
-      {/* Actions */}
+      {/* Security */}
       <Card>
+        <SectionHeader>Security</SectionHeader>
+
+        <div style={{ marginBottom: 16 }}>
+          <FieldLabel>Sign-in Method</FieldLabel>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8, backgroundColor: colors.gray100,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontFamily, fontWeight: 700, fontSize: 14, letterSpacing: "-0.04em", color: colors.black }}>
+                Magic Link
+              </div>
+              <div style={{ fontFamily, fontWeight: 500, fontSize: 12, letterSpacing: "-0.04em", color: colors.gray500 }}>
+                {profile.email}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Divider />
+
+        <div style={{ marginBottom: 16 }}>
+          <FieldLabel>Two-Factor Authentication</FieldLabel>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: "50%", backgroundColor: colors.gray400,
+              }} />
+              <span style={{ fontFamily, fontWeight: 600, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600 }}>
+                Not enabled
+              </span>
+            </div>
+            <motion.button
+              whileHover={{ backgroundColor: colors.gray100 }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                padding: "6px 14px", backgroundColor: "transparent",
+                border: `1.5px solid ${colors.gray400}`, borderRadius: 8,
+                fontFamily, fontWeight: 600, fontSize: 12, letterSpacing: "-0.04em",
+                color: colors.black, cursor: "pointer",
+              }}
+            >
+              Enable
+            </motion.button>
+          </div>
+        </div>
+
+        <Divider />
+
+        <div>
+          <FieldLabel>Active Sessions</FieldLabel>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: "50%", backgroundColor: "#4CAF50",
+            }} />
+            <span style={{ fontFamily, fontWeight: 600, fontSize: 13, letterSpacing: "-0.04em", color: colors.black }}>
+              This device
+            </span>
+            <span style={{ fontFamily, fontWeight: 500, fontSize: 12, letterSpacing: "-0.04em", color: colors.gray500, marginLeft: "auto" }}>
+              Active now
+            </span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Compare Plans — full width */}
+      <Card style={{ gridColumn: "span 2" }}>
+        <SectionHeader>Compare Plans</SectionHeader>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          {(["shore", "reef", "abyss"] as Tier[]).map((t) => {
+            const tInfo = TIER_INFO[t]
+            const tLimits = TIER_LIMITS[t]
+            const isCurrent = t === tier
+            return (
+              <div
+                key={t}
+                style={{
+                  padding: "20px 16px", borderRadius: 12,
+                  border: isCurrent ? `2px solid ${colors.primary}` : `1.5px solid ${colors.gray400}`,
+                  backgroundColor: isCurrent ? `${colors.primary}08` : colors.white,
+                  position: "relative",
+                }}
+              >
+                {isCurrent && (
+                  <div style={{
+                    position: "absolute", top: -10, left: 16,
+                    padding: "2px 10px", backgroundColor: colors.primary,
+                    borderRadius: 6, fontFamily, fontWeight: 700, fontSize: 10,
+                    letterSpacing: "0.04em", textTransform: "uppercase", color: colors.white,
+                  }}>
+                    Current
+                  </div>
+                )}
+                <div style={{ fontFamily, fontWeight: 800, fontSize: 18, letterSpacing: "-0.04em", color: colors.black, marginBottom: 2 }}>
+                  {tInfo.label}
+                </div>
+                <div style={{ fontFamily, fontWeight: 600, fontSize: 14, letterSpacing: "-0.04em", color: colors.gray600, marginBottom: 16 }}>
+                  {tInfo.price}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    { label: "Documents", value: tLimits.maxDocuments === Infinity ? "Unlimited" : String(tLimits.maxDocuments) },
+                    { label: "File Size", value: `${tLimits.maxFileSizeMB} MB` },
+                    { label: "Courses", value: tLimits.maxCourses === Infinity ? "Unlimited" : String(tLimits.maxCourses) },
+                  ].map((feat) => (
+                    <div key={feat.label} style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontFamily, fontWeight: 500, fontSize: 12, letterSpacing: "-0.04em", color: colors.gray500 }}>{feat.label}</span>
+                      <span style={{ fontFamily, fontWeight: 700, fontSize: 12, letterSpacing: "-0.04em", color: colors.black }}>{feat.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </Card>
+
+      {/* Actions */}
+      <Card style={{ gridColumn: "span 2" }}>
         <SectionHeader>Actions</SectionHeader>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", gap: 12 }}>
           <motion.button
             onClick={handleSignOut} disabled={signingOut}
             whileHover={{ backgroundColor: colors.gray100 }}
             style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "12px 14px",
               backgroundColor: "transparent", border: `1.5px solid ${colors.gray400}`, borderRadius: 10,
               fontFamily, fontWeight: 600, fontSize: 14, letterSpacing: "-0.04em", color: colors.black,
-              cursor: signingOut ? "not-allowed" : "pointer", width: "100%", textAlign: "left",
+              cursor: signingOut ? "not-allowed" : "pointer", flex: 1,
             }}
           >
             <LogOutIcon />
@@ -1105,10 +1481,10 @@ function AccountTab({
             onClick={() => setShowDeleteModal(true)}
             whileHover={{ backgroundColor: "#FFF5F5" }}
             style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "12px 14px",
               backgroundColor: "transparent", border: `1.5px solid #E57373`, borderRadius: 10,
               fontFamily, fontWeight: 600, fontSize: 14, letterSpacing: "-0.04em", color: "#C62828",
-              cursor: "pointer", width: "100%", textAlign: "left",
+              cursor: "pointer", flex: 1,
             }}
           >
             <TrashIcon />
@@ -1217,7 +1593,7 @@ export default function SettingsPage() {
                 <AboutTab />
               )}
               {activeTab === "account" && (
-                <AccountTab handleSignOut={handleSignOut} signingOut={signingOut} setShowDeleteModal={setShowDeleteModal} />
+                <AccountTab profile={profile} handleSignOut={handleSignOut} signingOut={signingOut} setShowDeleteModal={setShowDeleteModal} />
               )}
             </motion.div>
           </AnimatePresence>
