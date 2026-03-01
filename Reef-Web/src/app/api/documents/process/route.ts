@@ -11,17 +11,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "documentId required" }, { status: 400 })
     }
 
-    // Validate user session
+    // Validate user session — try cookies first, then Bearer token (iOS)
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    let { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      const authHeader = request.headers.get("authorization")
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice(7)
+        const { data: { user: tokenUser } } = await createServiceClient().auth.getUser(token)
+        user = tokenUser
+      }
+    }
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Service role client — bypasses RLS, works regardless of auth method
+    const serviceClient = createServiceClient()
+
     // Enforce document count limit
     const tier = await getUserTier()
     const limits = getLimits(tier)
-    const { count, error: countError } = await supabase
+    const { count, error: countError } = await serviceClient
       .from("documents")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
@@ -32,9 +45,6 @@ export async function POST(request: NextRequest) {
     if ((count ?? 0) > limits.maxDocuments) {
       return NextResponse.json({ error: "Document limit reached" }, { status: 403 })
     }
-
-    // Service role client for updates (bypasses RLS)
-    const serviceClient = createServiceClient()
 
     // Fetch document row and verify ownership
     const { data: doc, error: fetchError } = await serviceClient
@@ -50,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Download original PDF from Supabase Storage
     const storagePath = `${user.id}/${documentId}/original.pdf`
-    const { data: fileData, error: downloadError } = await supabase.storage
+    const { data: fileData, error: downloadError } = await serviceClient.storage
       .from("documents")
       .download(storagePath)
 
