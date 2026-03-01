@@ -352,6 +352,7 @@ struct DocumentsContentView: View {
                     .offset(x: 4, y: 4)
             )
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Grid
@@ -359,19 +360,31 @@ struct DocumentsContentView: View {
     private var documentGrid: some View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 20) {
-                // Upload placeholder card
+                // Upload placeholder card — matches document card height
                 Button {
                     viewModel.showFilePicker = true
                 } label: {
-                    VStack(spacing: 8) {
-                        Image(systemName: "arrow.up.doc")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Upload")
-                            .font(.epilogue(14, weight: .semiBold))
-                            .tracking(-0.04 * 14)
+                    VStack(spacing: 0) {
+                        // Invisible spacer matching thumbnail aspect ratio
+                        Color.clear
+                            .aspectRatio(8.5 / 11, contentMode: .fit)
+                            .padding(.horizontal, 14)
+                            .padding(.top, 14)
+
+                        // Spacer matching info section
+                        Color.clear
+                            .frame(height: 12 + 13 + 4 + 11 + 14) // padding + title + gap + status + padding
                     }
-                    .foregroundStyle(ReefColors.gray500)
-                    .frame(maxWidth: .infinity, minHeight: 200)
+                    .overlay {
+                        VStack(spacing: 8) {
+                            Image(systemName: "arrow.up.doc")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Upload")
+                                .font(.epilogue(14, weight: .semiBold))
+                                .tracking(-0.04 * 14)
+                        }
+                        .foregroundStyle(ReefColors.gray500)
+                    }
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
