@@ -237,7 +237,7 @@ export default function CommandPalette() {
             display: "flex",
             alignItems: "center",
             gap: 12,
-            padding: "16px 20px",
+            padding: "18px 24px",
             borderBottom: `1.5px solid ${colors.gray100}`,
           }}
         >
@@ -278,11 +278,11 @@ export default function CommandPalette() {
         </div>
 
         {/* Results */}
-        <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+        <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
           {loading && (
             <div
               style={{
-                padding: "24px 20px",
+                padding: "24px 24px",
                 textAlign: "center",
                 fontFamily,
                 fontWeight: 600,
@@ -298,7 +298,7 @@ export default function CommandPalette() {
           {!loading && allItems.length === 0 && (
             <div
               style={{
-                padding: "24px 20px",
+                padding: "24px 24px",
                 textAlign: "center",
                 fontFamily,
                 fontWeight: 600,
@@ -317,7 +317,7 @@ export default function CommandPalette() {
                 {/* Section header */}
                 <div
                   style={{
-                    padding: "8px 20px 4px",
+                    padding: "12px 24px 6px",
                     fontFamily,
                     fontWeight: 700,
                     fontSize: 11,
@@ -347,7 +347,7 @@ export default function CommandPalette() {
                         display: "flex",
                         alignItems: "center",
                         gap: 12,
-                        padding: "10px 20px",
+                        padding: "10px 24px",
                         cursor: "pointer",
                         backgroundColor: isActive ? colors.accent : "transparent",
                         transition: "background-color 0.08s",
