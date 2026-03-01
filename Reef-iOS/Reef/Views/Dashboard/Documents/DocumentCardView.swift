@@ -153,5 +153,6 @@ struct DocumentCardView: View {
                         .stroke(ReefColors.gray400, lineWidth: 1.5)
                 )
         }
+        .menuStyle(.borderlessButton)
     }
 }
