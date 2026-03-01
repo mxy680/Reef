@@ -19,6 +19,7 @@ struct DeleteCourseSheet: View {
                 .font(.epilogue(14, weight: .medium))
                 .tracking(-0.04 * 14)
                 .foregroundStyle(ReefColors.gray600)
+                .multilineTextAlignment(.center)
                 .padding(.top, 8)
 
             HStack(spacing: 10) {
