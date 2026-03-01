@@ -153,10 +153,8 @@ struct TutorQuizPopup: View {
                         withAnimation { step -= 1 }
                     } label: {
                         Text("Back")
-                            .font(.epilogue(14, weight: .semiBold))
-                            .tracking(-0.04 * 14)
-                            .foregroundStyle(ReefColors.gray600)
                     }
+                    .reefCompactStyle(.secondary)
                 }
 
                 Spacer()
