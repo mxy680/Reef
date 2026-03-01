@@ -1,4 +1,4 @@
-"""PostgreSQL connection pool for user profile storage."""
+"""PostgreSQL connection pool for document storage."""
 
 import os
 import asyncpg
@@ -7,7 +7,7 @@ _pool: asyncpg.Pool | None = None
 
 
 async def init_db():
-    """Create asyncpg connection pool and ensure user_profiles table exists."""
+    """Create asyncpg connection pool and ensure tables exist."""
     global _pool
 
     database_url = os.getenv("DATABASE_URL")
@@ -17,51 +17,6 @@ async def init_db():
 
     _pool = await asyncpg.create_pool(database_url, min_size=1, max_size=5)
     async with _pool.acquire() as conn:
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS user_profiles (
-                apple_user_id TEXT PRIMARY KEY,
-                display_name TEXT,
-                email TEXT,
-                created_at TIMESTAMPTZ DEFAULT NOW(),
-                updated_at TIMESTAMPTZ DEFAULT NOW()
-            )
-        """)
-        # Migrations: add onboarding columns to user_profiles
-        await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS grade TEXT")
-        await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS subjects JSONB DEFAULT '[]'::jsonb")
-        await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE")
-        await conn.execute("ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS referral_source TEXT")
-
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS stroke_logs (
-                id SERIAL PRIMARY KEY,
-                session_id TEXT NOT NULL,
-                page INT NOT NULL,
-                received_at TIMESTAMPTZ DEFAULT NOW(),
-                strokes JSONB NOT NULL
-            )
-        """)
-        await conn.execute("""
-            ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS event_type TEXT NOT NULL DEFAULT 'draw'
-        """)
-        await conn.execute("""
-            ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS deleted_count INT NOT NULL DEFAULT 0
-        """)
-        await conn.execute("""
-            ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS message TEXT NOT NULL DEFAULT ''
-        """)
-        await conn.execute("""
-            ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT ''
-        """)
-        await conn.execute("""
-            ALTER TABLE stroke_logs ADD COLUMN IF NOT EXISTS problem_context TEXT NOT NULL DEFAULT ''
-        """)
-        # Migration: drop clustering tables (no longer used)
-        await conn.execute("DROP TABLE IF EXISTS cluster_classes")
-        await conn.execute("DROP TABLE IF EXISTS clusters")
-        await conn.execute("""
-            ALTER TABLE stroke_logs DROP COLUMN IF EXISTS cluster_labels
-        """)
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS documents (
                 id SERIAL PRIMARY KEY,
@@ -102,76 +57,6 @@ async def init_db():
         await conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_answer_keys_question
             ON answer_keys(question_id)
-        """)
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS reasoning_logs (
-                id SERIAL PRIMARY KEY,
-                session_id TEXT NOT NULL,
-                page INT NOT NULL DEFAULT 1,
-                created_at TIMESTAMPTZ DEFAULT NOW(),
-                context TEXT NOT NULL DEFAULT '',
-                action TEXT NOT NULL DEFAULT 'silent',
-                message TEXT,
-                prompt_tokens INT NOT NULL DEFAULT 0,
-                completion_tokens INT NOT NULL DEFAULT 0,
-                estimated_cost FLOAT NOT NULL DEFAULT 0,
-                source VARCHAR(20) NOT NULL DEFAULT 'auto',
-                question_text TEXT
-            )
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_reasoning_logs_session
-            ON reasoning_logs(session_id, created_at DESC)
-        """)
-        # Migrations: add columns if missing (safe to re-run)
-        await conn.execute("""
-            ALTER TABLE reasoning_logs
-            ADD COLUMN IF NOT EXISTS source VARCHAR(20) NOT NULL DEFAULT 'auto'
-        """)
-        await conn.execute("""
-            ALTER TABLE reasoning_logs
-            ADD COLUMN IF NOT EXISTS question_text TEXT
-        """)
-        await conn.execute("""
-            ALTER TABLE reasoning_logs ADD COLUMN IF NOT EXISTS level INT
-        """)
-        await conn.execute("""
-            ALTER TABLE reasoning_logs ADD COLUMN IF NOT EXISTS error_type VARCHAR(20)
-        """)
-        await conn.execute("""
-            ALTER TABLE reasoning_logs ADD COLUMN IF NOT EXISTS delay_ms INT NOT NULL DEFAULT 0
-        """)
-        await conn.execute("""
-            ALTER TABLE reasoning_logs ADD COLUMN IF NOT EXISTS internal_reasoning TEXT
-        """)
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS page_transcriptions (
-                id SERIAL PRIMARY KEY,
-                session_id TEXT NOT NULL,
-                page INT NOT NULL,
-                latex TEXT NOT NULL DEFAULT '',
-                text TEXT NOT NULL DEFAULT '',
-                confidence FLOAT NOT NULL DEFAULT 0,
-                updated_at TIMESTAMPTZ DEFAULT NOW(),
-                UNIQUE(session_id, page)
-            )
-        """)
-        await conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_page_transcriptions_session_page
-            ON page_transcriptions(session_id, page)
-        """)
-        await conn.execute("""
-            ALTER TABLE page_transcriptions ADD COLUMN IF NOT EXISTS line_data JSONB DEFAULT NULL
-        """)
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS session_question_cache (
-                session_id TEXT PRIMARY KEY,
-                question_id INT NOT NULL,
-                updated_at TIMESTAMPTZ DEFAULT NOW()
-            )
-        """)
-        await conn.execute("""
-            ALTER TABLE session_question_cache ADD COLUMN IF NOT EXISTS document_name TEXT NOT NULL DEFAULT ''
         """)
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS question_figures (

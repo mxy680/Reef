@@ -52,24 +52,6 @@ def client():
         yield c
 
 
-@pytest.fixture(autouse=True)
-def clean_state():
-    """Clear in-memory state dicts between tests."""
-    from api.strokes import _active_sessions
-    from api.events import _event_queues
-    from api.tts_stream import _pending_tts
-
-    _active_sessions.clear()
-    _event_queues.clear()
-    _pending_tts.clear()
-
-    yield
-
-    _active_sessions.clear()
-    _event_queues.clear()
-    _pending_tts.clear()
-
-
 @pytest.fixture
 async def db(client):
     """Direct asyncpg connection for SQL data setup in tests."""
