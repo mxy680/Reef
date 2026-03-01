@@ -714,54 +714,71 @@ footer.framer-1fiw38h {
   align-items: center;
 }
 
-/* Responsive */
+/* Prevent horizontal overflow on mobile */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Responsive — mobile */
 @media (max-width: 768px) {
   .section-inner {
-    padding: 40px 24px;
+    padding: 40px 20px;
   }
 
   .hero-heading {
-    font-size: 40px;
+    font-size: 36px;
+    max-width: 100%;
+  }
+
+  .hero-subtitle {
+    font-size: 16px;
+    max-width: 100%;
   }
 
   .section-heading {
-    font-size: 28px;
-  }
-
-  .how-it-works-step {
-    flex-direction: column;
-  }
-
-  .step-card {
-    flex: none;
-    width: 100%;
-    height: 320px;
-  }
-
-  .step-arrow-right,
-  .step-arrow-left {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .problem-cards-row > * {
+    font-size: 26px;
     max-width: 100%;
   }
 
+  .section-subtitle {
+    font-size: 16px;
+    max-width: 100%;
+  }
+
+  .section-header {
+    margin-bottom: 32px;
+  }
+
+  /* Hero */
   .hero-buttons {
     flex-direction: column;
+    width: 100%;
   }
 
-  .cta-card {
-    padding: 40px 24px;
+  .hero-btn {
+    width: 100%;
+    justify-content: center;
   }
 
-  .cta-heading {
-    font-size: 28px;
+  .hero-image-wrapper {
+    margin-top: 24px;
+    padding-bottom: 10px;
+    padding-right: 10px;
   }
 
-  .pricing-cards-row > * {
+  .hero-image {
+    box-shadow: 6px 6px 0px 0px var(--color-black);
+    border-width: 3px;
+  }
+
+  header.framer-aw0er6 {
+    margin-bottom: 12px;
+  }
+
+  /* Problem cards */
+  .problem-cards-row > * {
     max-width: 100%;
+    min-width: 0;
   }
 
   /* Stack features cards vertically on mobile */
@@ -775,8 +792,150 @@ footer.framer-1fiw38h {
     width: 100% !important;
   }
 
+  /* Stack Double feature card content vertically on mobile */
+  .framer-CAKEG.framer-v-1uq5497.framer-1f6l56w {
+    flex-direction: column !important;
+  }
+
+  .framer-CAKEG.framer-v-1uq5497 .framer-9vsty4 {
+    width: 100% !important;
+  }
+
+  /* Double feature card image area — full width on mobile */
+  .features-cards-row .framer-iyuun0 {
+    width: 100% !important;
+    height: 200px !important;
+    margin-right: 0 !important;
+    margin-bottom: 12px;
+  }
+
+  /* How it works */
+  .how-it-works-step {
+    flex-direction: column;
+    gap: 24px;
+  }
+
   .step-text {
     flex: none;
     max-width: 100%;
+  }
+
+  .step-card {
+    flex: none;
+    width: 100%;
+    height: 260px;
+    box-shadow: 6px 6px 0px 0px var(--color-black);
+    border-width: 3px;
+  }
+
+  .how-it-works-steps {
+    gap: 40px;
+  }
+
+  /* Hide decorative arrows on mobile */
+  .step-arrow {
+    display: none;
+  }
+
+  /* Integrations */
+  .integrations-card {
+    padding: 24px 16px;
+    box-shadow: 6px 6px 0px 0px var(--color-black);
+  }
+
+  /* Pricing */
+  .pricing-cards-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pricing-cards-row > * {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Override Framer pricing card fixed dimensions */
+  .pricing-cards-row .framer-r7cQV.framer-1vxx77 {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* FAQ — override Framer's fixed 600px */
+  .faq-section .section-inner {
+    max-width: 100%;
+  }
+
+  .framer-3OB4o.framer-i8ltlx {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* FAQ question items full width (classes on same element) */
+  .framer-B8Htz.framer-1jl4vm1 {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* CTA section */
+  .cta-card {
+    padding: 32px 20px;
+    box-shadow: 6px 6px 0px 0px var(--color-black);
+  }
+
+  .cta-heading {
+    font-size: 26px;
+  }
+
+  .cta-subtitle {
+    font-size: 16px;
+  }
+
+  .newsletter-input-wrapper {
+    max-width: 100%;
+  }
+
+  /* Step headings */
+  .step-heading {
+    font-size: 24px;
+  }
+
+  .step-body {
+    font-size: 16px;
+  }
+
+  /* Reduce Framer button shadows */
+  .framer-CQKIS.framer-2m28gd {
+    box-shadow: 3px 3px 0px 0px var(--color-black) !important;
+  }
+
+  /* Badge scaling */
+  .framer-1lyq2hd {
+    transform: scale(0.9);
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 380px) {
+  .section-inner {
+    padding: 32px 16px;
+  }
+
+  .hero-heading {
+    font-size: 30px;
+  }
+
+  .section-heading {
+    font-size: 22px;
+  }
+
+  .cta-heading {
+    font-size: 22px;
+  }
+
+  .hero-btn {
+    font-size: 15px;
+    height: 44px;
+    padding: 0 16px;
   }
 }
