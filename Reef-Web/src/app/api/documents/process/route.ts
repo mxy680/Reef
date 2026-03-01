@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to download PDF" }, { status: 500 })
     }
 
-    // Send to Reef-Server /ai/reconstruct
+    // Send to server /ai/reconstruct
     const formData = new FormData()
     formData.append("pdf", fileData, doc.filename)
 
