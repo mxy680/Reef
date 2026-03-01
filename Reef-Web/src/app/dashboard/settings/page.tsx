@@ -783,7 +783,7 @@ function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
   const [crashReports, setCrashReports] = useState(true)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Analytics */}
       <Card>
         <SectionHeader>Analytics</SectionHeader>
@@ -806,7 +806,7 @@ function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
       </Card>
 
       {/* Your Data */}
-      <Card style={{ flex: 1 }}>
+      <Card>
         <SectionHeader>Your Data</SectionHeader>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -862,7 +862,7 @@ function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
 
 function AboutTab() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* App Info */}
       <Card>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
@@ -1029,9 +1029,9 @@ function AccountTab({
   const info = TIER_INFO[tier]
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Plan */}
-      <Card style={{ flex: 1 }}>
+      <Card>
         <SectionHeader>Your Plan</SectionHeader>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
@@ -1202,7 +1202,7 @@ export default function SettingsPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.2 }}
-              style={{ height: "100%" }}
+              style={{ height: activeTab === "profile" || activeTab === "preferences" ? "100%" : "auto" }}
             >
               {activeTab === "profile" && (
                 <ProfileTab profile={profile} setProfile={setProfile} setToast={setToast} />
