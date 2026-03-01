@@ -1,3 +1,4 @@
+@preconcurrency import Supabase
 import SwiftUI
 
 struct Course: Identifiable, Codable, Hashable {

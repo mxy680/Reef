@@ -1,6 +1,6 @@
 import Foundation
 import PDFKit
-import Supabase
+@preconcurrency import Supabase
 
 enum DocumentServiceError: LocalizedError {
     case notAuthenticated
