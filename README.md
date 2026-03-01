@@ -39,53 +39,11 @@ Reef is a single iPad app where you upload your homework, solve problems with Ap
 
 <br>
 
-## How It Works
-
-```
- ┌──────────────────────────────────────┐
- │           iPad + Apple Pencil        │
- │                                      │
- │   Student writes on the canvas.      │
- │   Strokes stream to the server.      │
- └──────────────────┬───────────────────┘
-                    │
-                    ▼
- ┌──────────────────────────────────────┐
- │            Reef Server               │
- │                                      │
- │   Mathpix transcribes handwriting.   │
- │   Context is built (transcription,   │
- │   answer key, earlier work, erased   │
- │   work snapshots).                   │
- └──────────────────┬───────────────────┘
-                    │
-                    ▼
- ┌──────────────────────────────────────┐
- │          AI Reasoning Model          │
- │                                      │
- │   Qwen3 VL 235B (multimodal) with   │
- │   streaming early-exit decides:      │
- │   speak or stay silent.              │
- └──────────────────┬───────────────────┘
-                    │
-                    ▼
- ┌──────────────────────────────────────┐
- │          Back to the iPad            │
- │                                      │
- │   If the model speaks, TTS audio     │
- │   streams to the student via SSE.    │
- │   The loop continues as they write.  │
- └──────────────────────────────────────┘
-```
-
-<br>
-
 ## Architecture
 
 ```
 Reef/
 ├── Reef-iOS/        iPad app — SwiftUI, Apple Pencil, Supabase auth
-├── Reef-Server/     Backend  — FastAPI, async Python, PostgreSQL
 ├── Reef-Web/        Website  — Next.js, React, Framer Motion
 └── scripts/         Setup, run, and deployment scripts
 ```
@@ -95,18 +53,6 @@ Reef/
 Swift 6 &middot; SwiftUI &middot; iOS 18.2+ &middot; iPad only
 
 The primary client. Handles Apple Pencil input with pressure sensitivity and palm rejection, streams strokes to the server, plays TTS audio responses, and manages course organization. Auth via Supabase (Apple Sign-In, Google OAuth).
-
-### Reef-Server
-
-Python 3.11+ &middot; FastAPI &middot; asyncpg &middot; Docker
-
-The brain. All AI processing, document reconstruction, handwriting transcription, and audio synthesis happen here. Key subsystems:
-
-- **Stroke pipeline** — 500ms debounced transcription via Mathpix, 2.5s debounced reasoning
-- **Reasoning engine** — Qwen3 VL 235B with streaming early-exit (~70-80% of calls break early)
-- **PDF reconstruction** — Surya layout detection + Gemini extraction + LaTeX compilation
-- **Voice** — Groq Whisper transcription, DeepInfra Kokoro TTS streaming
-- **Push events** — Server-Sent Events (SSE), not WebSockets
 
 ### Reef-Web
 
@@ -118,7 +64,7 @@ Landing page with scroll-driven 3D hero animation, user dashboard for document m
 
 ## Quick Start
 
-**Prerequisites:** Git, Node.js, pnpm, uv (Python), Xcode (optional, for iOS)
+**Prerequisites:** Git, Node.js, pnpm, Xcode (optional, for iOS)
 
 ```bash
 git clone https://github.com/mxy680/Reef.git
@@ -131,19 +77,7 @@ The setup script installs all dependencies and opens the iOS project in Xcode.
 ### Run locally
 
 ```bash
-# Everything at once
-./scripts/run.sh
-
-# Or individually
-./scripts/run.sh server    # FastAPI on :8000
-./scripts/run.sh web       # Next.js on :3000
-```
-
-### Run tests
-
-```bash
-cd Reef-Server
-uv run python -m pytest tests/ -q    # 193 tests (112 unit, 81 integration)
+./scripts/run.sh       # Next.js on :3000
 ```
 
 <br>
