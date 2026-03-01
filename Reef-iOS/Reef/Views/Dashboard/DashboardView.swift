@@ -36,6 +36,15 @@ struct DashboardView: View {
             }
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
+        .task { await fetchCourses() }
+    }
+
+    private func fetchCourses() async {
+        do {
+            courses = try await CourseService.shared.listCourses()
+        } catch {
+            print("Failed to fetch courses: \(error)")
+        }
     }
 
     private var contentTitle: String {
@@ -51,27 +60,49 @@ struct DashboardView: View {
 
     @ViewBuilder
     private var contentArea: some View {
-        switch selectedTab {
-        case .documents:
-            DocumentsContentView()
-        default:
-            VStack(alignment: .leading, spacing: 16) {
-                Text(contentTitle)
-                    .font(.epilogue(28, weight: .black))
-                    .tracking(-0.04 * 28)
-                    .foregroundStyle(ReefColors.black)
-
-                Text("Coming soon")
-                    .font(.epilogue(15, weight: .medium))
-                    .tracking(-0.04 * 15)
-                    .foregroundStyle(ReefColors.gray600)
-
-                Spacer()
+        if let tab = selectedTab {
+            switch tab {
+            case .documents:
+                DocumentsContentView()
+            default:
+                comingSoonPlaceholder
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(32)
-            .dashboardCard()
+        } else if let courseId = selectedCourseId,
+                  let course = courses.first(where: { $0.id == courseId }) {
+            CourseDetailView(
+                courseId: courseId,
+                course: course,
+                onCourseDeleted: {
+                    selectedTab = .documents
+                    selectedCourseId = nil
+                    Task { await fetchCourses() }
+                },
+                onCourseUpdated: {
+                    Task { await fetchCourses() }
+                }
+            )
+        } else {
+            comingSoonPlaceholder
         }
+    }
+
+    private var comingSoonPlaceholder: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(contentTitle)
+                .font(.epilogue(28, weight: .black))
+                .tracking(-0.04 * 28)
+                .foregroundStyle(ReefColors.black)
+
+            Text("Coming soon")
+                .font(.epilogue(15, weight: .medium))
+                .tracking(-0.04 * 15)
+                .foregroundStyle(ReefColors.gray600)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(32)
+        .dashboardCard()
     }
 }
 

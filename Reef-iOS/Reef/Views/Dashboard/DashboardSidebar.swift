@@ -7,6 +7,8 @@ struct DashboardSidebar: View {
     @Binding var isOpen: Bool
     @Environment(AuthManager.self) private var authManager
 
+    @State private var isCreating = false
+
     static let openWidth: CGFloat = 260
     static let collapsedWidth: CGFloat = 68
 
@@ -98,6 +100,14 @@ struct DashboardSidebar: View {
 
     // MARK: - Courses Section
 
+    private var maxCourses: Int {
+        TierLimits.current().maxCourses
+    }
+
+    private var atCourseLimit: Bool {
+        courses.count >= maxCourses
+    }
+
     private var coursesSection: some View {
         VStack(spacing: 2) {
             // Section header
@@ -108,21 +118,30 @@ struct DashboardSidebar: View {
                         .tracking(0.06 * 11)
                         .foregroundStyle(ReefColors.gray400)
 
+                    if maxCourses != Int.max {
+                        Text("\(courses.count)/\(maxCourses)")
+                            .font(.epilogue(10, weight: .bold))
+                            .tracking(-0.04 * 10)
+                            .foregroundStyle(atCourseLimit ? Color(hex: 0xC62828) : ReefColors.gray500)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(atCourseLimit ? Color(hex: 0xFDECEA) : ReefColors.gray100)
+                            .clipShape(Capsule())
+                    }
+
                     Spacer()
                 }
 
                 Button {
-                    let course = Course(name: "New Course")
-                    courses.append(course)
-                    selectedCourseId = course.id
-                    selectedTab = nil
+                    createCourse()
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(ReefColors.gray400)
+                        .foregroundStyle(atCourseLimit ? ReefColors.gray200 : ReefColors.gray400)
                         .frame(width: 24, height: 24)
                 }
                 .buttonStyle(.plain)
+                .disabled(isCreating || atCourseLimit)
             }
             .padding(.vertical, 4)
             .padding(.horizontal, isOpen ? 14 : 0)
@@ -131,10 +150,7 @@ struct DashboardSidebar: View {
             // Course list
             if courses.isEmpty {
                 Button {
-                    let course = Course(name: "New Course")
-                    courses.append(course)
-                    selectedCourseId = course.id
-                    selectedTab = nil
+                    createCourse()
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "plus.circle.dashed")
@@ -153,11 +169,28 @@ struct DashboardSidebar: View {
                     .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
                 }
                 .buttonStyle(.plain)
+                .disabled(isCreating)
             } else {
                 ForEach(courses) { course in
                     courseItem(course)
                 }
             }
+        }
+    }
+
+    private func createCourse() {
+        guard !isCreating, !atCourseLimit else { return }
+        isCreating = true
+        Task {
+            do {
+                let course = try await CourseService.shared.createCourse(name: "New Course")
+                courses.insert(course, at: 0)
+                selectedCourseId = course.id
+                selectedTab = nil
+            } catch {
+                print("Failed to create course: \(error)")
+            }
+            isCreating = false
         }
     }
 
@@ -221,7 +254,7 @@ struct DashboardSidebar: View {
             selectedTab = nil
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: "graduationcap")
+                Text(course.emoji)
                     .font(.system(size: 18))
                     .frame(width: 24, height: 24)
 

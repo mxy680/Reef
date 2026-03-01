@@ -9,6 +9,7 @@ enum ReefColors {
     static let gray600 = Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255)
     static let gray500 = Color(red: 140 / 255, green: 140 / 255, blue: 140 / 255)
     static let gray400 = Color(red: 160 / 255, green: 160 / 255, blue: 160 / 255)
+    static let gray200 = Color(red: 200 / 255, green: 200 / 255, blue: 200 / 255)
     static let gray100 = Color(red: 235 / 255, green: 235 / 255, blue: 235 / 255)
     static let error = Color(hex: 0xD32F2F)
 }
