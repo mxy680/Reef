@@ -3,7 +3,7 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(AuthManager.self) private var authManager
     @State private var selectedTab: DashboardTab? = .documents
-    @State private var selectedCourseId: UUID?
+    @State private var selectedCourseId: String?
     @State private var courses: [Course] = []
     @State private var sidebarOpen = true
 

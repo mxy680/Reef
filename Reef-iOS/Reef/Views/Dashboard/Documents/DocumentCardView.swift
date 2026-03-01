@@ -19,6 +19,7 @@ struct DocumentCardView: View {
     let onAction: (DocumentAction) -> Void
 
     @State private var isPressed = false
+    @State private var showMenu = false
 
     private var borderColor: Color {
         document.status == .failed ? Color(hex: 0xE57373) : ReefColors.gray500
@@ -84,10 +85,22 @@ struct DocumentCardView: View {
                 if document.status == .failed {
                     errorButton
                 }
-                menuButton
+                menuTrigger
             }
             .padding(8)
         }
+        .overlay(alignment: .topTrailing) {
+            if showMenu {
+                dropdownMenu
+                    .padding(.top, 44)
+                    .padding(.trailing, 8)
+                    .transition(
+                        .scale(scale: 0.95, anchor: .topTrailing)
+                        .combined(with: .opacity)
+                    )
+            }
+        }
+        .zIndex(showMenu ? 1 : 0)
         .fadeUp(index: index)
     }
 
@@ -117,29 +130,12 @@ struct DocumentCardView: View {
         .buttonStyle(.plain)
     }
 
-    private var menuButton: some View {
-        Menu {
-            Button { onAction(.rename) } label: {
-                Label("Rename", systemImage: "pencil")
-            }
-            Button { onAction(.download) } label: {
-                Label("Download", systemImage: "arrow.down.doc")
-            }
-            Button { onAction(.moveToCourse) } label: {
-                Label("Move to Course", systemImage: "folder")
-            }
-            Button { onAction(.duplicate) } label: {
-                Label("Duplicate", systemImage: "doc.on.doc")
-            }
-            Button { onAction(.share) } label: {
-                Label("Share", systemImage: "square.and.arrow.up")
-            }
-            Button { onAction(.viewDetails) } label: {
-                Label("View Details", systemImage: "info.circle")
-            }
-            Divider()
-            Button(role: .destructive) { onAction(.delete) } label: {
-                Label("Delete", systemImage: "trash")
+    // MARK: - Menu Trigger
+
+    private var menuTrigger: some View {
+        Button {
+            withAnimation(.spring(duration: 0.15)) {
+                showMenu.toggle()
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -153,5 +149,56 @@ struct DocumentCardView: View {
                         .stroke(ReefColors.gray400, lineWidth: 1.5)
                 )
         }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Dropdown Menu
+
+    private var dropdownMenu: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            dropdownItem("Rename", action: .rename)
+            dropdownItem("Download", action: .download)
+            dropdownItem("Move to Course", action: .moveToCourse)
+            dropdownItem("Duplicate", action: .duplicate)
+            dropdownItem("Share", action: .share)
+            dropdownItem("View Details", action: .viewDetails)
+
+            Rectangle()
+                .fill(ReefColors.gray100)
+                .frame(height: 1)
+                .padding(.vertical, 2)
+
+            dropdownItem("Delete", action: .delete, isDestructive: true)
+        }
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(ReefColors.gray500, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(ReefColors.gray500)
+                .offset(x: 3, y: 3)
+        )
+        .fixedSize(horizontal: true, vertical: true)
+        .frame(minWidth: 160, alignment: .trailing)
+    }
+
+    private func dropdownItem(_ label: String, action: DocumentAction, isDestructive: Bool = false) -> some View {
+        Button {
+            withAnimation(.spring(duration: 0.15)) { showMenu = false }
+            onAction(action)
+        } label: {
+            Text(label)
+                .font(.epilogue(13, weight: .semiBold))
+                .tracking(-0.04 * 13)
+                .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : ReefColors.black)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

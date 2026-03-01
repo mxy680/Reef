@@ -2,7 +2,7 @@ import SwiftUI
 
 struct DashboardSidebar: View {
     @Binding var selectedTab: DashboardTab?
-    @Binding var selectedCourseId: UUID?
+    @Binding var selectedCourseId: String?
     @Binding var courses: [Course]
     @Binding var isOpen: Bool
     @Environment(AuthManager.self) private var authManager
@@ -112,7 +112,7 @@ struct DashboardSidebar: View {
                 }
 
                 Button {
-                    let course = Course(id: UUID(), name: "New Course")
+                    let course = Course(name: "New Course")
                     courses.append(course)
                     selectedCourseId = course.id
                     selectedTab = nil
@@ -131,7 +131,7 @@ struct DashboardSidebar: View {
             // Course list
             if courses.isEmpty {
                 Button {
-                    let course = Course(id: UUID(), name: "New Course")
+                    let course = Course(name: "New Course")
                     courses.append(course)
                     selectedCourseId = course.id
                     selectedTab = nil
