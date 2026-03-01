@@ -16,6 +16,9 @@ packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
     from: "2.0.0"
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: "8.0.0"
 
 configFiles:
   Debug: Secrets.xcconfig
@@ -41,4 +44,5 @@ targets:
         DEVELOPMENT_TEAM: SMJLWBZ8X6
     dependencies:
       - package: Supabase
+      - package: GoogleSignIn
       - sdk: AuthenticationServices.framework

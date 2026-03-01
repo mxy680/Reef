@@ -1,6 +1,7 @@
 import AuthenticationServices
 import CryptoKit
 import Foundation
+@preconcurrency import GoogleSignIn
 import Supabase
 
 @Observable
@@ -91,6 +92,46 @@ final class AuthManager {
         case .failure(let error):
             if (error as? ASAuthorizationError)?.code == .canceled { return }
             errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Google Sign In
+
+    func signInWithGoogle() {
+        Task {
+            isLoading = true
+            errorMessage = nil
+            defer { isLoading = false }
+
+            do {
+                guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                      let rootViewController = windowScene.windows.first?.rootViewController
+                else {
+                    errorMessage = "Unable to find root view controller."
+                    return
+                }
+
+                let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
+
+                guard let idToken = result.user.idToken?.tokenString else {
+                    errorMessage = "Failed to get Google ID token."
+                    return
+                }
+
+                let accessToken = result.user.accessToken.tokenString
+
+                try await supabase.auth.signInWithIdToken(
+                    credentials: .init(
+                        provider: .google,
+                        idToken: idToken,
+                        accessToken: accessToken
+                    )
+                )
+            } catch let error as GIDSignInError where error.code == .canceled {
+                // User cancelled — ignore
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 

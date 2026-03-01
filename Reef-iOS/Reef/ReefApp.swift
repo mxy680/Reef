@@ -1,3 +1,4 @@
+@preconcurrency import GoogleSignIn
 import SwiftUI
 
 @main
@@ -8,6 +9,9 @@ struct ReefApp: App {
         WindowGroup {
             ContentView()
                 .environment(authManager)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
     }
 }

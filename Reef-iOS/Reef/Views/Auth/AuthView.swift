@@ -35,7 +35,7 @@ struct AuthView: View {
                             // OAuth buttons
                             HStack(spacing: 12) {
                                 Button {
-                                    // Google sign-in (not wired)
+                                    authManager.signInWithGoogle()
                                 } label: {
                                     HStack(spacing: 10) {
                                         GoogleIcon()

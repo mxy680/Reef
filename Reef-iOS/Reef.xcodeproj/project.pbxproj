@@ -15,6 +15,7 @@
 		611EB261C6B4D00B6ADA902E /* Epilogue-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */; };
 		689EDB34F09D6D2BB8CED1D2 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A601472A53F2EEA6CDC28FBB /* Supabase.swift */; };
 		8081686831DE310C575DC5EA /* ReefTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */; };
+		86C48AE599F618C06636F0BD /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 8A0AD6F5B9C938C549CBDA7E /* GoogleSignIn */; };
 		9223495A7D2DEDCA6FE9A351 /* ReefButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B67D53D01AE43D3B31BDEE /* ReefButton.swift */; };
 		92722784C33A0E7DAA072BDA /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A242632736FB9BEE170074 /* Typography.swift */; };
 		98E9547119361714B8EE388A /* ReefDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F2272F12753F94D68D47474 /* ReefDivider.swift */; };
@@ -53,7 +54,7 @@
 		E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggedInView.swift; sourceTree = "<group>"; };
 		E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
-		"TEMP_8EB26C27-AFD4-44AC-8250-24FE90AF66C6" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		"TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +63,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5764F13B61C5FBD9B17D28DD /* Supabase in Frameworks */,
+				86C48AE599F618C06636F0BD /* GoogleSignIn in Frameworks */,
 				B1342C3D4467A24E496A2705 /* AuthenticationServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -185,10 +187,10 @@
 			);
 			sourceTree = "<group>";
 		};
-		"TEMP_8416C773-174E-43F5-B383-37FB331D7A7D" /* Reef-iOS */ = {
+		"TEMP_194A531D-E200-46EB-B54F-AEB7B7E7507C" /* Reef-iOS */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_8EB26C27-AFD4-44AC-8250-24FE90AF66C6" /* Secrets.xcconfig */,
+				"TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B" /* Secrets.xcconfig */,
 			);
 			path = "Reef-iOS";
 			sourceTree = "<group>";
@@ -211,6 +213,7 @@
 			name = Reef;
 			packageProductDependencies = (
 				ECE996E3DB8403B5ED787530 /* Supabase */,
+				8A0AD6F5B9C938C549CBDA7E /* GoogleSignIn */,
 			);
 			productName = Reef;
 			productReference = 2FEBC9D0D9B06F74E3F564A1 /* Reef.app */;
@@ -242,6 +245,7 @@
 			mainGroup = F0F46F2D121C884BE5CD2C5E;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				243B9C3E9988E1B00BEF7698 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				7DDE570BD922A527B8FF276B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -314,7 +318,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_8EB26C27-AFD4-44AC-8250-24FE90AF66C6" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -380,7 +384,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_8EB26C27-AFD4-44AC-8250-24FE90AF66C6" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -480,6 +484,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		243B9C3E9988E1B00BEF7698 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 		7DDE570BD922A527B8FF276B /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
@@ -491,6 +503,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		8A0AD6F5B9C938C549CBDA7E /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 243B9C3E9988E1B00BEF7698 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
 		ECE996E3DB8403B5ED787530 /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 7DDE570BD922A527B8FF276B /* XCRemoteSwiftPackageReference "supabase-swift" */;
