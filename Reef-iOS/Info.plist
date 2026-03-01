@@ -5,13 +5,17 @@
 	<key>CFBundleExecutable</key>
 	<string>Reef</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.reef.app</string>
+	<string>com.studyreef.app</string>
 	<key>CFBundleName</key>
 	<string>Reef</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Epilogue-Medium.ttf</string>

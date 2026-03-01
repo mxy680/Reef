@@ -23,5 +23,8 @@ build/
 Package.resolved
 *.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
+# Secrets
+Secrets.xcconfig
+
 # OS
 .DS_Store

@@ -17,6 +17,10 @@ packages:
     url: https://github.com/supabase/supabase-swift
     from: "2.0.0"
 
+configFiles:
+  Debug: Secrets.xcconfig
+  Release: Secrets.xcconfig
+
 targets:
   Reef:
     type: application
@@ -28,9 +32,13 @@ targets:
         buildPhase: resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.reef.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.studyreef.app
         INFOPLIST_FILE: Info.plist
         TARGETED_DEVICE_FAMILY: "2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: Reef/Reef.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: SMJLWBZ8X6
     dependencies:
       - package: Supabase
+      - sdk: AuthenticationServices.framework
