@@ -11,9 +11,6 @@ final class CourseDetailViewModel {
     var isLoading = true
     var toastMessage: String?
 
-    var showDelete = false
-    var showEdit = false
-
     init(course: Course) {
         self.course = course
     }
@@ -134,6 +131,9 @@ struct CourseDetailView: View {
         .dashboardCard()
         .task { await viewModel.fetchData() }
         .id(courseId)
+        .onChange(of: initialCourse) { _, newCourse in
+            viewModel.course = newCourse
+        }
         // Toast
         .overlay(alignment: .bottomTrailing) {
             if let message = viewModel.toastMessage {
