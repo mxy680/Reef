@@ -36,7 +36,7 @@ function LoadingSkeleton() {
   const isMobile = useIsMobile()
 
   return (
-    <div className="dotted-grid" style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white }}>
+    <div className="dotted-grid" style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white, maxWidth: "100vw", overflowX: "hidden" }}>
       {/* Sidebar skeleton — hidden on mobile */}
       {!isMobile && (
         <div
@@ -106,25 +106,27 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const marginLeft = isMobile ? 0 : (sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED) + 28
 
   return (
-    <div className="dotted-grid" style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white }}>
+    <div className="dotted-grid" style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white, maxWidth: "100vw", overflowX: "hidden" }}>
       <DashboardSidebar />
       <motion.div
         initial={false}
         animate={{ marginLeft }}
         transition={isMobile ? { duration: 0 } : { type: "spring", bounce: 0.15, duration: 0.35 }}
-        style={{ flex: 1, display: "flex", flexDirection: "column" }}
+        style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}
       >
         <DashboardHeader />
         <main
           style={{
             flex: 1,
             overflowY: "auto",
+            overflowX: "hidden",
             padding: isMobile ? 16 : 32,
             margin: isMobile ? 12 : "12px 12px 12px 0",
             backgroundColor: colors.white,
             border: `1.5px solid ${colors.gray500}`,
             borderRadius: 16,
             boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
+            minWidth: 0,
           }}
         >
           {children}

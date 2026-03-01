@@ -103,11 +103,11 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden" }}>
       {crumbs.map((crumb, i) => {
         const isLast = i === crumbs.length - 1
         return (
-          <div key={crumb.href} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div key={crumb.href} style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
             {i > 0 && <ChevronSeparator />}
             {isLast ? (
               <span
@@ -117,6 +117,9 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
                   fontSize: 16,
                   letterSpacing: "-0.04em",
                   color: colors.black,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {crumb.label}
@@ -410,9 +413,11 @@ export default function DashboardHeader() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: isMobile ? "0 16px" : "0 24px",
+        padding: isMobile ? "0 12px" : "0 24px",
         position: "relative",
         zIndex: 10,
+        overflow: "hidden",
+        minWidth: 0,
       }}
     >
       {/* Left — Hamburger (mobile) + Breadcrumbs */}
@@ -426,15 +431,17 @@ export default function DashboardHeader() {
       </div>
 
       {/* Right — Actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10, flexShrink: 0 }}>
         {!isMobile && (
           <HeaderIconButton onClick={openCommandPalette}>
             <CommandIcon />
           </HeaderIconButton>
         )}
-        <HeaderIconButton>
-          <HelpIcon />
-        </HeaderIconButton>
+        {!isMobile && (
+          <HeaderIconButton>
+            <HelpIcon />
+          </HeaderIconButton>
+        )}
         <NotificationBell count={0} />
         {!isMobile && <StreakIndicator streak={0} />}
         <ProfileDropdown />
