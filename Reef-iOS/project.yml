@@ -1,0 +1,36 @@
+name: Reef
+options:
+  bundleIdPrefix: com.reef
+  deploymentTarget:
+    iOS: "18.2"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    TARGETED_DEVICE_FAMILY: "2"
+    INFOPLIST_FILE: Info.plist
+
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: "2.0.0"
+
+targets:
+  Reef:
+    type: application
+    platform: iOS
+    sources:
+      - path: Reef
+    resources:
+      - path: Reef/Resources/Fonts
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.reef.app
+        INFOPLIST_FILE: Info.plist
+        TARGETED_DEVICE_FAMILY: "2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: Supabase

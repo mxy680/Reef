@@ -4,6 +4,7 @@
 
 ```
 Reef/
+├── Reef-iOS/       — iPad SwiftUI app (iOS 18.2+, Supabase auth)
 ├── Reef-Server/    — Python FastAPI backend → see Reef-Server/CLAUDE.md
 ├── Reef-Web/       — Next.js landing page + document processing
 └── docs/plans/     — Design docs (gitignored, local only)
