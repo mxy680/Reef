@@ -10,6 +10,7 @@ final class AuthManager {
     var session: Session?
     var isLoading = false
     var errorMessage: String?
+    var magicLinkSent = false
 
     var isAuthenticated: Bool { session != nil }
 
@@ -129,6 +130,26 @@ final class AuthManager {
                 )
             } catch let error as GIDSignInError where error.code == .canceled {
                 // User cancelled — ignore
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    // MARK: - Magic Link
+
+    func sendMagicLink(email: String) {
+        Task {
+            isLoading = true
+            errorMessage = nil
+            defer { isLoading = false }
+
+            do {
+                try await supabase.auth.signInWithOTP(
+                    email: email,
+                    redirectTo: URL(string: "reef://auth-callback")
+                )
+                magicLinkSent = true
             } catch {
                 errorMessage = error.localizedDescription
             }

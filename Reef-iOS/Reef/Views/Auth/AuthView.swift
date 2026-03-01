@@ -18,90 +18,122 @@ struct AuthView: View {
                     // Card
                     ReefCard {
                         VStack(spacing: 0) {
-                            // Title
-                            Text(isSignUp ? "Get Started" : "Welcome Back")
-                                .reefHeading()
-                                .multilineTextAlignment(.center)
-                                .padding(.bottom, 6)
-                                .fadeUp(index: 0)
+                            if authManager.magicLinkSent {
+                                // Check your email state
+                                Image(systemName: "envelope.badge")
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(ReefColors.primary)
+                                    .padding(.bottom, 20)
+                                    .fadeUp(index: 0)
 
-                            // Subtitle
-                            Text(isSignUp ? "Create your free account" : "Sign in to continue learning")
-                                .reefBody()
-                                .multilineTextAlignment(.center)
-                                .padding(.bottom, 28)
-                                .fadeUp(index: 1)
+                                Text("Check Your Email")
+                                    .reefHeading()
+                                    .multilineTextAlignment(.center)
+                                    .padding(.bottom, 6)
+                                    .fadeUp(index: 1)
 
-                            // OAuth buttons
-                            HStack(spacing: 12) {
-                                Button {
-                                    authManager.signInWithGoogle()
-                                } label: {
-                                    HStack(spacing: 10) {
-                                        GoogleIcon()
-                                        Text("Google")
-                                    }
-                                }
-                                .reefStyle(.secondary)
-
-                                Button {
-                                    authManager.signInWithApple()
-                                } label: {
-                                    HStack(spacing: 10) {
-                                        Image(systemName: "apple.logo")
-                                            .font(.system(size: 18, weight: .semibold))
-                                        Text("Apple")
-                                    }
-                                }
-                                .reefStyle(.secondary)
-                            }
-                            .disabled(authManager.isLoading)
-                            .padding(.bottom, 20)
-                            .fadeUp(index: 2)
-
-                            // Divider
-                            ReefDivider()
-                                .padding(.bottom, 20)
-                                .fadeUp(index: 3)
-
-                            // Email field
-                            ReefTextField(
-                                placeholder: "name@example.com",
-                                text: $email
-                            )
-                            .padding(.bottom, 22)
-                            .fadeUp(index: 4)
-
-                            // CTA button
-                            Button {
-                                // Auth action (not wired)
-                            } label: {
-                                Text(isSignUp ? "Create Account" : "Continue")
-                            }
-                            .reefStyle(.primary)
-                            .padding(.bottom, 20)
-                            .fadeUp(index: 5)
-
-                            // Toggle link
-                            HStack(spacing: 4) {
-                                Text(isSignUp ? "Already have an account?" : "Don't have an account?")
-                                    .font(.epilogue(14, weight: .medium))
-                                    .tracking(-0.04 * 14)
-                                    .foregroundStyle(ReefColors.gray600)
+                                Text("We sent a magic link to **\(email)**")
+                                    .reefBody()
+                                    .multilineTextAlignment(.center)
+                                    .padding(.bottom, 28)
+                                    .fadeUp(index: 2)
 
                                 Button {
                                     withAnimation(.easeInOut(duration: 0.3)) {
-                                        isSignUp.toggle()
-                                        email = ""
+                                        authManager.magicLinkSent = false
                                     }
                                 } label: {
-                                    Text(isSignUp ? "Log in" : "Sign up")
-                                        .font(.epilogue(14, weight: .bold))
-                                        .tracking(-0.04 * 14)
-                                        .foregroundStyle(ReefColors.primary)
+                                    Text("Back")
                                 }
+                                .reefStyle(.secondary)
+                                .fadeUp(index: 3)
+                            } else {
+                                // Title
+                                Text(isSignUp ? "Get Started" : "Welcome Back")
+                                    .reefHeading()
+                                    .multilineTextAlignment(.center)
+                                    .padding(.bottom, 6)
+                                    .fadeUp(index: 0)
+
+                                // Subtitle
+                                Text(isSignUp ? "Create your free account" : "Sign in to continue learning")
+                                    .reefBody()
+                                    .multilineTextAlignment(.center)
+                                    .padding(.bottom, 28)
+                                    .fadeUp(index: 1)
+
+                                // OAuth buttons
+                                HStack(spacing: 12) {
+                                    Button {
+                                        authManager.signInWithGoogle()
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            GoogleIcon()
+                                            Text("Google")
+                                        }
+                                    }
+                                    .reefStyle(.secondary)
+
+                                    Button {
+                                        authManager.signInWithApple()
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            Image(systemName: "apple.logo")
+                                                .font(.system(size: 18, weight: .semibold))
+                                            Text("Apple")
+                                        }
+                                    }
+                                    .reefStyle(.secondary)
+                                }
+                                .disabled(authManager.isLoading)
+                                .padding(.bottom, 20)
+                                .fadeUp(index: 2)
+
+                                // Divider
+                                ReefDivider()
+                                    .padding(.bottom, 20)
+                                    .fadeUp(index: 3)
+
+                                // Email field
+                                ReefTextField(
+                                    placeholder: "name@example.com",
+                                    text: $email
+                                )
+                                .padding(.bottom, 22)
+                                .fadeUp(index: 4)
+
+                                // CTA button
+                                Button {
+                                    authManager.sendMagicLink(email: email)
+                                } label: {
+                                    Text(isSignUp ? "Create Account" : "Continue")
+                                }
+                                .reefStyle(.primary)
+                                .disabled(email.isEmpty || authManager.isLoading)
+                                .padding(.bottom, 20)
+                                .fadeUp(index: 5)
+
+                                // Toggle link
+                                HStack(spacing: 4) {
+                                    Text(isSignUp ? "Already have an account?" : "Don't have an account?")
+                                        .font(.epilogue(14, weight: .medium))
+                                        .tracking(-0.04 * 14)
+                                        .foregroundStyle(ReefColors.gray600)
+
+                                    Button {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            isSignUp.toggle()
+                                            email = ""
+                                        }
+                                    } label: {
+                                        Text(isSignUp ? "Log in" : "Sign up")
+                                            .font(.epilogue(14, weight: .bold))
+                                            .tracking(-0.04 * 14)
+                                            .foregroundStyle(ReefColors.primary)
+                                    }
+                                }
+                                .fadeUp(index: 6)
                             }
-                            .fadeUp(index: 6)
                         }
                     }
                     .frame(maxWidth: 480)

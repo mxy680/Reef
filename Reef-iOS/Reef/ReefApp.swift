@@ -11,6 +11,7 @@ struct ReefApp: App {
                 .environment(authManager)
                 .onOpenURL { url in
                     GIDSignIn.sharedInstance.handle(url)
+                    Task { try? await supabase.auth.session(from: url) }
                 }
         }
     }
