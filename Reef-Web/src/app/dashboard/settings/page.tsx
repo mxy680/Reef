@@ -370,7 +370,7 @@ function ProfileTab({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
       {/* Name & Email row */}
       <Card>
         <SectionHeader>Personal Info</SectionHeader>
@@ -426,7 +426,7 @@ function ProfileTab({
       </Card>
 
       {/* Grade & Subjects */}
-      <Card>
+      <Card style={{ flex: 1 }}>
         <SectionHeader>Education</SectionHeader>
 
         {/* Grade */}
@@ -519,7 +519,7 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
   const [defaultQuestionCount, setDefaultQuestionCount] = useState(10)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
       {/* Appearance */}
       <Card>
         <SectionHeader>Appearance</SectionHeader>
@@ -579,7 +579,7 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
       </Card>
 
       {/* Study Preferences */}
-      <Card>
+      <Card style={{ flex: 1 }}>
         <SectionHeader>Study Preferences</SectionHeader>
 
         {/* Focus on weak areas */}
@@ -690,9 +690,9 @@ function AccountTab({
   const info = TIER_INFO[tier]
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
       {/* Plan */}
-      <Card>
+      <Card style={{ flex: 1 }}>
         <SectionHeader>Your Plan</SectionHeader>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
@@ -826,22 +826,24 @@ export default function SettingsPage() {
           </h2>
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 4, backgroundColor: colors.gray100, borderRadius: 12, padding: 4 }}>
+          <div style={{ display: "flex", gap: 10 }}>
             {TABS.map((tab) => {
               const active = activeTab === tab.key
               return (
                 <motion.button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  whileTap={{ scale: 0.97 }}
+                  whileHover={active ? {} : { boxShadow: `2px 2px 0px 0px ${colors.black}`, x: 1, y: 1 }}
+                  whileTap={active ? {} : { boxShadow: `0px 0px 0px 0px ${colors.black}`, x: 3, y: 3 }}
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
                   style={{
-                    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    padding: "10px 0", border: "none", borderRadius: 10, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "10px 20px", cursor: "pointer",
                     fontFamily, fontWeight: 700, fontSize: 14, letterSpacing: "-0.04em",
-                    backgroundColor: active ? colors.white : "transparent",
-                    color: active ? colors.black : colors.gray500,
-                    boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                    transition: "background-color 0.15s, color 0.15s",
+                    border: `2px solid ${colors.black}`, borderRadius: 10,
+                    backgroundColor: active ? colors.primary : colors.white,
+                    color: active ? colors.white : colors.black,
+                    boxShadow: active ? `3px 3px 0px 0px ${colors.black}` : `4px 4px 0px 0px ${colors.black}`,
                   }}
                 >
                   {tab.icon}
@@ -853,7 +855,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Tab Content */}
-        <div style={{ flex: 1, overflowY: "auto", paddingBottom: 24 }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingBottom: 24 }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -861,6 +863,7 @@ export default function SettingsPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.2 }}
+              style={{ height: "100%" }}
             >
               {activeTab === "profile" && (
                 <ProfileTab profile={profile} setProfile={setProfile} setToast={setToast} />
