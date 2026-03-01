@@ -33,6 +33,6 @@ enum DashboardTab: String, CaseIterable, Identifiable {
     }
 
     static var mainTabs: [DashboardTab] {
-        [.documents, .analytics, .myReef, .library, .tutors]
+        [.documents, .analytics, .myReef, .tutors, .library]
     }
 }
