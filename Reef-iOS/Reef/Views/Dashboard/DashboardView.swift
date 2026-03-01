@@ -80,10 +80,10 @@ struct DashboardView: View {
                     if let course = courseToEdit {
                         EditCourseSheet(
                             course: course,
-                            onConfirm: { name, emoji in
+                            onConfirm: { name, emoji, color in
                                 Task {
                                     do {
-                                        try await CourseService.shared.updateCourse(course.id, name: name, emoji: emoji)
+                                        try await CourseService.shared.updateCourse(course.id, name: name, emoji: emoji, color: color)
                                         withAnimation(.spring(duration: 0.2)) {
                                             courseToEdit = nil
                                         }

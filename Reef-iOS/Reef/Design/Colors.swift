@@ -23,4 +23,11 @@ extension Color {
             opacity: opacity
         )
     }
+
+    init(hex string: String) {
+        let hex = string.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        var value: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&value)
+        self.init(hex: UInt(value))
+    }
 }
