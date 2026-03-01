@@ -51,8 +51,10 @@ struct EditCourseSheet: View {
                 .padding(.bottom, 6)
 
             TextField("e.g. Calculus II", text: $name)
+                .textFieldStyle(.plain)
                 .font(.epilogue(15, weight: .semiBold))
                 .tracking(-0.04 * 15)
+                .foregroundStyle(ReefColors.black)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(ReefColors.white)

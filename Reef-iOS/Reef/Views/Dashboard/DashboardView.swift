@@ -39,73 +39,71 @@ struct DashboardView: View {
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
         .task { await fetchCourses() }
-        // Full-screen modal overlays
+        // Full-screen modal overlays — backdrop + modal on separate layers
+        // so the modal's interactive controls (TextFields, buttons) get
+        // proper hit-testing priority over the backdrop dismiss gesture.
         .overlay {
             if courseToDelete != nil || courseToEdit != nil {
-                ZStack {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation(.spring(duration: 0.2)) {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            courseToDelete = nil
+                            courseToEdit = nil
+                        }
+                    }
+            }
+        }
+        .overlay {
+            if let course = courseToDelete {
+                DeleteCourseSheet(
+                    course: course,
+                    onConfirm: {
+                        Task {
+                            do {
+                                try await CourseService.shared.deleteCourse(course.id)
                                 courseToDelete = nil
-                                courseToEdit = nil
+                                selectedTab = .documents
+                                selectedCourseId = nil
+                                await fetchCourses()
+                            } catch {
+                                print("Failed to delete course: \(error)")
                             }
                         }
-
-                    if let course = courseToDelete {
-                        DeleteCourseSheet(
-                            course: course,
-                            onConfirm: {
-                                Task {
-                                    do {
-                                        try await CourseService.shared.deleteCourse(course.id)
-                                        courseToDelete = nil
-                                        selectedTab = .documents
-                                        selectedCourseId = nil
-                                        await fetchCourses()
-                                    } catch {
-                                        print("Failed to delete course: \(error)")
-                                    }
-                                }
-                            },
-                            onClose: {
-                                withAnimation(.spring(duration: 0.2)) {
-                                    courseToDelete = nil
-                                }
-                            }
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture { }
-                        .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            courseToDelete = nil
+                        }
                     }
-
-                    if let course = courseToEdit {
-                        EditCourseSheet(
-                            course: course,
-                            onConfirm: { name, emoji, color in
-                                Task {
-                                    do {
-                                        try await CourseService.shared.updateCourse(course.id, name: name, emoji: emoji, color: color)
-                                        withAnimation(.spring(duration: 0.2)) {
-                                            courseToEdit = nil
-                                        }
-                                        await fetchCourses()
-                                    } catch {
-                                        print("Failed to update course: \(error)")
-                                    }
-                                }
-                            },
-                            onClose: {
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+        }
+        .overlay {
+            if let course = courseToEdit {
+                EditCourseSheet(
+                    course: course,
+                    onConfirm: { name, emoji, color in
+                        Task {
+                            do {
+                                try await CourseService.shared.updateCourse(course.id, name: name, emoji: emoji, color: color)
                                 withAnimation(.spring(duration: 0.2)) {
                                     courseToEdit = nil
                                 }
+                                await fetchCourses()
+                            } catch {
+                                print("Failed to update course: \(error)")
                             }
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture { }
-                        .transition(.scale(scale: 0.95).combined(with: .opacity))
+                        }
+                    },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            courseToEdit = nil
+                        }
                     }
-                }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
         .animation(.spring(duration: 0.2), value: courseToDelete?.id)
