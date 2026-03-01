@@ -74,6 +74,8 @@ struct DashboardView: View {
                                 }
                             }
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture { }
                         .transition(.scale(scale: 0.95).combined(with: .opacity))
                     }
 
@@ -99,6 +101,8 @@ struct DashboardView: View {
                                 }
                             }
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture { }
                         .transition(.scale(scale: 0.95).combined(with: .opacity))
                     }
                 }
