@@ -391,7 +391,7 @@ function ProfileTab({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Name & Email row */}
       <Card>
         <SectionHeader>Personal Info</SectionHeader>
@@ -447,7 +447,7 @@ function ProfileTab({
       </Card>
 
       {/* Grade & Subjects */}
-      <Card style={{ flex: 1 }}>
+      <Card>
         <SectionHeader>Education</SectionHeader>
 
         {/* Grade */}
@@ -540,7 +540,7 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
   const [defaultQuestionCount, setDefaultQuestionCount] = useState(10)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Appearance */}
       <Card>
         <SectionHeader>Appearance</SectionHeader>
@@ -600,7 +600,7 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
       </Card>
 
       {/* Study Preferences */}
-      <Card style={{ flex: 1 }}>
+      <Card>
         <SectionHeader>Study Preferences</SectionHeader>
 
         {/* Focus on weak areas */}
@@ -1202,7 +1202,7 @@ export default function SettingsPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.2 }}
-              style={{ height: activeTab === "profile" || activeTab === "preferences" ? "100%" : "auto" }}
+              style={{ height: "auto" }}
             >
               {activeTab === "profile" && (
                 <ProfileTab profile={profile} setProfile={setProfile} setToast={setToast} />
