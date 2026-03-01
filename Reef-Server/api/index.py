@@ -1,10 +1,10 @@
 """
-Reef Server - FastAPI application for PDF reconstruction and text embeddings.
+Reef Server - FastAPI application for PDF reconstruction.
 
 Provides:
 - PDF reconstruction pipeline (Surya layout → Gemini grouping → OpenAI extraction → LaTeX)
-- Text embeddings using MiniLM-L6-v2
 - PDF layout annotation using Surya
+- Problem grouping using Gemini
 """
 
 from contextlib import asynccontextmanager
@@ -25,14 +25,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pydantic import BaseModel
-from lib.mock_responses import get_mock_embedding
 import re
 from collections import defaultdict, deque
 from dataclasses import dataclass
 import numpy as np
-from lib.models import EmbedRequest, EmbedResponse, ProblemGroup, GroupProblemsResponse, Question, QuestionBatch, QuizGenerationRequest, QuizQuestionResponse
-from lib.embedding_client import get_embedding_service
-from lib.question_to_latex import question_to_latex, quiz_question_to_latex, _sanitize_text
+from lib.models import ProblemGroup, GroupProblemsResponse, Question, QuestionBatch
+from lib.question_to_latex import question_to_latex, _sanitize_text
 from lib.database import init_db, close_db, get_pool
 
 from lib.surya_client import detect_layout
@@ -80,61 +78,6 @@ async def health_check():
         "service": "reef-server",
         "version": "1.0.0"
     }
-
-
-@app.post("/ai/embed", response_model=EmbedResponse)
-async def ai_embed(
-    request_body: EmbedRequest,
-    request: Request,
-    mode: str = Query(default="prod", pattern="^(mock|prod)$"),
-):
-    """
-    Generate text embeddings using MiniLM-L6-v2.
-
-    Accepts a single text string or a list of texts. Returns 384-dimensional
-    normalized vectors suitable for semantic search.
-
-    Query Parameters:
-    - mode: "mock" for testing, "prod" for real embeddings
-    """
-    # Normalize input to list
-    texts = request_body.texts if isinstance(request_body.texts, list) else [request_body.texts]
-    text_count = len(texts)
-
-    try:
-        # Validate input
-        if text_count == 0:
-            raise HTTPException(status_code=422, detail="texts cannot be empty")
-        if text_count > 100:
-            raise HTTPException(status_code=422, detail="Maximum 100 texts per request")
-
-        # Mock mode
-        if mode == "mock":
-            embeddings = get_mock_embedding(count=text_count, dimensions=384)
-            return EmbedResponse(
-                embeddings=embeddings,
-                model="all-MiniLM-L6-v2",
-                dimensions=384,
-                count=text_count,
-                mode="mock",
-            )
-
-        # Production mode
-        embedding_service = get_embedding_service()
-        embeddings = embedding_service.embed(texts, normalize=request_body.normalize)
-
-        return EmbedResponse(
-            embeddings=embeddings,
-            model=embedding_service.model_name,
-            dimensions=embedding_service.dimensions,
-            count=text_count,
-            mode="prod",
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @dataclass
@@ -1159,186 +1102,3 @@ Use part_label: null for single questions, or the part letter for each subpart."
         raise HTTPException(status_code=500, detail=str(e))
 
 
-QUIZ_GENERATION_PROMPT = """\
-You are generating a practice quiz for a student. Create {num_questions} questions on the topic: "{topic}".
-
-Difficulty level: {difficulty}
-
-Question types to include: {question_types}
-
-{context_section}
-
-{general_knowledge_section}
-
-{additional_notes_section}
-
-## Rules
-- Each question must be valid LaTeX body content (no preamble, no \\documentclass, no \\begin{{document}}).
-- Use inline math with $...$ and display math with \\[...\\].
-- Escape LaTeX special characters in prose: \\& not &, \\% not %, \\# not #.
-- For "open ended" questions: ask the student to show their work and explain their reasoning.
-- For "multiple choice" questions: provide 4 options labeled (A), (B), (C), (D) using an itemized list.
-- For "fill in the blank" questions: use \\underline{{\\hspace{{3cm}}}} for blanks.
-- Vary the questions to test different aspects of the topic.
-- Questions should be appropriate for the specified difficulty level.
-- Do NOT include answers or solutions — this is a practice quiz for the student to work through.
-
-Return a JSON object matching the provided schema.
-"""
-
-
-class QuizQuestionGenerated(BaseModel):
-    """A single generated quiz question from the LLM."""
-    number: int
-    text: str
-    topic: str | None = None
-    answer_space_cm: float = 5.0
-
-
-class QuizQuestionsGenerated(BaseModel):
-    """Batch of generated quiz questions."""
-    questions: list[QuizQuestionGenerated]
-
-
-@app.post("/ai/generate-quiz")
-async def ai_generate_quiz(request_body: QuizGenerationRequest):
-    """
-    Generate a practice quiz from RAG context and configuration.
-
-    Pipeline:
-    1. Build prompt from topic + difficulty + RAG context
-    2. Call Gemini for structured question generation (LaTeX body)
-    3. Compile each question to PDF via LaTeXCompiler
-    4. On failure, use LLM auto-fix (same pattern as reconstruct)
-    5. Return array of { number, pdf_base64, topic }
-    """
-    try:
-        # Build context section
-        if request_body.rag_context.strip():
-            context_section = f"""## Course Materials Context
-The following is relevant content from the student's course notes. Base your questions on this material:
-
----
-{request_body.rag_context}
----"""
-        else:
-            context_section = "## No course materials provided.\nGenerate questions based on general knowledge of the topic."
-
-        # General knowledge section
-        if request_body.use_general_knowledge:
-            general_knowledge_section = "You may also draw on general knowledge beyond the provided notes to create more comprehensive questions."
-        else:
-            general_knowledge_section = "IMPORTANT: Only create questions that can be answered using the provided course materials. Do not require knowledge beyond what is in the notes."
-
-        # Additional notes section
-        if request_body.additional_notes:
-            additional_notes_section = f"## Additional Instructions\n{request_body.additional_notes}"
-        else:
-            additional_notes_section = ""
-
-        # Format question types
-        question_types_str = ", ".join(t.replace("_", " ") for t in request_body.question_types)
-
-        prompt = QUIZ_GENERATION_PROMPT.format(
-            num_questions=request_body.num_questions,
-            topic=request_body.topic,
-            difficulty=request_body.difficulty,
-            question_types=question_types_str,
-            context_section=context_section,
-            general_knowledge_section=general_knowledge_section,
-            additional_notes_section=additional_notes_section,
-        )
-
-        # Create LLM client
-        from lib.llm_client import LLMClient
-        llm_client = LLMClient(
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            model="google/gemini-3-flash-preview",
-            base_url="https://openrouter.ai/api/v1",
-        )
-
-        # Generate questions via LLM with structured output
-        raw_response = await asyncio.to_thread(
-            llm_client.generate,
-            prompt=prompt,
-            response_schema=QuizQuestionsGenerated.model_json_schema(),
-        )
-
-        generated = QuizQuestionsGenerated.model_validate_json(raw_response)
-
-        # Compile each question to PDF
-        from lib.latex_compiler import LaTeXCompiler
-        compiler = LaTeXCompiler()
-
-        async def compile_quiz_question(q: QuizQuestionGenerated) -> QuizQuestionResponse:
-            """Compile a single quiz question to PDF, with LLM fix on failure."""
-            latex_body = quiz_question_to_latex(q.number, q.text, q.answer_space_cm)
-            try:
-                pdf_bytes = await asyncio.to_thread(compiler.compile_latex, latex_body)
-                return QuizQuestionResponse(
-                    number=q.number,
-                    pdf_base64=base64.b64encode(pdf_bytes).decode(),
-                    topic=q.topic,
-                )
-            except Exception as e:
-                print(f"  [quiz] Question {q.number}: compile FAILED — {e}")
-                # Try LLM fix
-                try:
-                    fix_prompt = LATEX_FIX_PROMPT.format(
-                        latex_body=latex_body,
-                        error_message=str(e)[:2000],
-                    )
-                    fixed_latex = await asyncio.to_thread(llm_client.generate, prompt=fix_prompt)
-                    fixed_body = f"\\textbf{{Question {q.number}}}\n\n{fixed_latex}"
-                    pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fixed_body)
-                    print(f"  [quiz] Question {q.number}: FIXED by LLM")
-                    return QuizQuestionResponse(
-                        number=q.number,
-                        pdf_base64=base64.b64encode(pdf_bytes).decode(),
-                        topic=q.topic,
-                    )
-                except Exception as e2:
-                    print(f"  [quiz] Question {q.number}: FIX FAILED — {e2}")
-                    # Fallback: compile a placeholder
-                    fallback = f"\\textbf{{Question {q.number}}}\n\n\\textit{{Question generation failed. Please try again.}}\n\n\\vspace{{5.0cm}}"
-                    pdf_bytes = await asyncio.to_thread(compiler.compile_latex, fallback)
-                    return QuizQuestionResponse(
-                        number=q.number,
-                        pdf_base64=base64.b64encode(pdf_bytes).decode(),
-                        topic=q.topic,
-                    )
-
-        # Compile all questions in parallel
-        compile_tasks = [compile_quiz_question(q) for q in generated.questions]
-        results = await asyncio.gather(*compile_tasks)
-
-        return [r.model_dump() for r in results]
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.delete("/ai/documents/{filename}")
-async def delete_document(filename: str):
-    """Delete a document and its questions/answer keys from the database."""
-    pool = get_pool()
-    if not pool:
-        raise HTTPException(status_code=503, detail="Database not available")
-
-    async with pool.acquire() as conn:
-        # Find document by filename (may match multiple if re-uploaded)
-        doc_ids = await conn.fetch(
-            "SELECT id FROM documents WHERE filename = $1", filename
-        )
-        if not doc_ids:
-            raise HTTPException(status_code=404, detail=f"Document '{filename}' not found")
-
-        # CASCADE deletes questions and answer_keys automatically
-        for row in doc_ids:
-            await conn.execute("DELETE FROM documents WHERE id = $1", row["id"])
-
-    count = len(doc_ids)
-    print(f"[delete] Deleted {count} document(s) with filename '{filename}'")
-    return {"deleted": count, "filename": filename}
