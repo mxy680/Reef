@@ -1,30 +1,13 @@
 # Reef
 
-## Workflow
-
-- After finishing any implementation, always run the full test suite before reporting completion:
-  `xcodebuild -project Reef-iOS/Reef.xcodeproj -scheme Reef -destination 'platform=iOS Simulator,name=iPad Pro 11-inch (M4)' test 2>&1 | grep -E '(passed|failed|error:)'`
-
 ## Directory Map
 
 ```
 Reef/
 ├── Reef-Server/    — Python FastAPI backend → see Reef-Server/CLAUDE.md
-├── Reef-iOS/       — iPad SwiftUI app → see Reef-iOS/CLAUDE.md
 ├── Reef-Web/       — Next.js landing page + document processing
 └── docs/plans/     — Design docs (gitignored, local only)
 ```
-
-## iOS (Reef-iOS)
-
-- SourceKit errors about macOS unavailability (AVAudioSession, UIColor, etc.) are noise — this is an iPad-only app
-- SourceKit "Cannot find X in scope" for types like KeychainService, CanvasViewMode, FileStorageService are indexing issues, not real errors
-- Swift struct initializer arguments MUST match declaration order — check the struct's property list before adding new parameters
-- `AIService` is `@MainActor` singleton; stroke data sent via fire-and-forget REST POSTs (no WebSocket)
-- Debug base URL: `https://dev.studyreef.com` (Hetzner host:8001), release: `https://api.studyreef.com` (Hetzner Docker prod) — see `ServerConfig.swift`
-- **SSH tunnel must bind `0.0.0.0`**: `ssh -R 0.0.0.0:8001:localhost:8000 deploy@178.156.139.74 -N -f` — Caddy is in Docker, reaches host via bridge IP `172.18.0.1`, so `localhost` binding causes 502s
-- **SSE gotcha**: `URLSession.AsyncBytes.lines` does NOT reliably yield empty lines at HTTP chunk boundaries. Don't wait for the `\n\n` terminator to dispatch events — dispatch on `data:` line instead (see `docs/2026-02-18-sse-ios-buffering-fix.md`)
-- **Active part detection**: `DrawingOverlayView.Coordinator.detectActivePart(for:)` maps canvas Y → PDF Y using `regionData.pageHeights`. Canvas bounds ≈ PDF points (2x render / 2x screen scale = 1:1). `SubquestionRegion.page` is 0-indexed, `getPageIndex` returns 1-based
 
 ## Server (Reef-Server)
 
