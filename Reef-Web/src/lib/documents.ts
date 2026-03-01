@@ -57,10 +57,10 @@ export async function uploadDocument(file: File, thumbnail?: Blob): Promise<Docu
     throw new LimitError("Document limit reached — upgrade to upload more")
   }
 
-  // 1. Create DB row
+  // 1. Create DB row — mark completed immediately (no server-side reconstruction)
   const { data: doc, error: insertError } = await supabase
     .from("documents")
-    .insert({ user_id: user.id, filename: file.name })
+    .insert({ user_id: user.id, filename: file.name, status: "completed" })
     .select()
     .single()
 
@@ -87,14 +87,6 @@ export async function uploadDocument(file: File, thumbnail?: Blob): Promise<Docu
       .upload(thumbPath, thumbnail, { contentType: "image/png" })
       .catch(() => {}) // non-critical
   }
-
-  // 4. Fake processing — mark completed after 2s (no server-side reconstruction)
-  setTimeout(async () => {
-    await supabase
-      .from("documents")
-      .update({ status: "completed" })
-      .eq("id", document.id)
-  }, 2000)
 
   return document
 }
