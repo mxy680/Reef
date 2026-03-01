@@ -208,6 +208,18 @@ function DocumentThumbnail({ status, thumbnailUrl }: { status: Document["status"
         </svg>
       )}
 
+      {status === "processing" && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(90deg, transparent 0%, rgba(91,158,173,0.08) 50%, transparent 100%)",
+            backgroundSize: "200% 100%",
+            animation: "shimmer 1.5s infinite",
+          }}
+        />
+      )}
+
     </div>
   )
 }
@@ -363,6 +375,7 @@ function DocumentCard({
   const displayName = doc.filename.replace(/\.pdf$/i, "")
 
   function statusLabel() {
+    if (doc.status === "processing") return "Processing..."
     if (doc.status === "failed") return "Failed"
     return dateStr
   }
@@ -388,7 +401,7 @@ function DocumentCard({
         cursor: doc.status === "completed" ? "pointer" : "default",
         display: "flex",
         flexDirection: "column",
-        opacity: 1,
+        opacity: doc.status === "processing" ? 0.85 : 1,
       }}
     >
       {/* Top-right controls */}
@@ -495,7 +508,7 @@ function DocumentCard({
             fontWeight: 500,
             fontSize: 11,
             letterSpacing: "-0.04em",
-            color: doc.status === "failed" ? "#C62828" : colors.gray500,
+            color: doc.status === "failed" ? "#C62828" : doc.status === "processing" ? colors.primary : colors.gray500,
           }}
         >
           {statusLabel()}
@@ -1160,6 +1173,19 @@ function MoveToCourseModal({
   )
 }
 
+// ─── Shimmer Keyframes (injected once) ────────────────────
+
+function ShimmerStyle() {
+  return (
+    <style>{`
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+    `}</style>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────
 
 export default function DocumentsPage() {
@@ -1202,6 +1228,15 @@ export default function DocumentsPage() {
   // Initial load
   useEffect(() => { fetchDocuments() }, [fetchDocuments])
 
+  // Poll every 3s while any document is processing
+  useEffect(() => {
+    const hasProcessing = documents.some(d => d.status === "processing")
+    if (!hasProcessing) return
+
+    const interval = setInterval(fetchDocuments, 3000)
+    return () => clearInterval(interval)
+  }, [documents, fetchDocuments])
+
   function triggerUpload() {
     fileInputRef.current?.click()
   }
@@ -1237,7 +1272,7 @@ export default function DocumentsPage() {
 
       // Optimistically add the new document to the list
       setDocuments(prev => [doc, ...prev])
-      setToast("Document uploaded")
+      setToast("Document uploading — processing will begin shortly")
     } catch (err) {
       if (err instanceof LimitError) {
         setToast(err.message)
@@ -1340,6 +1375,7 @@ export default function DocumentsPage() {
 
   return (
     <>
+      <ShimmerStyle />
 
       {/* Hidden file input */}
       <input
