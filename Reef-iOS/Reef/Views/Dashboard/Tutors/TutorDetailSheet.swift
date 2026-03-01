@@ -45,36 +45,17 @@ struct TutorDetailSheet: View {
 
                     // Action buttons
                     HStack(spacing: 12) {
-                        // Voice preview
                         Button {
                             onVoicePreview()
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: isSpeaking ? "stop.fill" : "play.fill")
                                     .font(.system(size: 12, weight: .bold))
-
                                 Text(isSpeaking ? "Stop" : "Preview Voice")
-                                    .font(.epilogue(14, weight: .bold))
-                                    .tracking(-0.04 * 14)
                             }
-                            .foregroundStyle(tintColor)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(tintColor.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(tintColor.opacity(0.3), lineWidth: 1.5)
-                            )
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(tintColor.opacity(0.2))
-                                    .offset(x: 3, y: 3)
-                            )
                         }
-                        .buttonStyle(.plain)
+                        .reefStyle(.secondary)
 
-                        // Select tutor
                         Button {
                             onSelect()
                         } label: {
@@ -83,27 +64,10 @@ struct TutorDetailSheet: View {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 14, weight: .bold))
                                 }
-
                                 Text(isActive ? "Active Tutor" : "Select Tutor")
-                                    .font(.epilogue(14, weight: .bold))
-                                    .tracking(-0.04 * 14)
                             }
-                            .foregroundStyle(isActive ? ReefColors.white : ReefColors.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(isActive ? tintColor : ReefColors.accent)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(ReefColors.black, lineWidth: 1.5)
-                            )
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(ReefColors.black)
-                                    .offset(x: 3, y: 3)
-                            )
                         }
-                        .buttonStyle(.plain)
+                        .reefStyle(.primary)
                     }
 
                     // Sections

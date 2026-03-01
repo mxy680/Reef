@@ -71,33 +71,19 @@ struct TutorCardView: View {
 
                 // Bottom actions
                 HStack(spacing: 8) {
-                    // Voice preview pill
                     Button {
                         onVoicePreview()
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: isSpeaking ? "stop.fill" : "play.fill")
                                 .font(.system(size: 9, weight: .bold))
-
                             Text(isSpeaking ? "Stop" : "Voice")
-                                .font(.epilogue(11, weight: .bold))
-                                .tracking(-0.04 * 11)
                         }
-                        .foregroundStyle(tintColor)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(tintColor.opacity(0.1))
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(tintColor.opacity(0.25), lineWidth: 1)
-                        )
                     }
-                    .buttonStyle(.plain)
+                    .reefCompactStyle(.secondary)
 
                     Spacer()
 
-                    // Select button
                     Button {
                         onSelect()
                     } label: {
@@ -106,22 +92,10 @@ struct TutorCardView: View {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 9, weight: .black))
                             }
-
                             Text(isActive ? "Active" : "Select")
-                                .font(.epilogue(11, weight: .bold))
-                                .tracking(-0.04 * 11)
                         }
-                        .foregroundStyle(isActive ? ReefColors.white : tintColor)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 7)
-                        .background(isActive ? tintColor : tintColor.opacity(0.1))
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(isActive ? tintColor : tintColor.opacity(0.25), lineWidth: isActive ? 0 : 1)
-                        )
                     }
-                    .buttonStyle(.plain)
+                    .reefCompactStyle(isActive ? .primary : .secondary)
                 }
                 .padding(.horizontal, 14)
                 .padding(.bottom, 14)

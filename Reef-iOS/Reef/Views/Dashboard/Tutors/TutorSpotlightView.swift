@@ -6,8 +6,6 @@ struct TutorSpotlightView: View {
     let onVoicePreview: () -> Void
     let onStartSession: () -> Void
 
-    @State private var isPressed = false
-
     private var tintColor: Color {
         Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
     }
@@ -66,7 +64,6 @@ struct TutorSpotlightView: View {
 
                 // Bottom actions
                 HStack(spacing: 10) {
-                    // Voice Preview pill
                     Button {
                         onVoicePreview()
                     } label: {
@@ -74,22 +71,10 @@ struct TutorSpotlightView: View {
                             Image(systemName: isSpeaking ? "stop.fill" : "play.fill")
                                 .font(.system(size: 10, weight: .bold))
                             Text(isSpeaking ? "Stop" : "Preview Voice")
-                                .font(.epilogue(12, weight: .bold))
-                                .tracking(-0.04 * 12)
                         }
-                        .foregroundStyle(tintColor)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 9)
-                        .background(tintColor.opacity(0.1))
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(tintColor.opacity(0.25), lineWidth: 1)
-                        )
                     }
-                    .buttonStyle(.plain)
+                    .reefCompactStyle(.secondary)
 
-                    // Start Session button
                     Button {
                         onStartSession()
                     } label: {
@@ -97,16 +82,9 @@ struct TutorSpotlightView: View {
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 10, weight: .bold))
                             Text("Start Session")
-                                .font(.epilogue(12, weight: .bold))
-                                .tracking(-0.04 * 12)
                         }
-                        .foregroundStyle(ReefColors.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 9)
-                        .background(tintColor)
-                        .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .reefCompactStyle(.primary)
                 }
             }
         }
