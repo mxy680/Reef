@@ -8,15 +8,18 @@ import Supabase
 @MainActor
 final class AuthManager {
     var session: Session?
+    var profile: Profile?
     var isLoading = false
     var errorMessage: String?
     var magicLinkSent = false
     var magicLinkEmail = ""
 
     var isAuthenticated: Bool { session != nil }
+    var onboardingCompleted: Bool { profile?.onboardingCompleted == true }
 
     private var coordinator: AppleSignInCoordinator?
     private var currentNonce: String?
+    private let profileManager = ProfileManager()
 
     init() {
         Task { await bootstrap() }
@@ -27,17 +30,34 @@ final class AuthManager {
     private func bootstrap() async {
         // Listen for auth state changes
         Task {
-            for await (_, session) in supabase.auth.authStateChanges {
+            for await (event, session) in supabase.auth.authStateChanges {
                 self.session = session
+                if session != nil, event == .signedIn || event == .tokenRefreshed || event == .initialSession {
+                    await checkOnboarding()
+                }
+                if session == nil {
+                    self.profile = nil
+                }
             }
         }
 
         // Attempt session restore
         do {
             session = try await supabase.auth.session
+            await checkOnboarding()
         } catch {
             session = nil
         }
+    }
+
+    // MARK: - Onboarding
+
+    private func checkOnboarding() async {
+        profile = await profileManager.fetchProfile()
+    }
+
+    func completeOnboarding() async {
+        profile = await profileManager.fetchProfile()
     }
 
     // MARK: - Apple Sign In
@@ -165,6 +185,7 @@ final class AuthManager {
             do {
                 try await supabase.auth.signOut()
                 session = nil
+                profile = nil
             } catch {
                 errorMessage = error.localizedDescription
             }

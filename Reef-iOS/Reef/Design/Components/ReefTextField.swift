@@ -3,6 +3,8 @@ import SwiftUI
 struct ReefTextField: View {
     let placeholder: String
     @Binding var text: String
+    var keyboard: UIKeyboardType = .emailAddress
+    var capitalization: TextInputAutocapitalization = .never
 
     var body: some View {
         TextField(placeholder, text: $text, prompt: Text(placeholder).foregroundStyle(ReefColors.gray500))
@@ -22,8 +24,8 @@ struct ReefTextField: View {
                     .fill(ReefColors.black)
                     .offset(x: 2, y: 2)
             )
-            .textInputAutocapitalization(.never)
+            .textInputAutocapitalization(capitalization)
             .autocorrectionDisabled()
-            .keyboardType(.emailAddress)
+            .keyboardType(keyboard)
     }
 }
