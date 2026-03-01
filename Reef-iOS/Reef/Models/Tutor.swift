@@ -5,7 +5,6 @@ struct Tutor: Identifiable, Codable, Hashable {
     let name: String
     let emoji: String
     let species: String
-    let subject: String
     let shortBio: String
     let funFact: String
     let teachingStyle: String
@@ -18,7 +17,6 @@ struct Tutor: Identifiable, Codable, Hashable {
         case name
         case emoji
         case species
-        case subject
         case shortBio = "short_bio"
         case funFact = "fun_fact"
         case teachingStyle = "teaching_style"

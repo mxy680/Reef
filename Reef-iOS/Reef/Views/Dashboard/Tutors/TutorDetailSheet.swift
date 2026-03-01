@@ -40,11 +40,6 @@ struct TutorDetailSheet: View {
                             .font(.epilogue(12, weight: .bold))
                             .tracking(0.06 * 12)
                             .foregroundStyle(tintColor)
-
-                        Text(tutor.subject)
-                            .font(.epilogue(15, weight: .semiBold))
-                            .tracking(-0.04 * 15)
-                            .foregroundStyle(ReefColors.gray600)
                     }
                     .padding(.top, 8)
 

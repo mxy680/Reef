@@ -58,11 +58,6 @@ struct TutorCardView: View {
                         .tracking(0.06 * 10)
                         .foregroundStyle(tintColor)
 
-                    Text(tutor.subject)
-                        .font(.epilogue(12, weight: .semiBold))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray600)
-
                     Text(tutor.shortBio)
                         .font(.epilogue(11, weight: .medium))
                         .tracking(-0.04 * 11)

@@ -21,6 +21,11 @@ final class TutorsViewModel {
     func onAppear() async {
         activeTutorId = UserDefaults.standard.string(forKey: "reef_active_tutor_id")
         await fetchTutors()
+
+        // Default to first tutor if none selected
+        if activeTutorId == nil, let first = tutors.first {
+            activeTutorId = first.id
+        }
     }
 
     func onDisappear() {
