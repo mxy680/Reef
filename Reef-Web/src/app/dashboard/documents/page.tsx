@@ -236,24 +236,23 @@ function DocumentThumbnail({ status, thumbnailUrl }: { status: Document["status"
 // ─── Error Tooltip ────────────────────────────────────────
 
 function ErrorTooltip({ message, onRetry }: { message: string; onRetry: () => void }) {
+  // Truncate long raw error messages for display
+  const displayMessage = message.length > 100 ? message.slice(0, 100) + "..." : message
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 4 }}
       transition={{ duration: 0.15 }}
+      onClick={(e) => e.stopPropagation()}
       style={{
-        position: "absolute",
-        top: "100%",
-        right: 0,
-        marginTop: 6,
         backgroundColor: colors.white,
         border: `1.5px solid #E57373`,
         borderRadius: 10,
         padding: "10px 14px",
         width: 220,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-        zIndex: 20,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
       }}
     >
       <div
@@ -265,9 +264,10 @@ function ErrorTooltip({ message, onRetry }: { message: string; onRetry: () => vo
           color: colors.gray600,
           lineHeight: 1.4,
           marginBottom: 8,
+          wordBreak: "break-word",
         }}
       >
-        {message}
+        {displayMessage}
       </div>
       <button
         onClick={(e) => { e.stopPropagation(); onRetry() }}
@@ -394,6 +394,8 @@ function DocumentCard({
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [errorTooltipOpen, setErrorTooltipOpen] = useState(false)
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null)
+  const alertRef = useRef<HTMLDivElement>(null)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -434,7 +436,7 @@ function DocumentCard({
         border: `1.5px solid ${doc.status === "failed" ? "#E57373" : colors.gray500}`,
         borderRadius: 14,
         boxShadow: `4px 4px 0px 0px ${doc.status === "failed" ? "#E57373" : colors.gray500}`,
-        overflow: "hidden",
+        overflow: "visible",
         cursor: doc.status === "completed" ? "pointer" : "default",
         display: "flex",
         flexDirection: "column",
@@ -446,8 +448,15 @@ function DocumentCard({
         {/* Error alert icon (failed docs only) */}
         {doc.status === "failed" && (
           <div
+            ref={alertRef}
             style={{ position: "relative" }}
-            onMouseEnter={() => setErrorTooltipOpen(true)}
+            onMouseEnter={() => {
+              if (alertRef.current) {
+                const rect = alertRef.current.getBoundingClientRect()
+                setTooltipPos({ top: rect.bottom + 6, left: Math.max(8, rect.right - 220) })
+              }
+              setErrorTooltipOpen(true)
+            }}
             onMouseLeave={() => setErrorTooltipOpen(false)}
           >
             <button
@@ -467,14 +476,6 @@ function DocumentCard({
             >
               <AlertIcon size={15} />
             </button>
-            <AnimatePresence>
-              {errorTooltipOpen && (
-                <ErrorTooltip
-                  message={doc.error_message || "Processing failed"}
-                  onRetry={() => { setErrorTooltipOpen(false); onRetry(doc) }}
-                />
-              )}
-            </AnimatePresence>
           </div>
         )}
 
@@ -552,6 +553,22 @@ function DocumentCard({
           {statusLabel()}
         </div>
       </div>
+
+      {/* Error tooltip (rendered with fixed positioning to avoid clipping) */}
+      <AnimatePresence>
+        {errorTooltipOpen && tooltipPos && doc.status === "failed" && (
+          <div
+            style={{ position: "fixed", top: tooltipPos.top, left: tooltipPos.left, zIndex: 50 }}
+            onMouseEnter={() => setErrorTooltipOpen(true)}
+            onMouseLeave={() => setErrorTooltipOpen(false)}
+          >
+            <ErrorTooltip
+              message={doc.error_message || "Processing failed"}
+              onRetry={() => { setErrorTooltipOpen(false); onRetry(doc) }}
+            />
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
