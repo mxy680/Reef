@@ -416,7 +416,6 @@ export default function DashboardHeader() {
         padding: isMobile ? "0 12px" : "0 24px",
         position: "relative",
         zIndex: 10,
-        overflow: "hidden",
         minWidth: 0,
       }}
     >
@@ -442,7 +441,6 @@ export default function DashboardHeader() {
             <HelpIcon />
           </HeaderIconButton>
         )}
-        <NotificationBell count={0} />
         {!isMobile && <StreakIndicator streak={0} />}
         <ProfileDropdown />
       </div>
