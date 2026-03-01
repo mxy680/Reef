@@ -16,6 +16,8 @@
 	<string>$(SUPABASE_URL)</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>REEF_WEB_URL</key>
+	<string>$(REEF_WEB_URL)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Epilogue-Medium.ttf</string>

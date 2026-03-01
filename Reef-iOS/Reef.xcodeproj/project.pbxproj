@@ -34,6 +34,18 @@
 		E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */; };
 		FAD30BC870E2887DE6695C42 /* DashboardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8299119962039796C4D85BD2 /* DashboardCard.swift */; };
 		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
+		A1B2C3D4E5F60718A1B2C3D4 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F07181A2B3C4D /* Document.swift */; };
+		A2B3C4D5E6F70829A2B3C4D5 /* DocumentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3B4C5D6E7F08292A3B4C5D /* DocumentService.swift */; };
+		A3B4C5D6E7F8093AA3B4C5D6 /* TierLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4B5C6D7E8F093A3A4B5C6D /* TierLimits.swift */; };
+		A4B5C6D7E8F90A4BA4B5C6D7 /* DocumentsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A5B6C7D8E9F0A4B4A5B6C7D /* DocumentsContentView.swift */; };
+		A5B6C7D8E9FA0B5CA5B6C7D8 /* DocumentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6B7C8D9EAF0B5C5A6B7C8D /* DocumentCardView.swift */; };
+		A6B7C8D9EAFB0C6DA6B7C8D9 /* DocumentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7B8C9DAEBF0C6D6A7B8C9D /* DocumentThumbnailView.swift */; };
+		A7B8C9DAEBFC0D7EA7B8C9DA /* DocumentEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8B9CADBEFC0D7E7A8B9CAD /* DocumentEmptyStateView.swift */; };
+		A8B9CADBEFCD0E8FA8B9CADB /* DocumentSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9BACBDCEFD0E8F8A9BACBD /* DocumentSkeletonView.swift */; };
+		A9BACBDCEFDE0F9AA9BACBDC /* DeleteConfirmSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AABCBDDEFDE0F9A9AABCBDD /* DeleteConfirmSheet.swift */; };
+		AABCBDDEEFEF1AABABCBDDEE /* RenameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */; };
+		ABCDBDEEFEF02BABABCDBDEE /* DetailsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */; };
+		ACDECDEEFEF13CABABCDECDE /* MoveToCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */; };
 		AA10BF01C3D7A1E2F4B5C601 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */; };
 		CC01AE23D4C8B7F1A2E30901 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01AE23D4C8B7F1A2E30911 /* Course.swift */; };
 		AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */; };
@@ -73,6 +85,18 @@
 		E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
 		TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		1A2B3C4D5E6F07181A2B3C4D /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
+		2A3B4C5D6E7F08292A3B4C5D /* DocumentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentService.swift; sourceTree = "<group>"; };
+		3A4B5C6D7E8F093A3A4B5C6D /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
+		4A5B6C7D8E9F0A4B4A5B6C7D /* DocumentsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsContentView.swift; sourceTree = "<group>"; };
+		5A6B7C8D9EAF0B5C5A6B7C8D /* DocumentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCardView.swift; sourceTree = "<group>"; };
+		6A7B8C9DAEBF0C6D6A7B8C9D /* DocumentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentThumbnailView.swift; sourceTree = "<group>"; };
+		7A8B9CADBEFC0D7E7A8B9CAD /* DocumentEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmptyStateView.swift; sourceTree = "<group>"; };
+		8A9BACBDCEFD0E8F8A9BACBD /* DocumentSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSkeletonView.swift; sourceTree = "<group>"; };
+		9AABCBDDEFDE0F9A9AABCBDD /* DeleteConfirmSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteConfirmSheet.swift; sourceTree = "<group>"; };
+		ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameSheet.swift; sourceTree = "<group>"; };
+		BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailsSheet.swift; sourceTree = "<group>"; };
+		CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCourseSheet.swift; sourceTree = "<group>"; };
 		AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		CC01AE23D4C8B7F1A2E30911 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
 		AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
@@ -81,7 +105,6 @@
 		AA50BF05C3D7A1E2F4B5C615 /* StepGrade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepGrade.swift; sourceTree = "<group>"; };
 		AA60BF06C3D7A1E2F4B5C616 /* StepSubjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepSubjects.swift; sourceTree = "<group>"; };
 		AA70BF07C3D7A1E2F4B5C617 /* StepReferral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepReferral.swift; sourceTree = "<group>"; };
-
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -199,6 +222,7 @@
 				019D0ADC68C9D9ECF96D19C5 /* Design */,
 				AA90BF09C3D7A1E2F4B5C619 /* Models */,
 				7262DF6D88DE3E4B21390AF9 /* Resources */,
+				FF2233445566778899001122 /* Services */,
 				BD5A6C548E05A85AFF4FF6E4 /* Views */,
 			);
 			path = Reef;
@@ -208,6 +232,7 @@
 			isa = PBXGroup;
 			children = (
 				CC01AE23D4C8B7F1A2E30911 /* Course.swift */,
+				1A2B3C4D5E6F07181A2B3C4D /* Document.swift */,
 				AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */,
 			);
 			path = Models;
@@ -247,9 +272,43 @@
 				B88CBB5BEEC17E13645026BF /* DashboardSidebar.swift */,
 				170FD0C938538B1F376C2AA2 /* DashboardHeader.swift */,
 				D023F5ED102A820961A8A65C /* DashboardView.swift */,
+				DD1122334455667788990011 /* Documents */,
 			);
 			name = Dashboard;
 			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		DD1122334455667788990011 /* Documents */ = {
+			isa = PBXGroup;
+			children = (
+				4A5B6C7D8E9F0A4B4A5B6C7D /* DocumentsContentView.swift */,
+				5A6B7C8D9EAF0B5C5A6B7C8D /* DocumentCardView.swift */,
+				6A7B8C9DAEBF0C6D6A7B8C9D /* DocumentThumbnailView.swift */,
+				7A8B9CADBEFC0D7E7A8B9CAD /* DocumentEmptyStateView.swift */,
+				8A9BACBDCEFD0E8F8A9BACBD /* DocumentSkeletonView.swift */,
+				EE1122334455667788990011 /* Modals */,
+			);
+			path = Documents;
+			sourceTree = "<group>";
+		};
+		EE1122334455667788990011 /* Modals */ = {
+			isa = PBXGroup;
+			children = (
+				9AABCBDDEFDE0F9A9AABCBDD /* DeleteConfirmSheet.swift */,
+				ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */,
+				BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */,
+				CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */,
+			);
+			path = Modals;
+			sourceTree = "<group>";
+		};
+		FF2233445566778899001122 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				2A3B4C5D6E7F08292A3B4C5D /* DocumentService.swift */,
+				3A4B5C6D7E8F093A3A4B5C6D /* TierLimits.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -362,6 +421,18 @@
 				D7A9B727B2FBE1AD3097BBE2 /* DashboardHeader.swift in Sources */,
 				D4EB4081AFF5DF086F720507 /* DashboardView.swift in Sources */,
 				FAD30BC870E2887DE6695C42 /* DashboardCard.swift in Sources */,
+				A1B2C3D4E5F60718A1B2C3D4 /* Document.swift in Sources */,
+				A2B3C4D5E6F70829A2B3C4D5 /* DocumentService.swift in Sources */,
+				A3B4C5D6E7F8093AA3B4C5D6 /* TierLimits.swift in Sources */,
+				A4B5C6D7E8F90A4BA4B5C6D7 /* DocumentsContentView.swift in Sources */,
+				A5B6C7D8E9FA0B5CA5B6C7D8 /* DocumentCardView.swift in Sources */,
+				A6B7C8D9EAFB0C6DA6B7C8D9 /* DocumentThumbnailView.swift in Sources */,
+				A7B8C9DAEBFC0D7EA7B8C9DA /* DocumentEmptyStateView.swift in Sources */,
+				A8B9CADBEFCD0E8FA8B9CADB /* DocumentSkeletonView.swift in Sources */,
+				A9BACBDCEFDE0F9AA9BACBDC /* DeleteConfirmSheet.swift in Sources */,
+				AABCBDDEEFEF1AABABCBDDEE /* RenameSheet.swift in Sources */,
+				ABCDBDEEFEF02BABABCDBDEE /* DetailsSheet.swift in Sources */,
+				ACDECDEEFEF13CABABCDECDE /* MoveToCourseSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
