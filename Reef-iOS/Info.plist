@@ -19,6 +19,8 @@
 		<string>Epilogue-Bold.ttf</string>
 		<string>Epilogue-Black.ttf</string>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
