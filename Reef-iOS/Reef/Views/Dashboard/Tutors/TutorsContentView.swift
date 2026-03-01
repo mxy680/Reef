@@ -149,11 +149,24 @@ struct TutorsContentView: View {
                 onClose: { viewModel.selectedTutor = nil }
             )
         }
-        .sheet(isPresented: $viewModel.showQuiz) {
-            TutorQuizSheet(
-                tutors: viewModel.tutors,
-                onSelectTutor: { tutor in viewModel.selectTutor(tutor) }
-            )
+        .overlay {
+            if viewModel.showQuiz {
+                TutorQuizPopup(
+                    tutors: viewModel.tutors,
+                    onSelectTutor: { tutor in
+                        viewModel.selectTutor(tutor)
+                        withAnimation(.spring(duration: 0.3)) {
+                            viewModel.showQuiz = false
+                        }
+                    },
+                    onDismiss: {
+                        withAnimation(.spring(duration: 0.3)) {
+                            viewModel.showQuiz = false
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
         }
     }
 
@@ -171,23 +184,30 @@ struct TutorsContentView: View {
 
                 // Find Your Tutor quiz button
                 Button {
-                    viewModel.showQuiz = true
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 10, weight: .semibold))
-                        Text("Find Your Tutor")
-                            .font(.epilogue(12, weight: .bold))
-                            .tracking(-0.04 * 12)
+                    withAnimation(.spring(duration: 0.3)) {
+                        viewModel.showQuiz = true
                     }
-                    .foregroundStyle(ReefColors.primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(ReefColors.primary.opacity(0.1))
-                    .clipShape(Capsule())
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("Find Your Tutor")
+                            .font(.epilogue(14, weight: .bold))
+                            .tracking(-0.04 * 14)
+                    }
+                    .foregroundStyle(ReefColors.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(ReefColors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
-                        Capsule()
-                            .stroke(ReefColors.primary.opacity(0.25), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.black, lineWidth: 1.5)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(ReefColors.black)
+                            .offset(x: 4, y: 4)
                     )
                 }
                 .buttonStyle(.plain)
