@@ -60,73 +60,68 @@ function StarIcon() {
 
 export default function MyReefPage() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 200px)" }}>
-      <div style={{ width: "100%", maxWidth: 560 }}>
-      {/* Page header */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.1 }}
-        style={{ marginBottom: 24 }}
-      >
-        <h1
-          style={{
-            fontFamily,
-            fontWeight: 900,
-            fontSize: 28,
-            letterSpacing: "-0.04em",
-            color: colors.black,
-            margin: 0,
-            marginBottom: 6,
-            textAlign: "center",
-          }}
-        >
-          My Reef
-        </h1>
-        <p
-          style={{
-            fontFamily,
-            fontWeight: 500,
-            fontSize: 15,
-            letterSpacing: "-0.04em",
-            color: colors.gray600,
-            margin: 0,
-            textAlign: "center",
-          }}
-        >
-          Your personal ocean ecosystem
-        </p>
-      </motion.div>
-
-      {/* Hero card */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.2 }}
-        style={{
-          backgroundColor: colors.white,
-          border: `2px solid ${colors.black}`,
-          borderRadius: 16,
-          boxShadow: `4px 4px 0px 0px ${colors.black}`,
-          overflow: "hidden",
-        }}
-      >
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.1 }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "calc(100vh - 200px)",
+        backgroundColor: colors.white,
+        border: `2px solid ${colors.black}`,
+        borderRadius: 16,
+        boxShadow: `4px 4px 0px 0px ${colors.black}`,
+        overflow: "hidden",
+      }}
+    >
         {/* Illustration area */}
         <div
           style={{
             backgroundColor: colors.accent,
             borderBottom: `2px solid ${colors.black}`,
-            padding: "32px 0",
+            padding: "48px 0",
             display: "flex",
+            flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
+            flex: 1,
+            minHeight: 240,
+            gap: 24,
           }}
         >
           <CoralReefIllustration />
+          <div style={{ textAlign: "center" }}>
+            <h1
+              style={{
+                fontFamily,
+                fontWeight: 900,
+                fontSize: 32,
+                letterSpacing: "-0.04em",
+                color: colors.black,
+                margin: 0,
+                marginBottom: 6,
+              }}
+            >
+              My Reef
+            </h1>
+            <p
+              style={{
+                fontFamily,
+                fontWeight: 500,
+                fontSize: 15,
+                letterSpacing: "-0.04em",
+                color: colors.gray600,
+                margin: 0,
+              }}
+            >
+              Your personal ocean ecosystem
+            </p>
+          </div>
         </div>
 
         {/* Content */}
-        <div style={{ padding: "24px 28px" }}>
+        <div style={{ padding: "24px 32px" }}>
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -231,8 +226,6 @@ export default function MyReefPage() {
             ))}
           </div>
         </div>
-      </motion.div>
-      </div>
-    </div>
+    </motion.div>
   )
 }
