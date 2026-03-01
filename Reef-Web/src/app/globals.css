@@ -87,6 +87,40 @@ html {
   --framer-text-color: var(--color-black) !important;
 }
 
+/* Hero buttons — custom elements with icons */
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-family: "Epilogue", sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+  border: 2px solid var(--color-black);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.hero-btn-solid {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: 4px 4px 0px 0px var(--color-black);
+}
+.hero-btn-solid:hover {
+  box-shadow: 2px 2px 0px 0px var(--color-black);
+  transform: translate(2px, 2px);
+}
+.hero-btn-alt {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  box-shadow: 4px 4px 0px 0px var(--color-black);
+}
+.hero-btn-alt:hover {
+  box-shadow: 2px 2px 0px 0px var(--color-black);
+  transform: translate(2px, 2px);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
