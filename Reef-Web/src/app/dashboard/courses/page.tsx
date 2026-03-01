@@ -674,7 +674,7 @@ function LoadingSkeleton() {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
         gap: 16,
         marginTop: 8,
       }}
@@ -975,7 +975,7 @@ export default function CoursesPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
               gap: 16,
             }}
           >

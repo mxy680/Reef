@@ -580,7 +580,7 @@ function LoadingSkeleton() {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(180px, 220px))",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
         gap: 20,
         marginTop: 8,
       }}
@@ -1478,6 +1478,7 @@ export default function DocumentsPage() {
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
+                flexWrap: "wrap",
               }}
             >
               Upload and manage your study documents.
@@ -1511,7 +1512,7 @@ export default function DocumentsPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(180px, 220px))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
               gap: 20,
             }}
           >

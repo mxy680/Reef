@@ -12,11 +12,13 @@ export default function NavItem({
   label,
   icon,
   collapsed = false,
+  onNavigate,
 }: {
   href: string
   label: string
   icon: React.ReactNode
   collapsed?: boolean
+  onNavigate?: () => void
 }) {
   const pathname = usePathname()
   const isActive = pathname.startsWith(href)
@@ -25,6 +27,7 @@ export default function NavItem({
     return (
       <Link
         href={href}
+        onClick={onNavigate}
         title={collapsed ? label : undefined}
         style={{
           display: "flex",
@@ -59,6 +62,7 @@ export default function NavItem({
     >
       <Link
         href={href}
+        onClick={onNavigate}
         title={collapsed ? label : undefined}
         style={{
           display: "flex",

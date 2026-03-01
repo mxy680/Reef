@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { colors } from "../../../lib/colors"
+import { useIsMobile } from "../../../lib/useIsMobile"
 
 const fontFamily = `"Epilogue", sans-serif`
 
@@ -25,6 +26,8 @@ function MailIcon() {
 }
 
 export default function CheckEmailPage() {
+  const isMobile = useIsMobile()
+
   return (
     <div
       style={{
@@ -77,8 +80,8 @@ export default function CheckEmailPage() {
           backgroundColor: colors.white,
           border: `2px solid ${colors.black}`,
           borderRadius: 12,
-          boxShadow: `6px 6px 0px 0px ${colors.black}`,
-          padding: "48px 36px",
+          boxShadow: isMobile ? `4px 4px 0px 0px ${colors.black}` : `6px 6px 0px 0px ${colors.black}`,
+          padding: isMobile ? "32px 20px" : "48px 36px",
           boxSizing: "border-box",
           textAlign: "center",
         }}
@@ -99,7 +102,7 @@ export default function CheckEmailPage() {
           style={{
             fontFamily,
             fontWeight: 900,
-            fontSize: 28,
+            fontSize: isMobile ? 24 : 28,
             lineHeight: "1.2em",
             letterSpacing: "-0.04em",
             textTransform: "uppercase",

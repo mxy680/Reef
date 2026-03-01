@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { useIsMobile } from "../../lib/useIsMobile"
 
 export interface DashboardProfile {
   display_name: string
@@ -14,8 +15,10 @@ export interface DashboardContextValue {
   profile: DashboardProfile
   setProfile: (p: DashboardProfile) => void
   userId: string
+  isMobile: boolean
   sidebarOpen: boolean
   toggleSidebar: () => void
+  closeSidebar: () => void
   commandPaletteOpen: boolean
   openCommandPalette: () => void
   closeCommandPalette: () => void
@@ -28,13 +31,20 @@ export function DashboardProvider({
   value,
 }: {
   children: React.ReactNode
-  value: Omit<DashboardContextValue, "sidebarOpen" | "toggleSidebar" | "commandPaletteOpen" | "openCommandPalette" | "closeCommandPalette">
+  value: Omit<DashboardContextValue, "isMobile" | "sidebarOpen" | "toggleSidebar" | "closeSidebar" | "commandPaletteOpen" | "openCommandPalette" | "closeCommandPalette">
 }) {
+  const isMobile = useIsMobile()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const toggleSidebar = useCallback(() => setSidebarOpen((o) => !o), [])
+  const closeSidebar = useCallback(() => setSidebarOpen(false), [])
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const openCommandPalette = useCallback(() => setCommandPaletteOpen(true), [])
   const closeCommandPalette = useCallback(() => setCommandPaletteOpen(false), [])
+
+  // Auto-close sidebar when switching to mobile
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+  }, [isMobile])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -48,7 +58,7 @@ export function DashboardProvider({
   }, [])
 
   return (
-    <DashboardContext.Provider value={{ ...value, sidebarOpen, toggleSidebar, commandPaletteOpen, openCommandPalette, closeCommandPalette }}>
+    <DashboardContext.Provider value={{ ...value, isMobile, sidebarOpen, toggleSidebar, closeSidebar, commandPaletteOpen, openCommandPalette, closeCommandPalette }}>
       {children}
     </DashboardContext.Provider>
   )
