@@ -117,7 +117,7 @@ export default function Home() {
   return (
     <div className="landing-dots">
       {/* 1. Header */}
-      <HeaderResponsive />
+      <HeaderResponsive variants={{ base: "Phone", md: "Tablet", lg: "Desktop" }} />
 
       {/* 2. Hero */}
       <section className="page-section hero-section">
@@ -433,7 +433,7 @@ export default function Home() {
       </section>
 
       {/* 10. Footer */}
-      <FooterResponsive />
+      <FooterResponsive variants={{ base: "Phone", md: "Tablet", lg: "Desktop" }} />
     </div>
   )
 }
