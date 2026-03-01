@@ -51,6 +51,7 @@
 		E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggedInView.swift; sourceTree = "<group>"; };
 		E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
+		"TEMP_973170E9-50C1-4539-BEB3-2417DFC3B979" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,6 +182,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		"TEMP_9D34188A-6CE1-4D3D-8BD6-08AE8AE7C9DF" /* Reef-iOS */ = {
+			isa = PBXGroup;
+			children = (
+				"TEMP_973170E9-50C1-4539-BEB3-2417DFC3B979" /* Secrets.xcconfig */,
+			);
+			path = "Reef-iOS";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -301,6 +310,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = "TEMP_973170E9-50C1-4539-BEB3-2417DFC3B979" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -366,6 +376,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = "TEMP_973170E9-50C1-4539-BEB3-2417DFC3B979" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
