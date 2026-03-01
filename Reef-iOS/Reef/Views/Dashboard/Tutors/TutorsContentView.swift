@@ -139,15 +139,22 @@ struct TutorsContentView: View {
         .dashboardCard()
         .task { await viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
-        .sheet(item: $viewModel.selectedTutor) { tutor in
-            TutorDetailSheet(
-                tutor: tutor,
-                isSpeaking: viewModel.speakingTutorId == tutor.id,
-                isActive: viewModel.activeTutorId == tutor.id,
-                onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
-                onSelect: { viewModel.selectTutor(tutor) },
-                onClose: { viewModel.selectedTutor = nil }
-            )
+        .overlay {
+            if let tutor = viewModel.selectedTutor {
+                TutorDetailPopup(
+                    tutor: tutor,
+                    isSpeaking: viewModel.speakingTutorId == tutor.id,
+                    isActive: viewModel.activeTutorId == tutor.id,
+                    onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
+                    onSelect: { viewModel.selectTutor(tutor) },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.3)) {
+                            viewModel.selectedTutor = nil
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
         }
         .overlay {
             if viewModel.showQuiz {
@@ -268,7 +275,7 @@ struct TutorsContentView: View {
                             index: index,
                             isSpeaking: viewModel.speakingTutorId == tutor.id,
                             isActive: viewModel.activeTutorId == tutor.id,
-                            onTap: { viewModel.selectedTutor = tutor },
+                            onTap: { withAnimation(.spring(duration: 0.3)) { viewModel.selectedTutor = tutor } },
                             onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
                             onSelect: { viewModel.selectTutor(tutor) }
                         )
