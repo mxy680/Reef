@@ -3,10 +3,9 @@
 import pytest
 from pydantic import ValidationError
 
+from lib.models.group_problems import GroupProblemsResponse, ProblemGroup
 from lib.models.question import Part, Question, QuestionBatch
 from lib.models.quiz import QuizGenerationRequest
-from lib.models.group_problems import ProblemGroup, GroupProblemsResponse
-
 
 # ── Part ────────────────────────────────────────────────────
 
@@ -112,26 +111,18 @@ class TestQuizGenerationRequest:
 
     def test_num_questions_zero_fails(self):
         with pytest.raises(ValidationError):
-            QuizGenerationRequest(
-                topic="t", difficulty="d", num_questions=0, rag_context="c"
-            )
+            QuizGenerationRequest(topic="t", difficulty="d", num_questions=0, rag_context="c")
 
     def test_num_questions_eleven_fails(self):
         with pytest.raises(ValidationError):
-            QuizGenerationRequest(
-                topic="t", difficulty="d", num_questions=11, rag_context="c"
-            )
+            QuizGenerationRequest(topic="t", difficulty="d", num_questions=11, rag_context="c")
 
     def test_question_types_default(self):
-        r = QuizGenerationRequest(
-            topic="t", difficulty="d", num_questions=1, rag_context="c"
-        )
+        r = QuizGenerationRequest(topic="t", difficulty="d", num_questions=1, rag_context="c")
         assert r.question_types == ["open_ended"]
 
     def test_additional_notes_optional(self):
-        r = QuizGenerationRequest(
-            topic="t", difficulty="d", num_questions=1, rag_context="c"
-        )
+        r = QuizGenerationRequest(topic="t", difficulty="d", num_questions=1, rag_context="c")
         assert r.additional_notes is None
 
 

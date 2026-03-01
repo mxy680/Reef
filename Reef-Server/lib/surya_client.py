@@ -17,6 +17,7 @@ from PIL import Image
 @dataclass
 class LayoutBox:
     """Drop-in for Surya's LayoutBox."""
+
     bbox: list[float]
     label: str
     confidence: float = 1.0
@@ -25,6 +26,7 @@ class LayoutBox:
 @dataclass
 class LayoutResult:
     """Drop-in for Surya's LayoutResult."""
+
     bboxes: list[LayoutBox] = field(default_factory=list)
 
 

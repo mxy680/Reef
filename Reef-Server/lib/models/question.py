@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 class Part(BaseModel):
     """A labeled part of a question (e.g. a, b, i, ii). Recursive."""
+
     label: str = Field(..., description="Part label, e.g. 'a', 'b', 'i', 'ii'")
     text: str = Field(..., description="Question text (inline $...$ and display \\[...\\] math)")
     figures: list[str] = Field(default_factory=list, description="Figure filenames for this part")
@@ -33,6 +34,7 @@ class Question(BaseModel):
     Hierarchy: Question → Part → Part → ...  The LLM fills this via
     structured output; a deterministic converter turns it into LaTeX.
     """
+
     number: int = Field(..., description="Problem number as shown in the document")
     text: str = Field(..., description="Stem / preamble text (inline $...$ and display \\[...\\] math)")
     figures: list[str] = Field(default_factory=list, description="Figure filenames for the stem")
@@ -47,4 +49,5 @@ class Question(BaseModel):
 
 class QuestionBatch(BaseModel):
     """Multiple questions extracted from a single image containing several problems."""
+
     questions: list[Question] = Field(..., description="All questions found in the image")

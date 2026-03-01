@@ -18,7 +18,9 @@ def test_database():
 
     async def _setup():
         conn = await asyncpg.connect(
-            host="localhost", port=5432, user=os.getenv("PGUSER", os.getenv("USER")),
+            host="localhost",
+            port=5432,
+            user=os.getenv("PGUSER", os.getenv("USER")),
             database="postgres",
         )
         # Drop if leftover from a crashed run
@@ -28,7 +30,9 @@ def test_database():
 
     async def _teardown():
         conn = await asyncpg.connect(
-            host="localhost", port=5432, user=os.getenv("PGUSER", os.getenv("USER")),
+            host="localhost",
+            port=5432,
+            user=os.getenv("PGUSER", os.getenv("USER")),
             database="postgres",
         )
         await conn.execute("DROP DATABASE IF EXISTS reef_test")

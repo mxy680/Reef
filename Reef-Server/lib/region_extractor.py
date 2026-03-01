@@ -11,7 +11,6 @@ import re
 
 import fitz  # PyMuPDF
 
-
 # Bold flag in PyMuPDF span flags (bit 4)
 _BOLD_FLAG = 1 << 4
 
@@ -94,12 +93,14 @@ def extract_question_regions(
     if not parts:
         regions = []
         for page_idx, height in enumerate(page_heights):
-            regions.append({
-                "label": None,
-                "page": page_idx,
-                "y_start": 0.0,
-                "y_end": height,
-            })
+            regions.append(
+                {
+                    "label": None,
+                    "page": page_idx,
+                    "y_start": 0.0,
+                    "y_end": height,
+                }
+            )
         doc.close()
         return {"page_heights": page_heights, "regions": regions}
 
@@ -144,27 +145,33 @@ def extract_question_regions(
     # Stem region: from top of page 0 to first label
     first_label, first_page, first_y = all_found[0]
     if first_page == 0 and first_y > 0:
-        regions.append({
-            "label": None,
-            "page": 0,
-            "y_start": 0.0,
-            "y_end": first_y,
-        })
+        regions.append(
+            {
+                "label": None,
+                "page": 0,
+                "y_start": 0.0,
+                "y_end": first_y,
+            }
+        )
     elif first_page > 0:
         # Stem spans entire pages before the first label
         for p in range(first_page):
-            regions.append({
+            regions.append(
+                {
+                    "label": None,
+                    "page": p,
+                    "y_start": 0.0,
+                    "y_end": page_heights[p],
+                }
+            )
+        regions.append(
+            {
                 "label": None,
-                "page": p,
+                "page": first_page,
                 "y_start": 0.0,
-                "y_end": page_heights[p],
-            })
-        regions.append({
-            "label": None,
-            "page": first_page,
-            "y_start": 0.0,
-            "y_end": first_y,
-        })
+                "y_end": first_y,
+            }
+        )
 
     # Part regions
     for i, (label, page, y) in enumerate(all_found):
@@ -172,49 +179,61 @@ def extract_question_regions(
             next_label, next_page, next_y = all_found[i + 1]
             if next_page == page:
                 # Same page — region ends at next label
-                regions.append({
-                    "label": label,
-                    "page": page,
-                    "y_start": y,
-                    "y_end": next_y,
-                })
+                regions.append(
+                    {
+                        "label": label,
+                        "page": page,
+                        "y_start": y,
+                        "y_end": next_y,
+                    }
+                )
             else:
                 # Part spans to end of current page
-                regions.append({
+                regions.append(
+                    {
+                        "label": label,
+                        "page": page,
+                        "y_start": y,
+                        "y_end": page_heights[page],
+                    }
+                )
+                # Full intermediate pages
+                for p in range(page + 1, next_page):
+                    regions.append(
+                        {
+                            "label": label,
+                            "page": p,
+                            "y_start": 0.0,
+                            "y_end": page_heights[p],
+                        }
+                    )
+                # Continues on next label's page up to that label
+                regions.append(
+                    {
+                        "label": label,
+                        "page": next_page,
+                        "y_start": 0.0,
+                        "y_end": next_y,
+                    }
+                )
+        else:
+            # Last label — extends to end of its page and any remaining pages
+            regions.append(
+                {
                     "label": label,
                     "page": page,
                     "y_start": y,
                     "y_end": page_heights[page],
-                })
-                # Full intermediate pages
-                for p in range(page + 1, next_page):
-                    regions.append({
+                }
+            )
+            for p in range(page + 1, len(page_heights)):
+                regions.append(
+                    {
                         "label": label,
                         "page": p,
                         "y_start": 0.0,
                         "y_end": page_heights[p],
-                    })
-                # Continues on next label's page up to that label
-                regions.append({
-                    "label": label,
-                    "page": next_page,
-                    "y_start": 0.0,
-                    "y_end": next_y,
-                })
-        else:
-            # Last label — extends to end of its page and any remaining pages
-            regions.append({
-                "label": label,
-                "page": page,
-                "y_start": y,
-                "y_end": page_heights[page],
-            })
-            for p in range(page + 1, len(page_heights)):
-                regions.append({
-                    "label": label,
-                    "page": p,
-                    "y_start": 0.0,
-                    "y_end": page_heights[p],
-                })
+                    }
+                )
 
     return {"page_heights": page_heights, "regions": regions}

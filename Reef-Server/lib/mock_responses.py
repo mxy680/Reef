@@ -1,7 +1,7 @@
 """Mock responses for testing."""
 
-import random
 import math
+import random
 
 
 def get_mock_embedding(count: int = 1, dimensions: int = 384) -> list[list[float]]:

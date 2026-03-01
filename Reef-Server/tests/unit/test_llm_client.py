@@ -1,4 +1,5 @@
 """Unit tests for lib/llm_client.py — LLMClient.generate and generate_stream."""
+
 import base64
 import json
 
@@ -29,9 +30,7 @@ class TestGenerate:
 
     @respx.mock
     def test_with_images(self):
-        route = respx.post(COMPLETIONS_URL).mock(
-            return_value=httpx.Response(200, json=make_chat_completion("ok"))
-        )
+        route = respx.post(COMPLETIONS_URL).mock(return_value=httpx.Response(200, json=make_chat_completion("ok")))
 
         client = LLMClient(api_key="fake")
         client.generate("describe", images=[b"fake_jpg"])
@@ -51,9 +50,7 @@ class TestGenerate:
     def test_with_response_schema(self):
         schema = {"type": "object", "properties": {"a": {"type": "string"}}}
 
-        route = respx.post(COMPLETIONS_URL).mock(
-            return_value=httpx.Response(200, json=make_chat_completion("{}"))
-        )
+        route = respx.post(COMPLETIONS_URL).mock(return_value=httpx.Response(200, json=make_chat_completion("{}")))
 
         client = LLMClient(api_key="fake")
         client.generate("go", response_schema=schema)
@@ -68,9 +65,7 @@ class TestGenerate:
 
     @respx.mock
     def test_system_message(self):
-        route = respx.post(COMPLETIONS_URL).mock(
-            return_value=httpx.Response(200, json=make_chat_completion("ok"))
-        )
+        route = respx.post(COMPLETIONS_URL).mock(return_value=httpx.Response(200, json=make_chat_completion("ok")))
 
         client = LLMClient(api_key="fake")
         client.generate("hello", system_message="be helpful")
@@ -81,9 +76,7 @@ class TestGenerate:
 
     @respx.mock
     def test_temperature_passed(self):
-        route = respx.post(COMPLETIONS_URL).mock(
-            return_value=httpx.Response(200, json=make_chat_completion("ok"))
-        )
+        route = respx.post(COMPLETIONS_URL).mock(return_value=httpx.Response(200, json=make_chat_completion("ok")))
 
         client = LLMClient(api_key="fake")
         client.generate("hello", temperature=0.5)
@@ -93,9 +86,7 @@ class TestGenerate:
 
     @respx.mock
     def test_returns_content(self):
-        respx.post(COMPLETIONS_URL).mock(
-            return_value=httpx.Response(200, json=make_chat_completion("the answer"))
-        )
+        respx.post(COMPLETIONS_URL).mock(return_value=httpx.Response(200, json=make_chat_completion("the answer")))
 
         client = LLMClient(api_key="fake")
         result = client.generate("question")

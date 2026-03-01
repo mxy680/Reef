@@ -1,6 +1,7 @@
 """PostgreSQL connection pool for document storage."""
 
 import os
+
 import asyncpg
 
 _pool: asyncpg.Pool | None = None

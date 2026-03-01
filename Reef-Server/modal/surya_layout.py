@@ -16,7 +16,7 @@ image = (
     .pip_install("surya-ocr>=0.8.0", "requests", "fastapi[standard]")
     .run_commands(
         # Pre-download the layout model into the image
-        "python -c \""
+        'python -c "'
         "from surya.settings import settings; "
         "from surya.common.s3 import download_directory; "
         "import os; "
@@ -50,6 +50,7 @@ class SuryaLayout:
     def predict(self, request: dict):
         import base64
         import io
+
         from PIL import Image
 
         raw_images = request.get("images", [])
@@ -71,11 +72,13 @@ class SuryaLayout:
         for result in results:
             bboxes = []
             for box in result.bboxes:
-                bboxes.append({
-                    "bbox": list(box.bbox),
-                    "label": box.label,
-                    "confidence": getattr(box, "confidence", 1.0),
-                })
+                bboxes.append(
+                    {
+                        "bbox": list(box.bbox),
+                        "label": box.label,
+                        "confidence": getattr(box, "confidence", 1.0),
+                    }
+                )
             pages.append({"bboxes": bboxes})
 
         return {"pages": pages}

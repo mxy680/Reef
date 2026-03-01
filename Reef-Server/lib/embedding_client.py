@@ -7,7 +7,6 @@ No torch/sentence-transformers dependencies needed.
 """
 
 import os
-from typing import Union
 
 import requests
 
@@ -24,7 +23,7 @@ class EmbeddingService:
 
     def embed(
         self,
-        texts: Union[str, list[str]],
+        texts: str | list[str],
         normalize: bool = True,
     ) -> list[list[float]]:
         """Generate embeddings by calling the Modal endpoint."""
