@@ -12,6 +12,7 @@ interface AdminUser {
   display_name: string | null
   grade: string | null
   subjects: string[] | null
+  onboarding_completed: boolean
   documents_count: number
   created_at: string
 }
@@ -415,6 +416,7 @@ export default function AdminPage() {
               <tr>
                 <th style={thStyle}>Email</th>
                 <th style={thStyle}>Display Name</th>
+                <th style={thStyle}>Status</th>
                 <th style={thStyle}>Grade</th>
                 <th style={thStyle}>Subjects</th>
                 <th style={thStyle}>Docs</th>
@@ -427,6 +429,25 @@ export default function AdminPage() {
                 <tr key={u.id}>
                   <td style={tdStyle}>{u.email || "—"}</td>
                   <td style={tdStyle}>{u.display_name || "—"}</td>
+                  <td style={tdStyle}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "3px 10px",
+                        borderRadius: 6,
+                        backgroundColor: u.onboarding_completed ? "#22c55e" : colors.gray400,
+                        border: `1.5px solid ${colors.black}`,
+                        fontFamily,
+                        fontWeight: 800,
+                        fontSize: 10,
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        color: colors.white,
+                      }}
+                    >
+                      {u.onboarding_completed ? "Onboarded" : "Incomplete"}
+                    </span>
+                  </td>
                   <td style={tdStyle}>{u.grade || "—"}</td>
                   <td style={tdStyle}>{u.subjects?.join(", ") || "—"}</td>
                   <td style={{ ...tdStyle, fontWeight: 700 }}>{u.documents_count}</td>
@@ -455,7 +476,7 @@ export default function AdminPage() {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td style={{ ...tdStyle, color: colors.gray500 }} colSpan={7}>
+                  <td style={{ ...tdStyle, color: colors.gray500 }} colSpan={8}>
                     No users found
                   </td>
                 </tr>

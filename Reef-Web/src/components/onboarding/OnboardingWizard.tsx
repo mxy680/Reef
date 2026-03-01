@@ -28,6 +28,7 @@ export default function OnboardingWizard({ user }: { user: { id: string; email: 
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     grade: "",
@@ -47,6 +48,7 @@ export default function OnboardingWizard({ user }: { user: { id: string; email: 
 
   async function handleSubmit() {
     setSubmitting(true)
+    setError(null)
     try {
       await upsertProfile({
         display_name: formData.name,
@@ -59,6 +61,7 @@ export default function OnboardingWizard({ user }: { user: { id: string; email: 
       document.cookie = "reef_onboarded=true; path=/; max-age=31536000"
       router.push("/dashboard")
     } catch {
+      setError("Something went wrong saving your profile. Please try again.")
       setSubmitting(false)
     }
   }
@@ -168,6 +171,7 @@ export default function OnboardingWizard({ user }: { user: { id: string; email: 
                 onSubmit={handleSubmit}
                 onBack={goBack}
                 submitting={submitting}
+                error={error}
               />
             </motion.div>
           )}
