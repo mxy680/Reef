@@ -222,6 +222,25 @@ export async function duplicateDocument(docId: string): Promise<Document> {
   return newDoc
 }
 
+export async function retryDocument(docId: string): Promise<void> {
+  const supabase = createClient()
+
+  // Reset status back to processing
+  const { error } = await supabase
+    .from("documents")
+    .update({ status: "processing" as const, error_message: null })
+    .eq("id", docId)
+
+  if (error) throw error
+
+  // Re-trigger processing
+  fetch("/api/documents/process", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ documentId: docId }),
+  }).catch(() => {})
+}
+
 export async function getDocumentThumbnailUrls(
   docIds: string[]
 ): Promise<Record<string, string>> {
