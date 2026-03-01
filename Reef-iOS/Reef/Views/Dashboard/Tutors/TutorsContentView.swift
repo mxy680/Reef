@@ -10,11 +10,17 @@ final class TutorsViewModel {
     var isLoading = true
     var selectedTutor: Tutor?
     var speakingTutorId: String?
+    var showQuiz = false
     var activeTutorId: String? {
         didSet { UserDefaults.standard.set(activeTutorId, forKey: "reef_active_tutor_id") }
     }
 
     private let synthesizer = AVSpeechSynthesizer()
+
+    var activeTutor: Tutor? {
+        guard let id = activeTutorId else { return nil }
+        return tutors.first(where: { $0.id == id })
+    }
 
     // MARK: - Lifecycle
 
@@ -62,6 +68,7 @@ final class TutorsViewModel {
             utterance.rate = AVSpeechUtteranceDefaultSpeechRate
             utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
             speakingTutorId = tutor.id
+
             synthesizer.speak(utterance)
 
             // Monitor for completion
@@ -88,22 +95,44 @@ struct TutorsContentView: View {
     @State private var viewModel = TutorsViewModel()
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerRow
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 8)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 0) {
+                headerRow
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 20)
 
-            Spacer()
+                if viewModel.isLoading {
+                    skeletonCarousel
+                        .padding(.top, 24)
+                } else if viewModel.tutors.isEmpty {
+                    emptyState
+                        .padding(.top, 40)
+                } else {
+                    // Spotlight hero
+                    if let tutor = viewModel.activeTutor {
+                        TutorSpotlightView(
+                            tutor: tutor,
+                            isSpeaking: viewModel.speakingTutorId == tutor.id,
+                            onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
+                            onStartSession: { /* placeholder */ }
+                        )
+                        .id(viewModel.activeTutorId)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                        .animation(.spring(duration: 0.35), value: viewModel.activeTutorId)
+                        .padding(.bottom, 24)
+                    }
 
-            if viewModel.isLoading {
-                skeletonCarousel
-            } else if viewModel.tutors.isEmpty {
-                emptyState
-            } else {
-                tutorCarousel
+                    // Carousel section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("CHOOSE YOUR TUTOR")
+                            .font(.epilogue(11, weight: .bold))
+                            .tracking(0.06 * 11)
+                            .foregroundStyle(ReefColors.gray400)
+
+                        tutorCarousel
+                    }
+                }
             }
-
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(32)
@@ -120,16 +149,49 @@ struct TutorsContentView: View {
                 onClose: { viewModel.selectedTutor = nil }
             )
         }
+        .sheet(isPresented: $viewModel.showQuiz) {
+            TutorQuizSheet(
+                tutors: viewModel.tutors,
+                onSelectTutor: { tutor in viewModel.selectTutor(tutor) }
+            )
+        }
     }
 
     // MARK: - Header
 
     private var headerRow: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Tutors")
-                .font(.epilogue(24, weight: .black))
-                .tracking(-0.04 * 24)
-                .foregroundStyle(ReefColors.black)
+            HStack {
+                Text("Tutors")
+                    .font(.epilogue(24, weight: .black))
+                    .tracking(-0.04 * 24)
+                    .foregroundStyle(ReefColors.black)
+
+                Spacer()
+
+                // Find Your Tutor quiz button
+                Button {
+                    viewModel.showQuiz = true
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Find Your Tutor")
+                            .font(.epilogue(12, weight: .bold))
+                            .tracking(-0.04 * 12)
+                    }
+                    .foregroundStyle(ReefColors.primary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(ReefColors.primary.opacity(0.1))
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(ReefColors.primary.opacity(0.25), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
 
             HStack(spacing: 10) {
                 Text("Meet your AI study companions — tap a card to learn more.")

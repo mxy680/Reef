@@ -59,6 +59,8 @@
 		CC03BB33DD44EE55FF66AA03 /* TutorCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB03AA33CC44DD55EE66FF03 /* TutorCardView.swift */; };
 		CC04BB44DD55EE66FF77AA04 /* TutorDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB04AA44CC55DD66EE77FF04 /* TutorDetailSheet.swift */; };
 		CC05BB55DD66EE77FF88AA05 /* TutorsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB05AA55CC66DD77EE88FF05 /* TutorsContentView.swift */; };
+		CC06BB66DD77EE88FF99AA06 /* TutorSpotlightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB06AA66CC77DD88EE99FF06 /* TutorSpotlightView.swift */; };
+		CC07BB77DD88EE99FFAAAA07 /* TutorQuizSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB07AA77CC88DD99EEAAFF07 /* TutorQuizSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -115,6 +117,8 @@
 		BB03AA33CC44DD55EE66FF03 /* TutorCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorCardView.swift; sourceTree = "<group>"; };
 		BB04AA44CC55DD66EE77FF04 /* TutorDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorDetailSheet.swift; sourceTree = "<group>"; };
 		BB05AA55CC66DD77EE88FF05 /* TutorsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorsContentView.swift; sourceTree = "<group>"; };
+		BB06AA66CC77DD88EE99FF06 /* TutorSpotlightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorSpotlightView.swift; sourceTree = "<group>"; };
+		BB07AA77CC88DD99EEAAFF07 /* TutorQuizSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorQuizSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -296,6 +300,8 @@
 				BB05AA55CC66DD77EE88FF05 /* TutorsContentView.swift */,
 				BB03AA33CC44DD55EE66FF03 /* TutorCardView.swift */,
 				BB04AA44CC55DD66EE77FF04 /* TutorDetailSheet.swift */,
+				BB06AA66CC77DD88EE99FF06 /* TutorSpotlightView.swift */,
+				BB07AA77CC88DD99EEAAFF07 /* TutorQuizSheet.swift */,
 			);
 			path = Tutors;
 			sourceTree = "<group>";
@@ -461,6 +467,8 @@
 				CC03BB33DD44EE55FF66AA03 /* TutorCardView.swift in Sources */,
 				CC04BB44DD55EE66FF77AA04 /* TutorDetailSheet.swift in Sources */,
 				CC05BB55DD66EE77FF88AA05 /* TutorsContentView.swift in Sources */,
+				CC06BB66DD77EE88FF99AA06 /* TutorSpotlightView.swift in Sources */,
+				CC07BB77DD88EE99FFAAAA07 /* TutorQuizSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
