@@ -3,6 +3,8 @@ import "lenis/dist/lenis.css"
 import "./globals.css"
 import SmoothScroll from "../components/smooth-scroll"
 import SuppressRefWarning from "../components/suppress-ref-warning"
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata = {
   title: "Reef — AI Tutoring for STEM Students",
@@ -17,6 +19,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <SuppressRefWarning />
         <SmoothScroll>{children}</SmoothScroll>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
