@@ -11,7 +11,7 @@ import { TIER_LIMITS, type Tier } from "../../../lib/limits"
 
 const fontFamily = `"Epilogue", sans-serif`
 
-type Tab = "profile" | "preferences" | "account"
+type Tab = "profile" | "preferences" | "privacy" | "about" | "account"
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   {
@@ -38,6 +38,27 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
         <line x1="1" y1="14" x2="7" y2="14" />
         <line x1="9" y1="8" x2="15" y2="8" />
         <line x1="17" y1="16" x2="23" y2="16" />
+      </svg>
+    ),
+  },
+  {
+    key: "privacy",
+    label: "Privacy",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    ),
+  },
+  {
+    key: "about",
+    label: "About",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
       </svg>
     ),
   },
@@ -674,6 +695,324 @@ function PreferencesTab({ setToast }: { setToast: (msg: string) => void }) {
   )
 }
 
+// ─── Toggle Row (shared by Privacy tab) ──────────────────
+
+function ToggleRow({
+  title,
+  description,
+  value,
+  onChange,
+}: {
+  title: string
+  description: string
+  value: boolean
+  onChange: (v: boolean) => void
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div>
+        <div style={{ fontFamily, fontWeight: 700, fontSize: 15, letterSpacing: "-0.04em", color: colors.black, marginBottom: 2 }}>
+          {title}
+        </div>
+        <div style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600 }}>
+          {description}
+        </div>
+      </div>
+      <motion.button
+        onClick={() => onChange(!value)}
+        whileTap={{ scale: 0.9 }}
+        style={{
+          width: 52, height: 30, borderRadius: 999, border: "none",
+          backgroundColor: value ? colors.primary : colors.gray100,
+          cursor: "pointer", position: "relative", padding: 0, flexShrink: 0, marginLeft: 16,
+        }}
+      >
+        <motion.div
+          animate={{ x: value ? 24 : 4 }}
+          transition={{ type: "spring", bounce: 0.3, duration: 0.35 }}
+          style={{
+            width: 22, height: 22, borderRadius: 999,
+            backgroundColor: colors.white, position: "absolute", top: 4,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          }}
+        />
+      </motion.button>
+    </div>
+  )
+}
+
+// ─── Link Row (shared by About tab) ──────────────────────
+
+function LinkRow({
+  icon,
+  label,
+  href,
+  external,
+}: {
+  icon: React.ReactNode
+  label: string
+  href: string
+  external?: boolean
+}) {
+  return (
+    <motion.a
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
+      whileHover={{ backgroundColor: colors.gray100 }}
+      style={{
+        display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+        backgroundColor: "transparent", border: `1.5px solid ${colors.gray400}`, borderRadius: 10,
+        fontFamily, fontWeight: 600, fontSize: 14, letterSpacing: "-0.04em", color: colors.black,
+        cursor: "pointer", textDecoration: "none",
+      }}
+    >
+      {icon}
+      <span style={{ flex: 1 }}>{label}</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.gray500} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+    </motion.a>
+  )
+}
+
+// ─── Privacy Tab ──────────────────────────────────────────
+
+function PrivacyTab({ setToast }: { setToast: (msg: string) => void }) {
+  const [usageAnalytics, setUsageAnalytics] = useState(true)
+  const [crashReports, setCrashReports] = useState(true)
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
+      {/* Analytics */}
+      <Card>
+        <SectionHeader>Analytics</SectionHeader>
+
+        <ToggleRow
+          title="Usage Analytics"
+          description="Help us improve Reef by sharing anonymous usage data"
+          value={usageAnalytics}
+          onChange={(v) => { setUsageAnalytics(v); setToast(v ? "Usage analytics enabled" : "Usage analytics disabled") }}
+        />
+
+        <Divider />
+
+        <ToggleRow
+          title="Crash Reports"
+          description="Automatically send crash reports to help us fix bugs"
+          value={crashReports}
+          onChange={(v) => { setCrashReports(v); setToast(v ? "Crash reports enabled" : "Crash reports disabled") }}
+        />
+      </Card>
+
+      {/* Your Data */}
+      <Card style={{ flex: 1 }}>
+        <SectionHeader>Your Data</SectionHeader>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <motion.button
+            whileHover={{ backgroundColor: colors.gray100 }}
+            onClick={() => setToast("Export started — you'll receive an email when it's ready")}
+            style={{
+              display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+              backgroundColor: "transparent", border: `1.5px solid ${colors.gray400}`, borderRadius: 10,
+              fontFamily, fontWeight: 600, fontSize: 14, letterSpacing: "-0.04em", color: colors.black,
+              cursor: "pointer", width: "100%", textAlign: "left",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export My Data
+          </motion.button>
+
+          <motion.button
+            whileHover={{ backgroundColor: colors.gray100 }}
+            style={{
+              display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+              backgroundColor: "transparent", border: `1.5px solid ${colors.gray400}`, borderRadius: 10,
+              fontFamily, fontWeight: 600, fontSize: 14, letterSpacing: "-0.04em", color: colors.black,
+              cursor: "pointer", width: "100%", textAlign: "left",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            What We Collect
+          </motion.button>
+        </div>
+
+        <Divider />
+
+        <div style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600, lineHeight: 1.5 }}>
+          We only collect data necessary to provide and improve Reef. Your documents and study content are never shared with third parties. You can request a full export or deletion of your data at any time.
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+// ─── About Tab ────────────────────────────────────────────
+
+function AboutTab() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, height: "100%" }}>
+      {/* App Info */}
+      <Card>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+          <div
+            style={{
+              width: 56, height: 56, borderRadius: 14, backgroundColor: colors.primary,
+              border: `2px solid ${colors.black}`, boxShadow: `3px 3px 0px 0px ${colors.black}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <span style={{ fontFamily, fontWeight: 900, fontSize: 24, color: colors.white }}>R</span>
+          </div>
+          <div>
+            <div style={{ fontFamily, fontWeight: 900, fontSize: 20, letterSpacing: "-0.04em", color: colors.black }}>
+              Reef
+            </div>
+            <div style={{ fontFamily, fontWeight: 500, fontSize: 13, letterSpacing: "-0.04em", color: colors.gray600 }}>
+              Version 1.0.0
+            </div>
+          </div>
+        </div>
+        <div style={{ fontFamily, fontWeight: 500, fontSize: 14, letterSpacing: "-0.04em", color: colors.gray600, lineHeight: 1.6 }}>
+          Reef is your AI-powered study companion. Upload documents, organize courses, and master your material with intelligent quizzes and analytics.
+        </div>
+      </Card>
+
+      {/* Support */}
+      <Card>
+        <SectionHeader>Support</SectionHeader>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+            }
+            label="Contact Support"
+            href="mailto:support@studyreef.com"
+          />
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            }
+            label="Help Center"
+            href="https://studyreef.com/help"
+            external
+          />
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            }
+            label="Report a Bug"
+            href="mailto:bugs@studyreef.com?subject=Bug Report"
+          />
+        </div>
+      </Card>
+
+      {/* Social */}
+      <Card>
+        <SectionHeader>Social</SectionHeader>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            }
+            label="Follow us on X"
+            href="https://x.com/studyreef"
+            external
+          />
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+              </svg>
+            }
+            label="Instagram"
+            href="https://instagram.com/studyreef"
+            external
+          />
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" />
+              </svg>
+            }
+            label="Discord Community"
+            href="https://discord.gg/studyreef"
+            external
+          />
+        </div>
+      </Card>
+
+      {/* Legal */}
+      <Card>
+        <SectionHeader>Legal</SectionHeader>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+            }
+            label="Terms of Service"
+            href="https://studyreef.com/terms"
+            external
+          />
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            }
+            label="Privacy Policy"
+            href="https://studyreef.com/privacy"
+            external
+          />
+          <LinkRow
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>
+            }
+            label="Open Source Licenses"
+            href="https://studyreef.com/licenses"
+            external
+          />
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 // ─── Account Tab ──────────────────────────────────────────
 
 function AccountTab({
@@ -870,6 +1209,12 @@ export default function SettingsPage() {
               )}
               {activeTab === "preferences" && (
                 <PreferencesTab setToast={setToast} />
+              )}
+              {activeTab === "privacy" && (
+                <PrivacyTab setToast={setToast} />
+              )}
+              {activeTab === "about" && (
+                <AboutTab />
               )}
               {activeTab === "account" && (
                 <AccountTab handleSignOut={handleSignOut} signingOut={signingOut} setShowDeleteModal={setShowDeleteModal} />
