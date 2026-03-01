@@ -57,10 +57,10 @@ export async function uploadDocument(file: File, thumbnail?: Blob): Promise<Docu
     throw new LimitError("Document limit reached — upgrade to upload more")
   }
 
-  // 1. Create DB row
+  // 1. Create DB row — mark completed immediately (no server-side reconstruction)
   const { data: doc, error: insertError } = await supabase
     .from("documents")
-    .insert({ user_id: user.id, filename: file.name })
+    .insert({ user_id: user.id, filename: file.name, status: "completed" })
     .select()
     .single()
 
@@ -88,15 +88,6 @@ export async function uploadDocument(file: File, thumbnail?: Blob): Promise<Docu
       .catch(() => {}) // non-critical
   }
 
-  // 4. Fire-and-forget POST to processing API route
-  fetch("/api/documents/process", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ documentId: document.id }),
-  }).catch(() => {
-    // Fire-and-forget — errors handled server-side
-  })
-
   return document
 }
 
@@ -107,7 +98,7 @@ export async function getDocumentDownloadUrl(docId: string): Promise<string> {
 
   const { data, error } = await supabase.storage
     .from("documents")
-    .createSignedUrl(`${user.id}/${docId}/output.pdf`, 60 * 60) // 1 hour
+    .createSignedUrl(`${user.id}/${docId}/original.pdf`, 60 * 60) // 1 hour
 
   if (error) throw error
   return data.signedUrl
@@ -154,21 +145,11 @@ export async function getDocumentShareUrl(docId: string): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  // Try output.pdf first, fall back to original.pdf
   const { data, error } = await supabase.storage
     .from("documents")
-    .createSignedUrl(`${user.id}/${docId}/output.pdf`, 7 * 24 * 60 * 60) // 7 days
+    .createSignedUrl(`${user.id}/${docId}/original.pdf`, 7 * 24 * 60 * 60) // 7 days
 
-  if (error) {
-    // Fall back to original
-    const { data: fallback, error: fallbackError } = await supabase.storage
-      .from("documents")
-      .createSignedUrl(`${user.id}/${docId}/original.pdf`, 7 * 24 * 60 * 60)
-
-    if (fallbackError) throw fallbackError
-    return fallback.signedUrl
-  }
-
+  if (error) throw error
   return data.signedUrl
 }
 
@@ -222,24 +203,6 @@ export async function duplicateDocument(docId: string): Promise<Document> {
   return newDoc
 }
 
-export async function retryDocument(docId: string): Promise<void> {
-  const supabase = createClient()
-
-  // Reset status back to processing
-  const { error } = await supabase
-    .from("documents")
-    .update({ status: "processing" as const, error_message: null })
-    .eq("id", docId)
-
-  if (error) throw error
-
-  // Re-trigger processing
-  fetch("/api/documents/process", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ documentId: docId }),
-  }).catch(() => {})
-}
 
 export async function getDocumentThumbnailUrls(
   docIds: string[]

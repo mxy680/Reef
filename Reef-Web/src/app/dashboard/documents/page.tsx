@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../../lib/colors"
-import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentShareUrl, getDocumentThumbnailUrls, deleteDocument, renameDocument, duplicateDocument, moveDocumentToCourse, retryDocument, LimitError, type Document } from "../../../lib/documents"
+import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentShareUrl, getDocumentThumbnailUrls, deleteDocument, renameDocument, duplicateDocument, moveDocumentToCourse, LimitError, type Document } from "../../../lib/documents"
 import { listCourses, type Course } from "../../../lib/courses"
 import { generateThumbnail } from "../../../lib/pdf-thumbnail"
 import { getUserTier, getLimits } from "../../../lib/limits"
@@ -49,15 +49,6 @@ function AlertIcon({ size = 20 }: { size?: number }) {
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
-  )
-}
-
-function RetryIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="23 4 23 10 17 10" />
-      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
     </svg>
   )
 }
@@ -235,7 +226,7 @@ function DocumentThumbnail({ status, thumbnailUrl }: { status: Document["status"
 
 // ─── Error Tooltip ────────────────────────────────────────
 
-function ErrorTooltip({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorTooltip({ message }: { message: string }) {
   // Truncate long raw error messages for display
   const displayMessage = message.length > 100 ? message.slice(0, 100) + "..." : message
 
@@ -263,35 +254,11 @@ function ErrorTooltip({ message, onRetry }: { message: string; onRetry: () => vo
           letterSpacing: "-0.04em",
           color: colors.gray600,
           lineHeight: 1.4,
-          marginBottom: 8,
           wordBreak: "break-word",
         }}
       >
         {displayMessage}
       </div>
-      <button
-        onClick={(e) => { e.stopPropagation(); onRetry() }}
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#EF5350"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#C62828"; }}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 5,
-          padding: "5px 12px",
-          backgroundColor: "#C62828",
-          color: colors.white,
-          fontFamily,
-          fontWeight: 700,
-          fontSize: 11,
-          letterSpacing: "-0.04em",
-          border: "none",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
-      >
-        <RetryIcon />
-        Retry
-      </button>
     </motion.div>
   )
 }
@@ -376,7 +343,6 @@ function DocumentCard({
   onMoveToCourse,
   onShare,
   onViewDetails,
-  onRetry,
   onClick,
 }: {
   doc: Document
@@ -389,7 +355,6 @@ function DocumentCard({
   onMoveToCourse: (d: Document) => void
   onShare: (d: Document) => void
   onViewDetails: (d: Document) => void
-  onRetry: (d: Document) => void
   onClick: (d: Document) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -412,10 +377,6 @@ function DocumentCard({
   function statusLabel() {
     if (doc.status === "processing") return "Processing..."
     if (doc.status === "failed") return "Failed"
-    const parts: string[] = []
-    if (doc.page_count) parts.push(`${doc.page_count} ${doc.page_count === 1 ? "page" : "pages"}`)
-    if (doc.problem_count) parts.push(`${doc.problem_count} ${doc.problem_count === 1 ? "problem" : "problems"}`)
-    if (parts.length > 0) return parts.join(" · ")
     return dateStr
   }
 
@@ -563,8 +524,7 @@ function DocumentCard({
             onMouseLeave={() => setErrorTooltipOpen(false)}
           >
             <ErrorTooltip
-              message={doc.error_message || "Processing failed"}
-              onRetry={() => { setErrorTooltipOpen(false); onRetry(doc) }}
+              message={doc.error_message || "Upload failed"}
             />
           </div>
         )}
@@ -928,8 +888,6 @@ function DetailsModal({ doc, onClose }: { doc: Document; onClose: () => void }) 
   const rows = [
     { label: "Filename", value: doc.filename },
     { label: "Status", value: doc.status.charAt(0).toUpperCase() + doc.status.slice(1) },
-    { label: "Pages", value: doc.page_count != null ? String(doc.page_count) : "—" },
-    { label: "Problems", value: doc.problem_count != null ? String(doc.problem_count) : "—" },
     { label: "Uploaded", value: dateStr },
     { label: "ID", value: doc.id },
   ]
@@ -1404,17 +1362,6 @@ export default function DocumentsPage() {
     }
   }
 
-  async function handleRetry(doc: Document) {
-    try {
-      await retryDocument(doc.id)
-      setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, status: "processing" as const, error_message: null } : d))
-      setToast("Retrying document processing...")
-    } catch (err) {
-      console.error("Retry failed:", err)
-      setToast("Failed to retry — please try again")
-    }
-  }
-
   async function handleShare(doc: Document) {
     try {
       const url = await getDocumentShareUrl(doc.id)
@@ -1557,7 +1504,6 @@ export default function DocumentsPage() {
                 onMoveToCourse={setMoveToCourseTarget}
                 onShare={handleShare}
                 onViewDetails={setDetailsTarget}
-                onRetry={handleRetry}
                 onClick={handleCardClick}
               />
             ))}
