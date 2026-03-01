@@ -33,6 +33,8 @@ targets:
         TARGETED_DEVICE_FAMILY: "2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_ENTITLEMENTS: Reef/Reef.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: SMJLWBZ8X6
     dependencies:
       - package: Supabase
       - sdk: AuthenticationServices.framework
