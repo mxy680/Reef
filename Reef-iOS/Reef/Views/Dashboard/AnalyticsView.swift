@@ -95,6 +95,7 @@ struct AnalyticsView: View {
                 statCard(stat, index: index)
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func statCard(_ stat: StatItem, index: Int) -> some View {
@@ -108,8 +109,10 @@ struct AnalyticsView: View {
                 .font(.epilogue(26, weight: .bold))
                 .tracking(-0.04 * 26)
                 .foregroundStyle(ReefColors.black)
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(.horizontal, 16)
         .padding(.vertical, 18)
         .dashboardCard()
@@ -121,17 +124,19 @@ struct AnalyticsView: View {
     // MARK: - Chart rows
 
     private var chartRowTop: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(spacing: 12) {
             WeeklyActivityCard(appeared: appeared)
             RecentSessionsCard(appeared: appeared)
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var chartRowBottom: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(spacing: 12) {
             TimeBySubjectCard(appeared: appeared)
             MasteryBySubjectCard(appeared: appeared)
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -156,8 +161,10 @@ private struct WeeklyActivityCard: View {
 
             WeeklyBarChart()
                 .frame(height: 152)
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(20)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
@@ -247,8 +254,10 @@ private struct TimeBySubjectCard: View {
                     SubjectBarRow(subject: subject, index: index, appeared: appeared)
                 }
             }
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(20)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
@@ -320,8 +329,10 @@ private struct MasteryBySubjectCard: View {
                     DonutRing(subject: subject, index: index, appeared: appeared)
                 }
             }
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(20)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
@@ -401,8 +412,10 @@ private struct RecentSessionsCard: View {
                     }
                 }
             }
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(20)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
