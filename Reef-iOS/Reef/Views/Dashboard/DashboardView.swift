@@ -58,6 +58,8 @@ struct DashboardView: View {
             MyReefComingSoonView()
         case .library:
             LibraryComingSoonView()
+        case .analytics:
+            AnalyticsView()
         default:
             VStack(alignment: .leading, spacing: 16) {
                 Text(contentTitle)
