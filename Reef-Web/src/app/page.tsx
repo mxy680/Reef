@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import "./globals.css"
 import Badge from "../framer/badge"
-import Button from "../framer/button"
 import FeaturesCard from "../framer/features-card"
 import PricingCard from "../framer/pricing-card"
 
@@ -130,8 +129,19 @@ export default function Home() {
               Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.
             </p>
             <div className="hero-buttons">
-              <Button variant="Solid" label="Download" link="/signup" />
-              <Button variant="Alternative" label="Watch Demo" link="#demo" />
+              <a href="/signup" className="hero-btn hero-btn-solid">
+                <svg width="16" height="20" viewBox="0 0 17 21" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M13.545 11.05c-.02-2.15 1.75-3.18 1.83-3.23-1-1.46-2.55-1.66-3.1-1.68-1.32-.13-2.57.78-3.24.78-.67 0-1.7-.76-2.8-.74-1.44.02-2.77.84-3.51 2.13-1.5 2.6-.38 6.45 1.07 8.56.72 1.03 1.57 2.19 2.69 2.15 1.08-.04 1.49-.7 2.79-.7 1.3 0 1.67.7 2.8.68 1.16-.02 1.89-1.05 2.6-2.09.82-1.2 1.16-2.36 1.18-2.42-.03-.01-2.26-.87-2.28-3.44h-.03z"/>
+                  <path d="M11.36 4.27c.59-.72 1-1.72.89-2.72-.86.04-1.9.58-2.52 1.3-.55.64-1.03 1.66-.9 2.64.96.07 1.94-.49 2.53-1.22z"/>
+                </svg>
+                Download
+              </a>
+              <a href="#demo" className="hero-btn hero-btn-alt">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <polygon points="6,3 20,12 6,21" />
+                </svg>
+                Watch Demo
+              </a>
             </div>
             <p className="hero-beta">
               <svg
