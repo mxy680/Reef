@@ -13,8 +13,6 @@ final class CourseDetailViewModel {
 
     var showDelete = false
     var showEdit = false
-    var editName = ""
-    var editEmoji = ""
 
     init(course: Course) {
         self.course = course
@@ -91,6 +89,8 @@ struct CourseDetailView: View {
     let initialCourse: Course
     let onCourseDeleted: () -> Void
     let onCourseUpdated: () -> Void
+    let onEditTapped: (Course) -> Void
+    let onDeleteTapped: (Course) -> Void
 
     @State private var viewModel: CourseDetailViewModel
 
@@ -98,11 +98,20 @@ struct CourseDetailView: View {
         GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 20)
     ]
 
-    init(courseId: String, course: Course, onCourseDeleted: @escaping () -> Void, onCourseUpdated: @escaping () -> Void) {
+    init(
+        courseId: String,
+        course: Course,
+        onCourseDeleted: @escaping () -> Void,
+        onCourseUpdated: @escaping () -> Void,
+        onEditTapped: @escaping (Course) -> Void,
+        onDeleteTapped: @escaping (Course) -> Void
+    ) {
         self.courseId = courseId
         self.initialCourse = course
         self.onCourseDeleted = onCourseDeleted
         self.onCourseUpdated = onCourseUpdated
+        self.onEditTapped = onEditTapped
+        self.onDeleteTapped = onDeleteTapped
         self._viewModel = State(initialValue: CourseDetailViewModel(course: course))
     }
 
@@ -125,35 +134,6 @@ struct CourseDetailView: View {
         .dashboardCard()
         .task { await viewModel.fetchData() }
         .id(courseId)
-        // Delete alert
-        .alert("Delete \"\(viewModel.course.name)\"?", isPresented: $viewModel.showDelete) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                Task {
-                    if await viewModel.deleteCourse() {
-                        onCourseDeleted()
-                    }
-                }
-            }
-        } message: {
-            Text("Documents in this course will be unlinked, not deleted.")
-        }
-        // Edit alert
-        .alert("Edit Course", isPresented: $viewModel.showEdit) {
-            TextField("Emoji", text: $viewModel.editEmoji)
-            TextField("Course name", text: $viewModel.editName)
-            Button("Cancel", role: .cancel) {}
-            Button("Save") {
-                let name = viewModel.editName.trimmingCharacters(in: .whitespaces)
-                let emoji = viewModel.editEmoji.trimmingCharacters(in: .whitespaces)
-                guard !name.isEmpty else { return }
-                Task {
-                    if await viewModel.updateCourse(name: name, emoji: emoji.isEmpty ? "📚" : emoji) {
-                        onCourseUpdated()
-                    }
-                }
-            }
-        }
         // Toast
         .overlay(alignment: .bottomTrailing) {
             if let message = viewModel.toastMessage {
@@ -183,9 +163,7 @@ struct CourseDetailView: View {
 
             HStack(spacing: 8) {
                 Button {
-                    viewModel.editName = viewModel.course.name
-                    viewModel.editEmoji = viewModel.course.emoji
-                    viewModel.showEdit = true
+                    onEditTapped(viewModel.course)
                 } label: {
                     Image(systemName: "pencil")
                         .font(.system(size: 14, weight: .semibold))
@@ -201,7 +179,7 @@ struct CourseDetailView: View {
                 .buttonStyle(.plain)
 
                 Button {
-                    viewModel.showDelete = true
+                    onDeleteTapped(viewModel.course)
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 14, weight: .semibold))

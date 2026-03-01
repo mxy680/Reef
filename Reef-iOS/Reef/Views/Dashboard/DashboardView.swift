@@ -6,6 +6,8 @@ struct DashboardView: View {
     @State private var selectedCourseId: String?
     @State private var courses: [Course] = []
     @State private var sidebarOpen = true
+    @State private var courseToDelete: Course?
+    @State private var courseToEdit: Course?
 
     var body: some View {
         ZStack {
@@ -37,6 +39,71 @@ struct DashboardView: View {
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
         .task { await fetchCourses() }
+        // Full-screen modal overlays
+        .overlay {
+            if courseToDelete != nil || courseToEdit != nil {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            courseToDelete = nil
+                            courseToEdit = nil
+                        }
+                    }
+
+                if let course = courseToDelete {
+                    DeleteCourseSheet(
+                        course: course,
+                        onConfirm: {
+                            Task {
+                                do {
+                                    try await CourseService.shared.deleteCourse(course.id)
+                                    courseToDelete = nil
+                                    selectedTab = .documents
+                                    selectedCourseId = nil
+                                    await fetchCourses()
+                                } catch {
+                                    print("Failed to delete course: \(error)")
+                                }
+                            }
+                        },
+                        onClose: {
+                            withAnimation(.spring(duration: 0.2)) {
+                                courseToDelete = nil
+                            }
+                        }
+                    )
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                }
+
+                if let course = courseToEdit {
+                    EditCourseSheet(
+                        course: course,
+                        onConfirm: { name, emoji in
+                            Task {
+                                do {
+                                    try await CourseService.shared.updateCourse(course.id, name: name, emoji: emoji)
+                                    withAnimation(.spring(duration: 0.2)) {
+                                        courseToEdit = nil
+                                    }
+                                    await fetchCourses()
+                                } catch {
+                                    print("Failed to update course: \(error)")
+                                }
+                            }
+                        },
+                        onClose: {
+                            withAnimation(.spring(duration: 0.2)) {
+                                courseToEdit = nil
+                            }
+                        }
+                    )
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                }
+            }
+        }
+        .animation(.spring(duration: 0.2), value: courseToDelete?.id)
+        .animation(.spring(duration: 0.2), value: courseToEdit?.id)
     }
 
     private func fetchCourses() async {
@@ -79,6 +146,16 @@ struct DashboardView: View {
                 },
                 onCourseUpdated: {
                     Task { await fetchCourses() }
+                },
+                onEditTapped: { course in
+                    withAnimation(.spring(duration: 0.2)) {
+                        courseToEdit = course
+                    }
+                },
+                onDeleteTapped: { course in
+                    withAnimation(.spring(duration: 0.2)) {
+                        courseToDelete = course
+                    }
                 }
             )
         } else {
