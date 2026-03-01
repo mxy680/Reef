@@ -54,6 +54,8 @@ struct DashboardView: View {
         switch selectedTab {
         case .documents:
             DocumentsContentView()
+        case .tutors:
+            TutorsContentView()
         default:
             VStack(alignment: .leading, spacing: 16) {
                 Text(contentTitle)
