@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../../lib/colors"
-import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentShareUrl, getDocumentThumbnailUrls, deleteDocument, renameDocument, duplicateDocument, moveDocumentToCourse, retryDocument, LimitError, type Document } from "../../../lib/documents"
+import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentShareUrl, getDocumentThumbnailUrls, deleteDocument, renameDocument, duplicateDocument, moveDocumentToCourse, LimitError, type Document } from "../../../lib/documents"
 import { listCourses, type Course } from "../../../lib/courses"
 import { generateThumbnail } from "../../../lib/pdf-thumbnail"
 import { getUserTier, getLimits } from "../../../lib/limits"
@@ -49,15 +49,6 @@ function AlertIcon({ size = 20 }: { size?: number }) {
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
-  )
-}
-
-function RetryIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="23 4 23 10 17 10" />
-      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
     </svg>
   )
 }
@@ -217,25 +208,13 @@ function DocumentThumbnail({ status, thumbnailUrl }: { status: Document["status"
         </svg>
       )}
 
-      {status === "processing" && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(90deg, transparent 0%, rgba(91,158,173,0.08) 50%, transparent 100%)",
-            backgroundSize: "200% 100%",
-            animation: "shimmer 1.5s infinite",
-          }}
-        />
-      )}
-
     </div>
   )
 }
 
 // ─── Error Tooltip ────────────────────────────────────────
 
-function ErrorTooltip({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorTooltip({ message }: { message: string }) {
   // Truncate long raw error messages for display
   const displayMessage = message.length > 100 ? message.slice(0, 100) + "..." : message
 
@@ -263,35 +242,11 @@ function ErrorTooltip({ message, onRetry }: { message: string; onRetry: () => vo
           letterSpacing: "-0.04em",
           color: colors.gray600,
           lineHeight: 1.4,
-          marginBottom: 8,
           wordBreak: "break-word",
         }}
       >
         {displayMessage}
       </div>
-      <button
-        onClick={(e) => { e.stopPropagation(); onRetry() }}
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#EF5350"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#C62828"; }}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 5,
-          padding: "5px 12px",
-          backgroundColor: "#C62828",
-          color: colors.white,
-          fontFamily,
-          fontWeight: 700,
-          fontSize: 11,
-          letterSpacing: "-0.04em",
-          border: "none",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
-      >
-        <RetryIcon />
-        Retry
-      </button>
     </motion.div>
   )
 }
@@ -376,7 +331,6 @@ function DocumentCard({
   onMoveToCourse,
   onShare,
   onViewDetails,
-  onRetry,
   onClick,
 }: {
   doc: Document
@@ -389,7 +343,6 @@ function DocumentCard({
   onMoveToCourse: (d: Document) => void
   onShare: (d: Document) => void
   onViewDetails: (d: Document) => void
-  onRetry: (d: Document) => void
   onClick: (d: Document) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -410,12 +363,7 @@ function DocumentCard({
   const displayName = doc.filename.replace(/\.pdf$/i, "")
 
   function statusLabel() {
-    if (doc.status === "processing") return "Processing..."
     if (doc.status === "failed") return "Failed"
-    const parts: string[] = []
-    if (doc.page_count) parts.push(`${doc.page_count} ${doc.page_count === 1 ? "page" : "pages"}`)
-    if (doc.problem_count) parts.push(`${doc.problem_count} ${doc.problem_count === 1 ? "problem" : "problems"}`)
-    if (parts.length > 0) return parts.join(" · ")
     return dateStr
   }
 
@@ -440,7 +388,7 @@ function DocumentCard({
         cursor: doc.status === "completed" ? "pointer" : "default",
         display: "flex",
         flexDirection: "column",
-        opacity: doc.status === "processing" ? 0.85 : 1,
+        opacity: 1,
       }}
     >
       {/* Top-right controls */}
@@ -547,7 +495,7 @@ function DocumentCard({
             fontWeight: 500,
             fontSize: 11,
             letterSpacing: "-0.04em",
-            color: doc.status === "failed" ? "#C62828" : doc.status === "processing" ? colors.primary : colors.gray500,
+            color: doc.status === "failed" ? "#C62828" : colors.gray500,
           }}
         >
           {statusLabel()}
@@ -563,8 +511,7 @@ function DocumentCard({
             onMouseLeave={() => setErrorTooltipOpen(false)}
           >
             <ErrorTooltip
-              message={doc.error_message || "Processing failed"}
-              onRetry={() => { setErrorTooltipOpen(false); onRetry(doc) }}
+              message={doc.error_message || "Upload failed"}
             />
           </div>
         )}
@@ -928,8 +875,6 @@ function DetailsModal({ doc, onClose }: { doc: Document; onClose: () => void }) 
   const rows = [
     { label: "Filename", value: doc.filename },
     { label: "Status", value: doc.status.charAt(0).toUpperCase() + doc.status.slice(1) },
-    { label: "Pages", value: doc.page_count != null ? String(doc.page_count) : "—" },
-    { label: "Problems", value: doc.problem_count != null ? String(doc.problem_count) : "—" },
     { label: "Uploaded", value: dateStr },
     { label: "ID", value: doc.id },
   ]
@@ -1215,19 +1160,6 @@ function MoveToCourseModal({
   )
 }
 
-// ─── Shimmer Keyframes (injected once) ────────────────────
-
-function ShimmerStyle() {
-  return (
-    <style>{`
-      @keyframes shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-      }
-    `}</style>
-  )
-}
-
 // ─── Main Page ────────────────────────────────────────────
 
 export default function DocumentsPage() {
@@ -1270,15 +1202,6 @@ export default function DocumentsPage() {
   // Initial load
   useEffect(() => { fetchDocuments() }, [fetchDocuments])
 
-  // Poll every 3s while any document is processing
-  useEffect(() => {
-    const hasProcessing = documents.some(d => d.status === "processing")
-    if (!hasProcessing) return
-
-    const interval = setInterval(fetchDocuments, 3000)
-    return () => clearInterval(interval)
-  }, [documents, fetchDocuments])
-
   function triggerUpload() {
     fileInputRef.current?.click()
   }
@@ -1314,7 +1237,7 @@ export default function DocumentsPage() {
 
       // Optimistically add the new document to the list
       setDocuments(prev => [doc, ...prev])
-      setToast("Document uploading — processing will begin shortly")
+      setToast("Document uploaded")
     } catch (err) {
       if (err instanceof LimitError) {
         setToast(err.message)
@@ -1404,17 +1327,6 @@ export default function DocumentsPage() {
     }
   }
 
-  async function handleRetry(doc: Document) {
-    try {
-      await retryDocument(doc.id)
-      setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, status: "processing" as const, error_message: null } : d))
-      setToast("Retrying document processing...")
-    } catch (err) {
-      console.error("Retry failed:", err)
-      setToast("Failed to retry — please try again")
-    }
-  }
-
   async function handleShare(doc: Document) {
     try {
       const url = await getDocumentShareUrl(doc.id)
@@ -1428,7 +1340,6 @@ export default function DocumentsPage() {
 
   return (
     <>
-      <ShimmerStyle />
 
       {/* Hidden file input */}
       <input
@@ -1557,7 +1468,6 @@ export default function DocumentsPage() {
                 onMoveToCourse={setMoveToCourseTarget}
                 onShare={handleShare}
                 onViewDetails={setDetailsTarget}
-                onRetry={handleRetry}
                 onClick={handleCardClick}
               />
             ))}
