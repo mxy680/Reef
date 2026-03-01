@@ -8,6 +8,7 @@ import InputField from "../signup/InputField"
 import OAuthButton from "../signup/OAuthButton"
 import { createClient } from "../../lib/supabase/client"
 import { colors } from "../../lib/colors"
+import { useIsMobile } from "../../lib/useIsMobile"
 
 const fontFamily = `"Epilogue", sans-serif`
 
@@ -36,6 +37,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const router = useRouter()
+  const isMobile = useIsMobile()
 
   async function handleMagicLink() {
     if (!email) return
@@ -109,8 +111,8 @@ export default function LoginPage() {
           backgroundColor: colors.white,
           border: `2px solid ${colors.black}`,
           borderRadius: 12,
-          boxShadow: `6px 6px 0px 0px ${colors.black}`,
-          padding: "40px 36px",
+          boxShadow: isMobile ? `4px 4px 0px 0px ${colors.black}` : `6px 6px 0px 0px ${colors.black}`,
+          padding: isMobile ? "28px 20px" : "40px 36px",
           boxSizing: "border-box",
         }}
       >
@@ -120,7 +122,7 @@ export default function LoginPage() {
             style={{
               fontFamily,
               fontWeight: 900,
-              fontSize: 32,
+              fontSize: isMobile ? 26 : 32,
               lineHeight: "1.2em",
               letterSpacing: "-0.04em",
               textTransform: "uppercase",

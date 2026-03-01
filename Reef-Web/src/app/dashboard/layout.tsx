@@ -10,6 +10,7 @@ import { DashboardProvider, useDashboard, type DashboardProfile } from "../../co
 import DashboardSidebar, { SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_COLLAPSED } from "../../components/dashboard/DashboardSidebar"
 import DashboardHeader from "../../components/dashboard/DashboardHeader"
 import CommandPalette from "../../components/dashboard/CommandPalette"
+import { useIsMobile } from "../../lib/useIsMobile"
 
 function SkeletonBlock({ width, height }: { width: string | number; height: number }) {
   return (
@@ -32,39 +33,43 @@ const cardStyle: React.CSSProperties = {
 }
 
 function LoadingSkeleton() {
+  const isMobile = useIsMobile()
+
   return (
     <div className="dotted-grid" style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white }}>
-      {/* Sidebar skeleton */}
-      <div
-        style={{
-          ...cardStyle,
-          width: SIDEBAR_WIDTH_OPEN,
-          position: "fixed",
-          top: 12,
-          left: 12,
-          height: "calc(100vh - 24px)",
-          padding: "24px 20px",
-          boxSizing: "border-box",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-        }}
-      >
-        <SkeletonBlock width={80} height={28} />
-        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-          {[1, 2, 3, 4].map((i) => (
-            <SkeletonBlock key={i} width="100%" height={36} />
-          ))}
+      {/* Sidebar skeleton — hidden on mobile */}
+      {!isMobile && (
+        <div
+          style={{
+            ...cardStyle,
+            width: SIDEBAR_WIDTH_OPEN,
+            position: "fixed",
+            top: 12,
+            left: 12,
+            height: "calc(100vh - 24px)",
+            padding: "24px 20px",
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <SkeletonBlock width={80} height={28} />
+          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonBlock key={i} width="100%" height={36} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       {/* Main column */}
-      <div style={{ flex: 1, marginLeft: SIDEBAR_WIDTH_OPEN + 28, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, marginLeft: isMobile ? 0 : SIDEBAR_WIDTH_OPEN + 28, display: "flex", flexDirection: "column" }}>
         {/* Header skeleton */}
         <div
           style={{
             ...cardStyle,
             height: 64,
-            margin: "12px 12px 0 0",
+            margin: isMobile ? 12 : "12px 12px 0 0",
             padding: "0 24px",
             display: "flex",
             alignItems: "center",
@@ -77,17 +82,17 @@ function LoadingSkeleton() {
           style={{
             ...cardStyle,
             flex: 1,
-            margin: "12px 12px 12px 0",
-            padding: 32,
+            margin: isMobile ? "12px" : "12px 12px 12px 0",
+            padding: isMobile ? 16 : 32,
             display: "flex",
             flexDirection: "column",
             gap: 16,
           }}
         >
           <SkeletonBlock width={260} height={32} />
-          <div style={{ display: "flex", gap: 16 }}>
+          <div style={{ display: "flex", gap: 16, flexDirection: isMobile ? "column" : "row" }}>
             {[1, 2, 3].map((i) => (
-              <SkeletonBlock key={i} width="33%" height={100} />
+              <SkeletonBlock key={i} width={isMobile ? "100%" : "33%"} height={100} />
             ))}
           </div>
         </div>
@@ -97,16 +102,16 @@ function LoadingSkeleton() {
 }
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
-  const { sidebarOpen, commandPaletteOpen } = useDashboard()
-  const marginLeft = sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED
+  const { isMobile, sidebarOpen, commandPaletteOpen } = useDashboard()
+  const marginLeft = isMobile ? 0 : (sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED) + 28
 
   return (
     <div className="dotted-grid" style={{ display: "flex", minHeight: "100vh", backgroundColor: colors.white }}>
       <DashboardSidebar />
       <motion.div
         initial={false}
-        animate={{ marginLeft: marginLeft + 28 }}
-        transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+        animate={{ marginLeft }}
+        transition={isMobile ? { duration: 0 } : { type: "spring", bounce: 0.15, duration: 0.35 }}
         style={{ flex: 1, display: "flex", flexDirection: "column" }}
       >
         <DashboardHeader />
@@ -114,8 +119,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: 32,
-            margin: "12px 12px 12px 0",
+            padding: isMobile ? 16 : 32,
+            margin: isMobile ? 12 : "12px 12px 12px 0",
             backgroundColor: colors.white,
             border: `1.5px solid ${colors.gray500}`,
             borderRadius: 16,

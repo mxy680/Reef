@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../lib/colors"
 import { useDashboard } from "./DashboardContext"
 import NavItem from "./NavItem"
@@ -226,198 +227,136 @@ const footerRowStyle: React.CSSProperties = {
 }
 
 export default function DashboardSidebar() {
-  const { profile, sidebarOpen, toggleSidebar } = useDashboard()
-  const collapsed = !sidebarOpen
-  const sidebarWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_OPEN
+  const { profile, isMobile, sidebarOpen, toggleSidebar, closeSidebar } = useDashboard()
+  const collapsed = isMobile ? false : !sidebarOpen
+  const sidebarWidth = SIDEBAR_WIDTH_OPEN
+
+  // Lock body scroll when mobile overlay is open
+  useEffect(() => {
+    if (!isMobile || !sidebarOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => { document.body.style.overflow = prev }
+  }, [isMobile, sidebarOpen])
+
+  const onNavigate = isMobile ? closeSidebar : undefined
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: sidebarWidth }}
-      transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
-      style={{
-        position: "fixed",
-        top: 12,
-        left: 12,
-        height: "calc(100vh - 24px)",
-        backgroundColor: colors.white,
-        border: `1.5px solid ${colors.gray500}`,
-        borderRadius: 16,
-        boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
-        display: "flex",
-        flexDirection: "column",
-        zIndex: 50,
-        overflow: "hidden",
-      }}
-    >
-      {/* Logo + Toggle — matches header height */}
-      <div
-        style={{
-          height: 64,
-          padding: collapsed ? "0 14px" : "0 20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
-          gap: 10,
-          flexShrink: 0,
-        }}
-      >
-        {!collapsed && (
-          <img
-            src="https://framerusercontent.com/images/QVfYzRv9XQaJZ26QhKKD0TMKZA.png?scale-down-to=512&width=2000&height=2000"
-            alt="Reef logo"
-            style={{ width: 28, height: 28, flexShrink: 0 }}
+    <>
+      {/* Backdrop for mobile overlay */}
+      <AnimatePresence>
+        {isMobile && sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={closeSidebar}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              zIndex: 99,
+            }}
           />
         )}
-        {!collapsed && (
-          <span
-            style={{
-              fontFamily,
-              fontWeight: 900,
-              fontSize: 24,
-              letterSpacing: "-0.04em",
-              textTransform: "uppercase",
-              color: colors.black,
-              flex: 1,
-            }}
-          >
-            Reef
-          </span>
-        )}
-        <motion.button
-          onClick={toggleSidebar}
-          whileHover={{ backgroundColor: colors.gray100 }}
+      </AnimatePresence>
+
+      <motion.aside
+        initial={false}
+        animate={
+          isMobile
+            ? { x: sidebarOpen ? 0 : -sidebarWidth - 10, width: sidebarWidth }
+            : { x: 0, width: sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED }
+        }
+        transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+        style={{
+          position: "fixed",
+          top: isMobile ? 0 : 12,
+          left: isMobile ? 0 : 12,
+          height: isMobile ? "100vh" : "calc(100vh - 24px)",
+          backgroundColor: colors.white,
+          border: `1.5px solid ${colors.gray500}`,
+          borderRadius: isMobile ? "0 16px 16px 0" : 16,
+          boxShadow: isMobile
+            ? `4px 0px 12px rgba(0,0,0,0.1)`
+            : `3px 3px 0px 0px ${colors.gray500}`,
+          display: "flex",
+          flexDirection: "column",
+          zIndex: 100,
+          overflow: "hidden",
+        }}
+      >
+        {/* Logo + Toggle — matches header height */}
+        <div
           style={{
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            borderRadius: 6,
-            width: 28,
-            height: 28,
+            height: 64,
+            padding: collapsed ? "0 14px" : "0 20px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: collapsed ? "center" : "flex-start",
+            gap: 10,
             flexShrink: 0,
-            padding: 0,
           }}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <SidebarToggleIcon />
-        </motion.button>
-      </div>
-
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: collapsed ? "12px 10px 0" : "12px 14px 0", display: "flex", flexDirection: "column", gap: 2 }}>
-        {NAV_ITEMS.map((item) => (
-          <NavItem key={item.href} {...item} collapsed={collapsed} />
-        ))}
-        <div style={{ height: 1, backgroundColor: colors.gray100, margin: "4px 0" }} />
-        {BOTTOM_NAV_ITEMS.filter((item) => !item.adminOnly || profile.email === ADMIN_EMAIL).map((item) => (
-          <NavItem key={item.href} {...item} collapsed={collapsed} />
-        ))}
-      </nav>
-
-      {/* Footer */}
-      <div style={{ padding: collapsed ? "0 10px 16px" : "0 14px 16px", display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* Upgrade */}
-        <motion.div
-          style={{
-            ...footerRowStyle,
-            justifyContent: collapsed ? "center" : "flex-start",
-            padding: collapsed ? "8px 0" : "8px 6px",
-          }}
-          whileHover={{ backgroundColor: colors.gray100 }}
-          title={collapsed ? "Upgrade" : undefined}
-        >
-          <UpgradeIcon />
           {!collapsed && (
-            <>
-              <span
-                style={{
-                  flex: 1,
-                  fontFamily,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  letterSpacing: "-0.04em",
-                  color: colors.black,
-                }}
-              >
-                Upgrade
-              </span>
-              <span
-                style={{
-                  padding: "3px 8px",
-                  backgroundColor: colors.surface,
-                  border: `2px solid ${colors.black}`,
-                  borderRadius: 6,
-                  fontFamily,
-                  fontWeight: 800,
-                  fontSize: 10,
-                  letterSpacing: "0.02em",
-                  color: colors.black,
-                  textTransform: "uppercase",
-                }}
-              >
-                Free Beta
-              </span>
-            </>
+            <img
+              src="https://framerusercontent.com/images/QVfYzRv9XQaJZ26QhKKD0TMKZA.png?scale-down-to=512&width=2000&height=2000"
+              alt="Reef logo"
+              style={{ width: 28, height: 28, flexShrink: 0 }}
+            />
           )}
-        </motion.div>
-
-        {/* Socials */}
-        <motion.div
-          style={{
-            ...footerRowStyle,
-            justifyContent: collapsed ? "center" : "flex-start",
-            padding: collapsed ? "8px 0" : "8px 6px",
-          }}
-          whileHover={{ backgroundColor: colors.gray100 }}
-          title={collapsed ? "Socials" : undefined}
-        >
-          <div
+          {!collapsed && (
+            <span
+              style={{
+                fontFamily,
+                fontWeight: 900,
+                fontSize: 24,
+                letterSpacing: "-0.04em",
+                textTransform: "uppercase",
+                color: colors.black,
+                flex: 1,
+              }}
+            >
+              Reef
+            </span>
+          )}
+          <motion.button
+            onClick={isMobile ? closeSidebar : toggleSidebar}
+            whileHover={{ backgroundColor: colors.gray100 }}
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 999,
-              backgroundColor: colors.gray100,
-              border: `2px solid ${colors.black}`,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              borderRadius: 6,
+              width: 28,
+              height: 28,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
+              padding: 0,
             }}
+            title={isMobile ? "Close sidebar" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 4l11.733 16h4.267l-11.733-16z" />
-              <path d="M4 20l6.768-6.768" />
-              <path d="M20 4l-6.768 6.768" />
-            </svg>
-          </div>
-          {!collapsed && (
-            <>
-              <span
-                style={{
-                  flex: 1,
-                  fontFamily,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  letterSpacing: "-0.04em",
-                  color: colors.black,
-                }}
-              >
-                Socials
-              </span>
-              <ChevronRight />
-            </>
-          )}
-        </motion.div>
+            <SidebarToggleIcon />
+          </motion.button>
+        </div>
 
-        {/* User */}
-        <Link
-          href="/dashboard/settings"
-          style={{ textDecoration: "none" }}
-          title={collapsed ? profile.display_name : undefined}
-        >
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: collapsed ? "12px 10px 0" : "12px 14px 0", display: "flex", flexDirection: "column", gap: 2 }}>
+          {NAV_ITEMS.map((item) => (
+            <NavItem key={item.href} {...item} collapsed={collapsed} onNavigate={onNavigate} />
+          ))}
+          <div style={{ height: 1, backgroundColor: colors.gray100, margin: "4px 0" }} />
+          {BOTTOM_NAV_ITEMS.filter((item) => !item.adminOnly || profile.email === ADMIN_EMAIL).map((item) => (
+            <NavItem key={item.href} {...item} collapsed={collapsed} onNavigate={onNavigate} />
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div style={{ padding: collapsed ? "0 10px 16px" : "0 14px 16px", display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Upgrade */}
           <motion.div
             style={{
               ...footerRowStyle,
@@ -425,8 +364,9 @@ export default function DashboardSidebar() {
               padding: collapsed ? "8px 0" : "8px 6px",
             }}
             whileHover={{ backgroundColor: colors.gray100 }}
+            title={collapsed ? "Upgrade" : undefined}
           >
-            <UserAvatar name={profile.display_name} />
+            <UpgradeIcon />
             {!collapsed && (
               <>
                 <span
@@ -437,19 +377,118 @@ export default function DashboardSidebar() {
                     fontSize: 14,
                     letterSpacing: "-0.04em",
                     color: colors.black,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
                   }}
                 >
-                  {profile.display_name}
+                  Upgrade
                 </span>
-                <SettingsGearIcon />
+                <span
+                  style={{
+                    padding: "3px 8px",
+                    backgroundColor: colors.surface,
+                    border: `2px solid ${colors.black}`,
+                    borderRadius: 6,
+                    fontFamily,
+                    fontWeight: 800,
+                    fontSize: 10,
+                    letterSpacing: "0.02em",
+                    color: colors.black,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Free Beta
+                </span>
               </>
             )}
           </motion.div>
-        </Link>
-      </div>
-    </motion.aside>
+
+          {/* Socials */}
+          <motion.div
+            style={{
+              ...footerRowStyle,
+              justifyContent: collapsed ? "center" : "flex-start",
+              padding: collapsed ? "8px 0" : "8px 6px",
+            }}
+            whileHover={{ backgroundColor: colors.gray100 }}
+            title={collapsed ? "Socials" : undefined}
+          >
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 999,
+                backgroundColor: colors.gray100,
+                border: `2px solid ${colors.black}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4l11.733 16h4.267l-11.733-16z" />
+                <path d="M4 20l6.768-6.768" />
+                <path d="M20 4l-6.768 6.768" />
+              </svg>
+            </div>
+            {!collapsed && (
+              <>
+                <span
+                  style={{
+                    flex: 1,
+                    fontFamily,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    letterSpacing: "-0.04em",
+                    color: colors.black,
+                  }}
+                >
+                  Socials
+                </span>
+                <ChevronRight />
+              </>
+            )}
+          </motion.div>
+
+          {/* User */}
+          <Link
+            href="/dashboard/settings"
+            onClick={onNavigate}
+            style={{ textDecoration: "none" }}
+            title={collapsed ? profile.display_name : undefined}
+          >
+            <motion.div
+              style={{
+                ...footerRowStyle,
+                justifyContent: collapsed ? "center" : "flex-start",
+                padding: collapsed ? "8px 0" : "8px 6px",
+              }}
+              whileHover={{ backgroundColor: colors.gray100 }}
+            >
+              <UserAvatar name={profile.display_name} />
+              {!collapsed && (
+                <>
+                  <span
+                    style={{
+                      flex: 1,
+                      fontFamily,
+                      fontWeight: 700,
+                      fontSize: 14,
+                      letterSpacing: "-0.04em",
+                      color: colors.black,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {profile.display_name}
+                  </span>
+                  <SettingsGearIcon />
+                </>
+              )}
+            </motion.div>
+          </Link>
+        </div>
+      </motion.aside>
+    </>
   )
 }

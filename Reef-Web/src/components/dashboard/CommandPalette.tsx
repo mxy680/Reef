@@ -78,7 +78,7 @@ const NAV_RESULTS: ResultItem[] = [
 // -- Component ---------------------------------------------------------------
 
 export default function CommandPalette() {
-  const { commandPaletteOpen, closeCommandPalette } = useDashboard()
+  const { isMobile, commandPaletteOpen, closeCommandPalette } = useDashboard()
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -231,8 +231,8 @@ export default function CommandPalette() {
         onClick={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
         style={{
-          width: 560,
-          maxHeight: "min(480px, calc(100vh - 160px))",
+          width: isMobile ? "calc(100vw - 32px)" : 560,
+          maxHeight: isMobile ? "min(400px, calc(100vh - 120px))" : "min(480px, calc(100vh - 160px))",
           backgroundColor: colors.white,
           border: `2px solid ${colors.black}`,
           borderRadius: 16,

@@ -70,6 +70,16 @@ function FlameIcon() {
   )
 }
 
+function HamburgerIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="3" y1="5" x2="17" y2="5" />
+      <line x1="3" y1="10" x2="17" y2="10" />
+      <line x1="3" y1="15" x2="17" y2="15" />
+    </svg>
+  )
+}
+
 function ChevronSeparator() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke={colors.gray400} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -386,7 +396,7 @@ function ProfileDropdown() {
 
 export default function DashboardHeader() {
   const pathname = usePathname()
-  const { openCommandPalette } = useDashboard()
+  const { isMobile, openCommandPalette, toggleSidebar } = useDashboard()
 
   return (
     <header
@@ -396,28 +406,37 @@ export default function DashboardHeader() {
         border: `1.5px solid ${colors.gray500}`,
         borderRadius: 16,
         boxShadow: `3px 3px 0px 0px ${colors.gray500}`,
-        margin: "12px 12px 0 0",
+        margin: isMobile ? 12 : "12px 12px 0 0",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 24px",
+        padding: isMobile ? "0 16px" : "0 24px",
         position: "relative",
         zIndex: 10,
       }}
     >
-      {/* Left — Breadcrumbs */}
-      <Breadcrumbs pathname={pathname} />
+      {/* Left — Hamburger (mobile) + Breadcrumbs */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+        {isMobile && (
+          <HeaderIconButton onClick={toggleSidebar}>
+            <HamburgerIcon />
+          </HeaderIconButton>
+        )}
+        <Breadcrumbs pathname={pathname} />
+      </div>
 
       {/* Right — Actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <HeaderIconButton onClick={openCommandPalette}>
-          <CommandIcon />
-        </HeaderIconButton>
+        {!isMobile && (
+          <HeaderIconButton onClick={openCommandPalette}>
+            <CommandIcon />
+          </HeaderIconButton>
+        )}
         <HeaderIconButton>
           <HelpIcon />
         </HeaderIconButton>
         <NotificationBell count={0} />
-        <StreakIndicator streak={0} />
+        {!isMobile && <StreakIndicator streak={0} />}
         <ProfileDropdown />
       </div>
     </header>
