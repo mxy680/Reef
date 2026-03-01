@@ -5,7 +5,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Reef</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.reef.app</string>
+	<string>com.studyreef.app</string>
 	<key>CFBundleName</key>
 	<string>Reef</string>
 	<key>CFBundleShortVersionString</key>
