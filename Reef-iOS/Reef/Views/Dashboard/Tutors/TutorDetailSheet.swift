@@ -3,7 +3,9 @@ import SwiftUI
 struct TutorDetailSheet: View {
     let tutor: Tutor
     let isSpeaking: Bool
+    let isActive: Bool
     let onVoicePreview: () -> Void
+    let onSelect: () -> Void
     let onClose: () -> Void
 
     private var tintColor: Color {
@@ -46,34 +48,68 @@ struct TutorDetailSheet: View {
                     }
                     .padding(.top, 8)
 
-                    // Voice preview button
-                    Button {
-                        onVoicePreview()
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: isSpeaking ? "stop.fill" : "play.fill")
-                                .font(.system(size: 12, weight: .bold))
+                    // Action buttons
+                    HStack(spacing: 12) {
+                        // Voice preview
+                        Button {
+                            onVoicePreview()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: isSpeaking ? "stop.fill" : "play.fill")
+                                    .font(.system(size: 12, weight: .bold))
 
-                            Text(isSpeaking ? "Stop Preview" : "Preview Voice")
-                                .font(.epilogue(14, weight: .bold))
-                                .tracking(-0.04 * 14)
+                                Text(isSpeaking ? "Stop" : "Preview Voice")
+                                    .font(.epilogue(14, weight: .bold))
+                                    .tracking(-0.04 * 14)
+                            }
+                            .foregroundStyle(tintColor)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(tintColor.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(tintColor.opacity(0.3), lineWidth: 1.5)
+                            )
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(tintColor.opacity(0.2))
+                                    .offset(x: 3, y: 3)
+                            )
                         }
-                        .foregroundStyle(tintColor)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(tintColor.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(tintColor.opacity(0.3), lineWidth: 1.5)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(tintColor.opacity(0.2))
-                                .offset(x: 3, y: 3)
-                        )
+                        .buttonStyle(.plain)
+
+                        // Select tutor
+                        Button {
+                            onSelect()
+                        } label: {
+                            HStack(spacing: 8) {
+                                if isActive {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 14, weight: .bold))
+                                }
+
+                                Text(isActive ? "Active Tutor" : "Select Tutor")
+                                    .font(.epilogue(14, weight: .bold))
+                                    .tracking(-0.04 * 14)
+                            }
+                            .foregroundStyle(isActive ? ReefColors.white : ReefColors.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(isActive ? tintColor : ReefColors.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(ReefColors.black, lineWidth: 1.5)
+                            )
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(ReefColors.black)
+                                    .offset(x: 3, y: 3)
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
 
                     // Sections
                     VStack(alignment: .leading, spacing: 20) {

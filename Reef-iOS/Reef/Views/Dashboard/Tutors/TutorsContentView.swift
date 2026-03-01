@@ -10,12 +10,16 @@ final class TutorsViewModel {
     var isLoading = true
     var selectedTutor: Tutor?
     var speakingTutorId: String?
+    var activeTutorId: String? {
+        didSet { UserDefaults.standard.set(activeTutorId, forKey: "reef_active_tutor_id") }
+    }
 
     private let synthesizer = AVSpeechSynthesizer()
 
     // MARK: - Lifecycle
 
     func onAppear() async {
+        activeTutorId = UserDefaults.standard.string(forKey: "reef_active_tutor_id")
         await fetchTutors()
     }
 
@@ -34,6 +38,14 @@ final class TutorsViewModel {
         isLoading = false
     }
 
+    // MARK: - Selection
+
+    func selectTutor(_ tutor: Tutor) {
+        withAnimation(.spring(duration: 0.3)) {
+            activeTutorId = tutor.id
+        }
+    }
+
     // MARK: - Voice Preview
 
     func toggleVoicePreview(for tutor: Tutor) {
@@ -49,7 +61,6 @@ final class TutorsViewModel {
 
             // Monitor for completion
             Task {
-                // Poll briefly — AVSpeechSynthesizer has no async API
                 while synthesizer.isSpeaking {
                     try? await Task.sleep(for: .milliseconds(200))
                 }
@@ -72,8 +83,12 @@ struct TutorsContentView: View {
     @State private var viewModel = TutorsViewModel()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 0) {
             headerRow
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 8)
+
+            Spacer()
 
             if viewModel.isLoading {
                 skeletonCarousel
@@ -85,7 +100,7 @@ struct TutorsContentView: View {
 
             Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(32)
         .dashboardCard()
         .task { await viewModel.onAppear() }
@@ -94,7 +109,9 @@ struct TutorsContentView: View {
             TutorDetailSheet(
                 tutor: tutor,
                 isSpeaking: viewModel.speakingTutorId == tutor.id,
+                isActive: viewModel.activeTutorId == tutor.id,
                 onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
+                onSelect: { viewModel.selectTutor(tutor) },
                 onClose: { viewModel.selectedTutor = nil }
             )
         }
@@ -109,10 +126,28 @@ struct TutorsContentView: View {
                 .tracking(-0.04 * 24)
                 .foregroundStyle(ReefColors.black)
 
-            Text("Meet your AI study companions — each with a unique teaching style and personality.")
-                .font(.epilogue(14, weight: .medium))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.gray600)
+            HStack(spacing: 10) {
+                Text("Meet your AI study companions — tap a card to learn more.")
+                    .font(.epilogue(14, weight: .medium))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.gray600)
+
+                if let activeId = viewModel.activeTutorId,
+                   let tutor = viewModel.tutors.first(where: { $0.id == activeId }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 11))
+                        Text(tutor.name)
+                            .font(.epilogue(12, weight: .bold))
+                            .tracking(-0.04 * 12)
+                    }
+                    .foregroundStyle(Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD).opacity(0.12))
+                    .clipShape(Capsule())
+                }
+            }
         }
     }
 
@@ -120,32 +155,51 @@ struct TutorsContentView: View {
 
     private var skeletonCarousel: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
+            HStack(spacing: 20) {
                 ForEach(0..<3, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 14)
+                    RoundedRectangle(cornerRadius: 16)
                         .fill(ReefColors.gray100)
-                        .frame(width: 260, height: 360)
+                        .frame(width: 240, height: 380)
                 }
             }
+            .padding(.horizontal, 4)
         }
     }
 
     // MARK: - Carousel
 
     private var tutorCarousel: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
-                ForEach(Array(viewModel.tutors.enumerated()), id: \.element.id) { index, tutor in
-                    TutorCardView(
-                        tutor: tutor,
-                        index: index,
-                        isSpeaking: viewModel.speakingTutorId == tutor.id,
-                        onTap: { viewModel.selectedTutor = tutor },
-                        onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) }
-                    )
+        VStack(spacing: 16) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 20) {
+                    ForEach(Array(viewModel.tutors.enumerated()), id: \.element.id) { index, tutor in
+                        TutorCardView(
+                            tutor: tutor,
+                            index: index,
+                            isSpeaking: viewModel.speakingTutorId == tutor.id,
+                            isActive: viewModel.activeTutorId == tutor.id,
+                            onTap: { viewModel.selectedTutor = tutor },
+                            onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
+                            onSelect: { viewModel.selectTutor(tutor) }
+                        )
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.vertical, 8)
+            }
+
+            // Scroll hint dots
+            HStack(spacing: 6) {
+                ForEach(viewModel.tutors) { tutor in
+                    Circle()
+                        .fill(viewModel.activeTutorId == tutor.id
+                              ? Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
+                              : ReefColors.gray400.opacity(0.4))
+                        .frame(width: viewModel.activeTutorId == tutor.id ? 8 : 6,
+                               height: viewModel.activeTutorId == tutor.id ? 8 : 6)
+                        .animation(.spring(duration: 0.25), value: viewModel.activeTutorId)
                 }
             }
-            .padding(.bottom, 8) // Room for offset shadow
         }
     }
 
@@ -164,6 +218,5 @@ struct TutorsContentView: View {
                 .foregroundStyle(ReefColors.gray500)
         }
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.top, 40)
     }
 }
