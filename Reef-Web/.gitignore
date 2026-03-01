@@ -4,3 +4,4 @@ node_modules/
 page-tree.json
 .vercel
 tsconfig.tsbuildinfo
+.env*.local
