@@ -54,6 +54,10 @@ struct DashboardView: View {
         switch selectedTab {
         case .documents:
             DocumentsContentView()
+        case .myReef:
+            MyReefComingSoonView()
+        case .library:
+            LibraryComingSoonView()
         default:
             VStack(alignment: .leading, spacing: 16) {
                 Text(contentTitle)
