@@ -14,7 +14,7 @@ const SOURCES = [
   { value: "other", label: "Other" },
 ]
 
-export default function StepReferral({ value, onChange, onSubmit, onBack, submitting }: { value: string; onChange: (v: string) => void; onSubmit: () => void; onBack: () => void; submitting: boolean }) {
+export default function StepReferral({ value, onChange, onSubmit, onBack, submitting, error }: { value: string; onChange: (v: string) => void; onSubmit: () => void; onBack: () => void; submitting: boolean; error?: string | null }) {
   const canSubmit = !!value && !submitting
 
   return (
@@ -87,6 +87,20 @@ export default function StepReferral({ value, onChange, onSubmit, onBack, submit
           )
         })}
       </div>
+
+      {error && (
+        <p
+          style={{
+            fontFamily,
+            fontWeight: 500,
+            fontSize: 13,
+            color: "#d32f2f",
+            margin: "0 0 12px 0",
+          }}
+        >
+          {error}
+        </p>
+      )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button
