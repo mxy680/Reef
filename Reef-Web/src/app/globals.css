@@ -158,8 +158,9 @@ header.framer-aw0er6 {
   width: 100% !important;
   background-color: transparent !important;
   position: relative;
-  z-index: 1;
+  z-index: 10;
   margin-bottom: 24px;
+  overflow: visible !important;
 }
 
 /* Hide header's internal pattern — body::before provides the grid */
@@ -775,10 +776,20 @@ html, body {
     margin-bottom: 12px;
   }
 
-  /* Problem cards */
+  /* Problem cards — stack vertically */
+  .problem-cards-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .problem-cards-row > * {
     max-width: 100%;
     min-width: 0;
+  }
+
+  /* Override Framer problem card fixed 350px width */
+  .problem-cards-row .framer-CAKEG.framer-1f6l56w {
+    width: 100% !important;
   }
 
   /* Stack features cards vertically on mobile */
