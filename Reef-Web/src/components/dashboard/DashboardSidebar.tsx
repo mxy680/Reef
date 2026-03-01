@@ -307,11 +307,11 @@ export default function DashboardSidebar() {
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: collapsed ? "12px 10px 0" : "12px 14px 0", display: "flex", flexDirection: "column", gap: 6 }}>
+      <nav style={{ flex: 1, padding: collapsed ? "12px 10px 0" : "12px 14px 0", display: "flex", flexDirection: "column", gap: 2 }}>
         {NAV_ITEMS.map((item) => (
           <NavItem key={item.href} {...item} collapsed={collapsed} />
         ))}
-        <div style={{ height: 1, backgroundColor: colors.gray100, margin: "6px 0" }} />
+        <div style={{ height: 1, backgroundColor: colors.gray100, margin: "4px 0" }} />
         {BOTTOM_NAV_ITEMS.filter((item) => !item.adminOnly || profile.email === ADMIN_EMAIL).map((item) => (
           <NavItem key={item.href} {...item} collapsed={collapsed} />
         ))}
