@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient, createServiceClient } from "../../../../lib/supabase/server"
 import { getUserTier, getLimits } from "../../../../lib/limits"
 
-const REEF_SERVER_URL = process.env.NEXT_PUBLIC_REEF_API_URL || "http://localhost:8000"
-
 export async function POST(request: NextRequest) {
   try {
     const { documentId } = await request.json()
@@ -72,45 +70,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to download PDF" }, { status: 500 })
     }
 
-    // Send to server /ai/reconstruct
-    const formData = new FormData()
-    formData.append("pdf", fileData, doc.filename)
-
-    let response: Response
-    try {
-      response = await fetch(`${REEF_SERVER_URL}/ai/reconstruct`, {
-        method: "POST",
-        body: formData,
-        signal: AbortSignal.timeout(10 * 60 * 1000), // 10 minute timeout
-      })
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Reef Server unreachable"
-      await serviceClient
-        .from("documents")
-        .update({ status: "failed", error_message: message })
-        .eq("id", documentId)
-      return NextResponse.json({ error: message }, { status: 502 })
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error")
-      await serviceClient
-        .from("documents")
-        .update({ status: "failed", error_message: errorText.slice(0, 500) })
-        .eq("id", documentId)
-      return NextResponse.json({ error: "Reconstruction failed" }, { status: 502 })
-    }
-
-    // Parse response headers
-    const pageCount = parseInt(response.headers.get("X-Page-Count") || "0", 10) || null
-    const problemCount = parseInt(response.headers.get("X-Problem-Count") || "0", 10) || null
-
-    // Upload reconstructed PDF to Storage
-    const outputBlob = await response.blob()
+    // Copy original PDF as output (no reconstruction)
     const outputPath = `${user.id}/${documentId}/output.pdf`
     const { error: uploadError } = await serviceClient.storage
       .from("documents")
-      .upload(outputPath, outputBlob, {
+      .upload(outputPath, fileData, {
         contentType: "application/pdf",
         upsert: true,
       })
@@ -118,7 +82,7 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       await serviceClient
         .from("documents")
-        .update({ status: "failed", error_message: "Failed to save reconstructed PDF" })
+        .update({ status: "failed", error_message: "Failed to save output PDF" })
         .eq("id", documentId)
       return NextResponse.json({ error: "Failed to save output" }, { status: 500 })
     }
@@ -128,8 +92,6 @@ export async function POST(request: NextRequest) {
       .from("documents")
       .update({
         status: "completed",
-        page_count: pageCount,
-        problem_count: problemCount,
       })
       .eq("id", documentId)
 
