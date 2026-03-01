@@ -36,13 +36,9 @@ struct DashboardView: View {
                         .padding(12)
                 }
             }
-        }
-        .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
-        .task { await fetchCourses() }
-        // Full-screen modal overlays — backdrop + modal on separate layers
-        // so the modal's interactive controls (TextFields, buttons) get
-        // proper hit-testing priority over the backdrop dismiss gesture.
-        .overlay {
+
+            // Modal backdrop + content in the same ZStack so the TextField
+            // participates in the main responder chain (keyboard works).
             if courseToDelete != nil || courseToEdit != nil {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
@@ -53,8 +49,7 @@ struct DashboardView: View {
                         }
                     }
             }
-        }
-        .overlay {
+
             if let course = courseToDelete {
                 DeleteCourseSheet(
                     course: course,
@@ -79,8 +74,7 @@ struct DashboardView: View {
                 )
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
-        }
-        .overlay {
+
             if let course = courseToEdit {
                 EditCourseSheet(
                     course: course,
@@ -106,8 +100,10 @@ struct DashboardView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
+        .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
         .animation(.spring(duration: 0.2), value: courseToDelete?.id)
         .animation(.spring(duration: 0.2), value: courseToEdit?.id)
+        .task { await fetchCourses() }
     }
 
     private func fetchCourses() async {
