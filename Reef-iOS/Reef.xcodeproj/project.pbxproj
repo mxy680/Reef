@@ -46,6 +46,9 @@
 		AABCBDDEEFEF1AABABCBDDEE /* RenameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */; };
 		ABCDBDEEFEF02BABABCDBDEE /* DetailsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */; };
 		ACDECDEEFEF13CABABCDECDE /* MoveToCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */; };
+		B1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift */; };
+		B2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift */; };
+		B3A4C5D6E7F8093A03040506 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */; };
 		AA10BF01C3D7A1E2F4B5C601 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */; };
 		CC01AE23D4C8B7F1A2E30901 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01AE23D4C8B7F1A2E30911 /* Course.swift */; };
 		AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */; };
@@ -113,6 +116,9 @@
 		E67635849BD6EE8CAF22FCC7 /* CourseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseDetailView.swift; sourceTree = "<group>"; };
 		D0A36A869A1C3A1BB1C02A99 /* DeleteCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCourseSheet.swift; sourceTree = "<group>"; };
 		79993F29F0CC9CD296303BEA /* EditCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCourseSheet.swift; sourceTree = "<group>"; };
+		C1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyReefComingSoonView.swift; sourceTree = "<group>"; };
+		C2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryComingSoonView.swift; sourceTree = "<group>"; };
+		C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -281,6 +287,9 @@
 				170FD0C938538B1F376C2AA2 /* DashboardHeader.swift */,
 				D023F5ED102A820961A8A65C /* DashboardView.swift */,
 				5872AB56932E5D8CEE7D9087 /* Courses */,
+				C1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift */,
+				C2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift */,
+				C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */,
 				DD1122334455667788990011 /* Documents */,
 			);
 			name = Dashboard;
@@ -465,6 +474,9 @@
 				AA3CBC5F90AEA5D19BF2D1B7 /* CourseDetailView.swift in Sources */,
 				5691B05BD55FEC1EDC2F4FD1 /* DeleteCourseSheet.swift in Sources */,
 				56EF689994FC441699D09C78 /* EditCourseSheet.swift in Sources */,
+				B1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift in Sources */,
+				B2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift in Sources */,
+				B3A4C5D6E7F8093A03040506 /* AnalyticsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

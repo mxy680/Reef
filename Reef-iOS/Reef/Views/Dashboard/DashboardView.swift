@@ -131,6 +131,12 @@ struct DashboardView: View {
             switch tab {
             case .documents:
                 DocumentsContentView()
+            case .myReef:
+                MyReefComingSoonView()
+            case .library:
+                LibraryComingSoonView()
+            case .analytics:
+                AnalyticsView()
             default:
                 comingSoonPlaceholder
             }
