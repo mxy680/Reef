@@ -1,24 +1,6 @@
 @preconcurrency import Supabase
 import SwiftUI
 
-struct Course: Identifiable, Codable, Hashable {
-    let id: String
-    let userId: String
-    let name: String
-    let emoji: String
-    let color: String
-    let createdAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case userId = "user_id"
-        case name
-        case emoji
-        case color
-        case createdAt = "created_at"
-    }
-}
-
 struct MoveToCourseSheet: View {
     let document: Document
     let onConfirm: (String?) -> Void
