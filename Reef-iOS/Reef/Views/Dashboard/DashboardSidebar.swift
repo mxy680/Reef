@@ -114,8 +114,34 @@ struct DashboardSidebar: View {
             .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
 
             // Course list
-            ForEach(courses) { course in
-                courseItem(course)
+            if courses.isEmpty {
+                Button {
+                    let course = Course(id: UUID(), name: "New Course")
+                    courses.append(course)
+                    selectedCourseId = course.id
+                    selectedTab = nil
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "plus.circle.dashed")
+                            .font(.system(size: 18))
+                            .frame(width: 24, height: 24)
+
+                        if isOpen {
+                            Text("Add a course")
+                                .font(.epilogue(15, weight: .semiBold))
+                                .tracking(-0.04 * 15)
+                        }
+                    }
+                    .foregroundStyle(ReefColors.gray400)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, isOpen ? 14 : 0)
+                    .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+                }
+                .buttonStyle(.plain)
+            } else {
+                ForEach(courses) { course in
+                    courseItem(course)
+                }
             }
         }
     }
