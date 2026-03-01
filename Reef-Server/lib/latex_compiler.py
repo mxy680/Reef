@@ -4,14 +4,11 @@ LaTeX compilation service using tectonic.
 Compiles LaTeX content to PDF for individual questions.
 """
 
-import os
-import subprocess
-import tempfile
 import base64
 import shutil
+import subprocess
+import tempfile
 from pathlib import Path
-from typing import Optional
-
 
 # LaTeX document template with essential packages
 LATEX_TEMPLATE = r"""
@@ -75,7 +72,7 @@ LATEX_TEMPLATE = r"""
 class LaTeXCompiler:
     """Compiles LaTeX content to PDF using tectonic."""
 
-    def __init__(self, tectonic_path: Optional[str] = None):
+    def __init__(self, tectonic_path: str | None = None):
         """
         Initialize the compiler.
 
@@ -86,12 +83,7 @@ class LaTeXCompiler:
 
         # Verify tectonic is available
         try:
-            result = subprocess.run(
-                [self.tectonic_path, "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
+            result = subprocess.run([self.tectonic_path, "--version"], capture_output=True, text=True, timeout=10)
             if result.returncode != 0:
                 raise RuntimeError(f"tectonic check failed: {result.stderr}")
         except FileNotFoundError:
@@ -100,10 +92,7 @@ class LaTeXCompiler:
             )
 
     def compile_latex(
-        self,
-        latex_content: str,
-        image_data: Optional[dict[str, str]] = None,
-        work_dir: Optional[str] = None
+        self, latex_content: str, image_data: dict[str, str] | None = None, work_dir: str | None = None
     ) -> bytes:
         """
         Compile LaTeX content to PDF.
@@ -138,10 +127,7 @@ class LaTeXCompiler:
 
             # Build full document
             image_path_latex = str(images_dir) + "/" if image_data else "./"
-            full_document = LATEX_TEMPLATE.format(
-                image_path=image_path_latex,
-                content=latex_content
-            )
+            full_document = LATEX_TEMPLATE.format(image_path=image_path_latex, content=latex_content)
 
             # Write LaTeX file
             tex_file = temp_dir / "question.tex"
@@ -153,13 +139,14 @@ class LaTeXCompiler:
                 [
                     self.tectonic_path,
                     str(tex_file),
-                    "--outdir", str(temp_dir),
+                    "--outdir",
+                    str(temp_dir),
                     "--keep-logs",  # Keep logs for debugging
                 ],
                 capture_output=True,
                 text=True,
                 timeout=60,
-                cwd=str(temp_dir)
+                cwd=str(temp_dir),
             )
 
             if result.returncode != 0:
@@ -169,9 +156,7 @@ class LaTeXCompiler:
                 if log_file.exists():
                     log_content = log_file.read_text()[-2000:]  # Last 2000 chars
 
-                raise RuntimeError(
-                    f"LaTeX compilation failed:\n{result.stderr}\n\nLog:\n{log_content}"
-                )
+                raise RuntimeError(f"LaTeX compilation failed:\n{result.stderr}\n\nLog:\n{log_content}")
 
             # Read PDF output
             pdf_file = temp_dir / "question.pdf"
@@ -183,4 +168,3 @@ class LaTeXCompiler:
         finally:
             if cleanup and temp_dir.exists():
                 shutil.rmtree(temp_dir, ignore_errors=True)
-

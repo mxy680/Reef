@@ -1,9 +1,10 @@
 """Tests for Reef Server API endpoints."""
 
-import pytest
-from fastapi.testclient import TestClient
 import os
 import sys
+
+import pytest
+from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -37,10 +38,7 @@ class TestEmbedEndpoint:
 
     def test_embed_single_text_mock(self, client):
         """Embed single text in mock mode."""
-        response = client.post(
-            "/ai/embed?mode=mock",
-            json={"texts": "Hello world"}
-        )
+        response = client.post("/ai/embed?mode=mock", json={"texts": "Hello world"})
         assert response.status_code == 200
         data = response.json()
         assert "embeddings" in data
@@ -53,10 +51,7 @@ class TestEmbedEndpoint:
 
     def test_embed_batch_mock(self, client):
         """Embed multiple texts in mock mode."""
-        response = client.post(
-            "/ai/embed?mode=mock",
-            json={"texts": ["Hello world", "Test embedding", "Another text"]}
-        )
+        response = client.post("/ai/embed?mode=mock", json={"texts": ["Hello world", "Test embedding", "Another text"]})
         assert response.status_code == 200
         data = response.json()
         assert len(data["embeddings"]) == 3
@@ -64,10 +59,7 @@ class TestEmbedEndpoint:
 
     def test_embed_normalized_mock(self, client):
         """Embeddings should be normalized (L2 norm ~1)."""
-        response = client.post(
-            "/ai/embed?mode=mock",
-            json={"texts": "Test normalization", "normalize": True}
-        )
+        response = client.post("/ai/embed?mode=mock", json={"texts": "Test normalization", "normalize": True})
         assert response.status_code == 200
         data = response.json()
         embedding = data["embeddings"][0]
@@ -76,24 +68,15 @@ class TestEmbedEndpoint:
 
     def test_embed_requires_texts(self, client):
         """Embed should require texts field."""
-        response = client.post(
-            "/ai/embed?mode=mock",
-            json={}
-        )
+        response = client.post("/ai/embed?mode=mock", json={})
         assert response.status_code == 422
 
     def test_embed_empty_list_fails(self, client):
         """Embed should reject empty texts list."""
-        response = client.post(
-            "/ai/embed?mode=mock",
-            json={"texts": []}
-        )
+        response = client.post("/ai/embed?mode=mock", json={"texts": []})
         assert response.status_code == 422
 
     def test_embed_invalid_mode(self, client):
         """Embed with invalid mode should fail."""
-        response = client.post(
-            "/ai/embed?mode=invalid",
-            json={"texts": "Test"}
-        )
+        response = client.post("/ai/embed?mode=invalid", json={"texts": "Test"})
         assert response.status_code == 422
