@@ -46,6 +46,14 @@
 		AABCBDDEEFEF1AABABCBDDEE /* RenameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */; };
 		ABCDBDEEFEF02BABABCDBDEE /* DetailsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */; };
 		ACDECDEEFEF13CABABCDECDE /* MoveToCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */; };
+		AA10BF01C3D7A1E2F4B5C601 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */; };
+		CC01AE23D4C8B7F1A2E30901 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01AE23D4C8B7F1A2E30911 /* Course.swift */; };
+		AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */; };
+		AA30BF03C3D7A1E2F4B5C603 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA30BF03C3D7A1E2F4B5C613 /* OnboardingView.swift */; };
+		AA40BF04C3D7A1E2F4B5C604 /* StepName.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA40BF04C3D7A1E2F4B5C614 /* StepName.swift */; };
+		AA50BF05C3D7A1E2F4B5C605 /* StepGrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA50BF05C3D7A1E2F4B5C615 /* StepGrade.swift */; };
+		AA60BF06C3D7A1E2F4B5C606 /* StepSubjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60BF06C3D7A1E2F4B5C616 /* StepSubjects.swift */; };
+		AA70BF07C3D7A1E2F4B5C607 /* StepReferral.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA70BF07C3D7A1E2F4B5C617 /* StepReferral.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -89,6 +97,14 @@
 		ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameSheet.swift; sourceTree = "<group>"; };
 		BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailsSheet.swift; sourceTree = "<group>"; };
 		CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCourseSheet.swift; sourceTree = "<group>"; };
+		AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		CC01AE23D4C8B7F1A2E30911 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
+		AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
+		AA30BF03C3D7A1E2F4B5C613 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		AA40BF04C3D7A1E2F4B5C614 /* StepName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepName.swift; sourceTree = "<group>"; };
+		AA50BF05C3D7A1E2F4B5C615 /* StepGrade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepGrade.swift; sourceTree = "<group>"; };
+		AA60BF06C3D7A1E2F4B5C616 /* StepSubjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepSubjects.swift; sourceTree = "<group>"; };
+		AA70BF07C3D7A1E2F4B5C617 /* StepReferral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepReferral.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +150,7 @@
 		37CB64D67A4227D8D98F7032 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */,
 				12B67D53D01AE43D3B31BDEE /* ReefButton.swift */,
 				1CC10B33BD05613452B10A19 /* ReefCard.swift */,
 				0F2272F12753F94D68D47474 /* ReefDivider.swift */,
@@ -175,9 +192,22 @@
 			children = (
 				E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */,
 				D38D8310566A59D632087B38 /* Auth */,
+				AA80BF08C3D7A1E2F4B5C618 /* Onboarding */,
 				F5990CE8BB917741B731D23A /* Dashboard */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		AA80BF08C3D7A1E2F4B5C618 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				AA30BF03C3D7A1E2F4B5C613 /* OnboardingView.swift */,
+				AA40BF04C3D7A1E2F4B5C614 /* StepName.swift */,
+				AA50BF05C3D7A1E2F4B5C615 /* StepGrade.swift */,
+				AA60BF06C3D7A1E2F4B5C616 /* StepSubjects.swift */,
+				AA70BF07C3D7A1E2F4B5C617 /* StepReferral.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		CD282D01C21A1CB2BA694890 /* Reef */ = {
@@ -190,12 +220,22 @@
 				DE1BD128EA2A0639C86D1413 /* Auth */,
 				30632B30B15AC95E949447F5 /* Config */,
 				019D0ADC68C9D9ECF96D19C5 /* Design */,
-				FF1122334455667788990011 /* Models */,
+				AA90BF09C3D7A1E2F4B5C619 /* Models */,
 				7262DF6D88DE3E4B21390AF9 /* Resources */,
 				FF2233445566778899001122 /* Services */,
 				BD5A6C548E05A85AFF4FF6E4 /* Views */,
 			);
 			path = Reef;
+			sourceTree = "<group>";
+		};
+		AA90BF09C3D7A1E2F4B5C619 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				CC01AE23D4C8B7F1A2E30911 /* Course.swift */,
+				1A2B3C4D5E6F07181A2B3C4D /* Document.swift */,
+				AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 		D38D8310566A59D632087B38 /* Auth */ = {
@@ -260,14 +300,6 @@
 				CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */,
 			);
 			path = Modals;
-			sourceTree = "<group>";
-		};
-		FF1122334455667788990011 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				1A2B3C4D5E6F07181A2B3C4D /* Document.swift */,
-			);
-			path = Models;
 			sourceTree = "<group>";
 		};
 		FF2233445566778899001122 /* Services */ = {
@@ -369,11 +401,19 @@
 				BFEC612BA600837B55341B71 /* ContentView.swift in Sources */,
 				E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */,
 				4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */,
+				AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */,
+				AA30BF03C3D7A1E2F4B5C603 /* OnboardingView.swift in Sources */,
+				CC01AE23D4C8B7F1A2E30901 /* Course.swift in Sources */,
+				AA10BF01C3D7A1E2F4B5C601 /* Profile.swift in Sources */,
 				2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */,
 				9223495A7D2DEDCA6FE9A351 /* ReefButton.swift in Sources */,
 				4B77DE746EC133DCDE98D407 /* ReefCard.swift in Sources */,
 				98E9547119361714B8EE388A /* ReefDivider.swift in Sources */,
 				8081686831DE310C575DC5EA /* ReefTextField.swift in Sources */,
+				AA50BF05C3D7A1E2F4B5C605 /* StepGrade.swift in Sources */,
+				AA40BF04C3D7A1E2F4B5C604 /* StepName.swift in Sources */,
+				AA70BF07C3D7A1E2F4B5C607 /* StepReferral.swift in Sources */,
+				AA60BF06C3D7A1E2F4B5C606 /* StepSubjects.swift in Sources */,
 				689EDB34F09D6D2BB8CED1D2 /* Supabase.swift in Sources */,
 				92722784C33A0E7DAA072BDA /* Typography.swift in Sources */,
 				5C6D658BCBC2AA3D1A4BC3FD /* DashboardTab.swift in Sources */,

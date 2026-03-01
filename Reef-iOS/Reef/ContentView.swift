@@ -11,8 +11,10 @@ struct ContentView: View {
                         .ignoresSafeArea()
                     ProgressView()
                 }
-            } else if authManager.isAuthenticated {
+            } else if authManager.isAuthenticated && authManager.onboardingCompleted {
                 LoggedInView()
+            } else if authManager.isAuthenticated {
+                OnboardingView()
             } else {
                 AuthView()
             }
