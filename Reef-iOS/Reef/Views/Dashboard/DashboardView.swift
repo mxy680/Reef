@@ -2,7 +2,9 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(AuthManager.self) private var authManager
-    @State private var selectedTab: DashboardTab = .documents
+    @State private var selectedTab: DashboardTab? = .documents
+    @State private var selectedCourseId: UUID?
+    @State private var courses: [Course] = []
     @State private var sidebarOpen = true
 
     var body: some View {
@@ -15,6 +17,8 @@ struct DashboardView: View {
                 // Sidebar
                 DashboardSidebar(
                     selectedTab: $selectedTab,
+                    selectedCourseId: $selectedCourseId,
+                    courses: $courses,
                     isOpen: $sidebarOpen
                 )
                 .padding(.leading, 12)
@@ -22,7 +26,7 @@ struct DashboardView: View {
 
                 // Main column
                 VStack(spacing: 0) {
-                    DashboardHeader(selectedTab: selectedTab)
+                    DashboardHeader(title: contentTitle)
                         .padding(.top, 12)
                         .padding(.horizontal, 12)
 
@@ -34,10 +38,21 @@ struct DashboardView: View {
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
     }
 
+    private var contentTitle: String {
+        if let tab = selectedTab {
+            return tab.label
+        }
+        if let courseId = selectedCourseId,
+           let course = courses.first(where: { $0.id == courseId }) {
+            return course.name
+        }
+        return "Dashboard"
+    }
+
     @ViewBuilder
     private var contentArea: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(selectedTab.label)
+            Text(contentTitle)
                 .font(.epilogue(28, weight: .black))
                 .tracking(-0.04 * 28)
                 .foregroundStyle(ReefColors.black)

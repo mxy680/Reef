@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct DashboardSidebar: View {
-    @Binding var selectedTab: DashboardTab
+    @Binding var selectedTab: DashboardTab?
+    @Binding var selectedCourseId: UUID?
+    @Binding var courses: [Course]
     @Binding var isOpen: Bool
     @Environment(AuthManager.self) private var authManager
 
@@ -29,9 +31,9 @@ struct DashboardSidebar: View {
     private var header: some View {
         HStack(spacing: 10) {
             if isOpen {
-                Image(systemName: "water.waves")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(ReefColors.primary)
+                Image("ReefLogo")
+                    .resizable()
+                    .frame(width: 28, height: 28)
 
                 Text("REEF")
                     .font(.epilogue(24, weight: .black))
@@ -63,6 +65,21 @@ struct DashboardSidebar: View {
     private var navigation: some View {
         ScrollView {
             VStack(spacing: 2) {
+                // Section header
+                HStack {
+                    if isOpen {
+                        Text("WORKSPACE")
+                            .font(.epilogue(11, weight: .bold))
+                            .tracking(0.06 * 11)
+                            .foregroundStyle(ReefColors.gray400)
+
+                        Spacer()
+                    }
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, isOpen ? 14 : 0)
+                .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+
                 ForEach(DashboardTab.mainTabs) { tab in
                     navItem(tab)
                 }
@@ -72,12 +89,75 @@ struct DashboardSidebar: View {
                     .frame(height: 1)
                     .padding(.vertical, 4)
 
-                ForEach(DashboardTab.bottomTabs) { tab in
-                    navItem(tab)
-                }
+                coursesSection
             }
             .padding(.horizontal, isOpen ? 14 : 10)
             .padding(.top, 12)
+        }
+    }
+
+    // MARK: - Courses Section
+
+    private var coursesSection: some View {
+        VStack(spacing: 2) {
+            // Section header
+            HStack {
+                if isOpen {
+                    Text("COURSES")
+                        .font(.epilogue(11, weight: .bold))
+                        .tracking(0.06 * 11)
+                        .foregroundStyle(ReefColors.gray400)
+
+                    Spacer()
+                }
+
+                Button {
+                    let course = Course(id: UUID(), name: "New Course")
+                    courses.append(course)
+                    selectedCourseId = course.id
+                    selectedTab = nil
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(ReefColors.gray400)
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, isOpen ? 14 : 0)
+            .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+
+            // Course list
+            if courses.isEmpty {
+                Button {
+                    let course = Course(id: UUID(), name: "New Course")
+                    courses.append(course)
+                    selectedCourseId = course.id
+                    selectedTab = nil
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "plus.circle.dashed")
+                            .font(.system(size: 18))
+                            .frame(width: 24, height: 24)
+
+                        if isOpen {
+                            Text("Add a course")
+                                .font(.epilogue(15, weight: .semiBold))
+                                .tracking(-0.04 * 15)
+                        }
+                    }
+                    .foregroundStyle(ReefColors.gray400)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, isOpen ? 14 : 0)
+                    .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+                }
+                .buttonStyle(.plain)
+            } else {
+                ForEach(courses) { course in
+                    courseItem(course)
+                }
+            }
         }
     }
 
@@ -88,6 +168,7 @@ struct DashboardSidebar: View {
 
         return Button {
             selectedTab = tab
+            selectedCourseId = nil
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: tab.icon)
@@ -98,6 +179,57 @@ struct DashboardSidebar: View {
                     Text(tab.label)
                         .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
                         .tracking(-0.04 * 15)
+
+                    Spacer()
+                }
+            }
+            .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
+            .padding(.vertical, 8)
+            .padding(.horizontal, isOpen ? 14 : 0)
+            .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+            .background(
+                isActive
+                    ? RoundedRectangle(cornerRadius: 10)
+                        .fill(ReefColors.accent)
+                    : nil
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                isActive
+                    ? RoundedRectangle(cornerRadius: 10)
+                        .stroke(ReefColors.black, lineWidth: 2)
+                    : nil
+            )
+            .background(
+                isActive
+                    ? RoundedRectangle(cornerRadius: 10)
+                        .fill(ReefColors.black)
+                        .offset(x: 3, y: 3)
+                    : nil
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Course Item
+
+    private func courseItem(_ course: Course) -> some View {
+        let isActive = selectedCourseId == course.id
+
+        return Button {
+            selectedCourseId = course.id
+            selectedTab = nil
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "graduationcap")
+                    .font(.system(size: 18))
+                    .frame(width: 24, height: 24)
+
+                if isOpen {
+                    Text(course.name)
+                        .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
+                        .tracking(-0.04 * 15)
+                        .lineLimit(1)
 
                     Spacer()
                 }
@@ -159,25 +291,31 @@ struct DashboardSidebar: View {
                     )
             }
 
-            // Socials
-            footerRow {
-                circleIcon(fill: ReefColors.gray100) {
-                    // X/Twitter logo approximation
-                    Text("𝕏")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(ReefColors.black)
-                }
+            // Settings
+            Button {
+                selectedTab = .settings
+                selectedCourseId = nil
             } label: {
-                Text("Socials")
-            } trailing: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12))
-                    .foregroundStyle(ReefColors.gray400)
+                footerRow {
+                    circleIcon(fill: ReefColors.gray100) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(ReefColors.black)
+                    }
+                } label: {
+                    Text("Settings")
+                } trailing: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12))
+                        .foregroundStyle(ReefColors.gray400)
+                }
             }
+            .buttonStyle(.plain)
 
             // User
             Button {
                 selectedTab = .settings
+                selectedCourseId = nil
             } label: {
                 footerRow {
                     circleIcon(fill: ReefColors.surface) {

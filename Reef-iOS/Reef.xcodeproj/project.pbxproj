@@ -35,6 +35,7 @@
 		FAD30BC870E2887DE6695C42 /* DashboardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8299119962039796C4D85BD2 /* DashboardCard.swift */; };
 		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
 		AA10BF01C3D7A1E2F4B5C601 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */; };
+		CC01AE23D4C8B7F1A2E30901 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01AE23D4C8B7F1A2E30911 /* Course.swift */; };
 		AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */; };
 		AA30BF03C3D7A1E2F4B5C603 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA30BF03C3D7A1E2F4B5C613 /* OnboardingView.swift */; };
 		AA40BF04C3D7A1E2F4B5C604 /* StepName.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA40BF04C3D7A1E2F4B5C614 /* StepName.swift */; };
@@ -73,6 +74,7 @@
 		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
 		TEMP_AC195344-2B9D-437D-97D3-CD6DD974FF6B /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		CC01AE23D4C8B7F1A2E30911 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
 		AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
 		AA30BF03C3D7A1E2F4B5C613 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		AA40BF04C3D7A1E2F4B5C614 /* StepName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepName.swift; sourceTree = "<group>"; };
@@ -205,6 +207,7 @@
 		AA90BF09C3D7A1E2F4B5C619 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				CC01AE23D4C8B7F1A2E30911 /* Course.swift */,
 				AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */,
 			);
 			path = Models;
@@ -341,6 +344,7 @@
 				4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */,
 				AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */,
 				AA30BF03C3D7A1E2F4B5C603 /* OnboardingView.swift in Sources */,
+				CC01AE23D4C8B7F1A2E30901 /* Course.swift in Sources */,
 				AA10BF01C3D7A1E2F4B5C601 /* Profile.swift in Sources */,
 				2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */,
 				9223495A7D2DEDCA6FE9A351 /* ReefButton.swift in Sources */,
