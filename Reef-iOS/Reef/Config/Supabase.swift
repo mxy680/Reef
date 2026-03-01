@@ -1,9 +1,8 @@
 import Foundation
+import Supabase
 
-// MARK: - Supabase configuration placeholder
-// Import and configure `supabase-swift` here once auth is wired up.
-
-enum SupabaseConfig {
-    static let url = "https://YOUR_PROJECT.supabase.co"
-    static let anonKey = "YOUR_ANON_KEY"
-}
+// TODO: Replace with real Supabase project URL and anon key
+let supabase = SupabaseClient(
+    supabaseURL: URL(string: "https://YOUR_PROJECT.supabase.co")!,
+    supabaseKey: "YOUR_ANON_KEY"
+)

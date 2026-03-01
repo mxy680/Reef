@@ -3,11 +3,12 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC4262B97357102BF9818098 /* ReefApp.swift */; };
+		4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */; };
 		4B77DE746EC133DCDE98D407 /* ReefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC10B33BD05613452B10A19 /* ReefCard.swift */; };
 		53A8FAA539972BE884E9A543 /* Epilogue-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */; };
 		5764F13B61C5FBD9B17D28DD /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = ECE996E3DB8403B5ED787530 /* Supabase */; };
@@ -18,11 +19,14 @@
 		92722784C33A0E7DAA072BDA /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A242632736FB9BEE170074 /* Typography.swift */; };
 		98E9547119361714B8EE388A /* ReefDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F2272F12753F94D68D47474 /* ReefDivider.swift */; };
 		A371C46423DF8A87C7CB0F3B /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 585B9AFB26D4C25AB8FFF803 /* Colors.swift */; };
+		B1342C3D4467A24E496A2705 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */; };
 		BFEC612BA600837B55341B71 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7601EE91C6C7F4218ED01B97 /* ContentView.swift */; };
+		D07E9FEAC5D7A2AD66303B45 /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206F870E71C6B2391213AE78 /* AppleSignInCoordinator.swift */; };
 		D127D837D809C7679D5F1098 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E68361F46DF0D0B0951ECE8 /* AuthView.swift */; };
 		D29EC142A3431E5CA3D29869 /* Epilogue-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 60BB4D786D5BD94C884A3D33 /* Epilogue-SemiBold.ttf */; };
 		D76683C3BC8B3E2C1170517A /* Epilogue-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */; };
 		E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */; };
+		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,17 +34,22 @@
 		0F2272F12753F94D68D47474 /* ReefDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefDivider.swift; sourceTree = "<group>"; };
 		12B67D53D01AE43D3B31BDEE /* ReefButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefButton.swift; sourceTree = "<group>"; };
 		1CC10B33BD05613452B10A19 /* ReefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefCard.swift; sourceTree = "<group>"; };
-		2FEBC9D0D9B06F74E3F564A1 /* Reef.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Reef.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Epilogue-Black.ttf"; sourceTree = "<group>"; };
+		206F870E71C6B2391213AE78 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
+		2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
+		2FEBC9D0D9B06F74E3F564A1 /* Reef.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Reef.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Black.ttf"; sourceTree = "<group>"; };
 		585B9AFB26D4C25AB8FFF803 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
-		60BB4D786D5BD94C884A3D33 /* Epilogue-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Epilogue-SemiBold.ttf"; sourceTree = "<group>"; };
+		60BB4D786D5BD94C884A3D33 /* Epilogue-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-SemiBold.ttf"; sourceTree = "<group>"; };
 		7601EE91C6C7F4218ED01B97 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Epilogue-Bold.ttf"; sourceTree = "<group>"; };
-		8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Epilogue-Medium.ttf"; sourceTree = "<group>"; };
+		8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Bold.ttf"; sourceTree = "<group>"; };
+		8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Medium.ttf"; sourceTree = "<group>"; };
 		9E68361F46DF0D0B0951ECE8 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		A601472A53F2EEA6CDC28FBB /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
 		AC4262B97357102BF9818098 /* ReefApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefApp.swift; sourceTree = "<group>"; };
+		B1C1085150D25A8BA7D81D2B /* Reef.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Reef.entitlements; sourceTree = "<group>"; };
 		E2A242632736FB9BEE170074 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggedInView.swift; sourceTree = "<group>"; };
+		E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -50,6 +59,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5764F13B61C5FBD9B17D28DD /* Supabase in Frameworks */,
+				B1342C3D4467A24E496A2705 /* AuthenticationServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,6 +103,14 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		624D905650AFCFF61C8BAAD8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		7262DF6D88DE3E4B21390AF9 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -115,6 +133,7 @@
 		BD5A6C548E05A85AFF4FF6E4 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */,
 				D38D8310566A59D632087B38 /* Auth */,
 			);
 			path = Views;
@@ -124,7 +143,9 @@
 			isa = PBXGroup;
 			children = (
 				7601EE91C6C7F4218ED01B97 /* ContentView.swift */,
+				B1C1085150D25A8BA7D81D2B /* Reef.entitlements */,
 				AC4262B97357102BF9818098 /* ReefApp.swift */,
+				DE1BD128EA2A0639C86D1413 /* Auth */,
 				30632B30B15AC95E949447F5 /* Config */,
 				019D0ADC68C9D9ECF96D19C5 /* Design */,
 				7262DF6D88DE3E4B21390AF9 /* Resources */,
@@ -142,10 +163,20 @@
 			path = Auth;
 			sourceTree = "<group>";
 		};
+		DE1BD128EA2A0639C86D1413 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				206F870E71C6B2391213AE78 /* AppleSignInCoordinator.swift */,
+				E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
 		F0F46F2D121C884BE5CD2C5E = {
 			isa = PBXGroup;
 			children = (
 				CD282D01C21A1CB2BA694890 /* Reef */,
+				624D905650AFCFF61C8BAAD8 /* Frameworks */,
 				18C69EFE0AF9128BD3588C6A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -195,6 +226,7 @@
 			packageReferences = (
 				7DDE570BD922A527B8FF276B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -222,10 +254,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D07E9FEAC5D7A2AD66303B45 /* AppleSignInCoordinator.swift in Sources */,
+				FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */,
 				D127D837D809C7679D5F1098 /* AuthView.swift in Sources */,
 				A371C46423DF8A87C7CB0F3B /* Colors.swift in Sources */,
 				BFEC612BA600837B55341B71 /* ContentView.swift in Sources */,
 				E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */,
+				4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */,
 				2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */,
 				9223495A7D2DEDCA6FE9A351 /* ReefButton.swift in Sources */,
 				4B77DE746EC133DCDE98D407 /* ReefCard.swift in Sources */,
@@ -243,8 +278,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Reef/Reef.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = SMJLWBZ8X6;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -383,8 +418,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Reef/Reef.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = SMJLWBZ8X6;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

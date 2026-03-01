@@ -1,11 +1,21 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        AuthView()
-    }
-}
+    @Environment(AuthManager.self) private var authManager
 
-#Preview {
-    ContentView()
+    var body: some View {
+        Group {
+            if authManager.isLoading && authManager.session == nil {
+                ZStack {
+                    ReefColors.surface
+                        .ignoresSafeArea()
+                    ProgressView()
+                }
+            } else if authManager.isAuthenticated {
+                LoggedInView()
+            } else {
+                AuthView()
+            }
+        }
+    }
 }

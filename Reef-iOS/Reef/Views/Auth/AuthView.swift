@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AuthView: View {
+    @Environment(AuthManager.self) private var authManager
     @State private var isSignUp = false
     @State private var email = ""
 
@@ -43,7 +44,7 @@ struct AuthView: View {
                                 .reefStyle(.secondary)
 
                                 Button {
-                                    // Apple sign-in (not wired)
+                                    authManager.signInWithApple()
                                 } label: {
                                     HStack(spacing: 10) {
                                         Image(systemName: "apple.logo")
@@ -53,6 +54,7 @@ struct AuthView: View {
                                 }
                                 .reefStyle(.secondary)
                             }
+                            .disabled(authManager.isLoading)
                             .padding(.bottom, 20)
                             .fadeUp(index: 2)
 
@@ -128,10 +130,28 @@ struct AuthView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 24)
             }
+
+            if authManager.isLoading {
+                Color.black.opacity(0.25)
+                    .ignoresSafeArea()
+                ProgressView()
+                    .tint(.white)
+                    .scaleEffect(1.5)
+            }
+        }
+        .alert("Sign In Error",
+               isPresented: Binding(
+                   get: { authManager.errorMessage != nil },
+                   set: { if !$0 { authManager.errorMessage = nil } }
+               )) {
+            Button("OK") { authManager.errorMessage = nil }
+        } message: {
+            Text(authManager.errorMessage ?? "")
         }
     }
 }
 
 #Preview {
     AuthView()
+        .environment(AuthManager())
 }
