@@ -283,19 +283,16 @@ actor DocumentService {
     }
 
     private func triggerProcessing(documentId: String) async throws {
-        guard let baseURLString = Bundle.main.object(forInfoDictionaryKey: "REEF_WEB_URL") as? String,
-              let url = URL(string: "\(baseURLString)/api/documents/process") else { return }
+        // Fake processing — skip server call, just mark as completed after a delay
+        try await Task.sleep(for: .seconds(2))
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        // Include auth token
-        if let token = try? await supabase.auth.session.accessToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        struct UpdatePayload: Encodable {
+            let status: String
         }
-
-        request.httpBody = try? JSONEncoder().encode(["documentId": documentId])
-        _ = try? await URLSession.shared.data(for: request)
+        try await supabase
+            .from("documents")
+            .update(UpdatePayload(status: "completed"))
+            .eq("id", value: documentId)
+            .execute()
     }
 }
