@@ -167,10 +167,19 @@ struct TutorQuizPopup: View {
                 } label: {
                     Text("Continue")
                 }
-                .reefStyle(.primary)
+                .buttonStyle(.plain)
                 .frame(maxWidth: 160)
+                .frame(height: 48)
+                .font(.epilogue(16, weight: .bold))
+                .tracking(-0.04 * 16)
+                .foregroundStyle(answers[step] != nil ? ReefColors.white : ReefColors.gray500)
+                .background(answers[step] != nil ? ReefColors.primary : ReefColors.gray100)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(answers[step] != nil ? ReefColors.black : ReefColors.gray400, lineWidth: answers[step] != nil ? 2 : 1)
+                )
                 .disabled(answers[step] == nil)
-                .opacity(answers[step] != nil ? 1 : 0.5)
             }
         }
     }
