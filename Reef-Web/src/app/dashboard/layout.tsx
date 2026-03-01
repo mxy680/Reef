@@ -4,11 +4,12 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "../../lib/supabase/client"
 import { getProfile } from "../../lib/profiles"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../lib/colors"
 import { DashboardProvider, useDashboard, type DashboardProfile } from "../../components/dashboard/DashboardContext"
 import DashboardSidebar, { SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_COLLAPSED } from "../../components/dashboard/DashboardSidebar"
 import DashboardHeader from "../../components/dashboard/DashboardHeader"
+import CommandPalette from "../../components/dashboard/CommandPalette"
 
 function SkeletonBlock({ width, height }: { width: string | number; height: number }) {
   return (
@@ -96,7 +97,7 @@ function LoadingSkeleton() {
 }
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
-  const { sidebarOpen } = useDashboard()
+  const { sidebarOpen, commandPaletteOpen } = useDashboard()
   const marginLeft = sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_COLLAPSED
 
   return (
@@ -124,6 +125,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </motion.div>
+      <AnimatePresence>
+        {commandPaletteOpen && <CommandPalette />}
+      </AnimatePresence>
     </div>
   )
 }

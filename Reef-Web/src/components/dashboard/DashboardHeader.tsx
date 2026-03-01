@@ -383,6 +383,7 @@ function ProfileDropdown() {
 
 export default function DashboardHeader() {
   const pathname = usePathname()
+  const { openCommandPalette } = useDashboard()
 
   return (
     <header
@@ -406,8 +407,24 @@ export default function DashboardHeader() {
 
       {/* Right — Actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <HeaderIconButton>
+        <HeaderIconButton onClick={openCommandPalette}>
           <SearchIcon />
+          <span
+            style={{
+              marginLeft: 2,
+              padding: "1px 5px",
+              borderRadius: 4,
+              border: `1.5px solid ${colors.gray400}`,
+              fontFamily,
+              fontWeight: 600,
+              fontSize: 10,
+              letterSpacing: "-0.02em",
+              color: colors.gray400,
+              lineHeight: "14px",
+            }}
+          >
+            &#8984;K
+          </span>
         </HeaderIconButton>
         <HeaderIconButton>
           <HelpIcon />

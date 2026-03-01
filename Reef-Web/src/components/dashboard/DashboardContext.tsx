@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
 
 export interface DashboardProfile {
   display_name: string
@@ -15,6 +15,9 @@ export interface DashboardContextValue {
   userId: string
   sidebarOpen: boolean
   toggleSidebar: () => void
+  commandPaletteOpen: boolean
+  openCommandPalette: () => void
+  closeCommandPalette: () => void
 }
 
 const DashboardContext = createContext<DashboardContextValue | null>(null)
@@ -24,13 +27,27 @@ export function DashboardProvider({
   value,
 }: {
   children: React.ReactNode
-  value: Omit<DashboardContextValue, "sidebarOpen" | "toggleSidebar">
+  value: Omit<DashboardContextValue, "sidebarOpen" | "toggleSidebar" | "commandPaletteOpen" | "openCommandPalette" | "closeCommandPalette">
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const toggleSidebar = useCallback(() => setSidebarOpen((o) => !o), [])
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const openCommandPalette = useCallback(() => setCommandPaletteOpen(true), [])
+  const closeCommandPalette = useCallback(() => setCommandPaletteOpen(false), [])
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault()
+        setCommandPaletteOpen((o) => !o)
+      }
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [])
 
   return (
-    <DashboardContext.Provider value={{ ...value, sidebarOpen, toggleSidebar }}>
+    <DashboardContext.Provider value={{ ...value, sidebarOpen, toggleSidebar, commandPaletteOpen, openCommandPalette, closeCommandPalette }}>
       {children}
     </DashboardContext.Provider>
   )
