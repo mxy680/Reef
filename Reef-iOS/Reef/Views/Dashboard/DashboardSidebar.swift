@@ -29,9 +29,9 @@ struct DashboardSidebar: View {
     private var header: some View {
         HStack(spacing: 10) {
             if isOpen {
-                Image(systemName: "water.waves")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(ReefColors.primary)
+                MantaRayShape()
+                    .fill(ReefColors.primary)
+                    .frame(width: 24, height: 24)
 
                 Text("REEF")
                     .font(.epilogue(24, weight: .black))
@@ -64,15 +64,6 @@ struct DashboardSidebar: View {
         ScrollView {
             VStack(spacing: 2) {
                 ForEach(DashboardTab.mainTabs) { tab in
-                    navItem(tab)
-                }
-
-                Rectangle()
-                    .fill(ReefColors.gray100)
-                    .frame(height: 1)
-                    .padding(.vertical, 4)
-
-                ForEach(DashboardTab.bottomTabs) { tab in
                     navItem(tab)
                 }
             }
@@ -159,21 +150,25 @@ struct DashboardSidebar: View {
                     )
             }
 
-            // Socials
-            footerRow {
-                circleIcon(fill: ReefColors.gray100) {
-                    // X/Twitter logo approximation
-                    Text("𝕏")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(ReefColors.black)
-                }
+            // Settings
+            Button {
+                selectedTab = .settings
             } label: {
-                Text("Socials")
-            } trailing: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12))
-                    .foregroundStyle(ReefColors.gray400)
+                footerRow {
+                    circleIcon(fill: ReefColors.gray100) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(ReefColors.black)
+                    }
+                } label: {
+                    Text("Settings")
+                } trailing: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12))
+                        .foregroundStyle(ReefColors.gray400)
+                }
             }
+            .buttonStyle(.plain)
 
             // User
             Button {

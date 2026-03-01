@@ -6,8 +6,6 @@ enum DashboardTab: String, CaseIterable, Identifiable {
     case analytics
     case myReef
     case library
-    case help
-    case billing
     case settings
 
     var id: String { rawValue }
@@ -19,8 +17,6 @@ enum DashboardTab: String, CaseIterable, Identifiable {
         case .analytics: "Analytics"
         case .myReef: "My Reef"
         case .library: "Library"
-        case .help: "Help"
-        case .billing: "Billing"
         case .settings: "Settings"
         }
     }
@@ -32,24 +28,11 @@ enum DashboardTab: String, CaseIterable, Identifiable {
         case .analytics: "chart.bar"
         case .myReef: "heart"
         case .library: "books.vertical"
-        case .help: "questionmark.circle"
-        case .billing: "creditcard"
         case .settings: "gearshape"
         }
     }
 
-    var isMain: Bool {
-        switch self {
-        case .documents, .courses, .analytics, .myReef, .library: true
-        case .help, .billing, .settings: false
-        }
-    }
-
     static var mainTabs: [DashboardTab] {
-        allCases.filter(\.isMain)
-    }
-
-    static var bottomTabs: [DashboardTab] {
-        allCases.filter { !$0.isMain }
+        [.documents, .courses, .analytics, .myReef, .library]
     }
 }
