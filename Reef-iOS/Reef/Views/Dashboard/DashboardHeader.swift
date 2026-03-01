@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DashboardHeader: View {
-    let selectedTab: DashboardTab
+    let title: String
     @Environment(AuthManager.self) private var authManager
 
     var body: some View {
@@ -17,7 +17,7 @@ struct DashboardHeader: View {
                     .font(.system(size: 12))
                     .foregroundStyle(ReefColors.gray400)
 
-                Text(selectedTab.label)
+                Text(title)
                     .font(.epilogue(16, weight: .black))
                     .tracking(-0.04 * 16)
                     .foregroundStyle(ReefColors.black)

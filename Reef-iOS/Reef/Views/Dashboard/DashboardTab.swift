@@ -2,7 +2,6 @@ import SwiftUI
 
 enum DashboardTab: String, CaseIterable, Identifiable {
     case documents
-    case courses
     case analytics
     case myReef
     case library
@@ -13,7 +12,6 @@ enum DashboardTab: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .documents: "Documents"
-        case .courses: "Courses"
         case .analytics: "Analytics"
         case .myReef: "My Reef"
         case .library: "Library"
@@ -24,7 +22,6 @@ enum DashboardTab: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .documents: "doc.text"
-        case .courses: "graduationcap"
         case .analytics: "chart.bar"
         case .myReef: "heart"
         case .library: "books.vertical"
@@ -33,6 +30,6 @@ enum DashboardTab: String, CaseIterable, Identifiable {
     }
 
     static var mainTabs: [DashboardTab] {
-        [.documents, .courses, .analytics, .myReef, .library]
+        [.documents, .analytics, .myReef, .library]
     }
 }
