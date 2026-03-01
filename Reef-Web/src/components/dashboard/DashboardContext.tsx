@@ -12,6 +12,7 @@ export interface DashboardProfile {
 
 export interface DashboardContextValue {
   profile: DashboardProfile
+  setProfile: (p: DashboardProfile) => void
   userId: string
   sidebarOpen: boolean
   toggleSidebar: () => void

@@ -166,7 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <DashboardProvider value={{ profile, userId }}>
+    <DashboardProvider value={{ profile, setProfile: (p) => setProfile(p), userId }}>
       <DashboardInner>{children}</DashboardInner>
     </DashboardProvider>
   )
