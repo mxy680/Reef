@@ -126,7 +126,8 @@ struct CourseDetailView: View {
         // Modals
         .overlay {
             if viewModel.showDelete || viewModel.showEdit {
-                Color.black.opacity(0.3)
+                Color.clear
+                    .contentShape(Rectangle())
                     .ignoresSafeArea()
                     .onTapGesture {
                         withAnimation(.spring(duration: 0.2)) {
