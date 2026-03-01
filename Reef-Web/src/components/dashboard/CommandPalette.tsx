@@ -210,6 +210,7 @@ export default function CommandPalette() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       onClick={closeCommandPalette}
+      onWheel={(e) => e.preventDefault()}
       style={{
         position: "fixed",
         inset: 0,
@@ -219,6 +220,7 @@ export default function CommandPalette() {
         justifyContent: "center",
         alignItems: "flex-start",
         paddingTop: 80,
+        overflow: "hidden",
       }}
     >
       <motion.div
@@ -227,6 +229,7 @@ export default function CommandPalette() {
         exit={{ opacity: 0, y: 20, scale: 0.97 }}
         transition={{ duration: 0.25 }}
         onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
         style={{
           width: 560,
           maxHeight: "min(480px, calc(100vh - 160px))",

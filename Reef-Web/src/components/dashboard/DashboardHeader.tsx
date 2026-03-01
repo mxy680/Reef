@@ -30,11 +30,14 @@ const PAGE_TITLES: Record<string, string> = {
 
 // -- SVG Icons ---------------------------------------------------------------
 
-function SearchIcon() {
+function CommandIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="9" cy="9" r="6" />
-      <line x1="13.5" y1="13.5" x2="17" y2="17" />
+      <path d="M5 3 C3.5 3 2.5 4 2.5 5.5 C2.5 7 3.5 8 5 8 H7 V5.5 C7 4 6 3 5 3 Z" />
+      <path d="M15 3 C16.5 3 17.5 4 17.5 5.5 C17.5 7 16.5 8 15 8 H13 V5.5 C13 4 14 3 15 3 Z" />
+      <path d="M5 17 C3.5 17 2.5 16 2.5 14.5 C2.5 13 3.5 12 5 12 H7 V14.5 C7 16 6 17 5 17 Z" />
+      <path d="M15 17 C16.5 17 17.5 16 17.5 14.5 C17.5 13 16.5 12 15 12 H13 V14.5 C13 16 14 17 15 17 Z" />
+      <rect x="7" y="8" width="6" height="4" />
     </svg>
   )
 }
@@ -408,7 +411,7 @@ export default function DashboardHeader() {
       {/* Right — Actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <HeaderIconButton onClick={openCommandPalette}>
-          <SearchIcon />
+          <CommandIcon />
         </HeaderIconButton>
         <HeaderIconButton>
           <HelpIcon />
