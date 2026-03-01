@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { colors } from "../../../lib/colors"
-import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentShareUrl, getDocumentThumbnailUrls, deleteDocument, renameDocument, duplicateDocument, moveDocumentToCourse, LimitError, type Document } from "../../../lib/documents"
+import { listDocuments, uploadDocument, getDocumentDownloadUrl, getDocumentShareUrl, getDocumentThumbnailUrls, deleteDocument, renameDocument, duplicateDocument, moveDocumentToCourse, retryDocument, LimitError, type Document } from "../../../lib/documents"
 import { listCourses, type Course } from "../../../lib/courses"
 import { generateThumbnail } from "../../../lib/pdf-thumbnail"
 import { getUserTier, getLimits } from "../../../lib/limits"
@@ -43,12 +43,21 @@ function DotsIcon() {
   )
 }
 
-function AlertIcon() {
+function AlertIcon({ size = 20 }: { size?: number }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#C62828" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  )
+}
+
+function RetryIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
     </svg>
   )
 }
@@ -220,12 +229,70 @@ function DocumentThumbnail({ status, thumbnailUrl }: { status: Document["status"
         />
       )}
 
-      {status === "failed" && (
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <AlertIcon />
-        </div>
-      )}
     </div>
+  )
+}
+
+// ─── Error Tooltip ────────────────────────────────────────
+
+function ErrorTooltip({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
+      transition={{ duration: 0.15 }}
+      style={{
+        position: "absolute",
+        top: "100%",
+        right: 0,
+        marginTop: 6,
+        backgroundColor: colors.white,
+        border: `1.5px solid #E57373`,
+        borderRadius: 10,
+        padding: "10px 14px",
+        width: 220,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        zIndex: 20,
+      }}
+    >
+      <div
+        style={{
+          fontFamily,
+          fontWeight: 500,
+          fontSize: 12,
+          letterSpacing: "-0.04em",
+          color: colors.gray600,
+          lineHeight: 1.4,
+          marginBottom: 8,
+        }}
+      >
+        {message}
+      </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); onRetry() }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#EF5350"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#C62828"; }}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+          padding: "5px 12px",
+          backgroundColor: "#C62828",
+          color: colors.white,
+          fontFamily,
+          fontWeight: 700,
+          fontSize: 11,
+          letterSpacing: "-0.04em",
+          border: "none",
+          borderRadius: 6,
+          cursor: "pointer",
+        }}
+      >
+        <RetryIcon />
+        Retry
+      </button>
+    </motion.div>
   )
 }
 
@@ -309,6 +376,7 @@ function DocumentCard({
   onMoveToCourse,
   onShare,
   onViewDetails,
+  onRetry,
   onClick,
 }: {
   doc: Document
@@ -321,9 +389,11 @@ function DocumentCard({
   onMoveToCourse: (d: Document) => void
   onShare: (d: Document) => void
   onViewDetails: (d: Document) => void
+  onRetry: (d: Document) => void
   onClick: (d: Document) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [errorTooltipOpen, setErrorTooltipOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -371,43 +441,80 @@ function DocumentCard({
         opacity: doc.status === "processing" ? 0.85 : 1,
       }}
     >
-      {/* 3-dot menu */}
-      <div
-        style={{ position: "absolute", top: 8, right: 8, zIndex: 5 }}
-        onMouseEnter={() => setMenuOpen(true)}
-        onMouseLeave={() => setMenuOpen(false)}
-      >
-        <button
-          onClick={(e) => { e.stopPropagation() }}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            border: `1.5px solid ${colors.gray400}`,
-            backgroundColor: colors.white,
-            color: colors.gray500,
-            cursor: "pointer",
-          }}
+      {/* Top-right controls */}
+      <div style={{ position: "absolute", top: 8, right: 8, zIndex: 5, display: "flex", gap: 4, alignItems: "flex-start" }}>
+        {/* Error alert icon (failed docs only) */}
+        {doc.status === "failed" && (
+          <div
+            style={{ position: "relative" }}
+            onMouseEnter={() => setErrorTooltipOpen(true)}
+            onMouseLeave={() => setErrorTooltipOpen(false)}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation() }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                border: "1.5px solid #E57373",
+                backgroundColor: "#FFF5F5",
+                cursor: "default",
+                padding: 0,
+              }}
+            >
+              <AlertIcon size={15} />
+            </button>
+            <AnimatePresence>
+              {errorTooltipOpen && (
+                <ErrorTooltip
+                  message={doc.error_message || "Processing failed"}
+                  onRetry={() => { setErrorTooltipOpen(false); onRetry(doc) }}
+                />
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* 3-dot menu */}
+        <div
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
         >
-          <DotsIcon />
-        </button>
-        <AnimatePresence>
-          {menuOpen && (
-            <DropdownMenu
-              onRename={() => onRename(doc)}
-              onDownload={() => onDownload(doc)}
-              onDuplicate={() => onDuplicate(doc)}
-              onMoveToCourse={() => onMoveToCourse(doc)}
-              onShare={() => onShare(doc)}
-              onViewDetails={() => onViewDetails(doc)}
-              onDelete={() => onDelete(doc)}
-              onClose={() => setMenuOpen(false)}
-            />
-          )}
-        </AnimatePresence>
+          <button
+            onClick={(e) => { e.stopPropagation() }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              border: `1.5px solid ${colors.gray400}`,
+              backgroundColor: colors.white,
+              color: colors.gray500,
+              cursor: "pointer",
+            }}
+          >
+            <DotsIcon />
+          </button>
+          <AnimatePresence>
+            {menuOpen && (
+              <DropdownMenu
+                onRename={() => onRename(doc)}
+                onDownload={() => onDownload(doc)}
+                onDuplicate={() => onDuplicate(doc)}
+                onMoveToCourse={() => onMoveToCourse(doc)}
+                onShare={() => onShare(doc)}
+                onViewDetails={() => onViewDetails(doc)}
+                onDelete={() => onDelete(doc)}
+                onClose={() => setMenuOpen(false)}
+              />
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Thumbnail */}
@@ -1280,6 +1387,17 @@ export default function DocumentsPage() {
     }
   }
 
+  async function handleRetry(doc: Document) {
+    try {
+      await retryDocument(doc.id)
+      setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, status: "processing" as const, error_message: null } : d))
+      setToast("Retrying document processing...")
+    } catch (err) {
+      console.error("Retry failed:", err)
+      setToast("Failed to retry — please try again")
+    }
+  }
+
   async function handleShare(doc: Document) {
     try {
       const url = await getDocumentShareUrl(doc.id)
@@ -1421,6 +1539,7 @@ export default function DocumentsPage() {
                 onMoveToCourse={setMoveToCourseTarget}
                 onShare={handleShare}
                 onViewDetails={setDetailsTarget}
+                onRetry={handleRetry}
                 onClick={handleCardClick}
               />
             ))}
