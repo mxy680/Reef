@@ -31,9 +31,9 @@ struct DashboardSidebar: View {
     private var header: some View {
         HStack(spacing: 10) {
             if isOpen {
-                MantaRayShape()
-                    .fill(ReefColors.primary)
-                    .frame(width: 24, height: 24)
+                Image("ReefLogo")
+                    .resizable()
+                    .frame(width: 28, height: 28)
 
                 Text("REEF")
                     .font(.epilogue(24, weight: .black))
@@ -65,6 +65,21 @@ struct DashboardSidebar: View {
     private var navigation: some View {
         ScrollView {
             VStack(spacing: 2) {
+                // Section header
+                HStack {
+                    if isOpen {
+                        Text("WORKSPACE")
+                            .font(.epilogue(11, weight: .bold))
+                            .tracking(0.06 * 11)
+                            .foregroundStyle(ReefColors.gray400)
+
+                        Spacer()
+                    }
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, isOpen ? 14 : 0)
+                .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+
                 ForEach(DashboardTab.mainTabs) { tab in
                     navItem(tab)
                 }
