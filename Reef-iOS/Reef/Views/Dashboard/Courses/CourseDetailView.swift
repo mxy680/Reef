@@ -118,16 +118,16 @@ struct CourseDetailView: View {
 
             if viewModel.isLoading {
                 DocumentSkeletonView()
+                Spacer()
             } else if viewModel.documents.isEmpty {
                 emptyState
+                Spacer()
             } else {
                 documentGrid
             }
-
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(32)
+        .padding(24)
         .dashboardCard()
         .task { await viewModel.fetchData() }
         .id(courseId)
@@ -222,22 +222,31 @@ struct CourseDetailView: View {
 
     // MARK: - Grid
 
+    private let rowSpacing: CGFloat = 16
+    private let shadowPad: CGFloat = 4
+    private let targetRows: CGFloat = 2
+
     private var documentGrid: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(Array(viewModel.documents.enumerated()), id: \.element.id) { index, doc in
-                    DocumentCardView(
-                        document: doc,
-                        thumbnailURL: viewModel.thumbnailURLs[doc.id],
-                        index: index
-                    ) { action in
-                        if case .open = action {
-                            Task { await viewModel.openDocument(doc) }
+        GeometryReader { geo in
+            let cardHeight = (geo.size.height - rowSpacing * (targetRows - 1) - shadowPad) / targetRows
+
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: rowSpacing) {
+                    ForEach(Array(viewModel.documents.enumerated()), id: \.element.id) { index, doc in
+                        DocumentCardView(
+                            document: doc,
+                            thumbnailURL: viewModel.thumbnailURLs[doc.id],
+                            index: index,
+                            cardHeight: cardHeight
+                        ) { action in
+                            if case .open = action {
+                                Task { await viewModel.openDocument(doc) }
+                            }
                         }
                     }
                 }
+                .padding([.trailing, .bottom], shadowPad)
             }
-            .padding([.trailing, .bottom], 4) // room for 3D shadow offset
         }
     }
 

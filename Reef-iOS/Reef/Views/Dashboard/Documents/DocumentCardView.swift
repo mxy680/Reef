@@ -16,6 +16,7 @@ struct DocumentCardView: View {
     let document: Document
     let thumbnailURL: URL?
     let index: Int
+    var cardHeight: CGFloat? = nil
     let onAction: (DocumentAction) -> Void
 
     @State private var isPressed = false
@@ -27,13 +28,20 @@ struct DocumentCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Thumbnail
+            // Thumbnail — flexible, shrinks to fit when cardHeight is set
             DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
-                .padding(.horizontal, 14)
-                .padding(.top, 14)
+                .padding(.horizontal, 10)
+                .padding(.top, 10)
 
-            // Info
-            VStack(alignment: .leading, spacing: 4) {
+            // Divider
+            Rectangle()
+                .fill(ReefColors.gray200)
+                .frame(height: 1)
+                .padding(.top, 10)
+                .layoutPriority(1)
+
+            // Info — fixed, gets priority so it's never clipped
+            VStack(alignment: .leading, spacing: 6) {
                 Text(document.displayName)
                     .font(.epilogue(13, weight: .bold))
                     .tracking(-0.04 * 13)
@@ -46,10 +54,12 @@ struct DocumentCardView: View {
                     .tracking(-0.04 * 11)
                     .foregroundStyle(statusColor)
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 12)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 10)
+            .padding(.top, 10)
+            .padding(.bottom, 16)
+            .layoutPriority(1)
         }
+        .frame(height: cardHeight)
         .background(ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(
