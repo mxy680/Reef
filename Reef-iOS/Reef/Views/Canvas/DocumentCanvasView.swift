@@ -2,7 +2,7 @@
 //  DocumentCanvasView.swift
 //  Reef
 //
-//  Full-screen PDF viewer with page navigation
+//  Full-screen scrollable PDF viewer
 //
 
 import SwiftUI
@@ -22,26 +22,14 @@ struct DocumentCanvasView: View {
                 loadingView
             } else if let error = viewModel.error {
                 errorView(error)
-            } else {
+            } else if let pdf = viewModel.pdfDocument {
                 VStack(spacing: 0) {
                     CanvasToolbar(
                         documentName: document.displayName,
                         onClose: { onDismiss() }
                     )
 
-                    if let page = viewModel.currentPage {
-                        CanvasPageView(pdfPage: page)
-                            .id(viewModel.currentPageIndex)
-                    }
-
-                    if viewModel.pageCount > 1 {
-                        PageNavigationBar(
-                            currentPage: viewModel.currentPageIndex,
-                            pageCount: viewModel.pageCount,
-                            onPrevious: { viewModel.previousPage() },
-                            onNext: { viewModel.nextPage() }
-                        )
-                    }
+                    CanvasPageView(pdfDocument: pdf)
                 }
             }
         }
