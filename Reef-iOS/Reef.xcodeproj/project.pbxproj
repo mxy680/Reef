@@ -52,6 +52,7 @@
 		B3A4C5D6E7F8093A03040506 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */; };
 		AA10BF01C3D7A1E2F4B5C601 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */; };
 		CC01AE23D4C8B7F1A2E30901 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01AE23D4C8B7F1A2E30911 /* Course.swift */; };
+		DD01AA11BB22CC33DD44EE01 /* Stroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD02AA22BB33CC44DD55EE02 /* Stroke.swift */; };
 		AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */; };
 		AA30BF03C3D7A1E2F4B5C603 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA30BF03C3D7A1E2F4B5C613 /* OnboardingView.swift */; };
 		AA40BF04C3D7A1E2F4B5C604 /* StepName.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA40BF04C3D7A1E2F4B5C614 /* StepName.swift */; };
@@ -123,6 +124,7 @@
 		DEFEFEEFEF234DBCDEFEFEEF /* SelectCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectCourseSheet.swift; sourceTree = "<group>"; };
 		AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		CC01AE23D4C8B7F1A2E30911 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
+		DD02AA22BB33CC44DD55EE02 /* Stroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stroke.swift; sourceTree = "<group>"; };
 		AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
 		AA30BF03C3D7A1E2F4B5C613 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		AA40BF04C3D7A1E2F4B5C614 /* StepName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepName.swift; sourceTree = "<group>"; };
@@ -281,6 +283,7 @@
 				CC01AE23D4C8B7F1A2E30911 /* Course.swift */,
 				1A2B3C4D5E6F07181A2B3C4D /* Document.swift */,
 				AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */,
+				DD02AA22BB33CC44DD55EE02 /* Stroke.swift */,
 				BB01AA11CC22DD33EE44FF01 /* Tutor.swift */,
 			);
 			path = Models;
@@ -565,6 +568,7 @@
 				CB04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift in Sources */,
 				CB05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift in Sources */,
 				CB06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift in Sources */,
+				DD01AA11BB22CC33DD44EE01 /* Stroke.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

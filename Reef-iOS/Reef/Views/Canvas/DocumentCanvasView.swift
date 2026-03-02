@@ -1,12 +1,17 @@
+//
+//  DocumentCanvasView.swift
+//  Reef
+//
+//  Full-screen canvas for viewing and annotating documents
+//
+
 import SwiftUI
-import PencilKit
 
 struct DocumentCanvasView: View {
     let document: Document
     let onDismiss: () -> Void
 
     @State private var viewModel = CanvasViewModel()
-    @State private var undoManager: UndoManager?
 
     var body: some View {
         ZStack {
@@ -21,13 +26,28 @@ struct DocumentCanvasView: View {
                 VStack(spacing: 0) {
                     CanvasToolbar(
                         documentName: document.displayName,
+                        currentTool: viewModel.currentTool,
+                        currentColor: viewModel.currentColor,
                         fingerDrawing: viewModel.fingerDrawing,
+                        canUndo: viewModel.canUndo,
+                        canRedo: viewModel.canRedo,
                         onClose: {
                             viewModel.saveCurrentDrawings()
                             onDismiss()
                         },
-                        onUndo: { undoManager?.undo() },
-                        onRedo: { undoManager?.redo() },
+                        onUndo: { viewModel.undo() },
+                        onRedo: { viewModel.redo() },
+                        onSelectTool: { tool in
+                            viewModel.currentTool = tool
+                            switch tool {
+                            case .pen: viewModel.currentLineWidth = 3.0
+                            case .highlighter: viewModel.currentLineWidth = 15.0
+                            case .eraser: viewModel.currentLineWidth = 30.0
+                            }
+                        },
+                        onSelectColor: { color in
+                            viewModel.currentColor = color
+                        },
                         onToggleFingerDrawing: {
                             viewModel.fingerDrawing.toggle()
                         }
@@ -38,16 +58,15 @@ struct DocumentCanvasView: View {
                         CanvasPageView(
                             pdfPage: page,
                             fingerDrawing: viewModel.fingerDrawing,
-                            drawing: Binding(
-                                get: { viewModel.currentDrawing },
-                                set: { viewModel.currentDrawing = $0 }
-                            )
+                            tool: viewModel.currentTool,
+                            strokeColor: viewModel.currentColor,
+                            lineWidth: viewModel.currentLineWidth,
+                            strokes: viewModel.currentDrawing.strokes,
+                            onDrawingAction: { action in
+                                viewModel.handleDrawingAction(action)
+                            }
                         )
                         .id(viewModel.currentPageIndex)
-                        .onAppear {
-                            // Capture the undo manager from the environment
-                            undoManager = UndoManager()
-                        }
                     }
 
                     if viewModel.pageCount > 1 {
@@ -92,7 +111,6 @@ struct DocumentCanvasView: View {
                 .tracking(-0.04 * 15)
                 .foregroundStyle(ReefColors.gray600)
 
-            // Close button
             Text("Go Back")
                 .font(.epilogue(14, weight: .bold))
                 .tracking(-0.04 * 14)

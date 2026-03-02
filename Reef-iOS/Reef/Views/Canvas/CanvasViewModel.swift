@@ -1,6 +1,12 @@
+//
+//  CanvasViewModel.swift
+//  Reef
+//
+//  Manages PDF loading, per-page drawing state, and tool configuration
+//
+
 import Foundation
 import PDFKit
-import PencilKit
 
 @Observable
 @MainActor
@@ -12,24 +18,35 @@ final class CanvasViewModel {
     var error: String?
     var fingerDrawing = false
 
+    // Tool state
+    var currentTool: DrawingTool = .pen
+    var currentColor: StrokeColor = .black
+    var currentLineWidth: CGFloat = 3.0
+
     // Per-page drawings keyed by page index
-    var drawings: [Int: PKDrawing] = [:]
+    var drawings: [Int: PageDrawing] = [:]
+
+    // Undo / redo stacks per page (each entry is a snapshot of the strokes array)
+    private var undoStack: [Int: [[Stroke]]] = [:]
+    private var redoStack: [Int: [[Stroke]]] = [:]
 
     private var documentId: String = ""
 
-    // MARK: - Current State
+    // MARK: - Computed
 
     var currentPage: PDFPage? {
         pdfDocument?.page(at: currentPageIndex)
     }
 
-    var currentDrawing: PKDrawing {
-        get { drawings[currentPageIndex] ?? PKDrawing() }
+    var currentDrawing: PageDrawing {
+        get { drawings[currentPageIndex] ?? PageDrawing() }
         set { drawings[currentPageIndex] = newValue }
     }
 
     var canGoBack: Bool { currentPageIndex > 0 }
     var canGoForward: Bool { currentPageIndex < pageCount - 1 }
+    var canUndo: Bool { !(undoStack[currentPageIndex]?.isEmpty ?? true) }
+    var canRedo: Bool { !(redoStack[currentPageIndex]?.isEmpty ?? true) }
 
     // MARK: - Load
 
@@ -49,8 +66,6 @@ final class CanvasViewModel {
 
             pdfDocument = pdf
             pageCount = pdf.pageCount
-
-            // Load saved drawings
             drawings = DrawingStorageService.loadDrawings(
                 for: documentId,
                 pageCount: pageCount
@@ -70,12 +85,36 @@ final class CanvasViewModel {
         currentPageIndex = index
     }
 
-    func nextPage() {
-        goToPage(currentPageIndex + 1)
+    func nextPage() { goToPage(currentPageIndex + 1) }
+    func previousPage() { goToPage(currentPageIndex - 1) }
+
+    // MARK: - Drawing Actions
+
+    func handleDrawingAction(_ action: DrawingAction) {
+        let previousStrokes = currentDrawing.strokes
+        undoStack[currentPageIndex, default: []].append(previousStrokes)
+        redoStack[currentPageIndex] = []
+
+        switch action {
+        case .addStroke(let stroke):
+            drawings[currentPageIndex, default: PageDrawing()].strokes.append(stroke)
+        case .eraseStrokes(let remaining):
+            drawings[currentPageIndex] = PageDrawing(strokes: remaining)
+        }
     }
 
-    func previousPage() {
-        goToPage(currentPageIndex - 1)
+    func undo() {
+        guard let previousStrokes = undoStack[currentPageIndex]?.popLast() else { return }
+        let currentStrokes = currentDrawing.strokes
+        redoStack[currentPageIndex, default: []].append(currentStrokes)
+        drawings[currentPageIndex] = PageDrawing(strokes: previousStrokes)
+    }
+
+    func redo() {
+        guard let nextStrokes = redoStack[currentPageIndex]?.popLast() else { return }
+        let currentStrokes = currentDrawing.strokes
+        undoStack[currentPageIndex, default: []].append(currentStrokes)
+        drawings[currentPageIndex] = PageDrawing(strokes: nextStrokes)
     }
 
     // MARK: - Save

@@ -1,5 +1,11 @@
+//
+//  DrawingStorageService.swift
+//  Reef
+//
+//  Persists per-page drawing data as JSON
+//
+
 import Foundation
-import PencilKit
 
 @MainActor
 enum DrawingStorageService {
@@ -10,26 +16,30 @@ enum DrawingStorageService {
 
     // MARK: - Save
 
-    static func saveDrawings(_ drawings: [Int: PKDrawing], for documentId: String) {
+    static func saveDrawings(_ drawings: [Int: PageDrawing], for documentId: String) {
         let docDir = baseURL.appendingPathComponent(documentId)
         try? FileManager.default.createDirectory(at: docDir, withIntermediateDirectories: true)
 
+        let encoder = JSONEncoder()
         for (pageIndex, drawing) in drawings {
-            let fileURL = docDir.appendingPathComponent("page_\(pageIndex).drawing")
-            try? drawing.dataRepresentation().write(to: fileURL)
+            let fileURL = docDir.appendingPathComponent("page_\(pageIndex).json")
+            if let data = try? encoder.encode(drawing) {
+                try? data.write(to: fileURL)
+            }
         }
     }
 
     // MARK: - Load
 
-    static func loadDrawings(for documentId: String, pageCount: Int) -> [Int: PKDrawing] {
-        var result: [Int: PKDrawing] = [:]
+    static func loadDrawings(for documentId: String, pageCount: Int) -> [Int: PageDrawing] {
+        var result: [Int: PageDrawing] = [:]
         let docDir = baseURL.appendingPathComponent(documentId)
+        let decoder = JSONDecoder()
 
         for i in 0..<pageCount {
-            let fileURL = docDir.appendingPathComponent("page_\(i).drawing")
+            let fileURL = docDir.appendingPathComponent("page_\(i).json")
             if let data = try? Data(contentsOf: fileURL),
-               let drawing = try? PKDrawing(data: data) {
+               let drawing = try? decoder.decode(PageDrawing.self, from: data) {
                 result[i] = drawing
             }
         }
