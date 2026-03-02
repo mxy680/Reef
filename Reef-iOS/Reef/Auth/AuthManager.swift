@@ -34,9 +34,11 @@ final class AuthManager {
                 self.session = session
                 if session != nil, event == .signedIn || event == .tokenRefreshed || event == .initialSession {
                     await checkOnboarding()
+                    Task { try? await ReefAPI.shared.connectWebSocket() }
                 }
                 if session == nil {
                     self.profile = nil
+                    Task { await ReefAPI.shared.disconnectWebSocket() }
                 }
             }
         }

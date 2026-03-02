@@ -6,6 +6,7 @@
 Reef/
 ├── Reef-iOS/       — iPad SwiftUI app (iOS 18.2+, Supabase auth)
 ├── Reef-Web/       — Next.js landing page + document processing
+├── Reef-Server/    — FastAPI backend (Python 3.12, Docker, Hetzner)
 └── docs/plans/     — Design docs (gitignored, local only)
 ```
 
@@ -15,6 +16,14 @@ Reef/
 - Framer components use `WithFramerBreakpoints` with `variants` prop for responsive rendering (Phone/Tablet/Desktop). The `defaultResponsiveVariants` in Framer files are empty `{}` — pass variants from `page.tsx`.
 - Framer components have fixed pixel widths (350px, 600px, 1200px etc.) that must be overridden with `!important` in `globals.css` for mobile.
 - No Tailwind — all styling is plain CSS with custom properties in `globals.css`.
+
+## Server (Reef-Server)
+
+- **Python 3.12 + FastAPI** with uvicorn/gunicorn
+- Auth: Verifies Supabase JWTs (RS256) via JWKS endpoint — no secret needed
+- WebSocket: Single connection per user, token passed as query param `?token=`
+- Deploy: Docker Compose + Caddy reverse proxy on Hetzner (`api.studyreef.com`)
+- Do NOT run `docker compose up` or `uvicorn` without explicit user permission.
 
 ## iOS (Reef-iOS)
 

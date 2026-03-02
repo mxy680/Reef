@@ -1,0 +1,20 @@
+[project]
+name = "reef-server"
+version = "0.1.0"
+description = "Reef backend server — real-time AI tutoring"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "pydantic-settings>=2.8",
+    "PyJWT[crypto]>=2.10",
+    "httpx>=0.28",
+    "gunicorn>=23",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "httpx",
+]
