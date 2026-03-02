@@ -26,50 +26,50 @@ struct DocumentCardView: View {
     }
 
     var body: some View {
-        Button {
+        VStack(alignment: .leading, spacing: 0) {
+            // Thumbnail
+            DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
+                .padding(.horizontal, 14)
+                .padding(.top, 14)
+
+            // Info
+            VStack(alignment: .leading, spacing: 4) {
+                Text(document.displayName)
+                    .font(.epilogue(13, weight: .bold))
+                    .tracking(-0.04 * 13)
+                    .foregroundStyle(ReefColors.black)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Text(document.statusLabel)
+                    .font(.epilogue(11, weight: .medium))
+                    .tracking(-0.04 * 11)
+                    .foregroundStyle(statusColor)
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 14)
+        }
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(borderColor, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(borderColor)
+                .offset(x: isPressed ? 0 : 4, y: isPressed ? 0 : 4)
+        )
+        .offset(x: isPressed ? 4 : 0, y: isPressed ? 4 : 0)
+        .opacity(document.status == .processing ? 0.85 : 1)
+        .contentShape(Rectangle())
+        .onTapGesture {
             if document.status == .completed {
                 onAction(.open)
             }
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                // Thumbnail
-                DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 14)
-
-                // Info
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(document.displayName)
-                        .font(.epilogue(13, weight: .bold))
-                        .tracking(-0.04 * 13)
-                        .foregroundStyle(ReefColors.black)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-
-                    Text(document.statusLabel)
-                        .font(.epilogue(11, weight: .medium))
-                        .tracking(-0.04 * 11)
-                        .foregroundStyle(statusColor)
-                }
-                .padding(.horizontal, 14)
-                .padding(.top, 12)
-                .padding(.bottom, 14)
-            }
-            .background(ReefColors.white)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(borderColor, lineWidth: 1.5)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(borderColor)
-                    .offset(x: isPressed ? 0 : 4, y: isPressed ? 0 : 4)
-            )
-            .offset(x: isPressed ? 4 : 0, y: isPressed ? 4 : 0)
-            .opacity(document.status == .processing ? 0.85 : 1)
         }
-        .buttonStyle(NoHighlightButtonStyle())
+        .accessibilityAddTraits(.isButton)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
@@ -113,43 +113,43 @@ struct DocumentCardView: View {
     }
 
     private var errorButton: some View {
-        Button {
-            onAction(.retry)
-        } label: {
-            Image(systemName: "exclamationmark.circle")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color(hex: 0xC62828))
-                .frame(width: 28, height: 28)
-                .background(Color(hex: 0xFFF5F5))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
-                )
-        }
-        .buttonStyle(NoHighlightButtonStyle())
+        Image(systemName: "exclamationmark.circle")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color(hex: 0xC62828))
+            .frame(width: 28, height: 28)
+            .background(Color(hex: 0xFFF5F5))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onAction(.retry)
+            }
+            .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Menu Trigger
 
     private var menuTrigger: some View {
-        Button {
-            withAnimation(.spring(duration: 0.15)) {
-                showMenu.toggle()
+        Image(systemName: "ellipsis")
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(ReefColors.gray500)
+            .frame(width: 28, height: 28)
+            .background(ReefColors.white)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(ReefColors.gray400, lineWidth: 1.5)
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.spring(duration: 0.15)) {
+                    showMenu.toggle()
+                }
             }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(ReefColors.gray500)
-                .frame(width: 28, height: 28)
-                .background(ReefColors.white)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(ReefColors.gray400, lineWidth: 1.5)
-                )
-        }
-        .buttonStyle(NoHighlightButtonStyle())
+            .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Dropdown Menu
@@ -186,19 +186,18 @@ struct DocumentCardView: View {
     }
 
     private func dropdownItem(_ label: String, action: DocumentAction, isDestructive: Bool = false) -> some View {
-        Button {
-            withAnimation(.spring(duration: 0.15)) { showMenu = false }
-            onAction(action)
-        } label: {
-            Text(label)
-                .font(.epilogue(13, weight: .semiBold))
-                .tracking(-0.04 * 13)
-                .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : ReefColors.black)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(NoHighlightButtonStyle())
+        Text(label)
+            .font(.epilogue(13, weight: .semiBold))
+            .tracking(-0.04 * 13)
+            .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : ReefColors.black)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.spring(duration: 0.15)) { showMenu = false }
+                onAction(action)
+            }
+            .accessibilityAddTraits(.isButton)
     }
 }

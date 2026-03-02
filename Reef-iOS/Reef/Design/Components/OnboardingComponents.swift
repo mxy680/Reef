@@ -32,41 +32,43 @@ struct OnboardingOptionButton: View {
     @State private var isPressed = false
 
     var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(.epilogue(15, weight: .semiBold))
-                .tracking(-0.04 * 15)
-                .foregroundStyle(isSelected ? ReefColors.white : ReefColors.black)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
-                .background(isSelected ? ReefColors.primary : ReefColors.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(ReefColors.black, lineWidth: 2)
-                )
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(ReefColors.black)
-                        .offset(
-                            x: isPressed ? 0 : (isSelected ? 3 : 4),
-                            y: isPressed ? 0 : (isSelected ? 3 : 4)
-                        )
-                )
-                .offset(
-                    x: isPressed ? (isSelected ? 3 : 4) : 0,
-                    y: isPressed ? (isSelected ? 3 : 4) : 0
-                )
-                .animation(.spring(duration: 0.3, bounce: 0.2), value: isPressed)
-                .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
-        }
-        .buttonStyle(NoHighlightButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
+        Text(label)
+            .font(.epilogue(15, weight: .semiBold))
+            .tracking(-0.04 * 15)
+            .foregroundStyle(isSelected ? ReefColors.white : ReefColors.black)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(isSelected ? ReefColors.primary : ReefColors.white)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(ReefColors.black, lineWidth: 2)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(ReefColors.black)
+                    .offset(
+                        x: isPressed ? 0 : (isSelected ? 3 : 4),
+                        y: isPressed ? 0 : (isSelected ? 3 : 4)
+                    )
+            )
+            .offset(
+                x: isPressed ? (isSelected ? 3 : 4) : 0,
+                y: isPressed ? (isSelected ? 3 : 4) : 0
+            )
+            .animation(.spring(duration: 0.3, bounce: 0.2), value: isPressed)
+            .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                action()
+            }
+            .accessibilityAddTraits(.isButton)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in isPressed = true }
+                    .onEnded { _ in isPressed = false }
+            )
     }
 }
 
@@ -80,39 +82,41 @@ struct SubjectPill: View {
     @State private var isPressed = false
 
     var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(.epilogue(13, weight: .semiBold))
-                .tracking(-0.04 * 13)
-                .foregroundStyle(isSelected ? ReefColors.white : ReefColors.black)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? ReefColors.primary : ReefColors.white)
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule().stroke(ReefColors.black, lineWidth: 2)
-                )
-                .background(
-                    Capsule()
-                        .fill(ReefColors.black)
-                        .offset(
-                            x: isPressed ? 0 : 3,
-                            y: isPressed ? 0 : 3
-                        )
-                )
-                .offset(
-                    x: isPressed ? 3 : 0,
-                    y: isPressed ? 3 : 0
-                )
-                .animation(.spring(duration: 0.3, bounce: 0.2), value: isPressed)
-                .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
-        }
-        .buttonStyle(NoHighlightButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
+        Text(label)
+            .font(.epilogue(13, weight: .semiBold))
+            .tracking(-0.04 * 13)
+            .foregroundStyle(isSelected ? ReefColors.white : ReefColors.black)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(isSelected ? ReefColors.primary : ReefColors.white)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule().stroke(ReefColors.black, lineWidth: 2)
+            )
+            .background(
+                Capsule()
+                    .fill(ReefColors.black)
+                    .offset(
+                        x: isPressed ? 0 : 3,
+                        y: isPressed ? 0 : 3
+                    )
+            )
+            .offset(
+                x: isPressed ? 3 : 0,
+                y: isPressed ? 3 : 0
+            )
+            .animation(.spring(duration: 0.3, bounce: 0.2), value: isPressed)
+            .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                action()
+            }
+            .accessibilityAddTraits(.isButton)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in isPressed = true }
+                    .onEnded { _ in isPressed = false }
+            )
     }
 }
 

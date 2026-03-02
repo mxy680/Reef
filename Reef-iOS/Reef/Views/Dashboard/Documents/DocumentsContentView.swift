@@ -327,32 +327,32 @@ struct DocumentsContentView: View {
     // MARK: - Upload Button
 
     private var uploadButton: some View {
-        Button {
-            viewModel.showFilePicker = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "arrow.up.doc")
-                    .font(.system(size: 14, weight: .bold))
-                Text("Upload")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-            }
-            .foregroundStyle(ReefColors.white)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
-            .background(ReefColors.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(ReefColors.black, lineWidth: 1.5)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(ReefColors.black)
-                    .offset(x: 4, y: 4)
-            )
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.up.doc")
+                .font(.system(size: 14, weight: .bold))
+            Text("Upload")
+                .font(.epilogue(14, weight: .bold))
+                .tracking(-0.04 * 14)
         }
-        .buttonStyle(NoHighlightButtonStyle())
+        .foregroundStyle(ReefColors.white)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(ReefColors.primary)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(ReefColors.black, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(ReefColors.black)
+                .offset(x: 4, y: 4)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            viewModel.showFilePicker = true
+        }
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Grid
@@ -361,37 +361,37 @@ struct DocumentsContentView: View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 20) {
                 // Upload placeholder card — matches document card height
-                Button {
-                    viewModel.showFilePicker = true
-                } label: {
-                    VStack(spacing: 0) {
-                        // Invisible spacer matching thumbnail aspect ratio
-                        Color.clear
-                            .aspectRatio(8.5 / 11, contentMode: .fit)
-                            .padding(.horizontal, 14)
-                            .padding(.top, 14)
+                VStack(spacing: 0) {
+                    // Invisible spacer matching thumbnail aspect ratio
+                    Color.clear
+                        .aspectRatio(8.5 / 11, contentMode: .fit)
+                        .padding(.horizontal, 14)
+                        .padding(.top, 14)
 
-                        // Spacer matching info section
-                        Color.clear
-                            .frame(height: 12 + 13 + 4 + 11 + 14) // padding + title + gap + status + padding
-                    }
-                    .overlay {
-                        VStack(spacing: 8) {
-                            Image(systemName: "arrow.up.doc")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Upload")
-                                .font(.epilogue(14, weight: .semiBold))
-                                .tracking(-0.04 * 14)
-                        }
-                        .foregroundStyle(ReefColors.gray500)
-                    }
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
-                            .foregroundStyle(ReefColors.gray400)
-                    )
+                    // Spacer matching info section
+                    Color.clear
+                        .frame(height: 12 + 13 + 4 + 11 + 14) // padding + title + gap + status + padding
                 }
-                .buttonStyle(NoHighlightButtonStyle())
+                .overlay {
+                    VStack(spacing: 8) {
+                        Image(systemName: "arrow.up.doc")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Upload")
+                            .font(.epilogue(14, weight: .semiBold))
+                            .tracking(-0.04 * 14)
+                    }
+                    .foregroundStyle(ReefColors.gray500)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                        .foregroundStyle(ReefColors.gray400)
+                )
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    viewModel.showFilePicker = true
+                }
+                .accessibilityAddTraits(.isButton)
                 .fadeUp(index: 0)
 
                 // Document cards

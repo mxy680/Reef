@@ -34,28 +34,28 @@ struct DetailsSheet: View {
             HStack {
                 Spacer()
 
-                Button {
-                    onClose()
-                } label: {
-                    Text("Close")
-                        .font(.epilogue(14, weight: .bold))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.black)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 10)
-                        .background(ReefColors.gray100)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.black, lineWidth: 2)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(ReefColors.black)
-                                .offset(x: 4, y: 4)
-                        )
-                }
-                .buttonStyle(NoHighlightButtonStyle())
+                Text("Close")
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.black)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(ReefColors.gray100)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.black, lineWidth: 2)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(ReefColors.black)
+                            .offset(x: 4, y: 4)
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onClose()
+                    }
+                    .accessibilityAddTraits(.isButton)
             }
             .padding(.top, 24)
         }

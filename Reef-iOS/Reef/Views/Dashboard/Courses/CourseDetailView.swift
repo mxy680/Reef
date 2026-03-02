@@ -162,37 +162,37 @@ struct CourseDetailView: View {
             Spacer()
 
             HStack(spacing: 8) {
-                Button {
-                    onEditTapped(viewModel.course)
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(ReefColors.gray600)
-                        .frame(width: 36, height: 36)
-                        .background(ReefColors.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.gray400, lineWidth: 1.5)
-                        )
-                }
-                .buttonStyle(NoHighlightButtonStyle())
+                Image(systemName: "pencil")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(ReefColors.gray600)
+                    .frame(width: 36, height: 36)
+                    .background(ReefColors.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.gray400, lineWidth: 1.5)
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onEditTapped(viewModel.course)
+                    }
+                    .accessibilityAddTraits(.isButton)
 
-                Button {
-                    onDeleteTapped(viewModel.course)
-                } label: {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color(hex: 0xC62828))
-                        .frame(width: 36, height: 36)
-                        .background(Color(hex: 0xFFF5F5))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
-                        )
-                }
-                .buttonStyle(NoHighlightButtonStyle())
+                Image(systemName: "trash")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color(hex: 0xC62828))
+                    .frame(width: 36, height: 36)
+                    .background(Color(hex: 0xFFF5F5))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onDeleteTapped(viewModel.course)
+                    }
+                    .accessibilityAddTraits(.isButton)
             }
         }
     }

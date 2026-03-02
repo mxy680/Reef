@@ -24,17 +24,17 @@ struct TutorDetailPopup: View {
                 // Close button
                 HStack {
                     Spacer()
-                    Button {
-                        onClose()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(ReefColors.gray500)
-                            .frame(width: 28, height: 28)
-                            .background(ReefColors.gray100)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(NoHighlightButtonStyle())
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(ReefColors.gray500)
+                        .frame(width: 28, height: 28)
+                        .background(ReefColors.gray100)
+                        .clipShape(Circle())
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            onClose()
+                        }
+                        .accessibilityAddTraits(.isButton)
                 }
                 .padding(.bottom, 4)
 

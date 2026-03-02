@@ -190,34 +190,34 @@ struct TutorsContentView: View {
                 Spacer()
 
                 // Find Your Tutor quiz button
-                Button {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("Find Your Tutor")
+                        .font(.epilogue(14, weight: .bold))
+                        .tracking(-0.04 * 14)
+                }
+                .foregroundStyle(ReefColors.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(ReefColors.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(ReefColors.black, lineWidth: 1.5)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(ReefColors.black)
+                        .offset(x: 4, y: 4)
+                )
+                .contentShape(Rectangle())
+                .onTapGesture {
                     withAnimation(.spring(duration: 0.3)) {
                         viewModel.showQuiz = true
                     }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 14, weight: .bold))
-                        Text("Find Your Tutor")
-                            .font(.epilogue(14, weight: .bold))
-                            .tracking(-0.04 * 14)
-                    }
-                    .foregroundStyle(ReefColors.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 1.5)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 4, y: 4)
-                    )
                 }
-                .buttonStyle(NoHighlightButtonStyle())
+                .accessibilityAddTraits(.isButton)
                 .padding(.top, 4)
                 .padding(.trailing, 4)
                 .padding(.bottom, 4)

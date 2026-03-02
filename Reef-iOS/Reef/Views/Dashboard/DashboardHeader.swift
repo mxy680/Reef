@@ -71,13 +71,13 @@ struct DashboardHeader: View {
     }
 
     private func headerButton(_ icon: String) -> some View {
-        Button {} label: {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(ReefColors.gray600)
-                .frame(width: 32, height: 32)
-        }
-        .buttonStyle(NoHighlightButtonStyle())
+        Image(systemName: icon)
+            .font(.system(size: 18))
+            .foregroundStyle(ReefColors.gray600)
+            .frame(width: 32, height: 32)
+            .contentShape(Rectangle())
+            .onTapGesture {}
+            .accessibilityAddTraits(.isButton)
     }
 
     private var userInitials: String {

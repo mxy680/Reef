@@ -80,17 +80,17 @@ struct TutorQuizPopup: View {
                 // Close button row
                 HStack {
                     Spacer()
-                    Button {
-                        onDismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(ReefColors.gray500)
-                            .frame(width: 28, height: 28)
-                            .background(ReefColors.gray100)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(NoHighlightButtonStyle())
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(ReefColors.gray500)
+                        .frame(width: 28, height: 28)
+                        .background(ReefColors.gray100)
+                        .clipShape(Circle())
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            onDismiss()
+                        }
+                        .accessibilityAddTraits(.isButton)
                 }
                 .padding(.bottom, 4)
 
@@ -213,17 +213,17 @@ struct TutorQuizPopup: View {
                 .frame(maxWidth: 220)
                 .padding(.top, 4)
 
-                Button {
-                    answers = [nil, nil, nil]
-                    direction = .leading
-                    withAnimation { step = 0 }
-                } label: {
-                    Text("Retake Quiz")
-                        .font(.epilogue(14, weight: .semiBold))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.gray600)
-                }
-                .buttonStyle(NoHighlightButtonStyle())
+                Text("Retake Quiz")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.gray600)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        answers = [nil, nil, nil]
+                        direction = .leading
+                        withAnimation { step = 0 }
+                    }
+                    .accessibilityAddTraits(.isButton)
             }
         }
     }
