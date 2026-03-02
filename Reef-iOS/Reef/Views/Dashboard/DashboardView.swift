@@ -30,7 +30,11 @@ struct DashboardView: View {
 
                 // Main column
                 VStack(spacing: 0) {
-                    DashboardHeader(title: contentTitle)
+                    DashboardHeader(
+                        title: contentTitle,
+                        selectedTab: $selectedTab,
+                        selectedCourseId: $selectedCourseId
+                    )
                         .padding(.top, 12)
                         .padding(.horizontal, 12)
 
