@@ -499,22 +499,19 @@ function ProfileDropdown() {
               </div>
             </div>
 
-            {/* Grade */}
-            <div
-              style={{
-                padding: "0 14px 6px",
-                fontFamily,
-                fontWeight: 600,
-                fontSize: 12,
-                letterSpacing: "-0.02em",
-                color: colors.gray600,
-              }}
-            >
-              {GRADE_LABELS[profile.grade] || profile.grade}
-            </div>
-
-            {/* Tier pill */}
-            <div style={{ padding: "0 14px 8px" }}>
+            {/* Grade + Tier pill */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 14px 8px" }}>
+              <span
+                style={{
+                  fontFamily,
+                  fontWeight: 600,
+                  fontSize: 12,
+                  letterSpacing: "-0.02em",
+                  color: colors.gray600,
+                }}
+              >
+                {GRADE_LABELS[profile.grade] || profile.grade}
+              </span>
               <span
                 style={{
                   fontFamily,
@@ -525,7 +522,6 @@ function ProfileDropdown() {
                   backgroundColor: `${colors.accent}1F`,
                   padding: "3px 10px",
                   borderRadius: 999,
-                  display: "inline-block",
                 }}
               >
                 Shore &middot; Free

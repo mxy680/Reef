@@ -154,27 +154,26 @@ struct DashboardHeader: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
 
-            // Grade
-            if !userGrade.isEmpty {
-                Text(userGrade)
-                    .font(.epilogue(12, weight: .semiBold))
-                    .tracking(-0.02 * 12)
-                    .foregroundStyle(ReefColors.gray600)
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 8)
-            }
+            // Grade + Tier pill
+            HStack(spacing: 8) {
+                if !userGrade.isEmpty {
+                    Text(userGrade)
+                        .font(.epilogue(12, weight: .semiBold))
+                        .tracking(-0.02 * 12)
+                        .foregroundStyle(ReefColors.gray600)
+                }
 
-            // Tier pill
-            Text(tierLabel)
-                .font(.epilogue(11, weight: .bold))
-                .tracking(-0.02 * 11)
-                .foregroundStyle(ReefColors.accent)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(ReefColors.accent.opacity(0.12))
-                .clipShape(Capsule())
-                .padding(.horizontal, 14)
-                .padding(.bottom, 8)
+                Text(tierLabel)
+                    .font(.epilogue(11, weight: .bold))
+                    .tracking(-0.02 * 11)
+                    .foregroundStyle(ReefColors.accent)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(ReefColors.accent.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 8)
 
             // Streak
             HStack(spacing: 4) {
