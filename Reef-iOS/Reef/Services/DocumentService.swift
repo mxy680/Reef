@@ -46,7 +46,7 @@ actor DocumentService {
 
     // MARK: - Upload
 
-    func uploadDocument(fileURL: URL) async throws -> Document {
+    func uploadDocument(fileURL: URL, courseId: String? = nil) async throws -> Document {
         let userId = try await getUserId()
 
         // Validate PDF
@@ -79,11 +79,12 @@ actor DocumentService {
         struct InsertPayload: Encodable {
             let user_id: String
             let filename: String
+            let course_id: String?
         }
 
         let newDoc: Document = try await supabase
             .from("documents")
-            .insert(InsertPayload(user_id: userId, filename: fileURL.lastPathComponent))
+            .insert(InsertPayload(user_id: userId, filename: fileURL.lastPathComponent, course_id: courseId))
             .select()
             .single()
             .execute()

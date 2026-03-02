@@ -31,7 +31,7 @@ export class LimitError extends Error {
   }
 }
 
-export async function uploadDocument(file: File, thumbnail?: Blob): Promise<Document> {
+export async function uploadDocument(file: File, thumbnail?: Blob, courseId?: string): Promise<Document> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -60,7 +60,7 @@ export async function uploadDocument(file: File, thumbnail?: Blob): Promise<Docu
   // 1. Create DB row — mark completed immediately (no server-side reconstruction)
   const { data: doc, error: insertError } = await supabase
     .from("documents")
-    .insert({ user_id: user.id, filename: file.name, status: "completed" })
+    .insert({ user_id: user.id, filename: file.name, status: "completed", ...(courseId ? { course_id: courseId } : {}) })
     .select()
     .single()
 

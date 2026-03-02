@@ -1173,6 +1173,152 @@ function MoveToCourseModal({
   )
 }
 
+// ─── Select Course Modal (for upload) ─────────────────────
+
+function SelectCourseModal({
+  filename,
+  onConfirm,
+  onClose,
+}: {
+  filename: string
+  onConfirm: (courseId: string) => void
+  onClose: () => void
+}) {
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    listCourses()
+      .then(setCourses)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const displayName = filename.replace(/\.pdf$/i, "")
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.3)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100,
+        padding: 24,
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        transition={{ duration: 0.25 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 380,
+          maxWidth: "100%",
+          backgroundColor: colors.white,
+          border: `2px solid ${colors.black}`,
+          borderRadius: 12,
+          boxShadow: `6px 6px 0px 0px ${colors.black}`,
+          padding: "32px 28px",
+          boxSizing: "border-box",
+        }}
+      >
+        <h3
+          style={{
+            fontFamily,
+            fontWeight: 900,
+            fontSize: 20,
+            letterSpacing: "-0.04em",
+            color: colors.black,
+            margin: 0,
+            marginBottom: 6,
+          }}
+        >
+          Select Course
+        </h3>
+        <p
+          style={{
+            fontFamily,
+            fontWeight: 500,
+            fontSize: 13,
+            letterSpacing: "-0.04em",
+            color: colors.gray600,
+            margin: 0,
+            marginBottom: 20,
+          }}
+        >
+          {displayName}
+        </p>
+
+        {loading ? (
+          <p style={{ fontFamily, fontSize: 13, color: colors.gray500, margin: "16px 0" }}>Loading courses...</p>
+        ) : courses.length === 0 ? (
+          <p style={{ fontFamily, fontSize: 13, color: colors.gray500, margin: "16px 0" }}>No courses yet. Create one first.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+            {courses.map((course) => (
+              <button
+                key={course.id}
+                onClick={() => onConfirm(course.id)}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.gray100)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 12px",
+                  border: `1.5px solid ${colors.gray400}`,
+                  borderRadius: 10,
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  fontFamily,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  letterSpacing: "-0.04em",
+                  color: colors.black,
+                  width: "100%",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{course.emoji}</span>
+                <span style={{ flex: 1 }}>{course.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              padding: "10px 20px",
+              background: "none",
+              border: "none",
+              fontFamily,
+              fontWeight: 600,
+              fontSize: 14,
+              letterSpacing: "-0.04em",
+              color: colors.gray600,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 // ─── Shimmer Keyframes (injected once) ────────────────────
 
 function ShimmerStyle() {
@@ -1196,6 +1342,8 @@ export default function DocumentsPage() {
   const [renameTarget, setRenameTarget] = useState<Document | null>(null)
   const [detailsTarget, setDetailsTarget] = useState<Document | null>(null)
   const [moveToCourseTarget, setMoveToCourseTarget] = useState<Document | null>(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [pendingThumbnail, setPendingThumbnail] = useState<Blob | null>(null)
   const [maxDocuments, setMaxDocuments] = useState<number | null>(null)
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1253,16 +1401,28 @@ export default function DocumentsPage() {
       return
     }
 
+    // Generate thumbnail before showing course picker
+    let thumbnailBlob: Blob | null = null
     try {
-      // Generate thumbnail from the PDF before uploading
-      let thumbnailBlob: Blob | undefined
-      try {
-        thumbnailBlob = await generateThumbnail(file)
-      } catch {
-        // Non-critical — upload proceeds without thumbnail
-      }
+      thumbnailBlob = await generateThumbnail(file)
+    } catch {
+      // Non-critical — upload proceeds without thumbnail
+    }
 
-      const doc = await uploadDocument(file, thumbnailBlob)
+    // Store pending state — triggers course picker modal
+    setPendingFile(file)
+    setPendingThumbnail(thumbnailBlob)
+  }
+
+  async function handleUploadWithCourse(courseId: string) {
+    if (!pendingFile) return
+    const file = pendingFile
+    const thumbnailBlob = pendingThumbnail
+    setPendingFile(null)
+    setPendingThumbnail(null)
+
+    try {
+      const doc = await uploadDocument(file, thumbnailBlob ?? undefined, courseId)
 
       // Store local thumbnail URL for immediate display
       if (thumbnailBlob) {
@@ -1550,6 +1710,17 @@ export default function DocumentsPage() {
             doc={moveToCourseTarget}
             onConfirm={handleMoveToCourse}
             onClose={() => setMoveToCourseTarget(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Select Course modal (for upload) */}
+      <AnimatePresence>
+        {pendingFile && (
+          <SelectCourseModal
+            filename={pendingFile.name}
+            onConfirm={handleUploadWithCourse}
+            onClose={() => { setPendingFile(null); setPendingThumbnail(null) }}
           />
         )}
       </AnimatePresence>
