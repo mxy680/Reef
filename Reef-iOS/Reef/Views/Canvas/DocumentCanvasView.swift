@@ -14,25 +14,26 @@ struct DocumentCanvasView: View {
     @State private var viewModel = CanvasViewModel()
 
     var body: some View {
-        ZStack {
-            Color(hex: 0xF5F5F0)
-                .ignoresSafeArea()
-
+        VStack(spacing: 0) {
             if viewModel.isLoading {
                 loadingView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0xF5F5F0))
             } else if let error = viewModel.error {
                 errorView(error)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0xF5F5F0))
             } else if let pdf = viewModel.pdfDocument {
-                VStack(spacing: 0) {
-                    CanvasToolbar(
-                        documentName: document.displayName,
-                        onClose: { onDismiss() }
-                    )
+                CanvasToolbar(
+                    documentName: document.displayName,
+                    onClose: { onDismiss() }
+                )
 
-                    CanvasPageView(pdfDocument: pdf)
-                }
+                CanvasPageView(pdfDocument: pdf)
             }
         }
+        .background(Color(hex: 0xF5F5F0))
+        .ignoresSafeArea(edges: .bottom)
         .task { await viewModel.loadDocument(document) }
     }
 
