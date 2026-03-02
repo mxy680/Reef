@@ -1,0 +1,3 @@
+api.studyreef.com {
+	reverse_proxy server:8000
+}
