@@ -375,7 +375,7 @@ function DocumentCard({
   const displayName = doc.filename.replace(/\.pdf$/i, "")
 
   function statusLabel() {
-    if (doc.status === "processing") return "Processing..."
+    if (doc.status === "processing") return doc.status_message || "Processing..."
     if (doc.status === "failed") return "Failed"
     return dateStr
   }
@@ -1401,7 +1401,7 @@ export default function DocumentsPage() {
       return
     }
 
-    // Generate thumbnail before showing course picker
+    // Generate thumbnail
     let thumbnailBlob: Blob | null = null
     try {
       thumbnailBlob = await generateThumbnail(file)
@@ -1409,9 +1409,25 @@ export default function DocumentsPage() {
       // Non-critical — upload proceeds without thumbnail
     }
 
-    // Store pending state — triggers course picker modal
-    setPendingFile(file)
-    setPendingThumbnail(thumbnailBlob)
+    // Upload immediately without course assignment
+    try {
+      const doc = await uploadDocument(file, thumbnailBlob ?? undefined)
+
+      if (thumbnailBlob) {
+        const localUrl = URL.createObjectURL(thumbnailBlob)
+        setThumbnails((prev) => ({ ...prev, [doc.id]: localUrl }))
+      }
+
+      setDocuments(prev => [doc, ...prev])
+      setToast("Document uploading — processing will begin shortly")
+    } catch (err) {
+      if (err instanceof LimitError) {
+        setToast(err.message)
+      } else {
+        console.error("Upload failed:", err)
+        setToast("Upload failed — please try again")
+      }
+    }
   }
 
   async function handleUploadWithCourse(courseId: string) {

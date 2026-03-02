@@ -9,6 +9,7 @@ export interface Document {
   page_count: number | null
   problem_count: number | null
   error_message: string | null
+  status_message: string | null
   course_id: string | null
   created_at: string
 }
@@ -57,10 +58,10 @@ export async function uploadDocument(file: File, thumbnail?: Blob, courseId?: st
     throw new LimitError("Document limit reached — upgrade to upload more")
   }
 
-  // 1. Create DB row — mark completed immediately (no server-side reconstruction)
+  // 1. Create DB row — mark as processing (server will reconstruct)
   const { data: doc, error: insertError } = await supabase
     .from("documents")
-    .insert({ user_id: user.id, filename: file.name, status: "completed", ...(courseId ? { course_id: courseId } : {}) })
+    .insert({ user_id: user.id, filename: file.name, status: "processing", ...(courseId ? { course_id: courseId } : {}) })
     .select()
     .single()
 
@@ -88,6 +89,13 @@ export async function uploadDocument(file: File, thumbnail?: Blob, courseId?: st
       .catch(() => {}) // non-critical
   }
 
+  // 4. Fire-and-forget: trigger server-side reconstruction
+  fetch("/api/documents/process", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ documentId: document.id, userId: user.id }),
+  }).catch(() => {}) // non-critical — status stays "processing" until server finishes
+
   return document
 }
 
@@ -96,9 +104,17 @@ export async function getDocumentDownloadUrl(docId: string): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
+  // Prefer reconstructed output.pdf, fall back to original.pdf
+  const prefix = `${user.id}/${docId}`
+  const { data: outputData } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(`${prefix}/output.pdf`, 60 * 60)
+
+  if (outputData?.signedUrl) return outputData.signedUrl
+
   const { data, error } = await supabase.storage
     .from("documents")
-    .createSignedUrl(`${user.id}/${docId}/original.pdf`, 60 * 60) // 1 hour
+    .createSignedUrl(`${prefix}/original.pdf`, 60 * 60)
 
   if (error) throw error
   return data.signedUrl
@@ -145,9 +161,17 @@ export async function getDocumentShareUrl(docId: string): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
+  // Prefer reconstructed output.pdf, fall back to original.pdf
+  const prefix = `${user.id}/${docId}`
+  const { data: outputData } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(`${prefix}/output.pdf`, 7 * 24 * 60 * 60)
+
+  if (outputData?.signedUrl) return outputData.signedUrl
+
   const { data, error } = await supabase.storage
     .from("documents")
-    .createSignedUrl(`${user.id}/${docId}/original.pdf`, 7 * 24 * 60 * 60) // 7 days
+    .createSignedUrl(`${prefix}/original.pdf`, 7 * 24 * 60 * 60)
 
   if (error) throw error
   return data.signedUrl
