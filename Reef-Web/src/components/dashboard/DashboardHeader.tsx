@@ -80,6 +80,67 @@ function HamburgerIcon() {
   )
 }
 
+function UserIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="5" r="3" />
+      <path d="M2 14 C2 11 4.5 9 8 9 C11.5 9 14 11 14 14" />
+    </svg>
+  )
+}
+
+function SlidersIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="4" x2="13" y2="4" />
+      <line x1="3" y1="8" x2="13" y2="8" />
+      <line x1="3" y1="12" x2="13" y2="12" />
+      <circle cx="5" cy="4" r="1.5" fill={colors.white} />
+      <circle cx="10" cy="8" r="1.5" fill={colors.white} />
+      <circle cx="7" cy="12" r="1.5" fill={colors.white} />
+    </svg>
+  )
+}
+
+function SettingsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="2.5" />
+      <path d="M8 1 L8 3 M8 13 L8 15 M1 8 L3 8 M13 8 L15 8 M2.9 2.9 L4.3 4.3 M11.7 11.7 L13.1 13.1 M13.1 2.9 L11.7 4.3 M4.3 11.7 L2.9 13.1" />
+    </svg>
+  )
+}
+
+function LogOutIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2 H3 C2 2 1 3 1 4 V12 C1 13 2 14 3 14 H6" />
+      <polyline points="10,4 14,8 10,12" />
+      <line x1="14" y1="8" x2="5" y2="8" />
+    </svg>
+  )
+}
+
+function KeyboardIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="14" height="10" rx="2" />
+      <line x1="4" y1="6" x2="4" y2="6.01" />
+      <line x1="8" y1="6" x2="8" y2="6.01" />
+      <line x1="12" y1="6" x2="12" y2="6.01" />
+      <line x1="5" y1="10" x2="11" y2="10" />
+    </svg>
+  )
+}
+
+function SmallFlameIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 1 C8 1 12 5 12 9 C12 12 10 14 8 14 C6 14 4 12 4 9 C4 5 8 1 8 1 Z" />
+    </svg>
+  )
+}
+
 function ChevronSeparator() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke={colors.gray400} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -233,8 +294,72 @@ function StreakIndicator({ streak = 0 }: { streak?: number }) {
   )
 }
 
+function DropdownMenuItem({
+  icon,
+  label,
+  shortcut,
+  href,
+  destructive,
+  onClick,
+}: {
+  icon: React.ReactNode
+  label: string
+  shortcut?: string
+  href?: string
+  destructive?: boolean
+  onClick?: () => void
+}) {
+  const content = (
+    <div
+      onClick={onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "8px 14px",
+        fontFamily,
+        fontWeight: 600,
+        fontSize: 13,
+        letterSpacing: "-0.02em",
+        color: destructive ? "#c62828" : colors.black,
+        cursor: "pointer",
+        transition: "background-color 0.1s",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.gray100)}
+      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+    >
+      <span style={{ display: "flex", alignItems: "center", color: destructive ? "#c62828" : colors.gray600 }}>
+        {icon}
+      </span>
+      <span style={{ flex: 1 }}>{label}</span>
+      {shortcut && (
+        <span
+          style={{
+            fontFamily,
+            fontWeight: 500,
+            fontSize: 11,
+            color: colors.gray400,
+            letterSpacing: "0",
+          }}
+        >
+          {shortcut}
+        </span>
+      )}
+    </div>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} style={{ textDecoration: "none" }} onClick={onClick}>
+        {content}
+      </Link>
+    )
+  }
+  return content
+}
+
 function ProfileDropdown() {
-  const { profile } = useDashboard()
+  const { profile, openCommandPalette } = useDashboard()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -307,7 +432,7 @@ function ProfileDropdown() {
               position: "absolute",
               top: "calc(100% + 8px)",
               right: 0,
-              width: 200,
+              width: 260,
               backgroundColor: colors.white,
               border: `1.5px solid ${colors.gray500}`,
               borderRadius: 12,
@@ -316,78 +441,163 @@ function ProfileDropdown() {
               zIndex: 100,
             }}
           >
-            {/* User info */}
-            <div style={{ padding: "0 14px 10px" }}>
+            {/* User info with avatar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px 10px" }}>
               <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 999,
+                  backgroundColor: colors.accent,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily,
+                    fontWeight: 700,
+                    fontSize: 11,
+                    color: colors.black,
+                  }}
+                >
+                  {initials}
+                </span>
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    letterSpacing: "-0.04em",
+                    color: colors.black,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {profile.display_name}
+                </div>
+                <div
+                  style={{
+                    fontFamily,
+                    fontWeight: 500,
+                    fontSize: 11,
+                    letterSpacing: "-0.02em",
+                    color: colors.gray600,
+                    marginTop: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {profile.email}
+                </div>
+              </div>
+            </div>
+
+            {/* Grade */}
+            <div
+              style={{
+                padding: "0 14px 6px",
+                fontFamily,
+                fontWeight: 600,
+                fontSize: 12,
+                letterSpacing: "-0.02em",
+                color: colors.gray600,
+              }}
+            >
+              {GRADE_LABELS[profile.grade] || profile.grade}
+            </div>
+
+            {/* Tier pill */}
+            <div style={{ padding: "0 14px 8px" }}>
+              <span
                 style={{
                   fontFamily,
                   fontWeight: 700,
-                  fontSize: 14,
-                  letterSpacing: "-0.04em",
-                  color: colors.black,
+                  fontSize: 11,
+                  letterSpacing: "-0.02em",
+                  color: colors.accent,
+                  backgroundColor: `${colors.accent}1F`,
+                  padding: "3px 10px",
+                  borderRadius: 999,
+                  display: "inline-block",
                 }}
               >
-                {profile.display_name}
-              </div>
-              <div
+                Shore &middot; Free
+              </span>
+            </div>
+
+            {/* Streak */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "0 14px 6px",
+                color: colors.gray600,
+              }}
+            >
+              <SmallFlameIcon />
+              <span
                 style={{
                   fontFamily,
-                  fontWeight: 500,
+                  fontWeight: 600,
                   fontSize: 12,
                   letterSpacing: "-0.02em",
                   color: colors.gray600,
-                  marginTop: 2,
                 }}
               >
-                {GRADE_LABELS[profile.grade] || profile.grade}
-              </div>
+                0 day streak
+              </span>
             </div>
 
             {/* Divider */}
-            <div style={{ height: 1, backgroundColor: colors.gray100, margin: "0 14px" }} />
+            <div style={{ height: 1, backgroundColor: colors.gray100, margin: "4px 14px" }} />
 
-            {/* Settings */}
-            <Link
+            {/* Menu items */}
+            <DropdownMenuItem
+              icon={<UserIcon />}
+              label="Edit Profile"
               href="/dashboard/settings"
               onClick={() => setOpen(false)}
-              style={{ textDecoration: "none" }}
-            >
-              <div
-                style={{
-                  padding: "10px 14px",
-                  fontFamily,
-                  fontWeight: 600,
-                  fontSize: 13,
-                  letterSpacing: "-0.02em",
-                  color: colors.black,
-                  cursor: "pointer",
-                  transition: "background-color 0.1s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.gray100)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-              >
-                Settings
-              </div>
-            </Link>
+            />
+            <DropdownMenuItem
+              icon={<SlidersIcon />}
+              label="Preferences"
+              href="/dashboard/settings"
+              onClick={() => setOpen(false)}
+            />
+            <DropdownMenuItem
+              icon={<HelpIcon />}
+              label="Help & Support"
+              href="/dashboard/help"
+              onClick={() => setOpen(false)}
+            />
+            <DropdownMenuItem
+              icon={<KeyboardIcon />}
+              label="Keyboard Shortcuts"
+              shortcut="⌘K"
+              onClick={() => {
+                setOpen(false)
+                openCommandPalette()
+              }}
+            />
+
+            {/* Divider */}
+            <div style={{ height: 1, backgroundColor: colors.gray100, margin: "4px 14px" }} />
 
             {/* Log out */}
-            <div
+            <DropdownMenuItem
+              icon={<LogOutIcon />}
+              label="Log out"
+              destructive
               onClick={handleSignOut}
-              style={{
-                padding: "10px 14px",
-                fontFamily,
-                fontWeight: 600,
-                fontSize: 13,
-                letterSpacing: "-0.02em",
-                color: "#e74c3c",
-                cursor: "pointer",
-                transition: "background-color 0.1s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.gray100)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-            >
-              Log out
-            </div>
+            />
           </motion.div>
         )}
       </AnimatePresence>
