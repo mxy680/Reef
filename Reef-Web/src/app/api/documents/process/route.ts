@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server"
+import { Agent } from "undici"
 import { createServiceClient } from "@/lib/supabase/server"
 
 const REEF_SERVER_URL = process.env.REEF_SERVER_URL || "http://localhost:8000"
 const REEF_SERVER_TOKEN = process.env.REEF_SERVER_TOKEN || "dev"
+
+// Reconstruction can take 5-10 min with verification retries + rate limits
+const reconstructAgent = new Agent({
+  headersTimeout: 10 * 60 * 1000,
+  bodyTimeout: 10 * 60 * 1000,
+})
+
+export const maxDuration = 600 // 10 minutes
 
 export async function POST(request: Request) {
   let documentId: string | undefined
@@ -43,6 +52,8 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { Authorization: `Bearer ${REEF_SERVER_TOKEN}` },
         body: formData,
+        // @ts-expect-error Node.js undici dispatcher option
+        dispatcher: reconstructAgent,
       },
     )
 
