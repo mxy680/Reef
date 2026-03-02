@@ -55,8 +55,8 @@ struct DocumentCardView: View {
                     .foregroundStyle(statusColor)
             }
             .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 14)
+            .padding(.top, 10)
+            .padding(.bottom, 16)
             .layoutPriority(1)
         }
         .frame(height: cardHeight)
