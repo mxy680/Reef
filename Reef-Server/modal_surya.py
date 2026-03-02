@@ -14,6 +14,8 @@ surya_image = (
         "surya-ocr",
         "Pillow",
         "torch",
+        "requests",
+        "transformers>=4.56.1,<5.0.0",
     )
     .run_commands(
         # Pre-download Surya model weights at build time
