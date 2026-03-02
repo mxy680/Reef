@@ -2,7 +2,7 @@
 
 Pipeline:
 1. Render PDF pages at 192 DPI (Surya) + 288 DPI (cropping) via PyMuPDF
-2. Run Surya layout detection locally, annotate pages with red numbered boxes
+2. Run Surya layout detection on Modal GPU, annotate pages with red numbered boxes
 3. Send annotated images to Gemini (via OpenRouter LLMClient) for problem grouping
 4. For each problem: crop regions, send to Gemini for structured Question extraction
 5. question_to_latex() → LaTeXCompiler (with LLM error recovery on failure)
@@ -16,9 +16,11 @@ import io
 import json
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import fitz  # PyMuPDF
+import modal
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from PIL import Image, ImageDraw, ImageFont
@@ -38,31 +40,28 @@ from app.services.region_extractor import extract_question_regions
 
 router = APIRouter()
 
-# Surya imports (lazy — loaded on first request)
-_layout_predictor = None
-_foundation_predictor = None
-
 FIGURE_LABELS = {"Picture", "Figure"}
 
+# Modal remote reference to the Surya GPU function
+SuryaLayout = modal.Cls.from_name("reef-surya", "SuryaLayout")
 
-def _get_layout_predictor():
-    """Get or create the Surya layout predictor singleton."""
-    global _layout_predictor, _foundation_predictor
-    if _layout_predictor is None:
-        from surya.foundation import FoundationPredictor
-        from surya.layout import LayoutPredictor
-        from surya.settings import settings as surya_settings
 
-        _foundation_predictor = FoundationPredictor(
-            checkpoint=surya_settings.LAYOUT_MODEL_CHECKPOINT
-        )
-        _layout_predictor = LayoutPredictor(_foundation_predictor)
-    return _layout_predictor
+@dataclass
+class LayoutBlock:
+    """Local stand-in for a Surya bbox result (deserialized from Modal)."""
+    bbox: list[float]
+    label: str
+
+
+@dataclass
+class PageLayout:
+    """Layout results for one page."""
+    bboxes: list[LayoutBlock]
 
 
 def _annotate_page(
     img: Image.Image,
-    layout_result,
+    layout_result: PageLayout,
     scale: int = 2,
     start_index: int = 1,
 ) -> tuple[Image.Image, int]:
@@ -146,9 +145,28 @@ async def ai_reconstruct(
             )
         doc.close()
 
-        # --- Stage 1: Surya layout detection ---
-        layout_predictor = _get_layout_predictor()
-        layout_results = layout_predictor(surya_images)
+        # --- Stage 1: Surya layout detection (Modal GPU) ---
+        surya_image_bytes: list[bytes] = []
+        for img in surya_images:
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=95)
+            surya_image_bytes.append(buf.getvalue())
+
+        print(f"  [reconstruct] Sending {len(surya_image_bytes)} pages to Modal Surya...")
+        surya_cls = SuryaLayout()
+        raw_layouts = await asyncio.to_thread(
+            surya_cls.detect_layout.remote, surya_image_bytes
+        )
+
+        # Deserialize Modal response into local dataclasses
+        layout_results: list[PageLayout] = []
+        for page_bboxes in raw_layouts:
+            layout_results.append(
+                PageLayout(
+                    bboxes=[LayoutBlock(**b) for b in page_bboxes]
+                )
+            )
+        print(f"  [reconstruct] Got layout results from Modal")
 
         annotated_pages = []
         current_index = 1

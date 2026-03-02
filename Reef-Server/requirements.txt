@@ -9,4 +9,4 @@ python-multipart
 numpy
 Pillow
 pymupdf
-surya-ocr
+modal
