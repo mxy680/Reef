@@ -1,0 +1,41 @@
+name: Deploy Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Reef-Server/**"
+
+jobs:
+  deploy:
+    name: Deploy to Hetzner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SSH key
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          ssh-keyscan -H 178.156.139.74 >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          rsync -az --delete \
+            --exclude '.venv' \
+            --exclude '.git' \
+            --exclude '.env' \
+            --exclude 'data/' \
+            --exclude 'tests/' \
+            --exclude '__pycache__' \
+            --exclude '.pytest_cache' \
+            --exclude '*.pyc' \
+            --exclude '.env.example' \
+            Reef-Server/ deploy@178.156.139.74:/opt/reef/
+
+          ssh deploy@178.156.139.74 'cd /opt/reef && docker compose build server && docker compose up -d'
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -sf https://api.studyreef.com/health
