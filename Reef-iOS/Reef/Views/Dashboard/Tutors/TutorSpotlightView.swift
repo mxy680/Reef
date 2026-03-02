@@ -59,8 +59,7 @@ struct TutorSpotlightView: View {
                 .background(tintColor.opacity(0.1))
                 .clipShape(Capsule())
                 .padding(.top, 4)
-
-                Spacer(minLength: 4)
+                .padding(.bottom, 6)
 
                 // Bottom actions
                 HStack(spacing: 10) {
@@ -89,7 +88,6 @@ struct TutorSpotlightView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 220)
         .padding(20)
         .background(ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -102,5 +100,7 @@ struct TutorSpotlightView: View {
                 .fill(tintColor)
                 .offset(x: 4, y: 4)
         )
+        .padding(.trailing, 6)
+        .padding(.bottom, 6)
     }
 }
