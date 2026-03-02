@@ -96,12 +96,14 @@ struct TutorQuizPopup: View {
                 .padding(.bottom, 4)
 
                 if step < 3 {
-                    questionView
+                    questionContent
                         .id(step)
                         .transition(.asymmetric(
                             insertion: .move(edge: direction).combined(with: .opacity),
                             removal: .move(edge: direction == .trailing ? .leading : .trailing).combined(with: .opacity)
                         ))
+
+                    questionButtons
                 } else {
                     resultView
                         .transition(.asymmetric(
@@ -125,7 +127,7 @@ struct TutorQuizPopup: View {
 
     // MARK: - Question View
 
-    private var questionView: some View {
+    private var questionContent: some View {
         VStack(spacing: 0) {
             OnboardingProgressDots(current: step, total: 3)
 
@@ -146,31 +148,33 @@ struct TutorQuizPopup: View {
                 }
             }
             .padding(.bottom, 24)
+        }
+    }
 
-            HStack {
-                if step > 0 {
-                    Button {
-                        direction = .leading
-                        withAnimation { step -= 1 }
-                    } label: {
-                        Text("Back")
-                    }
-                    .reefCompactStyle(.secondary)
-                }
-
-                Spacer()
-
+    private var questionButtons: some View {
+        HStack {
+            if step > 0 {
                 Button {
-                    direction = .trailing
-                    withAnimation { step += 1 }
+                    direction = .leading
+                    withAnimation { step -= 1 }
                 } label: {
-                    Text("Continue")
+                    Text("Back")
                 }
-                .reefStyle(.primary)
-                .frame(maxWidth: 160)
-                .disabled(answers[step] == nil)
-                .opacity(answers[step] != nil ? 1 : 0.4)
+                .reefCompactStyle(.secondary)
             }
+
+            Spacer()
+
+            Button {
+                direction = .trailing
+                withAnimation { step += 1 }
+            } label: {
+                Text("Continue")
+            }
+            .reefStyle(.primary)
+            .frame(maxWidth: 160)
+            .disabled(answers[step] == nil)
+            .opacity(answers[step] != nil ? 1 : 0.4)
         }
     }
 

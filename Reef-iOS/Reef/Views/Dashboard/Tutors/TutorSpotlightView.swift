@@ -67,7 +67,11 @@ struct TutorSpotlightView: View {
                     Button {
                         onVoicePreview()
                     } label: {
-                        Text(isSpeaking ? "Stop" : "Preview Voice")
+                        HStack(spacing: 6) {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 10, weight: .bold))
+                            Text("Preview Voice")
+                        }
                     }
                     .reefCompactStyle(.secondary)
 
