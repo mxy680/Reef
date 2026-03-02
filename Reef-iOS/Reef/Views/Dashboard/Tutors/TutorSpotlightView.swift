@@ -60,8 +60,6 @@ struct TutorSpotlightView: View {
                 .clipShape(Capsule())
                 .padding(.top, 4)
 
-                Spacer(minLength: 4)
-
                 // Bottom actions
                 HStack(spacing: 10) {
                     Button {
@@ -89,7 +87,6 @@ struct TutorSpotlightView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 220)
         .padding(20)
         .background(ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
