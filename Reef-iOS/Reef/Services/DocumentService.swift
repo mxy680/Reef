@@ -112,7 +112,7 @@ actor DocumentService {
 
         // Fire-and-forget processing trigger
         Task.detached { [weak self] in
-            try? await self?.triggerProcessing(documentId: newDoc.id)
+            await self?.triggerProcessing(documentId: newDoc.id)
         }
 
         return newDoc
@@ -226,7 +226,7 @@ actor DocumentService {
             .execute()
 
         Task.detached { [weak self] in
-            try? await self?.triggerProcessing(documentId: docId)
+            await self?.triggerProcessing(documentId: docId)
         }
     }
 
@@ -311,7 +311,21 @@ actor DocumentService {
         return thumbnail.pngData()
     }
 
-    private func triggerProcessing(documentId: String) async throws {
-        try await ReefAPI.shared.triggerReconstruction(documentId: documentId)
+    private func triggerProcessing(documentId: String) async {
+        do {
+            try await ReefAPI.shared.triggerReconstruction(documentId: documentId)
+        } catch {
+            print("[DocumentService] triggerProcessing failed: \(error)")
+            // Mark as failed so the card doesn't stay stuck on "Processing..."
+            struct FailPayload: Encodable {
+                let status: String
+                let error_message: String
+            }
+            _ = try? await supabase
+                .from("documents")
+                .update(FailPayload(status: "failed", error_message: "Server unavailable — tap retry"))
+                .eq("id", value: documentId)
+                .execute()
+        }
     }
 }
