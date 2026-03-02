@@ -237,6 +237,7 @@ struct CourseDetailView: View {
                     }
                 }
             }
+            .padding([.trailing, .bottom], 4) // room for 3D shadow offset
         }
     }
 

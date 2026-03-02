@@ -361,6 +361,7 @@ struct DocumentsContentView: View {
     private var documentGrid: some View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 20) {
+
                 // Upload placeholder card — matches document card height
                 VStack(spacing: 0) {
                     // Invisible spacer matching thumbnail aspect ratio
@@ -407,6 +408,7 @@ struct DocumentsContentView: View {
                     }
                 }
             }
+            .padding([.trailing, .bottom], 4) // room for 3D shadow offset
         }
     }
 
