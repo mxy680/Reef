@@ -9,6 +9,7 @@ export interface Document {
   page_count: number | null
   problem_count: number | null
   error_message: string | null
+  status_message: string | null
   course_id: string | null
   created_at: string
 }

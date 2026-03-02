@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # Supabase (for JWT verification via JWKS)
     supabase_url: str = ""
     supabase_anon_key: str = ""
+    supabase_service_role_key: str = ""
 
     # External services
     openrouter_api_key: str = ""

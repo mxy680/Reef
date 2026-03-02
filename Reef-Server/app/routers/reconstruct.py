@@ -42,6 +42,7 @@ from app.services.prompts import (
     LATEX_FIX_PROMPT,
     VISUAL_VERIFY_PROMPT,
 )
+from app.services.progress import update_progress
 from app.services.question_to_latex import question_to_latex
 from app.services.region_extractor import extract_question_regions
 
@@ -208,8 +209,13 @@ async def ai_reconstruct(
     pdf: UploadFile = File(..., description="PDF file to reconstruct"),
     split: bool = Query(default=False, description="Return individual problem PDFs as JSON"),
     debug: bool = Query(default=False, description="Save intermediate files to data/"),
+    document_id: str | None = Query(default=None, description="Supabase document ID for progress reporting"),
 ):
     try:
+        async def progress(msg: str | None):
+            if document_id:
+                await update_progress(document_id, msg)
+
         pdf_bytes = await pdf.read()
         base_name = Path(pdf.filename).stem if pdf.filename else "document"
         data_dir = Path(__file__).parent.parent.parent / "data"
@@ -222,6 +228,8 @@ async def ai_reconstruct(
         crop_scale = CROP_DPI / SURYA_DPI
         surya_mat = fitz.Matrix(SURYA_DPI / 72, SURYA_DPI / 72)
         hires_mat = fitz.Matrix(CROP_DPI / 72, CROP_DPI / 72)
+
+        await progress("Analyzing document layout...")
 
         # --- Stage 1a: Rasterize 192 DPI for Surya ---
         surya_images: list[Image.Image] = []
@@ -292,6 +300,8 @@ async def ai_reconstruct(
                 append_images=annotated_pages[1:] if len(annotated_pages) > 1 else [],
                 resolution=150,
             )
+
+        await progress("Identifying problems...")
 
         # --- Stage 2b: LLM problem grouping (now non-blocking) ---
         llm_client = LLMClient(
@@ -662,6 +672,8 @@ async def ai_reconstruct(
             key = tuple(sorted(p.annotation_indices))
             crop_groups[key].append(p)
 
+        await progress(f"Reconstructing {len(group_result.problems)} problems...")
+
         # Assign problem numbers and launch all groups in parallel
         group_tasks = []
         problem_counter = 1
@@ -687,7 +699,11 @@ async def ai_reconstruct(
                 json.dumps(questions_data, indent=2)
             )
 
+        await progress("Finalizing PDF...")
+
         # --- Stage 4: Output ---
+
+        await progress(None)  # Clear status message on completion
 
         if split:
             problem_pdfs = []

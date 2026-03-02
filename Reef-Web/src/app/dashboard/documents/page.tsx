@@ -375,7 +375,7 @@ function DocumentCard({
   const displayName = doc.filename.replace(/\.pdf$/i, "")
 
   function statusLabel() {
-    if (doc.status === "processing") return "Processing..."
+    if (doc.status === "processing") return doc.status_message || "Processing..."
     if (doc.status === "failed") return "Failed"
     return dateStr
   }

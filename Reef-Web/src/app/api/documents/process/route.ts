@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     formData.append("pdf", fileData, "original.pdf")
 
     const response = await fetch(
-      `${REEF_SERVER_URL}/ai/reconstruct`,
+      `${REEF_SERVER_URL}/ai/reconstruct?document_id=${documentId}`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${REEF_SERVER_TOKEN}` },
