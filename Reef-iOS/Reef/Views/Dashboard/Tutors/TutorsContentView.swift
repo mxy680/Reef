@@ -92,7 +92,7 @@ final class TutorsViewModel {
 // MARK: - Main View
 
 struct TutorsContentView: View {
-    @State private var viewModel = TutorsViewModel()
+    @Bindable var viewModel: TutorsViewModel
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -139,42 +139,6 @@ struct TutorsContentView: View {
         .dashboardCard()
         .task { await viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
-        .overlay {
-            if let tutor = viewModel.selectedTutor {
-                TutorDetailPopup(
-                    tutor: tutor,
-                    isSpeaking: viewModel.speakingTutorId == tutor.id,
-                    isActive: viewModel.activeTutorId == tutor.id,
-                    onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
-                    onSelect: { viewModel.selectTutor(tutor) },
-                    onClose: {
-                        withAnimation(.spring(duration: 0.3)) {
-                            viewModel.selectedTutor = nil
-                        }
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
-        }
-        .overlay {
-            if viewModel.showQuiz {
-                TutorQuizPopup(
-                    tutors: viewModel.tutors,
-                    onSelectTutor: { tutor in
-                        viewModel.selectTutor(tutor)
-                        withAnimation(.spring(duration: 0.3)) {
-                            viewModel.showQuiz = false
-                        }
-                    },
-                    onDismiss: {
-                        withAnimation(.spring(duration: 0.3)) {
-                            viewModel.showQuiz = false
-                        }
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
-        }
     }
 
     // MARK: - Header

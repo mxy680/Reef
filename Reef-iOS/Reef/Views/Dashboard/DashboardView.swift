@@ -8,6 +8,7 @@ struct DashboardView: View {
     @State private var sidebarOpen = true
     @State private var courseToDelete: Course?
     @State private var courseToEdit: Course?
+    @State private var tutorsVM = TutorsViewModel()
 
     var body: some View {
         ZStack {
@@ -102,10 +103,57 @@ struct DashboardView: View {
                 )
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
+            // Tutor detail popup
+            if tutorsVM.selectedTutor != nil || tutorsVM.showQuiz {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.3)) {
+                            tutorsVM.selectedTutor = nil
+                            tutorsVM.showQuiz = false
+                        }
+                    }
+            }
+
+            if let tutor = tutorsVM.selectedTutor {
+                TutorDetailPopup(
+                    tutor: tutor,
+                    isSpeaking: tutorsVM.speakingTutorId == tutor.id,
+                    isActive: tutorsVM.activeTutorId == tutor.id,
+                    onVoicePreview: { tutorsVM.toggleVoicePreview(for: tutor) },
+                    onSelect: { tutorsVM.selectTutor(tutor) },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.3)) {
+                            tutorsVM.selectedTutor = nil
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+
+            if tutorsVM.showQuiz {
+                TutorQuizPopup(
+                    tutors: tutorsVM.tutors,
+                    onSelectTutor: { tutor in
+                        tutorsVM.selectTutor(tutor)
+                        withAnimation(.spring(duration: 0.3)) {
+                            tutorsVM.showQuiz = false
+                        }
+                    },
+                    onDismiss: {
+                        withAnimation(.spring(duration: 0.3)) {
+                            tutorsVM.showQuiz = false
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
         .animation(.spring(duration: 0.2), value: courseToDelete?.id)
         .animation(.spring(duration: 0.2), value: courseToEdit?.id)
+        .animation(.spring(duration: 0.3), value: tutorsVM.selectedTutor?.id)
+        .animation(.spring(duration: 0.3), value: tutorsVM.showQuiz)
         .task { await fetchCourses() }
     }
 
@@ -135,7 +183,7 @@ struct DashboardView: View {
             case .documents:
                 DocumentsContentView()
             case .tutors:
-                TutorsContentView()
+                TutorsContentView(viewModel: tutorsVM)
             case .myReef:
                 MyReefComingSoonView()
             case .library:

@@ -69,60 +69,49 @@ struct TutorQuizPopup: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            // Dimmed backdrop
-            Color.black.opacity(0.4)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .onTapGesture { onDismiss() }
-
-            // Popup card
-            VStack(spacing: 0) {
-                // Close button row
-                HStack {
-                    Spacer()
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(ReefColors.gray500)
-                        .frame(width: 28, height: 28)
-                        .background(ReefColors.gray100)
-                        .clipShape(Circle())
-                        .compositingGroup()
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onDismiss()
-                        }
-                        .accessibilityAddTraits(.isButton)
-                }
-                .padding(.bottom, 4)
-
-                if step < 3 {
-                    questionContent
-                        .id(step)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: direction).combined(with: .opacity),
-                            removal: .move(edge: direction == .trailing ? .leading : .trailing).combined(with: .opacity)
-                        ))
-
-                    questionButtons
-                } else {
-                    resultView
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        ))
-                }
+        VStack(spacing: 0) {
+            // Close button row
+            HStack {
+                Spacer()
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(ReefColors.gray500)
+                    .frame(width: 28, height: 28)
+                    .background(ReefColors.gray100)
+                    .clipShape(Circle())
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture { onDismiss() }
+                    .accessibilityAddTraits(.isButton)
             }
-            .animation(.spring(duration: 0.35), value: step)
-            .padding(24)
-            .background(ReefColors.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(ReefColors.black, lineWidth: 1.5)
-            )
-            .frame(maxWidth: 420)
-            .padding(32)
+            .padding(.bottom, 4)
+
+            if step < 3 {
+                questionContent
+                    .id(step)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: direction).combined(with: .opacity),
+                        removal: .move(edge: direction == .trailing ? .leading : .trailing).combined(with: .opacity)
+                    ))
+
+                questionButtons
+            } else {
+                resultView
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+            }
         }
+        .animation(.spring(duration: 0.35), value: step)
+        .padding(24)
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(ReefColors.black, lineWidth: 1.5)
+        )
+        .frame(maxWidth: 420)
     }
 
     // MARK: - Question View
