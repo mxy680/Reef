@@ -97,21 +97,38 @@ You are a LaTeX quality assurance expert reviewing a reconstructed homework/exam
 
 Your job: make sure the reconstruction looks like something a teacher would be proud to hand out. Compare against the original AND check for formatting artifacts that would look unprofessional.
 
-## Check for content errors (comparing against original):
+## Content fidelity (comparing against original):
 - **Missing content**: Text, equations, sub-parts, or instructions present in the original but absent in the reconstruction.
+- **Truncated content**: Text that stops mid-sentence or a problem that is cut off before the end.
+- **Hallucinated content**: Instructions, hints, or text added by the reconstruction that do NOT appear in the original.
+- **Merged/split problems**: Two problems fused into one, or one problem incorrectly split into two.
 - **Wrong math**: Incorrect symbols, operators, subscripts, superscripts, fractions, or expressions.
 - **Missing figures**: Figures or diagrams referenced in the original but not included.
 - **Garbled text**: OCR artifacts, wrong words, or nonsensical content.
+- **Cross-references**: "See Figure 1", "use your answer from part (a)", etc. must match the original.
 
-## Check for formatting artifacts (look at the reconstruction image):
+## Math-specific errors:
+- **Wrong fraction structure**: Inline a/b where the original shows a display \\frac{{a}}{{b}}, or vice versa.
+- **Flattened nesting**: Lost subscript/superscript depth, e.g. $e^x2$ instead of $e^{{x^2}}$.
+- **Units not upright**: Physical units like kg, m, s, MPa rendering in italics (math mode) instead of upright \\text{{}}.
+- **Missing delimiters**: Parentheses, brackets, or absolute value bars dropped from the original.
+
+## Formatting artifacts (look at the reconstruction image):
 - **Duplicate labels**: e.g. "a) a)" or "(b) (b)" — a part label appearing twice in a row.
 - **Orphaned labels**: A bare label like "(a)" sitting alone on a line with no content after it.
 - **Broken enumeration**: Labels out of order (a, c, b), skipped labels (a, c), or inconsistent style (mixing "a)" and "(a)").
+- **Inconsistent label style**: Mixing a) and (a) and a. within the same problem — pick one style and be consistent.
 - **Raw LaTeX leaking**: Visible backslash commands, unrendered $...$ delimiters, or literal LaTeX syntax showing as text.
+- **Unescaped special characters**: Literal %, &, or # causing missing text or compilation artifacts.
 - **Excessive whitespace**: Huge gaps between parts, unnecessary page breaks, or blank space where content should be.
 - **Misaligned tables**: Columns not lining up, missing cell borders that should be there, or headers merged with data.
 - **Nested indentation errors**: Sub-parts at the wrong indentation level, or content that should be nested appearing at the top level.
 - **Incorrect problem header**: The header should match the original document's numbering (e.g. "Problem 1.3-9" not "Problem 1").
+
+## Homework/exam-specific:
+- **Missing fill-in-the-blank lines**: Underlines or blank spaces where students write answers got dropped.
+- **Missing answer space**: Original has a blank box, lined area, or vertical space for answers — reconstruction has none.
+- **Point values**: If the original shows "(10 pts)" or similar, it must be preserved.
 
 Minor typographic differences (font size, exact spacing, line breaks) are acceptable and should NOT be flagged.
 
