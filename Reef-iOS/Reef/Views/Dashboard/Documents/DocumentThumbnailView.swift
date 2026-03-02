@@ -17,12 +17,13 @@ struct DocumentThumbnailView: View {
                 )
 
             if let url = thumbnailURL {
-                AsyncImage(url: url) { phase in
+                AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.25))) { phase in
                     switch phase {
                     case .success(let image):
                         image
                             .resizable()
                             .scaledToFill()
+                            .transition(.opacity)
                     default:
                         ruledLines
                     }
