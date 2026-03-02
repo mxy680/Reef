@@ -48,3 +48,19 @@ class Question(BaseModel):
 class QuestionBatch(BaseModel):
     """Multiple questions extracted from a single image containing several problems."""
     questions: list[Question] = Field(..., description="All questions found in the image")
+
+
+class VerificationResult(BaseModel):
+    """Result of visual verification comparing original document vs reconstruction."""
+    needs_fix: bool = Field(
+        ...,
+        description="True if the reconstruction has meaningful discrepancies from the original",
+    )
+    issues: list[str] = Field(
+        default_factory=list,
+        description="List of specific issues found (empty if needs_fix is false)",
+    )
+    fixed_latex: str = Field(
+        default="",
+        description="Corrected LaTeX body content (empty if needs_fix is false)",
+    )

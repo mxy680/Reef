@@ -88,3 +88,36 @@ LATEX_FIX_PROMPT = """You are a LaTeX expert. The following LaTeX body content f
 - Keep all math in $...$ or \\[...\\] delimiters
 - Available packages: amsmath, amssymb, amsfonts, graphicx, booktabs, array, xcolor, needspace, algorithm, algorithmic, listings, caption, changepage
 """
+
+VISUAL_VERIFY_PROMPT = """\
+You are a LaTeX quality assurance expert. You are given two images:
+
+1. **ORIGINAL** (first image): A crop from the original scanned document showing a homework/exam problem.
+2. **RECONSTRUCTION** (second image): The same problem after being extracted and re-typeset in LaTeX.
+
+Compare the reconstruction against the original and identify any meaningful discrepancies.
+
+## Check for these issues:
+- **Missing content**: Text, equations, sub-parts, or instructions present in the original but absent in the reconstruction.
+- **Wrong math**: Incorrect symbols, operators, subscripts, superscripts, fractions, or expressions.
+- **Broken layout**: Tables that lost structure, lists that became prose, or parts that merged/split incorrectly.
+- **Missing figures**: Figures or diagrams referenced in the original but not included in the reconstruction.
+- **Incorrect numbering**: Wrong problem numbers, part labels, or sub-part labels.
+- **Garbled text**: OCR artifacts, wrong words, or nonsensical content.
+
+Minor typographic differences (font size, spacing, line breaks) are acceptable and should NOT be flagged.
+
+## Current LaTeX body content:
+```
+{latex_body}
+```
+
+## Instructions:
+- If the reconstruction is faithful to the original, set `needs_fix` to false and leave `fixed_latex` empty.
+- If there are meaningful discrepancies, set `needs_fix` to true, list the issues, and provide the corrected LaTeX in `fixed_latex`.
+- The `fixed_latex` must be ONLY the LaTeX body content — no \\documentclass, no \\usepackage, no \\begin{{document}}.
+- Preserve all existing formatting that is correct — only fix what is actually wrong.
+- Available packages: amsmath, amssymb, amsfonts, graphicx, booktabs, array, xcolor, needspace, algorithm, algorithmic, listings, caption, changepage.
+- Math must use $...$ for inline and \\[...\\] for display mode.
+- Do NOT solve problems or fill in blanks — reproduce the original content exactly.
+"""

@@ -1,11 +1,11 @@
 """POST /ai/reconstruct — Reconstruct homework PDFs into cleanly typeset LaTeX.
 
 Pipeline:
-1. Render PDF pages at 192 DPI (Surya) + 288 DPI (cropping) via PyMuPDF
-2. Run Surya layout detection on Modal GPU, annotate pages with red numbered boxes
-3. Send annotated images to Gemini (via OpenRouter LLMClient) for problem grouping
-4. For each problem: crop regions, send to Gemini for structured Question extraction
-5. question_to_latex() → LaTeXCompiler (with LLM error recovery on failure)
+1. Rasterize PDF at 192 DPI, fire Surya layout detection on Modal GPU
+2. Rasterize 288 DPI (overlapped with Surya), annotate pages with numbered boxes
+3. Send annotated images to LLM for problem grouping
+4. For each crop group (parallelized): extract → compile → visually verify + fix
+5. Merge PDFs or return split JSON
 
 Output: merged PDF (default) or split JSON with base64 PDFs + regions.
 """
@@ -27,13 +27,20 @@ from PIL import Image, ImageDraw, ImageFont
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
-from app.models import GroupProblemsResponse, ProblemGroup, Question, QuestionBatch
+from app.models import (
+    GroupProblemsResponse,
+    ProblemGroup,
+    Question,
+    QuestionBatch,
+    VerificationResult,
+)
 from app.services.latex_compiler import LaTeXCompiler
 from app.services.llm_client import LLMClient
 from app.services.prompts import (
     EXTRACT_QUESTION_PROMPT,
     GROUP_PROBLEMS_PROMPT,
     LATEX_FIX_PROMPT,
+    VISUAL_VERIFY_PROMPT,
 )
 from app.services.question_to_latex import question_to_latex
 from app.services.region_extractor import extract_question_regions
@@ -57,6 +64,11 @@ class LayoutBlock:
 class PageLayout:
     """Layout results for one page."""
     bboxes: list[LayoutBlock]
+
+
+# ---------------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------------
 
 
 def _annotate_page(
@@ -109,6 +121,87 @@ def _annotate_page(
     return img.convert("RGB"), current_index
 
 
+def _render_pdf_to_image(pdf_bytes: bytes, dpi: int = 192) -> bytes:
+    """Render a compiled PDF to a single JPEG image (stacks pages vertically)."""
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    mat = fitz.Matrix(dpi / 72, dpi / 72)
+
+    page_imgs: list[Image.Image] = []
+    for page in doc:
+        pix = page.get_pixmap(matrix=mat)
+        page_imgs.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
+    doc.close()
+
+    if len(page_imgs) == 1:
+        composite = page_imgs[0]
+    else:
+        total_height = sum(img.height for img in page_imgs)
+        max_width = max(img.width for img in page_imgs)
+        composite = Image.new("RGB", (max_width, total_height), (255, 255, 255))
+        y_offset = 0
+        for img in page_imgs:
+            composite.paste(img, (0, y_offset))
+            y_offset += img.height
+
+    buf = io.BytesIO()
+    composite.save(buf, format="JPEG", quality=90)
+    return buf.getvalue()
+
+
+def _get_original_crop(
+    problem: ProblemGroup,
+    bbox_index: dict[int, tuple[int, list[float], str]],
+    hires_images: list[Image.Image],
+    crop_scale: float,
+) -> bytes:
+    """Create a composite crop of the original document for a problem's region."""
+    page_regions: dict[int, list[list[float]]] = defaultdict(list)
+    for idx in problem.annotation_indices:
+        if idx not in bbox_index:
+            continue
+        page_num, bbox, label = bbox_index[idx]
+        page_regions[page_num].append(bbox)
+
+    if not page_regions:
+        return b""
+
+    crops: list[Image.Image] = []
+    for page_num in sorted(page_regions.keys()):
+        bboxes = page_regions[page_num]
+        hires = hires_images[page_num]
+
+        x1 = max(0, int(min(b[0] for b in bboxes) * crop_scale) - 20)
+        y1 = max(0, int(min(b[1] for b in bboxes) * crop_scale) - 20)
+        x2 = min(hires.width, int(max(b[2] for b in bboxes) * crop_scale) + 20)
+        y2 = min(hires.height, int(max(b[3] for b in bboxes) * crop_scale) + 20)
+
+        if x2 > x1 and y2 > y1:
+            crops.append(hires.crop((x1, y1, x2, y2)))
+
+    if not crops:
+        return b""
+
+    if len(crops) == 1:
+        composite = crops[0]
+    else:
+        total_height = sum(c.height for c in crops)
+        max_width = max(c.width for c in crops)
+        composite = Image.new("RGB", (max_width, total_height), (255, 255, 255))
+        y_offset = 0
+        for crop in crops:
+            composite.paste(crop, (0, y_offset))
+            y_offset += crop.height
+
+    buf = io.BytesIO()
+    composite.save(buf, format="JPEG", quality=90)
+    return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Main endpoint
+# ---------------------------------------------------------------------------
+
+
 @router.post("/ai/reconstruct")
 async def ai_reconstruct(
     user: AuthenticatedUser = Depends(get_current_user),
@@ -127,48 +220,53 @@ async def ai_reconstruct(
         SURYA_DPI = 192
         CROP_DPI = 288
         crop_scale = CROP_DPI / SURYA_DPI
-
-        surya_images = []
-        hires_images = []
         surya_mat = fitz.Matrix(SURYA_DPI / 72, SURYA_DPI / 72)
         hires_mat = fitz.Matrix(CROP_DPI / 72, CROP_DPI / 72)
 
+        # --- Stage 1a: Rasterize 192 DPI for Surya ---
+        surya_images: list[Image.Image] = []
         for page_num in range(num_pages):
-            pdf_page = doc[page_num]
-            pix = pdf_page.get_pixmap(matrix=surya_mat)
+            pix = doc[page_num].get_pixmap(matrix=surya_mat)
             surya_images.append(
                 Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
             )
-            pix = pdf_page.get_pixmap(matrix=hires_mat)
-            hires_images.append(
-                Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            )
-        doc.close()
 
-        # --- Stage 1: Surya layout detection (Modal GPU) ---
+        # Serialize for Surya
         surya_image_bytes: list[bytes] = []
         for img in surya_images:
             buf = io.BytesIO()
             img.save(buf, format="JPEG", quality=95)
             surya_image_bytes.append(buf.getvalue())
 
+        # --- Stage 1b: Fire Surya (async) + rasterize 288 DPI concurrently ---
         print(f"  [reconstruct] Sending {len(surya_image_bytes)} pages to Modal Surya...")
         surya_cls = SuryaLayout()
-        raw_layouts = await asyncio.to_thread(
-            surya_cls.detect_layout.remote, surya_image_bytes
+        surya_task = asyncio.create_task(
+            asyncio.to_thread(surya_cls.detect_layout.remote, surya_image_bytes)
         )
+
+        # Rasterize 288 DPI while Surya is running on GPU
+        hires_images: list[Image.Image] = []
+        for page_num in range(num_pages):
+            pix = doc[page_num].get_pixmap(matrix=hires_mat)
+            hires_images.append(
+                Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            )
+        doc.close()
+
+        # --- Stage 1c: Await Surya results ---
+        raw_layouts = await surya_task
 
         # Deserialize Modal response into local dataclasses
         layout_results: list[PageLayout] = []
         for page_bboxes in raw_layouts:
             layout_results.append(
-                PageLayout(
-                    bboxes=[LayoutBlock(**b) for b in page_bboxes]
-                )
+                PageLayout(bboxes=[LayoutBlock(**b) for b in page_bboxes])
             )
         print(f"  [reconstruct] Got layout results from Modal")
 
-        annotated_pages = []
+        # --- Stage 2a: Annotate pages ---
+        annotated_pages: list[Image.Image] = []
         current_index = 1
         for img, layout_result in zip(surya_images, layout_results):
             annotated, current_index = _annotate_page(
@@ -195,7 +293,7 @@ async def ai_reconstruct(
                 resolution=150,
             )
 
-        # --- Stage 2: Gemini problem grouping ---
+        # --- Stage 2b: LLM problem grouping (now non-blocking) ---
         llm_client = LLMClient(
             api_key=settings.openrouter_api_key,
             model="qwen/qwen2.5-vl-72b-instruct",
@@ -203,7 +301,8 @@ async def ai_reconstruct(
         )
 
         prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
-        raw_response = llm_client.generate(
+        raw_response = await asyncio.to_thread(
+            llm_client.generate,
             prompt=prompt,
             images=page_images,
             response_schema=GroupProblemsResponse.model_json_schema(),
@@ -246,7 +345,16 @@ async def ai_reconstruct(
                     f"  [reconstruct] Rescued orphan figure {idx} ({label}) -> {best_problem.label}"
                 )
 
-        # --- Stage 3+4: Extraction per crop group ---
+        # Prepare original crops for visual verification
+        original_crops: dict[str, bytes] = {}
+        for problem in group_result.problems:
+            original_crops[problem.label] = _get_original_crop(
+                problem, bbox_index, hires_images, crop_scale
+            )
+
+        # --- Stage 3: Extract + Compile + Verify (pipelined per crop group) ---
+
+        compiler = LaTeXCompiler()
 
         def _get_extraction_images(problem: ProblemGroup):
             """Get full annotated page images and figure data for a problem."""
@@ -298,10 +406,58 @@ async def ai_reconstruct(
             extraction_images = [page_images[p] for p in sorted(problem_pages)]
             return extraction_images, image_data, figure_filenames, figure_mappings
 
-        async def reconstruct_group(
+        async def _verify_and_fix(
+            label: str,
+            latex: str,
+            pdf_bytes: bytes,
+            original_crop_bytes: bytes,
+            image_data: dict[str, str],
+        ) -> tuple[str, bytes]:
+            """Visually verify compiled PDF against original, fix if needed (one retry)."""
+            if not original_crop_bytes:
+                return latex, pdf_bytes
+
+            reconstruction_image = _render_pdf_to_image(pdf_bytes)
+
+            try:
+                verify_prompt = VISUAL_VERIFY_PROMPT.format(latex_body=latex)
+                raw_result = await asyncio.to_thread(
+                    llm_client.generate,
+                    prompt=verify_prompt,
+                    images=[original_crop_bytes, reconstruction_image],
+                    response_schema=VerificationResult.model_json_schema(),
+                )
+                result = VerificationResult.model_validate_json(raw_result)
+            except Exception as e:
+                print(f"  [verify] {label}: verification call failed — {e}")
+                return latex, pdf_bytes
+
+            if not result.needs_fix or not result.fixed_latex.strip():
+                print(f"  [verify] {label}: OK")
+                return latex, pdf_bytes
+
+            print(f"  [verify] {label}: issues found: {result.issues}")
+
+            # Recompile with fixed LaTeX
+            try:
+                header = label
+                fixed_content = f"\\textbf{{\\large {header}}}\n\n{result.fixed_latex}"
+                fixed_pdf = await asyncio.to_thread(
+                    compiler.compile_latex,
+                    fixed_content,
+                    image_data=image_data or None,
+                )
+                print(f"  [verify] {label}: fix compiled successfully")
+                return result.fixed_latex, fixed_pdf
+            except Exception as e:
+                print(f"  [verify] {label}: fix failed to compile: {e} — keeping original")
+                return latex, pdf_bytes
+
+        async def extract_compile_verify(
+            problem_num: int,
             problems: list[ProblemGroup],
-        ) -> list[tuple[str, str, dict, dict | None]]:
-            """Extract all questions sharing the same page regions in one LLM call."""
+        ) -> list[tuple[str, bytes, dict | None]]:
+            """Extract, compile, and verify all problems in a crop group."""
             extraction_images, image_data, figure_filenames, figure_mappings = (
                 _get_extraction_images(problems[0])
             )
@@ -313,8 +469,16 @@ async def ai_reconstruct(
             )
 
             if not extraction_images:
-                return [(p.label, "% No regions found", {}, None) for p in problems]
+                fallback_pdf = await asyncio.to_thread(
+                    compiler.compile_latex,
+                    "\\textit{No regions found for this problem.}",
+                )
+                return [
+                    (p.label, fallback_pdf, None)
+                    for p in problems
+                ]
 
+            # --- LLM extraction ---
             extract_prompt = EXTRACT_QUESTION_PROMPT
             if len(problems) == 1:
                 extract_prompt += (
@@ -381,8 +545,10 @@ async def ai_reconstruct(
             for q in questions:
                 q_by_number[q.number].append(q)
 
-            out: list[tuple[str, str, dict, dict | None]] = []
-            for problem in problems:
+            # --- Compile + verify each problem in this group ---
+            out: list[tuple[str, bytes, dict | None]] = []
+            for i, problem in enumerate(problems):
+                current_num = problem_num + i
                 nums = re.findall(r"\d+", problem.label)
                 matched = None
                 if nums:
@@ -397,17 +563,67 @@ async def ai_reconstruct(
                             matched = remaining.pop(0)
                             break
 
-                if matched:
-                    latex = question_to_latex(matched)
-                    print(
-                        f"  [reconstruct] {problem.label}: got {len(latex)} chars of LaTeX"
+                if not matched:
+                    print(f"  [reconstruct] {problem.label}: no matching question in batch")
+                    fallback_pdf = await asyncio.to_thread(
+                        compiler.compile_latex,
+                        f"\\textbf{{\\large Problem {current_num}}}\n\n"
+                        f"\\textit{{Extraction failed for this problem.}}",
                     )
-                    out.append((problem.label, latex, image_data, matched.model_dump()))
-                else:
-                    print(
-                        f"  [reconstruct] {problem.label}: no matching question in batch"
+                    out.append((problem.label, fallback_pdf, None))
+                    continue
+
+                latex = question_to_latex(matched)
+                question_dict = matched.model_dump()
+                header = f"Problem {current_num}"
+                content = f"\\textbf{{\\large {header}}}\n\n{latex}"
+                print(
+                    f"  [compile] {problem.label}: {len(latex)} chars, "
+                    f"images={list(image_data.keys()) or 'none'}"
+                )
+
+                # Compile
+                try:
+                    pdf_result = await asyncio.to_thread(
+                        compiler.compile_latex, content, image_data=image_data or None
                     )
-                    out.append((problem.label, "% Extraction failed", {}, None))
+                except Exception as e:
+                    print(f"  [compile] {problem.label}: FAILED — {e}")
+                    # Try LLM fix for compilation error
+                    try:
+                        fix_prompt = LATEX_FIX_PROMPT.format(
+                            latex_body=latex, error_message=str(e)[:2000]
+                        )
+                        fixed_latex = await asyncio.to_thread(
+                            llm_client.generate, prompt=fix_prompt
+                        )
+                        fixed_content = f"\\textbf{{\\large {header}}}\n\n{fixed_latex}"
+                        pdf_result = await asyncio.to_thread(
+                            compiler.compile_latex,
+                            fixed_content,
+                            image_data=image_data or None,
+                        )
+                        latex = fixed_latex
+                        print(f"  [compile] {problem.label}: FIXED by LLM")
+                    except Exception as e2:
+                        print(f"  [compile] {problem.label}: FIX FAILED — {e2}")
+                        fallback = (
+                            f"\\textbf{{\\large {header}}}\n\n"
+                            f"\\textit{{LaTeX compilation failed for this problem.}}"
+                        )
+                        pdf_result = await asyncio.to_thread(
+                            compiler.compile_latex, fallback
+                        )
+                        out.append((problem.label, pdf_result, None))
+                        continue
+
+                # Verify against original
+                crop_bytes = original_crops.get(problem.label, b"")
+                latex, pdf_result = await _verify_and_fix(
+                    problem.label, latex, pdf_result, crop_bytes, image_data
+                )
+
+                out.append((problem.label, pdf_result, question_dict))
 
             return out
 
@@ -417,17 +633,24 @@ async def ai_reconstruct(
             key = tuple(sorted(p.annotation_indices))
             crop_groups[key].append(p)
 
-        group_tasks = [reconstruct_group(probs) for probs in crop_groups.values()]
+        # Assign problem numbers and launch all groups in parallel
+        group_tasks = []
+        problem_counter = 1
+        for probs in crop_groups.values():
+            group_tasks.append(extract_compile_verify(problem_counter, probs))
+            problem_counter += len(probs)
+
         group_results_nested = await asyncio.gather(*group_tasks)
 
+        # Flatten and order by original problem order
         results_by_label: dict[str, tuple] = {}
         for group_list in group_results_nested:
             for r in group_list:
                 results_by_label[r[0]] = r
-        results = [results_by_label[p.label] for p in group_result.problems]
+        compiled = [results_by_label[p.label] for p in group_result.problems]
 
         # Save structured questions
-        questions_data = [q for _, _, _, q in results if q is not None]
+        questions_data = [q for _, _, q in compiled if q is not None]
         if debug and questions_data:
             structured_dir = data_dir / "structured"
             structured_dir.mkdir(parents=True, exist_ok=True)
@@ -435,63 +658,7 @@ async def ai_reconstruct(
                 json.dumps(questions_data, indent=2)
             )
 
-        # --- Stage 5: Compile LaTeX to PDF ---
-        compiler = LaTeXCompiler()
-
-        async def compile_problem(
-            problem_num: int,
-            label: str,
-            latex: str,
-            image_data: dict[str, str],
-            question_dict: dict | None,
-        ) -> tuple[str, bytes | None, dict | None]:
-            header = f"Problem {problem_num}"
-            content = f"\\textbf{{\\large {header}}}\n\n{latex}"
-            print(
-                f"  [compile] {label}: {len(latex)} chars, "
-                f"images={list(image_data.keys()) or 'none'}"
-            )
-            try:
-                pdf_bytes = await asyncio.to_thread(
-                    compiler.compile_latex, content, image_data=image_data or None
-                )
-                return (label, pdf_bytes, question_dict)
-            except Exception as e:
-                print(f"  [compile] {label}: FAILED — {e}")
-                # Try LLM fix
-                try:
-                    fix_prompt = LATEX_FIX_PROMPT.format(
-                        latex_body=latex, error_message=str(e)[:2000]
-                    )
-                    fixed_latex = await asyncio.to_thread(
-                        llm_client.generate, prompt=fix_prompt
-                    )
-                    fixed_content = f"\\textbf{{\\large {header}}}\n\n{fixed_latex}"
-                    pdf_bytes = await asyncio.to_thread(
-                        compiler.compile_latex,
-                        fixed_content,
-                        image_data=image_data or None,
-                    )
-                    print(f"  [compile] {label}: FIXED by LLM")
-                    return (label, pdf_bytes, question_dict)
-                except Exception as e2:
-                    print(f"  [compile] {label}: FIX FAILED — {e2}")
-                    fallback = (
-                        f"\\textbf{{\\large {header}}}\n\n"
-                        f"\\textit{{LaTeX compilation failed for this problem.}}"
-                    )
-                    pdf_bytes = await asyncio.to_thread(
-                        compiler.compile_latex, fallback
-                    )
-                    return (label, pdf_bytes, None)
-
-        compile_tasks = [
-            compile_problem(i + 1, label, latex, img_data, q_dict)
-            for i, (p, (label, latex, img_data, q_dict)) in enumerate(
-                zip(group_result.problems, results)
-            )
-        ]
-        compiled = await asyncio.gather(*compile_tasks)
+        # --- Stage 4: Output ---
 
         if split:
             problem_pdfs = []
