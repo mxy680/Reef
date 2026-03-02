@@ -90,22 +90,30 @@ LATEX_FIX_PROMPT = """You are a LaTeX expert. The following LaTeX body content f
 """
 
 VISUAL_VERIFY_PROMPT = """\
-You are a LaTeX quality assurance expert. You are given two images:
+You are a LaTeX quality assurance expert reviewing a reconstructed homework/exam problem. You are given two images:
 
-1. **ORIGINAL** (first image): A crop from the original scanned document showing a homework/exam problem.
+1. **ORIGINAL** (first image): A crop from the original scanned document.
 2. **RECONSTRUCTION** (second image): The same problem after being extracted and re-typeset in LaTeX.
 
-Compare the reconstruction against the original and identify any meaningful discrepancies.
+Your job: make sure the reconstruction looks like something a teacher would be proud to hand out. Compare against the original AND check for formatting artifacts that would look unprofessional.
 
-## Check for these issues:
+## Check for content errors (comparing against original):
 - **Missing content**: Text, equations, sub-parts, or instructions present in the original but absent in the reconstruction.
 - **Wrong math**: Incorrect symbols, operators, subscripts, superscripts, fractions, or expressions.
-- **Broken layout**: Tables that lost structure, lists that became prose, or parts that merged/split incorrectly.
-- **Missing figures**: Figures or diagrams referenced in the original but not included in the reconstruction.
-- **Incorrect numbering**: Wrong problem numbers, part labels, or sub-part labels.
+- **Missing figures**: Figures or diagrams referenced in the original but not included.
 - **Garbled text**: OCR artifacts, wrong words, or nonsensical content.
 
-Minor typographic differences (font size, spacing, line breaks) are acceptable and should NOT be flagged.
+## Check for formatting artifacts (look at the reconstruction image):
+- **Duplicate labels**: e.g. "a) a)" or "(b) (b)" — a part label appearing twice in a row.
+- **Orphaned labels**: A bare label like "(a)" sitting alone on a line with no content after it.
+- **Broken enumeration**: Labels out of order (a, c, b), skipped labels (a, c), or inconsistent style (mixing "a)" and "(a)").
+- **Raw LaTeX leaking**: Visible backslash commands, unrendered $...$ delimiters, or literal LaTeX syntax showing as text.
+- **Excessive whitespace**: Huge gaps between parts, unnecessary page breaks, or blank space where content should be.
+- **Misaligned tables**: Columns not lining up, missing cell borders that should be there, or headers merged with data.
+- **Nested indentation errors**: Sub-parts at the wrong indentation level, or content that should be nested appearing at the top level.
+- **Incorrect problem header**: The header should match the original document's numbering (e.g. "Problem 1.3-9" not "Problem 1").
+
+Minor typographic differences (font size, exact spacing, line breaks) are acceptable and should NOT be flagged.
 
 ## Current LaTeX body content:
 ```
@@ -113,8 +121,8 @@ Minor typographic differences (font size, spacing, line breaks) are acceptable a
 ```
 
 ## Instructions:
-- If the reconstruction is faithful to the original, set `needs_fix` to false and leave `fixed_latex` empty.
-- If there are meaningful discrepancies, set `needs_fix` to true, list the issues, and provide the corrected LaTeX in `fixed_latex`.
+- If the reconstruction is faithful and looks clean, set `needs_fix` to false and leave `fixed_latex` empty.
+- If there are issues, set `needs_fix` to true, list the issues, and provide corrected LaTeX in `fixed_latex`.
 - The `fixed_latex` must be ONLY the LaTeX body content — no \\documentclass, no \\usepackage, no \\begin{{document}}.
 - Preserve all existing formatting that is correct — only fix what is actually wrong.
 - Available packages: amsmath, amssymb, amsfonts, graphicx, booktabs, array, xcolor, needspace, algorithm, algorithmic, listings, caption, changepage.
