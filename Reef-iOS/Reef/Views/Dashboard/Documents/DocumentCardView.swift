@@ -56,7 +56,7 @@ struct DocumentCardView: View {
             }
             .padding(.horizontal, 10)
             .padding(.top, 8)
-            .padding(.bottom, 10)
+            .padding(.bottom, 14)
             .layoutPriority(1)
         }
         .frame(height: cardHeight)
