@@ -88,6 +88,8 @@ struct TutorSpotlightView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 220)
         .padding(20)
         .background(ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))

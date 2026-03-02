@@ -53,12 +53,25 @@ struct DashboardHeader: View {
                 .padding(.vertical, 6)
                 .background(ReefColors.surface)
                 .clipShape(Capsule())
+                .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
+                .background(
+                    Capsule()
+                        .fill(ReefColors.black)
+                        .offset(x: 2, y: 2)
+                )
 
                 // Profile circle
                 ZStack {
                     Circle()
                         .fill(ReefColors.accent)
                         .frame(width: 32, height: 32)
+                        .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
+                        .background(
+                            Circle()
+                                .fill(ReefColors.black)
+                                .frame(width: 32, height: 32)
+                                .offset(x: 2, y: 2)
+                        )
                     Text(userInitials)
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
