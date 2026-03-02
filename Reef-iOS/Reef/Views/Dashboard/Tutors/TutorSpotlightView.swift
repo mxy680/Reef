@@ -102,5 +102,7 @@ struct TutorSpotlightView: View {
                 .fill(tintColor)
                 .offset(x: 4, y: 4)
         )
+        .padding(.trailing, 6)
+        .padding(.bottom, 6)
     }
 }
