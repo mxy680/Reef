@@ -29,8 +29,14 @@ struct DocumentCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Thumbnail
             DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
-                .padding(.horizontal, 14)
-                .padding(.top, 14)
+                .padding(.horizontal, 10)
+                .padding(.top, 10)
+
+            // Divider
+            Rectangle()
+                .fill(ReefColors.gray200)
+                .frame(height: 1)
+                .padding(.top, 10)
 
             // Info
             VStack(alignment: .leading, spacing: 4) {
@@ -46,9 +52,9 @@ struct DocumentCardView: View {
                     .tracking(-0.04 * 11)
                     .foregroundStyle(statusColor)
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 12)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 10)
+            .padding(.top, 8)
+            .padding(.bottom, 10)
         }
         .background(ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 14))

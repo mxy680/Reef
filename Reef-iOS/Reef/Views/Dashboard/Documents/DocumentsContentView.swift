@@ -376,12 +376,12 @@ struct DocumentsContentView: View {
                     // Invisible spacer matching thumbnail aspect ratio
                     Color.clear
                         .aspectRatio(8.5 / 11, contentMode: .fit)
-                        .padding(.horizontal, 14)
-                        .padding(.top, 14)
+                        .padding(.horizontal, 10)
+                        .padding(.top, 10)
 
-                    // Spacer matching info section
+                    // Spacer matching divider + info section
                     Color.clear
-                        .frame(height: 12 + 13 + 4 + 11 + 14) // padding + title + gap + status + padding
+                        .frame(height: 10 + 1 + 8 + 13 + 4 + 11 + 10) // divider-top + divider + padding + title + gap + status + padding
                 }
                 .overlay {
                     VStack(spacing: 8) {
