@@ -71,6 +71,7 @@
 		56EF689994FC441699D09C78 /* EditCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79993F29F0CC9CD296303BEA /* EditCourseSheet.swift */; };
 		DD01EE23F4D9C8A1B3E41001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE01FF34A5EAD9B2C4F52001 /* SettingsView.swift */; };
 		CB01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift */; };
+		CB07AA77BB88CC99DDAAEE07 /* ReefAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA07AA77BB88CC99DDAAEE07 /* ReefAPI.swift */; };
 		CB02AA22BB33CC44DD55EE02 /* CanvasPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA02AA22BB33CC44DD55EE02 /* CanvasPageView.swift */; };
 		CB03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */; };
 		CB04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift */; };
@@ -144,6 +145,7 @@
 		C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		EE01FF34A5EAD9B2C4F52001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CA01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingStorageService.swift; sourceTree = "<group>"; };
+		CA07AA77BB88CC99DDAAEE07 /* ReefAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefAPI.swift; sourceTree = "<group>"; };
 		CA02AA22BB33CC44DD55EE02 /* CanvasPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPageView.swift; sourceTree = "<group>"; };
 		CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewModel.swift; sourceTree = "<group>"; };
 		CA04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbar.swift; sourceTree = "<group>"; };
@@ -381,6 +383,7 @@
 				F43FAAE207679D7497541A99 /* CourseService.swift */,
 				2A3B4C5D6E7F08292A3B4C5D /* DocumentService.swift */,
 				CA01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift */,
+				CA07AA77BB88CC99DDAAEE07 /* ReefAPI.swift */,
 				3A4B5C6D7E8F093A3A4B5C6D /* TierLimits.swift */,
 				BB02AA22CC33DD44EE55FF02 /* TutorService.swift */,
 			);
@@ -556,6 +559,7 @@
 				B3A4C5D6E7F8093A03040506 /* AnalyticsView.swift in Sources */,
 				DD01EE23F4D9C8A1B3E41001 /* SettingsView.swift in Sources */,
 				CB01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift in Sources */,
+				CB07AA77BB88CC99DDAAEE07 /* ReefAPI.swift in Sources */,
 				CB02AA22BB33CC44DD55EE02 /* CanvasPageView.swift in Sources */,
 				CB03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift in Sources */,
 				CB04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift in Sources */,
