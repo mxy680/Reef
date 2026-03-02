@@ -64,6 +64,9 @@ struct AnalyticsView: View {
             }
             .padding(4)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(32)
+        .dashboardCard()
         .onAppear { appeared = true }
     }
 
