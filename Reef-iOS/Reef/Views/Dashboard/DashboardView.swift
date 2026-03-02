@@ -232,8 +232,6 @@ struct DashboardView: View {
                 AnalyticsView()
             case .settings:
                 SettingsView()
-            default:
-                comingSoonPlaceholder
             }
         } else if let courseId = selectedCourseId,
                   let course = courses.first(where: { $0.id == courseId }) {

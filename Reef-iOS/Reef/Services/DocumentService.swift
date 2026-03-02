@@ -98,14 +98,14 @@ actor DocumentService {
                 .upload(storagePath, data: fileData, options: .init(contentType: "application/pdf"))
         } catch {
             // Clean up DB row on storage failure
-            try? await supabase.from("documents").delete().eq("id", value: newDoc.id).execute()
+            _ = try? await supabase.from("documents").delete().eq("id", value: newDoc.id).execute()
             throw error
         }
 
         // Generate and upload thumbnail
         if let thumbnailData = generateThumbnail(from: fileURL) {
             let thumbPath = "\(userId)/\(newDoc.id)/thumbnail.png"
-            try? await supabase.storage
+            _ = try? await supabase.storage
                 .from("documents")
                 .upload(thumbPath, data: thumbnailData, options: .init(contentType: "image/png"))
         }
@@ -191,7 +191,7 @@ actor DocumentService {
         let prefix = "\(userId)/\(docId)"
         let files = try await supabase.storage.from("documents").list(path: prefix)
         for file in files {
-            try? await supabase.storage
+            _ = try? await supabase.storage
                 .from("documents")
                 .copy(from: "\(prefix)/\(file.name)", to: "\(userId)/\(newDoc.id)/\(file.name)")
         }
