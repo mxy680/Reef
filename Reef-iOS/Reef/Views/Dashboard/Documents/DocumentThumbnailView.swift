@@ -22,7 +22,8 @@ struct DocumentThumbnailView: View {
                     case .success(let image):
                         image
                             .resizable()
-                            .scaledToFill()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .transition(.opacity)
                     default:
                         ruledLines

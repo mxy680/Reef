@@ -86,7 +86,7 @@ final class DocumentsViewModel {
         }
     }
 
-    func uploadWithCourse(courseId: String) async {
+    func uploadWithCourse(courseId: String? = nil) async {
         guard let url = pendingUploadURL else { return }
         pendingUploadURL = nil
 
