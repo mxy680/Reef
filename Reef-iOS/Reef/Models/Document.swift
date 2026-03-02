@@ -14,6 +14,7 @@ struct Document: Identifiable, Codable, Hashable {
     let pageCount: Int?
     let problemCount: Int?
     let errorMessage: String?
+    let statusMessage: String?
     let courseId: String?
     let createdAt: String
 
@@ -25,6 +26,7 @@ struct Document: Identifiable, Codable, Hashable {
         case pageCount = "page_count"
         case problemCount = "problem_count"
         case errorMessage = "error_message"
+        case statusMessage = "status_message"
         case courseId = "course_id"
         case createdAt = "created_at"
     }
@@ -36,7 +38,7 @@ struct Document: Identifiable, Codable, Hashable {
     var statusLabel: String {
         switch status {
         case .processing:
-            return "Processing..."
+            return statusMessage ?? "Processing..."
         case .failed:
             return "Failed"
         case .completed:

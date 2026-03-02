@@ -312,16 +312,6 @@ actor DocumentService {
     }
 
     private func triggerProcessing(documentId: String) async throws {
-        // Fake processing — skip server call, just mark as completed after a delay
-        try await Task.sleep(for: .seconds(2))
-
-        struct UpdatePayload: Encodable {
-            let status: String
-        }
-        try await supabase
-            .from("documents")
-            .update(UpdatePayload(status: "completed"))
-            .eq("id", value: documentId)
-            .execute()
+        try await ReefAPI.shared.triggerReconstruction(documentId: documentId)
     }
 }

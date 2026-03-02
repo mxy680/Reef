@@ -54,6 +54,14 @@ actor ReefAPI {
         return try JSONDecoder().decode(T.self, from: data)
     }
 
+    // MARK: - Document Reconstruction
+
+    func triggerReconstruction(documentId: String) async throws {
+        struct Body: Encodable { let document_id: String }
+        struct Response: Decodable { let status: String; let document_id: String }
+        let _: Response = try await request("POST", path: "/ai/reconstruct-document", body: Body(document_id: documentId))
+    }
+
     // MARK: - WebSocket
 
     func connectWebSocket() async throws {
