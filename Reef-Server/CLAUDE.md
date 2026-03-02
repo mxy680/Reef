@@ -10,7 +10,7 @@
 ## Stack
 
 - Python 3.12, FastAPI, uvicorn, gunicorn
-- PyJWT for Supabase HS256 token verification
+- PyJWT + JWKS (RS256) for Supabase token verification — keys fetched from `SUPABASE_URL/auth/v1/.well-known/jwks.json`
 - Docker + Caddy for Hetzner deployment at api.studyreef.com
 
 ## Testing

@@ -8,10 +8,9 @@ class Settings(BaseSettings):
     debug: bool = False
     environment: str = "production"
 
-    # Supabase (for JWT verification)
+    # Supabase (for JWT verification via JWKS)
     supabase_url: str = ""
     supabase_anon_key: str = ""
-    supabase_jwt_secret: str = ""
 
     # External services (for later)
     openrouter_api_key: str = ""

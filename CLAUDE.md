@@ -20,7 +20,7 @@ Reef/
 ## Server (Reef-Server)
 
 - **Python 3.12 + FastAPI** with uvicorn/gunicorn
-- Auth: Verifies Supabase JWTs (HS256) via `SUPABASE_JWT_SECRET`
+- Auth: Verifies Supabase JWTs (RS256) via JWKS endpoint — no secret needed
 - WebSocket: Single connection per user, token passed as query param `?token=`
 - Deploy: Docker Compose + Caddy reverse proxy on Hetzner (`api.studyreef.com`)
 - Do NOT run `docker compose up` or `uvicorn` without explicit user permission.
