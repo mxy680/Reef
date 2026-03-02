@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/server"
 
 const REEF_SERVER_URL = process.env.REEF_SERVER_URL || "http://localhost:8000"
+const REEF_SERVER_TOKEN = process.env.REEF_SERVER_TOKEN || "dev"
 
 export async function POST(request: Request) {
   let documentId: string | undefined
@@ -38,7 +39,11 @@ export async function POST(request: Request) {
 
     const response = await fetch(
       `${REEF_SERVER_URL}/ai/reconstruct`,
-      { method: "POST", body: formData },
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${REEF_SERVER_TOKEN}` },
+        body: formData,
+      },
     )
 
     if (!response.ok) {
