@@ -2,7 +2,7 @@
 //  DocumentCanvasView.swift
 //  Reef
 //
-//  Full-screen canvas for viewing and annotating documents
+//  Full-screen PDF viewer with page navigation
 //
 
 import SwiftUI
@@ -26,47 +26,12 @@ struct DocumentCanvasView: View {
                 VStack(spacing: 0) {
                     CanvasToolbar(
                         documentName: document.displayName,
-                        currentTool: viewModel.currentTool,
-                        currentColor: viewModel.currentColor,
-                        fingerDrawing: viewModel.fingerDrawing,
-                        canUndo: viewModel.canUndo,
-                        canRedo: viewModel.canRedo,
-                        onClose: {
-                            viewModel.saveCurrentDrawings()
-                            onDismiss()
-                        },
-                        onUndo: { viewModel.undo() },
-                        onRedo: { viewModel.redo() },
-                        onSelectTool: { tool in
-                            viewModel.currentTool = tool
-                            switch tool {
-                            case .pen: viewModel.currentLineWidth = 3.0
-                            case .highlighter: viewModel.currentLineWidth = 15.0
-                            case .eraser: viewModel.currentLineWidth = 30.0
-                            }
-                        },
-                        onSelectColor: { color in
-                            viewModel.currentColor = color
-                        },
-                        onToggleFingerDrawing: {
-                            viewModel.fingerDrawing.toggle()
-                        }
+                        onClose: { onDismiss() }
                     )
 
-                    // Canvas area
                     if let page = viewModel.currentPage {
-                        CanvasPageView(
-                            pdfPage: page,
-                            fingerDrawing: viewModel.fingerDrawing,
-                            tool: viewModel.currentTool,
-                            strokeColor: viewModel.currentColor,
-                            lineWidth: viewModel.currentLineWidth,
-                            strokes: viewModel.currentDrawing.strokes,
-                            onDrawingAction: { action in
-                                viewModel.handleDrawingAction(action)
-                            }
-                        )
-                        .id(viewModel.currentPageIndex)
+                        CanvasPageView(pdfPage: page)
+                            .id(viewModel.currentPageIndex)
                     }
 
                     if viewModel.pageCount > 1 {
@@ -81,7 +46,6 @@ struct DocumentCanvasView: View {
             }
         }
         .task { await viewModel.loadDocument(document) }
-        .onDisappear { viewModel.saveCurrentDrawings() }
     }
 
     // MARK: - Loading
