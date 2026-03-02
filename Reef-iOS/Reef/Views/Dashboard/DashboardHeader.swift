@@ -2,7 +2,18 @@ import SwiftUI
 
 struct DashboardHeader: View {
     let title: String
+    @Binding var selectedTab: DashboardTab?
+    @Binding var selectedCourseId: String?
     @Environment(AuthManager.self) private var authManager
+    @State private var showProfileMenu = false
+
+    private let gradeLabels: [String: String] = [
+        "middle_school": "Middle School",
+        "high_school": "High School",
+        "college": "College",
+        "graduate": "Graduate",
+        "other": "Other",
+    ]
 
     var body: some View {
         HStack {
@@ -76,12 +87,183 @@ struct DashboardHeader: View {
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
                 }
+                .onTapGesture {
+                    withAnimation(.spring(duration: 0.2)) {
+                        showProfileMenu.toggle()
+                    }
+                }
             }
         }
         .frame(height: 64)
         .padding(.horizontal, 24)
         .dashboardCard()
+        .overlay(alignment: .topTrailing) {
+            if showProfileMenu {
+                // Dismiss backdrop
+                Color.clear
+                    .contentShape(Rectangle())
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            showProfileMenu = false
+                        }
+                    }
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if showProfileMenu {
+                profileDropdownMenu
+                    .offset(y: 68)
+                    .padding(.trailing, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
+            }
+        }
+        .zIndex(showProfileMenu ? 10 : 0)
     }
+
+    // MARK: - Dropdown Menu
+
+    private var profileDropdownMenu: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // User info
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(ReefColors.accent)
+                        .frame(width: 32, height: 32)
+                    Text(userInitials)
+                        .font(.epilogue(11, weight: .bold))
+                        .foregroundStyle(ReefColors.black)
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(displayName)
+                        .font(.epilogue(14, weight: .bold))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(ReefColors.black)
+                        .lineLimit(1)
+
+                    Text(userEmail)
+                        .font(.epilogue(11, weight: .medium))
+                        .tracking(-0.02 * 11)
+                        .foregroundStyle(ReefColors.gray600)
+                        .lineLimit(1)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            // Grade + Tier pill
+            HStack(spacing: 8) {
+                if !userGrade.isEmpty {
+                    Text(userGrade)
+                        .font(.epilogue(12, weight: .semiBold))
+                        .tracking(-0.02 * 12)
+                        .foregroundStyle(ReefColors.gray600)
+                }
+
+                Text(tierLabel)
+                    .font(.epilogue(11, weight: .bold))
+                    .tracking(-0.02 * 11)
+                    .foregroundStyle(ReefColors.accent)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(ReefColors.accent.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 8)
+
+            // Streak
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(ReefColors.gray600)
+                Text("0 day streak")
+                    .font(.epilogue(12, weight: .semiBold))
+                    .tracking(-0.02 * 12)
+                    .foregroundStyle(ReefColors.gray600)
+            }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 6)
+
+            // Divider
+            Rectangle()
+                .fill(ReefColors.gray100)
+                .frame(height: 1)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 2)
+
+            // Edit Profile
+            profileMenuItem(icon: "person.crop.circle", label: "Edit Profile") {
+                showProfileMenu = false
+                selectedTab = .settings
+                selectedCourseId = nil
+            }
+
+            // Preferences
+            profileMenuItem(icon: "slider.horizontal.3", label: "Preferences") {
+                showProfileMenu = false
+                selectedTab = .settings
+                selectedCourseId = nil
+            }
+
+            // Help & Support
+            profileMenuItem(icon: "questionmark.circle", label: "Help & Support") {
+                showProfileMenu = false
+            }
+
+            // Divider
+            Rectangle()
+                .fill(ReefColors.gray100)
+                .frame(height: 1)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 2)
+
+            // Log Out
+            profileMenuItem(icon: "rectangle.portrait.and.arrow.right", label: "Log Out", isDestructive: true) {
+                showProfileMenu = false
+                authManager.signOut()
+            }
+        }
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(ReefColors.gray500, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(ReefColors.gray500)
+                .offset(x: 3, y: 3)
+        )
+        .fixedSize(horizontal: true, vertical: true)
+        .frame(minWidth: 220, alignment: .trailing)
+    }
+
+    private func profileMenuItem(icon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : ReefColors.gray600)
+                    .frame(width: 18)
+
+                Text(label)
+                    .font(.epilogue(13, weight: .semiBold))
+                    .tracking(-0.04 * 13)
+                    .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : ReefColors.black)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
 
     private func headerIcon(_ icon: String) -> some View {
         Image(systemName: icon)
@@ -94,9 +276,35 @@ struct DashboardHeader: View {
             .accessibilityAddTraits(.isButton)
     }
 
+    private var displayName: String {
+        if let meta = authManager.session?.user.userMetadata["display_name"],
+           case .string(let name) = meta {
+            return name
+        }
+        return authManager.session?.user.email?.components(separatedBy: "@").first ?? "User"
+    }
+
+    private var userEmail: String {
+        authManager.session?.user.email ?? ""
+    }
+
+    private var userGrade: String {
+        if let profile = authManager.profile,
+           let grade = profile.grade {
+            return gradeLabels[grade] ?? grade
+        }
+        return ""
+    }
+
+    private var tierLabel: String {
+        "Shore · Free"
+    }
+
     private var userInitials: String {
-        let email = authManager.session?.user.email ?? "U"
-        let name = email.components(separatedBy: "@").first ?? "U"
-        return String(name.prefix(2)).uppercased()
+        let parts = displayName.split(separator: " ")
+        if parts.count >= 2 {
+            return "\(parts[0].prefix(1))\(parts[1].prefix(1))".uppercased()
+        }
+        return String(displayName.prefix(2)).uppercased()
     }
 }
