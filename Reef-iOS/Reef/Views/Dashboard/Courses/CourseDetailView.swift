@@ -127,7 +127,7 @@ struct CourseDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(32)
+        .padding(24)
         .dashboardCard()
         .task { await viewModel.fetchData() }
         .id(courseId)
@@ -224,7 +224,7 @@ struct CourseDetailView: View {
 
     private var documentGrid: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 20) {
+            LazyVGrid(columns: columns, spacing: 16) {
                 ForEach(Array(viewModel.documents.enumerated()), id: \.element.id) { index, doc in
                     DocumentCardView(
                         document: doc,

@@ -36,7 +36,7 @@ struct DocumentThumbnailView: View {
                 ShimmerOverlay()
             }
         }
-        .aspectRatio(8.5 / 11, contentMode: .fit)
+        .aspectRatio(8.5 / 10, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 

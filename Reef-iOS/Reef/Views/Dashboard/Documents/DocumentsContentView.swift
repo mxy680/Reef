@@ -246,7 +246,7 @@ struct DocumentsContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(32)
+        .padding(24)
         .dashboardCard()
         .fileImporter(
             isPresented: $viewModel.showFilePicker,
@@ -369,13 +369,13 @@ struct DocumentsContentView: View {
 
     private var documentGrid: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 20) {
+            LazyVGrid(columns: columns, spacing: 16) {
 
                 // Upload placeholder card — matches document card height
                 VStack(spacing: 0) {
                     // Invisible spacer matching thumbnail aspect ratio
                     Color.clear
-                        .aspectRatio(8.5 / 11, contentMode: .fit)
+                        .aspectRatio(8.5 / 10, contentMode: .fit)
                         .padding(.horizontal, 10)
                         .padding(.top, 10)
 
