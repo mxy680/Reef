@@ -1,17 +1,16 @@
 import Foundation
 import PencilKit
 
-actor DrawingStorageService {
-    static let shared = DrawingStorageService()
-
-    private var baseURL: URL {
+@MainActor
+enum DrawingStorageService {
+    private static var baseURL: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("drawings")
     }
 
     // MARK: - Save
 
-    func saveDrawings(_ drawings: [Int: PKDrawing], for documentId: String) {
+    static func saveDrawings(_ drawings: [Int: PKDrawing], for documentId: String) {
         let docDir = baseURL.appendingPathComponent(documentId)
         try? FileManager.default.createDirectory(at: docDir, withIntermediateDirectories: true)
 
@@ -23,7 +22,7 @@ actor DrawingStorageService {
 
     // MARK: - Load
 
-    func loadDrawings(for documentId: String, pageCount: Int) -> [Int: PKDrawing] {
+    static func loadDrawings(for documentId: String, pageCount: Int) -> [Int: PKDrawing] {
         var result: [Int: PKDrawing] = [:]
         let docDir = baseURL.appendingPathComponent(documentId)
 
@@ -39,7 +38,9 @@ actor DrawingStorageService {
 
     // MARK: - Delete
 
-    func deleteDrawings(for documentId: String) {
+    nonisolated static func deleteDrawings(for documentId: String) {
+        let baseURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("drawings")
         let docDir = baseURL.appendingPathComponent(documentId)
         try? FileManager.default.removeItem(at: docDir)
     }

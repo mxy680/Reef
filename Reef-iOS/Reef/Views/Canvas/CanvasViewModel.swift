@@ -51,7 +51,7 @@ final class CanvasViewModel {
             pageCount = pdf.pageCount
 
             // Load saved drawings
-            drawings = await DrawingStorageService.shared.loadDrawings(
+            drawings = DrawingStorageService.loadDrawings(
                 for: documentId,
                 pageCount: pageCount
             )
@@ -82,8 +82,6 @@ final class CanvasViewModel {
 
     func saveCurrentDrawings() {
         guard !documentId.isEmpty else { return }
-        Task.detached { [drawings = self.drawings, documentId = self.documentId] in
-            await DrawingStorageService.shared.saveDrawings(drawings, for: documentId)
-        }
+        DrawingStorageService.saveDrawings(drawings, for: documentId)
     }
 }

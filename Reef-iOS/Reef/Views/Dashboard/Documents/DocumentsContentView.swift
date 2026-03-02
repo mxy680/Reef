@@ -114,7 +114,7 @@ final class DocumentsViewModel {
         guard let doc = deleteTarget else { return }
         do {
             try await DocumentService.shared.deleteDocument(doc.id)
-            await DrawingStorageService.shared.deleteDrawings(for: doc.id)
+            DrawingStorageService.deleteDrawings(for: doc.id)
             showToast("Document deleted")
             deleteTarget = nil
             await fetchDocuments()

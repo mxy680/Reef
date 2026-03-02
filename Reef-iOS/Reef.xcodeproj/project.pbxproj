@@ -70,6 +70,12 @@
 		5691B05BD55FEC1EDC2F4FD1 /* DeleteCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A36A869A1C3A1BB1C02A99 /* DeleteCourseSheet.swift */; };
 		56EF689994FC441699D09C78 /* EditCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79993F29F0CC9CD296303BEA /* EditCourseSheet.swift */; };
 		DD01EE23F4D9C8A1B3E41001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE01FF34A5EAD9B2C4F52001 /* SettingsView.swift */; };
+		CB01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift */; };
+		CB02AA22BB33CC44DD55EE02 /* CanvasPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA02AA22BB33CC44DD55EE02 /* CanvasPageView.swift */; };
+		CB03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */; };
+		CB04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift */; };
+		CB05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift */; };
+		CB06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -137,6 +143,12 @@
 		C2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryComingSoonView.swift; sourceTree = "<group>"; };
 		C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		EE01FF34A5EAD9B2C4F52001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CA01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingStorageService.swift; sourceTree = "<group>"; };
+		CA02AA22BB33CC44DD55EE02 /* CanvasPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPageView.swift; sourceTree = "<group>"; };
+		CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewModel.swift; sourceTree = "<group>"; };
+		CA04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbar.swift; sourceTree = "<group>"; };
+		CA05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageNavigationBar.swift; sourceTree = "<group>"; };
+		CA06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCanvasView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -224,6 +236,7 @@
 			children = (
 				E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */,
 				D38D8310566A59D632087B38 /* Auth */,
+				CA00AA00BB00CC00DD00EE00 /* Canvas */,
 				AA80BF08C3D7A1E2F4B5C618 /* Onboarding */,
 				F5990CE8BB917741B731D23A /* Dashboard */,
 			);
@@ -367,10 +380,23 @@
 			children = (
 				F43FAAE207679D7497541A99 /* CourseService.swift */,
 				2A3B4C5D6E7F08292A3B4C5D /* DocumentService.swift */,
+				CA01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift */,
 				3A4B5C6D7E8F093A3A4B5C6D /* TierLimits.swift */,
 				BB02AA22CC33DD44EE55FF02 /* TutorService.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		CA00AA00BB00CC00DD00EE00 /* Canvas */ = {
+			isa = PBXGroup;
+			children = (
+				CA02AA22BB33CC44DD55EE02 /* CanvasPageView.swift */,
+				CA04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift */,
+				CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */,
+				CA06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift */,
+				CA05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift */,
+			);
+			path = Canvas;
 			sourceTree = "<group>";
 		};
 		5872AB56932E5D8CEE7D9087 /* Courses */ = {
@@ -529,6 +555,12 @@
 				B2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift in Sources */,
 				B3A4C5D6E7F8093A03040506 /* AnalyticsView.swift in Sources */,
 				DD01EE23F4D9C8A1B3E41001 /* SettingsView.swift in Sources */,
+				CB01AA11BB22CC33DD44EE01 /* DrawingStorageService.swift in Sources */,
+				CB02AA22BB33CC44DD55EE02 /* CanvasPageView.swift in Sources */,
+				CB03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift in Sources */,
+				CB04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift in Sources */,
+				CB05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift in Sources */,
+				CB06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
