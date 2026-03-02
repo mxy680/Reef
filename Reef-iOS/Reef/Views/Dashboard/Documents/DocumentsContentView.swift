@@ -237,13 +237,13 @@ struct DocumentsContentView: View {
 
             if viewModel.isLoading {
                 DocumentSkeletonView()
+                Spacer()
             } else if viewModel.documents.isEmpty {
                 DocumentEmptyStateView { viewModel.showFilePicker = true }
+                Spacer()
             } else {
                 documentGrid
             }
-
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(32)

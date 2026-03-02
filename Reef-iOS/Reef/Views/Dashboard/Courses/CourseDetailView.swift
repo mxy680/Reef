@@ -118,13 +118,13 @@ struct CourseDetailView: View {
 
             if viewModel.isLoading {
                 DocumentSkeletonView()
+                Spacer()
             } else if viewModel.documents.isEmpty {
                 emptyState
+                Spacer()
             } else {
                 documentGrid
             }
-
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(32)
