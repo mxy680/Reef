@@ -10,6 +10,7 @@ struct DashboardView: View {
     @State private var courseToEdit: Course?
     @State private var documentsVM = DocumentsViewModel()
     @State private var tutorsVM = TutorsViewModel()
+    @State private var canvasDocument: Document?
 
     var body: some View {
         ZStack {
@@ -186,6 +187,11 @@ struct DashboardView: View {
         .animation(.spring(duration: 0.3), value: tutorsVM.selectedTutor?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.showQuiz)
         .animation(.spring(duration: 0.3), value: documentsVM.pendingUploadURL != nil)
+        .fullScreenCover(item: $canvasDocument) { doc in
+            DocumentCanvasView(document: doc) {
+                canvasDocument = nil
+            }
+        }
         .task { await fetchCourses() }
     }
 
@@ -213,7 +219,9 @@ struct DashboardView: View {
         if let tab = selectedTab {
             switch tab {
             case .documents:
-                DocumentsContentView(viewModel: documentsVM)
+                DocumentsContentView(viewModel: documentsVM, onOpenCanvas: { doc in
+                    canvasDocument = doc
+                })
             case .tutors:
                 TutorsContentView(viewModel: tutorsVM)
             case .myReef:
@@ -232,6 +240,9 @@ struct DashboardView: View {
             CourseDetailView(
                 courseId: courseId,
                 course: course,
+                onOpenCanvas: { doc in
+                    canvasDocument = doc
+                },
                 onCourseDeleted: {
                     selectedTab = .documents
                     selectedCourseId = nil

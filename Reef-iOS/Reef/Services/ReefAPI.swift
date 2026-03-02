@@ -3,18 +3,19 @@ import Foundation
 actor ReefAPI {
     static let shared = ReefAPI()
 
-    private let baseURL: URL
+    private let baseURL: URL?
     private var wsTask: URLSessionWebSocketTask?
     private var isConnected = false
 
     private init() {
-        guard
-            let urlString = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
-            let url = URL(string: urlString)
-        else {
-            fatalError("Missing REEF_SERVER_URL in Info.plist — check Secrets.xcconfig")
+        if let urlString = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+           !urlString.isEmpty,
+           let url = URL(string: urlString) {
+            self.baseURL = url
+        } else {
+            print("[ReefAPI] REEF_SERVER_URL not configured — server features disabled")
+            self.baseURL = nil
         }
-        self.baseURL = url
     }
 
     // MARK: - Access Token
@@ -31,6 +32,7 @@ actor ReefAPI {
         path: String,
         body: (any Encodable)? = nil
     ) async throws -> T {
+        guard let baseURL else { throw URLError(.badURL) }
         let url = baseURL.appendingPathComponent(path)
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -55,6 +57,7 @@ actor ReefAPI {
     // MARK: - WebSocket
 
     func connectWebSocket() async throws {
+        guard let baseURL else { return }
         let token = try await getAccessToken()
         var components = URLComponents(
             url: baseURL.appendingPathComponent("ws"),
