@@ -56,7 +56,7 @@ struct DashboardSidebar: View {
                     .foregroundStyle(ReefColors.gray600)
                     .frame(width: 28, height: 28)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NoHighlightButtonStyle())
         }
         .frame(height: 64)
         .padding(.horizontal, isOpen ? 20 : 20)
@@ -140,7 +140,7 @@ struct DashboardSidebar: View {
                         .foregroundStyle(atCourseLimit ? ReefColors.gray200 : ReefColors.gray400)
                         .frame(width: 24, height: 24)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
                 .disabled(isCreating || atCourseLimit)
             }
             .padding(.vertical, 4)
@@ -168,7 +168,7 @@ struct DashboardSidebar: View {
                     .padding(.horizontal, isOpen ? 14 : 0)
                     .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
                 .disabled(isCreating)
             } else {
                 ForEach(courses) { course in
@@ -241,7 +241,7 @@ struct DashboardSidebar: View {
                     : nil
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
     }
 
     // MARK: - Course Item
@@ -292,7 +292,7 @@ struct DashboardSidebar: View {
                     : nil
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
     }
 
     // MARK: - Footer
@@ -343,7 +343,7 @@ struct DashboardSidebar: View {
                         .foregroundStyle(ReefColors.gray400)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NoHighlightButtonStyle())
 
             // User
             Button {
@@ -365,7 +365,7 @@ struct DashboardSidebar: View {
                         .foregroundStyle(ReefColors.gray400)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NoHighlightButtonStyle())
         }
         .padding(.horizontal, isOpen ? 14 : 10)
         .padding(.bottom, 16)

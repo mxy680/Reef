@@ -61,7 +61,7 @@ struct OnboardingOptionButton: View {
                 .animation(.spring(duration: 0.3, bounce: 0.2), value: isPressed)
                 .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in isPressed = true }
@@ -107,7 +107,7 @@ struct SubjectPill: View {
                 .animation(.spring(duration: 0.3, bounce: 0.2), value: isPressed)
                 .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in isPressed = true }

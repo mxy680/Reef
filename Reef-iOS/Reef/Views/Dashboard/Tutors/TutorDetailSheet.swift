@@ -34,7 +34,7 @@ struct TutorDetailPopup: View {
                             .background(ReefColors.gray100)
                             .clipShape(Circle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NoHighlightButtonStyle())
                 }
                 .padding(.bottom, 4)
 

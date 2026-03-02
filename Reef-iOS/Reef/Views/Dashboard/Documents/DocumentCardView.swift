@@ -69,7 +69,7 @@ struct DocumentCardView: View {
             .offset(x: isPressed ? 4 : 0, y: isPressed ? 4 : 0)
             .opacity(document.status == .processing ? 0.85 : 1)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
@@ -127,7 +127,7 @@ struct DocumentCardView: View {
                         .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
     }
 
     // MARK: - Menu Trigger
@@ -149,7 +149,7 @@ struct DocumentCardView: View {
                         .stroke(ReefColors.gray400, lineWidth: 1.5)
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
     }
 
     // MARK: - Dropdown Menu
@@ -199,6 +199,6 @@ struct DocumentCardView: View {
                 .padding(.vertical, 8)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
     }
 }

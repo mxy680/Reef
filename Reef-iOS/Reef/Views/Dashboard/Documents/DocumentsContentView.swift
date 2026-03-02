@@ -352,7 +352,7 @@ struct DocumentsContentView: View {
                     .offset(x: 4, y: 4)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
     }
 
     // MARK: - Grid
@@ -391,7 +391,7 @@ struct DocumentsContentView: View {
                             .foregroundStyle(ReefColors.gray400)
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
                 .fadeUp(index: 0)
 
                 // Document cards

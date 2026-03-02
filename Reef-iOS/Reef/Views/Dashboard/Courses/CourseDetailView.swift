@@ -176,7 +176,7 @@ struct CourseDetailView: View {
                                 .stroke(ReefColors.gray400, lineWidth: 1.5)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
 
                 Button {
                     onDeleteTapped(viewModel.course)
@@ -192,7 +192,7 @@ struct CourseDetailView: View {
                                 .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
             }
         }
     }

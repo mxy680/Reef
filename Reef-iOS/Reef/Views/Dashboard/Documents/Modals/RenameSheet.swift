@@ -45,7 +45,7 @@ struct RenameSheet: View {
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
                 .foregroundStyle(ReefColors.gray600)
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
 
                 Button {
                     submitIfValid()
@@ -68,7 +68,7 @@ struct RenameSheet: View {
                                 .offset(x: 4, y: 4)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 .opacity(name.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
             }

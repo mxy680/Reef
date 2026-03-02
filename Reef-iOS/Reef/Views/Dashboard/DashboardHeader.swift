@@ -77,7 +77,7 @@ struct DashboardHeader: View {
                 .foregroundStyle(ReefColors.gray600)
                 .frame(width: 32, height: 32)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
     }
 
     private var userInitials: String {

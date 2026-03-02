@@ -56,7 +56,7 @@ struct MoveToCourseSheet: View {
                                     .foregroundStyle(ReefColors.gray400)
                             )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(NoHighlightButtonStyle())
                     }
 
                     ForEach(courses) { course in
@@ -95,7 +95,7 @@ struct MoveToCourseSheet: View {
                                     )
                             )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(NoHighlightButtonStyle())
                     }
                 }
                 .padding(.top, 20)
@@ -110,7 +110,7 @@ struct MoveToCourseSheet: View {
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
                 .foregroundStyle(ReefColors.gray600)
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
             }
             .padding(.top, 20)
         }

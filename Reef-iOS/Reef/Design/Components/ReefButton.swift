@@ -100,6 +100,12 @@ struct ReefCompactButtonStyle: ButtonStyle {
     }
 }
 
+struct NoHighlightButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+    }
+}
+
 extension Button {
     func reefStyle(_ variant: ReefButtonVariant = .primary) -> some View {
         self.buttonStyle(ReefButtonStyle(variant: variant))

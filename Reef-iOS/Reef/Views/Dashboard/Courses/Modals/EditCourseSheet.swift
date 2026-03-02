@@ -97,7 +97,7 @@ struct EditCourseSheet: View {
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
                 .foregroundStyle(ReefColors.gray600)
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
 
                 Button {
                     submitIfValid()
@@ -120,7 +120,7 @@ struct EditCourseSheet: View {
                                 .offset(x: 4, y: 4)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
                 .disabled(!canSave)
             }
         }
@@ -166,7 +166,7 @@ struct EditCourseSheet: View {
                                 .offset(x: 3, y: 3)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
             }
         }
     }
@@ -189,7 +189,7 @@ struct EditCourseSheet: View {
                         )
                         .shadow(color: selected ? ReefColors.black.opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
             }
         }
     }

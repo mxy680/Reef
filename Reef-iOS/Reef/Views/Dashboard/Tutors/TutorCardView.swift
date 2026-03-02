@@ -115,7 +115,7 @@ struct TutorCardView: View {
             )
             .offset(x: isPressed ? 4 : 0, y: isPressed ? 4 : 0)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NoHighlightButtonStyle())
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in

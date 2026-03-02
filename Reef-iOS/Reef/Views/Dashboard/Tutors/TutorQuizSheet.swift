@@ -90,7 +90,7 @@ struct TutorQuizPopup: View {
                             .background(ReefColors.gray100)
                             .clipShape(Circle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NoHighlightButtonStyle())
                 }
                 .padding(.bottom, 4)
 
@@ -223,7 +223,7 @@ struct TutorQuizPopup: View {
                         .tracking(-0.04 * 14)
                         .foregroundStyle(ReefColors.gray600)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
             }
         }
     }

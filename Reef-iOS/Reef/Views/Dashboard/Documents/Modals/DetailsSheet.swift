@@ -55,7 +55,7 @@ struct DetailsSheet: View {
                                 .offset(x: 4, y: 4)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
             }
             .padding(.top, 24)
         }

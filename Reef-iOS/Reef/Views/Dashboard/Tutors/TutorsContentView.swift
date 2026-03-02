@@ -217,7 +217,7 @@ struct TutorsContentView: View {
                             .offset(x: 4, y: 4)
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
                 .padding(.top, 4)
                 .padding(.trailing, 4)
                 .padding(.bottom, 4)

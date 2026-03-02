@@ -28,7 +28,7 @@ struct DeleteConfirmSheet: View {
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
                 .foregroundStyle(ReefColors.gray600)
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
 
                 Button {
                     isDeleting = true
@@ -52,7 +52,7 @@ struct DeleteConfirmSheet: View {
                                 .offset(x: 4, y: 4)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NoHighlightButtonStyle())
                 .disabled(isDeleting)
             }
             .padding(.top, 24)
