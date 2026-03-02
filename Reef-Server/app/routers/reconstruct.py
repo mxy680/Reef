@@ -406,6 +406,8 @@ async def ai_reconstruct(
             extraction_images = [page_images[p] for p in sorted(problem_pages)]
             return extraction_images, image_data, figure_filenames, figure_mappings
 
+        MAX_FIX_ATTEMPTS = 3
+
         async def _verify_and_fix(
             label: str,
             latex: str,
@@ -413,7 +415,7 @@ async def ai_reconstruct(
             original_crop_bytes: bytes,
             image_data: dict[str, str],
         ) -> tuple[str, bytes]:
-            """Visually verify compiled PDF against original, fix if needed (one retry)."""
+            """Visually verify compiled PDF against original, retry fixes until they compile."""
             if not original_crop_bytes:
                 return latex, pdf_bytes
 
@@ -438,20 +440,42 @@ async def ai_reconstruct(
 
             print(f"  [verify] {label}: issues found: {result.issues}")
 
-            # Recompile with fixed LaTeX
-            try:
-                header = label
-                fixed_content = f"\\textbf{{\\large {header}}}\n\n{result.fixed_latex}"
-                fixed_pdf = await asyncio.to_thread(
-                    compiler.compile_latex,
-                    fixed_content,
-                    image_data=image_data or None,
-                )
-                print(f"  [verify] {label}: fix compiled successfully")
-                return result.fixed_latex, fixed_pdf
-            except Exception as e:
-                print(f"  [verify] {label}: fix failed to compile: {e} — keeping original")
-                return latex, pdf_bytes
+            # Try to compile the fix, retrying with error feedback if it fails
+            current_fix = result.fixed_latex
+            header = label
+
+            for attempt in range(1, MAX_FIX_ATTEMPTS + 1):
+                try:
+                    fixed_content = f"\\textbf{{\\large {header}}}\n\n{current_fix}"
+                    fixed_pdf = await asyncio.to_thread(
+                        compiler.compile_latex,
+                        fixed_content,
+                        image_data=image_data or None,
+                    )
+                    suffix = f" (attempt {attempt})" if attempt > 1 else ""
+                    print(f"  [verify] {label}: fix compiled successfully{suffix}")
+                    return current_fix, fixed_pdf
+                except Exception as e:
+                    if attempt < MAX_FIX_ATTEMPTS:
+                        print(f"  [verify] {label}: fix attempt {attempt} failed — {e}")
+                        try:
+                            fix_prompt = LATEX_FIX_PROMPT.format(
+                                latex_body=current_fix,
+                                error_message=str(e)[:2000],
+                            )
+                            current_fix = await asyncio.to_thread(
+                                llm_client.generate, prompt=fix_prompt
+                            )
+                        except Exception as e2:
+                            print(f"  [verify] {label}: LLM fix call failed — {e2}")
+                            break
+                    else:
+                        print(
+                            f"  [verify] {label}: fix failed after {MAX_FIX_ATTEMPTS} "
+                            f"attempts — keeping original"
+                        )
+
+            return latex, pdf_bytes
 
         async def extract_compile_verify(
             problem_num: int,
@@ -576,46 +600,51 @@ async def ai_reconstruct(
                 latex = question_to_latex(matched)
                 question_dict = matched.model_dump()
                 header = f"Problem {current_num}"
-                content = f"\\textbf{{\\large {header}}}\n\n{latex}"
                 print(
                     f"  [compile] {problem.label}: {len(latex)} chars, "
                     f"images={list(image_data.keys()) or 'none'}"
                 )
 
-                # Compile
-                try:
-                    pdf_result = await asyncio.to_thread(
-                        compiler.compile_latex, content, image_data=image_data or None
-                    )
-                except Exception as e:
-                    print(f"  [compile] {problem.label}: FAILED — {e}")
-                    # Try LLM fix for compilation error
+                # Compile with retry loop
+                pdf_result = None
+                for attempt in range(1, MAX_FIX_ATTEMPTS + 1):
                     try:
-                        fix_prompt = LATEX_FIX_PROMPT.format(
-                            latex_body=latex, error_message=str(e)[:2000]
-                        )
-                        fixed_latex = await asyncio.to_thread(
-                            llm_client.generate, prompt=fix_prompt
-                        )
-                        fixed_content = f"\\textbf{{\\large {header}}}\n\n{fixed_latex}"
+                        content = f"\\textbf{{\\large {header}}}\n\n{latex}"
                         pdf_result = await asyncio.to_thread(
-                            compiler.compile_latex,
-                            fixed_content,
-                            image_data=image_data or None,
+                            compiler.compile_latex, content, image_data=image_data or None
                         )
-                        latex = fixed_latex
-                        print(f"  [compile] {problem.label}: FIXED by LLM")
-                    except Exception as e2:
-                        print(f"  [compile] {problem.label}: FIX FAILED — {e2}")
-                        fallback = (
-                            f"\\textbf{{\\large {header}}}\n\n"
-                            f"\\textit{{LaTeX compilation failed for this problem.}}"
-                        )
-                        pdf_result = await asyncio.to_thread(
-                            compiler.compile_latex, fallback
-                        )
-                        out.append((problem.label, pdf_result, None))
-                        continue
+                        if attempt > 1:
+                            print(f"  [compile] {problem.label}: FIXED on attempt {attempt}")
+                        break
+                    except Exception as e:
+                        if attempt < MAX_FIX_ATTEMPTS:
+                            print(f"  [compile] {problem.label}: attempt {attempt} failed — {e}")
+                            try:
+                                fix_prompt = LATEX_FIX_PROMPT.format(
+                                    latex_body=latex, error_message=str(e)[:2000]
+                                )
+                                latex = await asyncio.to_thread(
+                                    llm_client.generate, prompt=fix_prompt
+                                )
+                            except Exception as e2:
+                                print(f"  [compile] {problem.label}: LLM fix failed — {e2}")
+                                break
+                        else:
+                            print(
+                                f"  [compile] {problem.label}: FAILED after "
+                                f"{MAX_FIX_ATTEMPTS} attempts — {e}"
+                            )
+
+                if pdf_result is None:
+                    fallback = (
+                        f"\\textbf{{\\large {header}}}\n\n"
+                        f"\\textit{{LaTeX compilation failed for this problem.}}"
+                    )
+                    pdf_result = await asyncio.to_thread(
+                        compiler.compile_latex, fallback
+                    )
+                    out.append((problem.label, pdf_result, None))
+                    continue
 
                 # Verify against original
                 crop_bytes = original_crops.get(problem.label, b"")
