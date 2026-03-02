@@ -46,6 +46,7 @@
 		AABCBDDEEFEF1AABABCBDDEE /* RenameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */; };
 		ABCDBDEEFEF02BABABCDBDEE /* DetailsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */; };
 		ACDECDEEFEF13CABABCDECDE /* MoveToCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */; };
+		BDEFDEEFEF24DBABCDEFDEEF /* SelectCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEFEFEEFEF234DBCDEFEFEEF /* SelectCourseSheet.swift */; };
 		B1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift */; };
 		B2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift */; };
 		B3A4C5D6E7F8093A03040506 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */; };
@@ -111,6 +112,7 @@
 		ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameSheet.swift; sourceTree = "<group>"; };
 		BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailsSheet.swift; sourceTree = "<group>"; };
 		CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCourseSheet.swift; sourceTree = "<group>"; };
+		DEFEFEEFEF234DBCDEFEFEEF /* SelectCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectCourseSheet.swift; sourceTree = "<group>"; };
 		AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		CC01AE23D4C8B7F1A2E30911 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
 		AA20BF02C3D7A1E2F4B5C612 /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
@@ -344,6 +346,7 @@
 				ABCBDDEEFEF01AABABCBDDEE /* RenameSheet.swift */,
 				BCDCDEEFEF012BABBCDCDEEF /* DetailsSheet.swift */,
 				CDEDDEEFEF123CABCDEDDEEF /* MoveToCourseSheet.swift */,
+				DEFEFEEFEF234DBCDEFEFEEF /* SelectCourseSheet.swift */,
 			);
 			path = Modals;
 			sourceTree = "<group>";
@@ -499,6 +502,7 @@
 				AABCBDDEEFEF1AABABCBDDEE /* RenameSheet.swift in Sources */,
 				ABCDBDEEFEF02BABABCDBDEE /* DetailsSheet.swift in Sources */,
 				ACDECDEEFEF13CABABCDECDE /* MoveToCourseSheet.swift in Sources */,
+				BDEFDEEFEF24DBABCDEFDEEF /* SelectCourseSheet.swift in Sources */,
 				CC01BB11DD22EE33FF44AA01 /* Tutor.swift in Sources */,
 				CC02BB22DD33EE44FF55AA02 /* TutorService.swift in Sources */,
 				CC03BB33DD44EE55FF66AA03 /* TutorCardView.swift in Sources */,
