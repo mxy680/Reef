@@ -55,6 +55,13 @@ def verify_token(token: str) -> AuthenticatedUser:
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> AuthenticatedUser:
+    # Dev bypass: accept "dev" token in development mode
+    if (
+        settings.debug
+        and settings.environment == "development"
+        and credentials.credentials == "dev"
+    ):
+        return AuthenticatedUser(sub="dev-user", email="dev@localhost", role="authenticated")
     return verify_token(credentials.credentials)
 
 
