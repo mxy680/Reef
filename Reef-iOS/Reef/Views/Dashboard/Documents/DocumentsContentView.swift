@@ -17,6 +17,7 @@ final class DocumentsViewModel {
     var moveToCourseTarget: Document?
 
     var showFilePicker = false
+    var pendingUploadURL: URL?
     var maxDocuments: Int? = nil
 
     private var pollTimer: Timer?
@@ -75,27 +76,35 @@ final class DocumentsViewModel {
 
     // MARK: - Upload
 
-    func uploadDocument(result: Result<URL, Error>) async {
+    func uploadDocument(result: Result<URL, Error>) {
         switch result {
         case .failure(let error):
             showToast("Failed to select file: \(error.localizedDescription)")
         case .success(let url):
-            guard url.startAccessingSecurityScopedResource() else {
-                showToast("Cannot access file")
-                return
-            }
-            defer { url.stopAccessingSecurityScopedResource() }
+            // Store the URL to trigger the course picker sheet
+            pendingUploadURL = url
+        }
+    }
 
-            do {
-                let doc = try await DocumentService.shared.uploadDocument(fileURL: url)
-                documents.insert(doc, at: 0)
-                showToast("Document uploading — processing will begin shortly")
-                startPollingIfNeeded()
-            } catch let error as DocumentServiceError {
-                showToast(error.localizedDescription ?? "Upload failed")
-            } catch {
-                showToast("Upload failed — please try again")
-            }
+    func uploadWithCourse(courseId: String) async {
+        guard let url = pendingUploadURL else { return }
+        pendingUploadURL = nil
+
+        guard url.startAccessingSecurityScopedResource() else {
+            showToast("Cannot access file")
+            return
+        }
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        do {
+            let doc = try await DocumentService.shared.uploadDocument(fileURL: url, courseId: courseId)
+            documents.insert(doc, at: 0)
+            showToast("Document uploading — processing will begin shortly")
+            startPollingIfNeeded()
+        } catch let error as DocumentServiceError {
+            showToast(error.localizedDescription ?? "Upload failed")
+        } catch {
+            showToast("Upload failed — please try again")
         }
     }
 
@@ -216,7 +225,7 @@ final class DocumentsViewModel {
 // MARK: - Main View
 
 struct DocumentsContentView: View {
-    @State private var viewModel = DocumentsViewModel()
+    @Bindable var viewModel: DocumentsViewModel
 
     private let columns = [
         GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 20)
@@ -243,7 +252,7 @@ struct DocumentsContentView: View {
             isPresented: $viewModel.showFilePicker,
             allowedContentTypes: [.pdf]
         ) { result in
-            Task { await viewModel.uploadDocument(result: result) }
+            viewModel.uploadDocument(result: result)
         }
         .task { await viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }

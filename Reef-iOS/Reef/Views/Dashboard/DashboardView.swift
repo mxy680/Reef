@@ -8,6 +8,7 @@ struct DashboardView: View {
     @State private var sidebarOpen = true
     @State private var courseToDelete: Course?
     @State private var courseToEdit: Course?
+    @State private var documentsVM = DocumentsViewModel()
     @State private var tutorsVM = TutorsViewModel()
 
     var body: some View {
@@ -152,12 +153,39 @@ struct DashboardView: View {
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
+
+            // Select course popup (document upload)
+            if documentsVM.pendingUploadURL != nil {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.3)) {
+                            documentsVM.pendingUploadURL = nil
+                        }
+                    }
+            }
+
+            if documentsVM.pendingUploadURL != nil {
+                SelectCoursePopup(
+                    filename: documentsVM.pendingUploadURL?.lastPathComponent ?? "",
+                    onConfirm: { courseId in
+                        Task { await documentsVM.uploadWithCourse(courseId: courseId) }
+                    },
+                    onDismiss: {
+                        withAnimation(.spring(duration: 0.3)) {
+                            documentsVM.pendingUploadURL = nil
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
         .animation(.spring(duration: 0.2), value: courseToDelete?.id)
         .animation(.spring(duration: 0.2), value: courseToEdit?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.selectedTutor?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.showQuiz)
+        .animation(.spring(duration: 0.3), value: documentsVM.pendingUploadURL != nil)
         .task { await fetchCourses() }
     }
 
@@ -185,7 +213,7 @@ struct DashboardView: View {
         if let tab = selectedTab {
             switch tab {
             case .documents:
-                DocumentsContentView()
+                DocumentsContentView(viewModel: documentsVM)
             case .tutors:
                 TutorsContentView(viewModel: tutorsVM)
             case .myReef:
