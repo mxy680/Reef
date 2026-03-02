@@ -23,7 +23,7 @@ rsync -az --delete \
 
 # 2. Build and restart
 echo "==> Building and restarting containers..."
-ssh "$REMOTE" "cd $REMOTE_DIR && docker compose build server && docker compose up -d"
+ssh "$REMOTE" "cd $REMOTE_DIR && docker compose build server && docker compose up -d --force-recreate server"
 
 # 3. Status check
 echo "==> Container status:"

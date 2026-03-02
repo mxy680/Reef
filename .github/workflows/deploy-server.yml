@@ -33,7 +33,7 @@ jobs:
             --exclude '.env.example' \
             Reef-Server/ deploy@178.156.139.74:/opt/reef/
 
-          ssh deploy@178.156.139.74 'cd /opt/reef && docker compose build server && docker compose up -d'
+          ssh deploy@178.156.139.74 'cd /opt/reef && docker compose build server && docker compose up -d --force-recreate server'
 
       - name: Health check
         run: |
