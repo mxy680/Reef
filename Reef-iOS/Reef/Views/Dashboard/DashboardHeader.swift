@@ -49,12 +49,13 @@ struct DashboardHeader: View {
                         .font(.epilogue(13, weight: .semiBold))
                         .foregroundStyle(ReefColors.black)
                 }
-                .frame(width: 32, height: 32)
+                .padding(.horizontal, 10)
+                .frame(height: 32)
                 .background(ReefColors.surface)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
                 .background(
-                    Circle()
+                    Capsule()
                         .fill(ReefColors.black)
                         .offset(x: 2, y: 2)
                 )
