@@ -72,12 +72,7 @@ struct TutorDetailPopup: View {
                             Button {
                                 onVoicePreview()
                             } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: isSpeaking ? "stop.fill" : "play.fill")
-                                        .font(.system(size: 10, weight: .bold))
-                                    Text(isSpeaking ? "Stop" : "Preview Voice")
-                                }
-                                .frame(minWidth: 100)
+                                Text(isSpeaking ? "Stop" : "Preview Voice")
                             }
                             .reefCompactStyle(.secondary)
 
