@@ -199,49 +199,49 @@ struct DashboardSidebar: View {
     private func navItem(_ tab: DashboardTab) -> some View {
         let isActive = selectedTab == tab
 
-        return Button {
+        return HStack(spacing: 12) {
+            Image(systemName: tab.icon)
+                .font(.system(size: 18))
+                .frame(width: 24, height: 24)
+
+            if isOpen {
+                Text(tab.label)
+                    .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
+                    .tracking(-0.04 * 15)
+
+                Spacer()
+            }
+        }
+        .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
+        .padding(.vertical, 8)
+        .padding(.horizontal, isOpen ? 14 : 0)
+        .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.accent)
+                : nil
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .stroke(ReefColors.black, lineWidth: 2)
+                : nil
+        )
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.black)
+                    .offset(x: 3, y: 3)
+                : nil
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
             selectedTab = tab
             selectedCourseId = nil
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 18))
-                    .frame(width: 24, height: 24)
-
-                if isOpen {
-                    Text(tab.label)
-                        .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
-                        .tracking(-0.04 * 15)
-
-                    Spacer()
-                }
-            }
-            .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
-            .padding(.vertical, 8)
-            .padding(.horizontal, isOpen ? 14 : 0)
-            .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
-            .background(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.accent)
-                    : nil
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .stroke(ReefColors.black, lineWidth: 2)
-                    : nil
-            )
-            .background(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.black)
-                        .offset(x: 3, y: 3)
-                    : nil
-            )
         }
-        .buttonStyle(NoHighlightButtonStyle())
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Course Item
@@ -249,50 +249,50 @@ struct DashboardSidebar: View {
     private func courseItem(_ course: Course) -> some View {
         let isActive = selectedCourseId == course.id
 
-        return Button {
+        return HStack(spacing: 12) {
+            Text(course.emoji)
+                .font(.system(size: 18))
+                .frame(width: 24, height: 24)
+
+            if isOpen {
+                Text(course.name)
+                    .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
+                    .tracking(-0.04 * 15)
+                    .lineLimit(1)
+
+                Spacer()
+            }
+        }
+        .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
+        .padding(.vertical, 8)
+        .padding(.horizontal, isOpen ? 14 : 0)
+        .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.accent)
+                : nil
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .stroke(ReefColors.black, lineWidth: 2)
+                : nil
+        )
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.black)
+                    .offset(x: 3, y: 3)
+                : nil
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
             selectedCourseId = course.id
             selectedTab = nil
-        } label: {
-            HStack(spacing: 12) {
-                Text(course.emoji)
-                    .font(.system(size: 18))
-                    .frame(width: 24, height: 24)
-
-                if isOpen {
-                    Text(course.name)
-                        .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
-                        .tracking(-0.04 * 15)
-                        .lineLimit(1)
-
-                    Spacer()
-                }
-            }
-            .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
-            .padding(.vertical, 8)
-            .padding(.horizontal, isOpen ? 14 : 0)
-            .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
-            .background(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.accent)
-                    : nil
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .stroke(ReefColors.black, lineWidth: 2)
-                    : nil
-            )
-            .background(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.black)
-                        .offset(x: 3, y: 3)
-                    : nil
-            )
         }
-        .buttonStyle(NoHighlightButtonStyle())
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Footer
