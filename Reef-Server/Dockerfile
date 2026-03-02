@@ -16,7 +16,7 @@ RUN curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | s
     && mv tectonic /usr/local/bin/
 
 # Pre-warm tectonic cache (downloads TeX packages on first run)
-RUN echo '\documentclass{article}\begin{document}Hello\end{document}' > /tmp/test.tex \
+RUN printf '\\documentclass{article}\\begin{document}Hello\\end{document}\n' > /tmp/test.tex \
     && tectonic /tmp/test.tex \
     && rm /tmp/test.tex /tmp/test.pdf
 
