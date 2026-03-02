@@ -190,6 +190,8 @@ struct DashboardView: View {
                 LibraryComingSoonView()
             case .analytics:
                 AnalyticsView()
+            case .settings:
+                SettingsView()
             default:
                 comingSoonPlaceholder
             }

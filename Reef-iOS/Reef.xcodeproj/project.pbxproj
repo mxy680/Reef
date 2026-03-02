@@ -68,6 +68,7 @@
 		AA3CBC5F90AEA5D19BF2D1B7 /* CourseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67635849BD6EE8CAF22FCC7 /* CourseDetailView.swift */; };
 		5691B05BD55FEC1EDC2F4FD1 /* DeleteCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A36A869A1C3A1BB1C02A99 /* DeleteCourseSheet.swift */; };
 		56EF689994FC441699D09C78 /* EditCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79993F29F0CC9CD296303BEA /* EditCourseSheet.swift */; };
+		DD01EE23F4D9C8A1B3E41001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE01FF34A5EAD9B2C4F52001 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -133,6 +134,7 @@
 		C1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyReefComingSoonView.swift; sourceTree = "<group>"; };
 		C2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryComingSoonView.swift; sourceTree = "<group>"; };
 		C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		EE01FF34A5EAD9B2C4F52001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -307,9 +309,18 @@
 				C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */,
 				DD1122334455667788990011 /* Documents */,
 				FF112233445566778899TTTT /* Tutors */,
+				FF01AA22BB33CC44DD55EE01 /* Settings */,
 			);
 			name = Dashboard;
 			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		FF01AA22BB33CC44DD55EE01 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				EE01FF34A5EAD9B2C4F52001 /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		FF112233445566778899TTTT /* Tutors */ = {
@@ -513,6 +524,7 @@
 				B1A2C3D4E5F6071801020304 /* MyReefComingSoonView.swift in Sources */,
 				B2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift in Sources */,
 				B3A4C5D6E7F8093A03040506 /* AnalyticsView.swift in Sources */,
+				DD01EE23F4D9C8A1B3E41001 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
