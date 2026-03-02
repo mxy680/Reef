@@ -24,7 +24,8 @@ struct DashboardView: View {
                     isOpen: $sidebarOpen
                 )
                 .padding(.leading, 12)
-                .padding(.vertical, 12)
+                .padding(.top, 12)
+                .padding(.bottom, 6)
 
                 // Main column
                 VStack(spacing: 0) {
@@ -33,7 +34,9 @@ struct DashboardView: View {
                         .padding(.horizontal, 12)
 
                     contentArea
-                        .padding(12)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 12)
+                        .padding(.bottom, 6)
                 }
             }
 

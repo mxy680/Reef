@@ -19,5 +19,6 @@ struct ContentView: View {
                 AuthView()
             }
         }
+        .hoverEffectDisabled()
     }
 }

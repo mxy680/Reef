@@ -48,6 +48,7 @@ struct ReefButtonStyle: ButtonStyle {
                 y: pressed ? 4 : 0
             )
             .animation(.spring(duration: 0.4, bounce: 0.2), value: pressed)
+            .hoverEffectDisabled()
     }
 }
 
@@ -95,6 +96,7 @@ struct ReefCompactButtonStyle: ButtonStyle {
                 y: pressed ? 3 : 0
             )
             .animation(.spring(duration: 0.2, bounce: 0.1), value: pressed)
+            .hoverEffectDisabled()
     }
 }
 
