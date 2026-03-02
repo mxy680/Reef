@@ -27,7 +27,31 @@ struct DashboardHeader: View {
 
             // Action buttons
             HStack(spacing: 10) {
-                headerButton("magnifyingglass")
+                // Search bar
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14))
+                        .foregroundStyle(ReefColors.gray400)
+                    Text("Search...")
+                        .font(.epilogue(13, weight: .medium))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(ReefColors.gray400)
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 32)
+                .background(ReefColors.white)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
+                .background(
+                    Capsule()
+                        .fill(ReefColors.black)
+                        .offset(x: 2, y: 2)
+                )
+                .compositingGroup()
+                .contentShape(Rectangle())
+                .onTapGesture {}
+                .accessibilityAddTraits(.isButton)
+
                 headerButton("questionmark.circle")
 
                 // Bell with notification dot
