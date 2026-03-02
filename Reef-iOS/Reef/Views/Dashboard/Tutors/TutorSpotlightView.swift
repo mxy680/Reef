@@ -59,6 +59,7 @@ struct TutorSpotlightView: View {
                 .background(tintColor.opacity(0.1))
                 .clipShape(Capsule())
                 .padding(.top, 4)
+                .padding(.bottom, 6)
 
                 // Bottom actions
                 HStack(spacing: 10) {
