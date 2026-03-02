@@ -57,6 +57,13 @@
 		AA50BF05C3D7A1E2F4B5C605 /* StepGrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA50BF05C3D7A1E2F4B5C615 /* StepGrade.swift */; };
 		AA60BF06C3D7A1E2F4B5C606 /* StepSubjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60BF06C3D7A1E2F4B5C616 /* StepSubjects.swift */; };
 		AA70BF07C3D7A1E2F4B5C607 /* StepReferral.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA70BF07C3D7A1E2F4B5C617 /* StepReferral.swift */; };
+		CC01BB11DD22EE33FF44AA01 /* Tutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB01AA11CC22DD33EE44FF01 /* Tutor.swift */; };
+		CC02BB22DD33EE44FF55AA02 /* TutorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB02AA22CC33DD44EE55FF02 /* TutorService.swift */; };
+		CC03BB33DD44EE55FF66AA03 /* TutorCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB03AA33CC44DD55EE66FF03 /* TutorCardView.swift */; };
+		CC04BB44DD55EE66FF77AA04 /* TutorDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB04AA44CC55DD66EE77FF04 /* TutorDetailSheet.swift */; };
+		CC05BB55DD66EE77FF88AA05 /* TutorsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB05AA55CC66DD77EE88FF05 /* TutorsContentView.swift */; };
+		CC06BB66DD77EE88FF99AA06 /* TutorSpotlightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB06AA66CC77DD88EE99FF06 /* TutorSpotlightView.swift */; };
+		CC07BB77DD88EE99FFAAAA07 /* TutorQuizSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB07AA77CC88DD99EEAAFF07 /* TutorQuizSheet.swift */; };
 		2B7AD203FD79EC389EB32B60 /* CourseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43FAAE207679D7497541A99 /* CourseService.swift */; };
 		AA3CBC5F90AEA5D19BF2D1B7 /* CourseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67635849BD6EE8CAF22FCC7 /* CourseDetailView.swift */; };
 		5691B05BD55FEC1EDC2F4FD1 /* DeleteCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A36A869A1C3A1BB1C02A99 /* DeleteCourseSheet.swift */; };
@@ -112,6 +119,13 @@
 		AA50BF05C3D7A1E2F4B5C615 /* StepGrade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepGrade.swift; sourceTree = "<group>"; };
 		AA60BF06C3D7A1E2F4B5C616 /* StepSubjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepSubjects.swift; sourceTree = "<group>"; };
 		AA70BF07C3D7A1E2F4B5C617 /* StepReferral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepReferral.swift; sourceTree = "<group>"; };
+		BB01AA11CC22DD33EE44FF01 /* Tutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tutor.swift; sourceTree = "<group>"; };
+		BB02AA22CC33DD44EE55FF02 /* TutorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorService.swift; sourceTree = "<group>"; };
+		BB03AA33CC44DD55EE66FF03 /* TutorCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorCardView.swift; sourceTree = "<group>"; };
+		BB04AA44CC55DD66EE77FF04 /* TutorDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorDetailSheet.swift; sourceTree = "<group>"; };
+		BB05AA55CC66DD77EE88FF05 /* TutorsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorsContentView.swift; sourceTree = "<group>"; };
+		BB06AA66CC77DD88EE99FF06 /* TutorSpotlightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorSpotlightView.swift; sourceTree = "<group>"; };
+		BB07AA77CC88DD99EEAAFF07 /* TutorQuizSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorQuizSheet.swift; sourceTree = "<group>"; };
 		F43FAAE207679D7497541A99 /* CourseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseService.swift; sourceTree = "<group>"; };
 		E67635849BD6EE8CAF22FCC7 /* CourseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseDetailView.swift; sourceTree = "<group>"; };
 		D0A36A869A1C3A1BB1C02A99 /* DeleteCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCourseSheet.swift; sourceTree = "<group>"; };
@@ -248,6 +262,7 @@
 				CC01AE23D4C8B7F1A2E30911 /* Course.swift */,
 				1A2B3C4D5E6F07181A2B3C4D /* Document.swift */,
 				AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */,
+				BB01AA11CC22DD33EE44FF01 /* Tutor.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -291,9 +306,22 @@
 				C2A3C4D5E6F7082902030405 /* LibraryComingSoonView.swift */,
 				C3A4C5D6E7F8093A03040506 /* AnalyticsView.swift */,
 				DD1122334455667788990011 /* Documents */,
+				FF112233445566778899TTTT /* Tutors */,
 			);
 			name = Dashboard;
 			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		FF112233445566778899TTTT /* Tutors */ = {
+			isa = PBXGroup;
+			children = (
+				BB05AA55CC66DD77EE88FF05 /* TutorsContentView.swift */,
+				BB03AA33CC44DD55EE66FF03 /* TutorCardView.swift */,
+				BB04AA44CC55DD66EE77FF04 /* TutorDetailSheet.swift */,
+				BB06AA66CC77DD88EE99FF06 /* TutorSpotlightView.swift */,
+				BB07AA77CC88DD99EEAAFF07 /* TutorQuizSheet.swift */,
+			);
+			path = Tutors;
 			sourceTree = "<group>";
 		};
 		DD1122334455667788990011 /* Documents */ = {
@@ -326,6 +354,7 @@
 				F43FAAE207679D7497541A99 /* CourseService.swift */,
 				2A3B4C5D6E7F08292A3B4C5D /* DocumentService.swift */,
 				3A4B5C6D7E8F093A3A4B5C6D /* TierLimits.swift */,
+				BB02AA22CC33DD44EE55FF02 /* TutorService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -470,6 +499,13 @@
 				AABCBDDEEFEF1AABABCBDDEE /* RenameSheet.swift in Sources */,
 				ABCDBDEEFEF02BABABCDBDEE /* DetailsSheet.swift in Sources */,
 				ACDECDEEFEF13CABABCDECDE /* MoveToCourseSheet.swift in Sources */,
+				CC01BB11DD22EE33FF44AA01 /* Tutor.swift in Sources */,
+				CC02BB22DD33EE44FF55AA02 /* TutorService.swift in Sources */,
+				CC03BB33DD44EE55FF66AA03 /* TutorCardView.swift in Sources */,
+				CC04BB44DD55EE66FF77AA04 /* TutorDetailSheet.swift in Sources */,
+				CC05BB55DD66EE77FF88AA05 /* TutorsContentView.swift in Sources */,
+				CC06BB66DD77EE88FF99AA06 /* TutorSpotlightView.swift in Sources */,
+				CC07BB77DD88EE99FFAAAA07 /* TutorQuizSheet.swift in Sources */,
 				2B7AD203FD79EC389EB32B60 /* CourseService.swift in Sources */,
 				AA3CBC5F90AEA5D19BF2D1B7 /* CourseDetailView.swift in Sources */,
 				5691B05BD55FEC1EDC2F4FD1 /* DeleteCourseSheet.swift in Sources */,

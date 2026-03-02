@@ -131,6 +131,8 @@ struct DashboardView: View {
             switch tab {
             case .documents:
                 DocumentsContentView()
+            case .tutors:
+                TutorsContentView()
             case .myReef:
                 MyReefComingSoonView()
             case .library:
