@@ -8,6 +8,10 @@ struct ReefApp: App {
 
     init() {
         PointerInteractionDisabler.install()
+        // Force all UIKit backing views to have clear backgrounds so
+        // SwiftUI doesn't briefly flash the system gray during layout.
+        UIScrollView.appearance().backgroundColor = .clear
+        UIView.appearance(whenContainedInInstancesOf: [UIHostingController<AnyView>.self]).backgroundColor = .clear
     }
 
     var body: some Scene {
