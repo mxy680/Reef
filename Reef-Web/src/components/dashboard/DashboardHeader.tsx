@@ -121,14 +121,13 @@ function LogOutIcon() {
   )
 }
 
-function KeyboardIcon() {
+
+function SmallHelpIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="3" width="14" height="10" rx="2" />
-      <line x1="4" y1="6" x2="4" y2="6.01" />
-      <line x1="8" y1="6" x2="8" y2="6.01" />
-      <line x1="12" y1="6" x2="12" y2="6.01" />
-      <line x1="5" y1="10" x2="11" y2="10" />
+      <circle cx="8" cy="8" r="6.5" />
+      <path d="M6 6 C6 4.8 6.8 4 8 4 C9.2 4 10 4.8 10 6 C10 7.2 8 7.6 8 9" />
+      <circle cx="8" cy="11.5" r="0.5" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -297,14 +296,12 @@ function StreakIndicator({ streak = 0 }: { streak?: number }) {
 function DropdownMenuItem({
   icon,
   label,
-  shortcut,
   href,
   destructive,
   onClick,
 }: {
   icon: React.ReactNode
   label: string
-  shortcut?: string
   href?: string
   destructive?: boolean
   onClick?: () => void
@@ -328,23 +325,10 @@ function DropdownMenuItem({
       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.gray100)}
       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
     >
-      <span style={{ display: "flex", alignItems: "center", color: destructive ? "#c62828" : colors.gray600 }}>
+      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, flexShrink: 0, color: destructive ? "#c62828" : colors.gray600 }}>
         {icon}
       </span>
       <span style={{ flex: 1 }}>{label}</span>
-      {shortcut && (
-        <span
-          style={{
-            fontFamily,
-            fontWeight: 500,
-            fontSize: 11,
-            color: colors.gray400,
-            letterSpacing: "0",
-          }}
-        >
-          {shortcut}
-        </span>
-      )}
     </div>
   )
 
@@ -359,7 +343,7 @@ function DropdownMenuItem({
 }
 
 function ProfileDropdown() {
-  const { profile, openCommandPalette } = useDashboard()
+  const { profile } = useDashboard()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -569,19 +553,10 @@ function ProfileDropdown() {
               onClick={() => setOpen(false)}
             />
             <DropdownMenuItem
-              icon={<HelpIcon />}
+              icon={<SmallHelpIcon />}
               label="Help & Support"
               href="/dashboard/help"
               onClick={() => setOpen(false)}
-            />
-            <DropdownMenuItem
-              icon={<KeyboardIcon />}
-              label="Keyboard Shortcuts"
-              shortcut="⌘K"
-              onClick={() => {
-                setOpen(false)
-                openCommandPalette()
-              }}
             />
 
             {/* Divider */}
