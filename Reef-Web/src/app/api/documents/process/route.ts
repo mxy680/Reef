@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { Agent } from "undici"
-import { createClient, createServiceClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/server"
 
 const REEF_SERVER_URL = process.env.REEF_SERVER_URL || "http://localhost:8000"
 
@@ -20,15 +20,13 @@ export async function POST(request: Request) {
     const body = await request.json()
     documentId = body.documentId
     userId = body.userId
+    const accessToken: string | undefined = body.accessToken
 
     if (!documentId || !userId) {
       return NextResponse.json({ error: "Missing documentId or userId" }, { status: 400 })
     }
 
-    // Get the user's Supabase access token (passed via cookies from the browser)
-    const supabaseAuth = await createClient()
-    const { data: { session } } = await supabaseAuth.auth.getSession()
-    if (!session?.access_token) {
+    if (!accessToken) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
@@ -56,7 +54,7 @@ export async function POST(request: Request) {
       `${REEF_SERVER_URL}/ai/reconstruct?document_id=${documentId}`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
         body: formData,
         // @ts-expect-error Node.js undici dispatcher option
         dispatcher: reconstructAgent,

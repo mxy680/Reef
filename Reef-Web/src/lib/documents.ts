@@ -90,10 +90,11 @@ export async function uploadDocument(file: File, thumbnail?: Blob, courseId?: st
   }
 
   // 4. Fire-and-forget: trigger server-side reconstruction
+  const { data: { session } } = await supabase.auth.getSession()
   fetch("/api/documents/process", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ documentId: document.id, userId: user.id }),
+    body: JSON.stringify({ documentId: document.id, userId: user.id, accessToken: session?.access_token }),
   }).catch(() => {}) // non-critical — status stays "processing" until server finishes
 
   return document
