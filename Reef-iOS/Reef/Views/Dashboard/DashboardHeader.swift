@@ -27,36 +27,12 @@ struct DashboardHeader: View {
 
             // Action buttons
             HStack(spacing: 10) {
-                // Search bar
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 14))
-                        .foregroundStyle(ReefColors.gray400)
-                    Text("Search...")
-                        .font(.epilogue(13, weight: .medium))
-                        .tracking(-0.04 * 13)
-                        .foregroundStyle(ReefColors.gray400)
-                }
-                .padding(.horizontal, 12)
-                .frame(height: 32)
-                .background(ReefColors.white)
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
-                .background(
-                    Capsule()
-                        .fill(ReefColors.black)
-                        .offset(x: 2, y: 2)
-                )
-                .compositingGroup()
-                .contentShape(Rectangle())
-                .onTapGesture {}
-                .accessibilityAddTraits(.isButton)
-
-                headerButton("questionmark.circle")
+                headerIcon("magnifyingglass")
+                headerIcon("questionmark.circle")
 
                 // Bell with notification dot
                 ZStack(alignment: .topTrailing) {
-                    headerButton("bell")
+                    headerIcon("bell")
                     Circle()
                         .fill(Color(hex: 0xE74C3C))
                         .frame(width: 8, height: 8)
@@ -85,7 +61,17 @@ struct DashboardHeader: View {
                 )
 
                 // Profile circle
-                headerCircle(fill: ReefColors.accent) {
+                ZStack {
+                    Circle()
+                        .fill(ReefColors.accent)
+                        .frame(width: 32, height: 32)
+                        .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
+                        .background(
+                            Circle()
+                                .fill(ReefColors.black)
+                                .frame(width: 32, height: 32)
+                                .offset(x: 2, y: 2)
+                        )
                     Text(userInitials)
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
@@ -97,35 +83,15 @@ struct DashboardHeader: View {
         .dashboardCard()
     }
 
-    private func headerButton(_ icon: String) -> some View {
-        headerCircle(fill: ReefColors.white) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(ReefColors.gray600)
-        }
-        .compositingGroup()
-        .contentShape(Rectangle())
-        .onTapGesture {}
-        .accessibilityAddTraits(.isButton)
-    }
-
-    private func headerCircle<Content: View>(
-        fill: Color,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ZStack {
-            Circle()
-                .fill(fill)
-                .frame(width: 32, height: 32)
-                .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
-                .background(
-                    Circle()
-                        .fill(ReefColors.black)
-                        .frame(width: 32, height: 32)
-                        .offset(x: 2, y: 2)
-                )
-            content()
-        }
+    private func headerIcon(_ icon: String) -> some View {
+        Image(systemName: icon)
+            .font(.system(size: 18))
+            .foregroundStyle(ReefColors.gray600)
+            .frame(width: 32, height: 32)
+            .compositingGroup()
+            .contentShape(Rectangle())
+            .onTapGesture {}
+            .accessibilityAddTraits(.isButton)
     }
 
     private var userInitials: String {
