@@ -273,6 +273,34 @@ actor DocumentService {
         return result
     }
 
+    // MARK: - Download PDF
+
+    func downloadPDF(_ docId: String) async throws -> URL {
+        let userId = try await getUserId()
+
+        // Try output.pdf first, fall back to original.pdf
+        let signedURL: URL
+        do {
+            signedURL = try await supabase.storage
+                .from("documents")
+                .createSignedURL(path: "\(userId)/\(docId)/output.pdf", expiresIn: 3600)
+        } catch {
+            signedURL = try await supabase.storage
+                .from("documents")
+                .createSignedURL(path: "\(userId)/\(docId)/original.pdf", expiresIn: 3600)
+        }
+
+        let (data, _) = try await URLSession.shared.data(from: signedURL)
+
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("reef_pdfs")
+        try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        let fileURL = tempDir.appendingPathComponent("\(docId).pdf")
+        try data.write(to: fileURL)
+        return fileURL
+    }
+
     // MARK: - Private Helpers
 
     private func generateThumbnail(from fileURL: URL) -> Data? {

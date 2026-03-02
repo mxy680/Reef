@@ -114,6 +114,7 @@ final class DocumentsViewModel {
         guard let doc = deleteTarget else { return }
         do {
             try await DocumentService.shared.deleteDocument(doc.id)
+            await DrawingStorageService.shared.deleteDrawings(for: doc.id)
             showToast("Document deleted")
             deleteTarget = nil
             await fetchDocuments()
@@ -226,6 +227,7 @@ final class DocumentsViewModel {
 
 struct DocumentsContentView: View {
     @Bindable var viewModel: DocumentsViewModel
+    var onOpenCanvas: ((Document) -> Void)?
 
     private let columns = [
         GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 20)
@@ -440,7 +442,9 @@ struct DocumentsContentView: View {
         case .retry:
             Task { await viewModel.retryDocument(doc) }
         case .open:
-            Task { await viewModel.openDocument(doc) }
+            if doc.status == .completed {
+                onOpenCanvas?(doc)
+            }
         }
     }
 

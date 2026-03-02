@@ -84,6 +84,7 @@ final class CourseDetailViewModel {
 struct CourseDetailView: View {
     let courseId: String
     let initialCourse: Course
+    var onOpenCanvas: ((Document) -> Void)?
     let onCourseDeleted: () -> Void
     let onCourseUpdated: () -> Void
     let onEditTapped: (Course) -> Void
@@ -98,6 +99,7 @@ struct CourseDetailView: View {
     init(
         courseId: String,
         course: Course,
+        onOpenCanvas: ((Document) -> Void)? = nil,
         onCourseDeleted: @escaping () -> Void,
         onCourseUpdated: @escaping () -> Void,
         onEditTapped: @escaping (Course) -> Void,
@@ -105,6 +107,7 @@ struct CourseDetailView: View {
     ) {
         self.courseId = courseId
         self.initialCourse = course
+        self.onOpenCanvas = onOpenCanvas
         self.onCourseDeleted = onCourseDeleted
         self.onCourseUpdated = onCourseUpdated
         self.onEditTapped = onEditTapped
@@ -239,8 +242,8 @@ struct CourseDetailView: View {
                             index: index,
                             cardHeight: cardHeight
                         ) { action in
-                            if case .open = action {
-                                Task { await viewModel.openDocument(doc) }
+                            if case .open = action, doc.status == .completed {
+                                onOpenCanvas?(doc)
                             }
                         }
                     }
