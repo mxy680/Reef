@@ -215,6 +215,8 @@ function StreakIndicator({ streak = 0 }: { streak?: number }) {
         padding: "4px 10px",
         backgroundColor: colors.surface,
         borderRadius: 999,
+        border: `1.5px solid ${colors.black}`,
+        boxShadow: `2px 2px 0px 0px ${colors.black}`,
         color: colors.black,
       }}
     >
@@ -275,7 +277,8 @@ function ProfileDropdown() {
           height: 32,
           borderRadius: 999,
           backgroundColor: colors.accent,
-          border: "none",
+          border: `1.5px solid ${colors.black}`,
+          boxShadow: `2px 2px 0px 0px ${colors.black}`,
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
