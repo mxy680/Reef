@@ -9,5 +9,9 @@ let supabase: SupabaseClient = {
     else {
         fatalError("Missing SUPABASE_URL or SUPABASE_ANON_KEY in Info.plist — check Secrets.xcconfig")
     }
-    return SupabaseClient(supabaseURL: url, supabaseKey: anonKey)
+    return SupabaseClient(
+        supabaseURL: url,
+        supabaseKey: anonKey,
+        options: .init(auth: .init(emitLocalSessionAsInitialSession: true))
+    )
 }()
