@@ -43,6 +43,7 @@ from app.services.prompts import (
     LATEX_FIX_PROMPT,
     VISUAL_VERIFY_PROMPT,
 )
+from app.services.cancellation import cancel as cancel_document, cleanup as cancel_cleanup, is_cancelled, register as cancel_register
 from app.services.progress import update_document_status, update_progress
 from app.services.storage import download_document_pdf, upload_document_pdf
 from app.services.question_to_latex import question_to_latex
@@ -713,11 +714,39 @@ async def _run_pipeline(
 # ---------------------------------------------------------------------------
 
 
+async def _run_pipeline_for_document(user_id: str, document_id: str):
+    """Download PDF and run the reconstruction pipeline. Returns (compiled, num_pages)."""
+    pdf_bytes = await download_document_pdf(user_id, document_id)
+    return await _run_pipeline(pdf_bytes, document_id)
+
+
 async def _process_document_background(user_id: str, document_id: str):
-    """Download PDF, run pipeline, upload output, update document status."""
+    """Download PDF, run pipeline, upload output, update document status.
+
+    Supports cancellation via the cancellation registry — a watchdog task
+    monitors the cancel event and calls task.cancel() on the pipeline task.
+    """
+    cancel_event = cancel_register(document_id)
     try:
-        pdf_bytes = await download_document_pdf(user_id, document_id)
-        compiled, num_pages = await _run_pipeline(pdf_bytes, document_id)
+        pipeline_task = asyncio.create_task(
+            _run_pipeline_for_document(user_id, document_id)
+        )
+
+        async def _watchdog():
+            await cancel_event.wait()
+            pipeline_task.cancel()
+
+        watchdog_task = asyncio.create_task(_watchdog())
+
+        try:
+            compiled, num_pages = await pipeline_task
+        finally:
+            watchdog_task.cancel()
+
+        # Final check — cancel may have fired between pipeline finishing and here
+        if is_cancelled(document_id):
+            print(f"  [reconstruct-document] {document_id} cancelled (post-pipeline)")
+            return
 
         # Merge per-problem PDFs into one
         merged = fitz.open()
@@ -736,7 +765,13 @@ async def _process_document_background(user_id: str, document_id: str):
             problem_count=len(compiled),
             status_message=None,
         )
+    except asyncio.CancelledError:
+        print(f"  [reconstruct-document] {document_id} cancelled")
+        return
     except Exception as e:
+        if is_cancelled(document_id):
+            print(f"  [reconstruct-document] {document_id} cancelled (during error)")
+            return
         print(f"  [reconstruct-document] {document_id} failed: {e}")
         await update_document_status(
             document_id,
@@ -744,6 +779,8 @@ async def _process_document_background(user_id: str, document_id: str):
             error_message=str(e)[:500],
             status_message=None,
         )
+    finally:
+        cancel_cleanup(document_id)
 
 
 # ---------------------------------------------------------------------------
@@ -764,6 +801,18 @@ async def reconstruct_document(
     """Trigger document reconstruction as a background task (used by iOS)."""
     background_tasks.add_task(_process_document_background, user.id, req.document_id)
     return {"status": "accepted", "document_id": req.document_id}
+
+
+@router.delete("/ai/reconstruct-document/{document_id}")
+async def cancel_reconstruction(
+    document_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Cancel a running reconstruction task. Idempotent — returns 200 even if no task is running."""
+    found = cancel_document(document_id)
+    status = "cancelled" if found else "not_found"
+    print(f"  [reconstruct-document] cancel {document_id}: {status}")
+    return {"status": status, "document_id": document_id}
 
 
 @router.post("/ai/reconstruct")
