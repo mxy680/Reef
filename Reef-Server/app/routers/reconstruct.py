@@ -198,7 +198,7 @@ async def ai_reconstruct(
         # --- Stage 2: Gemini problem grouping ---
         llm_client = LLMClient(
             api_key=settings.openrouter_api_key,
-            model="google/gemini-3-flash-preview",
+            model="qwen/qwen2.5-vl-72b-instruct",
             base_url="https://openrouter.ai/api/v1",
         )
 
