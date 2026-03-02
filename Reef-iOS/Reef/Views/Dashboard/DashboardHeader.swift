@@ -49,29 +49,18 @@ struct DashboardHeader: View {
                         .font(.epilogue(13, weight: .semiBold))
                         .foregroundStyle(ReefColors.black)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .frame(width: 32, height: 32)
                 .background(ReefColors.surface)
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
+                .clipShape(Circle())
+                .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
                 .background(
-                    Capsule()
+                    Circle()
                         .fill(ReefColors.black)
                         .offset(x: 2, y: 2)
                 )
 
                 // Profile circle
-                ZStack {
-                    Circle()
-                        .fill(ReefColors.accent)
-                        .frame(width: 32, height: 32)
-                        .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
-                        .background(
-                            Circle()
-                                .fill(ReefColors.black)
-                                .frame(width: 32, height: 32)
-                                .offset(x: 2, y: 2)
-                        )
+                headerCircle(fill: ReefColors.accent) {
                     Text(userInitials)
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
@@ -84,14 +73,34 @@ struct DashboardHeader: View {
     }
 
     private func headerButton(_ icon: String) -> some View {
-        Image(systemName: icon)
-            .font(.system(size: 18))
-            .foregroundStyle(ReefColors.gray600)
-            .frame(width: 32, height: 32)
-            .compositingGroup()
-            .contentShape(Rectangle())
-            .onTapGesture {}
-            .accessibilityAddTraits(.isButton)
+        headerCircle(fill: ReefColors.white) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(ReefColors.gray600)
+        }
+        .compositingGroup()
+        .contentShape(Rectangle())
+        .onTapGesture {}
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func headerCircle<Content: View>(
+        fill: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ZStack {
+            Circle()
+                .fill(fill)
+                .frame(width: 32, height: 32)
+                .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
+                .background(
+                    Circle()
+                        .fill(ReefColors.black)
+                        .frame(width: 32, height: 32)
+                        .offset(x: 2, y: 2)
+                )
+            content()
+        }
     }
 
     private var userInitials: String {
