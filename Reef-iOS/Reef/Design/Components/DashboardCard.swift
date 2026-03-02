@@ -17,6 +17,7 @@ struct DashboardCardModifier: ViewModifier {
                     .fill(ReefColors.gray500)
                     .offset(x: 3, y: 3)
             )
+            .compositingGroup()
     }
 }
 

@@ -91,37 +91,42 @@ struct EditCourseSheet: View {
             HStack {
                 Spacer()
 
-                Button("Cancel") {
-                    onClose()
-                }
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.gray600)
-                .buttonStyle(.plain)
+                Text("Cancel")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.gray600)
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onClose()
+                    }
+                    .accessibilityAddTraits(.isButton)
 
-                Button {
-                    submitIfValid()
-                } label: {
-                    Text("Save")
-                        .font(.epilogue(14, weight: .bold))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(canSave ? ReefColors.white : ReefColors.gray500)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 10)
-                        .background(canSave ? ReefColors.primary : ReefColors.gray100)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.black, lineWidth: 2)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(ReefColors.black)
-                                .offset(x: 4, y: 4)
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(!canSave)
+                Text("Save")
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(canSave ? ReefColors.white : ReefColors.gray500)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(canSave ? ReefColors.primary : ReefColors.gray100)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.black, lineWidth: 2)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(ReefColors.black)
+                            .offset(x: 4, y: 4)
+                    )
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        submitIfValid()
+                    }
+                    .accessibilityAddTraits(.isButton)
+                    .allowsHitTesting(canSave)
+                    .opacity(!canSave ? 0.4 : 1)
             }
         }
         .padding(.horizontal, 32)
@@ -148,25 +153,26 @@ struct EditCourseSheet: View {
         return LazyVGrid(columns: columns, spacing: 6) {
             ForEach(emojiOptions, id: \.self) { em in
                 let selected = emoji == em
-                Button {
-                    emoji = em
-                } label: {
-                    Text(em)
-                        .font(.system(size: 20))
-                        .frame(width: 40, height: 40)
-                        .background(selected ? ReefColors.primary : ReefColors.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.black, lineWidth: 2)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(ReefColors.black)
-                                .offset(x: 3, y: 3)
-                        )
-                }
-                .buttonStyle(.plain)
+                Text(em)
+                    .font(.system(size: 20))
+                    .frame(width: 40, height: 40)
+                    .background(selected ? ReefColors.primary : ReefColors.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.black, lineWidth: 2)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(ReefColors.black)
+                            .offset(x: 3, y: 3)
+                    )
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        emoji = em
+                    }
+                    .accessibilityAddTraits(.isButton)
             }
         }
     }
@@ -177,19 +183,19 @@ struct EditCourseSheet: View {
         HStack(spacing: 10) {
             ForEach(colorPresets, id: \.self) { c in
                 let selected = selectedColor == c
-                Button {
-                    selectedColor = c
-                } label: {
-                    Circle()
-                        .fill(Color(hex: c))
-                        .frame(width: 32, height: 32)
-                        .overlay(
-                            Circle()
-                                .stroke(selected ? ReefColors.black : ReefColors.gray400, lineWidth: selected ? 3 : 2)
-                        )
-                        .shadow(color: selected ? ReefColors.black.opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
-                }
-                .buttonStyle(.plain)
+                Circle()
+                    .fill(Color(hex: c))
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Circle()
+                            .stroke(selected ? ReefColors.black : ReefColors.gray400, lineWidth: selected ? 3 : 2)
+                    )
+                    .shadow(color: selected ? ReefColors.black.opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
+                    .contentShape(Circle())
+                    .onTapGesture {
+                        selectedColor = c
+                    }
+                    .accessibilityAddTraits(.isButton)
             }
         }
     }

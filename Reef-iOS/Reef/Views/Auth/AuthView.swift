@@ -120,18 +120,19 @@ struct AuthView: View {
                                         .tracking(-0.04 * 14)
                                         .foregroundStyle(ReefColors.gray600)
 
-                                    Button {
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            isSignUp.toggle()
-                                            email = ""
+                                    Text(isSignUp ? "Log in" : "Sign up")
+                                        .font(.epilogue(14, weight: .bold))
+                                        .tracking(-0.04 * 14)
+                                        .foregroundStyle(ReefColors.primary)
+                                        .compositingGroup()
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                                isSignUp.toggle()
+                                                email = ""
+                                            }
                                         }
-                                    } label: {
-                                        Text(isSignUp ? "Log in" : "Sign up")
-                                            .font(.epilogue(14, weight: .bold))
-                                            .tracking(-0.04 * 14)
-                                            .foregroundStyle(ReefColors.primary)
-                                    }
-                                    .buttonStyle(.plain)
+                                        .accessibilityAddTraits(.isButton)
                                 }
                                 .fadeUp(index: 6)
                             }

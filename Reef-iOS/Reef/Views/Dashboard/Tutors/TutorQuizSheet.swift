@@ -69,62 +69,54 @@ struct TutorQuizPopup: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            // Dimmed backdrop
-            Color.black.opacity(0.4)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .onTapGesture { onDismiss() }
-
-            // Popup card
-            VStack(spacing: 0) {
-                // Close button row
-                HStack {
-                    Spacer()
-                    Button {
-                        onDismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(ReefColors.gray500)
-                            .frame(width: 28, height: 28)
-                            .background(ReefColors.gray100)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.bottom, 4)
-
-                if step < 3 {
-                    questionView
-                        .id(step)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: direction).combined(with: .opacity),
-                            removal: .move(edge: direction == .trailing ? .leading : .trailing).combined(with: .opacity)
-                        ))
-                } else {
-                    resultView
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        ))
-                }
+        VStack(spacing: 0) {
+            // Close button row
+            HStack {
+                Spacer()
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(ReefColors.gray500)
+                    .frame(width: 28, height: 28)
+                    .background(ReefColors.gray100)
+                    .clipShape(Circle())
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture { onDismiss() }
+                    .accessibilityAddTraits(.isButton)
             }
-            .animation(.spring(duration: 0.35), value: step)
-            .padding(24)
-            .background(ReefColors.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(ReefColors.black, lineWidth: 1.5)
-            )
-            .frame(maxWidth: 420)
-            .padding(32)
+            .padding(.bottom, 4)
+
+            if step < 3 {
+                questionContent
+                    .id(step)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: direction).combined(with: .opacity),
+                        removal: .move(edge: direction == .trailing ? .leading : .trailing).combined(with: .opacity)
+                    ))
+
+                questionButtons
+            } else {
+                resultView
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+            }
         }
+        .animation(.spring(duration: 0.35), value: step)
+        .padding(24)
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(ReefColors.black, lineWidth: 1.5)
+        )
+        .frame(maxWidth: 420)
     }
 
     // MARK: - Question View
 
-    private var questionView: some View {
+    private var questionContent: some View {
         VStack(spacing: 0) {
             OnboardingProgressDots(current: step, total: 3)
 
@@ -145,31 +137,33 @@ struct TutorQuizPopup: View {
                 }
             }
             .padding(.bottom, 24)
+        }
+    }
 
-            HStack {
-                if step > 0 {
-                    Button {
-                        direction = .leading
-                        withAnimation { step -= 1 }
-                    } label: {
-                        Text("Back")
-                    }
-                    .reefCompactStyle(.secondary)
-                }
-
-                Spacer()
-
+    private var questionButtons: some View {
+        HStack {
+            if step > 0 {
                 Button {
-                    direction = .trailing
-                    withAnimation { step += 1 }
+                    direction = .leading
+                    withAnimation { step -= 1 }
                 } label: {
-                    Text("Continue")
+                    Text("Back")
                 }
-                .reefStyle(.primary)
-                .frame(maxWidth: 160)
-                .disabled(answers[step] == nil)
-                .opacity(answers[step] != nil ? 1 : 0.4)
+                .reefCompactStyle(.secondary)
             }
+
+            Spacer()
+
+            Button {
+                direction = .trailing
+                withAnimation { step += 1 }
+            } label: {
+                Text("Continue")
+            }
+            .reefStyle(.primary)
+            .frame(maxWidth: 160)
+            .disabled(answers[step] == nil)
+            .opacity(answers[step] != nil ? 1 : 0.4)
         }
     }
 
@@ -213,17 +207,18 @@ struct TutorQuizPopup: View {
                 .frame(maxWidth: 220)
                 .padding(.top, 4)
 
-                Button {
-                    answers = [nil, nil, nil]
-                    direction = .leading
-                    withAnimation { step = 0 }
-                } label: {
-                    Text("Retake Quiz")
-                        .font(.epilogue(14, weight: .semiBold))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.gray600)
-                }
-                .buttonStyle(.plain)
+                Text("Retake Quiz")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.gray600)
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        answers = [nil, nil, nil]
+                        direction = .leading
+                        withAnimation { step = 0 }
+                    }
+                    .accessibilityAddTraits(.isButton)
             }
         }
     }

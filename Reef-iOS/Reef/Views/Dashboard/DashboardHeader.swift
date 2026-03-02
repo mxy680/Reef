@@ -27,12 +27,12 @@ struct DashboardHeader: View {
 
             // Action buttons
             HStack(spacing: 10) {
-                headerButton("magnifyingglass")
-                headerButton("questionmark.circle")
+                headerIcon("magnifyingglass")
+                headerIcon("questionmark.circle")
 
                 // Bell with notification dot
                 ZStack(alignment: .topTrailing) {
-                    headerButton("bell")
+                    headerIcon("bell")
                     Circle()
                         .fill(Color(hex: 0xE74C3C))
                         .frame(width: 8, height: 8)
@@ -50,15 +50,28 @@ struct DashboardHeader: View {
                         .foregroundStyle(ReefColors.black)
                 }
                 .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .frame(height: 32)
                 .background(ReefColors.surface)
                 .clipShape(Capsule())
+                .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
+                .background(
+                    Capsule()
+                        .fill(ReefColors.black)
+                        .offset(x: 2, y: 2)
+                )
 
                 // Profile circle
                 ZStack {
                     Circle()
                         .fill(ReefColors.accent)
                         .frame(width: 32, height: 32)
+                        .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
+                        .background(
+                            Circle()
+                                .fill(ReefColors.black)
+                                .frame(width: 32, height: 32)
+                                .offset(x: 2, y: 2)
+                        )
                     Text(userInitials)
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
@@ -70,14 +83,15 @@ struct DashboardHeader: View {
         .dashboardCard()
     }
 
-    private func headerButton(_ icon: String) -> some View {
-        Button {} label: {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(ReefColors.gray600)
-                .frame(width: 32, height: 32)
-        }
-        .buttonStyle(.plain)
+    private func headerIcon(_ icon: String) -> some View {
+        Image(systemName: icon)
+            .font(.system(size: 18))
+            .foregroundStyle(ReefColors.gray600)
+            .frame(width: 32, height: 32)
+            .compositingGroup()
+            .contentShape(Rectangle())
+            .onTapGesture {}
+            .accessibilityAddTraits(.isButton)
     }
 
     private var userInitials: String {

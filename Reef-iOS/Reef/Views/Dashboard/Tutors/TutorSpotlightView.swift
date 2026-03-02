@@ -68,11 +68,10 @@ struct TutorSpotlightView: View {
                         onVoicePreview()
                     } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: isSpeaking ? "stop.fill" : "play.fill")
+                            Image(systemName: "play.fill")
                                 .font(.system(size: 10, weight: .bold))
-                            Text(isSpeaking ? "Stop" : "Preview Voice")
+                            Text("Preview Voice")
                         }
-                        .frame(minWidth: 100)
                     }
                     .reefCompactStyle(.secondary)
 
@@ -89,6 +88,8 @@ struct TutorSpotlightView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 220)
         .padding(20)
         .background(ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))

@@ -39,38 +39,42 @@ struct RenameSheet: View {
             HStack {
                 Spacer()
 
-                Button("Cancel") {
-                    onClose()
-                }
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.gray600)
-                .buttonStyle(.plain)
+                Text("Cancel")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.gray600)
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onClose()
+                    }
+                    .accessibilityAddTraits(.isButton)
 
-                Button {
-                    submitIfValid()
-                } label: {
-                    Text("Rename")
-                        .font(.epilogue(14, weight: .bold))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 10)
-                        .background(ReefColors.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.black, lineWidth: 2)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(ReefColors.black)
-                                .offset(x: 4, y: 4)
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
-                .opacity(name.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
+                Text("Rename")
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(ReefColors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.black, lineWidth: 2)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(ReefColors.black)
+                            .offset(x: 4, y: 4)
+                    )
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        submitIfValid()
+                    }
+                    .accessibilityAddTraits(.isButton)
+                    .allowsHitTesting(!name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .opacity(name.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
             }
             .padding(.top, 20)
         }

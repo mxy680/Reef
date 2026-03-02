@@ -46,17 +46,18 @@ struct DashboardSidebar: View {
                 Spacer()
             }
 
-            Button {
-                withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
-                    isOpen.toggle()
+            Image(systemName: "sidebar.left")
+                .font(.system(size: 18))
+                .foregroundStyle(ReefColors.gray600)
+                .frame(width: 28, height: 28)
+                .compositingGroup()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
+                        isOpen.toggle()
+                    }
                 }
-            } label: {
-                Image(systemName: "sidebar.left")
-                    .font(.system(size: 18))
-                    .foregroundStyle(ReefColors.gray600)
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.plain)
+                .accessibilityAddTraits(.isButton)
         }
         .frame(height: 64)
         .padding(.horizontal, isOpen ? 20 : 20)
@@ -132,16 +133,18 @@ struct DashboardSidebar: View {
                     Spacer()
                 }
 
-                Button {
-                    createCourse()
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(atCourseLimit ? ReefColors.gray200 : ReefColors.gray400)
-                        .frame(width: 24, height: 24)
-                }
-                .buttonStyle(.plain)
-                .disabled(isCreating || atCourseLimit)
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(atCourseLimit ? ReefColors.gray200 : ReefColors.gray400)
+                    .frame(width: 24, height: 24)
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        createCourse()
+                    }
+                    .accessibilityAddTraits(.isButton)
+                    .allowsHitTesting(!(isCreating || atCourseLimit))
+                    .opacity((isCreating || atCourseLimit) ? 0.4 : 1)
             }
             .padding(.vertical, 4)
             .padding(.horizontal, isOpen ? 14 : 0)
@@ -149,27 +152,29 @@ struct DashboardSidebar: View {
 
             // Course list
             if courses.isEmpty {
-                Button {
-                    createCourse()
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "plus.circle.dashed")
-                            .font(.system(size: 18))
-                            .frame(width: 24, height: 24)
+                HStack(spacing: 12) {
+                    Image(systemName: "plus.circle.dashed")
+                        .font(.system(size: 18))
+                        .frame(width: 24, height: 24)
 
-                        if isOpen {
-                            Text("Add a course")
-                                .font(.epilogue(15, weight: .semiBold))
-                                .tracking(-0.04 * 15)
-                        }
+                    if isOpen {
+                        Text("Add a course")
+                            .font(.epilogue(15, weight: .semiBold))
+                            .tracking(-0.04 * 15)
                     }
-                    .foregroundStyle(ReefColors.gray400)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, isOpen ? 14 : 0)
-                    .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
                 }
-                .buttonStyle(.plain)
-                .disabled(isCreating)
+                .foregroundStyle(ReefColors.gray400)
+                .padding(.vertical, 8)
+                .padding(.horizontal, isOpen ? 14 : 0)
+                .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+                .compositingGroup()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    createCourse()
+                }
+                .accessibilityAddTraits(.isButton)
+                .allowsHitTesting(!isCreating)
+                .opacity(isCreating ? 0.4 : 1)
             } else {
                 ForEach(courses) { course in
                     courseItem(course)
@@ -199,49 +204,50 @@ struct DashboardSidebar: View {
     private func navItem(_ tab: DashboardTab) -> some View {
         let isActive = selectedTab == tab
 
-        return Button {
+        return HStack(spacing: 12) {
+            Image(systemName: tab.icon)
+                .font(.system(size: 18))
+                .frame(width: 24, height: 24)
+
+            if isOpen {
+                Text(tab.label)
+                    .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
+                    .tracking(-0.04 * 15)
+
+                Spacer()
+            }
+        }
+        .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
+        .padding(.vertical, 8)
+        .padding(.horizontal, isOpen ? 14 : 0)
+        .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.accent)
+                : nil
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .stroke(ReefColors.black, lineWidth: 2)
+                : nil
+        )
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.black)
+                    .offset(x: 3, y: 3)
+                : nil
+        )
+        .compositingGroup()
+        .contentShape(Rectangle())
+        .onTapGesture {
             selectedTab = tab
             selectedCourseId = nil
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 18))
-                    .frame(width: 24, height: 24)
-
-                if isOpen {
-                    Text(tab.label)
-                        .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
-                        .tracking(-0.04 * 15)
-
-                    Spacer()
-                }
-            }
-            .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
-            .padding(.vertical, 8)
-            .padding(.horizontal, isOpen ? 14 : 0)
-            .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
-            .background(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.accent)
-                    : nil
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .stroke(ReefColors.black, lineWidth: 2)
-                    : nil
-            )
-            .background(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.black)
-                        .offset(x: 3, y: 3)
-                    : nil
-            )
         }
-        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Course Item
@@ -249,50 +255,51 @@ struct DashboardSidebar: View {
     private func courseItem(_ course: Course) -> some View {
         let isActive = selectedCourseId == course.id
 
-        return Button {
+        return HStack(spacing: 12) {
+            Text(course.emoji)
+                .font(.system(size: 18))
+                .frame(width: 24, height: 24)
+
+            if isOpen {
+                Text(course.name)
+                    .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
+                    .tracking(-0.04 * 15)
+                    .lineLimit(1)
+
+                Spacer()
+            }
+        }
+        .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
+        .padding(.vertical, 8)
+        .padding(.horizontal, isOpen ? 14 : 0)
+        .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.accent)
+                : nil
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .stroke(ReefColors.black, lineWidth: 2)
+                : nil
+        )
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.black)
+                    .offset(x: 3, y: 3)
+                : nil
+        )
+        .compositingGroup()
+        .contentShape(Rectangle())
+        .onTapGesture {
             selectedCourseId = course.id
             selectedTab = nil
-        } label: {
-            HStack(spacing: 12) {
-                Text(course.emoji)
-                    .font(.system(size: 18))
-                    .frame(width: 24, height: 24)
-
-                if isOpen {
-                    Text(course.name)
-                        .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
-                        .tracking(-0.04 * 15)
-                        .lineLimit(1)
-
-                    Spacer()
-                }
-            }
-            .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
-            .padding(.vertical, 8)
-            .padding(.horizontal, isOpen ? 14 : 0)
-            .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
-            .background(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.accent)
-                    : nil
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .stroke(ReefColors.black, lineWidth: 2)
-                    : nil
-            )
-            .background(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.black)
-                        .offset(x: 3, y: 3)
-                    : nil
-            )
         }
-        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Footer
@@ -325,47 +332,45 @@ struct DashboardSidebar: View {
             }
 
             // Settings
-            Button {
+            footerRow {
+                circleIcon(fill: ReefColors.gray100) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(ReefColors.black)
+                }
+            } label: {
+                Text("Settings")
+            } trailing: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundStyle(ReefColors.gray400)
+            }
+            .onTapGesture {
                 selectedTab = .settings
                 selectedCourseId = nil
-            } label: {
-                footerRow {
-                    circleIcon(fill: ReefColors.gray100) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(ReefColors.black)
-                    }
-                } label: {
-                    Text("Settings")
-                } trailing: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12))
-                        .foregroundStyle(ReefColors.gray400)
-                }
             }
-            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isButton)
 
             // User
-            Button {
+            footerRow {
+                circleIcon(fill: ReefColors.surface) {
+                    Text(userInitials)
+                        .font(.epilogue(12, weight: .black))
+                        .foregroundStyle(ReefColors.black)
+                }
+            } label: {
+                Text(displayName)
+                    .lineLimit(1)
+            } trailing: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 18))
+                    .foregroundStyle(ReefColors.gray400)
+            }
+            .onTapGesture {
                 selectedTab = .settings
                 selectedCourseId = nil
-            } label: {
-                footerRow {
-                    circleIcon(fill: ReefColors.surface) {
-                        Text(userInitials)
-                            .font(.epilogue(12, weight: .black))
-                            .foregroundStyle(ReefColors.black)
-                    }
-                } label: {
-                    Text(displayName)
-                        .lineLimit(1)
-                } trailing: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 18))
-                        .foregroundStyle(ReefColors.gray400)
-                }
             }
-            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isButton)
         }
         .padding(.horizontal, isOpen ? 14 : 10)
         .padding(.bottom, 16)
@@ -410,6 +415,7 @@ struct DashboardSidebar: View {
         .padding(.vertical, 8)
         .padding(.horizontal, isOpen ? 6 : 0)
         .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+        .compositingGroup()
         .contentShape(Rectangle())
     }
 

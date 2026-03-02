@@ -23,38 +23,43 @@ struct DeleteCourseSheet: View {
                 .padding(.top, 8)
 
             HStack(spacing: 10) {
-                Button("Cancel") {
-                    onClose()
-                }
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.gray600)
-                .buttonStyle(.plain)
+                Text("Cancel")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.gray600)
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onClose()
+                    }
+                    .accessibilityAddTraits(.isButton)
 
-                Button {
-                    isDeleting = true
-                    onConfirm()
-                } label: {
-                    Text(isDeleting ? "Deleting..." : "Delete")
-                        .font(.epilogue(14, weight: .bold))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 10)
-                        .background(Color(hex: 0xC62828))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.black, lineWidth: 2)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(ReefColors.black)
-                                .offset(x: 4, y: 4)
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(isDeleting)
+                Text(isDeleting ? "Deleting..." : "Delete")
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(Color(hex: 0xC62828))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.black, lineWidth: 2)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(ReefColors.black)
+                            .offset(x: 4, y: 4)
+                    )
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isDeleting = true
+                        onConfirm()
+                    }
+                    .accessibilityAddTraits(.isButton)
+                    .allowsHitTesting(!isDeleting)
+                    .opacity(isDeleting ? 0.4 : 1)
             }
             .padding(.top, 24)
         }

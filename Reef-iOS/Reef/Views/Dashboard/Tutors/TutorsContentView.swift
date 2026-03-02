@@ -92,7 +92,7 @@ final class TutorsViewModel {
 // MARK: - Main View
 
 struct TutorsContentView: View {
-    @State private var viewModel = TutorsViewModel()
+    @Bindable var viewModel: TutorsViewModel
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -139,42 +139,6 @@ struct TutorsContentView: View {
         .dashboardCard()
         .task { await viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
-        .overlay {
-            if let tutor = viewModel.selectedTutor {
-                TutorDetailPopup(
-                    tutor: tutor,
-                    isSpeaking: viewModel.speakingTutorId == tutor.id,
-                    isActive: viewModel.activeTutorId == tutor.id,
-                    onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
-                    onSelect: { viewModel.selectTutor(tutor) },
-                    onClose: {
-                        withAnimation(.spring(duration: 0.3)) {
-                            viewModel.selectedTutor = nil
-                        }
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
-        }
-        .overlay {
-            if viewModel.showQuiz {
-                TutorQuizPopup(
-                    tutors: viewModel.tutors,
-                    onSelectTutor: { tutor in
-                        viewModel.selectTutor(tutor)
-                        withAnimation(.spring(duration: 0.3)) {
-                            viewModel.showQuiz = false
-                        }
-                    },
-                    onDismiss: {
-                        withAnimation(.spring(duration: 0.3)) {
-                            viewModel.showQuiz = false
-                        }
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
-        }
     }
 
     // MARK: - Header
@@ -190,34 +154,35 @@ struct TutorsContentView: View {
                 Spacer()
 
                 // Find Your Tutor quiz button
-                Button {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("Find Your Tutor")
+                        .font(.epilogue(14, weight: .bold))
+                        .tracking(-0.04 * 14)
+                }
+                .foregroundStyle(ReefColors.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(ReefColors.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(ReefColors.black, lineWidth: 1.5)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(ReefColors.black)
+                        .offset(x: 4, y: 4)
+                )
+                .compositingGroup()
+                .contentShape(Rectangle())
+                .onTapGesture {
                     withAnimation(.spring(duration: 0.3)) {
                         viewModel.showQuiz = true
                     }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 14, weight: .bold))
-                        Text("Find Your Tutor")
-                            .font(.epilogue(14, weight: .bold))
-                            .tracking(-0.04 * 14)
-                    }
-                    .foregroundStyle(ReefColors.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 1.5)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 4, y: 4)
-                    )
                 }
-                .buttonStyle(.plain)
+                .accessibilityAddTraits(.isButton)
                 .padding(.top, 4)
                 .padding(.trailing, 4)
                 .padding(.bottom, 4)
