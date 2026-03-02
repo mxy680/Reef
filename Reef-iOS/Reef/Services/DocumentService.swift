@@ -98,21 +98,21 @@ actor DocumentService {
                 .upload(storagePath, data: fileData, options: .init(contentType: "application/pdf"))
         } catch {
             // Clean up DB row on storage failure
-            try? await supabase.from("documents").delete().eq("id", value: newDoc.id).execute()
+            _ = try? await supabase.from("documents").delete().eq("id", value: newDoc.id).execute()
             throw error
         }
 
         // Generate and upload thumbnail
         if let thumbnailData = generateThumbnail(from: fileURL) {
             let thumbPath = "\(userId)/\(newDoc.id)/thumbnail.png"
-            try? await supabase.storage
+            _ = try? await supabase.storage
                 .from("documents")
                 .upload(thumbPath, data: thumbnailData, options: .init(contentType: "image/png"))
         }
 
         // Fire-and-forget processing trigger
         Task.detached { [weak self] in
-            try? await self?.triggerProcessing(documentId: newDoc.id)
+            await self?.triggerProcessing(documentId: newDoc.id)
         }
 
         return newDoc
@@ -191,7 +191,7 @@ actor DocumentService {
         let prefix = "\(userId)/\(docId)"
         let files = try await supabase.storage.from("documents").list(path: prefix)
         for file in files {
-            try? await supabase.storage
+            _ = try? await supabase.storage
                 .from("documents")
                 .copy(from: "\(prefix)/\(file.name)", to: "\(userId)/\(newDoc.id)/\(file.name)")
         }
@@ -226,7 +226,7 @@ actor DocumentService {
             .execute()
 
         Task.detached { [weak self] in
-            try? await self?.triggerProcessing(documentId: docId)
+            await self?.triggerProcessing(documentId: docId)
         }
     }
 
@@ -311,17 +311,21 @@ actor DocumentService {
         return thumbnail.pngData()
     }
 
-    private func triggerProcessing(documentId: String) async throws {
-        // Fake processing — skip server call, just mark as completed after a delay
-        try await Task.sleep(for: .seconds(2))
-
-        struct UpdatePayload: Encodable {
-            let status: String
+    private func triggerProcessing(documentId: String) async {
+        do {
+            try await ReefAPI.shared.triggerReconstruction(documentId: documentId)
+        } catch {
+            print("[DocumentService] triggerProcessing failed: \(error)")
+            // Mark as failed so the card doesn't stay stuck on "Processing..."
+            struct FailPayload: Encodable {
+                let status: String
+                let error_message: String
+            }
+            _ = try? await supabase
+                .from("documents")
+                .update(FailPayload(status: "failed", error_message: "Server unavailable — tap retry"))
+                .eq("id", value: documentId)
+                .execute()
         }
-        try await supabase
-            .from("documents")
-            .update(UpdatePayload(status: "completed"))
-            .eq("id", value: documentId)
-            .execute()
     }
 }

@@ -102,7 +102,7 @@ final class DocumentsViewModel {
             showToast("Document uploading — processing will begin shortly")
             startPollingIfNeeded()
         } catch let error as DocumentServiceError {
-            showToast(error.localizedDescription ?? "Upload failed")
+            showToast(error.localizedDescription)
         } catch {
             showToast("Upload failed — please try again")
         }
@@ -179,7 +179,7 @@ final class DocumentsViewModel {
                     id: doc.id, userId: doc.userId, filename: doc.filename,
                     status: .processing, pageCount: doc.pageCount,
                     problemCount: doc.problemCount, errorMessage: nil,
-                    courseId: doc.courseId, createdAt: doc.createdAt
+                    statusMessage: nil, courseId: doc.courseId, createdAt: doc.createdAt
                 )
                 documents[idx] = updated
             }
