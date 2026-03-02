@@ -30,6 +30,7 @@ struct TutorDetailPopup: View {
                         .frame(width: 28, height: 28)
                         .background(ReefColors.gray100)
                         .clipShape(Circle())
+                        .compositingGroup()
                         .contentShape(Rectangle())
                         .onTapGesture {
                             onClose()

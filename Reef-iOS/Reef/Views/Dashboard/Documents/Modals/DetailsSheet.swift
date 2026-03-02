@@ -51,6 +51,7 @@ struct DetailsSheet: View {
                             .fill(ReefColors.black)
                             .offset(x: 4, y: 4)
                     )
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         onClose()

@@ -63,6 +63,7 @@ struct DocumentCardView: View {
         )
         .offset(x: isPressed ? 4 : 0, y: isPressed ? 4 : 0)
         .opacity(document.status == .processing ? 0.85 : 1)
+        .compositingGroup()
         .contentShape(Rectangle())
         .onTapGesture {
             if document.status == .completed {
@@ -123,6 +124,7 @@ struct DocumentCardView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
             )
+            .compositingGroup()
             .contentShape(Rectangle())
             .onTapGesture {
                 onAction(.retry)
@@ -143,6 +145,7 @@ struct DocumentCardView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(ReefColors.gray400, lineWidth: 1.5)
             )
+            .compositingGroup()
             .contentShape(Rectangle())
             .onTapGesture {
                 withAnimation(.spring(duration: 0.15)) {
@@ -193,6 +196,7 @@ struct DocumentCardView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
+            .compositingGroup()
             .contentShape(Rectangle())
             .onTapGesture {
                 withAnimation(.spring(duration: 0.15)) { showMenu = false }

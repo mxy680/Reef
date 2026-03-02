@@ -50,6 +50,7 @@ struct DashboardSidebar: View {
                 .font(.system(size: 18))
                 .foregroundStyle(ReefColors.gray600)
                 .frame(width: 28, height: 28)
+                .compositingGroup()
                 .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
@@ -136,6 +137,7 @@ struct DashboardSidebar: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(atCourseLimit ? ReefColors.gray200 : ReefColors.gray400)
                     .frame(width: 24, height: 24)
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         createCourse()
@@ -165,6 +167,7 @@ struct DashboardSidebar: View {
                 .padding(.vertical, 8)
                 .padding(.horizontal, isOpen ? 14 : 0)
                 .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+                .compositingGroup()
                 .contentShape(Rectangle())
                 .onTapGesture {
                     createCourse()
@@ -238,6 +241,7 @@ struct DashboardSidebar: View {
                     .offset(x: 3, y: 3)
                 : nil
         )
+        .compositingGroup()
         .contentShape(Rectangle())
         .onTapGesture {
             selectedTab = tab
@@ -289,6 +293,7 @@ struct DashboardSidebar: View {
                     .offset(x: 3, y: 3)
                 : nil
         )
+        .compositingGroup()
         .contentShape(Rectangle())
         .onTapGesture {
             selectedCourseId = course.id
@@ -410,6 +415,7 @@ struct DashboardSidebar: View {
         .padding(.vertical, 8)
         .padding(.horizontal, isOpen ? 6 : 0)
         .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+        .compositingGroup()
         .contentShape(Rectangle())
     }
 

@@ -211,6 +211,7 @@ struct TutorsContentView: View {
                         .fill(ReefColors.black)
                         .offset(x: 4, y: 4)
                 )
+                .compositingGroup()
                 .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.spring(duration: 0.3)) {

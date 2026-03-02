@@ -86,6 +86,7 @@ struct TutorQuizPopup: View {
                         .frame(width: 28, height: 28)
                         .background(ReefColors.gray100)
                         .clipShape(Circle())
+                        .compositingGroup()
                         .contentShape(Rectangle())
                         .onTapGesture {
                             onDismiss()
@@ -217,6 +218,7 @@ struct TutorQuizPopup: View {
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
                     .foregroundStyle(ReefColors.gray600)
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         answers = [nil, nil, nil]

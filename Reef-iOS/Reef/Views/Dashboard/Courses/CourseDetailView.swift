@@ -172,6 +172,7 @@ struct CourseDetailView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(ReefColors.gray400, lineWidth: 1.5)
                     )
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         onEditTapped(viewModel.course)
@@ -188,6 +189,7 @@ struct CourseDetailView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
                     )
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         onDeleteTapped(viewModel.course)

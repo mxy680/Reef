@@ -52,6 +52,7 @@ struct MoveToCourseSheet: View {
                                 .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                                 .foregroundStyle(ReefColors.gray400)
                         )
+                        .compositingGroup()
                         .contentShape(Rectangle())
                         .onTapGesture {
                             onConfirm(nil)
@@ -91,6 +92,7 @@ struct MoveToCourseSheet: View {
                                     lineWidth: 1.5
                                 )
                         )
+                        .compositingGroup()
                         .contentShape(Rectangle())
                         .onTapGesture {
                             onConfirm(course.id)
@@ -108,6 +110,7 @@ struct MoveToCourseSheet: View {
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
                     .foregroundStyle(ReefColors.gray600)
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         onClose()

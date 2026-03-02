@@ -75,6 +75,7 @@ struct DashboardHeader: View {
             .font(.system(size: 18))
             .foregroundStyle(ReefColors.gray600)
             .frame(width: 32, height: 32)
+            .compositingGroup()
             .contentShape(Rectangle())
             .onTapGesture {}
             .accessibilityAddTraits(.isButton)

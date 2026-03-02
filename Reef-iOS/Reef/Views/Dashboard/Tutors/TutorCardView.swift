@@ -111,6 +111,7 @@ struct TutorCardView: View {
                 .offset(x: isPressed ? 0 : 4, y: isPressed ? 0 : 4)
         )
         .offset(x: isPressed ? 4 : 0, y: isPressed ? 4 : 0)
+        .compositingGroup()
         .contentShape(Rectangle())
         .onTapGesture {
             onTap()

@@ -348,6 +348,7 @@ struct DocumentsContentView: View {
                 .fill(ReefColors.black)
                 .offset(x: 4, y: 4)
         )
+        .compositingGroup()
         .contentShape(Rectangle())
         .onTapGesture {
             viewModel.showFilePicker = true
@@ -387,6 +388,7 @@ struct DocumentsContentView: View {
                         .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
                         .foregroundStyle(ReefColors.gray400)
                 )
+                .compositingGroup()
                 .contentShape(Rectangle())
                 .onTapGesture {
                     viewModel.showFilePicker = true

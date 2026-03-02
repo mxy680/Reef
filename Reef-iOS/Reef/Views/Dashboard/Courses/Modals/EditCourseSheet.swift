@@ -95,6 +95,7 @@ struct EditCourseSheet: View {
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
                     .foregroundStyle(ReefColors.gray600)
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         onClose()
@@ -118,6 +119,7 @@ struct EditCourseSheet: View {
                             .fill(ReefColors.black)
                             .offset(x: 4, y: 4)
                     )
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         submitIfValid()
@@ -165,6 +167,7 @@ struct EditCourseSheet: View {
                             .fill(ReefColors.black)
                             .offset(x: 3, y: 3)
                     )
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         emoji = em

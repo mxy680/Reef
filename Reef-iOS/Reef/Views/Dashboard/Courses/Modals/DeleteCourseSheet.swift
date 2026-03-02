@@ -27,6 +27,7 @@ struct DeleteCourseSheet: View {
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
                     .foregroundStyle(ReefColors.gray600)
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         onClose()
@@ -50,6 +51,7 @@ struct DeleteCourseSheet: View {
                             .fill(ReefColors.black)
                             .offset(x: 4, y: 4)
                     )
+                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         isDeleting = true

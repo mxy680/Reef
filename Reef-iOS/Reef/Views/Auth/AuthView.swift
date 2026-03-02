@@ -124,6 +124,7 @@ struct AuthView: View {
                                         .font(.epilogue(14, weight: .bold))
                                         .tracking(-0.04 * 14)
                                         .foregroundStyle(ReefColors.primary)
+                                        .compositingGroup()
                                         .contentShape(Rectangle())
                                         .onTapGesture {
                                             withAnimation(.easeInOut(duration: 0.3)) {
