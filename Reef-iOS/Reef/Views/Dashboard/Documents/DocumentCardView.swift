@@ -16,6 +16,7 @@ struct DocumentCardView: View {
     let document: Document
     let thumbnailURL: URL?
     let index: Int
+    var cardHeight: CGFloat? = nil
     let onAction: (DocumentAction) -> Void
 
     @State private var isPressed = false
@@ -27,7 +28,7 @@ struct DocumentCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Thumbnail
+            // Thumbnail — flexible, shrinks to fit when cardHeight is set
             DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
@@ -37,8 +38,9 @@ struct DocumentCardView: View {
                 .fill(ReefColors.gray200)
                 .frame(height: 1)
                 .padding(.top, 10)
+                .layoutPriority(1)
 
-            // Info
+            // Info — fixed, gets priority so it's never clipped
             VStack(alignment: .leading, spacing: 4) {
                 Text(document.displayName)
                     .font(.epilogue(13, weight: .bold))
@@ -55,7 +57,9 @@ struct DocumentCardView: View {
             .padding(.horizontal, 10)
             .padding(.top, 8)
             .padding(.bottom, 10)
+            .layoutPriority(1)
         }
+        .frame(height: cardHeight)
         .background(ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(

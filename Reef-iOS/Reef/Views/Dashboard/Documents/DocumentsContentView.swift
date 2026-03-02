@@ -367,23 +367,18 @@ struct DocumentsContentView: View {
 
     // MARK: - Grid
 
+    private let rowSpacing: CGFloat = 16
+    private let shadowPad: CGFloat = 4
+    private let targetRows: CGFloat = 2
+
     private var documentGrid: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
+        GeometryReader { geo in
+            let cardHeight = (geo.size.height - rowSpacing * (targetRows - 1) - shadowPad) / targetRows
 
-                // Upload placeholder card — matches document card height
-                VStack(spacing: 0) {
-                    // Invisible spacer matching thumbnail aspect ratio
-                    Color.clear
-                        .aspectRatio(8.5 / 10, contentMode: .fit)
-                        .padding(.horizontal, 10)
-                        .padding(.top, 10)
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: rowSpacing) {
 
-                    // Spacer matching divider + info section
-                    Color.clear
-                        .frame(height: 10 + 1 + 8 + 13 + 4 + 11 + 10) // divider-top + divider + padding + title + gap + status + padding
-                }
-                .overlay {
+                    // Upload placeholder card — height matches document cards
                     VStack(spacing: 8) {
                         Image(systemName: "arrow.up.doc")
                             .font(.system(size: 16, weight: .semibold))
@@ -392,32 +387,35 @@ struct DocumentsContentView: View {
                             .tracking(-0.04 * 14)
                     }
                     .foregroundStyle(ReefColors.gray500)
-                }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
-                        .foregroundStyle(ReefColors.gray400)
-                )
-                .compositingGroup()
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    viewModel.showFilePicker = true
-                }
-                .accessibilityAddTraits(.isButton)
-                .fadeUp(index: 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(height: cardHeight)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                            .foregroundStyle(ReefColors.gray400)
+                    )
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        viewModel.showFilePicker = true
+                    }
+                    .accessibilityAddTraits(.isButton)
+                    .fadeUp(index: 0)
 
-                // Document cards
-                ForEach(Array(viewModel.documents.enumerated()), id: \.element.id) { index, doc in
-                    DocumentCardView(
-                        document: doc,
-                        thumbnailURL: viewModel.thumbnailURLs[doc.id],
-                        index: index + 1
-                    ) { action in
-                        handleAction(action, doc: doc)
+                    // Document cards
+                    ForEach(Array(viewModel.documents.enumerated()), id: \.element.id) { index, doc in
+                        DocumentCardView(
+                            document: doc,
+                            thumbnailURL: viewModel.thumbnailURLs[doc.id],
+                            index: index + 1,
+                            cardHeight: cardHeight
+                        ) { action in
+                            handleAction(action, doc: doc)
+                        }
                     }
                 }
+                .padding([.trailing, .bottom], shadowPad)
             }
-            .padding([.trailing, .bottom], 4) // room for 3D shadow offset
         }
     }
 
