@@ -65,7 +65,7 @@ struct SelectCoursePopup: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.gray300, lineWidth: 1.5)
+                                .stroke(ReefColors.gray400, lineWidth: 1.5)
                         )
                         .compositingGroup()
                         .contentShape(Rectangle())
