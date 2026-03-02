@@ -41,7 +41,7 @@ struct DocumentCardView: View {
                 .layoutPriority(1)
 
             // Info — fixed, gets priority so it's never clipped
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(document.displayName)
                     .font(.epilogue(13, weight: .bold))
                     .tracking(-0.04 * 13)
