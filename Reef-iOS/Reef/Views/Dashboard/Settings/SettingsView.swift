@@ -253,128 +253,126 @@ extension SettingsView {
         let completionItems = profileCompletionItems(profile)
         let completionPct = Double(completionItems.filter(\.done).count) / Double(completionItems.count)
 
-        return SettingsGrid {
-            // Personal Info
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Personal Info")
+        return VStack(spacing: 16) {
+            // Row 1: Personal Info | Profile Completion
+            SettingsRow {
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Personal Info")
 
-                    // Name
-                    SettingsFieldLabel("Name")
-                    if isEditingName {
-                        HStack(spacing: 8) {
-                            TextField("Your name", text: $editedName)
-                                .font(.epilogue(15, weight: .medium))
-                                .tracking(-0.04 * 15)
-                                .textFieldStyle(.plain)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(ReefColors.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(ReefColors.gray400, lineWidth: 1.5)
-                                )
+                        SettingsFieldLabel("Name")
+                        if isEditingName {
+                            HStack(spacing: 8) {
+                                TextField("Your name", text: $editedName)
+                                    .font(.epilogue(15, weight: .medium))
+                                    .tracking(-0.04 * 15)
+                                    .textFieldStyle(.plain)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                    .background(ReefColors.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(ReefColors.gray400, lineWidth: 1.5)
+                                    )
 
-                            Button {
-                                saveName()
-                            } label: {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundStyle(ReefColors.primary)
+                                Button {
+                                    saveName()
+                                } label: {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(ReefColors.primary)
+                                }
+
+                                Button {
+                                    isEditingName = false
+                                    editedName = profile?.displayName ?? ""
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(ReefColors.gray500)
+                                }
                             }
+                        } else {
+                            HStack {
+                                Text(profile?.displayName ?? "Not set")
+                                    .font(.epilogue(15, weight: .semiBold))
+                                    .tracking(-0.04 * 15)
+                                    .foregroundStyle(ReefColors.black)
 
-                            Button {
-                                isEditingName = false
-                                editedName = profile?.displayName ?? ""
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundStyle(ReefColors.gray500)
+                                Spacer()
+
+                                Button {
+                                    editedName = profile?.displayName ?? ""
+                                    isEditingName = true
+                                } label: {
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(ReefColors.gray500)
+                                }
                             }
                         }
-                    } else {
-                        HStack {
-                            Text(profile?.displayName ?? "Not set")
-                                .font(.epilogue(15, weight: .semiBold))
-                                .tracking(-0.04 * 15)
-                                .foregroundStyle(ReefColors.black)
 
-                            Spacer()
+                        SettingsDivider()
 
-                            Button {
-                                editedName = profile?.displayName ?? ""
-                                isEditingName = true
-                            } label: {
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(ReefColors.gray500)
-                            }
-                        }
-                    }
+                        SettingsFieldLabel("Email")
+                        Text(authManager.session?.user.email ?? "—")
+                            .font(.epilogue(15, weight: .semiBold))
+                            .tracking(-0.04 * 15)
+                            .foregroundStyle(ReefColors.black)
 
-                    SettingsDivider()
+                        SettingsDivider()
 
-                    // Email
-                    SettingsFieldLabel("Email")
-                    Text(authManager.session?.user.email ?? "—")
-                        .font(.epilogue(15, weight: .semiBold))
-                        .tracking(-0.04 * 15)
-                        .foregroundStyle(ReefColors.black)
-
-                    SettingsDivider()
-
-                    // Member Since
-                    SettingsFieldLabel("Member Since")
-                    Text(memberSinceText(profile?.createdAt))
-                        .font(.epilogue(15, weight: .semiBold))
-                        .tracking(-0.04 * 15)
-                        .foregroundStyle(ReefColors.black)
-                }
-            }
-
-            // Profile Completion
-            SettingsCard {
-                VStack(spacing: 16) {
-                    SettingsSectionHeader("Profile Completion")
-
-                    ZStack {
-                        Circle()
-                            .stroke(ReefColors.gray100, lineWidth: 8)
-
-                        Circle()
-                            .trim(from: 0, to: appeared ? completionPct : 0)
-                            .stroke(ReefColors.primary, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                            .rotationEffect(.degrees(-90))
-                            .animation(.easeOut(duration: 0.8).delay(0.3), value: appeared)
-
-                        Text("\(Int(completionPct * 100))%")
-                            .font(.epilogue(22, weight: .bold))
-                            .tracking(-0.04 * 22)
+                        SettingsFieldLabel("Member Since")
+                        Text(memberSinceText(profile?.createdAt))
+                            .font(.epilogue(15, weight: .semiBold))
+                            .tracking(-0.04 * 15)
                             .foregroundStyle(ReefColors.black)
                     }
-                    .frame(width: 96, height: 96)
+                }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(completionItems, id: \.label) { item in
-                            HStack(spacing: 8) {
-                                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(item.done ? ReefColors.primary : ReefColors.gray400)
+                SettingsCard {
+                    VStack(spacing: 16) {
+                        SettingsSectionHeader("Profile Completion")
 
-                                Text(item.label)
-                                    .font(.epilogue(13, weight: .medium))
-                                    .tracking(-0.04 * 13)
-                                    .foregroundStyle(item.done ? ReefColors.black : ReefColors.gray500)
+                        ZStack {
+                            Circle()
+                                .stroke(ReefColors.gray100, lineWidth: 8)
+
+                            Circle()
+                                .trim(from: 0, to: appeared ? completionPct : 0)
+                                .stroke(ReefColors.primary, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                                .rotationEffect(.degrees(-90))
+                                .animation(.easeOut(duration: 0.8).delay(0.3), value: appeared)
+
+                            Text("\(Int(completionPct * 100))%")
+                                .font(.epilogue(22, weight: .bold))
+                                .tracking(-0.04 * 22)
+                                .foregroundStyle(ReefColors.black)
+                        }
+                        .frame(width: 96, height: 96)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(completionItems, id: \.label) { item in
+                                HStack(spacing: 8) {
+                                    Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(item.done ? ReefColors.primary : ReefColors.gray400)
+
+                                    Text(item.label)
+                                        .font(.epilogue(13, weight: .medium))
+                                        .tracking(-0.04 * 13)
+                                        .foregroundStyle(item.done ? ReefColors.black : ReefColors.gray500)
+                                }
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 
-            // Education (full width)
-            SettingsCard(fullWidth: true) {
+            // Row 2: Education (full width)
+            SettingsCard {
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsSectionHeader("Education")
 
@@ -484,57 +482,57 @@ extension SettingsView {
 
 extension SettingsView {
     private var preferencesTab: some View {
-        SettingsGrid {
-            // Appearance
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Appearance")
+        VStack(spacing: 16) {
+            // Row 1: Appearance | Notifications
+            SettingsRow {
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Appearance")
 
-                    SettingsToggleRow(
-                        label: "Dark Mode",
-                        isOn: $darkMode
-                    )
+                        SettingsToggleRow(
+                            label: "Dark Mode",
+                            isOn: $darkMode
+                        )
 
-                    SettingsDivider()
+                        SettingsDivider()
 
-                    SettingsFieldLabel("Theme Color")
-                    HStack(spacing: 12) {
-                        ForEach(themeColors, id: \.hex) { item in
-                            Circle()
-                                .fill(item.color)
-                                .frame(width: 32, height: 32)
-                                .overlay(
-                                    Circle()
-                                        .stroke(ReefColors.black, lineWidth: selectedTheme == item.hex ? 2.5 : 0)
-                                )
-                                .shadow(color: selectedTheme == item.hex ? ReefColors.black.opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
-                                .contentShape(Circle())
-                                .onTapGesture { selectedTheme = item.hex }
+                        SettingsFieldLabel("Theme Color")
+                        HStack(spacing: 12) {
+                            ForEach(themeColors, id: \.hex) { item in
+                                Circle()
+                                    .fill(item.color)
+                                    .frame(width: 32, height: 32)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(ReefColors.black, lineWidth: selectedTheme == item.hex ? 2.5 : 0)
+                                    )
+                                    .shadow(color: selectedTheme == item.hex ? ReefColors.black.opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
+                                    .contentShape(Circle())
+                                    .onTapGesture { selectedTheme = item.hex }
+                            }
                         }
+                    }
+                }
+
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Notifications")
+
+                        SettingsToggleRow(label: "Email Notifications", isOn: $emailNotifications)
+                        SettingsDivider()
+                        SettingsToggleRow(label: "Study Reminders", isOn: $studyReminders)
+                        SettingsDivider()
+                        SettingsToggleRow(label: "Weekly Digest", isOn: $weeklyDigest)
                     }
                 }
             }
 
-            // Notifications
+            // Row 2: Study Preferences (full width)
             SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Notifications")
-
-                    SettingsToggleRow(label: "Email Notifications", isOn: $emailNotifications)
-                    SettingsDivider()
-                    SettingsToggleRow(label: "Study Reminders", isOn: $studyReminders)
-                    SettingsDivider()
-                    SettingsToggleRow(label: "Weekly Digest", isOn: $weeklyDigest)
-                }
-            }
-
-            // Study Preferences (full width)
-            SettingsCard(fullWidth: true) {
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsSectionHeader("Study Preferences")
 
                     HStack(alignment: .top, spacing: 32) {
-                        // Left column
                         VStack(alignment: .leading, spacing: 0) {
                             SettingsToggleRow(label: "Focus on Weak Areas", isOn: $focusWeakAreas)
                             SettingsDivider()
@@ -547,7 +545,6 @@ extension SettingsView {
                         }
                         .frame(maxWidth: .infinity)
 
-                        // Right column
                         VStack(alignment: .leading, spacing: 0) {
                             SettingsFieldLabel("Default Question Count")
                             SettingsStepper(value: $questionCount, range: 5...50, step: 5)
@@ -572,87 +569,89 @@ extension SettingsView {
 
 extension SettingsView {
     private var privacyTab: some View {
-        SettingsGrid {
-            // Analytics
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Analytics")
+        VStack(spacing: 16) {
+            // Row 1: Analytics | Data Sharing
+            SettingsRow {
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Analytics")
 
-                    SettingsToggleRow(label: "Usage Analytics", isOn: $usageAnalytics)
-                    Text("Help us improve Reef by sharing anonymous usage data")
-                        .font(.epilogue(12, weight: .medium))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray500)
-                        .padding(.top, 4)
+                        SettingsToggleRow(label: "Usage Analytics", isOn: $usageAnalytics)
+                        Text("Help us improve Reef by sharing anonymous usage data")
+                            .font(.epilogue(12, weight: .medium))
+                            .tracking(-0.04 * 12)
+                            .foregroundStyle(ReefColors.gray500)
+                            .padding(.top, 4)
 
-                    SettingsDivider()
+                        SettingsDivider()
 
-                    SettingsToggleRow(label: "Crash Reports", isOn: $crashReports)
-                    Text("Automatically send crash reports")
-                        .font(.epilogue(12, weight: .medium))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray500)
-                        .padding(.top, 4)
-                }
-            }
-
-            // Data Sharing
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Data Sharing")
-
-                    SettingsToggleRow(label: "Personalized Experience", isOn: $personalizedExperience)
-                    Text("Use your study patterns to improve recommendations")
-                        .font(.epilogue(12, weight: .medium))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray500)
-                        .padding(.top, 4)
-
-                    SettingsDivider()
-
-                    SettingsToggleRow(label: "Third-Party Sharing", isOn: $thirdPartySharing)
-                    Text("Share anonymized data with research partners")
-                        .font(.epilogue(12, weight: .medium))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray500)
-                        .padding(.top, 4)
-                }
-            }
-
-            // Your Data
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    SettingsSectionHeader("Your Data")
-
-                    Button("Export My Data") {
-                        showToast("Export started — you'll receive an email when it's ready")
+                        SettingsToggleRow(label: "Crash Reports", isOn: $crashReports)
+                        Text("Automatically send crash reports")
+                            .font(.epilogue(12, weight: .medium))
+                            .tracking(-0.04 * 12)
+                            .foregroundStyle(ReefColors.gray500)
+                            .padding(.top, 4)
                     }
-                    .reefCompactStyle(.secondary)
+                }
 
-                    Button("What We Collect") {}
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Data Sharing")
+
+                        SettingsToggleRow(label: "Personalized Experience", isOn: $personalizedExperience)
+                        Text("Use your study patterns to improve recommendations")
+                            .font(.epilogue(12, weight: .medium))
+                            .tracking(-0.04 * 12)
+                            .foregroundStyle(ReefColors.gray500)
+                            .padding(.top, 4)
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(label: "Third-Party Sharing", isOn: $thirdPartySharing)
+                        Text("Share anonymized data with research partners")
+                            .font(.epilogue(12, weight: .medium))
+                            .tracking(-0.04 * 12)
+                            .foregroundStyle(ReefColors.gray500)
+                            .padding(.top, 4)
+                    }
+                }
+            }
+
+            // Row 2: Your Data | Privacy Notice
+            SettingsRow {
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 12) {
+                        SettingsSectionHeader("Your Data")
+
+                        Button("Export My Data") {
+                            showToast("Export started — you'll receive an email when it's ready")
+                        }
                         .reefCompactStyle(.secondary)
 
-                    Button("Request Data Deletion") {
-                        showToast("Request submitted — we'll process it within 30 days")
+                        Button("What We Collect") {}
+                            .reefCompactStyle(.secondary)
+
+                        Button("Request Data Deletion") {
+                            showToast("Request submitted — we'll process it within 30 days")
+                        }
+                        .reefCompactStyle(.secondary)
                     }
-                    .reefCompactStyle(.secondary)
                 }
-            }
 
-            // Privacy Notice
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    SettingsSectionHeader("Privacy Notice")
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 12) {
+                        SettingsSectionHeader("Privacy Notice")
 
-                    Text("Your data is protected by industry-standard security practices.")
-                        .font(.epilogue(13, weight: .medium))
-                        .tracking(-0.04 * 13)
-                        .foregroundStyle(ReefColors.gray600)
+                        Text("Your data is protected by industry-standard security practices.")
+                            .font(.epilogue(13, weight: .medium))
+                            .tracking(-0.04 * 13)
+                            .foregroundStyle(ReefColors.gray600)
 
-                    privacyBullet(icon: "lock.shield", text: "End-to-end encryption")
-                    privacyBullet(icon: "hand.raised", text: "No data sold to advertisers")
-                    privacyBullet(icon: "server.rack", text: "US-based servers")
-                    privacyBullet(icon: "trash", text: "30-day deletion guarantee")
+                        privacyBullet(icon: "lock.shield", text: "End-to-end encryption")
+                        privacyBullet(icon: "hand.raised", text: "No data sold to advertisers")
+                        privacyBullet(icon: "server.rack", text: "US-based servers")
+                        privacyBullet(icon: "trash", text: "30-day deletion guarantee")
+                    }
                 }
             }
         }
@@ -677,107 +676,108 @@ extension SettingsView {
 
 extension SettingsView {
     private var aboutTab: some View {
-        SettingsGrid {
-            // App Info
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("App Info")
+        VStack(spacing: 16) {
+            // Row 1: App Info | What's New
+            SettingsRow {
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("App Info")
 
-                    HStack(spacing: 14) {
-                        // App icon
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(ReefColors.primary)
-                            .frame(width: 56, height: 56)
-                            .overlay(
-                                Text("R")
-                                    .font(.epilogue(26, weight: .black))
-                                    .tracking(-0.04 * 26)
-                                    .foregroundStyle(ReefColors.white)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(ReefColors.black, lineWidth: 2)
-                            )
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(ReefColors.black)
-                                    .offset(x: 3, y: 3)
-                            )
+                        HStack(spacing: 14) {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(ReefColors.primary)
+                                .frame(width: 56, height: 56)
+                                .overlay(
+                                    Text("R")
+                                        .font(.epilogue(26, weight: .black))
+                                        .tracking(-0.04 * 26)
+                                        .foregroundStyle(ReefColors.white)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(ReefColors.black, lineWidth: 2)
+                                )
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(ReefColors.black)
+                                        .offset(x: 3, y: 3)
+                                )
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Reef")
-                                .font(.epilogue(20, weight: .black))
-                                .tracking(-0.04 * 20)
-                                .foregroundStyle(ReefColors.black)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Reef")
+                                    .font(.epilogue(20, weight: .black))
+                                    .tracking(-0.04 * 20)
+                                    .foregroundStyle(ReefColors.black)
 
-                            Text("1.0.0 (Build 42)")
-                                .font(.epilogue(12, weight: .medium))
-                                .tracking(-0.04 * 12)
-                                .foregroundStyle(ReefColors.gray500)
+                                Text("1.0.0 (Build 42)")
+                                    .font(.epilogue(12, weight: .medium))
+                                    .tracking(-0.04 * 12)
+                                    .foregroundStyle(ReefColors.gray500)
+                            }
+                        }
+
+                        Text("Your AI-powered study companion. Upload documents, generate quizzes, and master any subject.")
+                            .font(.epilogue(13, weight: .medium))
+                            .tracking(-0.04 * 13)
+                            .foregroundStyle(ReefColors.gray600)
+                            .padding(.top, 14)
+
+                        SettingsDivider()
+
+                        HStack(spacing: 24) {
+                            aboutInfoRow(label: "Platform", value: "iPad")
+                            aboutInfoRow(label: "Environment", value: "Production")
                         }
                     }
+                }
 
-                    Text("Your AI-powered study companion. Upload documents, generate quizzes, and master any subject.")
-                        .font(.epilogue(13, weight: .medium))
-                        .tracking(-0.04 * 13)
-                        .foregroundStyle(ReefColors.gray600)
-                        .padding(.top, 14)
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("What's New")
 
-                    SettingsDivider()
+                        Text("v1.0.0 — February 2026")
+                            .font(.epilogue(14, weight: .bold))
+                            .tracking(-0.04 * 14)
+                            .foregroundStyle(ReefColors.black)
+                            .padding(.bottom, 12)
 
-                    HStack(spacing: 24) {
-                        aboutInfoRow(label: "Platform", value: "iPad")
-                        aboutInfoRow(label: "Environment", value: "Production")
+                        VStack(alignment: .leading, spacing: 8) {
+                            releaseNote("Document upload & management")
+                            releaseNote("Course organization")
+                            releaseNote("AI-powered quizzes")
+                            releaseNote("Study analytics dashboard")
+                        }
                     }
                 }
             }
 
-            // What's New
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("What's New")
+            // Row 2: Support | Social
+            SettingsRow {
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Support")
 
-                    Text("v1.0.0 — February 2026")
-                        .font(.epilogue(14, weight: .bold))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.black)
-                        .padding(.bottom, 12)
+                        SettingsLinkRow(icon: "envelope", label: "Contact Support")
+                        SettingsLinkRow(icon: "questionmark.circle", label: "Help Center")
+                        SettingsLinkRow(icon: "ladybug", label: "Report a Bug")
+                        SettingsLinkRow(icon: "bubble.left", label: "Send Feedback")
+                    }
+                }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        releaseNote("Document upload & management")
-                        releaseNote("Course organization")
-                        releaseNote("AI-powered quizzes")
-                        releaseNote("Study analytics dashboard")
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Social")
+
+                        SettingsLinkRow(icon: "at", label: "X / Twitter")
+                        SettingsLinkRow(icon: "camera", label: "Instagram")
+                        SettingsLinkRow(icon: "bubble.left.and.bubble.right", label: "Discord Community")
+                        SettingsLinkRow(icon: "play.rectangle", label: "YouTube")
                     }
                 }
             }
 
-            // Support
+            // Row 3: Legal (full width)
             SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Support")
-
-                    SettingsLinkRow(icon: "envelope", label: "Contact Support")
-                    SettingsLinkRow(icon: "questionmark.circle", label: "Help Center")
-                    SettingsLinkRow(icon: "ladybug", label: "Report a Bug")
-                    SettingsLinkRow(icon: "bubble.left", label: "Send Feedback")
-                }
-            }
-
-            // Social
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Social")
-
-                    SettingsLinkRow(icon: "at", label: "X / Twitter")
-                    SettingsLinkRow(icon: "camera", label: "Instagram")
-                    SettingsLinkRow(icon: "bubble.left.and.bubble.right", label: "Discord Community")
-                    SettingsLinkRow(icon: "play.rectangle", label: "YouTube")
-                }
-            }
-
-            // Legal (full width)
-            SettingsCard(fullWidth: true) {
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsSectionHeader("Legal")
 
@@ -830,113 +830,111 @@ extension SettingsView {
         let tier: Tier = .shore
         let limits = TierLimits.current()
 
-        return SettingsGrid {
-            // Your Plan
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Your Plan")
+        return VStack(spacing: 16) {
+            // Row 1: Your Plan | Security
+            SettingsRow {
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Your Plan")
 
-                    // Tier badge
-                    Text("Shore")
-                        .font(.epilogue(13, weight: .bold))
-                        .tracking(-0.04 * 13)
-                        .foregroundStyle(ReefColors.black)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(ReefColors.accent)
-                        .clipShape(Capsule())
-                        .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
-                        .padding(.bottom, 16)
-
-                    // Usage: Documents
-                    usageBar(label: "Documents", current: 0, max: limits.maxDocuments)
-                        .padding(.bottom, 12)
-
-                    // Usage: Courses
-                    usageBar(label: "Courses", current: 0, max: limits.maxCourses)
-                        .padding(.bottom, 12)
-
-                    SettingsDivider()
-
-                    HStack {
-                        Text("Max File Size")
-                            .font(.epilogue(13, weight: .medium))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.gray600)
-                        Spacer()
-                        Text("\(limits.maxFileSizeMB) MB")
+                        Text("Shore")
                             .font(.epilogue(13, weight: .bold))
                             .tracking(-0.04 * 13)
                             .foregroundStyle(ReefColors.black)
-                    }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(ReefColors.accent)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
+                            .padding(.bottom, 16)
 
-                    Button {
-                        showToast("Upgrades coming soon!")
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.up.circle")
-                            Text("Upgrade Plan")
+                        usageBar(label: "Documents", current: 0, max: limits.maxDocuments)
+                            .padding(.bottom, 12)
+
+                        usageBar(label: "Courses", current: 0, max: limits.maxCourses)
+                            .padding(.bottom, 12)
+
+                        SettingsDivider()
+
+                        HStack {
+                            Text("Max File Size")
+                                .font(.epilogue(13, weight: .medium))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(ReefColors.gray600)
+                            Spacer()
+                            Text("\(limits.maxFileSizeMB) MB")
+                                .font(.epilogue(13, weight: .bold))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(ReefColors.black)
+                        }
+
+                        Button {
+                            showToast("Upgrades coming soon!")
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.up.circle")
+                                Text("Upgrade Plan")
+                            }
+                        }
+                        .reefCompactStyle(.primary)
+                        .padding(.top, 16)
+                    }
+                }
+
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SettingsSectionHeader("Security")
+
+                        SettingsFieldLabel("Sign-in Method")
+                        HStack(spacing: 8) {
+                            Image(systemName: "link")
+                                .font(.system(size: 13))
+                                .foregroundStyle(ReefColors.primary)
+                            Text("Magic Link")
+                                .font(.epilogue(14, weight: .semiBold))
+                                .tracking(-0.04 * 14)
+                                .foregroundStyle(ReefColors.black)
+                        }
+                        Text(authManager.session?.user.email ?? "—")
+                            .font(.epilogue(12, weight: .medium))
+                            .tracking(-0.04 * 12)
+                            .foregroundStyle(ReefColors.gray500)
+                            .padding(.top, 2)
+
+                        SettingsDivider()
+
+                        SettingsFieldLabel("Two-Factor Authentication")
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(ReefColors.gray400)
+                                .frame(width: 8, height: 8)
+                            Text("Not enabled")
+                                .font(.epilogue(13, weight: .medium))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(ReefColors.gray500)
+                            Spacer()
+                            Button("Enable") {}
+                                .reefCompactStyle(.secondary)
+                        }
+
+                        SettingsDivider()
+
+                        SettingsFieldLabel("Active Sessions")
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(Color(hex: 0x4CAF50))
+                                .frame(width: 8, height: 8)
+                            Text("This device — Active now")
+                                .font(.epilogue(13, weight: .medium))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(ReefColors.black)
                         }
                     }
-                    .reefCompactStyle(.primary)
-                    .padding(.top, 16)
                 }
             }
 
-            // Security
+            // Row 2: Compare Plans (full width)
             SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Security")
-
-                    SettingsFieldLabel("Sign-in Method")
-                    HStack(spacing: 8) {
-                        Image(systemName: "link")
-                            .font(.system(size: 13))
-                            .foregroundStyle(ReefColors.primary)
-                        Text("Magic Link")
-                            .font(.epilogue(14, weight: .semiBold))
-                            .tracking(-0.04 * 14)
-                            .foregroundStyle(ReefColors.black)
-                    }
-                    Text(authManager.session?.user.email ?? "—")
-                        .font(.epilogue(12, weight: .medium))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray500)
-                        .padding(.top, 2)
-
-                    SettingsDivider()
-
-                    SettingsFieldLabel("Two-Factor Authentication")
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(ReefColors.gray400)
-                            .frame(width: 8, height: 8)
-                        Text("Not enabled")
-                            .font(.epilogue(13, weight: .medium))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.gray500)
-                        Spacer()
-                        Button("Enable") {}
-                            .reefCompactStyle(.secondary)
-                    }
-
-                    SettingsDivider()
-
-                    SettingsFieldLabel("Active Sessions")
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color(hex: 0x4CAF50))
-                            .frame(width: 8, height: 8)
-                        Text("This device — Active now")
-                            .font(.epilogue(13, weight: .medium))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.black)
-                    }
-                }
-            }
-
-            // Compare Plans (full width)
-            SettingsCard(fullWidth: true) {
                 VStack(alignment: .leading, spacing: 0) {
                     SettingsSectionHeader("Compare Plans")
 
@@ -948,8 +946,8 @@ extension SettingsView {
                 }
             }
 
-            // Actions (full width)
-            SettingsCard(fullWidth: true) {
+            // Row 3: Actions (full width)
+            SettingsCard {
                 HStack(spacing: 12) {
                     Button {
                         authManager.signOut()
@@ -1068,33 +1066,27 @@ extension SettingsView {
 
 // MARK: ─── Shared Components ────────────────────────────
 
-private struct SettingsGrid<Content: View>: View {
+private struct SettingsRow<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        let grid = [
-            GridItem(.flexible(), spacing: 16),
-            GridItem(.flexible(), spacing: 16),
-        ]
-
-        LazyVGrid(columns: grid, alignment: .leading, spacing: 16) {
+        HStack(alignment: .top, spacing: 16) {
             content
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
 private struct SettingsCard<Content: View>: View {
-    var fullWidth: Bool = false
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading) {
             content
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(24)
         .dashboardCard()
-        .gridCellColumns(fullWidth ? 2 : 1)
     }
 }
 
