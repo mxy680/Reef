@@ -225,7 +225,7 @@ final class DocumentsViewModel {
 // MARK: - Main View
 
 struct DocumentsContentView: View {
-    @State private var viewModel = DocumentsViewModel()
+    @Bindable var viewModel: DocumentsViewModel
 
     private let columns = [
         GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 20)
@@ -282,16 +282,6 @@ struct DocumentsContentView: View {
                 document: doc,
                 onConfirm: { courseId in Task { await viewModel.moveDocumentToCourse(courseId: courseId) } },
                 onClose: { viewModel.moveToCourseTarget = nil }
-            )
-        }
-        .sheet(isPresented: Binding(
-            get: { viewModel.pendingUploadURL != nil },
-            set: { if !$0 { viewModel.pendingUploadURL = nil } }
-        )) {
-            SelectCourseSheet(
-                filename: viewModel.pendingUploadURL?.lastPathComponent ?? "",
-                onConfirm: { courseId in Task { await viewModel.uploadWithCourse(courseId: courseId) } },
-                onClose: { viewModel.pendingUploadURL = nil }
             )
         }
         // Toast

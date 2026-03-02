@@ -1,89 +1,97 @@
 @preconcurrency import Supabase
 import SwiftUI
 
-struct SelectCourseSheet: View {
+struct SelectCoursePopup: View {
     let filename: String
     let onConfirm: (String) -> Void
-    let onClose: () -> Void
+    let onDismiss: () -> Void
 
     @State private var courses: [Course] = []
     @State private var isLoading = true
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Select Course")
-                .font(.epilogue(20, weight: .black))
-                .tracking(-0.04 * 20)
-                .foregroundStyle(ReefColors.black)
-
-            Text(filename.replacingOccurrences(of: ".pdf", with: "", options: .caseInsensitive))
-                .font(.epilogue(13, weight: .medium))
-                .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
-                .padding(.top, 6)
-
-            if isLoading {
-                Text("Loading courses...")
-                    .font(.epilogue(13, weight: .medium))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray500)
-                    .padding(.top, 16)
-            } else if courses.isEmpty {
-                Text("No courses yet. Create one first.")
-                    .font(.epilogue(13, weight: .medium))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray500)
-                    .padding(.top, 16)
-            } else {
-                VStack(spacing: 6) {
-                    ForEach(courses) { course in
-                        HStack(spacing: 10) {
-                            Text(course.emoji)
-                                .font(.system(size: 16))
-
-                            Text(course.name)
-                                .font(.epilogue(13, weight: .semiBold))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.black)
-
-                            Spacer()
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.gray400, lineWidth: 1.5)
-                        )
-                        .compositingGroup()
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onConfirm(course.id)
-                        }
-                        .accessibilityAddTraits(.isButton)
-                    }
-                }
-                .padding(.top, 20)
-            }
-
+        VStack(spacing: 0) {
+            // Close button row
             HStack {
                 Spacer()
-
-                Text("Cancel")
-                    .font(.epilogue(14, weight: .semiBold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.gray600)
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(ReefColors.gray500)
+                    .frame(width: 28, height: 28)
+                    .background(ReefColors.gray100)
+                    .clipShape(Circle())
                     .compositingGroup()
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        onClose()
-                    }
+                    .onTapGesture { onDismiss() }
                     .accessibilityAddTraits(.isButton)
             }
-            .padding(.top, 20)
+            .padding(.bottom, 4)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Select Course")
+                    .font(.epilogue(20, weight: .black))
+                    .tracking(-0.04 * 20)
+                    .foregroundStyle(ReefColors.black)
+
+                Text(filename.replacingOccurrences(of: ".pdf", with: "", options: .caseInsensitive))
+                    .font(.epilogue(13, weight: .medium))
+                    .tracking(-0.04 * 13)
+                    .foregroundStyle(ReefColors.gray600)
+                    .padding(.top, 6)
+
+                if isLoading {
+                    Text("Loading courses...")
+                        .font(.epilogue(13, weight: .medium))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(ReefColors.gray500)
+                        .padding(.top, 16)
+                } else if courses.isEmpty {
+                    Text("No courses yet. Create one first.")
+                        .font(.epilogue(13, weight: .medium))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(ReefColors.gray500)
+                        .padding(.top, 16)
+                } else {
+                    VStack(spacing: 6) {
+                        ForEach(courses) { course in
+                            HStack(spacing: 10) {
+                                Text(course.emoji)
+                                    .font(.system(size: 16))
+
+                                Text(course.name)
+                                    .font(.epilogue(13, weight: .semiBold))
+                                    .tracking(-0.04 * 13)
+                                    .foregroundStyle(ReefColors.black)
+
+                                Spacer()
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(ReefColors.gray400, lineWidth: 1.5)
+                            )
+                            .compositingGroup()
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                onConfirm(course.id)
+                            }
+                            .accessibilityAddTraits(.isButton)
+                        }
+                    }
+                    .padding(.top, 20)
+                }
+            }
         }
-        .padding(28)
-        .presentationDetents([.medium])
+        .padding(24)
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(ReefColors.black, lineWidth: 1.5)
+        )
+        .frame(maxWidth: 420)
         .task {
             do {
                 courses = try await supabase
