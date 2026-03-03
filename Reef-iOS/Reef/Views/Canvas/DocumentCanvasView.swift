@@ -40,12 +40,8 @@ struct DocumentCanvasView: View {
                 // Floating toolbar overlay
                 CanvasToolbar(
                     selectedTool: $selectedTool,
-                    selectedColor: $selectedColor,
                     onClose: { onDismiss() }
                 )
-                .dashboardCard()
-                .padding(.horizontal, 12)
-                .padding(.top, 12)
             }
         }
         .task {
