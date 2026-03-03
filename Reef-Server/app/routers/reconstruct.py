@@ -88,7 +88,6 @@ class PipelineCosts:
     MODEL_RATES: dict = field(default_factory=lambda: {
         "qwen/qwen2.5-vl-72b-instruct": (0.80 / 1_000_000, 0.80 / 1_000_000),
         "qwen/qwen2.5-vl-32b-instruct": (0.20 / 1_000_000, 0.60 / 1_000_000),
-        "qwen/qwen-2.5-coder-32b-instruct": (0.20 / 1_000_000, 0.20 / 1_000_000),
     })
     _DEFAULT_RATE: tuple = (0.20 / 1_000_000, 0.60 / 1_000_000)
 
@@ -359,16 +358,10 @@ async def _run_pipeline(
         model="qwen/qwen2.5-vl-72b-instruct",
         base_url="https://openrouter.ai/api/v1",
     )
-    # Extraction + verification use the 32B model (well-constrained, N calls)
+    # Extraction, verification, and fixes all use the 32B VL model
     extract_client = LLMClient(
         api_key=settings.openrouter_api_key,
         model="qwen/qwen2.5-vl-32b-instruct",
-        base_url="https://openrouter.ai/api/v1",
-    )
-    # LaTeX fixes use a text-only coder model (no vision needed)
-    fix_client = LLMClient(
-        api_key=settings.openrouter_api_key,
-        model="qwen/qwen-2.5-coder-32b-instruct",
         base_url="https://openrouter.ai/api/v1",
     )
 
@@ -557,9 +550,9 @@ async def _run_pipeline(
                             error_message=str(e)[:2000],
                         )
                         fix_llm = await asyncio.to_thread(
-                            fix_client.generate, prompt=fix_prompt
+                            extract_client.generate, prompt=fix_prompt
                         )
-                        costs.add(fix_llm, model=fix_client.model)
+                        costs.add(fix_llm, model=extract_client.model)
                         current_fix = fix_llm.content
                     except Exception as e2:
                         print(f"  [verify] {label}: LLM fix call failed — {e2}")
@@ -720,9 +713,9 @@ async def _run_pipeline(
                                 latex_body=latex, error_message=str(e)[:2000]
                             )
                             fix_llm = await asyncio.to_thread(
-                                fix_client.generate, prompt=fix_prompt
+                                extract_client.generate, prompt=fix_prompt
                             )
-                            costs.add(fix_llm, model=fix_client.model)
+                            costs.add(fix_llm, model=extract_client.model)
                             latex = fix_llm.content
                         except Exception as e2:
                             print(f"  [compile] {problem.label}: LLM fix failed — {e2}")
