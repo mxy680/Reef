@@ -31,12 +31,21 @@ final class CanvasContainerView: UIView {
     private var separatorViews: [UIView] = []
     private var contentWidthConstraint: NSLayoutConstraint?
 
-    /// Separator height between pages
-    private static let separatorHeight: CGFloat = 2
+    /// Separator height between pages (increased for 3D shadow clearance)
+    private static let separatorHeight: CGFloat = 16
 
-    /// Scroll area background — matches old Reef canvas (#F5F5F0)
+    /// Corner radius for the 3D page cards
+    private static let pageCornerRadius: CGFloat = 12
+
+    /// 3D shadow offset (matches ReefCard style)
+    private static let shadowOffset: CGFloat = 6
+
+    /// Border color for pages — gray500
+    private static let pageBorderColor = UIColor(red: 140/255.0, green: 140/255.0, blue: 140/255.0, alpha: 1)
+
+    /// Scroll area background — muted warm cream (#F8F0E6)
     private static let scrollBackground = UIColor(
-        red: 0xF5 / 255.0, green: 0xF5 / 255.0, blue: 0xF0 / 255.0, alpha: 1
+        red: 0xF8 / 255.0, green: 0xF0 / 255.0, blue: 0xE6 / 255.0, alpha: 1
     )
 
     override init(frame: CGRect) {
@@ -143,12 +152,27 @@ final class CanvasContainerView: UIView {
         pagesStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         for (index, image) in images.enumerated() {
-            // Page container — white background with border
+            // Wrapper holds both the shadow and the page (for 3D effect)
+            let wrapper = UIView()
+            wrapper.translatesAutoresizingMaskIntoConstraints = false
+            wrapper.backgroundColor = .clear
+
+            // 3D shadow — offset behind the page
+            let shadowView = UIView()
+            shadowView.translatesAutoresizingMaskIntoConstraints = false
+            shadowView.backgroundColor = Self.pageBorderColor
+            shadowView.layer.cornerRadius = Self.pageCornerRadius
+            wrapper.addSubview(shadowView)
+
+            // Page container — white background with rounded corners and border
             let pageView = UIView()
             pageView.translatesAutoresizingMaskIntoConstraints = false
             pageView.backgroundColor = .white
-            pageView.layer.borderWidth = 1.5
-            pageView.layer.borderColor = UIColor.black.withAlphaComponent(0.4).cgColor
+            pageView.layer.cornerRadius = Self.pageCornerRadius
+            pageView.layer.borderWidth = 2
+            pageView.layer.borderColor = Self.pageBorderColor.cgColor
+            pageView.clipsToBounds = true
+            wrapper.addSubview(pageView)
 
             let imageView = UIImageView(image: image)
             imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -163,18 +187,35 @@ final class CanvasContainerView: UIView {
                 imageView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
             ])
 
-            pagesStackView.addArrangedSubview(pageView)
-
+            // Page sits at top-left of wrapper
             NSLayoutConstraint.activate([
+                pageView.topAnchor.constraint(equalTo: wrapper.topAnchor),
+                pageView.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
                 pageView.widthAnchor.constraint(equalToConstant: image.size.width),
                 pageView.heightAnchor.constraint(equalToConstant: image.size.height),
             ])
+
+            // Shadow is same size, offset right and down
+            NSLayoutConstraint.activate([
+                shadowView.topAnchor.constraint(equalTo: pageView.topAnchor, constant: Self.shadowOffset),
+                shadowView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor, constant: Self.shadowOffset),
+                shadowView.widthAnchor.constraint(equalTo: pageView.widthAnchor),
+                shadowView.heightAnchor.constraint(equalTo: pageView.heightAnchor),
+            ])
+
+            // Wrapper size accounts for the shadow offset
+            NSLayoutConstraint.activate([
+                wrapper.widthAnchor.constraint(equalToConstant: image.size.width + Self.shadowOffset),
+                wrapper.heightAnchor.constraint(equalToConstant: image.size.height + Self.shadowOffset),
+            ])
+
+            pagesStackView.addArrangedSubview(wrapper)
 
             // Separator between pages
             if index < images.count - 1 {
                 let separator = UIView()
                 separator.translatesAutoresizingMaskIntoConstraints = false
-                separator.backgroundColor = Self.scrollBackground
+                separator.backgroundColor = .clear
                 separatorViews.append(separator)
                 pagesStackView.addArrangedSubview(separator)
 
@@ -185,10 +226,10 @@ final class CanvasContainerView: UIView {
             }
         }
 
-        // Content width matches widest page
+        // Content width matches widest page + shadow offset
         if let maxWidth = images.map({ $0.size.width }).max() {
             contentWidthConstraint?.isActive = false
-            contentWidthConstraint = contentView.widthAnchor.constraint(equalToConstant: maxWidth)
+            contentWidthConstraint = contentView.widthAnchor.constraint(equalToConstant: maxWidth + Self.shadowOffset)
             contentWidthConstraint?.isActive = true
         }
 
