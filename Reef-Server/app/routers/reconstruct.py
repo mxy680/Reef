@@ -88,7 +88,7 @@ class PipelineCosts:
     MODEL_RATES: dict = field(default_factory=lambda: {
         "qwen/qwen2.5-vl-72b-instruct": (0.80 / 1_000_000, 0.80 / 1_000_000),
         "qwen/qwen2.5-vl-32b-instruct": (0.20 / 1_000_000, 0.60 / 1_000_000),
-        "qwen/qwen2.5-coder-32b-instruct": (0.20 / 1_000_000, 0.20 / 1_000_000),
+        "qwen/qwen-2.5-coder-32b-instruct": (0.20 / 1_000_000, 0.20 / 1_000_000),
     })
     _DEFAULT_RATE: tuple = (0.20 / 1_000_000, 0.60 / 1_000_000)
 
@@ -368,7 +368,7 @@ async def _run_pipeline(
     # LaTeX fixes use a text-only coder model (no vision needed)
     fix_client = LLMClient(
         api_key=settings.openrouter_api_key,
-        model="qwen/qwen2.5-coder-32b-instruct",
+        model="qwen/qwen-2.5-coder-32b-instruct",
         base_url="https://openrouter.ai/api/v1",
     )
 
