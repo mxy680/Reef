@@ -165,7 +165,7 @@ def _annotate_page(
     return img.convert("RGB"), current_index
 
 
-def _render_pdf_to_image(pdf_bytes: bytes, dpi: int = 192) -> bytes:
+def _render_pdf_to_image(pdf_bytes: bytes, dpi: int = 144) -> bytes:
     """Render a compiled PDF to a single JPEG image (stacks pages vertically)."""
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     mat = fitz.Matrix(dpi / 72, dpi / 72)
@@ -188,7 +188,7 @@ def _render_pdf_to_image(pdf_bytes: bytes, dpi: int = 192) -> bytes:
             y_offset += img.height
 
     buf = io.BytesIO()
-    composite.save(buf, format="JPEG", quality=90)
+    composite.save(buf, format="JPEG", quality=75)
     return buf.getvalue()
 
 
@@ -237,7 +237,7 @@ def _get_original_crop(
             y_offset += crop.height
 
     buf = io.BytesIO()
-    composite.save(buf, format="JPEG", quality=90)
+    composite.save(buf, format="JPEG", quality=75)
     return buf.getvalue()
 
 
