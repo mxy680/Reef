@@ -12,8 +12,8 @@ struct CanvasToolbar: View {
     @Binding var selectedColor: ToolbarColor
     let onClose: () -> Void
 
-    /// Soft teal — primary at 85% over a slightly darkened base
-    private static let barColor = Color(hex: 0x4E8A97)
+    /// Soft teal
+    private static let barColor = Color(red: 78/255.0, green: 138/255.0, blue: 151/255.0)
 
     /// Lighter teal pill behind the selected tool
     private static let selectedPill = Color.white.opacity(0.25)
@@ -110,7 +110,7 @@ private struct ColorPaletteStrip: View {
     @Binding var selectedColor: ToolbarColor
 
     /// Slightly darker teal for the color strip
-    private static let stripColor = Color(hex: 0x457A86)
+    private static let stripColor = Color(red: 69/255.0, green: 122/255.0, blue: 134/255.0)
 
     var body: some View {
         HStack(spacing: 12) {
