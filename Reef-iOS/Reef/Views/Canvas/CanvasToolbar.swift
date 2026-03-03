@@ -21,12 +21,6 @@ struct CanvasToolbar: View {
     /// Divider between tool groups
     private static let dividerColor = Color.white.opacity(0.25)
 
-    private var safeAreaTop: CGFloat {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.windows.first?.safeAreaInsets.top ?? 0
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             // Main bar
@@ -70,7 +64,6 @@ struct CanvasToolbar: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .padding(.top, safeAreaTop)
 
             // Color palette strip — slides in below the bar
             if selectedTool.hasColorPalette {
