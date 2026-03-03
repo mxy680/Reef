@@ -71,7 +71,6 @@ struct CanvasToolbar: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .padding(.top, safeAreaTop)
-            .background(Self.barColor)
 
             // Color palette strip — slides in below the bar
             if selectedTool.hasColorPalette {
@@ -79,6 +78,7 @@ struct CanvasToolbar: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
+        .background(Self.barColor)
         .animation(.easeInOut(duration: 0.2), value: selectedTool.hasColorPalette)
     }
 
@@ -117,7 +117,7 @@ private struct ColorPaletteStrip: View {
     @Binding var selectedColor: ToolbarColor
 
     /// Slightly darker teal for the color strip
-    private static let stripColor = Color(hex: 0x5B9EAD).opacity(0.3)
+    private static let stripColor = Color(hex: 0x457A86)
 
     var body: some View {
         HStack(spacing: 12) {
