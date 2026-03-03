@@ -38,13 +38,16 @@ struct DocumentCanvasView: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 8)
                 .padding(.bottom, 10)
+                .frame(maxWidth: .infinity)
+                .background(Self.barColor)
+                .background(Self.barColor.ignoresSafeArea(.container, edges: .top))
 
                 CanvasPageView(pdfDocument: pdf)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(hex: 0xF8F0E6))
+                    .background(Color(hex: 0xF8F0E6).ignoresSafeArea(.container, edges: .bottom))
             }
         }
-        .background(Self.barColor.ignoresSafeArea())
         .task {
             #if DEBUG
             if document.id == "dev-test" {
