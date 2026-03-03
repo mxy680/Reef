@@ -4,6 +4,7 @@ import base64
 import copy
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass
 
@@ -134,8 +135,13 @@ class LLMClient:
                 usage = response.usage
                 if self._strict_json_supported is None and response_schema is not None:
                     self._strict_json_supported = True
+                content = response.choices[0].message.content
+                # Strip <think>...</think> tags from thinking models
+                content = re.sub(
+                    r"<think>.*?</think>\s*", "", content, flags=re.DOTALL
+                )
                 return LLMResult(
-                    content=response.choices[0].message.content,
+                    content=content,
                     input_tokens=usage.prompt_tokens if usage else 0,
                     output_tokens=usage.completion_tokens if usage else 0,
                 )

@@ -86,9 +86,9 @@ class PipelineCosts:
 
     # Per-model pricing (dollars per token)
     MODEL_RATES: dict = field(default_factory=lambda: {
-        "qwen/qwen3-vl-235b-a22b-instruct": (0.20 / 1_000_000, 0.88 / 1_000_000),
+        "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
     })
-    _DEFAULT_RATE: tuple = (0.20 / 1_000_000, 0.88 / 1_000_000)
+    _DEFAULT_RATE: tuple = (0.50 / 1_000_000, 3.00 / 1_000_000)
 
     def add(self, result: LLMResult, model: str = "") -> None:
         self.input_tokens += result.input_tokens
@@ -354,7 +354,7 @@ async def _run_pipeline(
     # Single model for all calls — best accuracy, simplest routing
     llm_client = LLMClient(
         api_key=settings.openrouter_api_key,
-        model="qwen/qwen3-vl-235b-a22b-instruct",
+        model="google/gemini-3-flash-preview",
         base_url="https://openrouter.ai/api/v1",
     )
 
