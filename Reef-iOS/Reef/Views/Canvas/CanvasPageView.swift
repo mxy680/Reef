@@ -37,8 +37,8 @@ final class CanvasContainerView: UIView {
     /// Corner radius for the 3D page cards
     private static let pageCornerRadius: CGFloat = 12
 
-    /// 3D shadow offset (matches DocumentCardView style)
-    private static let shadowOffset: CGFloat = 4
+    /// 3D shadow offset (matches ReefCard style)
+    private static let shadowOffset: CGFloat = 6
 
     /// Border color for pages — gray500
     private static let pageBorderColor = UIColor(red: 140/255.0, green: 140/255.0, blue: 140/255.0, alpha: 1)
@@ -169,7 +169,7 @@ final class CanvasContainerView: UIView {
             pageView.translatesAutoresizingMaskIntoConstraints = false
             pageView.backgroundColor = .white
             pageView.layer.cornerRadius = Self.pageCornerRadius
-            pageView.layer.borderWidth = 1.5
+            pageView.layer.borderWidth = 2
             pageView.layer.borderColor = Self.pageBorderColor.cgColor
             pageView.clipsToBounds = true
             wrapper.addSubview(pageView)
