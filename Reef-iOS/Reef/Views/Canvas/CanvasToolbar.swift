@@ -2,7 +2,7 @@
 //  CanvasToolbar.swift
 //  Reef
 //
-//  Floating toolbar — three separate islands: back, tools, undo/redo
+//  Floating toolbar — back button, tool island, undo/redo
 //
 
 import SwiftUI
@@ -19,14 +19,14 @@ struct CanvasToolbar: View {
 
     var body: some View {
         HStack {
-            // Back button — separate island (top-left)
+            // Back button — plain icon, no card
             Button(action: onClose) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(ReefColors.gray600)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
-            .dashboardCard()
             .accessibilityLabel("Back")
 
             Spacer()
@@ -43,24 +43,23 @@ struct CanvasToolbar: View {
 
             Spacer()
 
-            // Undo/Redo — separate island (top-right)
-            HStack(spacing: 0) {
+            // Undo/Redo — plain icons, no card
+            HStack(spacing: 4) {
                 Button(action: {}) {
                     Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(ReefColors.gray400)
-                        .frame(width: 40, height: 40)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 Button(action: {}) {
                     Image(systemName: "arrow.uturn.forward")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(ReefColors.gray400)
-                        .frame(width: 40, height: 40)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
             }
-            .padding(.horizontal, 2)
-            .padding(.vertical, 2)
-            .dashboardCard()
         }
         .padding(.horizontal, 12)
         .padding(.top, 12)
