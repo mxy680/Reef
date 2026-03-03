@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A1B2C3D4E5F6A7B8C9D0E1F /* LayoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A69788A9B0C1D2 /* LayoutMetrics.swift */; };
 		098520296C758F9F622A6187 /* DashboardSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B88CBB5BEEC17E13645026BF /* DashboardSidebar.swift */; };
 		2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC4262B97357102BF9818098 /* ReefApp.swift */; };
 		4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */; };
@@ -105,6 +106,7 @@
 		B88CBB5BEEC17E13645026BF /* DashboardSidebar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardSidebar.swift; sourceTree = "<group>"; };
 		D023F5ED102A820961A8A65C /* DashboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		E2A242632736FB9BEE170074 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		F1E2D3C4B5A69788A9B0C1D2 /* LayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutMetrics.swift; sourceTree = "<group>"; };
 		E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggedInView.swift; sourceTree = "<group>"; };
 		E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
@@ -173,6 +175,7 @@
 			isa = PBXGroup;
 			children = (
 				585B9AFB26D4C25AB8FFF803 /* Colors.swift */,
+				F1E2D3C4B5A69788A9B0C1D2 /* LayoutMetrics.swift */,
 				E2A242632736FB9BEE170074 /* Typography.swift */,
 				37CB64D67A4227D8D98F7032 /* Components */,
 			);
@@ -512,6 +515,7 @@
 				A371C46423DF8A87C7CB0F3B /* Colors.swift in Sources */,
 				BFEC612BA600837B55341B71 /* ContentView.swift in Sources */,
 				E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */,
+				0A1B2C3D4E5F6A7B8C9D0E1F /* LayoutMetrics.swift in Sources */,
 				4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */,
 				AA20BF02C3D7A1E2F4B5C602 /* OnboardingComponents.swift in Sources */,
 				AA30BF03C3D7A1E2F4B5C603 /* OnboardingView.swift in Sources */,
