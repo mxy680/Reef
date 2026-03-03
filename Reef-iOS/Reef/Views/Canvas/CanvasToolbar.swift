@@ -72,7 +72,7 @@ struct CanvasToolbar: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .background(Self.barColor)
+        .background(Self.barColor.ignoresSafeArea(.container, edges: .top))
         .animation(.easeInOut(duration: 0.2), value: selectedTool.hasColorPalette)
     }
 
