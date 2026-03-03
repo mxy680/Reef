@@ -43,9 +43,9 @@ final class CanvasContainerView: UIView {
     /// Border color for pages — gray500
     private static let pageBorderColor = UIColor(red: 140/255.0, green: 140/255.0, blue: 140/255.0, alpha: 1)
 
-    /// Scroll area background — accent color (#A8D5D5)
+    /// Scroll area background — surface color (#FCEBD5)
     private static let scrollBackground = UIColor(
-        red: 0xA8 / 255.0, green: 0xD5 / 255.0, blue: 0xD5 / 255.0, alpha: 1
+        red: 0xFC / 255.0, green: 0xEB / 255.0, blue: 0xD5 / 255.0, alpha: 1
     )
 
     override init(frame: CGRect) {
