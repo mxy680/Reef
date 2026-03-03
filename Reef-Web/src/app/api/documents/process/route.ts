@@ -72,6 +72,12 @@ export async function POST(request: Request) {
 
     const problemCount = parseInt(response.headers.get("X-Problem-Count") || "0", 10)
     const pageCount = parseInt(response.headers.get("X-Page-Count") || "0", 10)
+    const costCents = parseInt(response.headers.get("X-Cost-Cents") || "0", 10)
+    const inputTokens = parseInt(response.headers.get("X-Input-Tokens") || "0", 10)
+    const outputTokens = parseInt(response.headers.get("X-Output-Tokens") || "0", 10)
+    const llmCalls = parseInt(response.headers.get("X-LLM-Calls") || "0", 10)
+    const gpuSeconds = parseFloat(response.headers.get("X-GPU-Seconds") || "0")
+    const pipelineSeconds = parseFloat(response.headers.get("X-Pipeline-Seconds") || "0")
 
     // Upload reconstructed output.pdf to Supabase Storage
     const outputPdf = await response.arrayBuffer()
@@ -88,6 +94,12 @@ export async function POST(request: Request) {
       status: "completed",
       page_count: pageCount || null,
       problem_count: problemCount || null,
+      cost_cents: costCents || null,
+      input_tokens: inputTokens || null,
+      output_tokens: outputTokens || null,
+      llm_calls: llmCalls || null,
+      gpu_seconds: gpuSeconds || null,
+      pipeline_seconds: pipelineSeconds || null,
     }).eq("id", documentId)
 
     return NextResponse.json({ success: true })

@@ -973,7 +973,7 @@ async def ai_reconstruct(
         pdf_bytes = await pdf.read()
         base_name = Path(pdf.filename).stem if pdf.filename else "document"
 
-        compiled, num_pages, _costs = await _run_pipeline(
+        compiled, num_pages, costs = await _run_pipeline(
             pdf_bytes, document_id, debug, base_name
         )
 
@@ -1025,6 +1025,12 @@ async def ai_reconstruct(
                 "Content-Disposition": f"inline; filename={output_filename}",
                 "X-Problem-Count": str(len(compiled)),
                 "X-Page-Count": str(num_pages),
+                "X-Cost-Cents": str(costs.cost_cents),
+                "X-Input-Tokens": str(costs.input_tokens),
+                "X-Output-Tokens": str(costs.output_tokens),
+                "X-LLM-Calls": str(costs.llm_calls),
+                "X-GPU-Seconds": str(round(costs.gpu_seconds, 2)),
+                "X-Pipeline-Seconds": str(round(costs.pipeline_seconds, 2)),
             },
         )
 
