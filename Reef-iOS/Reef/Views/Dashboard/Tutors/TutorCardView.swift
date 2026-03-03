@@ -8,6 +8,8 @@ struct TutorCardView: View {
     let onTap: () -> Void
     let onVoicePreview: () -> Void
     let onSelect: () -> Void
+    var cardWidth: CGFloat = 220
+    var cardHeight: CGFloat = 240
 
     @State private var isPressed = false
 
@@ -98,7 +100,7 @@ struct TutorCardView: View {
             .padding(.horizontal, 14)
             .padding(.bottom, 14)
         }
-        .frame(width: 220, height: 240)
+        .frame(width: cardWidth, height: cardHeight)
         .background(ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
