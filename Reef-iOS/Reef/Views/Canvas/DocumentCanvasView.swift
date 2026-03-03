@@ -18,11 +18,11 @@ struct DocumentCanvasView: View {
             if viewModel.isLoading {
                 loadingView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(ReefColors.surface)
+                    .background(Color(hex: 0xF8F0E6))
             } else if let error = viewModel.error {
                 errorView(error)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(ReefColors.surface)
+                    .background(Color(hex: 0xF8F0E6))
             } else if let pdf = viewModel.pdfDocument {
                 CanvasToolbar(
                     documentName: document.displayName,
@@ -32,7 +32,7 @@ struct DocumentCanvasView: View {
                 CanvasPageView(pdfDocument: pdf)
             }
         }
-        .background(ReefColors.surface)
+        .background(Color(hex: 0xF8F0E6))
         .ignoresSafeArea(edges: .bottom)
         .task { await viewModel.loadDocument(document) }
     }
