@@ -97,7 +97,6 @@ private struct ToolbarCardModifier: ViewModifier {
                     .fill(ReefColors.gray500)
                     .offset(x: 3, y: 3)
             )
-            .drawingGroup()
     }
 }
 
