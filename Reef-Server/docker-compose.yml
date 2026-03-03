@@ -6,6 +6,7 @@ services:
     env_file: .env
     environment:
       - PYTHONUNBUFFERED=1
+    stop_grace_period: 30s
     expose:
       - "8000"
     networks:

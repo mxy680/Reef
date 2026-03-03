@@ -1,8 +1,15 @@
 """Lightweight helper to update document status_message via Supabase REST."""
 
+import asyncio
+import logging
+
 import httpx
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
+
+_CRITICAL_STATUSES = {"completed", "failed"}
 
 _UNSET = object()  # sentinel — distinguishes "not provided" from explicit None
 
@@ -69,15 +76,37 @@ async def update_document_status(
         payload["pipeline_seconds"] = pipeline_seconds
     if not payload:
         return
-    try:
-        url = f"{settings.supabase_url}/rest/v1/documents?id=eq.{document_id}"
-        headers = {
-            "apikey": settings.supabase_service_role_key,
-            "Authorization": f"Bearer {settings.supabase_service_role_key}",
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal",
-        }
-        async with httpx.AsyncClient() as client:
-            await client.patch(url, json=payload, headers=headers)
-    except Exception as e:
-        print(f"  [progress] Failed to update document status: {e}")
+
+    is_critical = status in _CRITICAL_STATUSES
+    max_attempts = 3 if is_critical else 1
+
+    url = f"{settings.supabase_url}/rest/v1/documents?id=eq.{document_id}"
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+    }
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.patch(url, json=payload, headers=headers, timeout=10)
+                resp.raise_for_status()
+            return
+        except Exception as e:
+            if attempt < max_attempts:
+                delay = 2 ** attempt
+                logger.warning(
+                    f"Status update attempt {attempt}/{max_attempts} failed for "
+                    f"{document_id} (status={status}): {e}. Retrying in {delay}s..."
+                )
+                await asyncio.sleep(delay)
+            else:
+                if is_critical:
+                    logger.error(
+                        f"CRITICAL: Failed to set document {document_id} to "
+                        f"'{status}' after {max_attempts} attempts: {e}"
+                    )
+                else:
+                    logger.warning(f"Failed to update document status: {e}")

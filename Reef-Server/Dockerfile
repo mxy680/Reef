@@ -38,4 +38,5 @@ CMD ["gunicorn", "app.main:app", \
      "--workers", "1", \
      "--bind", "0.0.0.0:8000", \
      "--timeout", "600", \
+     "--graceful-timeout", "25", \
      "--keep-alive", "5"]

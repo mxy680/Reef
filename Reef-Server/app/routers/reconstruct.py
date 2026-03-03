@@ -754,16 +754,23 @@ async def _run_pipeline_for_document(user_id: str, document_id: str):
     return await _run_pipeline(pdf_bytes, document_id)
 
 
+PIPELINE_TIMEOUT_SECONDS = 540  # 9 min — leaves 60s buffer before gunicorn's 600s kill
+
+
 async def _process_document_background(user_id: str, document_id: str):
     """Download PDF, run pipeline, upload output, update document status.
 
     Supports cancellation via the cancellation registry — a watchdog task
     monitors the cancel event and calls task.cancel() on the pipeline task.
+    The entire pipeline is wrapped in a timeout to prevent indefinite hangs.
     """
     cancel_event = cancel_register(document_id)
     try:
         pipeline_task = asyncio.create_task(
-            _run_pipeline_for_document(user_id, document_id)
+            asyncio.wait_for(
+                _run_pipeline_for_document(user_id, document_id),
+                timeout=PIPELINE_TIMEOUT_SECONDS,
+            )
         )
 
         async def _watchdog():
@@ -803,6 +810,14 @@ async def _process_document_background(user_id: str, document_id: str):
             llm_calls=costs.llm_calls,
             gpu_seconds=round(costs.gpu_seconds, 2),
             pipeline_seconds=round(costs.pipeline_seconds, 2),
+        )
+    except asyncio.TimeoutError:
+        print(f"  [reconstruct-document] {document_id} timed out after {PIPELINE_TIMEOUT_SECONDS}s")
+        await update_document_status(
+            document_id,
+            status="failed",
+            error_message=f"Pipeline timed out after {PIPELINE_TIMEOUT_SECONDS}s",
+            status_message=None,
         )
     except asyncio.CancelledError:
         print(f"  [reconstruct-document] {document_id} cancelled")

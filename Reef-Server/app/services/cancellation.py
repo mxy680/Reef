@@ -34,3 +34,8 @@ def is_cancelled(document_id: str) -> bool:
 def cleanup(document_id: str) -> None:
     """Remove the cancellation event for a document."""
     _cancel_events.pop(document_id, None)
+
+
+def get_in_flight_ids() -> list[str]:
+    """Return document IDs currently being processed."""
+    return list(_cancel_events.keys())
