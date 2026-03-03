@@ -414,6 +414,7 @@ async def _run_pipeline(
             )
             best_problem.annotation_indices.append(idx)
             best_problem.annotation_indices.sort()
+            assigned.add(idx)
             print(
                 f"  [reconstruct] Rescued orphan figure {idx} ({label}) -> {best_problem.label}"
             )
