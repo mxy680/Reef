@@ -12,6 +12,8 @@ struct DocumentCanvasView: View {
     let onDismiss: () -> Void
 
     @State private var viewModel = CanvasViewModel()
+    @State private var selectedTool: CanvasTool = .pen
+    @State private var selectedColor: ToolbarColor = .black
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,7 +27,8 @@ struct DocumentCanvasView: View {
                     .background(Color(hex: 0xF8F0E6))
             } else if let pdf = viewModel.pdfDocument {
                 CanvasToolbar(
-                    documentName: document.displayName,
+                    selectedTool: $selectedTool,
+                    selectedColor: $selectedColor,
                     onClose: { onDismiss() }
                 )
 
