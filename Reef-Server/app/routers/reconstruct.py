@@ -239,13 +239,17 @@ async def _run_pipeline(
     document_id: str | None = None,
     debug: bool = False,
     base_name: str = "document",
+    costs: PipelineCosts | None = None,
 ) -> tuple[list[tuple[str, bytes, dict | None]], int, PipelineCosts]:
     """Run the full reconstruction pipeline.
 
     Returns ``(compiled, page_count, costs)`` where *compiled* is a list of
     ``(label, pdf_bytes, question_dict | None)`` tuples — one per problem.
+
+    Pass a *costs* object to accumulate metrics even if the pipeline raises.
     """
-    costs = PipelineCosts()
+    if costs is None:
+        costs = PipelineCosts()
     pipeline_start = time.monotonic()
 
     async def progress(msg: str | None):
@@ -761,10 +765,12 @@ async def _run_pipeline(
 # ---------------------------------------------------------------------------
 
 
-async def _run_pipeline_for_document(user_id: str, document_id: str):
+async def _run_pipeline_for_document(
+    user_id: str, document_id: str, costs: PipelineCosts | None = None,
+):
     """Download PDF and run the reconstruction pipeline. Returns (compiled, num_pages, costs)."""
     pdf_bytes = await download_document_pdf(user_id, document_id)
-    return await _run_pipeline(pdf_bytes, document_id)
+    return await _run_pipeline(pdf_bytes, document_id, costs=costs)
 
 
 PIPELINE_TIMEOUT_SECONDS = 540  # 9 min — leaves 60s buffer before gunicorn's 600s kill
@@ -778,10 +784,12 @@ async def _process_document_background(user_id: str, document_id: str):
     The entire pipeline is wrapped in a timeout to prevent indefinite hangs.
     """
     cancel_event = cancel_register(document_id)
+    # Shared costs object — accumulates even if the pipeline raises partway.
+    costs = PipelineCosts()
     try:
         pipeline_task = asyncio.create_task(
             asyncio.wait_for(
-                _run_pipeline_for_document(user_id, document_id),
+                _run_pipeline_for_document(user_id, document_id, costs=costs),
                 timeout=PIPELINE_TIMEOUT_SECONDS,
             )
         )
@@ -793,7 +801,7 @@ async def _process_document_background(user_id: str, document_id: str):
         watchdog_task = asyncio.create_task(_watchdog())
 
         try:
-            compiled, num_pages, costs = await pipeline_task
+            compiled, num_pages, _costs = await pipeline_task
         finally:
             watchdog_task.cancel()
 
@@ -832,6 +840,11 @@ async def _process_document_background(user_id: str, document_id: str):
             status="failed",
             error_message=f"Pipeline timed out after {PIPELINE_TIMEOUT_SECONDS}s",
             status_message=None,
+            input_tokens=costs.input_tokens,
+            output_tokens=costs.output_tokens,
+            llm_calls=costs.llm_calls,
+            gpu_seconds=round(costs.gpu_seconds, 2),
+            cost_cents=costs.cost_cents,
         )
     except asyncio.CancelledError:
         print(f"  [reconstruct-document] {document_id} cancelled")
@@ -846,6 +859,11 @@ async def _process_document_background(user_id: str, document_id: str):
             status="failed",
             error_message=str(e)[:500],
             status_message=None,
+            input_tokens=costs.input_tokens,
+            output_tokens=costs.output_tokens,
+            llm_calls=costs.llm_calls,
+            gpu_seconds=round(costs.gpu_seconds, 2),
+            cost_cents=costs.cost_cents,
         )
     finally:
         cancel_cleanup(document_id)
