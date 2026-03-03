@@ -117,11 +117,13 @@ class PipelineCosts:
 def _annotate_page(
     img: Image.Image,
     layout_result: PageLayout,
-    scale: int = 2,
     start_index: int = 1,
 ) -> tuple[Image.Image, int]:
-    """Annotate a single page image with red numbered bounding boxes."""
-    img = img.resize((img.width * scale, img.height * scale), Image.LANCZOS)
+    """Annotate a single page image with red numbered bounding boxes.
+
+    Operates at native resolution (no upscaling) to minimize image size
+    sent to the LLM, reducing both cost and latency.
+    """
     img = img.convert("RGBA")
 
     overlay = Image.new("RGBA", img.size, (255, 255, 255, 0))
@@ -129,10 +131,10 @@ def _annotate_page(
     draw = ImageDraw.Draw(img)
 
     try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
     except Exception:
         try:
-            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 24)
+            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 16)
         except Exception:
             font = ImageFont.load_default()
 
@@ -141,17 +143,16 @@ def _annotate_page(
 
     for block in layout_result.bboxes:
         bbox = block.bbox
-        x1, y1 = int(bbox[0] * scale), int(bbox[1] * scale)
-        x2, y2 = int(bbox[2] * scale), int(bbox[3] * scale)
+        x1, y1 = int(bbox[0]), int(bbox[1])
+        x2, y2 = int(bbox[2]), int(bbox[3])
 
         overlay_draw.rectangle([(x1, y1), (x2, y2)], fill=(*rgb, 40))
-        for i in range(3):
-            draw.rectangle([(x1 - i, y1 - i), (x2 + i, y2 + i)], outline=rgb, width=2)
+        draw.rectangle([(x1, y1), (x2, y2)], outline=rgb, width=2)
 
         label = str(current_index)
-        label_y = max(y1 - 32, 5)
+        label_y = max(y1 - 22, 3)
         text_bbox = draw.textbbox((x1, label_y), label, font=font)
-        padding = 6
+        padding = 4
         draw.rectangle(
             (text_bbox[0] - padding, text_bbox[1] - padding,
              text_bbox[2] + padding, text_bbox[3] + padding),
@@ -329,7 +330,7 @@ async def _run_pipeline(
     current_index = 1
     for img, layout_result in zip(surya_images, layout_results):
         annotated, current_index = _annotate_page(
-            img, layout_result, scale=2, start_index=current_index
+            img, layout_result, start_index=current_index
         )
         annotated_pages.append(annotated)
 
@@ -338,7 +339,7 @@ async def _run_pipeline(
     page_images: list[bytes] = []
     for page in annotated_pages:
         buf = io.BytesIO()
-        page.save(buf, format="JPEG", quality=85)
+        page.save(buf, format="JPEG", quality=75)
         page_images.append(buf.getvalue())
 
     if debug:
