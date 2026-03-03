@@ -27,7 +27,7 @@ struct CanvasToolbar: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
-            .dashboardCard()
+            .toolbarCard()
             .accessibilityLabel("Back")
 
             Spacer()
@@ -40,7 +40,7 @@ struct CanvasToolbar: View {
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
-            .dashboardCard()
+            .toolbarCard()
 
             Spacer()
 
@@ -60,7 +60,7 @@ struct CanvasToolbar: View {
                 }
             }
             .buttonStyle(.plain)
-            .dashboardCard()
+            .toolbarCard()
         }
         .padding(.horizontal, 12)
         .padding(.top, 12)
@@ -78,5 +78,30 @@ struct CanvasToolbar: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .contentShape(Rectangle())
             .onTapGesture { selectedTool = tool }
+    }
+}
+
+// MARK: - Toolbar Card (no compositingGroup — renders instantly)
+
+private struct ToolbarCardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(ReefColors.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(ReefColors.gray500, lineWidth: 1.5)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(ReefColors.gray500)
+                    .offset(x: 3, y: 3)
+            )
+    }
+}
+
+private extension View {
+    func toolbarCard() -> some View {
+        modifier(ToolbarCardModifier())
     }
 }
