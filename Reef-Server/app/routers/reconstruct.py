@@ -421,6 +421,12 @@ async def _run_pipeline(
                 f"  [reconstruct] Rescued orphan figure {idx} ({label}) -> {best_problem.label}"
             )
 
+    # Check if page 0 has unassigned annotations (likely general instructions)
+    page0_has_instructions = any(
+        idx not in assigned and bbox_index[idx][0] == 0
+        for idx in bbox_index
+    )
+
     # Prepare original crops for visual verification
     original_crops: dict[str, bytes] = {}
     for problem in group_result.problems:
@@ -459,9 +465,10 @@ async def _run_pipeline(
                     figure_filenames.append(fname)
                     figure_mappings.append(f"  - Red box #{idx} → {fname}")
 
-        # Include page 0 as context if problem isn't on it
+        # Include page 0 as context only if it has instructions or problem is nearby
         if problem_pages and 0 not in problem_pages:
-            problem_pages.add(0)
+            if page0_has_instructions or min(problem_pages) <= 1:
+                problem_pages.add(0)
 
         # Crop tables as images
         for idx, (page_num, bbox, label) in bbox_index.items():
