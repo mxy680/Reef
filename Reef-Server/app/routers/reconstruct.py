@@ -276,35 +276,11 @@ async def _run_pipeline(
     SURYA_DPI = 192
     CROP_DPI = 288
     crop_scale = CROP_DPI / SURYA_DPI
-    surya_mat = fitz.Matrix(SURYA_DPI / 72, SURYA_DPI / 72)
     hires_mat = fitz.Matrix(CROP_DPI / 72, CROP_DPI / 72)
 
     await progress("Analyzing document layout...")
 
-    # --- Stage 1a: Rasterize 192 DPI for Surya ---
-    surya_images: list[Image.Image] = []
-    for page_num in range(num_pages):
-        pix = doc[page_num].get_pixmap(matrix=surya_mat)
-        surya_images.append(
-            Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        )
-
-    # Serialize for Surya
-    surya_image_bytes: list[bytes] = []
-    for img in surya_images:
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=95)
-        surya_image_bytes.append(buf.getvalue())
-
-    # --- Stage 1b: Fire Surya (async) + rasterize 288 DPI concurrently ---
-    print(f"  [reconstruct] Sending {len(surya_image_bytes)} pages to Modal Surya...")
-    surya_cls = SuryaLayout()
-    gpu_start = time.monotonic()
-    surya_task = asyncio.create_task(
-        asyncio.to_thread(surya_cls.detect_layout.remote, surya_image_bytes)
-    )
-
-    # Rasterize 288 DPI while Surya is running on GPU
+    # --- Stage 1a: Single-pass rasterization at 288 DPI ---
     hires_images: list[Image.Image] = []
     for page_num in range(num_pages):
         pix = doc[page_num].get_pixmap(matrix=hires_mat)
@@ -312,6 +288,27 @@ async def _run_pipeline(
             Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         )
     doc.close()
+
+    # Downscale to 192 DPI for Surya layout detection
+    surya_images: list[Image.Image] = []
+    for img in hires_images:
+        w, h = int(img.width / crop_scale), int(img.height / crop_scale)
+        surya_images.append(img.resize((w, h), Image.LANCZOS))
+
+    # Serialize for Surya
+    surya_image_bytes: list[bytes] = []
+    for img in surya_images:
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        surya_image_bytes.append(buf.getvalue())
+
+    # --- Stage 1b: Fire Surya (async) ---
+    print(f"  [reconstruct] Sending {len(surya_image_bytes)} pages to Modal Surya...")
+    surya_cls = SuryaLayout()
+    gpu_start = time.monotonic()
+    surya_task = asyncio.create_task(
+        asyncio.to_thread(surya_cls.detect_layout.remote, surya_image_bytes)
+    )
 
     # --- Stage 1c: Await Surya results ---
     raw_layouts = await surya_task
