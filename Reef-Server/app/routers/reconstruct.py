@@ -484,6 +484,17 @@ async def _run_pipeline(
 
     MAX_FIX_ATTEMPTS = 3
 
+    def _is_simple_problem(question: Question, latex: str) -> bool:
+        """Check if a problem is simple enough to skip visual verification."""
+        if question.figures:
+            return False
+        if len(latex) > 500:
+            return False
+        for part in question.parts:
+            if part.figures or part.parts:  # has figures or nested sub-parts
+                return False
+        return True
+
     async def _verify_and_fix(
         label: str,
         latex: str,
@@ -728,11 +739,14 @@ async def _run_pipeline(
                 out.append((problem.label, pdf_result, None))
                 continue
 
-            # Verify against original
-            crop_bytes = original_crops.get(problem.label, b"")
-            latex, pdf_result = await _verify_and_fix(
-                problem.label, latex, pdf_result, crop_bytes, image_data
-            )
+            # Verify against original (skip for simple problems to save cost)
+            if matched and _is_simple_problem(matched, latex):
+                print(f"  [verify] {problem.label}: skipped (simple problem)")
+            else:
+                crop_bytes = original_crops.get(problem.label, b"")
+                latex, pdf_result = await _verify_and_fix(
+                    problem.label, latex, pdf_result, crop_bytes, image_data
+                )
 
             out.append((problem.label, pdf_result, question_dict))
 
