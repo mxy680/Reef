@@ -41,7 +41,7 @@ struct DocumentCanvasView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 10)
                 .frame(maxWidth: .infinity)
-                .background(Self.barColor)
+                .background(Self.cream)
 
                 CanvasPageView(pdfDocument: pdf)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
