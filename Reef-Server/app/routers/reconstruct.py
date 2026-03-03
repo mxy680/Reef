@@ -86,10 +86,9 @@ class PipelineCosts:
 
     # Per-model pricing (dollars per token)
     MODEL_RATES: dict = field(default_factory=lambda: {
-        "qwen/qwen2.5-vl-72b-instruct": (0.80 / 1_000_000, 0.80 / 1_000_000),
-        "qwen/qwen2.5-vl-32b-instruct": (0.20 / 1_000_000, 0.60 / 1_000_000),
+        "qwen/qwen3-vl-235b-a22b-instruct": (0.20 / 1_000_000, 0.88 / 1_000_000),
     })
-    _DEFAULT_RATE: tuple = (0.20 / 1_000_000, 0.60 / 1_000_000)
+    _DEFAULT_RATE: tuple = (0.20 / 1_000_000, 0.88 / 1_000_000)
 
     def add(self, result: LLMResult, model: str = "") -> None:
         self.input_tokens += result.input_tokens
@@ -352,27 +351,21 @@ async def _run_pipeline(
     await progress("Identifying problems...")
 
     # --- Stage 2b: LLM problem grouping (now non-blocking) ---
-    # Grouping uses the 72B model (hardest reasoning task, 1 call per doc)
-    group_client = LLMClient(
+    # Single model for all calls — best accuracy, simplest routing
+    llm_client = LLMClient(
         api_key=settings.openrouter_api_key,
-        model="qwen/qwen2.5-vl-72b-instruct",
-        base_url="https://openrouter.ai/api/v1",
-    )
-    # Extraction, verification, and fixes all use the 32B VL model
-    extract_client = LLMClient(
-        api_key=settings.openrouter_api_key,
-        model="qwen/qwen2.5-vl-32b-instruct",
+        model="qwen/qwen3-vl-235b-a22b-instruct",
         base_url="https://openrouter.ai/api/v1",
     )
 
     prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
     group_llm = await asyncio.to_thread(
-        group_client.generate,
+        llm_client.generate,
         prompt=prompt,
         images=page_images,
         response_schema=GroupProblemsResponse.model_json_schema(),
     )
-    costs.add(group_llm, model=group_client.model)
+    costs.add(group_llm, model=llm_client.model)
     group_result = GroupProblemsResponse.model_validate_json(group_llm.content)
 
     group_result.problems.sort(
@@ -509,12 +502,12 @@ async def _run_pipeline(
         try:
             verify_prompt = VISUAL_VERIFY_PROMPT.format(latex_body=latex)
             verify_llm = await asyncio.to_thread(
-                extract_client.generate,
+                llm_client.generate,
                 prompt=verify_prompt,
                 images=[original_crop_bytes, reconstruction_image],
                 response_schema=VerificationResult.model_json_schema(),
             )
-            costs.add(verify_llm, model=extract_client.model)
+            costs.add(verify_llm, model=llm_client.model)
             result = VerificationResult.model_validate_json(verify_llm.content)
         except Exception as e:
             print(f"  [verify] {label}: verification call failed — {e}")
@@ -550,9 +543,9 @@ async def _run_pipeline(
                             error_message=str(e)[:2000],
                         )
                         fix_llm = await asyncio.to_thread(
-                            extract_client.generate, prompt=fix_prompt
+                            llm_client.generate, prompt=fix_prompt
                         )
-                        costs.add(fix_llm, model=extract_client.model)
+                        costs.add(fix_llm, model=llm_client.model)
                         current_fix = fix_llm.content
                     except Exception as e2:
                         print(f"  [verify] {label}: LLM fix call failed — {e2}")
@@ -631,12 +624,12 @@ async def _run_pipeline(
             schema = QuestionBatch.model_json_schema()
 
         extract_llm = await asyncio.to_thread(
-            extract_client.generate,
+            llm_client.generate,
             prompt=extract_prompt,
             images=extraction_images,
             response_schema=schema,
         )
-        costs.add(extract_llm, model=extract_client.model)
+        costs.add(extract_llm, model=llm_client.model)
 
         if len(problems) == 1:
             questions = [Question.model_validate_json(extract_llm.content)]
@@ -713,9 +706,9 @@ async def _run_pipeline(
                                 latex_body=latex, error_message=str(e)[:2000]
                             )
                             fix_llm = await asyncio.to_thread(
-                                extract_client.generate, prompt=fix_prompt
+                                llm_client.generate, prompt=fix_prompt
                             )
-                            costs.add(fix_llm, model=extract_client.model)
+                            costs.add(fix_llm, model=llm_client.model)
                             latex = fix_llm.content
                         except Exception as e2:
                             print(f"  [compile] {problem.label}: LLM fix failed — {e2}")
