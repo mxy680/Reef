@@ -21,36 +21,31 @@ struct DocumentCanvasView: View {
     private static let cream = Color(hex: 0xF8F0E6)
 
     var body: some View {
-        ZStack {
-            // Background: teal top, cream bottom — covers entire screen
-            VStack(spacing: 0) {
-                Self.barColor.frame(height: 150)
-                Self.cream
-            }
-            .ignoresSafeArea()
+        VStack(spacing: 0) {
+            if viewModel.isLoading {
+                loadingView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Self.cream)
+            } else if let error = viewModel.error {
+                errorView(error)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Self.cream)
+            } else if let pdf = viewModel.pdfDocument {
+                CanvasToolbar(
+                    selectedTool: $selectedTool,
+                    selectedColor: $selectedColor,
+                    onClose: { onDismiss() }
+                )
+                .dashboardCard()
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
+                .padding(.bottom, 10)
+                .frame(maxWidth: .infinity)
+                .background(Self.barColor)
 
-            // Content
-            VStack(spacing: 0) {
-                if viewModel.isLoading {
-                    loadingView
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = viewModel.error {
-                    errorView(error)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let pdf = viewModel.pdfDocument {
-                    CanvasToolbar(
-                        selectedTool: $selectedTool,
-                        selectedColor: $selectedColor,
-                        onClose: { onDismiss() }
-                    )
-                    .dashboardCard()
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                    .padding(.bottom, 10)
-
-                    CanvasPageView(pdfDocument: pdf)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+                CanvasPageView(pdfDocument: pdf)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Self.cream)
             }
         }
         .task {
