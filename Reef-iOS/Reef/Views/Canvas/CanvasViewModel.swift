@@ -35,4 +35,18 @@ final class CanvasViewModel {
 
         isLoading = false
     }
+
+    #if DEBUG
+    /// Creates a blank test PDF for dev mode canvas testing
+    func loadTestDocument() {
+        isLoading = true
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792))
+        let data = renderer.pdfData { ctx in
+            ctx.beginPage()
+            // Blank white page — just for toolbar testing
+        }
+        pdfDocument = PDFDocument(data: data)
+        isLoading = false
+    }
+    #endif
 }

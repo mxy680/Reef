@@ -36,9 +36,17 @@ struct DocumentCanvasView: View {
                     .background(Color(hex: 0xF8F0E6))
             }
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(.container, edges: .top)
         .statusBarHidden(true)
-        .task { await viewModel.loadDocument(document) }
+        .task {
+            #if DEBUG
+            if document.id == "dev-test" {
+                viewModel.loadTestDocument()
+                return
+            }
+            #endif
+            await viewModel.loadDocument(document)
+        }
     }
 
     // MARK: - Loading

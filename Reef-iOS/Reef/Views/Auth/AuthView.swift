@@ -138,7 +138,7 @@ struct AuthView: View {
 
                                 #if DEBUG
                                 Button {
-                                    authManager.sendMagicLink(email: "markshteyn1@gmail.com")
+                                    authManager.devLogin()
                                 } label: {
                                     Text("Dev Login")
                                         .font(.epilogue(12, weight: .semiBold))

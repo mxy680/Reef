@@ -71,6 +71,7 @@ struct CanvasToolbar: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
+        .frame(maxWidth: .infinity)
         .background(Self.barColor)
         .animation(.easeInOut(duration: 0.2), value: selectedTool.hasColorPalette)
     }

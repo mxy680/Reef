@@ -171,6 +171,52 @@ struct DashboardView: View {
                 canvasDocument = nil
             }
         }
+        #if DEBUG
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                canvasDocument = Document(
+                    id: "dev-test",
+                    userId: "dev",
+                    filename: "Test Canvas.pdf",
+                    status: .completed,
+                    pageCount: 1,
+                    problemCount: nil,
+                    errorMessage: nil,
+                    statusMessage: nil,
+                    costCents: nil,
+                    courseId: nil,
+                    createdAt: "2026-01-01T00:00:00Z"
+                )
+            } label: {
+                Text("Test Canvas")
+                    .font(.epilogue(12, weight: .bold))
+                    .tracking(-0.04 * 12)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(ReefColors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .padding(20)
+        }
+        .onAppear {
+            if authManager.devMode && canvasDocument == nil {
+                canvasDocument = Document(
+                    id: "dev-test",
+                    userId: "dev",
+                    filename: "Test Canvas.pdf",
+                    status: .completed,
+                    pageCount: 1,
+                    problemCount: nil,
+                    errorMessage: nil,
+                    statusMessage: nil,
+                    costCents: nil,
+                    courseId: nil,
+                    createdAt: "2026-01-01T00:00:00Z"
+                )
+            }
+        }
+        #endif
         .task { await fetchCourses() }
     }
 
