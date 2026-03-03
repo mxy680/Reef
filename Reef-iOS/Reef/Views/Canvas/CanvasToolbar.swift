@@ -2,7 +2,7 @@
 //  CanvasToolbar.swift
 //  Reef
 //
-//  Top toolbar — close button, drawing tools, undo/redo
+//  Floating island toolbar — close button, drawing tools, undo/redo
 //
 
 import SwiftUI
@@ -12,14 +12,14 @@ struct CanvasToolbar: View {
     @Binding var selectedColor: ToolbarColor
     let onClose: () -> Void
 
-    /// Soft teal
-    private static let barColor = Color(red: 78/255.0, green: 138/255.0, blue: 151/255.0)
+    /// Teal for icons & accents
+    private static let teal = ReefColors.primary
 
-    /// Lighter teal pill behind the selected tool
-    private static let selectedPill = Color.white.opacity(0.25)
+    /// Selected tool pill
+    private static let selectedPill = ReefColors.primary.opacity(0.12)
 
     /// Divider between tool groups
-    private static let dividerColor = Color.white.opacity(0.25)
+    private static let dividerColor = ReefColors.gray200
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,18 +28,18 @@ struct CanvasToolbar: View {
                 // Close button
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(ReefColors.gray600)
                     .frame(width: 36, height: 36)
-                    .background(Color.white.opacity(0.15))
+                    .background(ReefColors.gray200)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .contentShape(Rectangle())
                     .onTapGesture { onClose() }
                     .accessibilityLabel("Close")
                     .accessibilityAddTraits(.isButton)
 
-                Spacer()
+                Spacer().frame(width: 16)
 
-                // Drawing tools — centered
+                // Drawing tools
                 HStack(spacing: 2) {
                     ForEach(CanvasTool.allCases, id: \.self) { tool in
                         toolButton(tool)
@@ -57,22 +57,23 @@ struct CanvasToolbar: View {
                     actionButton(icon: "arrow.uturn.forward")
                 }
 
-                Spacer()
+                Spacer().frame(width: 16)
 
-                // Balance spacer (same width as close button)
-                Color.clear.frame(width: 36, height: 36)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+                // Color dots inline (when tool supports color)
+                if selectedTool.hasColorPalette {
+                    RoundedRectangle(cornerRadius: 0.5)
+                        .fill(Self.dividerColor)
+                        .frame(width: 1, height: 24)
+                        .padding(.trailing, 8)
 
-            // Color palette strip — slides in below the bar
-            if selectedTool.hasColorPalette {
-                ColorPaletteStrip(selectedColor: $selectedColor)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    colorDots
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                }
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
-        .frame(maxWidth: .infinity)
-        .background(Self.barColor.ignoresSafeArea(.container, edges: .top))
+        .dashboardCard()
         .animation(.easeInOut(duration: 0.2), value: selectedTool.hasColorPalette)
     }
 
@@ -82,7 +83,7 @@ struct CanvasToolbar: View {
         let isSelected = selectedTool == tool
         return Image(systemName: tool.icon)
             .font(.system(size: 18, weight: .medium))
-            .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
+            .foregroundStyle(isSelected ? Self.teal : ReefColors.gray500)
             .frame(width: 44, height: 44)
             .background(isSelected ? Self.selectedPill : .clear)
             .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -99,22 +100,15 @@ struct CanvasToolbar: View {
     private func actionButton(icon: String) -> some View {
         Image(systemName: icon)
             .font(.system(size: 18, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(ReefColors.gray400)
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())
     }
-}
 
-// MARK: - Color Palette Strip
+    // MARK: - Color Dots
 
-private struct ColorPaletteStrip: View {
-    @Binding var selectedColor: ToolbarColor
-
-    /// Slightly darker teal for the color strip
-    private static let stripColor = Color(red: 69/255.0, green: 122/255.0, blue: 134/255.0)
-
-    var body: some View {
-        HStack(spacing: 12) {
+    private var colorDots: some View {
+        HStack(spacing: 8) {
             ForEach(ToolbarColor.allCases, id: \.self) { color in
                 Circle()
                     .fill(color.color)
@@ -122,7 +116,7 @@ private struct ColorPaletteStrip: View {
                     .overlay(
                         Circle()
                             .stroke(
-                                selectedColor == color ? .white : .clear,
+                                selectedColor == color ? Self.teal : .clear,
                                 lineWidth: 2.5
                             )
                             .frame(width: 30, height: 30)
@@ -131,8 +125,5 @@ private struct ColorPaletteStrip: View {
                     .onTapGesture { selectedColor = color }
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(Self.stripColor)
     }
 }
