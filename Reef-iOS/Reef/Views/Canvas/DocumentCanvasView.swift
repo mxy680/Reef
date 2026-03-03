@@ -33,9 +33,9 @@ struct DocumentCanvasView: View {
                 )
 
                 CanvasPageView(pdfDocument: pdf)
+                    .background(Color(hex: 0xF8F0E6))
             }
         }
-        .background(Color(hex: 0xF8F0E6))
         .ignoresSafeArea()
         .statusBarHidden(true)
         .task { await viewModel.loadDocument(document) }
