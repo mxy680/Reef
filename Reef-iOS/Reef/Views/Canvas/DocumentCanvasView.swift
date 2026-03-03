@@ -21,7 +21,8 @@ struct DocumentCanvasView: View {
     private static let cream = Color(hex: 0xF8F0E6)
 
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .top) {
+            // Full-screen canvas
             if viewModel.isLoading {
                 loadingView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -31,6 +32,12 @@ struct DocumentCanvasView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Self.cream)
             } else if let pdf = viewModel.pdfDocument {
+                CanvasPageView(pdfDocument: pdf)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Self.cream)
+                    .ignoresSafeArea()
+
+                // Floating toolbar overlay
                 CanvasToolbar(
                     selectedTool: $selectedTool,
                     selectedColor: $selectedColor,
@@ -38,14 +45,7 @@ struct DocumentCanvasView: View {
                 )
                 .dashboardCard()
                 .padding(.horizontal, 12)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
-                .frame(maxWidth: .infinity)
-                .background(Self.cream)
-
-                CanvasPageView(pdfDocument: pdf)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Self.cream)
+                .padding(.top, 12)
             }
         }
         .task {
