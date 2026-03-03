@@ -2,10 +2,22 @@
 
 import base64
 import copy
+import logging
 import os
+import time
 from dataclasses import dataclass
 
-from openai import OpenAI
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    InternalServerError,
+    OpenAI,
+    RateLimitError,
+)
+
+logger = logging.getLogger(__name__)
+
+_RETRYABLE = (APIConnectionError, APITimeoutError, RateLimitError, InternalServerError)
 
 
 @dataclass
@@ -74,6 +86,8 @@ class LLMClient:
         images: list[bytes] | None = None,
         temperature: float | None = None,
         response_schema: dict | None = None,
+        max_retries: int = 3,
+        timeout: float = 120.0,
     ) -> LLMResult:
         content: list[dict] = [{"type": "text", "text": prompt}]
         if images:
@@ -87,6 +101,7 @@ class LLMClient:
         kwargs: dict = {
             "model": self.model,
             "messages": [{"role": "user", "content": content}],
+            "timeout": timeout,
         }
         if temperature is not None:
             kwargs["temperature"] = temperature
@@ -100,10 +115,25 @@ class LLMClient:
                 },
             }
 
-        response = self.client.chat.completions.create(**kwargs)
-        usage = response.usage
-        return LLMResult(
-            content=response.choices[0].message.content,
-            input_tokens=usage.prompt_tokens if usage else 0,
-            output_tokens=usage.completion_tokens if usage else 0,
-        )
+        last_exc: Exception | None = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = self.client.chat.completions.create(**kwargs)
+                usage = response.usage
+                return LLMResult(
+                    content=response.choices[0].message.content,
+                    input_tokens=usage.prompt_tokens if usage else 0,
+                    output_tokens=usage.completion_tokens if usage else 0,
+                )
+            except _RETRYABLE as e:
+                last_exc = e
+                if attempt < max_retries:
+                    delay = min(2 ** attempt, 16)
+                    logger.warning(
+                        f"LLM attempt {attempt}/{max_retries} failed "
+                        f"({type(e).__name__}): {e}. Retrying in {delay}s..."
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(f"LLM call failed after {max_retries} attempts: {e}")
+        raise last_exc  # type: ignore[misc]

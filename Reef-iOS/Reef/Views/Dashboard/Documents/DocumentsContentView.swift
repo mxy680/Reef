@@ -174,7 +174,8 @@ final class DocumentsViewModel {
                     id: doc.id, userId: doc.userId, filename: doc.filename,
                     status: .processing, pageCount: doc.pageCount,
                     problemCount: doc.problemCount, errorMessage: nil,
-                    statusMessage: nil, courseId: doc.courseId, createdAt: doc.createdAt
+                    statusMessage: nil, costCents: nil, courseId: doc.courseId,
+                    createdAt: doc.createdAt
                 )
                 documents[idx] = updated
             }
