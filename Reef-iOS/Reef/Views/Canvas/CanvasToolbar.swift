@@ -27,7 +27,7 @@ struct CanvasToolbar: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
-            .dashboardCard()
+            .canvasCard()
             .accessibilityLabel("Back")
 
             Spacer()
@@ -40,7 +40,7 @@ struct CanvasToolbar: View {
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
-            .dashboardCard()
+            .canvasCard()
 
             Spacer()
 
@@ -60,7 +60,7 @@ struct CanvasToolbar: View {
                 }
             }
             .buttonStyle(.plain)
-            .dashboardCard()
+            .canvasCard()
         }
         .padding(.horizontal, 12)
         .padding(.top, 12)
@@ -78,5 +78,45 @@ struct CanvasToolbar: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .contentShape(Rectangle())
             .onTapGesture { selectedTool = tool }
+    }
+}
+
+// MARK: - Canvas Card (shadow within layout bounds)
+
+/// Like DashboardCardModifier but uses a ZStack instead of .background().offset().
+/// The canvas toolbar overlays a UIKit PDFView (UIViewRepresentable) which renders
+/// at a layer that covers SwiftUI backgrounds. A ZStack sibling approach keeps the
+/// shadow above the PDFView layer.
+private struct CanvasCardModifier: ViewModifier {
+    private let cr: CGFloat = 16
+    private let offset: CGFloat = 3
+
+    func body(content: Content) -> some View {
+        // ZStack approach: shadow is a sibling, not a background,
+        // so it renders above the UIKit PDFView layer.
+        ZStack(alignment: .topLeading) {
+            // Shadow layer
+            RoundedRectangle(cornerRadius: cr)
+                .fill(ReefColors.gray500)
+                .padding(.leading, offset)
+                .padding(.top, offset)
+
+            // Card layer
+            content
+                .background(ReefColors.white)
+                .clipShape(RoundedRectangle(cornerRadius: cr))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cr)
+                        .stroke(ReefColors.gray500, lineWidth: 1.5)
+                )
+                .padding(.trailing, offset)
+                .padding(.bottom, offset)
+        }
+    }
+}
+
+private extension View {
+    func canvasCard() -> some View {
+        modifier(CanvasCardModifier())
     }
 }
