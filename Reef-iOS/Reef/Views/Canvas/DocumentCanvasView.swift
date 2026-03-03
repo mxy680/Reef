@@ -15,8 +15,11 @@ struct DocumentCanvasView: View {
     @State private var selectedTool: CanvasTool = .pen
     @State private var selectedColor: ToolbarColor = .black
 
+    /// Toolbar teal — matches ReefColors.primary
+    private static let barColor = ReefColors.primary
+
     var body: some View {
-        ZStack(alignment: .top) {
+        VStack(spacing: 0) {
             if viewModel.isLoading {
                 loadingView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -26,19 +29,18 @@ struct DocumentCanvasView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(hex: 0xF8F0E6))
             } else if let pdf = viewModel.pdfDocument {
-                CanvasPageView(pdfDocument: pdf)
-                    .background(Color(hex: 0xF8F0E6))
-
                 CanvasToolbar(
                     selectedTool: $selectedTool,
                     selectedColor: $selectedColor,
                     onClose: { onDismiss() }
                 )
-                .padding(.top, 12)
-                .padding(.horizontal, 12)
+
+                CanvasPageView(pdfDocument: pdf)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0xF8F0E6))
             }
         }
-        .ignoresSafeArea()
+        .background(Self.barColor.ignoresSafeArea())
         .task {
             #if DEBUG
             if document.id == "dev-test" {
