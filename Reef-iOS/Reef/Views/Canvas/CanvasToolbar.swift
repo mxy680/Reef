@@ -2,7 +2,7 @@
 //  CanvasToolbar.swift
 //  Reef
 //
-//  Full-width top toolbar — close button, drawing tools, undo/redo
+//  Island toolbar — close button, drawing tools, undo/redo
 //
 
 import SwiftUI
@@ -12,68 +12,67 @@ struct CanvasToolbar: View {
     @Binding var selectedColor: ToolbarColor
     let onClose: () -> Void
 
-    /// Lighter teal pill behind the selected tool
-    private static let selectedPill = Color.white.opacity(0.25)
+    /// Teal accent for selected state
+    private static let teal = ReefColors.primary
+
+    /// Pill behind the selected tool
+    private static let selectedPill = ReefColors.primary.opacity(0.12)
 
     /// Divider between tool groups
-    private static let dividerColor = Color.white.opacity(0.25)
+    private static let dividerColor = ReefColors.gray200
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Main bar
-            HStack(spacing: 0) {
-                // Close button
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color.white.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .contentShape(Rectangle())
-                    .onTapGesture { onClose() }
-                    .accessibilityLabel("Close")
-                    .accessibilityAddTraits(.isButton)
+        HStack(spacing: 0) {
+            // Close button
+            Image(systemName: "xmark")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(ReefColors.gray600)
+                .frame(width: 36, height: 36)
+                .background(ReefColors.gray100)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .contentShape(Rectangle())
+                .onTapGesture { onClose() }
+                .accessibilityLabel("Close")
+                .accessibilityAddTraits(.isButton)
 
-                Spacer()
+            Spacer()
 
-                // Drawing tools — centered
-                HStack(spacing: 2) {
-                    ForEach(CanvasTool.allCases, id: \.self) { tool in
-                        toolButton(tool)
-                    }
+            // Drawing tools — centered
+            HStack(spacing: 2) {
+                ForEach(CanvasTool.allCases, id: \.self) { tool in
+                    toolButton(tool)
+                }
 
-                    // Divider
+                // Divider
+                RoundedRectangle(cornerRadius: 0.5)
+                    .fill(Self.dividerColor)
+                    .frame(width: 1, height: 24)
+                    .padding(.horizontal, 6)
+
+                // Undo
+                actionButton(icon: "arrow.uturn.backward")
+                // Redo
+                actionButton(icon: "arrow.uturn.forward")
+
+                // Color dots inline (when tool supports color)
+                if selectedTool.hasColorPalette {
                     RoundedRectangle(cornerRadius: 0.5)
                         .fill(Self.dividerColor)
                         .frame(width: 1, height: 24)
                         .padding(.horizontal, 6)
 
-                    // Undo
-                    actionButton(icon: "arrow.uturn.backward")
-                    // Redo
-                    actionButton(icon: "arrow.uturn.forward")
-
-                    // Color dots inline (when tool supports color)
-                    if selectedTool.hasColorPalette {
-                        RoundedRectangle(cornerRadius: 0.5)
-                            .fill(Self.dividerColor)
-                            .frame(width: 1, height: 24)
-                            .padding(.horizontal, 6)
-
-                        colorDots
-                            .transition(.opacity.combined(with: .scale(scale: 0.8)))
-                    }
+                    colorDots
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
                 }
-
-                Spacer()
-
-                // Balance spacer (same width as close button)
-                Color.clear.frame(width: 36, height: 36)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+
+            Spacer()
+
+            // Balance spacer (same width as close button)
+            Color.clear.frame(width: 36, height: 36)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .animation(.easeInOut(duration: 0.2), value: selectedTool.hasColorPalette)
     }
 
@@ -83,7 +82,7 @@ struct CanvasToolbar: View {
         let isSelected = selectedTool == tool
         return Image(systemName: tool.icon)
             .font(.system(size: 18, weight: .medium))
-            .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
+            .foregroundStyle(isSelected ? Self.teal : ReefColors.gray500)
             .frame(width: 44, height: 44)
             .background(isSelected ? Self.selectedPill : .clear)
             .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -100,7 +99,7 @@ struct CanvasToolbar: View {
     private func actionButton(icon: String) -> some View {
         Image(systemName: icon)
             .font(.system(size: 18, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(ReefColors.gray400)
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())
     }
@@ -116,7 +115,7 @@ struct CanvasToolbar: View {
                     .overlay(
                         Circle()
                             .stroke(
-                                selectedColor == color ? .white : .clear,
+                                selectedColor == color ? Self.teal : .clear,
                                 lineWidth: 2.5
                             )
                             .frame(width: 30, height: 30)

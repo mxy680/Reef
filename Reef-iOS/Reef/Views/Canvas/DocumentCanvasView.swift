@@ -34,6 +34,10 @@ struct DocumentCanvasView: View {
                     selectedColor: $selectedColor,
                     onClose: { onDismiss() }
                 )
+                .dashboardCard()
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
+                .padding(.bottom, 10)
 
                 CanvasPageView(pdfDocument: pdf)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
