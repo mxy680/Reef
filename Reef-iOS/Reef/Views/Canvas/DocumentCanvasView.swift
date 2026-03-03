@@ -18,34 +18,39 @@ struct DocumentCanvasView: View {
     /// Toolbar teal — matches ReefColors.primary
     private static let barColor = ReefColors.primary
 
-    var body: some View {
-        VStack(spacing: 0) {
-            if viewModel.isLoading {
-                loadingView
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(hex: 0xF8F0E6))
-            } else if let error = viewModel.error {
-                errorView(error)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(hex: 0xF8F0E6))
-            } else if let pdf = viewModel.pdfDocument {
-                CanvasToolbar(
-                    selectedTool: $selectedTool,
-                    selectedColor: $selectedColor,
-                    onClose: { onDismiss() }
-                )
-                .dashboardCard()
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
-                .frame(maxWidth: .infinity)
-                .background(Self.barColor)
-                .background(Self.barColor.ignoresSafeArea(.container, edges: .top))
+    private static let cream = Color(hex: 0xF8F0E6)
 
-                CanvasPageView(pdfDocument: pdf)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(hex: 0xF8F0E6))
-                    .background(Color(hex: 0xF8F0E6).ignoresSafeArea(.container, edges: .bottom))
+    var body: some View {
+        ZStack {
+            // Background: teal top, cream bottom — covers entire screen
+            VStack(spacing: 0) {
+                Self.barColor.frame(height: 150)
+                Self.cream
+            }
+            .ignoresSafeArea()
+
+            // Content
+            VStack(spacing: 0) {
+                if viewModel.isLoading {
+                    loadingView
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = viewModel.error {
+                    errorView(error)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let pdf = viewModel.pdfDocument {
+                    CanvasToolbar(
+                        selectedTool: $selectedTool,
+                        selectedColor: $selectedColor,
+                        onClose: { onDismiss() }
+                    )
+                    .dashboardCard()
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                    .padding(.bottom, 10)
+
+                    CanvasPageView(pdfDocument: pdf)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
         .task {
