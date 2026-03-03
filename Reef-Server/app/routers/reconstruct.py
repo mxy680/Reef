@@ -47,12 +47,40 @@ from app.services.prompts import (
 from app.services.cancellation import cancel as cancel_document, cleanup as cancel_cleanup, is_cancelled, register as cancel_register
 from app.services.progress import update_document_status, update_progress
 from app.services.storage import download_document_pdf, upload_document_pdf
-from app.services.question_to_latex import question_to_latex
+from app.services.question_to_latex import question_to_latex, _sanitize_text
 from app.services.region_extractor import extract_question_regions
 
 router = APIRouter()
 
 FIGURE_LABELS = {"Picture", "Figure"}
+
+# LaTeX special characters that must be escaped in literal text (labels, headers)
+_LATEX_SPECIAL = str.maketrans({
+    "&": r"\&",
+    "%": r"\%",
+    "#": r"\#",
+    "_": r"\_",
+})
+
+
+def _escape_latex_label(text: str) -> str:
+    """Escape LaTeX special characters in a problem label/header."""
+    return text.translate(_LATEX_SPECIAL)
+
+
+_INCLUDEGRAPHICS_RE = re.compile(r'\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}')
+
+
+def _strip_invalid_figures(latex: str, valid_figures: set[str]) -> str:
+    """Remove \\includegraphics lines referencing files not in valid_figures."""
+    lines = latex.split('\n')
+    filtered = []
+    for line in lines:
+        m = _INCLUDEGRAPHICS_RE.search(line)
+        if m and m.group(1) not in valid_figures:
+            continue  # drop line with invalid figure reference
+        filtered.append(line)
+    return '\n'.join(filtered)
 
 # Modal remote reference to the Surya GPU function
 SuryaLayout = modal.Cls.from_name("reef-surya", "SuryaLayout")
@@ -79,23 +107,32 @@ class PipelineCosts:
     llm_calls: int = 0
     gpu_seconds: float = 0.0
     pipeline_seconds: float = 0.0
+    _llm_cost_dollars: float = 0.0  # accumulated LLM cost in dollars
 
-    # Pricing constants (dollars per unit)
-    _LLM_COST_PER_TOKEN: float = 0.80 / 1_000_000   # Qwen 2.5 VL 72B via OpenRouter
-    _GPU_COST_PER_SECOND: float = 0.000164            # Modal T4
+    # GPU pricing (dollars per second)
+    _GPU_COST_PER_SECOND: float = 0.000164  # Modal T4
 
-    def add(self, result: LLMResult) -> None:
+    # Per-model pricing (dollars per token)
+    MODEL_RATES: dict = field(default_factory=lambda: {
+        "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
+    })
+    _DEFAULT_RATE: tuple = (0.50 / 1_000_000, 3.00 / 1_000_000)
+
+    def add(self, result: LLMResult, model: str = "") -> None:
         self.input_tokens += result.input_tokens
         self.output_tokens += result.output_tokens
         self.llm_calls += 1
+        in_rate, out_rate = self.MODEL_RATES.get(model, self._DEFAULT_RATE)
+        self._llm_cost_dollars += (
+            result.input_tokens * in_rate + result.output_tokens * out_rate
+        )
 
     @property
     def cost_cents(self) -> int:
         """Total estimated cost in cents (rounded up)."""
         import math
-        token_cost = (self.input_tokens + self.output_tokens) * self._LLM_COST_PER_TOKEN
         gpu_cost = self.gpu_seconds * self._GPU_COST_PER_SECOND
-        return math.ceil((token_cost + gpu_cost) * 100)
+        return math.ceil((self._llm_cost_dollars + gpu_cost) * 100)
 
 
 # ---------------------------------------------------------------------------
@@ -106,11 +143,13 @@ class PipelineCosts:
 def _annotate_page(
     img: Image.Image,
     layout_result: PageLayout,
-    scale: int = 2,
     start_index: int = 1,
 ) -> tuple[Image.Image, int]:
-    """Annotate a single page image with red numbered bounding boxes."""
-    img = img.resize((img.width * scale, img.height * scale), Image.LANCZOS)
+    """Annotate a single page image with red numbered bounding boxes.
+
+    Operates at native resolution (no upscaling) to minimize image size
+    sent to the LLM, reducing both cost and latency.
+    """
     img = img.convert("RGBA")
 
     overlay = Image.new("RGBA", img.size, (255, 255, 255, 0))
@@ -118,10 +157,10 @@ def _annotate_page(
     draw = ImageDraw.Draw(img)
 
     try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
     except Exception:
         try:
-            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 24)
+            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 16)
         except Exception:
             font = ImageFont.load_default()
 
@@ -130,17 +169,16 @@ def _annotate_page(
 
     for block in layout_result.bboxes:
         bbox = block.bbox
-        x1, y1 = int(bbox[0] * scale), int(bbox[1] * scale)
-        x2, y2 = int(bbox[2] * scale), int(bbox[3] * scale)
+        x1, y1 = int(bbox[0]), int(bbox[1])
+        x2, y2 = int(bbox[2]), int(bbox[3])
 
         overlay_draw.rectangle([(x1, y1), (x2, y2)], fill=(*rgb, 40))
-        for i in range(3):
-            draw.rectangle([(x1 - i, y1 - i), (x2 + i, y2 + i)], outline=rgb, width=2)
+        draw.rectangle([(x1, y1), (x2, y2)], outline=rgb, width=2)
 
         label = str(current_index)
-        label_y = max(y1 - 32, 5)
+        label_y = max(y1 - 22, 3)
         text_bbox = draw.textbbox((x1, label_y), label, font=font)
-        padding = 6
+        padding = 4
         draw.rectangle(
             (text_bbox[0] - padding, text_bbox[1] - padding,
              text_bbox[2] + padding, text_bbox[3] + padding),
@@ -153,7 +191,7 @@ def _annotate_page(
     return img.convert("RGB"), current_index
 
 
-def _render_pdf_to_image(pdf_bytes: bytes, dpi: int = 192) -> bytes:
+def _render_pdf_to_image(pdf_bytes: bytes, dpi: int = 144) -> bytes:
     """Render a compiled PDF to a single JPEG image (stacks pages vertically)."""
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     mat = fitz.Matrix(dpi / 72, dpi / 72)
@@ -176,7 +214,7 @@ def _render_pdf_to_image(pdf_bytes: bytes, dpi: int = 192) -> bytes:
             y_offset += img.height
 
     buf = io.BytesIO()
-    composite.save(buf, format="JPEG", quality=90)
+    composite.save(buf, format="JPEG", quality=75)
     return buf.getvalue()
 
 
@@ -225,7 +263,7 @@ def _get_original_crop(
             y_offset += crop.height
 
     buf = io.BytesIO()
-    composite.save(buf, format="JPEG", quality=90)
+    composite.save(buf, format="JPEG", quality=75)
     return buf.getvalue()
 
 
@@ -264,35 +302,11 @@ async def _run_pipeline(
     SURYA_DPI = 192
     CROP_DPI = 288
     crop_scale = CROP_DPI / SURYA_DPI
-    surya_mat = fitz.Matrix(SURYA_DPI / 72, SURYA_DPI / 72)
     hires_mat = fitz.Matrix(CROP_DPI / 72, CROP_DPI / 72)
 
     await progress("Analyzing document layout...")
 
-    # --- Stage 1a: Rasterize 192 DPI for Surya ---
-    surya_images: list[Image.Image] = []
-    for page_num in range(num_pages):
-        pix = doc[page_num].get_pixmap(matrix=surya_mat)
-        surya_images.append(
-            Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        )
-
-    # Serialize for Surya
-    surya_image_bytes: list[bytes] = []
-    for img in surya_images:
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=95)
-        surya_image_bytes.append(buf.getvalue())
-
-    # --- Stage 1b: Fire Surya (async) + rasterize 288 DPI concurrently ---
-    print(f"  [reconstruct] Sending {len(surya_image_bytes)} pages to Modal Surya...")
-    surya_cls = SuryaLayout()
-    gpu_start = time.monotonic()
-    surya_task = asyncio.create_task(
-        asyncio.to_thread(surya_cls.detect_layout.remote, surya_image_bytes)
-    )
-
-    # Rasterize 288 DPI while Surya is running on GPU
+    # --- Stage 1a: Single-pass rasterization at 288 DPI ---
     hires_images: list[Image.Image] = []
     for page_num in range(num_pages):
         pix = doc[page_num].get_pixmap(matrix=hires_mat)
@@ -300,6 +314,27 @@ async def _run_pipeline(
             Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         )
     doc.close()
+
+    # Downscale to 192 DPI for Surya layout detection
+    surya_images: list[Image.Image] = []
+    for img in hires_images:
+        w, h = int(img.width / crop_scale), int(img.height / crop_scale)
+        surya_images.append(img.resize((w, h), Image.LANCZOS))
+
+    # Serialize for Surya
+    surya_image_bytes: list[bytes] = []
+    for img in surya_images:
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        surya_image_bytes.append(buf.getvalue())
+
+    # --- Stage 1b: Fire Surya (async) ---
+    print(f"  [reconstruct] Sending {len(surya_image_bytes)} pages to Modal Surya...")
+    surya_cls = SuryaLayout()
+    gpu_start = time.monotonic()
+    surya_task = asyncio.create_task(
+        asyncio.to_thread(surya_cls.detect_layout.remote, surya_image_bytes)
+    )
 
     # --- Stage 1c: Await Surya results ---
     raw_layouts = await surya_task
@@ -318,7 +353,7 @@ async def _run_pipeline(
     current_index = 1
     for img, layout_result in zip(surya_images, layout_results):
         annotated, current_index = _annotate_page(
-            img, layout_result, scale=2, start_index=current_index
+            img, layout_result, start_index=current_index
         )
         annotated_pages.append(annotated)
 
@@ -327,7 +362,7 @@ async def _run_pipeline(
     page_images: list[bytes] = []
     for page in annotated_pages:
         buf = io.BytesIO()
-        page.save(buf, format="JPEG", quality=85)
+        page.save(buf, format="JPEG", quality=75)
         page_images.append(buf.getvalue())
 
     if debug:
@@ -344,9 +379,10 @@ async def _run_pipeline(
     await progress("Identifying problems...")
 
     # --- Stage 2b: LLM problem grouping (now non-blocking) ---
+    # Single model for all calls — best accuracy, simplest routing
     llm_client = LLMClient(
         api_key=settings.openrouter_api_key,
-        model="qwen/qwen2.5-vl-72b-instruct",
+        model="google/gemini-3-flash-preview",
         base_url="https://openrouter.ai/api/v1",
     )
 
@@ -357,7 +393,7 @@ async def _run_pipeline(
         images=page_images,
         response_schema=GroupProblemsResponse.model_json_schema(),
     )
-    costs.add(group_llm)
+    costs.add(group_llm, model=llm_client.model)
     group_result = GroupProblemsResponse.model_validate_json(group_llm.content)
 
     group_result.problems.sort(
@@ -392,9 +428,16 @@ async def _run_pipeline(
             )
             best_problem.annotation_indices.append(idx)
             best_problem.annotation_indices.sort()
+            assigned.add(idx)
             print(
                 f"  [reconstruct] Rescued orphan figure {idx} ({label}) -> {best_problem.label}"
             )
+
+    # Check if page 0 has unassigned annotations (likely general instructions)
+    page0_has_instructions = any(
+        idx not in assigned and bbox_index[idx][0] == 0
+        for idx in bbox_index
+    )
 
     # Prepare original crops for visual verification
     original_crops: dict[str, bytes] = {}
@@ -434,9 +477,10 @@ async def _run_pipeline(
                     figure_filenames.append(fname)
                     figure_mappings.append(f"  - Red box #{idx} → {fname}")
 
-        # Include page 0 as context if problem isn't on it
+        # Include page 0 as context only if it has instructions or problem is nearby
         if problem_pages and 0 not in problem_pages:
-            problem_pages.add(0)
+            if page0_has_instructions or min(problem_pages) <= 1:
+                problem_pages.add(0)
 
         # Crop tables as images
         for idx, (page_num, bbox, label) in bbox_index.items():
@@ -459,6 +503,17 @@ async def _run_pipeline(
 
     MAX_FIX_ATTEMPTS = 3
 
+    def _is_simple_problem(question: Question, latex: str) -> bool:
+        """Check if a problem is simple enough to skip visual verification."""
+        if question.figures:
+            return False
+        if len(latex) > 500:
+            return False
+        for part in question.parts:
+            if part.figures or part.parts:  # has figures or nested sub-parts
+                return False
+        return True
+
     async def _verify_and_fix(
         label: str,
         latex: str,
@@ -480,7 +535,7 @@ async def _run_pipeline(
                 images=[original_crop_bytes, reconstruction_image],
                 response_schema=VerificationResult.model_json_schema(),
             )
-            costs.add(verify_llm)
+            costs.add(verify_llm, model=llm_client.model)
             result = VerificationResult.model_validate_json(verify_llm.content)
         except Exception as e:
             print(f"  [verify] {label}: verification call failed — {e}")
@@ -492,9 +547,11 @@ async def _run_pipeline(
 
         print(f"  [verify] {label}: issues found: {result.issues}")
 
-        # Try to compile the fix, retrying with error feedback if it fails
-        current_fix = result.fixed_latex
-        header = label
+        # Sanitize fixed_latex: fix JSON escape corruption and strip hallucinated figures
+        current_fix = _sanitize_text(result.fixed_latex)
+        valid_figs = set(image_data.keys()) if image_data else set()
+        current_fix = _strip_invalid_figures(current_fix, valid_figs)
+        header = _escape_latex_label(label)
 
         for attempt in range(1, MAX_FIX_ATTEMPTS + 1):
             try:
@@ -518,7 +575,7 @@ async def _run_pipeline(
                         fix_llm = await asyncio.to_thread(
                             llm_client.generate, prompt=fix_prompt
                         )
-                        costs.add(fix_llm)
+                        costs.add(fix_llm, model=llm_client.model)
                         current_fix = fix_llm.content
                     except Exception as e2:
                         print(f"  [verify] {label}: LLM fix call failed — {e2}")
@@ -602,7 +659,7 @@ async def _run_pipeline(
             images=extraction_images,
             response_schema=schema,
         )
-        costs.add(extract_llm)
+        costs.add(extract_llm, model=llm_client.model)
 
         if len(problems) == 1:
             questions = [Question.model_validate_json(extract_llm.content)]
@@ -681,7 +738,7 @@ async def _run_pipeline(
                             fix_llm = await asyncio.to_thread(
                                 llm_client.generate, prompt=fix_prompt
                             )
-                            costs.add(fix_llm)
+                            costs.add(fix_llm, model=llm_client.model)
                             latex = fix_llm.content
                         except Exception as e2:
                             print(f"  [compile] {problem.label}: LLM fix failed — {e2}")
@@ -703,11 +760,14 @@ async def _run_pipeline(
                 out.append((problem.label, pdf_result, None))
                 continue
 
-            # Verify against original
-            crop_bytes = original_crops.get(problem.label, b"")
-            latex, pdf_result = await _verify_and_fix(
-                problem.label, latex, pdf_result, crop_bytes, image_data
-            )
+            # Verify against original (skip for simple problems to save cost)
+            if matched and _is_simple_problem(matched, latex):
+                print(f"  [verify] {problem.label}: skipped (simple problem)")
+            else:
+                crop_bytes = original_crops.get(problem.label, b"")
+                latex, pdf_result = await _verify_and_fix(
+                    problem.label, latex, pdf_result, crop_bytes, image_data
+                )
 
             out.append((problem.label, pdf_result, question_dict))
 

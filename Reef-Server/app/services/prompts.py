@@ -120,7 +120,7 @@ Your job: make sure the reconstruction looks like something a teacher would be p
 - **Inconsistent label style**: Mixing a) and (a) and a. within the same problem — pick one style and be consistent.
 - **Raw LaTeX leaking**: Visible backslash commands, unrendered $...$ delimiters, or literal LaTeX syntax showing as text.
 - **Unescaped special characters**: Literal %, &, or # causing missing text or compilation artifacts.
-- **Excessive whitespace**: Huge gaps between parts, unnecessary page breaks, or blank space where content should be.
+- **Excessive whitespace**: Unnecessary page breaks or content pushed to a second page when it should fit on one. NOTE: \\vspace commands for answer space are INTENTIONAL and must be preserved — do NOT remove them.
 - **Misaligned tables**: Columns not lining up, missing cell borders that should be there, or headers merged with data.
 - **Nested indentation errors**: Sub-parts at the wrong indentation level, or content that should be nested appearing at the top level.
 - **Incorrect problem header**: The header should match the original document's numbering (e.g. "Problem 1.3-9" not "Problem 1").
@@ -142,6 +142,7 @@ Minor typographic differences (font size, exact spacing, line breaks) are accept
 - If there are issues, set `needs_fix` to true, list the issues, and provide corrected LaTeX in `fixed_latex`.
 - The `fixed_latex` must be ONLY the LaTeX body content — no \\documentclass, no \\usepackage, no \\begin{{document}}.
 - Preserve all existing formatting that is correct — only fix what is actually wrong.
+- IMPORTANT: Preserve all \\vspace commands and \\needspace commands — these provide answer space for students.
 - Available packages: amsmath, amssymb, amsfonts, graphicx, booktabs, array, xcolor, needspace, algorithm, algorithmic, listings, caption, changepage.
 - Math must use $...$ for inline and \\[...\\] for display mode.
 - Do NOT solve problems or fill in blanks — reproduce the original content exactly.

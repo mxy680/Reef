@@ -4,12 +4,14 @@ import base64
 import copy
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass
 
 from openai import (
     APIConnectionError,
     APITimeoutError,
+    BadRequestError,
     InternalServerError,
     OpenAI,
     RateLimitError,
@@ -79,6 +81,23 @@ class LLMClient:
             kwargs["base_url"] = base_url
         self.client = OpenAI(**kwargs)
         self.model = model
+        self._strict_json_supported: bool | None = None  # auto-detect on first call
+
+    def _build_response_format(self, response_schema: dict | None) -> dict | None:
+        """Build response_format kwargs, respecting strict JSON support."""
+        if response_schema is None:
+            return None
+        if self._strict_json_supported is not False:
+            return {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "response",
+                    "strict": True,
+                    "schema": _make_strict(response_schema),
+                },
+            }
+        # Fallback: json_object mode (model must be prompted to return JSON)
+        return {"type": "json_object"}
 
     def generate(
         self,
@@ -105,26 +124,41 @@ class LLMClient:
         }
         if temperature is not None:
             kwargs["temperature"] = temperature
-        if response_schema is not None:
-            kwargs["response_format"] = {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "response",
-                    "strict": True,
-                    "schema": _make_strict(response_schema),
-                },
-            }
+        response_format = self._build_response_format(response_schema)
+        if response_format is not None:
+            kwargs["response_format"] = response_format
 
         last_exc: Exception | None = None
         for attempt in range(1, max_retries + 1):
             try:
                 response = self.client.chat.completions.create(**kwargs)
                 usage = response.usage
+                if self._strict_json_supported is None and response_schema is not None:
+                    self._strict_json_supported = True
+                content = response.choices[0].message.content
+                # Strip <think>...</think> tags from thinking models
+                content = re.sub(
+                    r"<think>.*?</think>\s*", "", content, flags=re.DOTALL
+                )
                 return LLMResult(
-                    content=response.choices[0].message.content,
+                    content=content,
                     input_tokens=usage.prompt_tokens if usage else 0,
                     output_tokens=usage.completion_tokens if usage else 0,
                 )
+            except BadRequestError as e:
+                # Strict JSON schema not supported — fall back to json_object
+                if (
+                    self._strict_json_supported is not False
+                    and response_schema is not None
+                ):
+                    logger.warning(
+                        f"LLM strict JSON not supported ({self.model}): {e}. "
+                        f"Falling back to json_object mode."
+                    )
+                    self._strict_json_supported = False
+                    kwargs["response_format"] = {"type": "json_object"}
+                    continue  # retry immediately with json_object
+                raise
             except _RETRYABLE as e:
                 last_exc = e
                 if attempt < max_retries:
