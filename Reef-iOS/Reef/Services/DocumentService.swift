@@ -123,6 +123,9 @@ actor DocumentService {
     func deleteDocument(_ docId: String) async throws {
         let userId = try await getUserId()
 
+        // Best-effort: cancel any running reconstruction on the server
+        try? await ReefAPI.shared.cancelReconstruction(documentId: docId)
+
         // Delete storage files
         let prefix = "\(userId)/\(docId)"
         let files = try await supabase.storage.from("documents").list(path: prefix)

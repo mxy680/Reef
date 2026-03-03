@@ -33,6 +33,11 @@ async def update_document_status(
     problem_count=_UNSET,
     error_message=_UNSET,
     status_message=_UNSET,
+    input_tokens=_UNSET,
+    output_tokens=_UNSET,
+    llm_calls=_UNSET,
+    gpu_seconds=_UNSET,
+    pipeline_seconds=_UNSET,
 ):
     """PATCH multiple fields on a document row at once.
 
@@ -52,6 +57,16 @@ async def update_document_status(
         payload["error_message"] = error_message
     if status_message is not _UNSET:
         payload["status_message"] = status_message
+    if input_tokens is not _UNSET:
+        payload["input_tokens"] = input_tokens
+    if output_tokens is not _UNSET:
+        payload["output_tokens"] = output_tokens
+    if llm_calls is not _UNSET:
+        payload["llm_calls"] = llm_calls
+    if gpu_seconds is not _UNSET:
+        payload["gpu_seconds"] = gpu_seconds
+    if pipeline_seconds is not _UNSET:
+        payload["pipeline_seconds"] = pipeline_seconds
     if not payload:
         return
     try:

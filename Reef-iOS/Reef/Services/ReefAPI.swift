@@ -62,6 +62,11 @@ actor ReefAPI {
         let _: Response = try await request("POST", path: "/ai/reconstruct-document", body: Body(document_id: documentId))
     }
 
+    func cancelReconstruction(documentId: String) async throws {
+        struct Response: Decodable { let status: String; let document_id: String }
+        let _: Response = try await request("DELETE", path: "/ai/reconstruct-document/\(documentId)")
+    }
+
     // MARK: - WebSocket
 
     func connectWebSocket() async throws {

@@ -23,6 +23,8 @@ struct DocumentThumbnailView: View {
                         image
                             .resizable()
                             .scaledToFill()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipped()
                             .transition(.opacity)
                     default:
                         ruledLines

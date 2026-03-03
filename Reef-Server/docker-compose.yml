@@ -4,6 +4,8 @@ services:
     container_name: reef-server
     restart: unless-stopped
     env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
     expose:
       - "8000"
     networks:

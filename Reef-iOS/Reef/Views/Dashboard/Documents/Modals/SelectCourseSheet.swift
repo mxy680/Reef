@@ -3,7 +3,7 @@ import SwiftUI
 
 struct SelectCoursePopup: View {
     let filename: String
-    let onConfirm: (String) -> Void
+    let onConfirm: (String?) -> Void
     let onDismiss: () -> Void
 
     @State private var courses: [Course] = []
@@ -45,14 +45,35 @@ struct SelectCoursePopup: View {
                         .tracking(-0.04 * 13)
                         .foregroundStyle(ReefColors.gray500)
                         .padding(.top, 16)
-                } else if courses.isEmpty {
-                    Text("No courses yet. Create one first.")
-                        .font(.epilogue(13, weight: .medium))
-                        .tracking(-0.04 * 13)
-                        .foregroundStyle(ReefColors.gray500)
-                        .padding(.top, 16)
                 } else {
                     VStack(spacing: 6) {
+                        // Skip course selection
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(ReefColors.gray500)
+
+                            Text("Skip — no course")
+                                .font(.epilogue(13, weight: .semiBold))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(ReefColors.gray600)
+
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(ReefColors.gray400, lineWidth: 1.5)
+                        )
+                        .compositingGroup()
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            onConfirm(nil)
+                        }
+                        .accessibilityAddTraits(.isButton)
+
                         ForEach(courses) { course in
                             HStack(spacing: 10) {
                                 Text(course.emoji)

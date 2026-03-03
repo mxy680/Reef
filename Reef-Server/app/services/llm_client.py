@@ -3,8 +3,17 @@
 import base64
 import copy
 import os
+from dataclasses import dataclass
 
 from openai import OpenAI
+
+
+@dataclass
+class LLMResult:
+    """Result from an LLM call including usage metrics."""
+    content: str
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 def _make_strict(schema: dict) -> dict:
@@ -65,7 +74,7 @@ class LLMClient:
         images: list[bytes] | None = None,
         temperature: float | None = None,
         response_schema: dict | None = None,
-    ) -> str:
+    ) -> LLMResult:
         content: list[dict] = [{"type": "text", "text": prompt}]
         if images:
             for img_bytes in images:
@@ -92,4 +101,9 @@ class LLMClient:
             }
 
         response = self.client.chat.completions.create(**kwargs)
-        return response.choices[0].message.content
+        usage = response.usage
+        return LLMResult(
+            content=response.choices[0].message.content,
+            input_tokens=usage.prompt_tokens if usage else 0,
+            output_tokens=usage.completion_tokens if usage else 0,
+        )

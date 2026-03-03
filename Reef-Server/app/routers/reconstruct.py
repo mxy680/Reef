@@ -15,8 +15,9 @@ import base64
 import io
 import json
 import re
+import time
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -36,13 +37,14 @@ from app.models import (
     VerificationResult,
 )
 from app.services.latex_compiler import LaTeXCompiler
-from app.services.llm_client import LLMClient
+from app.services.llm_client import LLMClient, LLMResult
 from app.services.prompts import (
     EXTRACT_QUESTION_PROMPT,
     GROUP_PROBLEMS_PROMPT,
     LATEX_FIX_PROMPT,
     VISUAL_VERIFY_PROMPT,
 )
+from app.services.cancellation import cancel as cancel_document, cleanup as cancel_cleanup, is_cancelled, register as cancel_register
 from app.services.progress import update_document_status, update_progress
 from app.services.storage import download_document_pdf, upload_document_pdf
 from app.services.question_to_latex import question_to_latex
@@ -67,6 +69,21 @@ class LayoutBlock:
 class PageLayout:
     """Layout results for one page."""
     bboxes: list[LayoutBlock]
+
+
+@dataclass
+class PipelineCosts:
+    """Accumulated cost metrics for a pipeline run."""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    llm_calls: int = 0
+    gpu_seconds: float = 0.0
+    pipeline_seconds: float = 0.0
+
+    def add(self, result: LLMResult) -> None:
+        self.input_tokens += result.input_tokens
+        self.output_tokens += result.output_tokens
+        self.llm_calls += 1
 
 
 # ---------------------------------------------------------------------------
@@ -210,12 +227,14 @@ async def _run_pipeline(
     document_id: str | None = None,
     debug: bool = False,
     base_name: str = "document",
-) -> tuple[list[tuple[str, bytes, dict | None]], int]:
+) -> tuple[list[tuple[str, bytes, dict | None]], int, PipelineCosts]:
     """Run the full reconstruction pipeline.
 
-    Returns ``(compiled, page_count)`` where *compiled* is a list of
+    Returns ``(compiled, page_count, costs)`` where *compiled* is a list of
     ``(label, pdf_bytes, question_dict | None)`` tuples — one per problem.
     """
+    costs = PipelineCosts()
+    pipeline_start = time.monotonic()
 
     async def progress(msg: str | None):
         if document_id:
@@ -252,6 +271,7 @@ async def _run_pipeline(
     # --- Stage 1b: Fire Surya (async) + rasterize 288 DPI concurrently ---
     print(f"  [reconstruct] Sending {len(surya_image_bytes)} pages to Modal Surya...")
     surya_cls = SuryaLayout()
+    gpu_start = time.monotonic()
     surya_task = asyncio.create_task(
         asyncio.to_thread(surya_cls.detect_layout.remote, surya_image_bytes)
     )
@@ -267,6 +287,7 @@ async def _run_pipeline(
 
     # --- Stage 1c: Await Surya results ---
     raw_layouts = await surya_task
+    costs.gpu_seconds = time.monotonic() - gpu_start
 
     # Deserialize Modal response into local dataclasses
     layout_results: list[PageLayout] = []
@@ -314,13 +335,14 @@ async def _run_pipeline(
     )
 
     prompt = GROUP_PROBLEMS_PROMPT.format(total_annotations=total_annotations)
-    raw_response = await asyncio.to_thread(
+    group_llm = await asyncio.to_thread(
         llm_client.generate,
         prompt=prompt,
         images=page_images,
         response_schema=GroupProblemsResponse.model_json_schema(),
     )
-    group_result = GroupProblemsResponse.model_validate_json(raw_response)
+    costs.add(group_llm)
+    group_result = GroupProblemsResponse.model_validate_json(group_llm.content)
 
     group_result.problems.sort(
         key=lambda p: min(p.annotation_indices) if p.annotation_indices else float("inf")
@@ -436,13 +458,14 @@ async def _run_pipeline(
 
         try:
             verify_prompt = VISUAL_VERIFY_PROMPT.format(latex_body=latex)
-            raw_result = await asyncio.to_thread(
+            verify_llm = await asyncio.to_thread(
                 llm_client.generate,
                 prompt=verify_prompt,
                 images=[original_crop_bytes, reconstruction_image],
                 response_schema=VerificationResult.model_json_schema(),
             )
-            result = VerificationResult.model_validate_json(raw_result)
+            costs.add(verify_llm)
+            result = VerificationResult.model_validate_json(verify_llm.content)
         except Exception as e:
             print(f"  [verify] {label}: verification call failed — {e}")
             return latex, pdf_bytes
@@ -476,9 +499,11 @@ async def _run_pipeline(
                             latex_body=current_fix,
                             error_message=str(e)[:2000],
                         )
-                        current_fix = await asyncio.to_thread(
+                        fix_llm = await asyncio.to_thread(
                             llm_client.generate, prompt=fix_prompt
                         )
+                        costs.add(fix_llm)
+                        current_fix = fix_llm.content
                     except Exception as e2:
                         print(f"  [verify] {label}: LLM fix call failed — {e2}")
                         break
@@ -555,17 +580,18 @@ async def _run_pipeline(
         else:
             schema = QuestionBatch.model_json_schema()
 
-        raw = await asyncio.to_thread(
+        extract_llm = await asyncio.to_thread(
             llm_client.generate,
             prompt=extract_prompt,
             images=extraction_images,
             response_schema=schema,
         )
+        costs.add(extract_llm)
 
         if len(problems) == 1:
-            questions = [Question.model_validate_json(raw)]
+            questions = [Question.model_validate_json(extract_llm.content)]
         else:
-            batch = QuestionBatch.model_validate_json(raw)
+            batch = QuestionBatch.model_validate_json(extract_llm.content)
             questions = batch.questions
 
         # Strip hallucinated figure filenames
@@ -636,9 +662,11 @@ async def _run_pipeline(
                             fix_prompt = LATEX_FIX_PROMPT.format(
                                 latex_body=latex, error_message=str(e)[:2000]
                             )
-                            latex = await asyncio.to_thread(
+                            fix_llm = await asyncio.to_thread(
                                 llm_client.generate, prompt=fix_prompt
                             )
+                            costs.add(fix_llm)
+                            latex = fix_llm.content
                         except Exception as e2:
                             print(f"  [compile] {problem.label}: LLM fix failed — {e2}")
                             break
@@ -705,7 +733,14 @@ async def _run_pipeline(
     await progress("Finalizing PDF...")
     await progress(None)  # Clear status message on completion
 
-    return compiled, num_pages
+    costs.pipeline_seconds = time.monotonic() - pipeline_start
+    print(
+        f"  [reconstruct] Costs: {costs.llm_calls} LLM calls, "
+        f"{costs.input_tokens} in / {costs.output_tokens} out tokens, "
+        f"{costs.gpu_seconds:.1f}s GPU, {costs.pipeline_seconds:.1f}s total"
+    )
+
+    return compiled, num_pages, costs
 
 
 # ---------------------------------------------------------------------------
@@ -713,11 +748,39 @@ async def _run_pipeline(
 # ---------------------------------------------------------------------------
 
 
+async def _run_pipeline_for_document(user_id: str, document_id: str):
+    """Download PDF and run the reconstruction pipeline. Returns (compiled, num_pages, costs)."""
+    pdf_bytes = await download_document_pdf(user_id, document_id)
+    return await _run_pipeline(pdf_bytes, document_id)
+
+
 async def _process_document_background(user_id: str, document_id: str):
-    """Download PDF, run pipeline, upload output, update document status."""
+    """Download PDF, run pipeline, upload output, update document status.
+
+    Supports cancellation via the cancellation registry — a watchdog task
+    monitors the cancel event and calls task.cancel() on the pipeline task.
+    """
+    cancel_event = cancel_register(document_id)
     try:
-        pdf_bytes = await download_document_pdf(user_id, document_id)
-        compiled, num_pages = await _run_pipeline(pdf_bytes, document_id)
+        pipeline_task = asyncio.create_task(
+            _run_pipeline_for_document(user_id, document_id)
+        )
+
+        async def _watchdog():
+            await cancel_event.wait()
+            pipeline_task.cancel()
+
+        watchdog_task = asyncio.create_task(_watchdog())
+
+        try:
+            compiled, num_pages, costs = await pipeline_task
+        finally:
+            watchdog_task.cancel()
+
+        # Final check — cancel may have fired between pipeline finishing and here
+        if is_cancelled(document_id):
+            print(f"  [reconstruct-document] {document_id} cancelled (post-pipeline)")
+            return
 
         # Merge per-problem PDFs into one
         merged = fitz.open()
@@ -735,8 +798,19 @@ async def _process_document_background(user_id: str, document_id: str):
             page_count=num_pages,
             problem_count=len(compiled),
             status_message=None,
+            input_tokens=costs.input_tokens,
+            output_tokens=costs.output_tokens,
+            llm_calls=costs.llm_calls,
+            gpu_seconds=round(costs.gpu_seconds, 2),
+            pipeline_seconds=round(costs.pipeline_seconds, 2),
         )
+    except asyncio.CancelledError:
+        print(f"  [reconstruct-document] {document_id} cancelled")
+        return
     except Exception as e:
+        if is_cancelled(document_id):
+            print(f"  [reconstruct-document] {document_id} cancelled (during error)")
+            return
         print(f"  [reconstruct-document] {document_id} failed: {e}")
         await update_document_status(
             document_id,
@@ -744,6 +818,8 @@ async def _process_document_background(user_id: str, document_id: str):
             error_message=str(e)[:500],
             status_message=None,
         )
+    finally:
+        cancel_cleanup(document_id)
 
 
 # ---------------------------------------------------------------------------
@@ -766,6 +842,18 @@ async def reconstruct_document(
     return {"status": "accepted", "document_id": req.document_id}
 
 
+@router.delete("/ai/reconstruct-document/{document_id}")
+async def cancel_reconstruction(
+    document_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Cancel a running reconstruction task. Idempotent — returns 200 even if no task is running."""
+    found = cancel_document(document_id)
+    status = "cancelled" if found else "not_found"
+    print(f"  [reconstruct-document] cancel {document_id}: {status}")
+    return {"status": status, "document_id": document_id}
+
+
 @router.post("/ai/reconstruct")
 async def ai_reconstruct(
     user: AuthenticatedUser = Depends(get_current_user),
@@ -778,7 +866,7 @@ async def ai_reconstruct(
         pdf_bytes = await pdf.read()
         base_name = Path(pdf.filename).stem if pdf.filename else "document"
 
-        compiled, num_pages = await _run_pipeline(
+        compiled, num_pages, _costs = await _run_pipeline(
             pdf_bytes, document_id, debug, base_name
         )
 

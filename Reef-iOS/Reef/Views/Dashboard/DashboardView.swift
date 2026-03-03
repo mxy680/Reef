@@ -155,38 +155,12 @@ struct DashboardView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
 
-            // Select course popup (document upload)
-            if documentsVM.pendingUploadURL != nil {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring(duration: 0.3)) {
-                            documentsVM.pendingUploadURL = nil
-                        }
-                    }
-            }
-
-            if documentsVM.pendingUploadURL != nil {
-                SelectCoursePopup(
-                    filename: documentsVM.pendingUploadURL?.lastPathComponent ?? "",
-                    onConfirm: { courseId in
-                        Task { await documentsVM.uploadWithCourse(courseId: courseId) }
-                    },
-                    onDismiss: {
-                        withAnimation(.spring(duration: 0.3)) {
-                            documentsVM.pendingUploadURL = nil
-                        }
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
         .animation(.spring(duration: 0.2), value: courseToDelete?.id)
         .animation(.spring(duration: 0.2), value: courseToEdit?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.selectedTutor?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.showQuiz)
-        .animation(.spring(duration: 0.3), value: documentsVM.pendingUploadURL != nil)
         .fullScreenCover(item: $canvasDocument) { doc in
             DocumentCanvasView(document: doc) {
                 canvasDocument = nil
