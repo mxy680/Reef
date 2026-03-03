@@ -45,6 +45,7 @@ async def update_document_status(
     llm_calls=_UNSET,
     gpu_seconds=_UNSET,
     pipeline_seconds=_UNSET,
+    cost_cents=_UNSET,
 ):
     """PATCH multiple fields on a document row at once.
 
@@ -74,6 +75,8 @@ async def update_document_status(
         payload["gpu_seconds"] = gpu_seconds
     if pipeline_seconds is not _UNSET:
         payload["pipeline_seconds"] = pipeline_seconds
+    if cost_cents is not _UNSET:
+        payload["cost_cents"] = cost_cents
     if not payload:
         return
 

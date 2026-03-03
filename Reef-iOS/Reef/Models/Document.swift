@@ -15,6 +15,7 @@ struct Document: Identifiable, Codable, Hashable {
     let problemCount: Int?
     let errorMessage: String?
     let statusMessage: String?
+    let costCents: Int?
     let courseId: String?
     let createdAt: String
 
@@ -27,6 +28,7 @@ struct Document: Identifiable, Codable, Hashable {
         case problemCount = "problem_count"
         case errorMessage = "error_message"
         case statusMessage = "status_message"
+        case costCents = "cost_cents"
         case courseId = "course_id"
         case createdAt = "created_at"
     }

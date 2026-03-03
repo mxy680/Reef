@@ -80,10 +80,22 @@ class PipelineCosts:
     gpu_seconds: float = 0.0
     pipeline_seconds: float = 0.0
 
+    # Pricing constants (dollars per unit)
+    _LLM_COST_PER_TOKEN: float = 0.80 / 1_000_000   # Qwen 2.5 VL 72B via OpenRouter
+    _GPU_COST_PER_SECOND: float = 0.000164            # Modal T4
+
     def add(self, result: LLMResult) -> None:
         self.input_tokens += result.input_tokens
         self.output_tokens += result.output_tokens
         self.llm_calls += 1
+
+    @property
+    def cost_cents(self) -> int:
+        """Total estimated cost in cents (rounded up)."""
+        import math
+        token_cost = (self.input_tokens + self.output_tokens) * self._LLM_COST_PER_TOKEN
+        gpu_cost = self.gpu_seconds * self._GPU_COST_PER_SECOND
+        return math.ceil((token_cost + gpu_cost) * 100)
 
 
 # ---------------------------------------------------------------------------
@@ -737,7 +749,8 @@ async def _run_pipeline(
     print(
         f"  [reconstruct] Costs: {costs.llm_calls} LLM calls, "
         f"{costs.input_tokens} in / {costs.output_tokens} out tokens, "
-        f"{costs.gpu_seconds:.1f}s GPU, {costs.pipeline_seconds:.1f}s total"
+        f"{costs.gpu_seconds:.1f}s GPU, {costs.pipeline_seconds:.1f}s total, "
+        f"~{costs.cost_cents}¢"
     )
 
     return compiled, num_pages, costs
@@ -810,6 +823,7 @@ async def _process_document_background(user_id: str, document_id: str):
             llm_calls=costs.llm_calls,
             gpu_seconds=round(costs.gpu_seconds, 2),
             pipeline_seconds=round(costs.pipeline_seconds, 2),
+            cost_cents=costs.cost_cents,
         )
     except asyncio.TimeoutError:
         print(f"  [reconstruct-document] {document_id} timed out after {PIPELINE_TIMEOUT_SECONDS}s")
