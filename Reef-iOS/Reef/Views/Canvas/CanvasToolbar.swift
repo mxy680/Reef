@@ -19,14 +19,15 @@ struct CanvasToolbar: View {
 
     var body: some View {
         HStack {
-            // Back button — plain icon, no card
+            // Back button — separate island (top-left)
             Button(action: onClose) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(ReefColors.gray600)
                     .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .dashboardCard()
             .accessibilityLabel("Back")
 
             Spacer()
@@ -43,23 +44,23 @@ struct CanvasToolbar: View {
 
             Spacer()
 
-            // Undo/Redo — plain icons, no card
-            HStack(spacing: 4) {
+            // Undo/Redo — separate island (top-right)
+            HStack(spacing: 0) {
                 Button(action: {}) {
                     Image(systemName: "arrow.uturn.backward")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(ReefColors.gray400)
                         .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
                 }
                 Button(action: {}) {
                     Image(systemName: "arrow.uturn.forward")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(ReefColors.gray400)
                         .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
                 }
             }
+            .buttonStyle(.plain)
+            .dashboardCard()
         }
         .padding(.horizontal, 12)
         .padding(.top, 12)
