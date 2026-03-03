@@ -255,13 +255,6 @@ struct DocumentsContentView: View {
         .task { await viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
         // Modals
-        .sheet(item: $viewModel.deleteTarget) { doc in
-            DeleteConfirmSheet(
-                document: doc,
-                onConfirm: { Task { await viewModel.deleteDocument() } },
-                onClose: { viewModel.deleteTarget = nil }
-            )
-        }
         .sheet(item: $viewModel.renameTarget) { doc in
             RenameSheet(
                 document: doc,
@@ -282,6 +275,32 @@ struct DocumentsContentView: View {
                 onClose: { viewModel.moveToCourseTarget = nil }
             )
         }
+        // Delete confirmation popup
+        .overlay {
+            if viewModel.deleteTarget != nil {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.deleteTarget = nil
+                        }
+                    }
+            }
+
+            if let doc = viewModel.deleteTarget {
+                DeleteConfirmSheet(
+                    document: doc,
+                    onConfirm: { Task { await viewModel.deleteDocument() } },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.deleteTarget = nil
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.2), value: viewModel.deleteTarget?.id)
         // Toast
         .overlay(alignment: .bottomTrailing) {
             if let message = viewModel.toastMessage {
