@@ -91,10 +91,11 @@ struct CourseDetailView: View {
     let onDeleteTapped: (Course) -> Void
 
     @State private var viewModel: CourseDetailViewModel
+    @Environment(\.layoutMetrics) private var metrics
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 20)
-    ]
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: metrics.gridColumnMin, maximum: metrics.gridColumnMax), spacing: 20)]
+    }
 
     init(
         courseId: String,
@@ -130,7 +131,7 @@ struct CourseDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(24)
+        .padding(metrics.cardPadding)
         .dashboardCard()
         .task { await viewModel.fetchData() }
         .id(courseId)

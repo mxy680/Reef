@@ -12,6 +12,8 @@ struct DashboardView: View {
     @State private var tutorsVM = TutorsViewModel()
     @State private var canvasDocument: Document?
 
+    private let metrics = LayoutMetrics(screenHeight: UIScreen.main.bounds.height)
+
     var body: some View {
         ZStack {
             // Dotted grid background
@@ -156,6 +158,7 @@ struct DashboardView: View {
             }
 
         }
+        .environment(\.layoutMetrics, metrics)
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
         .animation(.spring(duration: 0.2), value: courseToDelete?.id)
         .animation(.spring(duration: 0.2), value: courseToEdit?.id)
