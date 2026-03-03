@@ -11,6 +11,12 @@ struct CanvasToolbar: View {
     let documentName: String
     let onClose: () -> Void
 
+    private var safeAreaTop: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.top ?? 0
+    }
+
     var body: some View {
         HStack {
             Image(systemName: "xmark")
@@ -44,6 +50,7 @@ struct CanvasToolbar: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
+        .padding(.top, safeAreaTop)
         .background(ReefColors.white)
         .overlay(alignment: .bottom) {
             Rectangle().fill(ReefColors.gray200).frame(height: 1)
