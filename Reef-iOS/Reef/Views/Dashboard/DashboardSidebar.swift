@@ -8,12 +8,10 @@ struct DashboardSidebar: View {
     @Environment(AuthManager.self) private var authManager
 
     @State private var isCreating = false
-
-    static let openWidth: CGFloat = 260
-    static let collapsedWidth: CGFloat = 68
+    @Environment(\.layoutMetrics) private var metrics
 
     var width: CGFloat {
-        isOpen ? Self.openWidth : Self.collapsedWidth
+        isOpen ? metrics.sidebarOpenWidth : metrics.sidebarCollapsedWidth
     }
 
     var body: some View {
@@ -59,7 +57,7 @@ struct DashboardSidebar: View {
                 }
                 .accessibilityAddTraits(.isButton)
         }
-        .frame(height: 64)
+        .frame(height: metrics.headerHeight)
         .padding(.horizontal, isOpen ? 20 : 20)
     }
 

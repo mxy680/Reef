@@ -5,6 +5,7 @@ struct TutorSpotlightView: View {
     let isSpeaking: Bool
     let onVoicePreview: () -> Void
     let onStartSession: () -> Void
+    var avatarSize: CGFloat = 120
 
     private var tintColor: Color {
         Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
@@ -16,14 +17,14 @@ struct TutorSpotlightView: View {
             ZStack {
                 Circle()
                     .fill(tintColor.opacity(0.15))
-                    .frame(width: 120, height: 120)
+                    .frame(width: avatarSize, height: avatarSize)
                     .overlay(
                         Circle()
                             .stroke(tintColor.opacity(0.3), lineWidth: 2)
                     )
 
                 Text(tutor.emoji)
-                    .font(.system(size: 56))
+                    .font(.system(size: avatarSize * 0.47))
             }
 
             // Right: info + actions

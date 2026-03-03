@@ -91,10 +91,11 @@ struct SettingsView: View {
     @State private var showDeleteConfirm = false
 
     private let profileManager = ProfileManager()
+    @Environment(\.layoutMetrics) private var metrics
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
                 headerSection
                 tabBar
                 tabContent
@@ -102,7 +103,7 @@ struct SettingsView: View {
             .padding(4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(32)
+        .padding(metrics.contentPadding)
         .dashboardCard()
         .overlay(alignment: .bottomTrailing) { toastOverlay }
         .onAppear {
@@ -337,11 +338,11 @@ extension SettingsView {
 
                         ZStack {
                             Circle()
-                                .stroke(ReefColors.gray100, lineWidth: 8)
+                                .stroke(ReefColors.gray100, lineWidth: metrics.profileRingSize * 0.083)
 
                             Circle()
                                 .trim(from: 0, to: appeared ? completionPct : 0)
-                                .stroke(ReefColors.primary, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                                .stroke(ReefColors.primary, style: StrokeStyle(lineWidth: metrics.profileRingSize * 0.083, lineCap: .round))
                                 .rotationEffect(.degrees(-90))
                                 .animation(.easeOut(duration: 0.8).delay(0.3), value: appeared)
 
@@ -350,7 +351,7 @@ extension SettingsView {
                                 .tracking(-0.04 * 22)
                                 .foregroundStyle(ReefColors.black)
                         }
-                        .frame(width: 96, height: 96)
+                        .frame(width: metrics.profileRingSize, height: metrics.profileRingSize)
 
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(completionItems, id: \.label) { item in
@@ -1067,10 +1068,11 @@ extension SettingsView {
 // MARK: ─── Shared Components ────────────────────────────
 
 private struct SettingsRow<Content: View>: View {
+    @Environment(\.layoutMetrics) private var metrics
     @ViewBuilder let content: Content
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: metrics.sectionSpacing) {
             content
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -1078,6 +1080,7 @@ private struct SettingsRow<Content: View>: View {
 }
 
 private struct SettingsCard<Content: View>: View {
+    @Environment(\.layoutMetrics) private var metrics
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -1085,7 +1088,7 @@ private struct SettingsCard<Content: View>: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(24)
+        .padding(metrics.cardPadding)
         .dashboardCard()
     }
 }

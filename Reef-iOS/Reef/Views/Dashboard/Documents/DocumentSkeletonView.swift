@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct DocumentSkeletonView: View {
-    private let columns = [
-        GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 20)
-    ]
+    @Environment(\.layoutMetrics) private var metrics
+
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: metrics.gridColumnMin, maximum: metrics.gridColumnMax), spacing: 20)]
+    }
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 16) {

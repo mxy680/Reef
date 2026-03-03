@@ -224,10 +224,11 @@ final class DocumentsViewModel {
 struct DocumentsContentView: View {
     @Bindable var viewModel: DocumentsViewModel
     var onOpenCanvas: ((Document) -> Void)?
+    @Environment(\.layoutMetrics) private var metrics
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 180, maximum: 220), spacing: 20)
-    ]
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: metrics.gridColumnMin, maximum: metrics.gridColumnMax), spacing: 20)]
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -244,7 +245,7 @@ struct DocumentsContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(24)
+        .padding(metrics.cardPadding)
         .dashboardCard()
         .fileImporter(
             isPresented: $viewModel.showFilePicker,
@@ -386,11 +387,10 @@ struct DocumentsContentView: View {
 
     private let rowSpacing: CGFloat = 16
     private let shadowPad: CGFloat = 4
-    private let targetRows: CGFloat = 2
 
     private var documentGrid: some View {
         GeometryReader { geo in
-            let cardHeight = (geo.size.height - rowSpacing * (targetRows - 1) - shadowPad) / targetRows
+            let cardHeight = (geo.size.height - rowSpacing - shadowPad) / 2
 
             ScrollView {
                 LazyVGrid(columns: columns, spacing: rowSpacing) {

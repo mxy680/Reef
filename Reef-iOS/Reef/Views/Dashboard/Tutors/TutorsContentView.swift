@@ -93,6 +93,7 @@ final class TutorsViewModel {
 
 struct TutorsContentView: View {
     @Bindable var viewModel: TutorsViewModel
+    @Environment(\.layoutMetrics) private var metrics
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -114,7 +115,8 @@ struct TutorsContentView: View {
                             tutor: tutor,
                             isSpeaking: viewModel.speakingTutorId == tutor.id,
                             onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
-                            onStartSession: { /* placeholder */ }
+                            onStartSession: { /* placeholder */ },
+                            avatarSize: metrics.spotlightAvatarSize
                         )
                         .id(viewModel.activeTutorId)
                         .transition(.opacity.combined(with: .scale(scale: 0.97)))
@@ -135,7 +137,7 @@ struct TutorsContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(32)
+        .padding(metrics.contentPadding)
         .dashboardCard()
         .task { await viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
@@ -221,7 +223,7 @@ struct TutorsContentView: View {
                 ForEach(0..<3, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 16)
                         .fill(ReefColors.gray100)
-                        .frame(width: 220, height: 240)
+                        .frame(width: metrics.tutorCardWidth, height: metrics.tutorCardHeight)
                 }
             }
             .padding(.horizontal, 4)
@@ -242,7 +244,9 @@ struct TutorsContentView: View {
                             isActive: viewModel.activeTutorId == tutor.id,
                             onTap: { withAnimation(.spring(duration: 0.3)) { viewModel.selectedTutor = tutor } },
                             onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
-                            onSelect: { viewModel.selectTutor(tutor) }
+                            onSelect: { viewModel.selectTutor(tutor) },
+                            cardWidth: metrics.tutorCardWidth,
+                            cardHeight: metrics.tutorCardHeight
                         )
                     }
                 }

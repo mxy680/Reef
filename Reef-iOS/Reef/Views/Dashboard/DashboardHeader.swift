@@ -6,6 +6,7 @@ struct DashboardHeader: View {
     @Binding var selectedCourseId: String?
     @Environment(AuthManager.self) private var authManager
     @State private var showProfileMenu = false
+    @Environment(\.layoutMetrics) private var metrics
 
     private let gradeLabels: [String: String] = [
         "middle_school": "Middle School",
@@ -94,8 +95,8 @@ struct DashboardHeader: View {
                 }
             }
         }
-        .frame(height: 64)
-        .padding(.horizontal, 24)
+        .frame(height: metrics.headerHeight)
+        .padding(.horizontal, metrics.contentPadding)
         .dashboardCard()
         .overlay(alignment: .topTrailing) {
             if showProfileMenu {

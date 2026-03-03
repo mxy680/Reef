@@ -53,10 +53,11 @@ private let statItems: [StatItem] = [
 
 struct AnalyticsView: View {
     @State private var appeared = false
+    @Environment(\.layoutMetrics) private var metrics
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
                 headerSection
                 statCardsRow
                 chartRowTop
@@ -65,7 +66,7 @@ struct AnalyticsView: View {
             .padding(4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(32)
+        .padding(metrics.contentPadding)
         .dashboardCard()
         .onAppear { appeared = true }
     }
@@ -93,7 +94,7 @@ struct AnalyticsView: View {
     // MARK: - Stat Cards (4 across)
 
     private var statCardsRow: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: metrics.sectionSpacing) {
             ForEach(Array(statItems.enumerated()), id: \.element.id) { index, stat in
                 statCard(stat, index: index)
             }
@@ -117,7 +118,7 @@ struct AnalyticsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(.horizontal, 16)
-        .padding(.vertical, 18)
+        .padding(.vertical, metrics.statCardVPadding)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
@@ -127,17 +128,17 @@ struct AnalyticsView: View {
     // MARK: - Chart rows
 
     private var chartRowTop: some View {
-        HStack(spacing: 12) {
-            WeeklyActivityCard(appeared: appeared)
-            RecentSessionsCard(appeared: appeared)
+        HStack(spacing: metrics.sectionSpacing) {
+            WeeklyActivityCard(appeared: appeared, metrics: metrics)
+            RecentSessionsCard(appeared: appeared, metrics: metrics)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
 
     private var chartRowBottom: some View {
-        HStack(spacing: 12) {
-            TimeBySubjectCard(appeared: appeared)
-            MasteryBySubjectCard(appeared: appeared)
+        HStack(spacing: metrics.sectionSpacing) {
+            TimeBySubjectCard(appeared: appeared, metrics: metrics)
+            MasteryBySubjectCard(appeared: appeared, metrics: metrics)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -147,6 +148,7 @@ struct AnalyticsView: View {
 
 private struct WeeklyActivityCard: View {
     let appeared: Bool
+    let metrics: LayoutMetrics
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -163,12 +165,12 @@ private struct WeeklyActivityCard: View {
                 .padding(.bottom, 20)
 
             WeeklyBarChart()
-                .frame(height: 152)
+                .frame(height: metrics.chartHeight)
 
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(20)
+        .padding(metrics.chartCardPadding)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
@@ -237,6 +239,7 @@ private struct WeeklyBarChart: View {
 
 private struct TimeBySubjectCard: View {
     let appeared: Bool
+    let metrics: LayoutMetrics
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -261,7 +264,7 @@ private struct TimeBySubjectCard: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(20)
+        .padding(metrics.chartCardPadding)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
@@ -312,6 +315,7 @@ private struct SubjectBarRow: View {
 
 private struct MasteryBySubjectCard: View {
     let appeared: Bool
+    let metrics: LayoutMetrics
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -336,7 +340,7 @@ private struct MasteryBySubjectCard: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(20)
+        .padding(metrics.chartCardPadding)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
@@ -385,6 +389,7 @@ private struct DonutRing: View {
 
 private struct RecentSessionsCard: View {
     let appeared: Bool
+    let metrics: LayoutMetrics
 
     private var subjectColorMap: [String: Color] {
         Dictionary(uniqueKeysWithValues: subjects.map { ($0.name, $0.color) })
@@ -419,7 +424,7 @@ private struct RecentSessionsCard: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(20)
+        .padding(metrics.chartCardPadding)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
