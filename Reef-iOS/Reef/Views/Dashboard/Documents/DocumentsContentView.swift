@@ -387,17 +387,10 @@ struct DocumentsContentView: View {
 
     private let rowSpacing: CGFloat = 16
     private let shadowPad: CGFloat = 4
-    private let minCardHeight: CGFloat = 180
-
-    private func targetRows(for height: CGFloat) -> CGFloat {
-        let threeRowHeight = (height - rowSpacing * 2 - shadowPad) / 3
-        return threeRowHeight >= minCardHeight ? 3 : 2
-    }
 
     private var documentGrid: some View {
         GeometryReader { geo in
-            let rows = targetRows(for: geo.size.height)
-            let cardHeight = (geo.size.height - rowSpacing * (rows - 1) - shadowPad) / rows
+            let cardHeight = (geo.size.height - rowSpacing - shadowPad) / 2
 
             ScrollView {
                 LazyVGrid(columns: columns, spacing: rowSpacing) {
