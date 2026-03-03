@@ -12,7 +12,9 @@ struct DashboardView: View {
     @State private var tutorsVM = TutorsViewModel()
     @State private var canvasDocument: Document?
 
-    private let metrics = LayoutMetrics(screenHeight: UIScreen.main.bounds.height)
+    private let metrics = LayoutMetrics(
+        screenHeight: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+    )
 
     var body: some View {
         ZStack {
