@@ -47,12 +47,40 @@ from app.services.prompts import (
 from app.services.cancellation import cancel as cancel_document, cleanup as cancel_cleanup, is_cancelled, register as cancel_register
 from app.services.progress import update_document_status, update_progress
 from app.services.storage import download_document_pdf, upload_document_pdf
-from app.services.question_to_latex import question_to_latex
+from app.services.question_to_latex import question_to_latex, _sanitize_text
 from app.services.region_extractor import extract_question_regions
 
 router = APIRouter()
 
 FIGURE_LABELS = {"Picture", "Figure"}
+
+# LaTeX special characters that must be escaped in literal text (labels, headers)
+_LATEX_SPECIAL = str.maketrans({
+    "&": r"\&",
+    "%": r"\%",
+    "#": r"\#",
+    "_": r"\_",
+})
+
+
+def _escape_latex_label(text: str) -> str:
+    """Escape LaTeX special characters in a problem label/header."""
+    return text.translate(_LATEX_SPECIAL)
+
+
+_INCLUDEGRAPHICS_RE = re.compile(r'\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}')
+
+
+def _strip_invalid_figures(latex: str, valid_figures: set[str]) -> str:
+    """Remove \\includegraphics lines referencing files not in valid_figures."""
+    lines = latex.split('\n')
+    filtered = []
+    for line in lines:
+        m = _INCLUDEGRAPHICS_RE.search(line)
+        if m and m.group(1) not in valid_figures:
+            continue  # drop line with invalid figure reference
+        filtered.append(line)
+    return '\n'.join(filtered)
 
 # Modal remote reference to the Surya GPU function
 SuryaLayout = modal.Cls.from_name("reef-surya", "SuryaLayout")
@@ -519,9 +547,11 @@ async def _run_pipeline(
 
         print(f"  [verify] {label}: issues found: {result.issues}")
 
-        # Try to compile the fix, retrying with error feedback if it fails
-        current_fix = result.fixed_latex
-        header = label
+        # Sanitize fixed_latex: fix JSON escape corruption and strip hallucinated figures
+        current_fix = _sanitize_text(result.fixed_latex)
+        valid_figs = set(image_data.keys()) if image_data else set()
+        current_fix = _strip_invalid_figures(current_fix, valid_figs)
+        header = _escape_latex_label(label)
 
         for attempt in range(1, MAX_FIX_ATTEMPTS + 1):
             try:

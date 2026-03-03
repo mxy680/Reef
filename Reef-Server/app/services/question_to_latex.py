@@ -16,7 +16,7 @@ _MATH_SPLIT_RE = re.compile(r'(\$[^$]+\$|\\\[.*?\\\]|\\\(.*?\\\))', re.DOTALL)
 def _fix_json_latex_escapes(text: str) -> str:
     r"""Restore LaTeX commands corrupted by JSON escape interpretation."""
     text = re.sub(r'\t(ext|imes|heta|au)', r'\\t\1', text)
-    text = re.sub(r'\x08(egin|f[{ ]|ar|eta|inom|ig|oldsymbol|oxed)', r'\\b\1', text)
+    text = re.sub(r'\x08(egin|f[{ ]|ar|eta|inom|ig|oldsymbol|oxed|aselineskip)', r'\\b\1', text)
     text = re.sub(r'\x0c(rac|orall)', r'\\f\1', text)
     text = re.sub(r'\r(ight|angle|aise|enewcommand)', r'\\r\1', text)
     return text
