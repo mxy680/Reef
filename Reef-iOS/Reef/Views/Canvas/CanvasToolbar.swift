@@ -92,11 +92,7 @@ private struct ToolbarCardModifier: ViewModifier {
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(ReefColors.gray500, lineWidth: 1.5)
             )
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(ReefColors.gray500)
-                    .offset(x: 3, y: 3)
-            )
+            .shadow(color: ReefColors.gray500, radius: 0, x: 3, y: 3)
     }
 }
 
