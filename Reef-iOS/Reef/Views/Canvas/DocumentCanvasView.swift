@@ -33,7 +33,7 @@ struct DocumentCanvasView: View {
             }
         }
         .background(Color(hex: 0xF5F5F0))
-        .ignoresSafeArea(edges: .bottom)
+        .ignoresSafeArea()
         .task { await viewModel.loadDocument(document) }
     }
 
