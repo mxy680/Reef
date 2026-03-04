@@ -10,17 +10,21 @@ import SwiftUI
 // MARK: - Canvas Tool
 
 enum CanvasTool: String, CaseIterable {
+    case text
     case pen
     case highlighter
     case eraser
     case lasso
+    case hand
 
     var icon: String {
         switch self {
+        case .text: "a.square"
         case .pen: "pencil.tip"
         case .highlighter: "highlighter"
         case .eraser: "eraser"
         case .lasso: "lasso"
+        case .hand: "hand.raised"
         }
     }
 

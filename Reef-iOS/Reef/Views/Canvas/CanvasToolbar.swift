@@ -2,7 +2,7 @@
 //  CanvasToolbar.swift
 //  Reef
 //
-//  Top toolbar — close button, drawing tools, undo/redo
+//  Two-row toolbar — question tabs + drawing tools (GoodNotes style)
 //
 
 import SwiftUI
@@ -12,14 +12,13 @@ struct CanvasToolbar: View {
     @Binding var selectedColor: ToolbarColor
     let onClose: () -> Void
 
-    /// Soft teal — primary at 85% over a slightly darkened base
+    @State private var selectedQuestion = 1
+    @State private var tutorModeOn = false
+
     private static let barColor = Color(hex: 0x4E8A97)
-
-    /// Lighter teal pill behind the selected tool
     private static let selectedPill = Color.white.opacity(0.25)
-
-    /// Divider between tool groups
     private static let dividerColor = Color.white.opacity(0.25)
+    private static let questionCount = 10
 
     private var safeAreaTop: CGFloat {
         UIApplication.shared.connectedScenes
@@ -29,47 +28,13 @@ struct CanvasToolbar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Main bar
-            HStack(spacing: 0) {
-                // Close button
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color.white.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .contentShape(Rectangle())
-                    .onTapGesture { onClose() }
-                    .accessibilityLabel("Close")
-                    .accessibilityAddTraits(.isButton)
+            VStack(spacing: 0) {
+                // ── Row 1: Question Navigation ──
+                questionRow
 
-                Spacer()
-
-                // Drawing tools — centered
-                HStack(spacing: 2) {
-                    ForEach(CanvasTool.allCases, id: \.self) { tool in
-                        toolButton(tool)
-                    }
-
-                    // Divider
-                    RoundedRectangle(cornerRadius: 0.5)
-                        .fill(Self.dividerColor)
-                        .frame(width: 1, height: 24)
-                        .padding(.horizontal, 6)
-
-                    // Undo
-                    actionButton(icon: "arrow.uturn.backward")
-                    // Redo
-                    actionButton(icon: "arrow.uturn.forward")
-                }
-
-                Spacer()
-
-                // Balance spacer (same width as close button)
-                Color.clear.frame(width: 36, height: 36)
+                // ── Row 2: Drawing Tools ──
+                toolRow
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
             .padding(.top, safeAreaTop)
             .background(Self.barColor)
 
@@ -82,14 +47,105 @@ struct CanvasToolbar: View {
         .animation(.easeInOut(duration: 0.2), value: selectedTool.hasColorPalette)
     }
 
-    // MARK: - Tool Button
+    // MARK: - Row 1: Question Tabs
+
+    private var questionRow: some View {
+        HStack(spacing: 0) {
+            // Home button
+            iconButton("house.fill", size: 16)
+                .onTapGesture { onClose() }
+
+            Spacer().frame(width: 12)
+
+            // Question tabs
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(1...Self.questionCount, id: \.self) { q in
+                        if q > 1 {
+                            divider
+                        }
+                        questionTab(q)
+                    }
+                }
+            }
+
+            Spacer()
+
+            // Tutor Mode toggle
+            HStack(spacing: 8) {
+                Text("Tutor Mode")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+
+                Toggle("", isOn: $tutorModeOn)
+                    .labelsHidden()
+                    .tint(.white.opacity(0.4))
+                    .scaleEffect(0.8)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+
+    private func questionTab(_ number: Int) -> some View {
+        let isSelected = selectedQuestion == number
+        return Text("Q\(number)")
+            .font(.system(size: 14, weight: isSelected ? .bold : .medium))
+            .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(isSelected ? Self.selectedPill : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .contentShape(Rectangle())
+            .onTapGesture { selectedQuestion = number }
+    }
+
+    // MARK: - Row 2: Tool Bar
+
+    private var toolRow: some View {
+        HStack(spacing: 0) {
+            // Undo / Redo
+            actionButton(icon: "arrow.uturn.backward")
+            actionButton(icon: "arrow.uturn.forward")
+
+            divider
+
+            // Drawing tools (selectable)
+            ForEach(CanvasTool.allCases, id: \.self) { tool in
+                toolButton(tool)
+            }
+
+            divider
+
+            // Ruler, copy, paste (static)
+            iconButton("ruler.fill", size: 18)
+            iconButton("doc.on.doc", size: 16)
+            iconButton("doc.on.clipboard", size: 16)
+
+            divider
+
+            // Mic with orange badge + more
+            micButton
+            iconButton("ellipsis", size: 18)
+
+            Spacer()
+
+            // Trash + dark mode
+            iconButton("trash", size: 16)
+            iconButton("moon", size: 16)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 2)
+    }
+
+    // MARK: - Buttons
 
     private func toolButton(_ tool: CanvasTool) -> some View {
         let isSelected = selectedTool == tool
         return Image(systemName: tool.icon)
             .font(.system(size: 18, weight: .medium))
             .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
-            .frame(width: 44, height: 44)
+            .frame(width: 40, height: 40)
             .background(isSelected ? Self.selectedPill : .clear)
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .contentShape(Rectangle())
@@ -100,14 +156,41 @@ struct CanvasToolbar: View {
             }
     }
 
-    // MARK: - Action Button (undo/redo)
-
     private func actionButton(icon: String) -> some View {
         Image(systemName: icon)
             .font(.system(size: 18, weight: .medium))
             .foregroundStyle(.white.opacity(0.7))
-            .frame(width: 44, height: 44)
+            .frame(width: 40, height: 40)
             .contentShape(Rectangle())
+    }
+
+    private func iconButton(_ name: String, size: CGFloat) -> some View {
+        Image(systemName: name)
+            .font(.system(size: size, weight: .medium))
+            .foregroundStyle(.white.opacity(0.7))
+            .frame(width: 40, height: 40)
+            .contentShape(Rectangle())
+    }
+
+    private var micButton: some View {
+        Image(systemName: "mic")
+            .font(.system(size: 18, weight: .medium))
+            .foregroundStyle(.white.opacity(0.7))
+            .frame(width: 40, height: 40)
+            .overlay(alignment: .topTrailing) {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 8, height: 8)
+                    .offset(x: -6, y: 6)
+            }
+            .contentShape(Rectangle())
+    }
+
+    private var divider: some View {
+        RoundedRectangle(cornerRadius: 0.5)
+            .fill(Self.dividerColor)
+            .frame(width: 1, height: 24)
+            .padding(.horizontal, 6)
     }
 }
 
@@ -116,7 +199,6 @@ struct CanvasToolbar: View {
 private struct ColorPaletteStrip: View {
     @Binding var selectedColor: ToolbarColor
 
-    /// Slightly darker teal for the color strip
     private static let stripColor = Color(hex: 0x5B9EAD).opacity(0.3)
 
     var body: some View {
