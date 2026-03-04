@@ -39,6 +39,7 @@ struct DocumentCanvasView: View {
         }
         .background(Self.cream)
         .ignoresSafeArea()
+        .statusBarHidden(true)
         .task {
             #if DEBUG
             if document.id == "dev-test" {
