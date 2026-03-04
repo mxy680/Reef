@@ -17,6 +17,10 @@ struct DocumentCanvasView: View {
 
     private static let cream = Color(hex: 0xF8F0E6)
 
+    /// Toolbar teal — must match CanvasToolbar.barColor so the
+    /// safe area (camera housing) is teal, not black.
+    private static let barColor = Color(hex: 0x4E8A97)
+
     var body: some View {
         VStack(spacing: 0) {
             if viewModel.isLoading {
@@ -35,9 +39,10 @@ struct DocumentCanvasView: View {
                 )
 
                 CanvasPageView(pdfDocument: pdf)
+                    .background(Self.cream)
             }
         }
-        .background(Self.cream)
+        .background(Self.barColor)
         .ignoresSafeArea()
         .statusBarHidden(true)
         .task {
