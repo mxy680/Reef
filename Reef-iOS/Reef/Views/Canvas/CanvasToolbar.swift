@@ -17,7 +17,7 @@ struct CanvasToolbar: View {
 
     private static let barColor = Color(hex: 0x4E8A97)
     private static let selectedPill = Color.white.opacity(0.25)
-    private static let dividerColor = Color.white.opacity(0.25)
+    private static let dividerColor = Color.white.opacity(0.3)
     private static let questionCount = 10
 
     private var safeAreaTop: CGFloat {
@@ -52,17 +52,19 @@ struct CanvasToolbar: View {
     private var questionRow: some View {
         HStack(spacing: 0) {
             // Home button
-            iconButton("house.fill", size: 16)
+            Image(systemName: "house.fill")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.white)
+                .frame(width: 40, height: 40)
+                .contentShape(Rectangle())
                 .onTapGesture { onClose() }
 
-            Spacer().frame(width: 12)
-
-            // Question tabs
+            // Question tabs with dividers
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
                     ForEach(1...Self.questionCount, id: \.self) { q in
                         if q > 1 {
-                            divider
+                            verticalDivider
                         }
                         questionTab(q)
                     }
@@ -74,68 +76,77 @@ struct CanvasToolbar: View {
             // Tutor Mode toggle
             HStack(spacing: 8) {
                 Text("Tutor Mode")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
 
                 Toggle("", isOn: $tutorModeOn)
                     .labelsHidden()
                     .tint(.white.opacity(0.4))
-                    .scaleEffect(0.8)
+                    .scaleEffect(0.85)
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .frame(height: 44)
     }
 
     private func questionTab(_ number: Int) -> some View {
         let isSelected = selectedQuestion == number
         return Text("Q\(number)")
-            .font(.system(size: 14, weight: isSelected ? .bold : .medium))
+            .font(.system(size: 15, weight: isSelected ? .bold : .medium))
             .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
             .background(isSelected ? Self.selectedPill : .clear)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .contentShape(Rectangle())
             .onTapGesture { selectedQuestion = number }
     }
 
-    // MARK: - Row 2: Tool Bar
+    // MARK: - Row 2: Tool Bar (centered layout)
 
     private var toolRow: some View {
         HStack(spacing: 0) {
-            // Undo / Redo
-            actionButton(icon: "arrow.uturn.backward")
-            actionButton(icon: "arrow.uturn.forward")
-
-            divider
-
-            // Drawing tools (selectable)
-            ForEach(CanvasTool.allCases, id: \.self) { tool in
-                toolButton(tool)
+            // Left: Undo / Redo
+            HStack(spacing: 0) {
+                actionButton(icon: "arrow.uturn.backward")
+                actionButton(icon: "arrow.uturn.forward")
             }
 
-            divider
-
-            // Ruler, copy, paste (static)
-            iconButton("ruler.fill", size: 18)
-            iconButton("doc.on.doc", size: 16)
-            iconButton("doc.on.clipboard", size: 16)
-
-            divider
-
-            // Mic with orange badge + more
-            micButton
-            iconButton("ellipsis", size: 18)
+            verticalDivider
 
             Spacer()
 
-            // Trash + dark mode
-            iconButton("trash", size: 16)
-            iconButton("moon", size: 16)
+            // Center: Drawing tools + utility tools + mic/more
+            HStack(spacing: 0) {
+                // Drawing tools (selectable)
+                ForEach(CanvasTool.allCases, id: \.self) { tool in
+                    toolButton(tool)
+                }
+
+                verticalDivider
+
+                // Ruler, copy, paste (static)
+                staticButton("ruler.fill")
+                staticButton("doc.on.doc")
+                staticButton("doc.on.clipboard")
+
+                verticalDivider
+
+                // Mic with orange badge + more
+                micButton
+                staticButton("ellipsis")
+            }
+
+            Spacer()
+
+            // Right: Trash + dark mode
+            HStack(spacing: 0) {
+                staticButton("trash")
+                staticButton("moon")
+            }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 2)
+        .frame(height: 44)
     }
 
     // MARK: - Buttons
@@ -143,9 +154,9 @@ struct CanvasToolbar: View {
     private func toolButton(_ tool: CanvasTool) -> some View {
         let isSelected = selectedTool == tool
         return Image(systemName: tool.icon)
-            .font(.system(size: 18, weight: .medium))
-            .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
-            .frame(width: 40, height: 40)
+            .font(.system(size: 20, weight: .medium))
+            .foregroundStyle(.white.opacity(isSelected ? 1 : 0.65))
+            .frame(width: 44, height: 38)
             .background(isSelected ? Self.selectedPill : .clear)
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .contentShape(Rectangle())
@@ -158,39 +169,39 @@ struct CanvasToolbar: View {
 
     private func actionButton(icon: String) -> some View {
         Image(systemName: icon)
-            .font(.system(size: 18, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
-            .frame(width: 40, height: 40)
+            .font(.system(size: 20, weight: .medium))
+            .foregroundStyle(.white.opacity(0.65))
+            .frame(width: 40, height: 38)
             .contentShape(Rectangle())
     }
 
-    private func iconButton(_ name: String, size: CGFloat) -> some View {
+    private func staticButton(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.system(size: size, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
-            .frame(width: 40, height: 40)
+            .font(.system(size: 20, weight: .medium))
+            .foregroundStyle(.white.opacity(0.65))
+            .frame(width: 44, height: 38)
             .contentShape(Rectangle())
     }
 
     private var micButton: some View {
         Image(systemName: "mic")
-            .font(.system(size: 18, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
-            .frame(width: 40, height: 40)
+            .font(.system(size: 20, weight: .medium))
+            .foregroundStyle(.white.opacity(0.65))
+            .frame(width: 44, height: 38)
             .overlay(alignment: .topTrailing) {
                 Circle()
                     .fill(Color.orange)
                     .frame(width: 8, height: 8)
-                    .offset(x: -6, y: 6)
+                    .offset(x: -7, y: 5)
             }
             .contentShape(Rectangle())
     }
 
-    private var divider: some View {
+    private var verticalDivider: some View {
         RoundedRectangle(cornerRadius: 0.5)
             .fill(Self.dividerColor)
             .frame(width: 1, height: 24)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 8)
     }
 }
 

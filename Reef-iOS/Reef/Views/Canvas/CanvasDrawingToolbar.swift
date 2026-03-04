@@ -12,7 +12,6 @@ import SwiftUI
 enum CanvasTool: String, CaseIterable {
     case text
     case pen
-    case highlighter
     case eraser
     case lasso
     case hand
@@ -20,9 +19,8 @@ enum CanvasTool: String, CaseIterable {
     var icon: String {
         switch self {
         case .text: "a.square"
-        case .pen: "pencil.tip"
-        case .highlighter: "highlighter"
-        case .eraser: "eraser"
+        case .pen: "scribble.variable"
+        case .eraser: "eraser.fill"
         case .lasso: "lasso"
         case .hand: "hand.raised"
         }
@@ -30,7 +28,7 @@ enum CanvasTool: String, CaseIterable {
 
     /// Whether this tool supports color selection
     var hasColorPalette: Bool {
-        self == .pen || self == .highlighter
+        self == .pen
     }
 }
 
