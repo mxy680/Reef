@@ -14,8 +14,23 @@ final class AuthManager {
     var magicLinkSent = false
     var magicLinkEmail = ""
 
-    var isAuthenticated: Bool { session != nil }
-    var onboardingCompleted: Bool { profile?.onboardingCompleted == true }
+    #if DEBUG
+    var devMode = false
+    #endif
+
+    var isAuthenticated: Bool {
+        #if DEBUG
+        if devMode { return true }
+        #endif
+        return session != nil
+    }
+
+    var onboardingCompleted: Bool {
+        #if DEBUG
+        if devMode { return true }
+        #endif
+        return profile?.onboardingCompleted == true
+    }
 
     private var coordinator: AppleSignInCoordinator?
     private var currentNonce: String?
@@ -48,7 +63,12 @@ final class AuthManager {
             session = try await supabase.auth.session
             await checkOnboarding()
         } catch {
+            #if DEBUG
+            // No saved session — auto-bypass in debug builds
+            devLogin()
+            #else
             session = nil
+            #endif
         }
     }
 
@@ -179,6 +199,21 @@ final class AuthManager {
             }
         }
     }
+
+    // MARK: - Dev Bypass
+
+    #if DEBUG
+    func devLogin() {
+        devMode = true
+        profile = Profile(
+            id: "dev-user",
+            displayName: "Dev User",
+            email: "markshteyn1@gmail.com",
+            subjects: [],
+            onboardingCompleted: true
+        )
+    }
+    #endif
 
     // MARK: - Sign Out
 

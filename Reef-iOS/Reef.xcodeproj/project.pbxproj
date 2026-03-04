@@ -77,6 +77,7 @@
 		CB02AA22BB33CC44DD55EE02 /* CanvasPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA02AA22BB33CC44DD55EE02 /* CanvasPageView.swift */; };
 		CB03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */; };
 		CB04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift */; };
+		CB08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift */; };
 		CB05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift */; };
 		CB06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift */; };
 /* End PBXBuildFile section */
@@ -153,6 +154,7 @@
 		CA02AA22BB33CC44DD55EE02 /* CanvasPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPageView.swift; sourceTree = "<group>"; };
 		CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewModel.swift; sourceTree = "<group>"; };
 		CA04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbar.swift; sourceTree = "<group>"; };
+		CA08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDrawingToolbar.swift; sourceTree = "<group>"; };
 		CA05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageNavigationBar.swift; sourceTree = "<group>"; };
 		CA06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCanvasView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -399,6 +401,7 @@
 		CA00AA00BB00CC00DD00EE00 /* Canvas */ = {
 			isa = PBXGroup;
 			children = (
+				CA08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift */,
 				CA02AA22BB33CC44DD55EE02 /* CanvasPageView.swift */,
 				CA04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift */,
 				CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */,
@@ -570,6 +573,7 @@
 				CB02AA22BB33CC44DD55EE02 /* CanvasPageView.swift in Sources */,
 				CB03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift in Sources */,
 				CB04AA44BB55CC66DD77EE04 /* CanvasToolbar.swift in Sources */,
+				CB08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift in Sources */,
 				CB05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift in Sources */,
 				CB06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift in Sources */,
 				DD01AA11BB22CC33DD44EE01 /* Stroke.swift in Sources */,
