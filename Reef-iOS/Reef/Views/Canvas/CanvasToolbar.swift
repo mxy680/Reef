@@ -32,11 +32,11 @@ struct CanvasToolbar: View {
             // Row 2: Tool bar
             HStack(spacing: 0) {
                 leftSection
-                toolbarDivider
+                makeDivider()
                 centerSection
-                toolbarDivider
+                makeDivider()
                 canvasUtilitiesSection
-                toolbarDivider
+                makeDivider()
                 aiSection
                 Spacer(minLength: 0)
                 rightSection
@@ -238,10 +238,11 @@ struct CanvasToolbar: View {
 
     // MARK: - Divider
 
-    private var toolbarDivider: some View {
-        Color.white.opacity(0.45)
-            .frame(width: 2, height: 26)
-            .padding(.horizontal, 8)
+    private func makeDivider() -> some View {
+        Text("|")
+            .font(.system(size: 24, weight: .ultraLight))
+            .foregroundColor(.white.opacity(0.5))
+            .frame(width: 20)
     }
 }
 
