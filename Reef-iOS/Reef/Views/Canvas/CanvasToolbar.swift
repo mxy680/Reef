@@ -71,7 +71,10 @@ struct CanvasToolbar: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .padding(.top, safeAreaTop)
-            .background(Self.barColor)
+            .background(
+                Self.barColor
+                    .ignoresSafeArea(.container, edges: .top)
+            )
 
             // Color palette strip — slides in below the bar
             if selectedTool.hasColorPalette {
