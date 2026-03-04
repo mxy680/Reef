@@ -38,15 +38,15 @@ struct DocumentCanvasView: View {
 
     private static let cream = Color(hex: 0xF8F0E6)
 
-    /// Toolbar teal — must match CanvasToolbar.barColor so the
-    /// safe area (camera housing) is teal, not black.
-    private static let barColor = Color(hex: 0x4E8A97)
-    private static let barUIColor = UIColor(red: 0x4E/255.0, green: 0x8A/255.0, blue: 0x97/255.0, alpha: 1)
+    /// Tab strip darker teal — fills the safe area (camera housing)
+    /// so it matches the top row of the toolbar.
+    private static let safeAreaColor = Color(red: 0.28, green: 0.53, blue: 0.52)
+    private static let safeAreaUIColor = UIColor(red: 0.28, green: 0.53, blue: 0.52, alpha: 1)
 
     var body: some View {
         ZStack {
-            // Full-bleed teal so the safe area (camera housing) is never black
-            Self.barColor.ignoresSafeArea()
+            // Full-bleed tab strip teal so the safe area is never black
+            Self.safeAreaColor.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 if viewModel.isLoading {
@@ -69,7 +69,7 @@ struct DocumentCanvasView: View {
             }
         }
         .ignoresSafeArea()
-        .background(ContainerBackgroundSetter(color: Self.barUIColor))
+        .background(ContainerBackgroundSetter(color: Self.safeAreaUIColor))
         .task {
             #if DEBUG
             if document.id == "dev-test" {

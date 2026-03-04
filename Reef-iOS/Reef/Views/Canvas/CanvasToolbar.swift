@@ -2,7 +2,7 @@
 //  CanvasToolbar.swift
 //  Reef
 //
-//  Two-row toolbar — question tabs + drawing tools (GoodNotes style)
+//  GoodNotes 6-style two-row toolbar — problem tabs + drawing tools (UI only)
 //
 
 import SwiftUI
@@ -11,12 +11,12 @@ struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
     let onClose: () -> Void
 
-    @State private var selectedQuestion = 1
+    @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
 
-    private static let barColor = Color(hex: 0x4E8A97)
-    private static let selectedPill = Color.white.opacity(0.25)
-    private static let dividerColor = Color.white.opacity(0.3)
+    // Colors
+    static let barColor = Color(hex: 0x4E8A97)
+    private static let tabStripBg = Color(red: 0.28, green: 0.53, blue: 0.52)
     private static let questionCount = 10
 
     private var safeAreaTop: CGFloat {
@@ -27,174 +27,295 @@ struct CanvasToolbar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // ── Row 1: Question Navigation ──
-            questionRow
+            // Row 1: Problem tab bar
+            problemTabBar
 
-            // ── Row 2: Drawing Tools ──
-            toolRow
+            // Row 2: Tool bar
+            HStack(spacing: 0) {
+                leftSection
+                toolbarDivider
+                Spacer(minLength: 0)
+                centerSection
+                toolbarDivider
+                canvasUtilitiesSection
+                toolbarDivider
+                aiSection
+                Spacer(minLength: 0)
+                rightSection
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background(Self.barColor)
+
+            // Bottom separator
+            Rectangle()
+                .fill(Color.black.opacity(0.15))
+                .frame(height: 0.5)
         }
         .padding(.top, safeAreaTop)
-        .background(Self.barColor)
+        .background(
+            Self.tabStripBg.ignoresSafeArea(edges: .top)
+        )
     }
 
-    // MARK: - Row 1: Question Tabs
+    // MARK: - Problem Tab Bar
 
-    private var questionRow: some View {
-        HStack(spacing: 0) {
-            // Home button
-            Image(systemName: "house.fill")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .contentShape(Rectangle())
-                .onTapGesture { onClose() }
+    private var problemTabBar: some View {
+        ZStack(alignment: .bottom) {
+            // Recessed tab strip background
+            Self.tabStripBg
 
-            // Question tabs with dividers
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    ForEach(1...Self.questionCount, id: \.self) { q in
-                        if q > 1 {
-                            verticalDivider
+            // Scrollable Chrome-style tabs
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        ForEach(0..<Self.questionCount, id: \.self) { index in
+                            let isSelected = index == currentQuestionIndex
+
+                            Button {
+                                currentQuestionIndex = index
+                            } label: {
+                                Text("Q\(index + 1)")
+                                    .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                                    .foregroundColor(
+                                        isSelected ? .white : Color.white.opacity(0.55)
+                                    )
+                                    .frame(minWidth: 42, minHeight: 30)
+                                    .padding(.horizontal, 4)
+                                    .background(isSelected ? Self.barColor : Color.clear)
+                                    .clipShape(ChromeTabShape())
+                                    .overlay(
+                                        isSelected
+                                            ? ChromeTabShape()
+                                                .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                                            : nil
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .id(index)
+
+                            // Separator between unselected tabs
+                            if index < Self.questionCount - 1
+                                && !isSelected
+                                && index + 1 != currentQuestionIndex
+                            {
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.2))
+                                    .frame(width: 1, height: 16)
+                                    .padding(.vertical, 8)
+                            }
                         }
-                        questionTab(q)
+                    }
+                    .padding(.top, 6)
+                    .padding(.horizontal, 2)
+                }
+                .padding(.leading, 48)
+                .padding(.trailing, 150)
+                .onChange(of: currentQuestionIndex) { _, newValue in
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        proxy.scrollTo(newValue, anchor: .center)
                     }
                 }
             }
 
-            Spacer()
+            // Pinned edges: Home + Tutor Mode
+            HStack(spacing: 0) {
+                // Home button
+                HStack(spacing: 0) {
+                    Button(action: onClose) {
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, 6)
+                }
+                .background(Self.tabStripBg)
 
-            // Tutor Mode toggle
-            HStack(spacing: 6) {
-                Text("Tutor Mode")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                Spacer()
 
-                Toggle("", isOn: $tutorModeOn)
-                    .labelsHidden()
-                    .tint(.white.opacity(0.4))
-                    .scaleEffect(0.7)
-                    .frame(width: 40)
+                // Tutor Mode toggle
+                HStack(spacing: 6) {
+                    Text("Tutor Mode")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Toggle("", isOn: $tutorModeOn)
+                        .toggleStyle(TutorToggleStyle())
+                        .labelsHidden()
+                }
+                .padding(.trailing, 10)
+                .padding(.leading, 4)
+                .frame(height: 40)
+                .background(Self.tabStripBg)
             }
         }
-        .padding(.horizontal, 12)
-        .frame(height: 44)
+        .frame(maxWidth: .infinity)
+        .frame(height: 40)
     }
 
-    private func questionTab(_ number: Int) -> some View {
-        let isSelected = selectedQuestion == number
-        return Text("Q\(number)")
-            .font(.system(size: 15, weight: isSelected ? .bold : .medium))
-            .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .background(
-                isSelected
-                    ? RoundedRectangle(cornerRadius: 8).fill(Self.selectedPill)
-                    : nil
-            )
-            .contentShape(Rectangle())
-            .onTapGesture { selectedQuestion = number }
-    }
+    // MARK: - Left Section (Undo / Redo)
 
-    // MARK: - Row 2: Tool Bar (centered layout)
-
-    private var toolRow: some View {
+    private var leftSection: some View {
         HStack(spacing: 0) {
-            // Left: Undo / Redo
-            HStack(spacing: 0) {
-                actionButton(icon: "arrow.uturn.backward")
-                actionButton(icon: "arrow.uturn.forward")
-            }
+            ToolbarButton(icon: "arrow.uturn.backward", isSelected: false, action: {})
+            ToolbarButton(icon: "arrow.uturn.forward", isSelected: false, action: {})
+        }
+    }
 
-            verticalDivider
+    // MARK: - Center Section (Drawing Tools)
 
-            Spacer()
-
-            // Center: Drawing tools + utility tools + mic/more
-            HStack(spacing: 0) {
-                // Drawing tools (selectable)
-                ForEach(CanvasTool.allCases, id: \.self) { tool in
-                    toolButton(tool)
-                }
-
-                verticalDivider
-
-                // Ruler, copy, paste (static)
-                staticButton("ruler.fill")
-                staticButton("doc.on.doc")
-                staticButton("doc.on.clipboard")
-
-                verticalDivider
-
-                // Mic with orange badge + more
-                micButton
-                staticButton("ellipsis")
-            }
-
-            Spacer()
-
-            // Right: Trash + dark mode
-            HStack(spacing: 0) {
-                staticButton("trash")
-                staticButton("moon")
+    private var centerSection: some View {
+        HStack(spacing: 0) {
+            ForEach(CanvasTool.allCases, id: \.self) { tool in
+                ToolbarButton(
+                    icon: tool.icon,
+                    isSelected: selectedTool == tool,
+                    action: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTool = tool
+                        }
+                    }
+                )
             }
         }
-        .padding(.horizontal, 12)
-        .frame(height: 44)
     }
 
-    // MARK: - Buttons
+    // MARK: - Canvas Utilities (Ruler, Background, Pages)
 
-    private func toolButton(_ tool: CanvasTool) -> some View {
-        let isSelected = selectedTool == tool
-        return Image(systemName: tool.icon)
-            .font(.system(size: 20, weight: .medium))
-            .foregroundStyle(.white.opacity(isSelected ? 1 : 0.65))
-            .frame(width: 44, height: 38)
-            .background(isSelected ? Self.selectedPill : .clear)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    selectedTool = tool
-                }
-            }
+    private var canvasUtilitiesSection: some View {
+        HStack(spacing: 0) {
+            ToolbarButton(icon: "pencil.and.ruler.fill", isSelected: false, action: {})
+            ToolbarButton(icon: "document.badge.gearshape.fill", isSelected: false, action: {})
+            ToolbarButton(icon: "doc.fill.badge.plus", isSelected: false, action: {})
+        }
     }
 
-    private func actionButton(icon: String) -> some View {
-        Image(systemName: icon)
-            .font(.system(size: 20, weight: .medium))
-            .foregroundStyle(.white.opacity(0.65))
-            .frame(width: 40, height: 38)
-            .contentShape(Rectangle())
-    }
+    // MARK: - AI Section (Mic + More)
 
-    private func staticButton(_ name: String) -> some View {
-        Image(systemName: name)
-            .font(.system(size: 20, weight: .medium))
-            .foregroundStyle(.white.opacity(0.65))
-            .frame(width: 44, height: 38)
-            .contentShape(Rectangle())
-    }
+    private var aiSection: some View {
+        HStack(spacing: 0) {
+            // Mic with status indicator
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.white.opacity(0.9))
+                    .frame(width: 36, height: 36)
 
-    private var micButton: some View {
-        Image(systemName: "mic")
-            .font(.system(size: 20, weight: .medium))
-            .foregroundStyle(.white.opacity(0.65))
-            .frame(width: 44, height: 38)
-            .overlay(alignment: .topTrailing) {
                 Circle()
-                    .fill(Color.orange)
-                    .frame(width: 8, height: 8)
-                    .offset(x: -7, y: 5)
+                    .fill(Color.yellow)
+                    .frame(width: 7, height: 7)
+                    .offset(x: -2, y: 2)
             }
-            .contentShape(Rectangle())
+            .frame(width: 36, height: 36)
+
+            ToolbarButton(icon: "ellipsis.circle.fill", isSelected: false, action: {})
+        }
     }
 
-    private var verticalDivider: some View {
-        RoundedRectangle(cornerRadius: 0.5)
-            .fill(Self.dividerColor)
-            .frame(width: 1, height: 24)
-            .padding(.horizontal, 8)
+    // MARK: - Right Section (Sidebar, Export, Dark Mode)
+
+    private var rightSection: some View {
+        HStack(spacing: 0) {
+            ToolbarButton(icon: "sidebar.trailing", isSelected: false, action: {})
+            ToolbarButton(icon: "square.and.arrow.up.fill", isSelected: false, action: {})
+            ToolbarButton(icon: "moon.fill", isSelected: false, action: {})
+        }
+    }
+
+    // MARK: - Divider
+
+    private var toolbarDivider: some View {
+        Rectangle()
+            .fill(Color.white.opacity(0.3))
+            .frame(width: 1, height: 28)
+            .padding(.horizontal, 6)
+    }
+}
+
+// MARK: - Toolbar Button
+
+private struct ToolbarButton: View {
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(isSelected ? .white : Color.white.opacity(0.9))
+                .frame(width: 36, height: 36, alignment: .center)
+                .background(
+                    isSelected
+                        ? Color.white.opacity(0.25)
+                        : Color.clear
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .frame(width: 36, height: 36)
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Chrome Tab Shape
+
+private struct ChromeTabShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let curve: CGFloat = 8
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + curve, y: rect.minY),
+            control: CGPoint(x: rect.minX, y: rect.minY)
+        )
+        path.addLine(to: CGPoint(x: rect.maxX - curve, y: rect.minY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.maxY),
+            control: CGPoint(x: rect.maxX, y: rect.minY)
+        )
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Tutor Toggle Style
+
+private struct TutorToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        let trackWidth: CGFloat = 36
+        let trackHeight: CGFloat = 20
+        let knobSize: CGFloat = 16
+        let knobPadding: CGFloat = 2
+        let onColor = Color(hex: 0x4E8A97)
+        let offColor = Color.white.opacity(0.12)
+
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                configuration.isOn.toggle()
+            }
+        } label: {
+            ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                Capsule()
+                    .fill(configuration.isOn ? onColor : offColor)
+                    .overlay(
+                        Capsule()
+                            .strokeBorder(
+                                configuration.isOn ? Color.clear : Color.white.opacity(0.25),
+                                lineWidth: 1
+                            )
+                    )
+                    .frame(width: trackWidth, height: trackHeight)
+
+                Circle()
+                    .fill(Color.white)
+                    .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
+                    .frame(width: knobSize, height: knobSize)
+                    .padding(knobPadding)
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
