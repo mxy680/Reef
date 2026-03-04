@@ -35,3 +35,7 @@ Reef/
 ## iOS (Reef-iOS)
 
 - **3D border clipping**: Cards with 3D shadow offsets (e.g. `DocumentCardView` uses 4pt, `DashboardCard` uses 3pt) will get clipped by parent `clipShape`. Any `ScrollView` or container holding these cards must add `.padding([.trailing, .bottom], N)` on the grid/content to leave room for the shadow offset. Check this whenever adding new grids with 3D-bordered cards.
+- **fullScreenCover safe area on iPad**: `.background().ignoresSafeArea()` does NOT reliably color the camera housing region on real iPad hardware (works on simulator). The UIKit container views behind the fullScreenCover have opaque black backgrounds. Fix: use a `UIViewRepresentable` that walks up `superview` chain and sets `backgroundColor` on all ancestors. See `ContainerBackgroundSetter` in `DocumentCanvasView.swift`.
+- **3D shadows over UIKit views**: `.background().offset()` renders behind UIKit `UIViewRepresentable` views (e.g., PDFView). Use ZStack siblings for the shadow layer instead. See `CanvasCardModifier`.
+- **iPad device screenshots**: Use `pymobiledevice3` (`pipx install pymobiledevice3`). Requires `sudo pymobiledevice3 remote start-tunnel`, then `pymobiledevice3 developer dvt screenshot --rsd <host> <port> /path/to/output.png`.
+- **Bundle ID**: `com.studyreef.app` (not `com.reef.study`).
