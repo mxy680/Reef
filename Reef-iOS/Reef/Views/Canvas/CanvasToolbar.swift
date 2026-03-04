@@ -14,9 +14,8 @@ struct CanvasToolbar: View {
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
 
-    // Colors
+    /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
-    private static let tabStripBg = Color(red: 0.28, green: 0.53, blue: 0.52)
     private static let questionCount = 10
 
     private var safeAreaTop: CGFloat {
@@ -27,14 +26,13 @@ struct CanvasToolbar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Row 1: Problem tab bar
+            // Row 1: Problem tab bar (darkened teal)
             problemTabBar
 
             // Row 2: Tool bar
             HStack(spacing: 0) {
                 leftSection
                 toolbarDivider
-                Spacer(minLength: 0)
                 centerSection
                 toolbarDivider
                 canvasUtilitiesSection
@@ -55,16 +53,29 @@ struct CanvasToolbar: View {
         }
         .padding(.top, safeAreaTop)
         .background(
-            Self.tabStripBg.ignoresSafeArea(edges: .top)
+            // Tab strip = barColor darkened with black overlay, extends into safe area
+            ZStack {
+                Self.barColor
+                Color.black.opacity(0.18)
+            }
+            .ignoresSafeArea(edges: .top)
         )
     }
 
     // MARK: - Problem Tab Bar
 
+    /// Tab strip background: barColor darkened by overlaying black.
+    private var tabStripBg: some View {
+        ZStack {
+            Self.barColor
+            Color.black.opacity(0.18)
+        }
+    }
+
     private var problemTabBar: some View {
         ZStack(alignment: .bottom) {
-            // Recessed tab strip background
-            Self.tabStripBg
+            // Recessed tab strip background (same teal, darkened)
+            tabStripBg
 
             // Scrollable Chrome-style tabs
             ScrollViewReader { proxy in
@@ -77,18 +88,18 @@ struct CanvasToolbar: View {
                                 currentQuestionIndex = index
                             } label: {
                                 Text("Q\(index + 1)")
-                                    .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                                    .font(.system(size: 13, weight: isSelected ? .bold : .medium))
                                     .foregroundColor(
-                                        isSelected ? .white : Color.white.opacity(0.55)
+                                        isSelected ? .white : Color.white.opacity(0.6)
                                     )
-                                    .frame(minWidth: 42, minHeight: 30)
-                                    .padding(.horizontal, 4)
+                                    .frame(minWidth: 44, minHeight: 30)
+                                    .padding(.horizontal, 6)
                                     .background(isSelected ? Self.barColor : Color.clear)
                                     .clipShape(ChromeTabShape())
                                     .overlay(
                                         isSelected
                                             ? ChromeTabShape()
-                                                .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                                                .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
                                             : nil
                                     )
                             }
@@ -132,7 +143,7 @@ struct CanvasToolbar: View {
                     .buttonStyle(.plain)
                     .padding(.leading, 6)
                 }
-                .background(Self.tabStripBg)
+                .background(tabStripBg)
 
                 Spacer()
 
@@ -149,7 +160,7 @@ struct CanvasToolbar: View {
                 .padding(.trailing, 10)
                 .padding(.leading, 4)
                 .frame(height: 40)
-                .background(Self.tabStripBg)
+                .background(tabStripBg)
             }
         }
         .frame(maxWidth: .infinity)
@@ -205,7 +216,7 @@ struct CanvasToolbar: View {
                     .frame(width: 36, height: 36)
 
                 Circle()
-                    .fill(Color.yellow)
+                    .fill(Color.white.opacity(0.7))
                     .frame(width: 7, height: 7)
                     .offset(x: -2, y: 2)
             }
@@ -228,10 +239,9 @@ struct CanvasToolbar: View {
     // MARK: - Divider
 
     private var toolbarDivider: some View {
-        Rectangle()
-            .fill(Color.white.opacity(0.3))
-            .frame(width: 1, height: 28)
-            .padding(.horizontal, 6)
+        Color.white.opacity(0.45)
+            .frame(width: 2, height: 26)
+            .padding(.horizontal, 8)
     }
 }
 
@@ -283,14 +293,13 @@ private struct ChromeTabShape: Shape {
 
 // MARK: - Tutor Toggle Style
 
+/// Custom toggle using only white/black opacity on the teal toolbar background.
 private struct TutorToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
         let trackWidth: CGFloat = 36
         let trackHeight: CGFloat = 20
         let knobSize: CGFloat = 16
         let knobPadding: CGFloat = 2
-        let onColor = Color(hex: 0x4E8A97)
-        let offColor = Color.white.opacity(0.12)
 
         Button {
             withAnimation(.easeInOut(duration: 0.2)) {
@@ -299,12 +308,14 @@ private struct TutorToggleStyle: ToggleStyle {
         } label: {
             ZStack(alignment: configuration.isOn ? .trailing : .leading) {
                 Capsule()
-                    .fill(configuration.isOn ? onColor : offColor)
+                    .fill(configuration.isOn
+                          ? Color.white.opacity(0.35)
+                          : Color.black.opacity(0.15))
                     .overlay(
                         Capsule()
                             .strokeBorder(
-                                configuration.isOn ? Color.clear : Color.white.opacity(0.25),
-                                lineWidth: 1
+                                Color.white.opacity(0.25),
+                                lineWidth: 0.5
                             )
                     )
                     .frame(width: trackWidth, height: trackHeight)

@@ -38,10 +38,10 @@ struct DocumentCanvasView: View {
 
     private static let cream = Color(hex: 0xF8F0E6)
 
-    /// Tab strip darker teal — fills the safe area (camera housing)
-    /// so it matches the top row of the toolbar.
-    private static let safeAreaColor = Color(red: 0.28, green: 0.53, blue: 0.52)
-    private static let safeAreaUIColor = UIColor(red: 0.28, green: 0.53, blue: 0.52, alpha: 1)
+    /// Tab strip = barColor (0x4E8A97) darkened 18% for safe area.
+    /// RGB: (78,138,151) * 0.82 ≈ (64,113,124)
+    private static let safeAreaColor = Color(red: 64/255.0, green: 113/255.0, blue: 124/255.0)
+    private static let safeAreaUIColor = UIColor(red: 64/255.0, green: 113/255.0, blue: 124/255.0, alpha: 1)
 
     var body: some View {
         ZStack {
