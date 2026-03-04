@@ -9,7 +9,6 @@ import SwiftUI
 
 struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
-    @Binding var selectedColor: ToolbarColor
     let onClose: () -> Void
 
     @State private var selectedQuestion = 1
@@ -28,23 +27,14 @@ struct CanvasToolbar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 0) {
-                // ── Row 1: Question Navigation ──
-                questionRow
+            // ── Row 1: Question Navigation ──
+            questionRow
 
-                // ── Row 2: Drawing Tools ──
-                toolRow
-            }
-            .padding(.top, safeAreaTop)
-            .background(Self.barColor)
-
-            // Color palette strip — slides in below the bar
-            if selectedTool.hasColorPalette {
-                ColorPaletteStrip(selectedColor: $selectedColor)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
+            // ── Row 2: Drawing Tools ──
+            toolRow
         }
-        .animation(.easeInOut(duration: 0.2), value: selectedTool.hasColorPalette)
+        .padding(.top, safeAreaTop)
+        .background(Self.barColor)
     }
 
     // MARK: - Row 1: Question Tabs
@@ -74,15 +64,16 @@ struct CanvasToolbar: View {
             Spacer()
 
             // Tutor Mode toggle
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Text("Tutor Mode")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
 
                 Toggle("", isOn: $tutorModeOn)
                     .labelsHidden()
                     .tint(.white.opacity(0.4))
-                    .scaleEffect(0.85)
+                    .scaleEffect(0.7)
+                    .frame(width: 40)
             }
         }
         .padding(.horizontal, 12)
@@ -94,10 +85,13 @@ struct CanvasToolbar: View {
         return Text("Q\(number)")
             .font(.system(size: 15, weight: isSelected ? .bold : .medium))
             .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 14)
             .padding(.vertical, 6)
-            .background(isSelected ? Self.selectedPill : .clear)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .background(
+                isSelected
+                    ? RoundedRectangle(cornerRadius: 8).fill(Self.selectedPill)
+                    : nil
+            )
             .contentShape(Rectangle())
             .onTapGesture { selectedQuestion = number }
     }
@@ -202,36 +196,5 @@ struct CanvasToolbar: View {
             .fill(Self.dividerColor)
             .frame(width: 1, height: 24)
             .padding(.horizontal, 8)
-    }
-}
-
-// MARK: - Color Palette Strip
-
-private struct ColorPaletteStrip: View {
-    @Binding var selectedColor: ToolbarColor
-
-    private static let stripColor = Color(hex: 0x5B9EAD).opacity(0.3)
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ForEach(ToolbarColor.allCases, id: \.self) { color in
-                Circle()
-                    .fill(color.color)
-                    .frame(width: 22, height: 22)
-                    .overlay(
-                        Circle()
-                            .stroke(
-                                selectedColor == color ? .white : .clear,
-                                lineWidth: 2.5
-                            )
-                            .frame(width: 30, height: 30)
-                    )
-                    .contentShape(Circle().inset(by: -6))
-                    .onTapGesture { selectedColor = color }
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(Self.stripColor)
     }
 }

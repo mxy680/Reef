@@ -35,7 +35,6 @@ struct DocumentCanvasView: View {
 
     @State private var viewModel = CanvasViewModel()
     @State private var selectedTool: CanvasTool = .pen
-    @State private var selectedColor: ToolbarColor = .black
 
     private static let cream = Color(hex: 0xF8F0E6)
 
@@ -61,7 +60,6 @@ struct DocumentCanvasView: View {
                 } else if let pdf = viewModel.pdfDocument {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
-                        selectedColor: $selectedColor,
                         onClose: { onDismiss() }
                     )
 
@@ -71,7 +69,6 @@ struct DocumentCanvasView: View {
             }
         }
         .ignoresSafeArea()
-        .statusBarHidden(true)
         .background(ContainerBackgroundSetter(color: Self.barUIColor))
         .task {
             #if DEBUG
