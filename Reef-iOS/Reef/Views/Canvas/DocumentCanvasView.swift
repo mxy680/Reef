@@ -6,6 +6,28 @@
 //
 
 import SwiftUI
+import UIKit
+
+/// Sets the UIKit container background behind a fullScreenCover so the
+/// safe area (camera housing on iPad) shows the correct color instead of black.
+private struct ContainerBackgroundSetter: UIViewRepresentable {
+    let color: UIColor
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        DispatchQueue.main.async {
+            var ancestor = view.superview
+            while let v = ancestor {
+                v.backgroundColor = color
+                ancestor = v.superview
+            }
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
 
 struct DocumentCanvasView: View {
     let document: Document
@@ -20,31 +42,37 @@ struct DocumentCanvasView: View {
     /// Toolbar teal — must match CanvasToolbar.barColor so the
     /// safe area (camera housing) is teal, not black.
     private static let barColor = Color(hex: 0x4E8A97)
+    private static let barUIColor = UIColor(red: 0x4E/255.0, green: 0x8A/255.0, blue: 0x97/255.0, alpha: 1)
 
     var body: some View {
-        VStack(spacing: 0) {
-            if viewModel.isLoading {
-                loadingView
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Self.cream)
-            } else if let error = viewModel.error {
-                errorView(error)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Self.cream)
-            } else if let pdf = viewModel.pdfDocument {
-                CanvasToolbar(
-                    selectedTool: $selectedTool,
-                    selectedColor: $selectedColor,
-                    onClose: { onDismiss() }
-                )
+        ZStack {
+            // Full-bleed teal so the safe area (camera housing) is never black
+            Self.barColor.ignoresSafeArea()
 
-                CanvasPageView(pdfDocument: pdf)
-                    .background(Self.cream)
+            VStack(spacing: 0) {
+                if viewModel.isLoading {
+                    loadingView
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Self.cream)
+                } else if let error = viewModel.error {
+                    errorView(error)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Self.cream)
+                } else if let pdf = viewModel.pdfDocument {
+                    CanvasToolbar(
+                        selectedTool: $selectedTool,
+                        selectedColor: $selectedColor,
+                        onClose: { onDismiss() }
+                    )
+
+                    CanvasPageView(pdfDocument: pdf)
+                        .background(Self.cream)
+                }
             }
         }
-        .background(Self.barColor)
         .ignoresSafeArea()
         .statusBarHidden(true)
+        .background(ContainerBackgroundSetter(color: Self.barUIColor))
         .task {
             #if DEBUG
             if document.id == "dev-test" {
