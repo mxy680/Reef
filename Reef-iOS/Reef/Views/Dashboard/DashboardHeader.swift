@@ -40,11 +40,11 @@ struct DashboardHeader: View {
             // Action buttons
             HStack(spacing: 10) {
                 headerIcon("magnifyingglass")
-                headerIcon("icon.help", isCustom: true)
+                headerIcon("questionmark.circle")
 
                 // Bell with notification dot
                 ZStack(alignment: .topTrailing) {
-                    headerIcon("icon.notification", isCustom: true)
+                    headerIcon("bell")
                     Circle()
                         .fill(Color(hex: 0xE74C3C))
                         .frame(width: 8, height: 8)
@@ -60,7 +60,7 @@ struct DashboardHeader: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 14, height: 14)
                         .foregroundStyle(ReefColors.black)
-                    Text("0")
+                    Text("0 days")
                         .font(.epilogue(13, weight: .semiBold))
                         .foregroundStyle(ReefColors.black)
                 }
