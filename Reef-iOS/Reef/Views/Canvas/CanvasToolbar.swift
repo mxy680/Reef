@@ -205,7 +205,7 @@ struct CanvasToolbar: View {
 
     private var canvasUtilitiesSection: some View {
         HStack(spacing: 0) {
-            ToolbarButton(icon: "canvas.ruler", isSelected: false, isCustomIcon: true, action: {})
+            ToolbarButton(icon: "pencil.and.ruler.fill", isSelected: false, action: {})
             ToolbarButton(icon: "canvas.page_settings", isSelected: false, isCustomIcon: true, action: {})
             ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
         }

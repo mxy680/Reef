@@ -19,15 +19,15 @@ enum CanvasTool: String, CaseIterable {
         switch self {
         case .pen: "pencil.tip"
         case .diagram: "canvas.diagram"
-        case .eraser: "canvas.eraser"
+        case .eraser: "eraser.fill"
         case .lasso: "lasso"
         }
     }
 
     var isCustomIcon: Bool {
         switch self {
-        case .diagram, .eraser: true
-        case .pen, .lasso: false
+        case .diagram: true
+        case .pen, .eraser, .lasso: false
         }
     }
 }
