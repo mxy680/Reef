@@ -870,10 +870,14 @@ async def _process_document_background(user_id: str, document_id: str):
             print(f"  [reconstruct-document] {document_id} cancelled (post-pipeline)")
             return
 
-        # Merge per-problem PDFs into one
+        # Merge per-problem PDFs into one, tracking page ranges per question
         merged = fitz.open()
+        question_pages: list[list[int]] = []
+        running_page = 0
         for label, problem_pdf_bytes, _ in compiled:
             sub_doc = fitz.open(stream=problem_pdf_bytes, filetype="pdf")
+            question_pages.append([running_page, running_page + sub_doc.page_count - 1])
+            running_page += sub_doc.page_count
             merged.insert_pdf(sub_doc)
             sub_doc.close()
         merged_bytes = merged.tobytes()
@@ -885,6 +889,7 @@ async def _process_document_background(user_id: str, document_id: str):
             status="completed",
             page_count=num_pages,
             problem_count=len(compiled),
+            question_pages=question_pages,
             status_message=None,
             input_tokens=costs.input_tokens,
             output_tokens=costs.output_tokens,
@@ -1001,10 +1006,14 @@ async def ai_reconstruct(
                 }
             )
 
-        # Merge all per-problem PDFs into one
+        # Merge all per-problem PDFs into one, tracking page ranges per question
         merged = fitz.open()
+        question_pages: list[list[int]] = []
+        running_page = 0
         for label, problem_pdf_bytes, _ in compiled:
             sub_doc = fitz.open(stream=problem_pdf_bytes, filetype="pdf")
+            question_pages.append([running_page, running_page + sub_doc.page_count - 1])
+            running_page += sub_doc.page_count
             merged.insert_pdf(sub_doc)
             sub_doc.close()
 
@@ -1025,6 +1034,7 @@ async def ai_reconstruct(
                 "Content-Disposition": f"inline; filename={output_filename}",
                 "X-Problem-Count": str(len(compiled)),
                 "X-Page-Count": str(num_pages),
+                "X-Question-Pages": json.dumps(question_pages),
                 "X-Cost-Cents": str(costs.cost_cents),
                 "X-Input-Tokens": str(costs.input_tokens),
                 "X-Output-Tokens": str(costs.output_tokens),
