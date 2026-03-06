@@ -3,7 +3,7 @@
 //  Reef
 //
 //  Row 3 of the canvas toolbar — only visible when Tutor Mode is ON.
-//  Background shifts from cool teal (cold) to warm amber (hot) based on step progress.
+//  Lighter teal: barColor + white 12% overlay (vs black 18% for Row 1).
 //
 
 import SwiftUI
@@ -12,10 +12,10 @@ struct TutorStepToolbar: View {
     let questionIndex: Int
     @State private var stepIndex = 0
 
-    /// Cold = lighter teal (barColor + white overlay)
-    private static let coldColor = Color(hex: 0x5FA8B3)
-    /// Hot = warm amber
-    private static let hotColor = Color(hex: 0xD4915E)
+    /// Cold/hot gradient stops for the progress bar
+    private static let coldColor = Color(hex: 0x5B9EAD)
+    private static let warmColor = Color(hex: 0xE8A87C)
+    private static let hotColor = Color(hex: 0xD4605A)
 
     private var steps: [TutorStep] {
         MockTutorSteps.steps(for: questionIndex)
@@ -23,10 +23,6 @@ struct TutorStepToolbar: View {
 
     private var currentStep: TutorStep {
         steps[stepIndex]
-    }
-
-    private var barBackground: Color {
-        Self.coldColor.mix(with: Self.hotColor, by: currentStep.progress)
     }
 
     var body: some View {
@@ -65,12 +61,21 @@ struct TutorStepToolbar: View {
                         print("👁 Reveal answer tapped for step \(stepIndex + 1)")
                     }
                 }
+
+                makeDivider()
+
+                // Hot/cold progress bar
+                progressBar(progress: currentStep.progress)
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity)
             .frame(height: 44)
-            .background(barBackground)
-            .animation(.easeInOut(duration: 0.4), value: currentStep.progress)
+            .background(
+                ZStack {
+                    CanvasToolbar.barColor
+                    Color.white.opacity(0.12)
+                }
+            )
 
             // Bottom separator
             Rectangle()
@@ -80,6 +85,31 @@ struct TutorStepToolbar: View {
         .onChange(of: questionIndex) { _, _ in
             stepIndex = 0
         }
+    }
+
+    // MARK: - Progress Bar
+
+    private func progressBar(progress: Double) -> some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                // Track
+                Capsule()
+                    .fill(Color.white.opacity(0.15))
+
+                // Fill
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [Self.coldColor, Self.warmColor, Self.hotColor],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: max(geo.size.height, geo.size.width * progress))
+            }
+        }
+        .frame(width: 80, height: 8)
+        .animation(.easeInOut(duration: 0.4), value: progress)
     }
 
     // MARK: - Status Icon
