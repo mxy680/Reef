@@ -46,7 +46,7 @@ actor DocumentService {
 
     // MARK: - Upload
 
-    func uploadDocument(fileURL: URL, courseId: String? = nil) async throws -> Document {
+    func uploadDocument(fileURL: URL, courseId: String? = nil, reconstruct: Bool = true) async throws -> Document {
         let userId = try await getUserId()
 
         // Validate PDF
@@ -80,11 +80,17 @@ actor DocumentService {
             let user_id: String
             let filename: String
             let course_id: String?
+            let status: String?
         }
 
         let newDoc: Document = try await supabase
             .from("documents")
-            .insert(InsertPayload(user_id: userId, filename: fileURL.lastPathComponent, course_id: courseId))
+            .insert(InsertPayload(
+                user_id: userId,
+                filename: fileURL.lastPathComponent,
+                course_id: courseId,
+                status: reconstruct ? nil : "completed"
+            ))
             .select()
             .single()
             .execute()
@@ -110,9 +116,11 @@ actor DocumentService {
                 .upload(thumbPath, data: thumbnailData, options: .init(contentType: "image/png"))
         }
 
-        // Fire-and-forget processing trigger
-        Task.detached { [weak self] in
-            await self?.triggerProcessing(documentId: newDoc.id)
+        if reconstruct {
+            // Fire-and-forget processing trigger
+            Task.detached { [weak self] in
+                await self?.triggerProcessing(documentId: newDoc.id)
+            }
         }
 
         return newDoc

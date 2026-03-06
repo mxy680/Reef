@@ -17,6 +17,10 @@ struct DocumentCanvasView: View {
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
 
+    private var isReconstructed: Bool {
+        document.questionPages != nil
+    }
+
     private static let cream = Color(hex: 0xF8F0E6)
 
     /// Tab strip = barColor (0x4E8A97) darkened 18% for safe area.
@@ -41,12 +45,16 @@ struct DocumentCanvasView: View {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
                         currentQuestionIndex: $currentQuestionIndex,
-                        questionCount: document.problemCount ?? 1,
+                        questionCount: isReconstructed
+                            ? (document.problemCount ?? 1)
+                            : 1,
                         onClose: { onDismiss() },
-                        tutorModeOn: $tutorModeOn
+                        tutorModeOn: $tutorModeOn,
+                        isReconstructed: isReconstructed,
+                        documentName: document.displayName
                     )
 
-                    if tutorModeOn {
+                    if tutorModeOn && isReconstructed {
                         TutorStepToolbar(questionIndex: currentQuestionIndex)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }

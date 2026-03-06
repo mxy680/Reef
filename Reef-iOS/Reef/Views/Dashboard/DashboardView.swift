@@ -160,12 +160,14 @@ struct DashboardView: View {
             }
 
             // Document modals
-            if documentsVM.deleteTarget != nil || documentsVM.renameTarget != nil
-                || documentsVM.moveToCourseTarget != nil || documentsVM.detailsTarget != nil {
+            if documentsVM.pendingUploadURL != nil || documentsVM.deleteTarget != nil
+                || documentsVM.renameTarget != nil || documentsVM.moveToCourseTarget != nil
+                || documentsVM.detailsTarget != nil {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
                     .onTapGesture {
                         withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.pendingUploadURL = nil
                             documentsVM.deleteTarget = nil
                             documentsVM.renameTarget = nil
                             documentsVM.moveToCourseTarget = nil
@@ -225,6 +227,23 @@ struct DashboardView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
 
+            if let url = documentsVM.pendingUploadURL {
+                DocumentUploadSheet(
+                    filename: url.deletingPathExtension().lastPathComponent,
+                    onConfirm: { courseId, reconstruct in
+                        withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.performUploadWithOptions(courseId: courseId, reconstruct: reconstruct)
+                        }
+                    },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.pendingUploadURL = nil
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+
         }
         .environment(\.layoutMetrics, metrics)
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
@@ -236,6 +255,7 @@ struct DashboardView: View {
         .animation(.spring(duration: 0.2), value: documentsVM.renameTarget?.id)
         .animation(.spring(duration: 0.2), value: documentsVM.moveToCourseTarget?.id)
         .animation(.spring(duration: 0.2), value: documentsVM.detailsTarget?.id)
+        .animation(.spring(duration: 0.2), value: documentsVM.pendingUploadURL)
         #if DEBUG
         .overlay(alignment: .bottomTrailing) {
             Button {
