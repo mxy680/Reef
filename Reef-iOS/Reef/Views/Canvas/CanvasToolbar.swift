@@ -13,6 +13,7 @@ struct CanvasToolbar: View {
     let questionCount: Int
     let onClose: () -> Void
     @Binding var tutorModeOn: Bool
+    let isReconstructed: Bool
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -86,7 +87,7 @@ struct CanvasToolbar: View {
                             Button {
                                 currentQuestionIndex = index
                             } label: {
-                                Text("Q\(index + 1)")
+                                Text(isReconstructed ? "Q\(index + 1)" : "Page \(index + 1)")
                                     .font(.system(size: 13, weight: isSelected ? .bold : .medium))
                                     .foregroundColor(
                                         isSelected ? .white : Color.white.opacity(0.6)
@@ -150,20 +151,22 @@ struct CanvasToolbar: View {
 
                 Spacer()
 
-                // Tutor Mode toggle
-                HStack(spacing: 6) {
-                    Text("Tutor Mode")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white)
+                if isReconstructed {
+                    // Tutor Mode toggle
+                    HStack(spacing: 6) {
+                        Text("Tutor Mode")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white)
 
-                    Toggle("", isOn: $tutorModeOn)
-                        .toggleStyle(TutorToggleStyle())
-                        .labelsHidden()
+                        Toggle("", isOn: $tutorModeOn)
+                            .toggleStyle(TutorToggleStyle())
+                            .labelsHidden()
+                    }
+                    .padding(.trailing, 10)
+                    .padding(.leading, 4)
+                    .frame(height: 40)
+                    .background(tabStripBg)
                 }
-                .padding(.trailing, 10)
-                .padding(.leading, 4)
-                .frame(height: 40)
-                .background(tabStripBg)
             }
         }
         .frame(maxWidth: .infinity)

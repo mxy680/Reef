@@ -17,6 +17,10 @@ struct DocumentCanvasView: View {
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
 
+    private var isReconstructed: Bool {
+        document.questionPages != nil
+    }
+
     private static let cream = Color(hex: 0xF8F0E6)
 
     /// Tab strip = barColor (0x4E8A97) darkened 18% for safe area.
@@ -41,12 +45,15 @@ struct DocumentCanvasView: View {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
                         currentQuestionIndex: $currentQuestionIndex,
-                        questionCount: document.problemCount ?? 1,
+                        questionCount: isReconstructed
+                            ? (document.problemCount ?? 1)
+                            : (pdf.pageCount),
                         onClose: { onDismiss() },
-                        tutorModeOn: $tutorModeOn
+                        tutorModeOn: $tutorModeOn,
+                        isReconstructed: isReconstructed
                     )
 
-                    if tutorModeOn {
+                    if tutorModeOn && isReconstructed {
                         TutorStepToolbar(questionIndex: currentQuestionIndex)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
@@ -76,10 +83,16 @@ struct DocumentCanvasView: View {
     // MARK: - Page Range
 
     private func pageRange(for questionIndex: Int) -> ClosedRange<Int>? {
-        guard let pages = document.questionPages,
-              questionIndex < pages.count,
-              pages[questionIndex].count == 2 else { return nil }
-        return pages[questionIndex][0]...pages[questionIndex][1]
+        if let pages = document.questionPages,
+           questionIndex < pages.count,
+           pages[questionIndex].count == 2 {
+            return pages[questionIndex][0]...pages[questionIndex][1]
+        }
+        // Non-reconstructed: each tab = one page (0-indexed)
+        if !isReconstructed {
+            return questionIndex...questionIndex
+        }
+        return nil
     }
 
     // MARK: - Loading
