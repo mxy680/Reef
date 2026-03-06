@@ -1,8 +1,9 @@
-"""Pydantic models for answer key generation.
+"""Pydantic models for structured step-by-step answer key generation.
 
-Mirrors the Question/Part hierarchy so answer keys align 1:1 with
-extracted question parts.  The LLM produces a QuestionAnswer object
-(via structured output) and it is stored as JSON in the answer_keys table.
+Each answer is broken into discrete Steps that serve both the student
+(description) and the AI tutor (explanation + work).  The LLM produces
+a QuestionAnswer object via structured output, stored as JSON in the
+answer_keys table.
 """
 
 from __future__ import annotations
@@ -10,11 +11,28 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
+class Step(BaseModel):
+    """A single step in a solution walkthrough."""
+
+    description: str = Field(
+        ...,
+        description="Short label shown to the student, e.g. 'Set up the equation', 'Apply the chain rule'",
+    )
+    explanation: str = Field(
+        ...,
+        description="Teaching guidance for the tutor: why this step matters, common mistakes, pedagogy hints",
+    )
+    work: str = Field(
+        ...,
+        description="Actual solution content for this step (LaTeX math with $...$ inline, \\[...\\] display, or plain text)",
+    )
+
+
 class PartAnswer(BaseModel):
     """Answer for a single labeled part of a question."""
 
     label: str = Field(..., description="Part label matching the question, e.g. 'a', 'b', 'i', 'ii'")
-    answer: str = Field(..., description="Step-by-step solution (LaTeX math: $...$ inline, \\[...\\] display)")
+    steps: list[Step] = Field(..., description="Step-by-step solution walkthrough")
     final_answer: str = Field(..., description="Concise final answer, e.g. '$x = 5$', '$42$ cm$^2$'")
     parts: list[PartAnswer] = Field(default_factory=list, description="Answers for nested sub-parts")
 
@@ -26,9 +44,9 @@ class QuestionAnswer(BaseModel):
     """Complete answer for a single question."""
 
     question_number: int = Field(..., description="The problem number this answers")
-    answer: str = Field(
-        default="",
-        description="Solution for the stem/preamble if no parts, or general approach note",
+    steps: list[Step] = Field(
+        default_factory=list,
+        description="Step-by-step solution for simple questions with no parts",
     )
     final_answer: str = Field(
         default="",

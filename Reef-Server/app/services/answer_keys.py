@@ -19,7 +19,7 @@ from app.services.prompts import ANSWER_KEY_PROMPT
 
 logger = logging.getLogger(__name__)
 
-ANSWER_KEY_MODEL = "deepseek/deepseek-r1"
+ANSWER_KEY_MODEL = "google/gemini-3.1-pro-preview"
 
 
 # ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ async def _generate_single_answer(
             llm_client.generate,
             prompt=prompt,
             response_schema=QuestionAnswer.model_json_schema(),
-            timeout=180.0,  # reasoning models can be slow
+            timeout=120.0,
         )
 
         answer = QuestionAnswer.model_validate_json(result.content)

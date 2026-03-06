@@ -149,27 +149,31 @@ Minor typographic differences (font size, exact spacing, line breaks) are accept
 """
 
 ANSWER_KEY_PROMPT = """\
-You are a highly capable math and science tutor generating an answer key for a homework or exam question.
+You are generating a structured answer key for a homework or exam question. The answer key will be used by an AI tutor to guide students through the solution step by step.
 
 ## Question (structured JSON)
 ```json
 {question_json}
 ```
 
-## Instructions
-Solve this question completely. For each part and sub-part, provide:
-1. A clear step-by-step solution showing all work
-2. A concise final answer
+## Output structure
+
+Break every solution into discrete **steps**. Each step has three fields:
+
+- `description` — A short label shown directly to the student (e.g. "Identify the given values", "Apply Newton's second law", "Simplify the expression"). Keep it under ~10 words. This is the student-facing hint.
+- `explanation` — Teaching guidance for the AI tutor: why this step is important, what concept it exercises, common mistakes students make here, and how to explain it if the student is stuck. This is NOT shown to the student directly.
+- `work` — The actual solution content for this step: calculations, equations, reasoning, or prose. Use LaTeX math notation ($...$ inline, \\[...\\] display). This is the ground truth the tutor uses to check the student's work.
 
 ## Rules
-- Use LaTeX math notation: $...$ for inline, \\[...\\] for display equations
-- Show all intermediate steps — this is an answer key for teachers/students to learn from
-- If the question references a figure or diagram you cannot see, state what information would be needed from it and solve symbolically or with a placeholder
-- If a question is conceptual (no calculation), provide a clear, complete explanation
-- Match the `question_number` field exactly from the input
-- For each `parts` entry, match the `label` field exactly (e.g. 'a', 'b', 'i', 'ii')
-- If the question has no parts, put the full solution in the top-level `answer` and `final_answer` fields
-- If the question has parts, put per-part solutions in the `parts` array and leave the top-level `answer` for any general approach note (or empty)
-- Be rigorous with units, significant figures, and mathematical notation
-- Do NOT skip steps even if they seem obvious
+
+- Match `question_number` exactly from the input.
+- For each `parts` entry, match `label` exactly ('a', 'b', 'i', 'ii', etc.).
+- If the question has **no parts**: put steps and final_answer at the top level. Leave `parts` empty.
+- If the question has **parts**: put per-part steps in the `parts` array. Top-level `steps` and `final_answer` can be empty.
+- `final_answer` should be concise — just the answer itself (e.g. "$x = 5$", "$42$ cm$^2$", "True", "The reaction is exothermic").
+- Use LaTeX for all math: $...$ inline, \\[...\\] display. No Unicode math symbols.
+- If the question references a figure you cannot see, state what information would be needed and solve symbolically.
+- Be rigorous with units, significant figures, and notation.
+- Do NOT skip steps even if they seem obvious — each step should be granular enough to check independently.
+- For conceptual / non-calculation questions, each step should cover one key point or reasoning link.
 """

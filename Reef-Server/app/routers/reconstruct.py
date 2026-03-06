@@ -116,7 +116,7 @@ class PipelineCosts:
     # Per-model pricing (dollars per token)
     MODEL_RATES: dict = field(default_factory=lambda: {
         "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
-        "deepseek/deepseek-r1": (0.55 / 1_000_000, 2.19 / 1_000_000),
+        "google/gemini-3.1-pro-preview": (1.25 / 1_000_000, 10.00 / 1_000_000),
     })
     _DEFAULT_RATE: tuple = (0.50 / 1_000_000, 3.00 / 1_000_000)
 
