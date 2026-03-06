@@ -3,7 +3,7 @@
 //  Reef
 //
 //  Row 3 of the canvas toolbar — only visible when Tutor Mode is ON.
-//  Lighter teal: barColor + white 12% overlay (vs black 18% for Row 1).
+//  Background shifts from cool teal (cold) to warm amber (hot) based on step progress.
 //
 
 import SwiftUI
@@ -11,6 +11,11 @@ import SwiftUI
 struct TutorStepToolbar: View {
     let questionIndex: Int
     @State private var stepIndex = 0
+
+    /// Cold = lighter teal (barColor + white overlay)
+    private static let coldColor = Color(hex: 0x5FA8B3)
+    /// Hot = warm amber
+    private static let hotColor = Color(hex: 0xD4915E)
 
     private var steps: [TutorStep] {
         MockTutorSteps.steps(for: questionIndex)
@@ -20,42 +25,34 @@ struct TutorStepToolbar: View {
         steps[stepIndex]
     }
 
+    private var barBackground: Color {
+        Self.coldColor.mix(with: Self.hotColor, by: currentStep.progress)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                // Step navigation
-                HStack(spacing: 0) {
-                    stepNavButton(icon: "chevron.left", enabled: stepIndex > 0) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            stepIndex -= 1
-                        }
-                    }
-                    stepNavButton(icon: "chevron.right", enabled: stepIndex < steps.count - 1) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            stepIndex += 1
-                        }
-                    }
-                }
+                // Status indicator + step counter
+                HStack(spacing: 6) {
+                    statusIcon(for: currentStep.status)
 
-                makeDivider()
-
-                // Step counter + instruction
-                HStack(spacing: 10) {
                     Text("Step \(stepIndex + 1) of \(steps.count)")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                         .fixedSize()
-
-                    Text(currentStep.instruction)
-                        .font(.epilogue(13, weight: .medium))
-                        .tracking(-0.04 * 13)
-                        .foregroundColor(.white.opacity(0.95))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity)
+
+                makeDivider()
+
+                // Instruction text
+                Text(currentStep.instruction)
+                    .font(.epilogue(13, weight: .medium))
+                    .tracking(-0.04 * 13)
+                    .foregroundColor(.white.opacity(0.95))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
 
                 makeDivider()
 
@@ -72,12 +69,8 @@ struct TutorStepToolbar: View {
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity)
             .frame(height: 44)
-            .background(
-                ZStack {
-                    CanvasToolbar.barColor
-                    Color.white.opacity(0.12)
-                }
-            )
+            .background(barBackground)
+            .animation(.easeInOut(duration: 0.4), value: currentStep.progress)
 
             // Bottom separator
             Rectangle()
@@ -89,21 +82,24 @@ struct TutorStepToolbar: View {
         }
     }
 
-    // MARK: - Step Nav Button
+    // MARK: - Status Icon
 
-    private func stepNavButton(
-        icon: String,
-        enabled: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: { if enabled { action() } }) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(enabled ? .white.opacity(0.9) : .white.opacity(0.3))
-                .frame(width: 36, height: 36, alignment: .center)
+    @ViewBuilder
+    private func statusIcon(for status: StepStatus) -> some View {
+        switch status {
+        case .working:
+            Image(systemName: "circle.dotted")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.7))
+        case .mistake:
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color(hex: 0xE57373))
+        case .completed:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color(hex: 0x81C784))
         }
-        .frame(width: 36, height: 36)
-        .buttonStyle(.plain)
     }
 
     // MARK: - Toolbar Button
