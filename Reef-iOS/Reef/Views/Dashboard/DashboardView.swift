@@ -194,23 +194,6 @@ struct DashboardView: View {
             }
             .padding(20)
         }
-        .onAppear {
-            if authManager.devMode {
-                onOpenCanvas(Document(
-                    id: "dev-test",
-                    userId: "dev",
-                    filename: "Test Canvas.pdf",
-                    status: .completed,
-                    pageCount: 1,
-                    problemCount: nil,
-                    errorMessage: nil,
-                    statusMessage: nil,
-                    costCents: nil,
-                    courseId: nil,
-                    createdAt: "2026-01-01T00:00:00Z"
-                ))
-            }
-        }
         #endif
         .task { await fetchCourses() }
     }

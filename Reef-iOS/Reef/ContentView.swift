@@ -27,5 +27,24 @@ struct ContentView: View {
             }
         }
         .hoverEffectDisabled()
+        #if DEBUG
+        .onAppear {
+            if authManager.devMode && canvasDocument == nil {
+                canvasDocument = Document(
+                    id: "dev-test",
+                    userId: "dev",
+                    filename: "Test Canvas.pdf",
+                    status: .completed,
+                    pageCount: 1,
+                    problemCount: nil,
+                    errorMessage: nil,
+                    statusMessage: nil,
+                    costCents: nil,
+                    courseId: nil,
+                    createdAt: "2026-01-01T00:00:00Z"
+                )
+            }
+        }
+        #endif
     }
 }
