@@ -140,8 +140,8 @@ struct TutorStepToolbar: View {
     @ViewBuilder
     private func statusIcon(for status: StepStatus) -> some View {
         switch status {
-        case .working:
-            Image(systemName: "circle.dotted")
+        case .pending:
+            Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.7))
         case .mistake:

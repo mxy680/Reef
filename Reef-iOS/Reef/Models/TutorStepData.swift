@@ -8,7 +8,7 @@
 import Foundation
 
 enum StepStatus {
-    case working
+    case pending
     case mistake
     case completed
 }
@@ -34,13 +34,13 @@ enum MockTutorSteps {
             TutorStep(
                 instruction: "Write out the known values and assign variables.",
                 hint: "List each given quantity with its units before proceeding.",
-                status: .working,
-                progress: 0.4
+                status: .pending,
+                progress: 0.67
             ),
             TutorStep(
                 instruction: "Apply the relevant formula and solve.",
                 hint: "Check that your units cancel correctly before computing.",
-                status: .working,
+                status: .pending,
                 progress: 0.0
             ),
         ],
@@ -55,7 +55,7 @@ enum MockTutorSteps {
             TutorStep(
                 instruction: "Set up your equation based on the relationship described.",
                 hint: "Think about which law or rule applies to this type of problem.",
-                status: .working,
+                status: .pending,
                 progress: 0.1
             ),
         ],
@@ -70,7 +70,7 @@ enum MockTutorSteps {
             TutorStep(
                 instruction: "Verify your answer makes sense in context.",
                 hint: "Does the magnitude and sign of your answer seem reasonable?",
-                status: .working,
+                status: .pending,
                 progress: 0.6
             ),
         ],
