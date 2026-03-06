@@ -78,6 +78,8 @@ export async function POST(request: Request) {
     const llmCalls = parseInt(response.headers.get("X-LLM-Calls") || "0", 10)
     const gpuSeconds = parseFloat(response.headers.get("X-GPU-Seconds") || "0")
     const pipelineSeconds = parseFloat(response.headers.get("X-Pipeline-Seconds") || "0")
+    const questionPagesRaw = response.headers.get("X-Question-Pages")
+    const questionPages = questionPagesRaw ? JSON.parse(questionPagesRaw) : null
 
     // Upload reconstructed output.pdf to Supabase Storage
     const outputPdf = await response.arrayBuffer()
@@ -100,6 +102,7 @@ export async function POST(request: Request) {
       llm_calls: llmCalls || null,
       gpu_seconds: gpuSeconds || null,
       pipeline_seconds: pipelineSeconds || null,
+      question_pages: questionPages,
     }).eq("id", documentId)
 
     return NextResponse.json({ success: true })
