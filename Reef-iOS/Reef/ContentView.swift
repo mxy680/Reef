@@ -37,6 +37,7 @@ struct ContentView: View {
                     status: .completed,
                     pageCount: 1,
                     problemCount: nil,
+                    questionPages: nil,
                     errorMessage: nil,
                     statusMessage: nil,
                     costCents: nil,
