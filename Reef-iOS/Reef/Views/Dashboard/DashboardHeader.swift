@@ -40,11 +40,11 @@ struct DashboardHeader: View {
             // Action buttons
             HStack(spacing: 10) {
                 headerIcon("magnifyingglass")
-                headerIcon("questionmark.circle")
+                headerIcon("icon.help", isCustom: true)
 
                 // Bell with notification dot
                 ZStack(alignment: .topTrailing) {
-                    headerIcon("bell")
+                    headerIcon("icon.notification", isCustom: true)
                     Circle()
                         .fill(Color(hex: 0xE74C3C))
                         .frame(width: 8, height: 8)
@@ -54,8 +54,11 @@ struct DashboardHeader: View {
 
                 // Streak pill
                 HStack(spacing: 4) {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 13))
+                    Image("icon.streak")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 14, height: 14)
                         .foregroundStyle(ReefColors.black)
                     Text("0")
                         .font(.epilogue(13, weight: .semiBold))
@@ -178,8 +181,11 @@ struct DashboardHeader: View {
 
             // Streak
             HStack(spacing: 4) {
-                Image(systemName: "flame.fill")
-                    .font(.system(size: 12))
+                Image("icon.streak")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 13, height: 13)
                     .foregroundStyle(ReefColors.gray600)
                 Text("0 day streak")
                     .font(.epilogue(12, weight: .semiBold))
@@ -266,15 +272,25 @@ struct DashboardHeader: View {
 
     // MARK: - Helpers
 
-    private func headerIcon(_ icon: String) -> some View {
-        Image(systemName: icon)
-            .font(.system(size: 18))
-            .foregroundStyle(ReefColors.gray600)
-            .frame(width: 32, height: 32)
-            .compositingGroup()
-            .contentShape(Rectangle())
-            .onTapGesture {}
-            .accessibilityAddTraits(.isButton)
+    private func headerIcon(_ icon: String, isCustom: Bool = false) -> some View {
+        Group {
+            if isCustom {
+                Image(icon)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+            } else {
+                Image(systemName: icon)
+                    .font(.system(size: 18))
+            }
+        }
+        .foregroundStyle(ReefColors.gray600)
+        .frame(width: 32, height: 32)
+        .compositingGroup()
+        .contentShape(Rectangle())
+        .onTapGesture {}
+        .accessibilityAddTraits(.isButton)
     }
 
     private var displayName: String {

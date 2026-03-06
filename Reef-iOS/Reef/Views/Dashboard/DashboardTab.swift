@@ -28,17 +28,12 @@ enum DashboardTab: String, CaseIterable, Identifiable {
         case .myReef: "tab.reef"
         case .library: "tab.library"
         case .tutors: "tab.tutors"
-        case .settings: "gearshape"
+        case .settings: "icon.settings"
         }
     }
 
-    /// Whether this tab uses a custom asset image (vs SF Symbol)
-    var isCustomIcon: Bool {
-        switch self {
-        case .settings: false
-        default: true
-        }
-    }
+    /// All tabs now use custom asset images
+    var isCustomIcon: Bool { true }
 
     static var mainTabs: [DashboardTab] {
         [.documents, .analytics, .myReef, .tutors, .library]
