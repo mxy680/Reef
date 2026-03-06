@@ -46,7 +46,7 @@ actor DocumentService {
 
     // MARK: - Upload
 
-    func uploadDocument(fileURL: URL, courseId: String? = nil) async throws -> Document {
+    func uploadDocument(fileURL: URL, courseId: String? = nil, reconstruct: Bool = true) async throws -> Document {
         let userId = try await getUserId()
 
         // Validate PDF
@@ -110,9 +110,21 @@ actor DocumentService {
                 .upload(thumbPath, data: thumbnailData, options: .init(contentType: "image/png"))
         }
 
-        // Fire-and-forget processing trigger
-        Task.detached { [weak self] in
-            await self?.triggerProcessing(documentId: newDoc.id)
+        if reconstruct {
+            // Fire-and-forget processing trigger
+            Task.detached { [weak self] in
+                await self?.triggerProcessing(documentId: newDoc.id)
+            }
+        } else {
+            // Mark as completed immediately — no server-side reconstruction
+            struct StatusPayload: Encodable {
+                let status: String
+            }
+            try await supabase
+                .from("documents")
+                .update(StatusPayload(status: "completed"))
+                .eq("id", value: newDoc.id)
+                .execute()
         }
 
         return newDoc

@@ -17,6 +17,7 @@ final class DocumentsViewModel {
     var moveToCourseTarget: Document?
 
     var showFilePicker = false
+    var pendingUploadURL: URL?
     var maxDocuments: Int? = nil
 
     private var pollTimer: Timer?
@@ -80,11 +81,17 @@ final class DocumentsViewModel {
         case .failure(let error):
             showToast("Failed to select file: \(error.localizedDescription)")
         case .success(let url):
-            Task { await performUpload(url: url) }
+            pendingUploadURL = url
         }
     }
 
-    private func performUpload(url: URL) async {
+    func performUploadWithOptions(courseId: String?, reconstruct: Bool) {
+        guard let url = pendingUploadURL else { return }
+        pendingUploadURL = nil
+        Task { await performUpload(url: url, courseId: courseId, reconstruct: reconstruct) }
+    }
+
+    private func performUpload(url: URL, courseId: String?, reconstruct: Bool) async {
         guard url.startAccessingSecurityScopedResource() else {
             showToast("Cannot access file")
             return
@@ -92,10 +99,14 @@ final class DocumentsViewModel {
         defer { url.stopAccessingSecurityScopedResource() }
 
         do {
-            let doc = try await DocumentService.shared.uploadDocument(fileURL: url)
+            let doc = try await DocumentService.shared.uploadDocument(fileURL: url, courseId: courseId, reconstruct: reconstruct)
             documents.insert(doc, at: 0)
-            showToast("Document uploading — processing will begin shortly")
-            startPollingIfNeeded()
+            if reconstruct {
+                showToast("Document uploading — processing will begin shortly")
+                startPollingIfNeeded()
+            } else {
+                showToast("Document uploaded")
+            }
         } catch let error as DocumentServiceError {
             showToast(error.localizedDescription)
         } catch {
