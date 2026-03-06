@@ -203,9 +203,19 @@ struct DashboardSidebar: View {
         let isActive = selectedTab == tab
 
         return HStack(spacing: 12) {
-            Image(systemName: tab.icon)
-                .font(.system(size: 18))
-                .frame(width: 24, height: 24)
+            Group {
+                if tab.isCustomIcon {
+                    Image(tab.icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 22, height: 22)
+                } else {
+                    Image(systemName: tab.icon)
+                        .font(.system(size: 18))
+                }
+            }
+            .frame(width: 24, height: 24)
 
             if isOpen {
                 Text(tab.label)
@@ -307,8 +317,11 @@ struct DashboardSidebar: View {
             // Upgrade
             footerRow {
                 circleIcon(fill: ReefColors.accent) {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 14, weight: .bold))
+                    Image("icon.upgrade")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
                         .foregroundStyle(ReefColors.black)
                 }
             } label: {
@@ -332,8 +345,11 @@ struct DashboardSidebar: View {
             // Settings
             footerRow {
                 circleIcon(fill: ReefColors.gray100) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 14, weight: .semibold))
+                    Image("icon.settings")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
                         .foregroundStyle(ReefColors.black)
                 }
             } label: {
@@ -360,8 +376,11 @@ struct DashboardSidebar: View {
                 Text(displayName)
                     .lineLimit(1)
             } trailing: {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 18))
+                Image("icon.settings")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 18, height: 18)
                     .foregroundStyle(ReefColors.gray400)
             }
             .onTapGesture {
