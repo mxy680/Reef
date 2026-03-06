@@ -80,11 +80,17 @@ actor DocumentService {
             let user_id: String
             let filename: String
             let course_id: String?
+            let status: String?
         }
 
         let newDoc: Document = try await supabase
             .from("documents")
-            .insert(InsertPayload(user_id: userId, filename: fileURL.lastPathComponent, course_id: courseId))
+            .insert(InsertPayload(
+                user_id: userId,
+                filename: fileURL.lastPathComponent,
+                course_id: courseId,
+                status: reconstruct ? nil : "completed"
+            ))
             .select()
             .single()
             .execute()
@@ -115,16 +121,6 @@ actor DocumentService {
             Task.detached { [weak self] in
                 await self?.triggerProcessing(documentId: newDoc.id)
             }
-        } else {
-            // Mark as completed immediately — no server-side reconstruction
-            struct StatusPayload: Encodable {
-                let status: String
-            }
-            try await supabase
-                .from("documents")
-                .update(StatusPayload(status: "completed"))
-                .eq("id", value: newDoc.id)
-                .execute()
         }
 
         return newDoc
