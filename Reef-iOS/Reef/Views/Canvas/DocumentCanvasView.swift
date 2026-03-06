@@ -38,6 +38,7 @@ struct DocumentCanvasView: View {
                 } else if let pdf = viewModel.pdfDocument {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
+                        questionCount: document.problemCount ?? 1,
                         onClose: { onDismiss() }
                     )
 
