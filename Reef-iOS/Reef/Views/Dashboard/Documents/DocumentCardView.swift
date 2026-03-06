@@ -22,6 +22,8 @@ struct DocumentCardView: View {
     @State private var isPressed = false
     @State private var showMenu = false
 
+    private let footerHeight: CGFloat = 62
+
     private var borderColor: Color {
         document.status == .failed ? Color(hex: 0xE57373) : ReefColors.gray500
     }
@@ -40,7 +42,7 @@ struct DocumentCardView: View {
                 .padding(.top, 10)
                 .layoutPriority(1)
 
-            // Info — fixed, gets priority so it's never clipped
+            // Info — fixed height footer
             VStack(alignment: .leading, spacing: 6) {
                 Text(document.displayName)
                     .font(.epilogue(13, weight: .bold))
@@ -57,6 +59,7 @@ struct DocumentCardView: View {
             .padding(.horizontal, 10)
             .padding(.top, 10)
             .padding(.bottom, 16)
+            .frame(height: footerHeight)
             .layoutPriority(1)
         }
         .frame(height: cardHeight)

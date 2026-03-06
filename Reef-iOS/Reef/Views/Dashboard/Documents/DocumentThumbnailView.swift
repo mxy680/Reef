@@ -38,7 +38,7 @@ struct DocumentThumbnailView: View {
                 ShimmerOverlay()
             }
         }
-        .aspectRatio(8.5 / 10, contentMode: .fit)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
