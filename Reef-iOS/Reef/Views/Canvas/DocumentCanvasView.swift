@@ -8,27 +8,6 @@
 import SwiftUI
 import UIKit
 
-/// Sets the UIKit container background behind a fullScreenCover so the
-/// safe area (camera housing on iPad) shows the correct color instead of black.
-private struct ContainerBackgroundSetter: UIViewRepresentable {
-    let color: UIColor
-
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        view.backgroundColor = .clear
-        DispatchQueue.main.async {
-            var ancestor = view.superview
-            while let v = ancestor {
-                v.backgroundColor = color
-                ancestor = v.superview
-            }
-        }
-        return view
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) {}
-}
-
 struct DocumentCanvasView: View {
     let document: Document
     let onDismiss: () -> Void
@@ -41,7 +20,6 @@ struct DocumentCanvasView: View {
     /// Tab strip = barColor (0x4E8A97) darkened 18% for safe area.
     /// RGB: (78,138,151) * 0.82 ≈ (64,113,124)
     private static let safeAreaColor = Color(red: 64/255.0, green: 113/255.0, blue: 124/255.0)
-    private static let safeAreaUIColor = UIColor(red: 64/255.0, green: 113/255.0, blue: 124/255.0, alpha: 1)
 
     var body: some View {
         ZStack {
@@ -69,7 +47,6 @@ struct DocumentCanvasView: View {
             }
         }
         .ignoresSafeArea()
-        .background(ContainerBackgroundSetter(color: Self.safeAreaUIColor))
         .task {
             #if DEBUG
             if document.id == "dev-test" {

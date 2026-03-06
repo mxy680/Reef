@@ -10,7 +10,7 @@ struct DashboardView: View {
     @State private var courseToEdit: Course?
     @State private var documentsVM = DocumentsViewModel()
     @State private var tutorsVM = TutorsViewModel()
-    @State private var canvasDocument: Document?
+    var onOpenCanvas: (Document) -> Void
 
     private let metrics = LayoutMetrics(
         screenHeight: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
@@ -166,15 +166,10 @@ struct DashboardView: View {
         .animation(.spring(duration: 0.2), value: courseToEdit?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.selectedTutor?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.showQuiz)
-        .fullScreenCover(item: $canvasDocument) { doc in
-            DocumentCanvasView(document: doc) {
-                canvasDocument = nil
-            }
-        }
         #if DEBUG
         .overlay(alignment: .bottomTrailing) {
             Button {
-                canvasDocument = Document(
+                onOpenCanvas(Document(
                     id: "dev-test",
                     userId: "dev",
                     filename: "Test Canvas.pdf",
@@ -186,7 +181,7 @@ struct DashboardView: View {
                     costCents: nil,
                     courseId: nil,
                     createdAt: "2026-01-01T00:00:00Z"
-                )
+                ))
             } label: {
                 Text("Test Canvas")
                     .font(.epilogue(12, weight: .bold))
@@ -200,8 +195,8 @@ struct DashboardView: View {
             .padding(20)
         }
         .onAppear {
-            if authManager.devMode && canvasDocument == nil {
-                canvasDocument = Document(
+            if authManager.devMode {
+                onOpenCanvas(Document(
                     id: "dev-test",
                     userId: "dev",
                     filename: "Test Canvas.pdf",
@@ -213,7 +208,7 @@ struct DashboardView: View {
                     costCents: nil,
                     courseId: nil,
                     createdAt: "2026-01-01T00:00:00Z"
-                )
+                ))
             }
         }
         #endif
@@ -244,9 +239,7 @@ struct DashboardView: View {
         if let tab = selectedTab {
             switch tab {
             case .documents:
-                DocumentsContentView(viewModel: documentsVM, onOpenCanvas: { doc in
-                    canvasDocument = doc
-                })
+                DocumentsContentView(viewModel: documentsVM, onOpenCanvas: onOpenCanvas)
             case .tutors:
                 TutorsContentView(viewModel: tutorsVM)
             case .myReef:
@@ -263,9 +256,7 @@ struct DashboardView: View {
             CourseDetailView(
                 courseId: courseId,
                 course: course,
-                onOpenCanvas: { doc in
-                    canvasDocument = doc
-                },
+                onOpenCanvas: onOpenCanvas,
                 onCourseDeleted: {
                     selectedTab = .documents
                     selectedCourseId = nil
