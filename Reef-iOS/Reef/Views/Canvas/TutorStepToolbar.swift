@@ -12,11 +12,6 @@ struct TutorStepToolbar: View {
     let questionIndex: Int
     @State private var stepIndex = 0
 
-    /// Cold/hot gradient stops for the progress bar
-    private static let coldColor = Color(hex: 0x5B9EAD)
-    private static let warmColor = Color(hex: 0xE8A87C)
-    private static let hotColor = Color(hex: 0xD4605A)
-
     private var steps: [TutorStep] {
         MockTutorSteps.steps(for: questionIndex)
     }
@@ -87,29 +82,57 @@ struct TutorStepToolbar: View {
         }
     }
 
-    // MARK: - Progress Bar
+    // MARK: - 3D Progress Bar
 
     private func progressBar(progress: Double) -> some View {
-        GeometryReader { geo in
+        let percent = Int(progress * 100)
+        let barHeight: CGFloat = 14
+        let cornerRadius: CGFloat = 5
+        let shadowOffset: CGFloat = 2
+
+        return HStack(spacing: 6) {
+            // Bar with 3D shadow
             ZStack(alignment: .leading) {
+                // Shadow layer
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color.black.opacity(0.3))
+                    .offset(x: shadowOffset, y: shadowOffset)
+
                 // Track
-                Capsule()
-                    .fill(Color.white.opacity(0.15))
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color.black.opacity(0.2))
 
                 // Fill
-                Capsule()
+                GeometryReader { geo in
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(Color.white.opacity(0.85))
+                        .frame(width: max(barHeight, geo.size.width * progress))
+                }
+
+                // Top highlight for 3D effect
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(
                         LinearGradient(
-                            colors: [Self.coldColor, Self.warmColor, Self.hotColor],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                            colors: [Color.white.opacity(0.15), Color.clear],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
                     )
-                    .frame(width: max(geo.size.height, geo.size.width * progress))
+                    .frame(height: barHeight / 2)
+
+                // Border
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
             }
+            .frame(width: 72, height: barHeight)
+            .animation(.easeInOut(duration: 0.4), value: progress)
+
+            // Percentage label
+            Text("\(percent)%")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.white.opacity(0.7))
+                .fixedSize()
         }
-        .frame(width: 80, height: 8)
-        .animation(.easeInOut(duration: 0.4), value: progress)
     }
 
     // MARK: - Status Icon
