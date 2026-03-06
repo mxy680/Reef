@@ -14,6 +14,7 @@ struct DocumentCanvasView: View {
 
     @State private var viewModel = CanvasViewModel()
     @State private var selectedTool: CanvasTool = .pen
+    @State private var currentQuestionIndex = 0
 
     private static let cream = Color(hex: 0xF8F0E6)
 
@@ -38,12 +39,17 @@ struct DocumentCanvasView: View {
                 } else if let pdf = viewModel.pdfDocument {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
+                        currentQuestionIndex: $currentQuestionIndex,
                         questionCount: document.problemCount ?? 1,
                         onClose: { onDismiss() }
                     )
 
-                    CanvasPageView(pdfDocument: pdf)
-                        .background(Self.cream)
+                    CanvasPageView(
+                        pdfDocument: pdf,
+                        pageRange: pageRange(for: currentQuestionIndex)
+                    )
+                    .id(currentQuestionIndex)
+                    .background(Self.cream)
                 }
             }
         }
@@ -57,6 +63,15 @@ struct DocumentCanvasView: View {
             #endif
             await viewModel.loadDocument(document)
         }
+    }
+
+    // MARK: - Page Range
+
+    private func pageRange(for questionIndex: Int) -> ClosedRange<Int>? {
+        guard let pages = document.questionPages,
+              questionIndex < pages.count,
+              pages[questionIndex].count == 2 else { return nil }
+        return pages[questionIndex][0]...pages[questionIndex][1]
     }
 
     // MARK: - Loading
