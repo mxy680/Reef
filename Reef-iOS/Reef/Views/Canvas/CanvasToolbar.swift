@@ -137,8 +137,11 @@ struct CanvasToolbar: View {
                         print("🏠 HOME BUTTON TAPPED")
                         onClose()
                     } label: {
-                        Image(systemName: "house.fill")
-                            .font(.system(size: 18, weight: .medium))
+                        Image("canvas.home")
+                            .renderingMode(.template)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
                             .foregroundColor(.white)
                             .frame(width: 36, height: 36)
                             .contentShape(Rectangle())
@@ -187,6 +190,7 @@ struct CanvasToolbar: View {
                 ToolbarButton(
                     icon: tool.icon,
                     isSelected: selectedTool == tool,
+                    isCustomIcon: tool.isCustomIcon,
                     action: {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             selectedTool = tool
@@ -201,9 +205,9 @@ struct CanvasToolbar: View {
 
     private var canvasUtilitiesSection: some View {
         HStack(spacing: 0) {
-            ToolbarButton(icon: "pencil.and.ruler.fill", isSelected: false, action: {})
-            ToolbarButton(icon: "document.badge.gearshape.fill", isSelected: false, action: {})
-            ToolbarButton(icon: "doc.fill.badge.plus", isSelected: false, action: {})
+            ToolbarButton(icon: "canvas.ruler", isSelected: false, isCustomIcon: true, action: {})
+            ToolbarButton(icon: "canvas.page_settings", isSelected: false, isCustomIcon: true, action: {})
+            ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
         }
     }
 
@@ -224,8 +228,6 @@ struct CanvasToolbar: View {
                     .offset(x: -2, y: 2)
             }
             .frame(width: 36, height: 36)
-
-            ToolbarButton(icon: "ellipsis.circle.fill", isSelected: false, action: {})
         }
     }
 
@@ -254,20 +256,31 @@ struct CanvasToolbar: View {
 private struct ToolbarButton: View {
     let icon: String
     let isSelected: Bool
+    var isCustomIcon: Bool = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
-                .foregroundColor(isSelected ? .white : Color.white.opacity(0.9))
-                .frame(width: 36, height: 36, alignment: .center)
-                .background(
-                    isSelected
-                        ? Color.white.opacity(0.25)
-                        : Color.clear
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+            Group {
+                if isCustomIcon {
+                    Image(icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                } else {
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .medium))
+                }
+            }
+            .foregroundColor(isSelected ? .white : Color.white.opacity(0.9))
+            .frame(width: 36, height: 36, alignment: .center)
+            .background(
+                isSelected
+                    ? Color.white.opacity(0.25)
+                    : Color.clear
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .frame(width: 36, height: 36)
         .buttonStyle(.plain)
