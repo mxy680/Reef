@@ -340,10 +340,12 @@ struct DocumentsContentView: View {
 
     private let rowSpacing: CGFloat = 24
     private let shadowPad: CGFloat = 4
+    private let gridPadH: CGFloat = 16
+    private let gridPadV: CGFloat = 12
 
     private var documentGrid: some View {
         GeometryReader { geo in
-            let cardHeight = (geo.size.height - rowSpacing - shadowPad) / 2
+            let cardHeight = (geo.size.height - rowSpacing - shadowPad - gridPadV * 2) / 2
 
             ScrollView {
                 LazyVGrid(columns: columns, spacing: rowSpacing) {
@@ -385,8 +387,8 @@ struct DocumentsContentView: View {
                     }
                 }
                 .padding([.trailing, .bottom], shadowPad)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, gridPadH)
+                .padding(.vertical, gridPadV)
             }
         }
     }
