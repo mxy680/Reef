@@ -385,6 +385,7 @@ struct DocumentsContentView: View {
                     }
                 }
                 .padding([.trailing, .bottom], shadowPad)
+                .padding(.horizontal, 8)
             }
         }
     }
