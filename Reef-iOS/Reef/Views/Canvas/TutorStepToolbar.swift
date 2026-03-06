@@ -11,6 +11,9 @@ import SwiftUI
 struct TutorStepToolbar: View {
     let questionIndex: Int
     @State private var stepIndex = 0
+    @State private var hintActive = false
+    @State private var revealActive = false
+    @State private var pulseOpacity: Double = 1.0
 
     private var steps: [TutorStep] {
         MockTutorSteps.steps(for: questionIndex)
@@ -44,22 +47,31 @@ struct TutorStepToolbar: View {
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8)
+                    .id(stepIndex)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
 
                 makeDivider()
 
                 // Hint + Reveal
                 HStack(spacing: 0) {
-                    toolbarButton(icon: "lightbulb.fill") {
+                    toolbarToggle(icon: "lightbulb.fill", isActive: $hintActive) {
+                        hintActive.toggle()
+                        if hintActive { revealActive = false }
                         print("💡 Hint: \(currentStep.hint)")
                     }
-                    toolbarButton(icon: "eye.fill") {
+                    toolbarToggle(icon: "eye.fill", isActive: $revealActive) {
+                        revealActive.toggle()
+                        if revealActive { hintActive = false }
                         print("👁 Reveal answer tapped for step \(stepIndex + 1)")
                     }
                 }
 
                 makeDivider()
 
-                // Hot/cold progress bar
+                // Progress bar
                 progressBar(progress: currentStep.progress)
             }
             .padding(.horizontal, 12)
@@ -71,6 +83,7 @@ struct TutorStepToolbar: View {
                     Color.white.opacity(0.12)
                 }
             )
+            .animation(.easeInOut(duration: 0.25), value: stepIndex)
 
             // Bottom separator
             Rectangle()
@@ -79,6 +92,8 @@ struct TutorStepToolbar: View {
         }
         .onChange(of: questionIndex) { _, _ in
             stepIndex = 0
+            hintActive = false
+            revealActive = false
         }
     }
 
@@ -100,6 +115,7 @@ struct TutorStepToolbar: View {
         let barHeight: CGFloat = 14
         let cornerRadius: CGFloat = 5
         let shadowOffset: CGFloat = 2
+        let isPending = currentStep.status == .pending
 
         return HStack(alignment: .center, spacing: 7) {
             // Bar with 3D shadow
@@ -113,11 +129,12 @@ struct TutorStepToolbar: View {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(Color.black.opacity(0.2))
 
-                // Fill
+                // Fill with pulse when pending
                 GeometryReader { geo in
                     RoundedRectangle(cornerRadius: cornerRadius)
                         .fill(fillColor(for: progress))
                         .frame(width: max(barHeight, geo.size.width * progress))
+                        .opacity(isPending ? pulseOpacity : 1.0)
                 }
 
                 // Top highlight for 3D effect
@@ -137,6 +154,7 @@ struct TutorStepToolbar: View {
             }
             .frame(width: 100, height: barHeight)
             .animation(.easeInOut(duration: 0.4), value: progress)
+            .onAppear { startPulse() }
 
             // Percentage label
             HStack(spacing: 0) {
@@ -148,6 +166,15 @@ struct TutorStepToolbar: View {
             }
             .foregroundColor(.white.opacity(0.75))
             .fixedSize()
+        }
+    }
+
+    private func startPulse() {
+        withAnimation(
+            .easeInOut(duration: 1.2)
+            .repeatForever(autoreverses: true)
+        ) {
+            pulseOpacity = 0.5
         }
     }
 
@@ -171,18 +198,25 @@ struct TutorStepToolbar: View {
         }
     }
 
-    // MARK: - Toolbar Button
+    // MARK: - Toolbar Toggle Button
 
-    private func toolbarButton(
+    private func toolbarToggle(
         icon: String,
+        isActive: Binding<Bool>,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(isActive.wrappedValue ? .white : .white.opacity(0.9))
                 .frame(width: 36, height: 36, alignment: .center)
+                .background(
+                    isActive.wrappedValue
+                        ? Color.white.opacity(0.25)
+                        : Color.clear
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+                .animation(.easeInOut(duration: 0.15), value: isActive.wrappedValue)
         }
         .frame(width: 36, height: 36)
         .buttonStyle(.plain)
