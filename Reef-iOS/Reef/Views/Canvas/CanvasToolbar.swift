@@ -14,6 +14,7 @@ struct CanvasToolbar: View {
     let onClose: () -> Void
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
+    var documentName: String = ""
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -87,8 +88,9 @@ struct CanvasToolbar: View {
                             Button {
                                 currentQuestionIndex = index
                             } label: {
-                                Text(isReconstructed ? "Q\(index + 1)" : "Page \(index + 1)")
+                                Text(isReconstructed ? "Q\(index + 1)" : documentName)
                                     .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+                                    .lineLimit(1)
                                     .foregroundColor(
                                         isSelected ? .white : Color.white.opacity(0.6)
                                     )

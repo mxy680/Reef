@@ -47,10 +47,11 @@ struct DocumentCanvasView: View {
                         currentQuestionIndex: $currentQuestionIndex,
                         questionCount: isReconstructed
                             ? (document.problemCount ?? 1)
-                            : (pdf.pageCount),
+                            : 1,
                         onClose: { onDismiss() },
                         tutorModeOn: $tutorModeOn,
-                        isReconstructed: isReconstructed
+                        isReconstructed: isReconstructed,
+                        documentName: document.displayName
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -83,16 +84,10 @@ struct DocumentCanvasView: View {
     // MARK: - Page Range
 
     private func pageRange(for questionIndex: Int) -> ClosedRange<Int>? {
-        if let pages = document.questionPages,
-           questionIndex < pages.count,
-           pages[questionIndex].count == 2 {
-            return pages[questionIndex][0]...pages[questionIndex][1]
-        }
-        // Non-reconstructed: each tab = one page (0-indexed)
-        if !isReconstructed {
-            return questionIndex...questionIndex
-        }
-        return nil
+        guard let pages = document.questionPages,
+              questionIndex < pages.count,
+              pages[questionIndex].count == 2 else { return nil }
+        return pages[questionIndex][0]...pages[questionIndex][1]
     }
 
     // MARK: - Loading
