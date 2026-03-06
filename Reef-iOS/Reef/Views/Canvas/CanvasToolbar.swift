@@ -134,11 +134,15 @@ struct CanvasToolbar: View {
             HStack(spacing: 0) {
                 // Home button
                 HStack(spacing: 0) {
-                    Button(action: onClose) {
+                    Button {
+                        print("🏠 HOME BUTTON TAPPED")
+                        onClose()
+                    } label: {
                         Image(systemName: "house.fill")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(.white)
                             .frame(width: 36, height: 36)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .padding(.leading, 6)
