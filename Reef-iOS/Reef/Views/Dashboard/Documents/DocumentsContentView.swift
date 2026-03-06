@@ -227,7 +227,7 @@ struct DocumentsContentView: View {
     @Environment(\.layoutMetrics) private var metrics
 
     private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: metrics.gridColumnMin, maximum: metrics.gridColumnMax), spacing: 20)]
+        [GridItem(.adaptive(minimum: metrics.gridColumnMin, maximum: metrics.gridColumnMax), spacing: 28)]
     }
 
     var body: some View {
@@ -338,7 +338,7 @@ struct DocumentsContentView: View {
 
     // MARK: - Grid
 
-    private let rowSpacing: CGFloat = 16
+    private let rowSpacing: CGFloat = 24
     private let shadowPad: CGFloat = 4
 
     private var documentGrid: some View {
@@ -385,7 +385,8 @@ struct DocumentsContentView: View {
                     }
                 }
                 .padding([.trailing, .bottom], shadowPad)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
         }
     }
