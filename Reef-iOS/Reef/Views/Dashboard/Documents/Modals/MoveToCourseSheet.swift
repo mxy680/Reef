@@ -8,6 +8,11 @@ struct MoveToCourseSheet: View {
 
     @State private var courses: [Course] = []
     @State private var isLoading = true
+    @State private var selectedCourseId: String?
+
+    private var hasChange: Bool {
+        selectedCourseId != document.courseId
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -35,70 +40,55 @@ struct MoveToCourseSheet: View {
                     .foregroundStyle(ReefColors.gray500)
                     .padding(.top, 16)
             } else {
-                VStack(spacing: 6) {
-                    // Remove from course option
-                    if document.courseId != nil {
-                        HStack(spacing: 10) {
-                            Text("Remove from course")
-                                .font(.epilogue(13, weight: .semiBold))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.gray600)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                                .foregroundStyle(ReefColors.gray400)
-                        )
-                        .compositingGroup()
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onConfirm(nil)
-                        }
-                        .accessibilityAddTraits(.isButton)
+                // Dropdown picker
+                Menu {
+                    // "No course" option
+                    Button {
+                        selectedCourseId = nil
+                    } label: {
+                        Label("No course", systemImage: selectedCourseId == nil ? "checkmark" : "")
                     }
+
+                    Divider()
 
                     ForEach(courses) { course in
-                        let isCurrent = document.courseId == course.id
-
-                        HStack(spacing: 10) {
-                            Text(course.emoji)
-                                .font(.system(size: 16))
-
-                            Text(course.name)
-                                .font(.epilogue(13, weight: .semiBold))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.black)
-
-                            Spacer()
-
-                            if isCurrent {
-                                Text("Current")
-                                    .font(.epilogue(11, weight: .bold))
-                                    .tracking(-0.04 * 11)
-                                    .foregroundStyle(ReefColors.primary)
-                            }
+                        Button {
+                            selectedCourseId = course.id
+                        } label: {
+                            Label(
+                                "\(course.emoji) \(course.name)",
+                                systemImage: selectedCourseId == course.id ? "checkmark" : ""
+                            )
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(isCurrent ? ReefColors.primary.opacity(0.08) : .clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(
-                                    isCurrent ? ReefColors.primary : ReefColors.gray400,
-                                    lineWidth: 1.5
-                                )
-                        )
-                        .compositingGroup()
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onConfirm(course.id)
-                        }
-                        .accessibilityAddTraits(.isButton)
                     }
+                } label: {
+                    HStack {
+                        if let id = selectedCourseId,
+                           let course = courses.first(where: { $0.id == id }) {
+                            Text("\(course.emoji) \(course.name)")
+                                .font(.epilogue(14, weight: .semiBold))
+                                .tracking(-0.04 * 14)
+                                .foregroundStyle(ReefColors.black)
+                        } else {
+                            Text("No course")
+                                .font(.epilogue(14, weight: .semiBold))
+                                .tracking(-0.04 * 14)
+                                .foregroundStyle(ReefColors.gray500)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(ReefColors.gray500)
+                    }
+                    .padding(12)
+                    .background(ReefColors.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.gray400, lineWidth: 1.5)
+                    )
                 }
                 .padding(.top, 20)
             }
@@ -116,12 +106,52 @@ struct MoveToCourseSheet: View {
                         onClose()
                     }
                     .accessibilityAddTraits(.isButton)
+
+                Text(selectedCourseId == nil && document.courseId != nil ? "Remove" : "Move")
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(ReefColors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(ReefColors.black, lineWidth: 2)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(ReefColors.black)
+                            .offset(x: 4, y: 4)
+                    )
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if hasChange {
+                            onConfirm(selectedCourseId)
+                        }
+                    }
+                    .accessibilityAddTraits(.isButton)
+                    .allowsHitTesting(hasChange)
+                    .opacity(hasChange ? 1 : 0.4)
             }
             .padding(.top, 20)
         }
-        .padding(28)
-        .presentationDetents([.medium])
+        .padding(32)
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(ReefColors.black, lineWidth: 2)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(ReefColors.black)
+                .offset(x: 4, y: 4)
+        )
+        .frame(maxWidth: 400)
         .task {
+            selectedCourseId = document.courseId
             do {
                 courses = try await supabase
                     .from("courses")

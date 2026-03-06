@@ -78,8 +78,19 @@ struct RenameSheet: View {
             }
             .padding(.top, 20)
         }
-        .padding(28)
-        .presentationDetents([.height(220)])
+        .padding(32)
+        .background(ReefColors.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(ReefColors.black, lineWidth: 2)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(ReefColors.black)
+                .offset(x: 4, y: 4)
+        )
+        .frame(maxWidth: 400)
         .onAppear { isFocused = true }
     }
 

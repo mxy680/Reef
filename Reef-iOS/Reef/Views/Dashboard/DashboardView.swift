@@ -159,6 +159,72 @@ struct DashboardView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
 
+            // Document modals
+            if documentsVM.deleteTarget != nil || documentsVM.renameTarget != nil
+                || documentsVM.moveToCourseTarget != nil || documentsVM.detailsTarget != nil {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.deleteTarget = nil
+                            documentsVM.renameTarget = nil
+                            documentsVM.moveToCourseTarget = nil
+                            documentsVM.detailsTarget = nil
+                        }
+                    }
+            }
+
+            if let doc = documentsVM.deleteTarget {
+                DeleteConfirmSheet(
+                    document: doc,
+                    onConfirm: { Task { await documentsVM.deleteDocument() } },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.deleteTarget = nil
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+
+            if let doc = documentsVM.renameTarget {
+                RenameSheet(
+                    document: doc,
+                    onConfirm: { name in Task { await documentsVM.renameDocument(newFilename: name) } },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.renameTarget = nil
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+
+            if let doc = documentsVM.moveToCourseTarget {
+                MoveToCourseSheet(
+                    document: doc,
+                    onConfirm: { courseId in Task { await documentsVM.moveDocumentToCourse(courseId: courseId) } },
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.moveToCourseTarget = nil
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+
+            if let doc = documentsVM.detailsTarget {
+                DetailsSheet(
+                    document: doc,
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.detailsTarget = nil
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
+
         }
         .environment(\.layoutMetrics, metrics)
         .animation(.spring(duration: 0.35, bounce: 0.15), value: sidebarOpen)
@@ -166,6 +232,10 @@ struct DashboardView: View {
         .animation(.spring(duration: 0.2), value: courseToEdit?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.selectedTutor?.id)
         .animation(.spring(duration: 0.3), value: tutorsVM.showQuiz)
+        .animation(.spring(duration: 0.2), value: documentsVM.deleteTarget?.id)
+        .animation(.spring(duration: 0.2), value: documentsVM.renameTarget?.id)
+        .animation(.spring(duration: 0.2), value: documentsVM.moveToCourseTarget?.id)
+        .animation(.spring(duration: 0.2), value: documentsVM.detailsTarget?.id)
         #if DEBUG
         .overlay(alignment: .bottomTrailing) {
             Button {
