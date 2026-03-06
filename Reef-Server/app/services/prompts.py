@@ -147,3 +147,29 @@ Minor typographic differences (font size, exact spacing, line breaks) are accept
 - Math must use $...$ for inline and \\[...\\] for display mode.
 - Do NOT solve problems or fill in blanks — reproduce the original content exactly.
 """
+
+ANSWER_KEY_PROMPT = """\
+You are a highly capable math and science tutor generating an answer key for a homework or exam question.
+
+## Question (structured JSON)
+```json
+{question_json}
+```
+
+## Instructions
+Solve this question completely. For each part and sub-part, provide:
+1. A clear step-by-step solution showing all work
+2. A concise final answer
+
+## Rules
+- Use LaTeX math notation: $...$ for inline, \\[...\\] for display equations
+- Show all intermediate steps — this is an answer key for teachers/students to learn from
+- If the question references a figure or diagram you cannot see, state what information would be needed from it and solve symbolically or with a placeholder
+- If a question is conceptual (no calculation), provide a clear, complete explanation
+- Match the `question_number` field exactly from the input
+- For each `parts` entry, match the `label` field exactly (e.g. 'a', 'b', 'i', 'ii')
+- If the question has no parts, put the full solution in the top-level `answer` and `final_answer` fields
+- If the question has parts, put per-part solutions in the `parts` array and leave the top-level `answer` for any general approach note (or empty)
+- Be rigorous with units, significant figures, and mathematical notation
+- Do NOT skip steps even if they seem obvious
+"""
