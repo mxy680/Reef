@@ -44,6 +44,7 @@ from app.services.prompts import (
     LATEX_FIX_PROMPT,
     VISUAL_VERIFY_PROMPT,
 )
+from app.services.answer_keys import generate_answer_keys
 from app.services.cancellation import cancel as cancel_document, cleanup as cancel_cleanup, is_cancelled, register as cancel_register
 from app.services.progress import update_document_status, update_progress
 from app.services.storage import download_document_pdf, upload_document_pdf
@@ -115,6 +116,7 @@ class PipelineCosts:
     # Per-model pricing (dollars per token)
     MODEL_RATES: dict = field(default_factory=lambda: {
         "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
+        "google/gemini-3.1-pro-preview": (1.25 / 1_000_000, 10.00 / 1_000_000),
     })
     _DEFAULT_RATE: tuple = (0.50 / 1_000_000, 3.00 / 1_000_000)
 
@@ -835,6 +837,19 @@ async def _run_pipeline_for_document(
 
 PIPELINE_TIMEOUT_SECONDS = 540  # 9 min — leaves 60s buffer before gunicorn's 600s kill
 
+# Strong references for fire-and-forget tasks to prevent GC mid-execution
+_background_tasks: set[asyncio.Task] = set()
+
+
+async def _generate_answer_keys_safe(
+    document_id: str, questions: list[tuple[int, dict]],
+) -> None:
+    """Wrapper that catches all exceptions so fire-and-forget never leaks."""
+    try:
+        await generate_answer_keys(document_id, questions)
+    except Exception as e:
+        print(f"  [answer-key] Top-level failure for {document_id}: {e}")
+
 
 async def _process_document_background(user_id: str, document_id: str):
     """Download PDF, run pipeline, upload output, update document status.
@@ -869,6 +884,19 @@ async def _process_document_background(user_id: str, document_id: str):
         if is_cancelled(document_id):
             print(f"  [reconstruct-document] {document_id} cancelled (post-pipeline)")
             return
+
+        # Fire-and-forget answer key generation (runs concurrently with merge/upload)
+        answer_questions = [
+            (i + 1, q_dict)
+            for i, (label, pdf_bytes, q_dict) in enumerate(compiled)
+            if q_dict is not None
+        ]
+        if answer_questions:
+            task = asyncio.create_task(
+                _generate_answer_keys_safe(document_id, answer_questions)
+            )
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
 
         # Merge per-problem PDFs into one, tracking page ranges per question
         merged = fitz.open()
