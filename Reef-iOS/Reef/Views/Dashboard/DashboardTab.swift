@@ -23,12 +23,20 @@ enum DashboardTab: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .documents: "doc.text"
-        case .analytics: "chart.bar"
-        case .myReef: "heart"
-        case .library: "books.vertical"
-        case .tutors: "person.2"
+        case .documents: "tab.documents"
+        case .analytics: "tab.analytics"
+        case .myReef: "tab.reef"
+        case .library: "tab.library"
+        case .tutors: "tab.tutors"
         case .settings: "gearshape"
+        }
+    }
+
+    /// Whether this tab uses a custom asset image (vs SF Symbol)
+    var isCustomIcon: Bool {
+        switch self {
+        case .settings: false
+        default: true
         }
     }
 

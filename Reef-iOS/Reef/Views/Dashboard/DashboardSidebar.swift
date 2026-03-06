@@ -203,9 +203,19 @@ struct DashboardSidebar: View {
         let isActive = selectedTab == tab
 
         return HStack(spacing: 12) {
-            Image(systemName: tab.icon)
-                .font(.system(size: 18))
-                .frame(width: 24, height: 24)
+            Group {
+                if tab.isCustomIcon {
+                    Image(tab.icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 22, height: 22)
+                } else {
+                    Image(systemName: tab.icon)
+                        .font(.system(size: 18))
+                }
+            }
+            .frame(width: 24, height: 24)
 
             if isOpen {
                 Text(tab.label)
