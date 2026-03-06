@@ -221,11 +221,14 @@ final class AuthManager {
         Task {
             do {
                 try await supabase.auth.signOut()
-                session = nil
-                profile = nil
             } catch {
                 errorMessage = error.localizedDescription
             }
+            #if DEBUG
+            devMode = false
+            #endif
+            session = nil
+            profile = nil
         }
     }
 

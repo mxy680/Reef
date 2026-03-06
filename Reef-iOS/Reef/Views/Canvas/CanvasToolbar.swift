@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
+    let questionCount: Int
     let onClose: () -> Void
 
     @State private var currentQuestionIndex = 0
@@ -16,7 +17,6 @@ struct CanvasToolbar: View {
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
-    private static let questionCount = 10
 
     private var safeAreaTop: CGFloat {
         UIApplication.shared.connectedScenes
@@ -81,7 +81,7 @@ struct CanvasToolbar: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 0) {
-                        ForEach(0..<Self.questionCount, id: \.self) { index in
+                        ForEach(0..<questionCount, id: \.self) { index in
                             let isSelected = index == currentQuestionIndex
 
                             Button {
@@ -107,7 +107,7 @@ struct CanvasToolbar: View {
                             .id(index)
 
                             // Separator between unselected tabs
-                            if index < Self.questionCount - 1
+                            if index < questionCount - 1
                                 && !isSelected
                                 && index + 1 != currentQuestionIndex
                             {
