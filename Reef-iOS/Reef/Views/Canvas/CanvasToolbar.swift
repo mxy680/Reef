@@ -95,7 +95,7 @@ struct CanvasToolbar: View {
                                         isSelected ? .white : Color.white.opacity(0.6)
                                     )
                                     .frame(minWidth: 44, minHeight: 30)
-                                    .padding(.horizontal, 6)
+                                    .padding(.horizontal, isReconstructed ? 6 : 16)
                                     .background(isSelected ? Self.barColor : Color.clear)
                                     .clipShape(ChromeTabShape())
                                     .overlay(
