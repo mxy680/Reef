@@ -80,6 +80,8 @@
 		CB08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift */; };
 		CB05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift */; };
 		CB06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift */; };
+		CB09AA99BBAACC00DD11EE09 /* TutorStepToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA09AA99BBAACC00DD11EE09 /* TutorStepToolbar.swift */; };
+		CB0AAA00BBBBCC11DD22EE0A /* TutorStepData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0AAA00BBBBCC11DD22EE0A /* TutorStepData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -157,6 +159,8 @@
 		CA08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDrawingToolbar.swift; sourceTree = "<group>"; };
 		CA05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageNavigationBar.swift; sourceTree = "<group>"; };
 		CA06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCanvasView.swift; sourceTree = "<group>"; };
+		CA09AA99BBAACC00DD11EE09 /* TutorStepToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorStepToolbar.swift; sourceTree = "<group>"; };
+		CA0AAA00BBBBCC11DD22EE0A /* TutorStepData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorStepData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -290,6 +294,7 @@
 				AA10BF01C3D7A1E2F4B5C611 /* Profile.swift */,
 				DD02AA22BB33CC44DD55EE02 /* Stroke.swift */,
 				BB01AA11CC22DD33EE44FF01 /* Tutor.swift */,
+				CA0AAA00BBBBCC11DD22EE0A /* TutorStepData.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -407,6 +412,7 @@
 				CA03AA33BB44CC55DD66EE03 /* CanvasViewModel.swift */,
 				CA06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift */,
 				CA05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift */,
+				CA09AA99BBAACC00DD11EE09 /* TutorStepToolbar.swift */,
 			);
 			path = Canvas;
 			sourceTree = "<group>";
@@ -576,6 +582,8 @@
 				CB08AA88BB99CCAADDBBEE08 /* CanvasDrawingToolbar.swift in Sources */,
 				CB05AA55BB66CC77DD88EE05 /* PageNavigationBar.swift in Sources */,
 				CB06AA66BB77CC88DD99EE06 /* DocumentCanvasView.swift in Sources */,
+				CB09AA99BBAACC00DD11EE09 /* TutorStepToolbar.swift in Sources */,
+				CB0AAA00BBBBCC11DD22EE0A /* TutorStepData.swift in Sources */,
 				DD01AA11BB22CC33DD44EE01 /* Stroke.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -12,7 +12,7 @@ struct CanvasToolbar: View {
     @Binding var currentQuestionIndex: Int
     let questionCount: Int
     let onClose: () -> Void
-    @State private var tutorModeOn = false
+    @Binding var tutorModeOn: Bool
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)

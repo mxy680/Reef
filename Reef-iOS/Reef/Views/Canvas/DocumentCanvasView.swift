@@ -15,6 +15,7 @@ struct DocumentCanvasView: View {
     @State private var viewModel = CanvasViewModel()
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
+    @State private var tutorModeOn = false
 
     private static let cream = Color(hex: 0xF8F0E6)
 
@@ -41,8 +42,14 @@ struct DocumentCanvasView: View {
                         selectedTool: $selectedTool,
                         currentQuestionIndex: $currentQuestionIndex,
                         questionCount: document.problemCount ?? 1,
-                        onClose: { onDismiss() }
+                        onClose: { onDismiss() },
+                        tutorModeOn: $tutorModeOn
                     )
+
+                    if tutorModeOn {
+                        TutorStepToolbar(questionIndex: currentQuestionIndex)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
 
                     CanvasPageView(
                         pdfDocument: pdf,
@@ -52,6 +59,7 @@ struct DocumentCanvasView: View {
                     .background(Self.cream)
                 }
             }
+            .animation(.spring(duration: 0.25), value: tutorModeOn)
         }
         .ignoresSafeArea()
         .task {
