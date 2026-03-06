@@ -173,9 +173,9 @@ final class DocumentsViewModel {
                 let updated = Document(
                     id: doc.id, userId: doc.userId, filename: doc.filename,
                     status: .processing, pageCount: doc.pageCount,
-                    problemCount: doc.problemCount, errorMessage: nil,
-                    statusMessage: nil, costCents: nil, courseId: doc.courseId,
-                    createdAt: doc.createdAt
+                    problemCount: doc.problemCount, questionPages: doc.questionPages,
+                    errorMessage: nil, statusMessage: nil, costCents: nil,
+                    courseId: doc.courseId, createdAt: doc.createdAt
                 )
                 documents[idx] = updated
             }

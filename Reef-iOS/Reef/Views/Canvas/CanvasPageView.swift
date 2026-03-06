@@ -10,10 +10,11 @@ import PDFKit
 
 struct CanvasPageView: UIViewRepresentable {
     let pdfDocument: PDFDocument
+    let pageRange: ClosedRange<Int>?
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
-        container.configure(pdfDocument: pdfDocument)
+        container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
         return container
     }
 
@@ -100,10 +101,10 @@ final class CanvasContainerView: UIView {
 
     // MARK: - Configure
 
-    func configure(pdfDocument: PDFDocument) {
+    func configure(pdfDocument: PDFDocument, pageRange: ClosedRange<Int>? = nil) {
         Task { [weak self] in
             guard let self else { return }
-            let images = await self.renderPDFPages(document: pdfDocument)
+            let images = await self.renderPDFPages(document: pdfDocument, pageRange: pageRange)
 
             await MainActor.run {
                 self.setupPages(with: images)
@@ -117,12 +118,13 @@ final class CanvasContainerView: UIView {
 
     // MARK: - Render PDF
 
-    private func renderPDFPages(document: PDFDocument) async -> [UIImage] {
+    private func renderPDFPages(document: PDFDocument, pageRange: ClosedRange<Int>? = nil) async -> [UIImage] {
         let scale: CGFloat = 2.0
         var images: [UIImage] = []
 
-        for i in 0..<document.pageCount {
-            guard let page = document.page(at: i) else { continue }
+        let range = pageRange ?? 0...(document.pageCount - 1)
+        for i in range {
+            guard i < document.pageCount, let page = document.page(at: i) else { continue }
             let pageRect = page.bounds(for: .mediaBox)
 
             let renderer = UIGraphicsImageRenderer(

@@ -13,6 +13,7 @@ struct Document: Identifiable, Codable, Hashable {
     let status: DocumentStatus
     let pageCount: Int?
     let problemCount: Int?
+    let questionPages: [[Int]]?
     let errorMessage: String?
     let statusMessage: String?
     let costCents: Int?
@@ -26,6 +27,7 @@ struct Document: Identifiable, Codable, Hashable {
         case status
         case pageCount = "page_count"
         case problemCount = "problem_count"
+        case questionPages = "question_pages"
         case errorMessage = "error_message"
         case statusMessage = "status_message"
         case costCents = "cost_cents"

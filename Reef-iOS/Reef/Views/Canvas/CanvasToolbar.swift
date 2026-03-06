@@ -9,10 +9,9 @@ import SwiftUI
 
 struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
+    @Binding var currentQuestionIndex: Int
     let questionCount: Int
     let onClose: () -> Void
-
-    @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
