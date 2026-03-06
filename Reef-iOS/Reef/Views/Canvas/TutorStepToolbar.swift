@@ -84,13 +84,24 @@ struct TutorStepToolbar: View {
 
     // MARK: - 3D Progress Bar
 
+    /// Fill color shifts from white → teal → green as progress approaches 100%.
+    private func fillColor(for progress: Double) -> Color {
+        if progress < 0.5 {
+            return .white.opacity(0.85)
+        } else if progress < 0.8 {
+            return Color(hex: 0xA8D5D5)  // ReefColors.accent (light teal)
+        } else {
+            return Color(hex: 0x81C784)  // green (same as completed icon)
+        }
+    }
+
     private func progressBar(progress: Double) -> some View {
         let percent = Int(progress * 100)
         let barHeight: CGFloat = 14
         let cornerRadius: CGFloat = 5
         let shadowOffset: CGFloat = 2
 
-        return HStack(spacing: 6) {
+        return HStack(alignment: .center, spacing: 7) {
             // Bar with 3D shadow
             ZStack(alignment: .leading) {
                 // Shadow layer
@@ -105,7 +116,7 @@ struct TutorStepToolbar: View {
                 // Fill
                 GeometryReader { geo in
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(Color.white.opacity(0.85))
+                        .fill(fillColor(for: progress))
                         .frame(width: max(barHeight, geo.size.width * progress))
                 }
 
@@ -124,14 +135,19 @@ struct TutorStepToolbar: View {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
             }
-            .frame(width: 72, height: barHeight)
+            .frame(width: 100, height: barHeight)
             .animation(.easeInOut(duration: 0.4), value: progress)
 
             // Percentage label
-            Text("\(percent)%")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(.white.opacity(0.7))
-                .fixedSize()
+            HStack(spacing: 0) {
+                Text("\(percent)")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                Text("%")
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .baselineOffset(1)
+            }
+            .foregroundColor(.white.opacity(0.75))
+            .fixedSize()
         }
     }
 
@@ -142,15 +158,15 @@ struct TutorStepToolbar: View {
         switch status {
         case .pending:
             Image(systemName: "pencil.circle.fill")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 18, weight: .medium))
                 .foregroundColor(.white.opacity(0.7))
         case .mistake:
             Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 18, weight: .medium))
                 .foregroundColor(Color(hex: 0xE57373))
         case .completed:
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 18, weight: .medium))
                 .foregroundColor(Color(hex: 0x81C784))
         }
     }
