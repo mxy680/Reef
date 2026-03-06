@@ -23,23 +23,23 @@ struct TutorStep {
 /// Keyed by question index (0-based). Each question has 2–3 steps.
 enum MockTutorSteps {
     static let steps: [[TutorStep]] = [
-        // Q1
+        // Q1 — Titration of para-methoxybenzoic acid
         [
             TutorStep(
-                instruction: "Start by identifying what the problem is asking for.",
-                hint: "Look for the key variable — what are you solving for?",
-                status: .completed,
-                progress: 1.0
-            ),
-            TutorStep(
-                instruction: "Write out the known values and assign variables.",
-                hint: "List each given quantity with its units before proceeding.",
+                instruction: "Find the Ka using the given pKa of 4.47.",
+                hint: "Ka = 10^(-pKa). Plug in 4.47 for pKa.",
                 status: .pending,
-                progress: 0.67
+                progress: 0.6
             ),
             TutorStep(
-                instruction: "Apply the relevant formula and solve.",
-                hint: "Check that your units cancel correctly before computing.",
+                instruction: "Determine Kb from the relationship Ka × Kb = Kw.",
+                hint: "Kw = 1.0 × 10⁻¹⁴. Divide Kw by the Ka you just found.",
+                status: .pending,
+                progress: 0.0
+            ),
+            TutorStep(
+                instruction: "Calculate the equivalence point volume and pH at key titration points.",
+                hint: "At equivalence, moles of HA = moles of NaOH. Use concentrations to find the volume.",
                 status: .pending,
                 progress: 0.0
             ),
