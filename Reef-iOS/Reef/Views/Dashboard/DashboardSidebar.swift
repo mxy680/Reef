@@ -267,9 +267,11 @@ struct DashboardSidebar: View {
         let dark = theme.isDarkMode
 
         return HStack(spacing: 12) {
-            Text(course.emoji)
-                .font(.system(size: 18))
-                .frame(width: 24, height: 24)
+            Image(course.emoji)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
 
             if isOpen {
                 Text(course.name)

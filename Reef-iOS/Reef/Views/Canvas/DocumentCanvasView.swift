@@ -17,6 +17,9 @@ struct DocumentCanvasView: View {
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
+    @State private var showRuler = false
+    @State private var showPageSettings = false
+    @State private var pageOverlaySettings = PageOverlaySettings()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -62,27 +65,50 @@ struct DocumentCanvasView: View {
                         onClose: { onDismiss() },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
-                        documentName: document.displayName
+                        documentName: document.displayName,
+                        showRuler: $showRuler,
+                        showPageSettings: $showPageSettings,
+                        hasActiveOverlay: pageOverlaySettings.type != .none,
+                        pageOverlaySettings: $pageOverlaySettings
                     )
+                    .zIndex(1)
 
                     if tutorModeOn && isReconstructed {
                         TutorStepToolbar(questionIndex: currentQuestionIndex)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
-                    CanvasPageView(
-                        pdfDocument: pdf,
-                        pageRange: pageRange(for: currentQuestionIndex),
-                        darkMode: theme.isDarkMode
-                    )
-                    .id(currentQuestionIndex)
+                    ZStack {
+                        CanvasPageView(
+                            pdfDocument: pdf,
+                            pageRange: pageRange(for: currentQuestionIndex),
+                            darkMode: theme.isDarkMode,
+                            overlaySettings: pageOverlaySettings
+                        )
+                        .id(currentQuestionIndex)
+
+                        if showRuler {
+                            RulerOverlayView()
+                                .transition(.opacity)
+                        }
+                    }
                     .background(canvasBackground)
+                    .overlay {
+                        // Tap-to-dismiss layer (covers canvas only, not toolbar)
+                        if showPageSettings {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { showPageSettings = false }
+                        }
+                    }
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
             .animation(.easeInOut(duration: 0.3), value: theme.isDarkMode)
+            .animation(.easeInOut(duration: 0.2), value: showRuler)
         }
+        .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
         .task {
             #if DEBUG

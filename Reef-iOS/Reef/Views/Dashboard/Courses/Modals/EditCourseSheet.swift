@@ -1,9 +1,12 @@
 import SwiftUI
 
-private let emojiOptions = [
-    "📐", "🧪", "💻", "📊", "🔬", "📝", "🧮", "🎨",
-    "🌍", "📖", "🧬", "⚡", "🏛️", "🎵", "💰", "🔧",
-    "📈", "🧠", "🌿", "🔢", "💡", "🏗️", "📚", "✏️",
+private let iconOptions = [
+    "course.dolphin", "course.sea_turtle", "course.octopus", "course.whale",
+    "course.seahorse", "course.jellyfish", "course.starfish", "course.shark",
+    "course.crab", "course.clownfish", "course.pufferfish", "course.manta_ray",
+    "course.lobster", "course.seal", "course.narwhal", "course.squid",
+    "course.orca", "course.manatee", "course.coral", "course.shrimp",
+    "course.swordfish", "course.hermit_crab", "course.angelfish", "course.sea_otter",
 ]
 
 private let colorPresets = [
@@ -13,12 +16,12 @@ private let colorPresets = [
 
 struct EditCourseSheet: View {
     let course: Course
-    let onConfirm: (String, String, String) -> Void // (name, emoji, color)
+    let onConfirm: (String, String, String) -> Void // (name, icon, color)
     let onClose: () -> Void
 
     @Environment(ThemeManager.self) private var theme
     @State private var name: String
-    @State private var emoji: String
+    @State private var selectedIcon: String
     @State private var selectedColor: String
     @FocusState private var isNameFocused: Bool
 
@@ -27,7 +30,9 @@ struct EditCourseSheet: View {
         self.onConfirm = onConfirm
         self.onClose = onClose
         self._name = State(initialValue: course.name)
-        self._emoji = State(initialValue: course.emoji)
+        // Fall back to first icon if the stored emoji is a legacy emoji character
+        let icon = course.emoji
+        self._selectedIcon = State(initialValue: iconOptions.contains(icon) ? icon : iconOptions[0])
         self._selectedColor = State(initialValue: course.color.isEmpty ? colorPresets[0] : course.color)
     }
 
@@ -69,14 +74,14 @@ struct EditCourseSheet: View {
                 .onSubmit { submitIfValid() }
                 .padding(.bottom, 20)
 
-            // Emoji label + grid
+            // Icon label + grid
             Text("Icon")
                 .font(.epilogue(13, weight: .semiBold))
                 .tracking(-0.04 * 13)
                 .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 8)
 
-            emojiGrid
+            iconGrid
                 .padding(.bottom, 20)
 
             // Color label + picker
@@ -137,16 +142,20 @@ struct EditCourseSheet: View {
         .onAppear { isNameFocused = true }
     }
 
-    // MARK: - Emoji Grid
+    // MARK: - Icon Grid
 
-    private var emojiGrid: some View {
+    private var iconGrid: some View {
         let dark = theme.isDarkMode
         let columns = Array(repeating: GridItem(.fixed(40), spacing: 6), count: 8)
         return LazyVGrid(columns: columns, spacing: 6) {
-            ForEach(emojiOptions, id: \.self) { em in
-                let selected = emoji == em
-                Text(em)
-                    .font(.system(size: 20))
+            ForEach(iconOptions, id: \.self) { icon in
+                let selected = selectedIcon == icon
+                Image(icon)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+                    .foregroundStyle(selected ? ReefColors.white : ReefColors.gray600)
                     .frame(width: 40, height: 40)
                     .background(selected ? ReefColors.primary : (dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -162,7 +171,7 @@ struct EditCourseSheet: View {
                     .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        emoji = em
+                        selectedIcon = icon
                     }
                     .accessibilityAddTraits(.isButton)
             }
@@ -195,6 +204,6 @@ struct EditCourseSheet: View {
     private func submitIfValid() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         guard !trimmedName.isEmpty else { return }
-        onConfirm(trimmedName, emoji, selectedColor)
+        onConfirm(trimmedName, selectedIcon, selectedColor)
     }
 }

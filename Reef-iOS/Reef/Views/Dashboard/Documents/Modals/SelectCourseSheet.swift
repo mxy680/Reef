@@ -78,8 +78,12 @@ struct SelectCoursePopup: View {
 
                         ForEach(courses) { course in
                             HStack(spacing: 10) {
-                                Text(course.emoji)
-                                    .font(.system(size: 16))
+                                Image(course.emoji)
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 18, height: 18)
+                                    .foregroundStyle(ReefColors.gray600)
 
                                 Text(course.name)
                                     .font(.epilogue(13, weight: .semiBold))

@@ -54,10 +54,20 @@ struct DocumentUploadSheet: View {
                             Button {
                                 selectedCourseId = course.id
                             } label: {
-                                Label(
-                                    "\(course.emoji) \(course.name)",
-                                    systemImage: selectedCourseId == course.id ? "checkmark" : ""
-                                )
+                                Label {
+                                    HStack(spacing: 6) {
+                                        Image(course.emoji)
+                                            .renderingMode(.template)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 16, height: 16)
+                                        Text(course.name)
+                                    }
+                                } icon: {
+                                    if selectedCourseId == course.id {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
                             }
                         }
                     }
@@ -65,10 +75,18 @@ struct DocumentUploadSheet: View {
                     HStack {
                         if let id = selectedCourseId,
                            let course = courses.first(where: { $0.id == id }) {
-                            Text("\(course.emoji) \(course.name)")
-                                .font(.epilogue(14, weight: .semiBold))
-                                .tracking(-0.04 * 14)
-                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                            HStack(spacing: 6) {
+                                Image(course.emoji)
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 16, height: 16)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
+                                Text(course.name)
+                                    .font(.epilogue(14, weight: .semiBold))
+                                    .tracking(-0.04 * 14)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                            }
                         } else {
                             Text("No course")
                                 .font(.epilogue(14, weight: .semiBold))
