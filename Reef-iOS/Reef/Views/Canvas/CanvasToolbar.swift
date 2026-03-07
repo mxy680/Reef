@@ -39,12 +39,15 @@ struct CanvasToolbar: View {
             HStack(spacing: 0) {
                 leftSection
                 makeDivider()
+
+                Spacer(minLength: 0)
                 centerSection
                 makeDivider()
                 canvasUtilitiesSection
                 makeDivider()
                 aiSection
                 Spacer(minLength: 0)
+
                 rightSection
             }
             .padding(.horizontal, 12)

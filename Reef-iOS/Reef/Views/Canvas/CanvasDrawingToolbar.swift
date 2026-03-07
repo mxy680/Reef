@@ -46,7 +46,7 @@ enum CanvasTool: String, CaseIterable {
         case .pen:
             return PKInkingTool(.pen, color: color, width: width)
         case .diagram:
-            return PKInkingTool(.monoline, color: color, width: 1.5)
+            return PKInkingTool(.monoline, color: color, width: width * 2)
         case .eraser:
             return PKEraserTool(.vector)
         case .lasso:
