@@ -312,6 +312,23 @@ actor DocumentService {
         return fileURL
     }
 
+    // MARK: - Save PDF
+
+    func savePDF(_ data: Data, docId: String) async throws {
+        let userId = try await getUserId()
+        let storagePath = "\(userId)/\(docId)/output.pdf"
+
+        try await supabase.storage
+            .from("documents")
+            .update(storagePath, data: data, options: .init(contentType: "application/pdf"))
+
+        // Update local cache
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("reef_pdfs")
+        let fileURL = tempDir.appendingPathComponent("\(docId).pdf")
+        try? data.write(to: fileURL)
+    }
+
     // MARK: - Private Helpers
 
     private func generateThumbnail(from fileURL: URL) -> Data? {

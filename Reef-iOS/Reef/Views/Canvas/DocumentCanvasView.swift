@@ -17,6 +17,9 @@ struct DocumentCanvasView: View {
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
+    @State private var currentPageIndex = 0
+    @State private var pageVersion = UUID()
+    @State private var showPageMenu = false
     @State private var showRuler = false
     @State private var showPageSettings = false
     @State private var pageOverlaySettings = PageOverlaySettings()
@@ -62,10 +65,15 @@ struct DocumentCanvasView: View {
                         questionCount: isReconstructed
                             ? (document.problemCount ?? 1)
                             : 1,
-                        onClose: { onDismiss() },
+                        onClose: {
+                            Task { await viewModel.saveIfNeeded() }
+                            onDismiss()
+                        },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
+                        onPageAction: { handlePageAction($0) },
+                        showPageMenu: $showPageMenu,
                         showRuler: $showRuler,
                         showPageSettings: $showPageSettings,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
@@ -82,10 +90,11 @@ struct DocumentCanvasView: View {
                         CanvasPageView(
                             pdfDocument: pdf,
                             pageRange: pageRange(for: currentQuestionIndex),
+                            onVisiblePageChanged: { currentPageIndex = $0 },
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings
                         )
-                        .id(currentQuestionIndex)
+                        .id("\(currentQuestionIndex)-\(pageVersion)")
 
                         if showRuler {
                             RulerOverlayView()
@@ -110,6 +119,44 @@ struct DocumentCanvasView: View {
         }
         .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
+        .overlayPreferenceValue(PageMenuAnchorKey.self) { anchor in
+            if showPageMenu, let anchor {
+                GeometryReader { proxy in
+                    let rect = proxy[anchor]
+                    let menuWidth: CGFloat = 230
+                    // Center menu horizontally under the button, clamped to screen
+                    let menuX = max(8, min(
+                        rect.midX - menuWidth / 2,
+                        proxy.size.width - menuWidth - 12
+                    ))
+
+                    // Dismiss backdrop
+                    Color.black.opacity(0.001)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.spring(duration: 0.2, bounce: 0.15)) {
+                                showPageMenu = false
+                            }
+                        }
+
+                    // Custom popover centered below button
+                    PageMenuView(onAction: { action in
+                        withAnimation(.spring(duration: 0.2, bounce: 0.15)) {
+                            showPageMenu = false
+                        }
+                        handlePageAction(action)
+                    }, canUndo: viewModel.canUndo)
+                    .transition(
+                        .scale(scale: 0.92, anchor: .top)
+                        .combined(with: .opacity)
+                        .combined(with: .offset(y: -4))
+                    )
+                    .offset(x: menuX, y: rect.maxY + 10)
+                }
+                .ignoresSafeArea()
+            }
+        }
+        .animation(.spring(duration: 0.25, bounce: 0.15), value: showPageMenu)
         .task {
             #if DEBUG
             if document.id == "dev-test" {
@@ -119,6 +166,33 @@ struct DocumentCanvasView: View {
             #endif
             await viewModel.loadDocument(document)
         }
+        .onDisappear {
+            Task { await viewModel.saveIfNeeded() }
+        }
+    }
+
+    // MARK: - Page Actions
+
+    private func handlePageAction(_ action: PageAction) {
+        switch action {
+        case .addBlankAtEnd:
+            viewModel.addBlankPage(at: viewModel.pageCount)
+        case .addBlankAfterCurrent:
+            viewModel.addBlankPage(at: currentPageIndex + 1)
+        case .deleteCurrentPage:
+            viewModel.deletePageAt(currentPageIndex)
+            if currentPageIndex >= viewModel.pageCount {
+                currentPageIndex = max(0, viewModel.pageCount - 1)
+            }
+        case .deleteAllPages:
+            viewModel.deleteAllPages()
+            currentPageIndex = 0
+        case .undo:
+            if viewModel.undo() {
+                currentPageIndex = min(currentPageIndex, max(0, viewModel.pageCount - 1))
+            }
+        }
+        pageVersion = UUID()
     }
 
     // MARK: - Page Range

@@ -7,6 +7,21 @@
 
 import SwiftUI
 
+enum PageAction {
+    case addBlankAtEnd
+    case addBlankAfterCurrent
+    case deleteCurrentPage
+    case deleteAllPages
+    case undo
+}
+
+struct PageMenuAnchorKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: Anchor<CGRect>?
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}
+
 struct CanvasToolbar: View {
     @Environment(ThemeManager.self) private var theme
     @Binding var selectedTool: CanvasTool
@@ -16,6 +31,8 @@ struct CanvasToolbar: View {
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
     var documentName: String = ""
+    var onPageAction: ((PageAction) -> Void)?
+    @Binding var showPageMenu: Bool
     @Binding var showRuler: Bool
     @Binding var showPageSettings: Bool
     var hasActiveOverlay: Bool = false
@@ -252,7 +269,26 @@ struct CanvasToolbar: View {
                 }
             }
             .zIndex(1)
-            ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
+
+            // Page menu button
+            Button {
+                withAnimation(.spring(duration: 0.2)) {
+                    showPageMenu.toggle()
+                }
+            } label: {
+                Image("canvas.add_page")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(showPageMenu ? .white : Color.white.opacity(0.9))
+                    .frame(width: 36, height: 36, alignment: .center)
+                    .background(showPageMenu ? Color.white.opacity(0.25) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+            .frame(width: 36, height: 36)
+            .anchorPreference(key: PageMenuAnchorKey.self, value: .bounds) { $0 }
         }
     }
 
@@ -354,6 +390,72 @@ private struct ChromeTabShape: Shape {
         )
         path.closeSubpath()
         return path
+    }
+}
+
+// MARK: - Page Menu View
+
+struct PageMenuView: View {
+    let onAction: (PageAction) -> Void
+    var canUndo: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            menuRow(systemIcon: "doc.fill.badge.plus", label: "Add Page to End") {
+                onAction(.addBlankAtEnd)
+            }
+            menuRow(systemIcon: "doc.on.doc.fill", label: "Add Page After This") {
+                onAction(.addBlankAfterCurrent)
+            }
+            Divider()
+                .padding(.horizontal, 14)
+                .padding(.vertical, 2)
+            menuRow(systemIcon: "xmark.bin.fill", label: "Delete This Page", isDestructive: true) {
+                onAction(.deleteCurrentPage)
+            }
+            menuRow(systemIcon: "trash.fill", label: "Delete All Pages", isDestructive: true) {
+                onAction(.deleteAllPages)
+            }
+            if canUndo {
+                Divider()
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 2)
+                menuRow(systemIcon: "arrow.uturn.backward", label: "Undo") {
+                    onAction(.undo)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .frame(width: 230)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(ReefColors.black, lineWidth: 2)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(ReefColors.black)
+                .offset(x: 4, y: 4)
+        )
+    }
+
+    private func menuRow(systemIcon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemIcon)
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 20, height: 20)
+                Text(label)
+                    .font(.system(size: 14, weight: .medium))
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .foregroundColor(isDestructive ? .red : ReefColors.black)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
