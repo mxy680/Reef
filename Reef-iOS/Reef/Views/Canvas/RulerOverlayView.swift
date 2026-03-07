@@ -8,16 +8,18 @@
 import SwiftUI
 
 struct RulerOverlayView: View {
-    /// Ruler dimensions
-    private let rulerWidth: CGFloat = 600
-    private let rulerHeight: CGFloat = 56
+    /// Base ruler dimensions
+    private let baseWidth: CGFloat = 600
+    private let baseHeight: CGFloat = 56
 
     @State private var position: CGPoint = .zero
     @State private var rotation: Angle = .zero
+    @State private var scale: CGFloat = 1.0
 
     // Gesture tracking
     @State private var dragOffset: CGSize = .zero
     @State private var rotationDelta: Angle = .zero
+    @State private var scaleDelta: CGFloat = 1.0
     @State private var initialPosition: CGPoint?
 
     var body: some View {
@@ -25,6 +27,7 @@ struct RulerOverlayView: View {
             let center = initialPosition ?? CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
             rulerBody
+                .scaleEffect(x: scale * scaleDelta, y: 1)
                 .position(
                     x: (initialPosition == nil ? center.x : position.x) + dragOffset.width,
                     y: (initialPosition == nil ? center.y : position.y) + dragOffset.height
@@ -32,6 +35,7 @@ struct RulerOverlayView: View {
                 .rotationEffect(rotation + rotationDelta)
                 .gesture(dragGesture)
                 .simultaneousGesture(rotationGesture)
+                .simultaneousGesture(magnificationGesture)
                 .onAppear {
                     if initialPosition == nil {
                         position = center
@@ -109,7 +113,7 @@ struct RulerOverlayView: View {
                 context.stroke(edgePath, with: .color(Color.black.opacity(0.5)), lineWidth: 2)
             }
         }
-        .frame(width: rulerWidth, height: rulerHeight)
+        .frame(width: baseWidth, height: baseHeight)
         .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
         .contentShape(Rectangle())
     }
@@ -136,6 +140,17 @@ struct RulerOverlayView: View {
             .onEnded { angle in
                 rotation = rotation + angle
                 rotationDelta = .zero
+            }
+    }
+
+    private var magnificationGesture: some Gesture {
+        MagnifyGesture()
+            .onChanged { value in
+                scaleDelta = value.magnification
+            }
+            .onEnded { value in
+                scale = max(0.5, min(scale * value.magnification, 3.0))
+                scaleDelta = 1.0
             }
     }
 }
