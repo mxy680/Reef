@@ -38,7 +38,6 @@ struct CanvasToolbar: View {
             // Row 2: Tool bar
             HStack(spacing: 0) {
                 leftSection
-                makeDivider()
 
                 Spacer(minLength: 0)
                 centerSection
