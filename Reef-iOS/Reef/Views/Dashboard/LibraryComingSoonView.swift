@@ -32,12 +32,12 @@ struct LibraryComingSoonView: View {
                 Text("Library")
                     .font(.epilogue(32, weight: .black))
                     .tracking(-0.04 * 32)
-                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                    .foregroundStyle(ReefColors.black)
 
                 Text("Shared resources and study materials")
                     .font(.epilogue(15, weight: .medium))
                     .tracking(-0.04 * 15)
-                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
+                    .foregroundStyle(ReefColors.gray600)
             }
         }
         .frame(maxWidth: .infinity)
@@ -119,12 +119,12 @@ struct LibraryComingSoonView: View {
             Text(category.count)
                 .font(.epilogue(18, weight: .black))
                 .tracking(-0.04 * 18)
-                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                .foregroundStyle(ReefColors.black)
 
             Text(category.label)
                 .font(.epilogue(12, weight: .semiBold))
                 .tracking(-0.02 * 12)
-                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
+                .foregroundStyle(ReefColors.gray600)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)

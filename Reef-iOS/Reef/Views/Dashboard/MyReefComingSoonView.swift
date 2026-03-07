@@ -33,12 +33,12 @@ struct MyReefComingSoonView: View {
                 Text("My Reef")
                     .font(.epilogue(32, weight: .black))
                     .tracking(-0.04 * 32)
-                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                    .foregroundStyle(ReefColors.black)
 
                 Text("Your personal ocean ecosystem")
                     .font(.epilogue(15, weight: .medium))
                     .tracking(-0.04 * 15)
-                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
+                    .foregroundStyle(ReefColors.gray600)
             }
         }
         .frame(maxWidth: .infinity)
