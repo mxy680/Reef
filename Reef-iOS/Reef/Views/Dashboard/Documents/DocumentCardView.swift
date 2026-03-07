@@ -23,14 +23,24 @@ struct DocumentCardView: View {
     @State private var showMenu = false
 
     // Proportional padding scaled to card height for consistent spacing across iPad sizes
-    private var innerPad: CGFloat {
+    private var thumbPad: CGFloat {
+        guard let h = cardHeight else { return 8 }
+        return max(6, min(12, h * 0.035))
+    }
+
+    private var footerPadH: CGFloat {
+        guard let h = cardHeight else { return 12 }
+        return max(10, min(16, h * 0.05))
+    }
+
+    private var footerPadTop: CGFloat {
         guard let h = cardHeight else { return 10 }
-        return max(6, min(14, h * 0.04))
+        return max(8, min(14, h * 0.045))
     }
 
     private var footerBottomPad: CGFloat {
-        guard let h = cardHeight else { return 14 }
-        return max(8, min(20, h * 0.06))
+        guard let h = cardHeight else { return 16 }
+        return max(12, min(22, h * 0.075))
     }
 
     private var borderColor: Color {
@@ -41,14 +51,14 @@ struct DocumentCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Thumbnail — flexible, fills remaining space
             DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
-                .padding(.horizontal, innerPad)
-                .padding(.top, innerPad)
+                .padding(.horizontal, thumbPad)
+                .padding(.top, thumbPad)
 
             // Divider
             Rectangle()
                 .fill(ReefColors.gray200)
                 .frame(height: 1)
-                .padding(.top, innerPad)
+                .padding(.top, thumbPad)
                 .layoutPriority(1)
 
             // Info footer — natural height, priority sizing
@@ -65,8 +75,8 @@ struct DocumentCardView: View {
                     .tracking(-0.04 * 11)
                     .foregroundStyle(statusColor)
             }
-            .padding(.horizontal, innerPad)
-            .padding(.top, innerPad)
+            .padding(.horizontal, footerPadH)
+            .padding(.top, footerPadTop)
             .padding(.bottom, footerBottomPad)
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
