@@ -18,15 +18,10 @@ struct DocumentCanvasView: View {
     @State private var tutorModeOn = false
     @State private var showPageSettings = false
     @State private var pageOverlaySettings = PageOverlaySettings()
+    @State private var pageSettingsButtonFrame: CGRect = .zero
 
     private var isReconstructed: Bool {
         document.questionPages != nil
-    }
-
-    private var safeAreaTop: CGFloat {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.windows.first?.safeAreaInsets.top ?? 0
     }
 
     private static let cream = Color(hex: 0xF8F0E6)
@@ -91,8 +86,8 @@ struct DocumentCanvasView: View {
                     .ignoresSafeArea()
                     .onTapGesture { showPageSettings = false }
 
-                // Dropdown panel, anchored below toolbar
-                VStack(spacing: 0) {
+                // Dropdown panel, centered under the button
+                GeometryReader { _ in
                     PageSettingsPopover(settings: $pageOverlaySettings)
                         .background(ReefColors.white)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -105,14 +100,18 @@ struct DocumentCanvasView: View {
                                 .fill(ReefColors.black)
                                 .offset(x: 4, y: 4)
                         )
-
-                    Spacer()
+                        .fixedSize()
+                        .offset(
+                            x: pageSettingsButtonFrame.midX - 140,
+                            y: pageSettingsButtonFrame.maxY + 4
+                        )
                 }
-                .padding(.top, safeAreaTop + 88 + 4)
-                .padding(.trailing, 80)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .ignoresSafeArea()
+                .transition(.opacity)
             }
+        }
+        .onPreferenceChange(PageSettingsButtonFrameKey.self) { frame in
+            pageSettingsButtonFrame = frame
         }
         .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()

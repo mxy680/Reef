@@ -216,6 +216,14 @@ struct CanvasToolbar: View {
             ToolbarButton(icon: "canvas.page_settings", isSelected: hasActiveOverlay, isCustomIcon: true, action: {
                 showPageSettings.toggle()
             })
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(
+                        key: PageSettingsButtonFrameKey.self,
+                        value: geo.frame(in: .global)
+                    )
+                }
+            )
             ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
         }
     }
