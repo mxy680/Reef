@@ -2,11 +2,12 @@
 //  DocumentCanvasView.swift
 //  Reef
 //
-//  Full-screen scrollable PDF viewer
+//  Full-screen scrollable PDF viewer with PencilKit drawing
 //
 
 import SwiftUI
 import UIKit
+import PencilKit
 
 struct DocumentCanvasView: View {
     let document: Document
@@ -17,9 +18,15 @@ struct DocumentCanvasView: View {
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
     @State private var showRuler = false
+    @State private var drawingManager: DrawingManager?
 
     private var isReconstructed: Bool {
         document.questionPages != nil
+    }
+
+    /// Current PencilKit tool derived from toolbar selection
+    private var currentPKTool: PKTool {
+        selectedTool.pkTool()
     }
 
     private static let cream = Color(hex: 0xF8F0E6)
@@ -44,18 +51,23 @@ struct DocumentCanvasView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Self.cream)
                         .transition(.opacity)
-                } else if let pdf = viewModel.pdfDocument {
+                } else if let pdf = viewModel.pdfDocument, let manager = drawingManager {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
                         currentQuestionIndex: $currentQuestionIndex,
                         questionCount: isReconstructed
                             ? (document.problemCount ?? 1)
                             : 1,
-                        onClose: { onDismiss() },
+                        onClose: {
+                            manager.saveAll()
+                            onDismiss()
+                        },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
-                        showRuler: $showRuler
+                        showRuler: $showRuler,
+                        onUndo: { manager.undo() },
+                        onRedo: { manager.redo() }
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -66,7 +78,9 @@ struct DocumentCanvasView: View {
                     ZStack {
                         CanvasPageView(
                             pdfDocument: pdf,
-                            pageRange: pageRange(for: currentQuestionIndex)
+                            pageRange: pageRange(for: currentQuestionIndex),
+                            drawingManager: manager,
+                            currentTool: currentPKTool
                         )
                         .id(currentQuestionIndex)
 
@@ -87,10 +101,24 @@ struct DocumentCanvasView: View {
             #if DEBUG
             if document.id == "dev-test" {
                 viewModel.loadTestDocument()
+                let manager = DrawingManager(documentId: "dev-test")
+                manager.loadAll(pageCount: 1)
+                drawingManager = manager
                 return
             }
             #endif
             await viewModel.loadDocument(document)
+            if let pdf = viewModel.pdfDocument {
+                let manager = DrawingManager(documentId: document.id)
+                manager.loadAll(pageCount: pdf.pageCount)
+                drawingManager = manager
+            }
+        }
+        .onChange(of: currentQuestionIndex) { _, _ in
+            drawingManager?.saveAll()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            drawingManager?.saveAll()
         }
     }
 

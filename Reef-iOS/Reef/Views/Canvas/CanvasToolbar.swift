@@ -16,6 +16,8 @@ struct CanvasToolbar: View {
     let isReconstructed: Bool
     var documentName: String = ""
     @Binding var showRuler: Bool
+    var onUndo: () -> Void = {}
+    var onRedo: () -> Void = {}
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -183,8 +185,8 @@ struct CanvasToolbar: View {
 
     private var leftSection: some View {
         HStack(spacing: 0) {
-            ToolbarButton(icon: "arrow.uturn.backward", isSelected: false, action: {})
-            ToolbarButton(icon: "arrow.uturn.forward", isSelected: false, action: {})
+            ToolbarButton(icon: "arrow.uturn.backward", isSelected: false, action: onUndo)
+            ToolbarButton(icon: "arrow.uturn.forward", isSelected: false, action: onRedo)
         }
     }
 
