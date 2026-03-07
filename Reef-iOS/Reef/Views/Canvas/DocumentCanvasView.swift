@@ -16,6 +16,7 @@ struct DocumentCanvasView: View {
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
+    @State private var showRuler = false
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -53,7 +54,8 @@ struct DocumentCanvasView: View {
                         onClose: { onDismiss() },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
-                        documentName: document.displayName
+                        documentName: document.displayName,
+                        showRuler: $showRuler
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -61,16 +63,24 @@ struct DocumentCanvasView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
-                    CanvasPageView(
-                        pdfDocument: pdf,
-                        pageRange: pageRange(for: currentQuestionIndex)
-                    )
-                    .id(currentQuestionIndex)
+                    ZStack {
+                        CanvasPageView(
+                            pdfDocument: pdf,
+                            pageRange: pageRange(for: currentQuestionIndex)
+                        )
+                        .id(currentQuestionIndex)
+
+                        if showRuler {
+                            RulerOverlayView()
+                                .transition(.opacity)
+                        }
+                    }
                     .background(Self.cream)
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
+            .animation(.easeInOut(duration: 0.2), value: showRuler)
         }
         .ignoresSafeArea()
         .task {
