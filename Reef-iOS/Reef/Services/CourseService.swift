@@ -39,7 +39,7 @@ actor CourseService {
 
     // MARK: - Create
 
-    func createCourse(name: String, emoji: String = "📚", color: String = "") async throws -> Course {
+    func createCourse(name: String, emoji: String = "course.dolphin", color: String = "") async throws -> Course {
         let userId = try await getUserId()
 
         // Check tier limit
