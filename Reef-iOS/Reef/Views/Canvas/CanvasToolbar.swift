@@ -364,7 +364,7 @@ struct PageMenuView: View {
             Divider()
                 .padding(.horizontal, 14)
                 .padding(.vertical, 2)
-            menuRow(systemIcon: "doc.fill.badge.minus", label: "Delete This Page", isDestructive: true) {
+            menuRow(systemIcon: "xmark.bin.fill", label: "Delete This Page", isDestructive: true) {
                 onAction(.deleteCurrentPage)
             }
             menuRow(systemIcon: "trash.fill", label: "Delete All Pages", isDestructive: true) {
