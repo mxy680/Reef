@@ -29,7 +29,7 @@ struct DocumentCardView: View {
     var body: some View {
         GeometryReader { geo in
             let pad: CGFloat = 10
-            let footerH = max(60, geo.size.height * 0.22)
+            let footerH = max(50, geo.size.height * 0.18)
             let thumbnailH = geo.size.height - footerH - 1
 
             VStack(spacing: 0) {
