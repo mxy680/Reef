@@ -2,12 +2,14 @@ import SwiftUI
 
 struct AuthView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(ThemeManager.self) private var theme
     @State private var isSignUp = false
     @State private var email = ""
 
     var body: some View {
+        let dark = theme.isDarkMode
         ZStack {
-            ReefColors.surface
+            (dark ? ReefColors.DashboardDark.surface : ReefColors.surface)
                 .ignoresSafeArea()
 
             GeometryReader { geo in
@@ -118,7 +120,7 @@ struct AuthView: View {
                                     Text(isSignUp ? "Already have an account?" : "Don't have an account?")
                                         .font(.epilogue(14, weight: .medium))
                                         .tracking(-0.04 * 14)
-                                        .foregroundStyle(ReefColors.gray600)
+                                        .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
                                     Text(isSignUp ? "Log in" : "Sign up")
                                         .font(.epilogue(14, weight: .bold))
@@ -164,7 +166,7 @@ struct AuthView: View {
                                     Text(text)
                                         .font(.epilogue(13, weight: .medium))
                                         .tracking(-0.02 * 13)
-                                        .foregroundStyle(ReefColors.gray600)
+                                        .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                                 }
                             }
                         }

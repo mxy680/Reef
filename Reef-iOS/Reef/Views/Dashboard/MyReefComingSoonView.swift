@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MyReefComingSoonView: View {
     @State private var appeared = false
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
         ScrollView {
@@ -20,9 +21,13 @@ struct MyReefComingSoonView: View {
     // MARK: - Illustration
 
     private var illustrationArea: some View {
-        VStack(spacing: 24) {
-            CoralReefIllustration()
-                .frame(width: 200, height: 160)
+        let dark = theme.isDarkMode
+        return VStack(spacing: 24) {
+            CoralReefIllustration(
+                borderColor: dark ? ReefColors.DashboardDark.border : ReefColors.black,
+                textDisabledColor: dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400
+            )
+            .frame(width: 200, height: 160)
 
             VStack(spacing: 6) {
                 Text("My Reef")
@@ -41,7 +46,7 @@ struct MyReefComingSoonView: View {
         .background(ReefColors.accent)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(ReefColors.gray500)
+                .fill(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                 .frame(height: 1.5)
         }
     }
@@ -49,7 +54,8 @@ struct MyReefComingSoonView: View {
     // MARK: - Content
 
     private var contentArea: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 0) {
             // Badge
             comingSoonBadge
                 .padding(.bottom, 16)
@@ -57,14 +63,14 @@ struct MyReefComingSoonView: View {
             Text("Build Your Reef Ecosystem")
                 .font(.epilogue(22, weight: .black))
                 .tracking(-0.04 * 22)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .padding(.bottom, 10)
 
             Text("As you study and master new topics, you'll unlock species for your personal reef. Watch your ocean grow from a quiet sandy floor into a thriving coral ecosystem.")
                 .font(.epilogue(15, weight: .medium))
                 .tracking(-0.02 * 15)
                 .lineSpacing(4)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 20)
 
             // Feature list
@@ -79,7 +85,8 @@ struct MyReefComingSoonView: View {
     }
 
     private var comingSoonBadge: some View {
-        HStack(spacing: 6) {
+        let dark = theme.isDarkMode
+        return HStack(spacing: 6) {
             // Star icon
             Image(systemName: "star.fill")
                 .font(.system(size: 12))
@@ -87,35 +94,36 @@ struct MyReefComingSoonView: View {
                 .overlay(
                     Image(systemName: "star")
                         .font(.system(size: 12))
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.border : ReefColors.black)
                 )
 
             Text("COMING SOON")
                 .font(.epilogue(11, weight: .bold))
                 .tracking(0.04 * 11)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 5)
-        .background(ReefColors.surface)
+        .background(dark ? ReefColors.DashboardDark.surface : ReefColors.surface)
         .clipShape(Capsule())
-        .overlay(Capsule().stroke(ReefColors.black, lineWidth: 2))
+        .overlay(Capsule().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 2))
         .opacity(appeared ? 1 : 0)
         .scaleEffect(appeared ? 1 : 0.9)
         .animation(.easeOut(duration: 0.3).delay(0.35), value: appeared)
     }
 
     private func featureRow(_ feature: ReefFeature, index: Int) -> some View {
-        HStack(spacing: 10) {
+        let dark = theme.isDarkMode
+        return HStack(spacing: 10) {
             Circle()
                 .fill(feature.color)
-                .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
+                .overlay(Circle().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
                 .frame(width: 8, height: 8)
 
             Text(feature.label)
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.02 * 14)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
         }
         .opacity(appeared ? 1 : 0)
         .offset(x: appeared ? 0 : -12)
@@ -139,6 +147,9 @@ struct MyReefComingSoonView: View {
 // MARK: - Coral Reef Illustration
 
 private struct CoralReefIllustration: View {
+    let borderColor: Color
+    let textDisabledColor: Color
+
     var body: some View {
         Canvas { context, size in
             let scaleX = size.width / 200
@@ -159,7 +170,7 @@ private struct CoralReefIllustration: View {
             floor.addLine(to: CGPoint(x: 0 * scaleX, y: 160 * scaleY))
             floor.closeSubpath()
             context.fill(floor, with: .color(ReefColors.accent))
-            context.stroke(floor, with: .color(ReefColors.black), lineWidth: 2)
+            context.stroke(floor, with: .color(borderColor), lineWidth: 2)
 
             // Coral branch 1
             var coral1a = Path()
@@ -208,7 +219,7 @@ private struct CoralReefIllustration: View {
                 width: 24 * scaleX, height: 14 * scaleY
             ))
             context.fill(fishBody, with: .color(ReefColors.surface))
-            context.stroke(fishBody, with: .color(ReefColors.black), lineWidth: 1.5)
+            context.stroke(fishBody, with: .color(borderColor), lineWidth: 1.5)
 
             var fishTail = Path()
             fishTail.move(to: p(92, 50, scaleX, scaleY))
@@ -216,13 +227,13 @@ private struct CoralReefIllustration: View {
             fishTail.addLine(to: p(100, 56, scaleX, scaleY))
             fishTail.closeSubpath()
             context.fill(fishTail, with: .color(ReefColors.surface))
-            context.stroke(fishTail, with: .color(ReefColors.black), lineWidth: 1.5)
+            context.stroke(fishTail, with: .color(borderColor), lineWidth: 1.5)
 
             let fishEye = Path(ellipseIn: CGRect(
                 x: (75 - 1.5) * scaleX, y: (49 - 1.5) * scaleY,
                 width: 3 * scaleX, height: 3 * scaleY
             ))
-            context.fill(fishEye, with: .color(ReefColors.black))
+            context.fill(fishEye, with: .color(borderColor))
 
             // Small fish
             let smallFish = Path(ellipseIn: CGRect(
@@ -230,7 +241,7 @@ private struct CoralReefIllustration: View {
                 width: 16 * scaleX, height: 10 * scaleY
             ))
             context.fill(smallFish, with: .color(ReefColors.accent))
-            context.stroke(smallFish, with: .color(ReefColors.black), lineWidth: 1.5)
+            context.stroke(smallFish, with: .color(borderColor), lineWidth: 1.5)
 
             var smallTail = Path()
             smallTail.move(to: p(163, 35, scaleX, scaleY))
@@ -238,13 +249,13 @@ private struct CoralReefIllustration: View {
             smallTail.addLine(to: p(169, 40, scaleX, scaleY))
             smallTail.closeSubpath()
             context.fill(smallTail, with: .color(ReefColors.accent))
-            context.stroke(smallTail, with: .color(ReefColors.black), lineWidth: 1.5)
+            context.stroke(smallTail, with: .color(borderColor), lineWidth: 1.5)
 
             let smallEye = Path(ellipseIn: CGRect(
                 x: (151 - 1) * scaleX, y: (34 - 1) * scaleY,
                 width: 2 * scaleX, height: 2 * scaleY
             ))
-            context.fill(smallEye, with: .color(ReefColors.black))
+            context.fill(smallEye, with: .color(borderColor))
 
             // Bubbles
             drawBubble(context: context, cx: 60, cy: 25, r: 3, scaleX: scaleX, scaleY: scaleY)
@@ -263,7 +274,7 @@ private struct CoralReefIllustration: View {
             width: 2 * r * scaleX, height: 2 * r * scaleY
         ))
         context.fill(circle, with: .color(fill))
-        context.stroke(circle, with: .color(ReefColors.black), lineWidth: 1.5)
+        context.stroke(circle, with: .color(borderColor), lineWidth: 1.5)
     }
 
     private func drawBubble(context: GraphicsContext, cx: CGFloat, cy: CGFloat, r: CGFloat, scaleX: CGFloat, scaleY: CGFloat) {
@@ -271,6 +282,6 @@ private struct CoralReefIllustration: View {
             x: (cx - r) * scaleX, y: (cy - r) * scaleY,
             width: 2 * r * scaleX, height: 2 * r * scaleY
         ))
-        context.stroke(bubble, with: .color(ReefColors.gray400), lineWidth: 1)
+        context.stroke(bubble, with: .color(textDisabledColor), lineWidth: 1)
     }
 }

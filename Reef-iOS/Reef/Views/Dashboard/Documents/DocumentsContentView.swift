@@ -236,6 +236,7 @@ struct DocumentsContentView: View {
     @Bindable var viewModel: DocumentsViewModel
     var onOpenCanvas: ((Document) -> Void)?
     @Environment(\.layoutMetrics) private var metrics
+    @Environment(ThemeManager.self) private var theme
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: metrics.gridColumnMin, maximum: metrics.gridColumnMax), spacing: 28)]
@@ -280,28 +281,29 @@ struct DocumentsContentView: View {
     // MARK: - Header
 
     private var headerRow: some View {
-        HStack(alignment: .top) {
+        let dark = theme.isDarkMode
+        return HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Documents")
                     .font(.epilogue(24, weight: .black))
                     .tracking(-0.04 * 24)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                 HStack(spacing: 10) {
                     Text("Upload and manage your study documents.")
                         .font(.epilogue(14, weight: .medium))
                         .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.gray600)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
                     if !viewModel.isLoading, let max = viewModel.maxDocuments {
                         let atLimit = viewModel.documents.count >= max
                         Text("\(viewModel.documents.count) / \(max)")
                             .font(.epilogue(12, weight: .bold))
                             .tracking(-0.04 * 12)
-                            .foregroundStyle(atLimit ? Color(hex: 0xC62828) : ReefColors.gray500)
+                            .foregroundStyle(atLimit ? Color(hex: 0xC62828) : (dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 3)
-                            .background(atLimit ? Color(hex: 0xFDECEA) : ReefColors.gray100)
+                            .background(atLimit ? Color(hex: 0xFDECEA) : (dark ? ReefColors.DashboardDark.subtle : ReefColors.gray100))
                             .clipShape(Capsule())
                     }
                 }
@@ -318,7 +320,8 @@ struct DocumentsContentView: View {
     // MARK: - Upload Button
 
     private var uploadButton: some View {
-        HStack(spacing: 8) {
+        let dark = theme.isDarkMode
+        return HStack(spacing: 8) {
             Image(systemName: "arrow.up.doc")
                 .font(.system(size: 14, weight: .bold))
             Text("Upload")
@@ -332,11 +335,11 @@ struct DocumentsContentView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(ReefColors.black, lineWidth: 1.5)
+                .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
         )
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(ReefColors.black)
+                .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                 .offset(x: 4, y: 4)
         )
         .compositingGroup()
@@ -355,7 +358,8 @@ struct DocumentsContentView: View {
     private let gridPadV: CGFloat = 12
 
     private var documentGrid: some View {
-        GeometryReader { geo in
+        let dark = theme.isDarkMode
+        return GeometryReader { geo in
             let cardHeight = (geo.size.height - rowSpacing - shadowPad - gridPadV * 2) / 2
 
             ScrollView {
@@ -369,13 +373,13 @@ struct DocumentsContentView: View {
                             .font(.epilogue(14, weight: .semiBold))
                             .tracking(-0.04 * 14)
                     }
-                    .foregroundStyle(ReefColors.gray500)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .frame(height: cardHeight)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
-                            .foregroundStyle(ReefColors.gray400)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
                     )
                     .compositingGroup()
                     .contentShape(Rectangle())

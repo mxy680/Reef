@@ -6,6 +6,7 @@ struct MoveToCourseSheet: View {
     let onConfirm: (String?) -> Void
     let onClose: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var courses: [Course] = []
     @State private var isLoading = true
     @State private var selectedCourseId: String?
@@ -15,29 +16,30 @@ struct MoveToCourseSheet: View {
     }
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             Text("Move to Course")
                 .font(.epilogue(20, weight: .black))
                 .tracking(-0.04 * 20)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Text(document.displayName)
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.top, 6)
 
             if isLoading {
                 Text("Loading courses...")
                     .font(.epilogue(13, weight: .medium))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray500)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     .padding(.top, 16)
             } else if courses.isEmpty {
                 Text("No courses yet. Create one first.")
                     .font(.epilogue(13, weight: .medium))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray500)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     .padding(.top, 16)
             } else {
                 // Dropdown picker
@@ -55,39 +57,57 @@ struct MoveToCourseSheet: View {
                         Button {
                             selectedCourseId = course.id
                         } label: {
-                            Label(
-                                "\(course.emoji) \(course.name)",
-                                systemImage: selectedCourseId == course.id ? "checkmark" : ""
-                            )
+                            Label {
+                                HStack(spacing: 6) {
+                                    Image(course.emoji)
+                                        .renderingMode(.template)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 16, height: 16)
+                                    Text(course.name)
+                                }
+                            } icon: {
+                                if selectedCourseId == course.id {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
                     }
                 } label: {
                     HStack {
                         if let id = selectedCourseId,
                            let course = courses.first(where: { $0.id == id }) {
-                            Text("\(course.emoji) \(course.name)")
-                                .font(.epilogue(14, weight: .semiBold))
-                                .tracking(-0.04 * 14)
-                                .foregroundStyle(ReefColors.black)
+                            HStack(spacing: 6) {
+                                Image(course.emoji)
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 16, height: 16)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
+                                Text(course.name)
+                                    .font(.epilogue(14, weight: .semiBold))
+                                    .tracking(-0.04 * 14)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                            }
                         } else {
                             Text("No course")
                                 .font(.epilogue(14, weight: .semiBold))
                                 .tracking(-0.04 * 14)
-                                .foregroundStyle(ReefColors.gray500)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                         }
 
                         Spacer()
 
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(ReefColors.gray500)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     }
                     .padding(12)
-                    .background(ReefColors.white)
+                    .background(dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.gray400, lineWidth: 1.5)
+                            .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
                     )
                 }
                 .padding(.top, 20)
@@ -99,7 +119,7 @@ struct MoveToCourseSheet: View {
                 Text("Cancel")
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -138,18 +158,7 @@ struct MoveToCourseSheet: View {
             .padding(.top, 20)
         }
         .padding(32)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 2)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(ReefColors.black)
-                .offset(x: 4, y: 4)
-        )
-        .frame(maxWidth: 400)
+        .popupShell()
         .task {
             selectedCourseId = document.courseId
             do {

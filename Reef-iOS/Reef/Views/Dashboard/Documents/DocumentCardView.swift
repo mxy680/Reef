@@ -21,49 +21,61 @@ struct DocumentCardView: View {
 
     @State private var isPressed = false
     @State private var showMenu = false
-
-    private let footerHeight: CGFloat = 62
+    @Environment(ThemeManager.self) private var theme
 
     private var borderColor: Color {
-        document.status == .failed ? Color(hex: 0xE57373) : ReefColors.gray500
+        let dark = theme.isDarkMode
+        return document.status == .failed ? Color(hex: 0xE57373) : (dark ? ReefColors.DashboardDark.shadow : ReefColors.gray500)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Thumbnail — flexible, shrinks to fit when cardHeight is set
-            DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
-                .padding(.horizontal, 10)
-                .padding(.top, 10)
+        let dark = theme.isDarkMode
+        GeometryReader { geo in
+            let pad: CGFloat = 10
+            let footerH = max(50, geo.size.height * 0.18)
+            let thumbnailH = geo.size.height - footerH - 1
 
-            // Divider
-            Rectangle()
-                .fill(ReefColors.gray200)
-                .frame(height: 1)
-                .padding(.top, 10)
-                .layoutPriority(1)
+            VStack(spacing: 0) {
+                // Thumbnail — explicit height from geometry
+                DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
+                    .padding(.horizontal, pad)
+                    .padding(.top, pad)
+                    .padding(.bottom, pad)
+                    .frame(height: thumbnailH)
+                    .clipped()
 
-            // Info — fixed height footer
-            VStack(alignment: .leading, spacing: 6) {
-                Text(document.displayName)
-                    .font(.epilogue(13, weight: .bold))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.black)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                // Divider
+                Rectangle()
+                    .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray200)
+                    .frame(height: 1)
 
-                Text(document.statusLabel)
-                    .font(.epilogue(11, weight: .medium))
-                    .tracking(-0.04 * 11)
-                    .foregroundStyle(statusColor)
+                // Footer — GeometryReader + .position() for guaranteed centering
+                GeometryReader { footerGeo in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(document.displayName)
+                                .font(.epilogue(13, weight: .bold))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+
+                            Text(document.statusLabel)
+                                .font(.epilogue(11, weight: .medium))
+                                .tracking(-0.04 * 11)
+                                .foregroundStyle(statusColor)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, pad)
+                    .frame(width: footerGeo.size.width)
+                    .position(x: footerGeo.size.width / 2, y: footerGeo.size.height / 2)
+                }
+                .frame(height: footerH)
             }
-            .padding(.horizontal, 10)
-            .padding(.top, 10)
-            .padding(.bottom, 16)
-            .frame(height: footerHeight)
-            .layoutPriority(1)
         }
         .frame(height: cardHeight)
-        .background(ReefColors.white)
+        .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
@@ -118,10 +130,11 @@ struct DocumentCardView: View {
     }
 
     private var statusColor: Color {
+        let dark = theme.isDarkMode
         switch document.status {
-        case .processing: ReefColors.primary
-        case .failed: ReefColors.error
-        case .completed: ReefColors.gray500
+        case .processing: return ReefColors.primary
+        case .failed: return ReefColors.error
+        case .completed: return dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500
         }
     }
 
@@ -147,15 +160,16 @@ struct DocumentCardView: View {
     // MARK: - Menu Trigger
 
     private var menuTrigger: some View {
-        Image(systemName: "ellipsis")
+        let dark = theme.isDarkMode
+        return Image(systemName: "ellipsis")
             .font(.system(size: 12, weight: .bold))
-            .foregroundStyle(ReefColors.gray500)
+            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
             .frame(width: 28, height: 28)
-            .background(ReefColors.white)
+            .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(ReefColors.gray400, lineWidth: 1.5)
+                    .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
             )
             .compositingGroup()
             .contentShape(Rectangle())
@@ -170,7 +184,8 @@ struct DocumentCardView: View {
     // MARK: - Dropdown Menu
 
     private var dropdownMenu: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 0) {
             dropdownItem("Rename", action: .rename)
             dropdownItem("Download", action: .download)
             dropdownItem("Move to Course", action: .moveToCourse)
@@ -179,21 +194,21 @@ struct DocumentCardView: View {
             dropdownItem("View Details", action: .viewDetails)
 
             Rectangle()
-                .fill(ReefColors.gray100)
+                .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                 .frame(height: 1)
                 .padding(.vertical, 2)
 
             dropdownItem("Delete", action: .delete, isDestructive: true)
         }
-        .background(ReefColors.white)
+        .background(dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(ReefColors.gray500, lineWidth: 1.5)
+                .stroke(dark ? ReefColors.DashboardDark.shadow : ReefColors.gray500, lineWidth: 1.5)
         )
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(ReefColors.gray500)
+                .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.gray500)
                 .offset(x: 3, y: 3)
         )
         .fixedSize(horizontal: true, vertical: true)
@@ -201,10 +216,11 @@ struct DocumentCardView: View {
     }
 
     private func dropdownItem(_ label: String, action: DocumentAction, isDestructive: Bool = false) -> some View {
-        Text(label)
+        let dark = theme.isDarkMode
+        return Text(label)
             .font(.epilogue(13, weight: .semiBold))
             .tracking(-0.04 * 13)
-            .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : ReefColors.black)
+            .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : (dark ? ReefColors.DashboardDark.text : ReefColors.black))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)

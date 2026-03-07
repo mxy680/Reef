@@ -12,16 +12,22 @@ struct CanvasPageView: UIViewRepresentable {
     let pdfDocument: PDFDocument
     let pageRange: ClosedRange<Int>?
     var onVisiblePageChanged: ((Int) -> Void)?
+    var darkMode: Bool = false
+    var overlaySettings: PageOverlaySettings = PageOverlaySettings()
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
         container.onVisiblePageChanged = onVisiblePageChanged
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
+        container.applyDarkMode(darkMode)
+        container.updateOverlay(overlaySettings)
         return container
     }
 
     func updateUIView(_ uiView: CanvasContainerView, context: Context) {
         uiView.onVisiblePageChanged = onVisiblePageChanged
+        uiView.applyDarkMode(darkMode)
+        uiView.updateOverlay(overlaySettings)
     }
 }
 
@@ -33,9 +39,19 @@ final class CanvasContainerView: UIView {
     let pagesStackView = UIStackView()
 
     private var pageImageViews: [UIImageView] = []
+    private var pageContainerViews: [UIView] = []
+    private var shadowViews: [UIView] = []
+    private var pageOverlayViews: [PageOverlayView] = []
     private var separatorViews: [UIView] = []
     private var pageWrappers: [UIView] = []
     private var contentWidthConstraint: NSLayoutConstraint?
+    private var isDarkMode = false
+    private var currentOverlaySettings = PageOverlaySettings()
+
+    /// Original rendered page images (light mode)
+    private var originalImages: [UIImage] = []
+    /// Color-inverted page images (dark mode) — lazily generated
+    private var invertedImages: [UIImage]?
 
     /// Callback reporting the currently visible page index (PDF-absolute)
     var onVisiblePageChanged: ((Int) -> Void)?
@@ -127,6 +143,20 @@ final class CanvasContainerView: UIView {
         }
     }
 
+    // MARK: - Overlay
+
+    func updateOverlay(_ settings: PageOverlaySettings) {
+        guard settings != currentOverlaySettings else { return }
+        currentOverlaySettings = settings
+
+        for overlay in pageOverlayViews {
+            overlay.overlayType = settings.type
+            overlay.spacing = settings.spacing
+            overlay.overlayOpacity = settings.opacity
+            overlay.setNeedsDisplay()
+        }
+    }
+
     // MARK: - Render PDF
 
     private func renderPDFPages(document: PDFDocument, pageRange: ClosedRange<Int>? = nil) async -> [UIImage] {
@@ -159,12 +189,19 @@ final class CanvasContainerView: UIView {
     private func setupPages(with images: [UIImage]) {
         // Clear existing
         for view in pageImageViews { view.removeFromSuperview() }
+        for view in pageOverlayViews { view.removeFromSuperview() }
         for view in separatorViews { view.removeFromSuperview() }
         pageImageViews.removeAll()
+        pageContainerViews.removeAll()
+        shadowViews.removeAll()
+        pageOverlayViews.removeAll()
         separatorViews.removeAll()
         pageWrappers.removeAll()
         lastReportedPage = -1
         pagesStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        originalImages = images
+        invertedImages = nil
 
         for (index, image) in images.enumerated() {
             // Wrapper holds both the shadow and the page (for 3D effect)
@@ -178,6 +215,7 @@ final class CanvasContainerView: UIView {
             shadowView.backgroundColor = Self.pageBorderColor
             shadowView.layer.cornerRadius = Self.pageCornerRadius
             wrapper.addSubview(shadowView)
+            shadowViews.append(shadowView)
 
             // Page container — white background with rounded corners and border
             let pageView = UIView()
@@ -188,6 +226,7 @@ final class CanvasContainerView: UIView {
             pageView.layer.borderColor = Self.pageBorderColor.cgColor
             pageView.clipsToBounds = true
             wrapper.addSubview(pageView)
+            pageContainerViews.append(pageView)
 
             let imageView = UIImageView(image: image)
             imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -200,6 +239,22 @@ final class CanvasContainerView: UIView {
                 imageView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
                 imageView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
                 imageView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
+            ])
+
+            // Page overlay (grid / dots / lines)
+            let overlayView = PageOverlayView()
+            overlayView.translatesAutoresizingMaskIntoConstraints = false
+            overlayView.isUserInteractionEnabled = false
+            overlayView.overlayType = currentOverlaySettings.type
+            overlayView.spacing = currentOverlaySettings.spacing
+            pageView.addSubview(overlayView)
+            pageOverlayViews.append(overlayView)
+
+            NSLayoutConstraint.activate([
+                overlayView.topAnchor.constraint(equalTo: pageView.topAnchor),
+                overlayView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
+                overlayView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
+                overlayView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
             ])
 
             // Page sits at top-left of wrapper
@@ -250,6 +305,62 @@ final class CanvasContainerView: UIView {
         }
 
         layoutIfNeeded()
+    }
+
+    // MARK: - Dark Mode
+
+    func applyDarkMode(_ dark: Bool) {
+        guard isDarkMode != dark else { return }
+        isDarkMode = dark
+
+        // Swap page images (invert colors for true dark mode reading)
+        let targetImages: [UIImage]
+        if dark {
+            if invertedImages == nil {
+                invertedImages = originalImages.map { Self.invertImage($0) }
+            }
+            targetImages = invertedImages!
+        } else {
+            targetImages = originalImages
+        }
+
+        UIView.transition(
+            with: self,
+            duration: 0.3,
+            options: .transitionCrossDissolve
+        ) { [self] in
+            scrollView.backgroundColor = dark
+                ? ReefColors.CanvasDark.scrollBackground
+                : Self.scrollBackground
+
+            for (i, pageView) in pageContainerViews.enumerated() {
+                pageView.layer.borderColor = dark
+                    ? ReefColors.CanvasDark.pageBorderUI.cgColor
+                    : Self.pageBorderColor.cgColor
+
+                if i < targetImages.count {
+                    pageImageViews[i].image = targetImages[i]
+                }
+            }
+
+            for shadowView in shadowViews {
+                shadowView.backgroundColor = dark
+                    ? UIColor.black.withAlphaComponent(0.5)
+                    : Self.pageBorderColor
+            }
+        }
+    }
+
+    /// Invert an image's colors using CIColorInvert
+    private static func invertImage(_ image: UIImage) -> UIImage {
+        guard let ciImage = CIImage(image: image),
+              let filter = CIFilter(name: "CIColorInvert") else { return image }
+        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        guard let output = filter.outputImage else { return image }
+
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(output, from: output.extent) else { return image }
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
     // MARK: - Layout
@@ -330,6 +441,88 @@ extension CanvasContainerView: UIScrollViewDelegate {
         if actualPage != lastReportedPage {
             lastReportedPage = actualPage
             onVisiblePageChanged?(actualPage)
+        }
+    }
+}
+
+// MARK: - Page Overlay View
+
+final class PageOverlayView: UIView {
+    var overlayType: PageOverlayType = .none
+    var spacing: CGFloat = 20
+    var overlayOpacity: CGFloat = 0.35
+
+    private var overlayColor: UIColor {
+        UIColor(white: 0.72, alpha: overlayOpacity)
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isOpaque = false
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ rect: CGRect) {
+        guard overlayType != .none else { return }
+        guard let ctx = UIGraphicsGetCurrentContext() else { return }
+
+        ctx.setStrokeColor(overlayColor.cgColor)
+        ctx.setFillColor(overlayColor.cgColor)
+
+        // Scale spacing by the 2x render factor
+        let scaledSpacing = spacing * 2.0
+
+        switch overlayType {
+        case .none:
+            break
+
+        case .grid:
+            ctx.setLineWidth(0.5)
+            // Vertical lines
+            var x: CGFloat = scaledSpacing
+            while x < rect.width {
+                ctx.move(to: CGPoint(x: x, y: 0))
+                ctx.addLine(to: CGPoint(x: x, y: rect.height))
+                x += scaledSpacing
+            }
+            // Horizontal lines
+            var y: CGFloat = scaledSpacing
+            while y < rect.height {
+                ctx.move(to: CGPoint(x: 0, y: y))
+                ctx.addLine(to: CGPoint(x: rect.width, y: y))
+                y += scaledSpacing
+            }
+            ctx.strokePath()
+
+        case .dots:
+            let dotSize: CGFloat = 2.0
+            var y: CGFloat = scaledSpacing
+            while y < rect.height {
+                var x: CGFloat = scaledSpacing
+                while x < rect.width {
+                    let dotRect = CGRect(
+                        x: x - dotSize / 2,
+                        y: y - dotSize / 2,
+                        width: dotSize,
+                        height: dotSize
+                    )
+                    ctx.fillEllipse(in: dotRect)
+                    x += scaledSpacing
+                }
+                y += scaledSpacing
+            }
+
+        case .lines:
+            ctx.setLineWidth(0.5)
+            var y: CGFloat = scaledSpacing
+            while y < rect.height {
+                ctx.move(to: CGPoint(x: 0, y: y))
+                ctx.addLine(to: CGPoint(x: rect.width, y: y))
+                y += scaledSpacing
+            }
+            ctx.strokePath()
         }
     }
 }

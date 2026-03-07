@@ -7,12 +7,15 @@ struct TutorSpotlightView: View {
     let onStartSession: () -> Void
     var avatarSize: CGFloat = 120
 
+    @Environment(ThemeManager.self) private var theme
+
     private var tintColor: Color {
         Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
+        let dark = theme.isDarkMode
+        return HStack(alignment: .top, spacing: 20) {
             // Left: avatar circle
             ZStack {
                 Circle()
@@ -32,7 +35,7 @@ struct TutorSpotlightView: View {
                 Text(tutor.name)
                     .font(.epilogue(22, weight: .black))
                     .tracking(-0.04 * 22)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                 Text(tutor.species.uppercased())
                     .font(.epilogue(11, weight: .bold))
@@ -42,7 +45,7 @@ struct TutorSpotlightView: View {
                 Text(tutor.teachingStyle)
                     .font(.epilogue(13, weight: .medium))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .lineLimit(4)
                     .padding(.top, 2)
 
@@ -90,7 +93,7 @@ struct TutorSpotlightView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(ReefColors.white)
+        .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)

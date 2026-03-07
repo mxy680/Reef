@@ -12,6 +12,7 @@ struct DocumentCanvasView: View {
     let document: Document
     let onDismiss: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var viewModel = CanvasViewModel()
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
@@ -19,6 +20,9 @@ struct DocumentCanvasView: View {
     @State private var currentPageIndex = 0
     @State private var pageVersion = UUID()
     @State private var showPageMenu = false
+    @State private var showRuler = false
+    @State private var showPageSettings = false
+    @State private var pageOverlaySettings = PageOverlaySettings()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -30,21 +34,29 @@ struct DocumentCanvasView: View {
     /// RGB: (78,138,151) * 0.82 ≈ (64,113,124)
     private static let safeAreaColor = Color(red: 64/255.0, green: 113/255.0, blue: 124/255.0)
 
+    private var canvasBackground: Color {
+        theme.isDarkMode ? ReefColors.CanvasDark.background : Self.cream
+    }
+
+    private var canvasSafeArea: Color {
+        theme.isDarkMode ? ReefColors.CanvasDark.safeArea : Self.safeAreaColor
+    }
+
     var body: some View {
         ZStack {
             // Full-bleed tab strip teal so the safe area is never black
-            Self.safeAreaColor.ignoresSafeArea()
+            canvasSafeArea.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 if viewModel.isLoading {
                     loadingView
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Self.cream)
+                        .background(canvasBackground)
                         .transition(.opacity)
                 } else if let error = viewModel.error {
                     errorView(error)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Self.cream)
+                        .background(canvasBackground)
                         .transition(.opacity)
                 } else if let pdf = viewModel.pdfDocument {
                     CanvasToolbar(
@@ -61,26 +73,51 @@ struct DocumentCanvasView: View {
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
                         onPageAction: { handlePageAction($0) },
-                        showPageMenu: $showPageMenu
+                        showPageMenu: $showPageMenu,
+                        showRuler: $showRuler,
+                        showPageSettings: $showPageSettings,
+                        hasActiveOverlay: pageOverlaySettings.type != .none,
+                        pageOverlaySettings: $pageOverlaySettings
                     )
+                    .zIndex(1)
 
                     if tutorModeOn && isReconstructed {
                         TutorStepToolbar(questionIndex: currentQuestionIndex)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
-                    CanvasPageView(
-                        pdfDocument: pdf,
-                        pageRange: pageRange(for: currentQuestionIndex),
-                        onVisiblePageChanged: { currentPageIndex = $0 }
-                    )
-                    .id("\(currentQuestionIndex)-\(pageVersion)")
-                    .background(Self.cream)
+                    ZStack {
+                        CanvasPageView(
+                            pdfDocument: pdf,
+                            pageRange: pageRange(for: currentQuestionIndex),
+                            onVisiblePageChanged: { currentPageIndex = $0 },
+                            darkMode: theme.isDarkMode,
+                            overlaySettings: pageOverlaySettings
+                        )
+                        .id("\(currentQuestionIndex)-\(pageVersion)")
+
+                        if showRuler {
+                            RulerOverlayView()
+                                .transition(.opacity)
+                        }
+                    }
+                    .background(canvasBackground)
+                    .overlay {
+                        // Tap-to-dismiss layer (covers canvas only, not toolbar)
+                        if showPageSettings {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { showPageSettings = false }
+                        }
+                    }
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
+            .animation(.easeInOut(duration: 0.3), value: theme.isDarkMode)
+            .animation(.easeInOut(duration: 0.2), value: showRuler)
         }
+        .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
         .overlayPreferenceValue(PageMenuAnchorKey.self) { anchor in
             if showPageMenu, let anchor {

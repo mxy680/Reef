@@ -5,6 +5,7 @@ import UIKit
 @main
 struct ReefApp: App {
     @State private var authManager = AuthManager()
+    @State private var themeManager = ThemeManager()
 
     init() {
         PointerInteractionDisabler.install()
@@ -18,6 +19,7 @@ struct ReefApp: App {
         WindowGroup {
             ContentView()
                 .environment(authManager)
+                .environment(themeManager)
                 .onOpenURL { url in
                     GIDSignIn.sharedInstance.handle(url)
                     Task { try? await supabase.auth.session(from: url) }

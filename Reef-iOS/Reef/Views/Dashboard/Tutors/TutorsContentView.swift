@@ -94,9 +94,11 @@ final class TutorsViewModel {
 struct TutorsContentView: View {
     @Bindable var viewModel: TutorsViewModel
     @Environment(\.layoutMetrics) private var metrics
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
+        let dark = theme.isDarkMode
+        return ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 0) {
                 headerRow
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -129,7 +131,7 @@ struct TutorsContentView: View {
                         Text("CHOOSE YOUR TUTOR")
                             .font(.epilogue(11, weight: .bold))
                             .tracking(0.06 * 11)
-                            .foregroundStyle(ReefColors.gray400)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
 
                         tutorCarousel
                     }
@@ -146,12 +148,13 @@ struct TutorsContentView: View {
     // MARK: - Header
 
     private var headerRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("Tutors")
                     .font(.epilogue(24, weight: .black))
                     .tracking(-0.04 * 24)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                 Spacer()
 
@@ -170,11 +173,11 @@ struct TutorsContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(ReefColors.black, lineWidth: 1.5)
+                        .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
                 )
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(ReefColors.black)
+                        .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                         .offset(x: 4, y: 4)
                 )
                 .compositingGroup()
@@ -194,7 +197,7 @@ struct TutorsContentView: View {
                 Text("Meet your AI study companions — tap a card to learn more.")
                     .font(.epilogue(14, weight: .medium))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
                 if let activeId = viewModel.activeTutorId,
                    let tutor = viewModel.tutors.first(where: { $0.id == activeId }) {
@@ -218,11 +221,12 @@ struct TutorsContentView: View {
     // MARK: - Skeleton
 
     private var skeletonCarousel: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        let dark = theme.isDarkMode
+        return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 20) {
                 ForEach(0..<3, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(ReefColors.gray100)
+                        .fill(dark ? ReefColors.DashboardDark.subtle : ReefColors.gray100)
                         .frame(width: metrics.tutorCardWidth, height: metrics.tutorCardHeight)
                 }
             }
@@ -233,7 +237,8 @@ struct TutorsContentView: View {
     // MARK: - Carousel
 
     private var tutorCarousel: some View {
-        VStack(spacing: 16) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 16) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 20) {
                     ForEach(Array(viewModel.tutors.enumerated()), id: \.element.id) { index, tutor in
@@ -260,7 +265,7 @@ struct TutorsContentView: View {
                     Circle()
                         .fill(viewModel.activeTutorId == tutor.id
                               ? Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
-                              : ReefColors.gray400.opacity(0.4))
+                              : (dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400).opacity(0.4))
                         .frame(width: viewModel.activeTutorId == tutor.id ? 8 : 6,
                                height: viewModel.activeTutorId == tutor.id ? 8 : 6)
                         .animation(.spring(duration: 0.25), value: viewModel.activeTutorId)
@@ -272,16 +277,17 @@ struct TutorsContentView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 8) {
             Text("No tutors available")
                 .font(.epilogue(15, weight: .semiBold))
                 .tracking(-0.04 * 15)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
             Text("Check back soon — new tutors are on the way!")
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray500)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
         }
         .frame(maxWidth: .infinity, alignment: .center)
     }

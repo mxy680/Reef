@@ -92,6 +92,7 @@ struct CourseDetailView: View {
 
     @State private var viewModel: CourseDetailViewModel
     @Environment(\.layoutMetrics) private var metrics
+    @Environment(ThemeManager.self) private var theme
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: metrics.gridColumnMin, maximum: metrics.gridColumnMax), spacing: 20)]
@@ -152,15 +153,20 @@ struct CourseDetailView: View {
     // MARK: - Header
 
     private var headerRow: some View {
-        HStack(alignment: .top) {
+        let dark = theme.isDarkMode
+        return HStack(alignment: .top) {
             HStack(spacing: 10) {
-                Text(viewModel.course.emoji)
-                    .font(.system(size: 28))
+                Image(viewModel.course.emoji)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 26, height: 26)
+                    .foregroundStyle(ReefColors.gray600)
 
                 Text(viewModel.course.name)
                     .font(.epilogue(24, weight: .black))
                     .tracking(-0.04 * 24)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
             }
 
             Spacer()
@@ -168,13 +174,13 @@ struct CourseDetailView: View {
             HStack(spacing: 8) {
                 Image(systemName: "pencil")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .frame(width: 36, height: 36)
-                    .background(ReefColors.white)
+                    .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.gray400, lineWidth: 1.5)
+                            .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
                     )
                     .compositingGroup()
                     .contentShape(Rectangle())
@@ -206,20 +212,21 @@ struct CourseDetailView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 12) {
             Image(systemName: "doc.text")
                 .font(.system(size: 40))
-                .foregroundStyle(ReefColors.gray400)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
 
             Text("No documents in this course")
                 .font(.epilogue(16, weight: .semiBold))
                 .tracking(-0.04 * 16)
-                .foregroundStyle(ReefColors.gray500)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
 
             Text("Move documents here from the Documents tab.")
                 .font(.epilogue(14, weight: .medium))
                 .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.gray400)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

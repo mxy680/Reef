@@ -57,6 +57,7 @@ private let themeColors: [(color: Color, hex: String)] = [
 
 struct SettingsView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(ThemeManager.self) private var theme
     @State private var activeTab: SettingsTab = .profile
     @State private var appeared = false
 
@@ -68,7 +69,6 @@ struct SettingsView: View {
     @State private var educationDirty = false
 
     // Preferences state (local only, matching web)
-    @State private var darkMode = false
     @State private var selectedTheme = "#5B9EAD"
     @State private var emailNotifications = true
     @State private var studyReminders = false
@@ -94,6 +94,7 @@ struct SettingsView: View {
     @Environment(\.layoutMetrics) private var metrics
 
     var body: some View {
+        let dark = theme.isDarkMode
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
                 headerSection
@@ -115,10 +116,11 @@ struct SettingsView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        Text("Settings")
+        let dark = theme.isDarkMode
+        return Text("Settings")
             .font(.epilogue(24, weight: .black))
             .tracking(-0.04 * 24)
-            .foregroundStyle(ReefColors.black)
+            .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
             .opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : 16)
             .animation(.easeOut(duration: 0.35).delay(0.1), value: appeared)
@@ -198,12 +200,14 @@ struct SettingsView: View {
 // MARK: - Tab Button
 
 private struct SettingsTabButton: View {
+    @Environment(ThemeManager.self) private var theme
     let tab: SettingsTab
     let isActive: Bool
     let action: () -> Void
     @State private var isPressed = false
 
     var body: some View {
+        let dark = theme.isDarkMode
         HStack(spacing: 6) {
             Image(systemName: tab.icon)
                 .font(.system(size: 14, weight: .semibold))
@@ -211,18 +215,18 @@ private struct SettingsTabButton: View {
                 .font(.epilogue(13, weight: .bold))
                 .tracking(-0.04 * 13)
         }
-        .foregroundStyle(isActive ? ReefColors.white : ReefColors.black)
+        .foregroundStyle(isActive ? ReefColors.white : (dark ? ReefColors.DashboardDark.text : ReefColors.black))
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .background(isActive ? ReefColors.primary : ReefColors.white)
+        .background(isActive ? ReefColors.primary : (dark ? ReefColors.DashboardDark.card : ReefColors.white))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(ReefColors.black, lineWidth: 1.5)
+                .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
         )
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(ReefColors.black)
+                .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                 .offset(
                     x: isPressed ? 0 : 3,
                     y: isPressed ? 0 : 3
@@ -250,6 +254,7 @@ private struct SettingsTabButton: View {
 
 extension SettingsView {
     private var profileTab: some View {
+        let dark = theme.isDarkMode
         let profile = authManager.profile
         let completionItems = profileCompletionItems(profile)
         let completionPct = Double(completionItems.filter(\.done).count) / Double(completionItems.count)
@@ -270,11 +275,11 @@ extension SettingsView {
                                     .textFieldStyle(.plain)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 10)
-                                    .background(ReefColors.white)
+                                    .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(ReefColors.gray400, lineWidth: 1.5)
+                                            .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
                                     )
 
                                 Button {
@@ -291,7 +296,7 @@ extension SettingsView {
                                 } label: {
                                     Image(systemName: "xmark")
                                         .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(ReefColors.gray500)
+                                        .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                                 }
                             }
                         } else {
@@ -299,7 +304,7 @@ extension SettingsView {
                                 Text(profile?.displayName ?? "Not set")
                                     .font(.epilogue(15, weight: .semiBold))
                                     .tracking(-0.04 * 15)
-                                    .foregroundStyle(ReefColors.black)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                                 Spacer()
 
@@ -309,7 +314,7 @@ extension SettingsView {
                                 } label: {
                                     Image(systemName: "pencil")
                                         .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(ReefColors.gray500)
+                                        .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                                 }
                             }
                         }
@@ -320,7 +325,7 @@ extension SettingsView {
                         Text(authManager.session?.user.email ?? "—")
                             .font(.epilogue(15, weight: .semiBold))
                             .tracking(-0.04 * 15)
-                            .foregroundStyle(ReefColors.black)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                         SettingsDivider()
 
@@ -328,7 +333,7 @@ extension SettingsView {
                         Text(memberSinceText(profile?.createdAt))
                             .font(.epilogue(15, weight: .semiBold))
                             .tracking(-0.04 * 15)
-                            .foregroundStyle(ReefColors.black)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                     }
                 }
 
@@ -338,7 +343,7 @@ extension SettingsView {
 
                         ZStack {
                             Circle()
-                                .stroke(ReefColors.gray100, lineWidth: metrics.profileRingSize * 0.083)
+                                .stroke(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100, lineWidth: metrics.profileRingSize * 0.083)
 
                             Circle()
                                 .trim(from: 0, to: appeared ? completionPct : 0)
@@ -349,7 +354,7 @@ extension SettingsView {
                             Text("\(Int(completionPct * 100))%")
                                 .font(.epilogue(22, weight: .bold))
                                 .tracking(-0.04 * 22)
-                                .foregroundStyle(ReefColors.black)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                         }
                         .frame(width: metrics.profileRingSize, height: metrics.profileRingSize)
 
@@ -358,12 +363,12 @@ extension SettingsView {
                                 HStack(spacing: 8) {
                                     Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(item.done ? ReefColors.primary : ReefColors.gray400)
+                                        .foregroundStyle(item.done ? ReefColors.primary : (dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400))
 
                                     Text(item.label)
                                         .font(.epilogue(13, weight: .medium))
                                         .tracking(-0.04 * 13)
-                                        .foregroundStyle(item.done ? ReefColors.black : ReefColors.gray500)
+                                        .foregroundStyle(item.done ? (dark ? ReefColors.DashboardDark.text : ReefColors.black) : (dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500))
                                 }
                             }
                         }
@@ -483,7 +488,8 @@ extension SettingsView {
 
 extension SettingsView {
     private var preferencesTab: some View {
-        VStack(spacing: 16) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 16) {
             // Row 1: Appearance | Notifications
             SettingsRow {
                 SettingsCard {
@@ -492,7 +498,10 @@ extension SettingsView {
 
                         SettingsToggleRow(
                             label: "Dark Mode",
-                            isOn: $darkMode
+                            isOn: Binding(
+                                get: { theme.isDarkMode },
+                                set: { theme.isDarkMode = $0 }
+                            )
                         )
 
                         SettingsDivider()
@@ -505,9 +514,9 @@ extension SettingsView {
                                     .frame(width: 32, height: 32)
                                     .overlay(
                                         Circle()
-                                            .stroke(ReefColors.black, lineWidth: selectedTheme == item.hex ? 2.5 : 0)
+                                            .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: selectedTheme == item.hex ? 2.5 : 0)
                                     )
-                                    .shadow(color: selectedTheme == item.hex ? ReefColors.black.opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
+                                    .shadow(color: selectedTheme == item.hex ? (dark ? ReefColors.DashboardDark.shadow : ReefColors.black).opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
                                     .contentShape(Circle())
                                     .onTapGesture { selectedTheme = item.hex }
                             }
@@ -570,7 +579,8 @@ extension SettingsView {
 
 extension SettingsView {
     private var privacyTab: some View {
-        VStack(spacing: 16) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 16) {
             // Row 1: Analytics | Data Sharing
             SettingsRow {
                 SettingsCard {
@@ -581,7 +591,7 @@ extension SettingsView {
                         Text("Help us improve Reef by sharing anonymous usage data")
                             .font(.epilogue(12, weight: .medium))
                             .tracking(-0.04 * 12)
-                            .foregroundStyle(ReefColors.gray500)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                             .padding(.top, 4)
 
                         SettingsDivider()
@@ -590,7 +600,7 @@ extension SettingsView {
                         Text("Automatically send crash reports")
                             .font(.epilogue(12, weight: .medium))
                             .tracking(-0.04 * 12)
-                            .foregroundStyle(ReefColors.gray500)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                             .padding(.top, 4)
                     }
                 }
@@ -603,7 +613,7 @@ extension SettingsView {
                         Text("Use your study patterns to improve recommendations")
                             .font(.epilogue(12, weight: .medium))
                             .tracking(-0.04 * 12)
-                            .foregroundStyle(ReefColors.gray500)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                             .padding(.top, 4)
 
                         SettingsDivider()
@@ -612,7 +622,7 @@ extension SettingsView {
                         Text("Share anonymized data with research partners")
                             .font(.epilogue(12, weight: .medium))
                             .tracking(-0.04 * 12)
-                            .foregroundStyle(ReefColors.gray500)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                             .padding(.top, 4)
                     }
                 }
@@ -646,7 +656,7 @@ extension SettingsView {
                         Text("Your data is protected by industry-standard security practices.")
                             .font(.epilogue(13, weight: .medium))
                             .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.gray600)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
                         privacyBullet(icon: "lock.shield", text: "End-to-end encryption")
                         privacyBullet(icon: "hand.raised", text: "No data sold to advertisers")
@@ -659,7 +669,8 @@ extension SettingsView {
     }
 
     private func privacyBullet(icon: String, text: String) -> some View {
-        HStack(spacing: 10) {
+        let dark = theme.isDarkMode
+        return HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14))
                 .foregroundStyle(ReefColors.primary)
@@ -668,7 +679,7 @@ extension SettingsView {
             Text(text)
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
         }
     }
 }
@@ -677,7 +688,8 @@ extension SettingsView {
 
 extension SettingsView {
     private var aboutTab: some View {
-        VStack(spacing: 16) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 16) {
             // Row 1: App Info | What's New
             SettingsRow {
                 SettingsCard {
@@ -696,11 +708,11 @@ extension SettingsView {
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(ReefColors.black, lineWidth: 2)
+                                        .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 2)
                                 )
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .fill(ReefColors.black)
+                                        .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                                         .offset(x: 3, y: 3)
                                 )
 
@@ -708,19 +720,19 @@ extension SettingsView {
                                 Text("Reef")
                                     .font(.epilogue(20, weight: .black))
                                     .tracking(-0.04 * 20)
-                                    .foregroundStyle(ReefColors.black)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                                 Text("1.0.0 (Build 42)")
                                     .font(.epilogue(12, weight: .medium))
                                     .tracking(-0.04 * 12)
-                                    .foregroundStyle(ReefColors.gray500)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                             }
                         }
 
                         Text("Your AI-powered study companion. Upload documents, generate quizzes, and master any subject.")
                             .font(.epilogue(13, weight: .medium))
                             .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.gray600)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                             .padding(.top, 14)
 
                         SettingsDivider()
@@ -739,7 +751,7 @@ extension SettingsView {
                         Text("v1.0.0 — February 2026")
                             .font(.epilogue(14, weight: .bold))
                             .tracking(-0.04 * 14)
-                            .foregroundStyle(ReefColors.black)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                             .padding(.bottom, 12)
 
                         VStack(alignment: .leading, spacing: 8) {
@@ -796,22 +808,24 @@ extension SettingsView {
     }
 
     private func aboutInfoRow(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(.epilogue(11, weight: .bold))
                 .tracking(0.06 * 11)
                 .textCase(.uppercase)
-                .foregroundStyle(ReefColors.gray500)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
 
             Text(value)
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
         }
     }
 
     private func releaseNote(_ text: String) -> some View {
-        HStack(spacing: 8) {
+        let dark = theme.isDarkMode
+        return HStack(spacing: 8) {
             Circle()
                 .fill(ReefColors.primary)
                 .frame(width: 6, height: 6)
@@ -819,7 +833,7 @@ extension SettingsView {
             Text(text)
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
         }
     }
 }
@@ -828,6 +842,7 @@ extension SettingsView {
 
 extension SettingsView {
     private var accountTab: some View {
+        let dark = theme.isDarkMode
         let tier: Tier = .shore
         let limits = TierLimits.current()
 
@@ -841,12 +856,12 @@ extension SettingsView {
                         Text("Shore")
                             .font(.epilogue(13, weight: .bold))
                             .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.black)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(ReefColors.accent)
                             .clipShape(Capsule())
-                            .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
+                            .overlay(Capsule().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
                             .padding(.bottom, 16)
 
                         usageBar(label: "Documents", current: 0, max: limits.maxDocuments)
@@ -861,12 +876,12 @@ extension SettingsView {
                             Text("Max File Size")
                                 .font(.epilogue(13, weight: .medium))
                                 .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.gray600)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                             Spacer()
                             Text("\(limits.maxFileSizeMB) MB")
                                 .font(.epilogue(13, weight: .bold))
                                 .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.black)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                         }
 
                         Button {
@@ -894,12 +909,12 @@ extension SettingsView {
                             Text("Magic Link")
                                 .font(.epilogue(14, weight: .semiBold))
                                 .tracking(-0.04 * 14)
-                                .foregroundStyle(ReefColors.black)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                         }
                         Text(authManager.session?.user.email ?? "—")
                             .font(.epilogue(12, weight: .medium))
                             .tracking(-0.04 * 12)
-                            .foregroundStyle(ReefColors.gray500)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                             .padding(.top, 2)
 
                         SettingsDivider()
@@ -907,12 +922,12 @@ extension SettingsView {
                         SettingsFieldLabel("Two-Factor Authentication")
                         HStack(spacing: 8) {
                             Circle()
-                                .fill(ReefColors.gray400)
+                                .fill(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
                                 .frame(width: 8, height: 8)
                             Text("Not enabled")
                                 .font(.epilogue(13, weight: .medium))
                                 .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.gray500)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                             Spacer()
                             Button("Enable") {}
                                 .reefCompactStyle(.secondary)
@@ -928,7 +943,7 @@ extension SettingsView {
                             Text("This device — Active now")
                                 .font(.epilogue(13, weight: .medium))
                                 .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.black)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                         }
                     }
                 }
@@ -972,7 +987,7 @@ extension SettingsView {
                         .foregroundStyle(Color(hex: 0xC62828))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
-                        .background(ReefColors.white)
+                        .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
@@ -988,23 +1003,24 @@ extension SettingsView {
     }
 
     private func usageBar(label: String, current: Int, max limit: Int) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(label)
                     .font(.epilogue(13, weight: .medium))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 Spacer()
                 Text("\(current) / \(limit)")
                     .font(.epilogue(13, weight: .bold))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
             }
 
             GeometryReader { geo in
                 let pct = limit > 0 ? CGFloat(current) / CGFloat(limit) : 0
                 ZStack(alignment: .leading) {
-                    Capsule().fill(ReefColors.gray100)
+                    Capsule().fill(dark ? ReefColors.DashboardDark.subtle : ReefColors.gray100)
                     Capsule()
                         .fill(ReefColors.primary)
                         .frame(width: max(geo.size.width * pct, 0))
@@ -1016,7 +1032,8 @@ extension SettingsView {
     }
 
     private func planColumn(name: String, price: String, color: Color, docs: String, fileSize: String, courses: String, isCurrent: Bool) -> some View {
-        VStack(spacing: 12) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 12) {
             if isCurrent {
                 Text("Current")
                     .font(.epilogue(10, weight: .bold))
@@ -1028,12 +1045,12 @@ extension SettingsView {
             Text(name)
                 .font(.epilogue(18, weight: .black))
                 .tracking(-0.04 * 18)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Text(price)
                 .font(.epilogue(13, weight: .semiBold))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
             SettingsDivider()
 
@@ -1043,24 +1060,25 @@ extension SettingsView {
         }
         .frame(maxWidth: .infinity)
         .padding(20)
-        .background(ReefColors.white)
+        .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(isCurrent ? ReefColors.primary : ReefColors.gray200, lineWidth: isCurrent ? 2 : 1.5)
+                .stroke(isCurrent ? ReefColors.primary : (dark ? ReefColors.DashboardDark.divider : ReefColors.gray200), lineWidth: isCurrent ? 2 : 1.5)
         )
     }
 
     private func planFeature(label: String, value: String) -> some View {
-        VStack(spacing: 2) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 2) {
             Text(value)
                 .font(.epilogue(14, weight: .bold))
                 .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
             Text(label)
                 .font(.epilogue(11, weight: .medium))
                 .tracking(-0.04 * 11)
-                .foregroundStyle(ReefColors.gray500)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
         }
     }
 }
@@ -1094,53 +1112,62 @@ private struct SettingsCard<Content: View>: View {
 }
 
 private struct SettingsSectionHeader: View {
+    @Environment(ThemeManager.self) private var theme
     let text: String
 
     init(_ text: String) { self.text = text }
 
     var body: some View {
+        let dark = theme.isDarkMode
         Text(text)
             .font(.epilogue(11, weight: .bold))
             .tracking(0.06 * 11)
             .textCase(.uppercase)
-            .foregroundStyle(ReefColors.gray500)
+            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
             .padding(.bottom, 16)
     }
 }
 
 private struct SettingsFieldLabel: View {
+    @Environment(ThemeManager.self) private var theme
     let text: String
 
     init(_ text: String) { self.text = text }
 
     var body: some View {
+        let dark = theme.isDarkMode
         Text(text)
             .font(.epilogue(13, weight: .medium))
             .tracking(-0.04 * 13)
-            .foregroundStyle(ReefColors.gray600)
+            .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
             .padding(.bottom, 8)
     }
 }
 
 private struct SettingsDivider: View {
+    @Environment(ThemeManager.self) private var theme
+
     var body: some View {
+        let dark = theme.isDarkMode
         Rectangle()
-            .fill(ReefColors.gray100)
+            .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
             .frame(height: 1)
             .padding(.vertical, 16)
     }
 }
 
 private struct SettingsToggleRow: View {
+    @Environment(ThemeManager.self) private var theme
     let label: String
     @Binding var isOn: Bool
 
     var body: some View {
+        let dark = theme.isDarkMode
         HStack {
             Text(label)
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Spacer()
 
@@ -1150,12 +1177,14 @@ private struct SettingsToggleRow: View {
 }
 
 private struct SettingsToggle: View {
+    @Environment(ThemeManager.self) private var theme
     @Binding var isOn: Bool
 
     var body: some View {
+        let dark = theme.isDarkMode
         ZStack(alignment: isOn ? .trailing : .leading) {
             Capsule()
-                .fill(isOn ? ReefColors.primary : ReefColors.gray200)
+                .fill(isOn ? ReefColors.primary : (dark ? ReefColors.DashboardDark.divider : ReefColors.gray200))
                 .frame(width: 52, height: 30)
 
             Circle()
@@ -1171,20 +1200,22 @@ private struct SettingsToggle: View {
 }
 
 private struct SettingsSegmentedControl: View {
+    @Environment(ThemeManager.self) private var theme
     let options: [String]
     let labels: [String]
     @Binding var selection: String
 
     var body: some View {
+        let dark = theme.isDarkMode
         HStack(spacing: 0) {
             ForEach(Array(zip(options, labels)), id: \.0) { option, label in
                 Text(label)
                     .font(.epilogue(12, weight: .bold))
                     .tracking(-0.04 * 12)
-                    .foregroundStyle(selection == option ? ReefColors.white : ReefColors.black)
+                    .foregroundStyle(selection == option ? ReefColors.white : (dark ? ReefColors.DashboardDark.text : ReefColors.black))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(selection == option ? ReefColors.primary : ReefColors.white)
+                    .background(selection == option ? ReefColors.primary : (dark ? ReefColors.DashboardDark.card : ReefColors.white))
                     .contentShape(Rectangle())
                     .onTapGesture { selection = option }
             }
@@ -1192,11 +1223,11 @@ private struct SettingsSegmentedControl: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(ReefColors.black, lineWidth: 1.5)
+                .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
         )
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(ReefColors.black)
+                .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                 .offset(x: 3, y: 3)
         )
         .compositingGroup()
@@ -1205,24 +1236,26 @@ private struct SettingsSegmentedControl: View {
 }
 
 private struct SettingsStepper: View {
+    @Environment(ThemeManager.self) private var theme
     @Binding var value: Int
     let range: ClosedRange<Int>
     let step: Int
 
     var body: some View {
+        let dark = theme.isDarkMode
         HStack(spacing: 12) {
             Button {
                 if value - step >= range.lowerBound { value -= step }
             } label: {
                 Image(systemName: "minus")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                     .frame(width: 36, height: 36)
-                    .background(ReefColors.white)
+                    .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(ReefColors.black, lineWidth: 1.5)
+                            .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
                     )
             }
             .buttonStyle(NoHighlightButtonStyle())
@@ -1230,7 +1263,7 @@ private struct SettingsStepper: View {
             Text("\(value)")
                 .font(.epilogue(18, weight: .bold))
                 .tracking(-0.04 * 18)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .frame(minWidth: 40)
 
             Button {
@@ -1238,13 +1271,13 @@ private struct SettingsStepper: View {
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                     .frame(width: 36, height: 36)
-                    .background(ReefColors.white)
+                    .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(ReefColors.black, lineWidth: 1.5)
+                            .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
                     )
             }
             .buttonStyle(NoHighlightButtonStyle())
@@ -1253,27 +1286,29 @@ private struct SettingsStepper: View {
 }
 
 private struct SettingsPill: View {
+    @Environment(ThemeManager.self) private var theme
     let label: String
     let isSelected: Bool
     let action: () -> Void
     @State private var isPressed = false
 
     var body: some View {
+        let dark = theme.isDarkMode
         Text(label)
             .font(.epilogue(12, weight: .bold))
             .tracking(-0.04 * 12)
-            .foregroundStyle(isSelected ? ReefColors.white : ReefColors.black)
+            .foregroundStyle(isSelected ? ReefColors.white : (dark ? ReefColors.DashboardDark.text : ReefColors.black))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(isSelected ? ReefColors.primary : ReefColors.white)
+            .background(isSelected ? ReefColors.primary : (dark ? ReefColors.DashboardDark.card : ReefColors.white))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(ReefColors.black, lineWidth: 1.5)
+                    .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
             )
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(ReefColors.black)
+                    .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                     .offset(
                         x: isPressed ? 0 : 3,
                         y: isPressed ? 0 : 3
@@ -1298,31 +1333,33 @@ private struct SettingsPill: View {
 }
 
 private struct SettingsLinkRow: View {
+    @Environment(ThemeManager.self) private var theme
     let icon: String
     let label: String
     @State private var isHovered = false
 
     var body: some View {
+        let dark = theme.isDarkMode
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(ReefColors.gray500)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                 .frame(width: 20)
 
             Text(label)
                 .font(.epilogue(14, weight: .medium))
                 .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Spacer()
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(ReefColors.gray400)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 8)
-        .background(isHovered ? ReefColors.gray100 : .clear)
+        .background(isHovered ? (dark ? ReefColors.DashboardDark.subtle : ReefColors.gray100) : .clear)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
