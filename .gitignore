@@ -13,3 +13,4 @@ xcuserdata/
 *.xcuserstate
 Reef-Server/data/*
 !Reef-Server/data/reconstructions/
+!Reef-Server/data/test_*.pdf
