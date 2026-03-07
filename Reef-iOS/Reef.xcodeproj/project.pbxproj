@@ -84,6 +84,7 @@
 		FD40162D4542094829B3C5A3 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A58933EF653E5137FE20BA0 /* CanvasToolbar.swift */; };
 		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
 		186FEA6281971BA1A9DA11E7 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF25026FF4DAD8B84CD3AF5 /* ThemeManager.swift */; };
+		9573A0A9931F44A64F1E1ACB /* PopupShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0B47F9B18C4F2953AF26B1 /* PopupShell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -165,6 +166,7 @@
 		F89828EF647D60F501B07B68 /* DocumentsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsContentView.swift; sourceTree = "<group>"; };
 		"TEMP_803ADD2E-6CFA-414D-A619-5FD48B823F61" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		5AF25026FF4DAD8B84CD3AF5 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		EE0B47F9B18C4F2953AF26B1 /* PopupShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupShell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -245,7 +247,7 @@
 				1CC10B33BD05613452B10A19 /* ReefCard.swift */,
 				0F2272F12753F94D68D47474 /* ReefDivider.swift */,
 				E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */,
-			);
+				EE0B47F9B18C4F2953AF26B1 /* PopupShell.swift */,);
 			path = Components;
 			sourceTree = "<group>";
 		};
@@ -545,6 +547,7 @@
 				7F1FCE775A5319A5A9B341A7 /* CourseDetailView.swift in Sources */,
 				5324B3303CAB2D0612C06D62 /* CourseService.swift in Sources */,
 				84C859546EF6E6C562DEADB5 /* DashboardCard.swift in Sources */,
+				9573A0A9931F44A64F1E1ACB /* PopupShell.swift in Sources */,
 				54FC3EDC51D987C68956D963 /* DashboardHeader.swift in Sources */,
 				080C05AE475D134C85184ADD /* DashboardSidebar.swift in Sources */,
 				20617A406EC1A2D7D549E1B8 /* DashboardTab.swift in Sources */,

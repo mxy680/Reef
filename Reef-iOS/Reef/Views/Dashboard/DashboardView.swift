@@ -378,7 +378,13 @@ struct DashboardView: View {
 // MARK: - Dotted Background
 
 struct DottedBackground: View {
+    @Environment(ThemeManager.self) private var theme
+
     var body: some View {
+        let dark = theme.isDarkMode
+        let dotColor = dark ? ReefColors.DashboardDark.subtle : ReefColors.gray100
+        let bgColor = dark ? ReefColors.DashboardDark.background : ReefColors.white
+
         Canvas { context, size in
             let spacing: CGFloat = 20
             let dotSize: CGFloat = 1.5
@@ -395,13 +401,13 @@ struct DottedBackground: View {
                     )
                     context.fill(
                         Path(ellipseIn: rect),
-                        with: .color(ReefColors.gray100)
+                        with: .color(dotColor)
                     )
                     x += spacing
                 }
                 y += spacing
             }
         }
-        .background(ReefColors.white)
+        .background(bgColor)
     }
 }
