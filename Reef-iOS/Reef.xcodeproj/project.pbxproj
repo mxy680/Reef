@@ -83,6 +83,7 @@
 		F9425CBAF52188A136ADFCEF /* DocumentsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89828EF647D60F501B07B68 /* DocumentsContentView.swift */; };
 		FD40162D4542094829B3C5A3 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A58933EF653E5137FE20BA0 /* CanvasToolbar.swift */; };
 		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
+		186FEA6281971BA1A9DA11E7 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF25026FF4DAD8B84CD3AF5 /* ThemeManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -163,6 +164,7 @@
 		F0EB21ECE7AEA4945CFA6DFA /* MoveToCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCourseSheet.swift; sourceTree = "<group>"; };
 		F89828EF647D60F501B07B68 /* DocumentsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsContentView.swift; sourceTree = "<group>"; };
 		"TEMP_803ADD2E-6CFA-414D-A619-5FD48B823F61" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		5AF25026FF4DAD8B84CD3AF5 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -183,6 +185,7 @@
 			isa = PBXGroup;
 			children = (
 				585B9AFB26D4C25AB8FFF803 /* Colors.swift */,
+				5AF25026FF4DAD8B84CD3AF5 /* ThemeManager.swift */,
 				4EEB1F4ACFC66F718ED11A8E /* LayoutMetrics.swift */,
 				E2A242632736FB9BEE170074 /* Typography.swift */,
 				37CB64D67A4227D8D98F7032 /* Components */,
@@ -536,6 +539,7 @@
 				FD40162D4542094829B3C5A3 /* CanvasToolbar.swift in Sources */,
 				D90D66552E64DEAC25C27A6B /* CanvasViewModel.swift in Sources */,
 				A371C46423DF8A87C7CB0F3B /* Colors.swift in Sources */,
+				186FEA6281971BA1A9DA11E7 /* ThemeManager.swift in Sources */,
 				BFEC612BA600837B55341B71 /* ContentView.swift in Sources */,
 				29FE99041BD85DA967788BB5 /* Course.swift in Sources */,
 				7F1FCE775A5319A5A9B341A7 /* CourseDetailView.swift in Sources */,
