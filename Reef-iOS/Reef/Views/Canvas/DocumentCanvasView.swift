@@ -24,6 +24,7 @@ struct DocumentCanvasView: View {
     @State private var showToolSettings = false
     @State private var selectedToolMidX: CGFloat = 0
     @State private var customColors: [UIColor] = []
+    @State private var showColorPicker = false
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -112,7 +113,8 @@ struct DocumentCanvasView: View {
                                 ToolSettingsPopover(
                                     selectedColor: $penColor,
                                     lineWidth: $penWidth,
-                                    customColors: $customColors
+                                    customColors: $customColors,
+                                    onAddColorTapped: { showColorPicker = true }
                                 )
                                 .offset(x: offsetX, y: 8)
                             }
@@ -126,7 +128,25 @@ struct DocumentCanvasView: View {
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
             .animation(.easeInOut(duration: 0.2), value: showRuler)
+
+            // Centered color picker popup
+            if showColorPicker {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture { showColorPicker = false }
+
+                AddColorPopup(
+                    onAdd: { color in
+                        customColors.append(color)
+                        penColor = color
+                        showColorPicker = false
+                    },
+                    onDismiss: { showColorPicker = false }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
         }
+        .animation(.spring(duration: 0.2), value: showColorPicker)
         .ignoresSafeArea()
         .task {
             #if DEBUG

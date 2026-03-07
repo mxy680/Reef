@@ -11,7 +11,7 @@ struct ToolSettingsPopover: View {
     @Binding var selectedColor: UIColor
     @Binding var lineWidth: CGFloat
     @Binding var customColors: [UIColor]
-    @State private var showColorPicker = false
+    var onAddColorTapped: () -> Void = {}
 
     /// 3 defaults + user-added colors
     private var allColors: [UIColor] {
@@ -28,26 +28,11 @@ struct ToolSettingsPopover: View {
     private static let visibleCount = 5
 
     var body: some View {
-        ZStack {
-            mainPopover
-
-            if showColorPicker {
-                colorPickerPopup
-            }
-        }
-        .animation(.spring(duration: 0.2), value: showColorPicker)
-    }
-
-    // MARK: - Main Popover
-
-    private var mainPopover: some View {
         VStack(spacing: 16) {
-            // Color row
             colorRow
 
             // Thickness slider with preview dot
             HStack(spacing: 10) {
-                // Thin indicator
                 Circle()
                     .fill(Color(selectedColor))
                     .frame(width: 4, height: 4)
@@ -55,7 +40,6 @@ struct ToolSettingsPopover: View {
                 Slider(value: $lineWidth, in: 0.5...8.0)
                     .tint(Color(selectedColor))
 
-                // Live-size preview dot
                 Circle()
                     .fill(Color(selectedColor))
                     .frame(width: lineWidth * 2, height: lineWidth * 2)
@@ -64,22 +48,19 @@ struct ToolSettingsPopover: View {
         }
         .padding(16)
         .frame(width: 240)
-        .background(popoverBackground)
-    }
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(ReefColors.black)
+                    .offset(x: 4, y: 4)
 
-    // MARK: - Color Picker Popup
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(ReefColors.white)
 
-    private var colorPickerPopup: some View {
-        ColorPickerPopup(
-            onColorPicked: { color in
-                customColors.append(color)
-                selectedColor = color
-                showColorPicker = false
-            },
-            onDismiss: { showColorPicker = false }
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(ReefColors.black, lineWidth: 2)
+            }
         )
-        .offset(y: 120)
-        .transition(.scale(scale: 0.9, anchor: .top).combined(with: .opacity))
     }
 
     // MARK: - Color Row
@@ -105,25 +86,18 @@ struct ToolSettingsPopover: View {
             }
 
             // Add color button
-            Button {
-                showColorPicker.toggle()
-            } label: {
+            Button(action: onAddColorTapped) {
                 Circle()
                     .fill(Color.clear)
                     .frame(width: 28, height: 28)
                     .overlay(
                         Circle()
-                            .stroke(
-                                showColorPicker ? ReefColors.primary : ReefColors.gray400,
-                                lineWidth: 1.5
-                            )
+                            .stroke(ReefColors.gray400, lineWidth: 1.5)
                     )
                     .overlay(
                         Image(systemName: "plus")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(
-                                showColorPicker ? ReefColors.primary : ReefColors.gray400
-                            )
+                            .foregroundColor(ReefColors.gray400)
                     )
             }
             .buttonStyle(.plain)
@@ -152,107 +126,64 @@ struct ToolSettingsPopover: View {
         }
         .buttonStyle(.plain)
     }
-
-    // MARK: - Shared Background
-
-    private var popoverBackground: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(ReefColors.black)
-                .offset(x: 4, y: 4)
-
-            RoundedRectangle(cornerRadius: 12)
-                .fill(ReefColors.white)
-
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(ReefColors.black, lineWidth: 2)
-        }
-    }
 }
 
-// MARK: - Color Picker Popup
+// MARK: - Add Color Popup
 
-private struct ColorPickerPopup: View {
-    let onColorPicked: (UIColor) -> Void
+struct AddColorPopup: View {
+    let onAdd: (UIColor) -> Void
     let onDismiss: () -> Void
-    @State private var pickedColor = Color(UIColor(red: 0.95, green: 0.6, blue: 0.1, alpha: 1))
-
-    private let presetColors: [UIColor] = [
-        UIColor(red: 0.2, green: 0.7, blue: 0.3, alpha: 1),
-        UIColor(red: 0.95, green: 0.6, blue: 0.1, alpha: 1),
-        UIColor(red: 0.6, green: 0.3, blue: 0.8, alpha: 1),
-        UIColor(red: 0.0, green: 0.7, blue: 0.7, alpha: 1),
-        UIColor(red: 0.85, green: 0.4, blue: 0.6, alpha: 1),
-    ]
+    @State private var pickedColor = Color.orange
 
     var body: some View {
-        VStack(spacing: 14) {
-            // Quick presets
-            HStack(spacing: 10) {
-                ForEach(Array(presetColors.enumerated()), id: \.offset) { _, color in
-                    Button {
-                        onColorPicked(color)
-                    } label: {
-                        Circle()
-                            .fill(Color(color))
-                            .frame(width: 26, height: 26)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+        VStack(spacing: 20) {
+            Text("Add Color")
+                .font(.system(size: 17, weight: .bold))
 
-            // Divider
-            Rectangle()
-                .fill(ReefColors.gray200)
-                .frame(height: 1)
+            ColorPicker("Select color", selection: $pickedColor, supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 200, height: 200)
 
-            // Custom color picker
             HStack(spacing: 12) {
-                ColorPicker("", selection: $pickedColor, supportsOpacity: false)
-                    .labelsHidden()
-                    .frame(width: 32, height: 32)
-
-                // Preview circle
-                Circle()
-                    .fill(pickedColor)
-                    .frame(width: 24, height: 24)
-                    .overlay(
-                        Circle()
-                            .stroke(ReefColors.gray200, lineWidth: 1)
-                    )
-
-                Spacer()
+                Button {
+                    onDismiss()
+                } label: {
+                    Text("Cancel")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(ReefColors.gray600)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(ReefColors.gray100)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
 
                 Button {
-                    onColorPicked(UIColor(pickedColor))
+                    onAdd(UIColor(pickedColor))
                 } label: {
                     Text("Add")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
                         .background(ReefColors.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(14)
-        .frame(width: 240)
+        .padding(24)
+        .frame(maxWidth: 300)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 16)
                     .fill(ReefColors.black)
                     .offset(x: 4, y: 4)
 
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 16)
                     .fill(ReefColors.white)
 
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 16)
                     .stroke(ReefColors.black, lineWidth: 2)
             }
         )
