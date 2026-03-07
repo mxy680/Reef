@@ -83,6 +83,7 @@
 		F9425CBAF52188A136ADFCEF /* DocumentsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89828EF647D60F501B07B68 /* DocumentsContentView.swift */; };
 		FD40162D4542094829B3C5A3 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A58933EF653E5137FE20BA0 /* CanvasToolbar.swift */; };
 		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* PageSettingsPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8091A2B3C4D5E6F7081 /* PageSettingsPopup.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -162,6 +163,7 @@
 		EAF67386E8D3217F6F93CE39 /* DocumentUploadSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadSheet.swift; sourceTree = "<group>"; };
 		F0EB21ECE7AEA4945CFA6DFA /* MoveToCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCourseSheet.swift; sourceTree = "<group>"; };
 		F89828EF647D60F501B07B68 /* DocumentsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsContentView.swift; sourceTree = "<group>"; };
+		D6E7F8091A2B3C4D5E6F7081 /* PageSettingsPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSettingsPopup.swift; sourceTree = "<group>"; };
 		"TEMP_803ADD2E-6CFA-414D-A619-5FD48B823F61" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -220,6 +222,7 @@
 				0F1DB9597A94021843C8228F /* CanvasViewModel.swift */,
 				88CBAB5E82734D68035A3F5B /* DocumentCanvasView.swift */,
 				88ED32B183BA25990245CDA4 /* PageNavigationBar.swift */,
+				D6E7F8091A2B3C4D5E6F7081 /* PageSettingsPopup.swift */,
 				D0EE44C6EECF0A8DC228112C /* TutorStepToolbar.swift */,
 			);
 			path = Canvas;
@@ -568,6 +571,7 @@
 				AE1BE3E7815DBBE172F92BE7 /* OnboardingComponents.swift in Sources */,
 				B2489E124F224ADCD32F169F /* OnboardingView.swift in Sources */,
 				9ADE99D97C893E843E7D677D /* PageNavigationBar.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* PageSettingsPopup.swift in Sources */,
 				86EC51544647FC884C1827BD /* Profile.swift in Sources */,
 				72D09602B96DA1E7231038C2 /* ReefAPI.swift in Sources */,
 				2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */,
