@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#000000">
+  <!-- Back page (offset) -->
+  <path d="M7 2h8l5 5v13c0 1.1-0.9 2-2 2H7c-1.1 0-2-0.9-2-2V4c0-1.1 0.9-2 2-2z" opacity="0.35"/>
+  <!-- Front page -->
+  <path d="M4 4C4 2.9 4.9 2 6 2h7l5 5v13c0 1.1-0.9 2-2 2H6c-1.1 0-2-0.9-2-2V4z"/>
+  <!-- Fold corner -->
+  <path d="M13 2v3.5c0 0.83 0.67 1.5 1.5 1.5H18L13 2z" fill="white"/>
+  <!-- Plus circle -->
+  <circle cx="18.5" cy="18.5" r="5" fill="#000000"/>
+  <rect x="16.25" y="17.5" width="4.5" height="2" rx="0.5" fill="white"/>
+  <rect x="17.5" y="16.25" width="2" height="4.5" rx="0.5" fill="white"/>
+</svg>
