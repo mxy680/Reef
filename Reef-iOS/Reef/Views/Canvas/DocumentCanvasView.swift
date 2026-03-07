@@ -23,6 +23,7 @@ struct DocumentCanvasView: View {
     @State private var penWidth: CGFloat = 2.0
     @State private var showToolSettings = false
     @State private var selectedToolMidX: CGFloat = 0
+    @State private var customColors: [UIColor] = []
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -110,7 +111,8 @@ struct DocumentCanvasView: View {
 
                                 ToolSettingsPopover(
                                     selectedColor: $penColor,
-                                    lineWidth: $penWidth
+                                    lineWidth: $penWidth,
+                                    customColors: $customColors
                                 )
                                 .offset(x: offsetX, y: 8)
                             }
