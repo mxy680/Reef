@@ -8,20 +8,23 @@ struct TutorDetailPopup: View {
     let onSelect: () -> Void
     let onClose: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
+
     private var tintColor: Color {
         Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
     }
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(spacing: 0) {
             // Close button
             HStack {
                 Spacer()
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(ReefColors.gray500)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     .frame(width: 28, height: 28)
-                    .background(ReefColors.gray100)
+                    .background(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                     .clipShape(Circle())
                     .compositingGroup()
                     .contentShape(Rectangle())
@@ -50,7 +53,7 @@ struct TutorDetailPopup: View {
                         Text(tutor.name)
                             .font(.epilogue(22, weight: .black))
                             .tracking(-0.04 * 22)
-                            .foregroundStyle(ReefColors.black)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                         Text(tutor.species.uppercased())
                             .font(.epilogue(11, weight: .bold))
@@ -87,22 +90,22 @@ struct TutorDetailPopup: View {
 
                     // Info sections
                     VStack(alignment: .leading, spacing: 16) {
-                        sectionView(title: "ABOUT", content: tutor.shortBio)
+                        sectionView(title: "ABOUT", content: tutor.shortBio, dark: dark)
 
                         Rectangle()
-                            .fill(ReefColors.gray100)
+                            .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                             .frame(height: 1)
 
-                        sectionView(title: "TEACHING STYLE", content: tutor.teachingStyle)
+                        sectionView(title: "TEACHING STYLE", content: tutor.teachingStyle, dark: dark)
 
                         Rectangle()
-                            .fill(ReefColors.gray100)
+                            .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                             .frame(height: 1)
 
-                        sectionView(title: "VOICE", content: tutor.voiceDescription)
+                        sectionView(title: "VOICE", content: tutor.voiceDescription, dark: dark)
 
                         Rectangle()
-                            .fill(ReefColors.gray100)
+                            .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                             .frame(height: 1)
 
                         // Fun fact
@@ -115,41 +118,36 @@ struct TutorDetailPopup: View {
                                 Text("FUN FACT")
                                     .font(.epilogue(11, weight: .bold))
                                     .tracking(0.06 * 11)
-                                    .foregroundStyle(ReefColors.gray400)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
                             }
 
                             Text(tutor.funFact)
                                 .font(.epilogue(13, weight: .medium))
                                 .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.gray600)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                         }
                     }
                 }
             }
         }
         .padding(24)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 1.5)
-        )
-        .frame(maxWidth: 420, maxHeight: 500)
+        .popupShell(maxWidth: 420)
+        .frame(maxHeight: 500)
     }
 
     // MARK: - Section
 
-    private func sectionView(title: String, content: String) -> some View {
+    private func sectionView(title: String, content: String, dark: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.epilogue(11, weight: .bold))
                 .tracking(0.06 * 11)
-                .foregroundStyle(ReefColors.gray400)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
 
             Text(content)
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
         }
     }
 }

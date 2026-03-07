@@ -3,6 +3,7 @@ import SwiftUI
 
 struct OnboardingView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(ThemeManager.self) private var theme
 
     @State private var step = 0
     @State private var direction: CGFloat = 1
@@ -18,8 +19,9 @@ struct OnboardingView: View {
     private let profileManager = ProfileManager()
 
     var body: some View {
+        let dark = theme.isDarkMode
         ZStack {
-            ReefColors.surface
+            (dark ? ReefColors.DashboardDark.surface : ReefColors.surface)
                 .ignoresSafeArea()
 
             GeometryReader { geo in

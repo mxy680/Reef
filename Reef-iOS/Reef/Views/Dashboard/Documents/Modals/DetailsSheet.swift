@@ -4,12 +4,15 @@ struct DetailsSheet: View {
     let document: Document
     let onClose: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
+
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             Text(document.displayName)
                 .font(.epilogue(20, weight: .black))
                 .tracking(-0.04 * 20)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             VStack(spacing: 12) {
                 ForEach(rows, id: \.label) { row in
@@ -17,14 +20,14 @@ struct DetailsSheet: View {
                         Text(row.label)
                             .font(.epilogue(13, weight: .semiBold))
                             .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.gray600)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
                         Spacer()
 
                         Text(row.value)
                             .font(.epilogue(13, weight: .semiBold))
                             .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.black)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                             .multilineTextAlignment(.trailing)
                     }
                 }
@@ -37,10 +40,10 @@ struct DetailsSheet: View {
                 Text("Close")
                     .font(.epilogue(14, weight: .bold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 10)
-                    .background(ReefColors.gray100)
+                    .background(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
@@ -61,18 +64,7 @@ struct DetailsSheet: View {
             .padding(.top, 24)
         }
         .padding(32)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 2)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(ReefColors.black)
-                .offset(x: 4, y: 4)
-        )
-        .frame(maxWidth: 400)
+        .popupShell()
     }
 
     private var rows: [(label: String, value: String)] {

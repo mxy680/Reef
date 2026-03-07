@@ -256,36 +256,6 @@ struct DashboardView: View {
         .animation(.spring(duration: 0.2), value: documentsVM.moveToCourseTarget?.id)
         .animation(.spring(duration: 0.2), value: documentsVM.detailsTarget?.id)
         .animation(.spring(duration: 0.2), value: documentsVM.pendingUploadURL)
-        #if DEBUG
-        .overlay(alignment: .bottomTrailing) {
-            Button {
-                onOpenCanvas(Document(
-                    id: "dev-test",
-                    userId: "dev",
-                    filename: "Test Canvas.pdf",
-                    status: .completed,
-                    pageCount: 1,
-                    problemCount: nil,
-                    questionPages: nil,
-                    errorMessage: nil,
-                    statusMessage: nil,
-                    costCents: nil,
-                    courseId: nil,
-                    createdAt: "2026-01-01T00:00:00Z"
-                ))
-            } label: {
-                Text("Test Canvas")
-                    .font(.epilogue(12, weight: .bold))
-                    .tracking(-0.04 * 12)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(20)
-        }
-        #endif
         .task { await fetchCourses() }
     }
 
@@ -355,17 +325,20 @@ struct DashboardView: View {
         }
     }
 
+    @Environment(ThemeManager.self) private var theme
+
     private var comingSoonPlaceholder: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 16) {
             Text(contentTitle)
                 .font(.epilogue(28, weight: .black))
                 .tracking(-0.04 * 28)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Text("Coming soon")
                 .font(.epilogue(15, weight: .medium))
                 .tracking(-0.04 * 15)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
             Spacer()
         }
@@ -378,7 +351,13 @@ struct DashboardView: View {
 // MARK: - Dotted Background
 
 struct DottedBackground: View {
+    @Environment(ThemeManager.self) private var theme
+
     var body: some View {
+        let dark = theme.isDarkMode
+        let dotColor = dark ? ReefColors.DashboardDark.subtle : ReefColors.gray100
+        let bgColor = dark ? ReefColors.DashboardDark.background : ReefColors.white
+
         Canvas { context, size in
             let spacing: CGFloat = 20
             let dotSize: CGFloat = 1.5
@@ -395,13 +374,13 @@ struct DottedBackground: View {
                     )
                     context.fill(
                         Path(ellipseIn: rect),
-                        with: .color(ReefColors.gray100)
+                        with: .color(dotColor)
                     )
                     x += spacing
                 }
                 y += spacing
             }
         }
-        .background(ReefColors.white)
+        .background(bgColor)
     }
 }

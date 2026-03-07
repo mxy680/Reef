@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(ThemeManager.self) private var theme
     @State private var canvasDocument: Document?
 
     var body: some View {
@@ -15,7 +16,7 @@ struct ContentView: View {
                 .transition(.opacity)
             } else if authManager.isLoading && authManager.session == nil {
                 ZStack {
-                    ReefColors.surface
+                    (theme.isDarkMode ? ReefColors.DashboardDark.background : ReefColors.surface)
                         .ignoresSafeArea()
                     ProgressView()
                 }
