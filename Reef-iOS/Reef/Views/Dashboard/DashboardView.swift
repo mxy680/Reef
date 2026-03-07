@@ -355,17 +355,20 @@ struct DashboardView: View {
         }
     }
 
+    @Environment(ThemeManager.self) private var theme
+
     private var comingSoonPlaceholder: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 16) {
             Text(contentTitle)
                 .font(.epilogue(28, weight: .black))
                 .tracking(-0.04 * 28)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Text("Coming soon")
                 .font(.epilogue(15, weight: .medium))
                 .tracking(-0.04 * 15)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
             Spacer()
         }

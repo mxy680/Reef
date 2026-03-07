@@ -5,6 +5,7 @@ struct DashboardHeader: View {
     @Binding var selectedTab: DashboardTab?
     @Binding var selectedCourseId: String?
     @Environment(AuthManager.self) private var authManager
+    @Environment(ThemeManager.self) private var theme
     @State private var showProfileMenu = false
     @Environment(\.layoutMetrics) private var metrics
 
@@ -17,22 +18,23 @@ struct DashboardHeader: View {
     ]
 
     var body: some View {
+        let dark = theme.isDarkMode
         HStack {
             // Breadcrumbs
             HStack(spacing: 8) {
                 Text("Dashboard")
                     .font(.epilogue(16, weight: .semiBold))
                     .tracking(-0.04 * 16)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12))
-                    .foregroundStyle(ReefColors.gray400)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
 
                 Text(title)
                     .font(.epilogue(16, weight: .black))
                     .tracking(-0.04 * 16)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
             }
 
             Spacer()
@@ -48,7 +50,7 @@ struct DashboardHeader: View {
                     Circle()
                         .fill(Color(hex: 0xE74C3C))
                         .frame(width: 8, height: 8)
-                        .overlay(Circle().stroke(ReefColors.white, lineWidth: 1.5))
+                        .overlay(Circle().stroke(dark ? ReefColors.DashboardDark.card : ReefColors.white, lineWidth: 1.5))
                         .offset(x: 2, y: 2)
                 }
 
@@ -59,19 +61,19 @@ struct DashboardHeader: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 14, height: 14)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                     Text("0 days")
                         .font(.epilogue(13, weight: .semiBold))
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
                 .padding(.horizontal, 10)
                 .frame(height: 32)
-                .background(ReefColors.surface)
+                .background(dark ? ReefColors.DashboardDark.surface : ReefColors.surface)
                 .clipShape(Capsule())
-                .overlay(Capsule().stroke(ReefColors.black, lineWidth: 1.5))
+                .overlay(Capsule().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
                 .background(
                     Capsule()
-                        .fill(ReefColors.black)
+                        .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                         .offset(x: 2, y: 2)
                 )
 
@@ -80,16 +82,16 @@ struct DashboardHeader: View {
                     Circle()
                         .fill(ReefColors.accent)
                         .frame(width: 32, height: 32)
-                        .overlay(Circle().stroke(ReefColors.black, lineWidth: 1.5))
+                        .overlay(Circle().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
                         .background(
                             Circle()
-                                .fill(ReefColors.black)
+                                .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                                 .frame(width: 32, height: 32)
                                 .offset(x: 2, y: 2)
                         )
                     Text(userInitials)
                         .font(.epilogue(12, weight: .bold))
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
                 .onTapGesture {
                     withAnimation(.spring(duration: 0.2)) {
@@ -129,7 +131,8 @@ struct DashboardHeader: View {
     // MARK: - Dropdown Menu
 
     private var profileDropdownMenu: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 0) {
             // User info
             HStack(spacing: 10) {
                 ZStack {
@@ -138,20 +141,20 @@ struct DashboardHeader: View {
                         .frame(width: 32, height: 32)
                     Text(userInitials)
                         .font(.epilogue(11, weight: .bold))
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(displayName)
                         .font(.epilogue(14, weight: .bold))
                         .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                         .lineLimit(1)
 
                     Text(userEmail)
                         .font(.epilogue(11, weight: .medium))
                         .tracking(-0.02 * 11)
-                        .foregroundStyle(ReefColors.gray600)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                         .lineLimit(1)
                 }
             }
@@ -164,7 +167,7 @@ struct DashboardHeader: View {
                     Text(userGrade)
                         .font(.epilogue(12, weight: .semiBold))
                         .tracking(-0.02 * 12)
-                        .foregroundStyle(ReefColors.gray600)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 }
 
                 Text(tierLabel)
@@ -186,18 +189,18 @@ struct DashboardHeader: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 13, height: 13)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 Text("0 day streak")
                     .font(.epilogue(12, weight: .semiBold))
                     .tracking(-0.02 * 12)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 6)
 
             // Divider
             Rectangle()
-                .fill(ReefColors.gray100)
+                .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                 .frame(height: 1)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 2)
@@ -223,7 +226,7 @@ struct DashboardHeader: View {
 
             // Divider
             Rectangle()
-                .fill(ReefColors.gray100)
+                .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                 .frame(height: 1)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 2)
@@ -234,15 +237,15 @@ struct DashboardHeader: View {
                 authManager.signOut()
             }
         }
-        .background(ReefColors.white)
+        .background(dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(ReefColors.gray500, lineWidth: 1.5)
+                .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.gray500, lineWidth: 1.5)
         )
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(ReefColors.gray500)
+                .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.gray500)
                 .offset(x: 3, y: 3)
         )
         .fixedSize(horizontal: true, vertical: true)
@@ -250,17 +253,18 @@ struct DashboardHeader: View {
     }
 
     private func profileMenuItem(icon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let dark = theme.isDarkMode
+        return Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 14))
-                    .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : ReefColors.gray600)
+                    .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : (dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600))
                     .frame(width: 18)
 
                 Text(label)
                     .font(.epilogue(13, weight: .semiBold))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : ReefColors.black)
+                    .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : (dark ? ReefColors.DashboardDark.text : ReefColors.black))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14)
@@ -285,7 +289,7 @@ struct DashboardHeader: View {
                     .font(.system(size: 18))
             }
         }
-        .foregroundStyle(ReefColors.gray600)
+        .foregroundStyle(theme.isDarkMode ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
         .frame(width: 32, height: 32)
         .compositingGroup()
         .contentShape(Rectangle())
