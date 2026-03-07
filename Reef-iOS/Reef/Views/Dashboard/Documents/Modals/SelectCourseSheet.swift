@@ -6,19 +6,21 @@ struct SelectCoursePopup: View {
     let onConfirm: (String?) -> Void
     let onDismiss: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var courses: [Course] = []
     @State private var isLoading = true
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(spacing: 0) {
             // Close button row
             HStack {
                 Spacer()
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(ReefColors.gray500)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     .frame(width: 28, height: 28)
-                    .background(ReefColors.gray100)
+                    .background(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                     .clipShape(Circle())
                     .compositingGroup()
                     .contentShape(Rectangle())
@@ -31,19 +33,19 @@ struct SelectCoursePopup: View {
                 Text("Select Course")
                     .font(.epilogue(20, weight: .black))
                     .tracking(-0.04 * 20)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                 Text(filename.replacingOccurrences(of: ".pdf", with: "", options: .caseInsensitive))
                     .font(.epilogue(13, weight: .medium))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .padding(.top, 6)
 
                 if isLoading {
                     Text("Loading courses...")
                         .font(.epilogue(13, weight: .medium))
                         .tracking(-0.04 * 13)
-                        .foregroundStyle(ReefColors.gray500)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                         .padding(.top, 16)
                 } else {
                     VStack(spacing: 6) {
@@ -51,12 +53,12 @@ struct SelectCoursePopup: View {
                         HStack(spacing: 10) {
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(ReefColors.gray500)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
 
                             Text("Skip — no course")
                                 .font(.epilogue(13, weight: .semiBold))
                                 .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.gray600)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
                             Spacer()
                         }
@@ -65,7 +67,7 @@ struct SelectCoursePopup: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
-                                .stroke(ReefColors.gray400, lineWidth: 1.5)
+                                .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
                         )
                         .compositingGroup()
                         .contentShape(Rectangle())
@@ -82,7 +84,7 @@ struct SelectCoursePopup: View {
                                 Text(course.name)
                                     .font(.epilogue(13, weight: .semiBold))
                                     .tracking(-0.04 * 13)
-                                    .foregroundStyle(ReefColors.black)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                                 Spacer()
                             }
@@ -91,7 +93,7 @@ struct SelectCoursePopup: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(ReefColors.gray400, lineWidth: 1.5)
+                                    .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
                             )
                             .compositingGroup()
                             .contentShape(Rectangle())
@@ -106,13 +108,7 @@ struct SelectCoursePopup: View {
             }
         }
         .padding(24)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 1.5)
-        )
-        .frame(maxWidth: 420)
+        .popupShell(maxWidth: 420)
         .task {
             do {
                 courses = try await supabase

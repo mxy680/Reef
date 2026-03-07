@@ -5,6 +5,7 @@ struct TutorQuizPopup: View {
     let onSelectTutor: (Tutor) -> Void
     let onDismiss: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var step = 0          // 0-2 = questions, 3 = result
     @State private var direction: Edge = .trailing
     @State private var answers: [Int?] = [nil, nil, nil]
@@ -69,15 +70,16 @@ struct TutorQuizPopup: View {
     // MARK: - Body
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(spacing: 0) {
             // Close button row
             HStack {
                 Spacer()
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(ReefColors.gray500)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     .frame(width: 28, height: 28)
-                    .background(ReefColors.gray100)
+                    .background(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                     .clipShape(Circle())
                     .compositingGroup()
                     .contentShape(Rectangle())
@@ -105,25 +107,20 @@ struct TutorQuizPopup: View {
         }
         .animation(.spring(duration: 0.35), value: step)
         .padding(24)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 1.5)
-        )
-        .frame(maxWidth: 420)
+        .popupShell(maxWidth: 420)
     }
 
     // MARK: - Question View
 
     private var questionContent: some View {
-        VStack(spacing: 0) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 0) {
             OnboardingProgressDots(current: step, total: 3)
 
             Text(questions[step].text)
                 .font(.epilogue(22, weight: .black))
                 .tracking(-0.04 * 22)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, 20)
 
@@ -170,7 +167,8 @@ struct TutorQuizPopup: View {
     // MARK: - Result View
 
     private var resultView: some View {
-        VStack(spacing: 14) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 14) {
             if let tutor = resultTutor {
                 let tintColor = Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
 
@@ -190,12 +188,12 @@ struct TutorQuizPopup: View {
                 Text("Your match: \(tutor.name)!")
                     .font(.epilogue(22, weight: .black))
                     .tracking(-0.04 * 22)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                 Text(tutor.teachingStyle)
                     .font(.epilogue(13, weight: .medium))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .multilineTextAlignment(.center)
 
                 Button {
@@ -210,7 +208,7 @@ struct TutorQuizPopup: View {
                 Text("Retake Quiz")
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {

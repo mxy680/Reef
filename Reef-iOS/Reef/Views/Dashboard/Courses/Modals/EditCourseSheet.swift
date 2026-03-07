@@ -16,6 +16,7 @@ struct EditCourseSheet: View {
     let onConfirm: (String, String, String) -> Void // (name, emoji, color)
     let onClose: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var name: String
     @State private var emoji: String
     @State private var selectedColor: String
@@ -35,33 +36,34 @@ struct EditCourseSheet: View {
     }
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             // Title
             Text("Edit Course")
                 .font(.epilogue(22, weight: .black))
                 .tracking(-0.04 * 22)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .padding(.bottom, 24)
 
             // Name label + input
             Text("Course name")
                 .font(.epilogue(13, weight: .semiBold))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 6)
 
             TextField("e.g. Calculus II", text: $name)
                 .textFieldStyle(.plain)
                 .font(.epilogue(15, weight: .semiBold))
                 .tracking(-0.04 * 15)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(ReefColors.white)
+                .background(dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white)
                 .cornerRadius(10)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(ReefColors.gray400, lineWidth: 1.5)
+                        .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
                 )
                 .focused($isNameFocused)
                 .onSubmit { submitIfValid() }
@@ -71,7 +73,7 @@ struct EditCourseSheet: View {
             Text("Icon")
                 .font(.epilogue(13, weight: .semiBold))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 8)
 
             emojiGrid
@@ -81,7 +83,7 @@ struct EditCourseSheet: View {
             Text("Accent color")
                 .font(.epilogue(13, weight: .semiBold))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 8)
 
             colorPicker
@@ -94,7 +96,7 @@ struct EditCourseSheet: View {
                 Text("Cancel")
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -105,10 +107,10 @@ struct EditCourseSheet: View {
                 Text("Save")
                     .font(.epilogue(14, weight: .bold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(canSave ? ReefColors.white : ReefColors.gray500)
+                    .foregroundStyle(canSave ? ReefColors.white : (dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500))
                     .padding(.horizontal, 24)
                     .padding(.vertical, 10)
-                    .background(canSave ? ReefColors.primary : ReefColors.gray100)
+                    .background(canSave ? ReefColors.primary : (dark ? ReefColors.DashboardDark.divider : ReefColors.gray100))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
@@ -131,24 +133,14 @@ struct EditCourseSheet: View {
         }
         .padding(.horizontal, 32)
         .padding(.vertical, 36)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(ReefColors.black, lineWidth: 2)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(ReefColors.black)
-                .offset(x: 6, y: 6)
-        )
-        .frame(maxWidth: 420)
+        .popupShell(cornerRadius: 12, maxWidth: 420, shadowOffset: 6)
         .onAppear { isNameFocused = true }
     }
 
     // MARK: - Emoji Grid
 
     private var emojiGrid: some View {
+        let dark = theme.isDarkMode
         let columns = Array(repeating: GridItem(.fixed(40), spacing: 6), count: 8)
         return LazyVGrid(columns: columns, spacing: 6) {
             ForEach(emojiOptions, id: \.self) { em in
@@ -156,7 +148,7 @@ struct EditCourseSheet: View {
                 Text(em)
                     .font(.system(size: 20))
                     .frame(width: 40, height: 40)
-                    .background(selected ? ReefColors.primary : ReefColors.white)
+                    .background(selected ? ReefColors.primary : (dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)

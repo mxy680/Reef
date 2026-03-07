@@ -12,11 +12,11 @@ struct DocumentCanvasView: View {
     let document: Document
     let onDismiss: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var viewModel = CanvasViewModel()
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
-    @State private var darkMode = false
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -29,11 +29,11 @@ struct DocumentCanvasView: View {
     private static let safeAreaColor = Color(red: 64/255.0, green: 113/255.0, blue: 124/255.0)
 
     private var canvasBackground: Color {
-        darkMode ? ReefColors.CanvasDark.background : Self.cream
+        theme.isDarkMode ? ReefColors.CanvasDark.background : Self.cream
     }
 
     private var canvasSafeArea: Color {
-        darkMode ? ReefColors.CanvasDark.safeArea : Self.safeAreaColor
+        theme.isDarkMode ? ReefColors.CanvasDark.safeArea : Self.safeAreaColor
     }
 
     var body: some View {
@@ -62,19 +62,18 @@ struct DocumentCanvasView: View {
                         onClose: { onDismiss() },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
-                        documentName: document.displayName,
-                        darkMode: $darkMode
+                        documentName: document.displayName
                     )
 
                     if tutorModeOn && isReconstructed {
-                        TutorStepToolbar(questionIndex: currentQuestionIndex, darkMode: darkMode)
+                        TutorStepToolbar(questionIndex: currentQuestionIndex)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
                     CanvasPageView(
                         pdfDocument: pdf,
                         pageRange: pageRange(for: currentQuestionIndex),
-                        darkMode: darkMode
+                        darkMode: theme.isDarkMode
                     )
                     .id(currentQuestionIndex)
                     .background(canvasBackground)
@@ -82,7 +81,7 @@ struct DocumentCanvasView: View {
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
-            .animation(.easeInOut(duration: 0.3), value: darkMode)
+            .animation(.easeInOut(duration: 0.3), value: theme.isDarkMode)
         }
         .ignoresSafeArea()
         .task {

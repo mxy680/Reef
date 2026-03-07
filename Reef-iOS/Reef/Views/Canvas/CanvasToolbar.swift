@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CanvasToolbar: View {
+    @Environment(ThemeManager.self) private var theme
     @Binding var selectedTool: CanvasTool
     @Binding var currentQuestionIndex: Int
     let questionCount: Int
@@ -15,14 +16,13 @@ struct CanvasToolbar: View {
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
     var documentName: String = ""
-    @Binding var darkMode: Bool
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
     private static let darkBarColor = ReefColors.CanvasDark.toolbar
 
     private var activeBarColor: Color {
-        darkMode ? Self.darkBarColor : Self.barColor
+        theme.isDarkMode ? Self.darkBarColor : Self.barColor
     }
 
     private var safeAreaTop: CGFloat {
@@ -63,7 +63,7 @@ struct CanvasToolbar: View {
             // Tab strip = barColor darkened with black overlay, extends into safe area
             ZStack {
                 activeBarColor
-                Color.black.opacity(darkMode ? 0.3 : 0.18)
+                Color.black.opacity(theme.isDarkMode ? 0.3 : 0.18)
             }
             .ignoresSafeArea(edges: .top)
         )
@@ -75,7 +75,7 @@ struct CanvasToolbar: View {
     private var tabStripBg: some View {
         ZStack {
             activeBarColor
-            Color.black.opacity(darkMode ? 0.3 : 0.18)
+            Color.black.opacity(theme.isDarkMode ? 0.3 : 0.18)
         }
     }
 
@@ -249,9 +249,9 @@ struct CanvasToolbar: View {
             ToolbarButton(icon: "sidebar.trailing", isSelected: false, action: {})
             ToolbarButton(icon: "square.and.arrow.up.fill", isSelected: false, action: {})
             ToolbarButton(
-                icon: darkMode ? "sun.max.fill" : "moon.fill",
-                isSelected: darkMode,
-                action: { darkMode.toggle() }
+                icon: theme.isDarkMode ? "sun.max.fill" : "moon.fill",
+                isSelected: theme.isDarkMode,
+                action: { theme.isDarkMode.toggle() }
             )
         }
     }
