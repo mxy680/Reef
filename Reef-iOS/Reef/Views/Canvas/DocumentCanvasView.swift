@@ -16,6 +16,8 @@ struct DocumentCanvasView: View {
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
+    @State private var showPageSettings = false
+    @State private var pageOverlaySettings = PageOverlaySettings()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -53,7 +55,9 @@ struct DocumentCanvasView: View {
                         onClose: { onDismiss() },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
-                        documentName: document.displayName
+                        documentName: document.displayName,
+                        showPageSettings: $showPageSettings,
+                        hasActiveOverlay: pageOverlaySettings.type != .none
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -63,7 +67,8 @@ struct DocumentCanvasView: View {
 
                     CanvasPageView(
                         pdfDocument: pdf,
-                        pageRange: pageRange(for: currentQuestionIndex)
+                        pageRange: pageRange(for: currentQuestionIndex),
+                        overlaySettings: pageOverlaySettings
                     )
                     .id(currentQuestionIndex)
                     .background(Self.cream)
@@ -71,7 +76,29 @@ struct DocumentCanvasView: View {
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
+
+            // Page settings popup overlay
+            if showPageSettings {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            showPageSettings = false
+                        }
+                    }
+
+                PageSettingsPopup(
+                    settings: $pageOverlaySettings,
+                    onDismiss: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            showPageSettings = false
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
         }
+        .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
         .task {
             #if DEBUG

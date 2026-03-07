@@ -15,6 +15,8 @@ struct CanvasToolbar: View {
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
     var documentName: String = ""
+    @Binding var showPageSettings: Bool
+    var hasActiveOverlay: Bool = false
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -211,7 +213,11 @@ struct CanvasToolbar: View {
     private var canvasUtilitiesSection: some View {
         HStack(spacing: 0) {
             ToolbarButton(icon: "pencil.and.ruler.fill", isSelected: false, action: {})
-            ToolbarButton(icon: "canvas.page_settings", isSelected: false, isCustomIcon: true, action: {})
+            ToolbarButton(icon: "canvas.page_settings", isSelected: hasActiveOverlay, isCustomIcon: true, action: {
+                withAnimation(.spring(duration: 0.2)) {
+                    showPageSettings.toggle()
+                }
+            })
             ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
         }
     }

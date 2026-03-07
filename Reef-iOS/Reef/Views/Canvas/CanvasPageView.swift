@@ -11,14 +11,18 @@ import PDFKit
 struct CanvasPageView: UIViewRepresentable {
     let pdfDocument: PDFDocument
     let pageRange: ClosedRange<Int>?
+    var overlaySettings: PageOverlaySettings = PageOverlaySettings()
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
+        container.updateOverlay(overlaySettings)
         return container
     }
 
-    func updateUIView(_ uiView: CanvasContainerView, context: Context) {}
+    func updateUIView(_ uiView: CanvasContainerView, context: Context) {
+        uiView.updateOverlay(overlaySettings)
+    }
 }
 
 // MARK: - Canvas Container View
@@ -29,8 +33,10 @@ final class CanvasContainerView: UIView {
     let pagesStackView = UIStackView()
 
     private var pageImageViews: [UIImageView] = []
+    private var pageOverlayViews: [PageOverlayView] = []
     private var separatorViews: [UIView] = []
     private var contentWidthConstraint: NSLayoutConstraint?
+    private var currentOverlaySettings = PageOverlaySettings()
 
     /// Separator height between pages (increased for 3D shadow clearance)
     private static let separatorHeight: CGFloat = 16
@@ -116,6 +122,19 @@ final class CanvasContainerView: UIView {
         }
     }
 
+    // MARK: - Overlay
+
+    func updateOverlay(_ settings: PageOverlaySettings) {
+        guard settings != currentOverlaySettings else { return }
+        currentOverlaySettings = settings
+
+        for overlay in pageOverlayViews {
+            overlay.overlayType = settings.type
+            overlay.spacing = settings.spacing
+            overlay.setNeedsDisplay()
+        }
+    }
+
     // MARK: - Render PDF
 
     private func renderPDFPages(document: PDFDocument, pageRange: ClosedRange<Int>? = nil) async -> [UIImage] {
@@ -148,8 +167,10 @@ final class CanvasContainerView: UIView {
     private func setupPages(with images: [UIImage]) {
         // Clear existing
         for view in pageImageViews { view.removeFromSuperview() }
+        for view in pageOverlayViews { view.removeFromSuperview() }
         for view in separatorViews { view.removeFromSuperview() }
         pageImageViews.removeAll()
+        pageOverlayViews.removeAll()
         separatorViews.removeAll()
         pagesStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
@@ -187,6 +208,22 @@ final class CanvasContainerView: UIView {
                 imageView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
                 imageView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
                 imageView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
+            ])
+
+            // Page overlay (grid / dots / lines)
+            let overlayView = PageOverlayView()
+            overlayView.translatesAutoresizingMaskIntoConstraints = false
+            overlayView.isUserInteractionEnabled = false
+            overlayView.overlayType = currentOverlaySettings.type
+            overlayView.spacing = currentOverlaySettings.spacing
+            pageView.addSubview(overlayView)
+            pageOverlayViews.append(overlayView)
+
+            NSLayoutConstraint.activate([
+                overlayView.topAnchor.constraint(equalTo: pageView.topAnchor),
+                overlayView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
+                overlayView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
+                overlayView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
             ])
 
             // Page sits at top-left of wrapper
@@ -289,5 +326,84 @@ extension CanvasContainerView: UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         setNeedsLayout()
+    }
+}
+
+// MARK: - Page Overlay View
+
+final class PageOverlayView: UIView {
+    var overlayType: PageOverlayType = .none
+    var spacing: CGFloat = 20
+
+    private static let overlayColor = UIColor(white: 0.72, alpha: 0.35)
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isOpaque = false
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ rect: CGRect) {
+        guard overlayType != .none else { return }
+        guard let ctx = UIGraphicsGetCurrentContext() else { return }
+
+        ctx.setStrokeColor(Self.overlayColor.cgColor)
+        ctx.setFillColor(Self.overlayColor.cgColor)
+
+        // Scale spacing by the 2x render factor
+        let scaledSpacing = spacing * 2.0
+
+        switch overlayType {
+        case .none:
+            break
+
+        case .grid:
+            ctx.setLineWidth(0.5)
+            // Vertical lines
+            var x: CGFloat = scaledSpacing
+            while x < rect.width {
+                ctx.move(to: CGPoint(x: x, y: 0))
+                ctx.addLine(to: CGPoint(x: x, y: rect.height))
+                x += scaledSpacing
+            }
+            // Horizontal lines
+            var y: CGFloat = scaledSpacing
+            while y < rect.height {
+                ctx.move(to: CGPoint(x: 0, y: y))
+                ctx.addLine(to: CGPoint(x: rect.width, y: y))
+                y += scaledSpacing
+            }
+            ctx.strokePath()
+
+        case .dots:
+            let dotSize: CGFloat = 2.0
+            var y: CGFloat = scaledSpacing
+            while y < rect.height {
+                var x: CGFloat = scaledSpacing
+                while x < rect.width {
+                    let dotRect = CGRect(
+                        x: x - dotSize / 2,
+                        y: y - dotSize / 2,
+                        width: dotSize,
+                        height: dotSize
+                    )
+                    ctx.fillEllipse(in: dotRect)
+                    x += scaledSpacing
+                }
+                y += scaledSpacing
+            }
+
+        case .lines:
+            ctx.setLineWidth(0.5)
+            var y: CGFloat = scaledSpacing
+            while y < rect.height {
+                ctx.move(to: CGPoint(x: 0, y: y))
+                ctx.addLine(to: CGPoint(x: rect.width, y: y))
+                y += scaledSpacing
+            }
+            ctx.strokePath()
+        }
     }
 }
