@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct RulerOverlayView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     /// Base ruler dimensions
     private let baseWidth: CGFloat = 600
     private let baseHeight: CGFloat = 56
@@ -48,43 +50,77 @@ struct RulerOverlayView: View {
 
     // MARK: - Ruler Body
 
+    // MARK: - Theme Colors
+
+    private var isDark: Bool { colorScheme == .dark }
+
+    private var rulerFill: Color {
+        isDark
+            ? Color(red: 0.22, green: 0.24, blue: 0.28)
+            : Color(red: 0.96, green: 0.88, blue: 0.55)
+    }
+
+    private var borderColor: Color {
+        isDark
+            ? Color.white.opacity(0.25)
+            : Color.black.opacity(0.35)
+    }
+
+    private var tickColor: Color {
+        isDark
+            ? Color.white.opacity(0.7)
+            : Color.black.opacity(0.7)
+    }
+
+    private var labelColor: Color {
+        isDark
+            ? Color.white.opacity(0.6)
+            : Color.black.opacity(0.6)
+    }
+
+    private var edgeColor: Color {
+        isDark
+            ? Color.white.opacity(0.5)
+            : Color.black.opacity(0.5)
+    }
+
+    // MARK: - Ruler Body
+
     private var rulerBody: some View {
-        ZStack(alignment: .top) {
-            // Translucent ruler background
+        let tick = tickColor
+        let label = labelColor
+        let edge = edgeColor
+
+        return ZStack(alignment: .top) {
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color(red: 0.96, green: 0.88, blue: 0.55))
+                .fill(rulerFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: 4)
-                        .stroke(Color.black.opacity(0.35), lineWidth: 1.5)
+                        .stroke(borderColor, lineWidth: 1.5)
                 )
 
-            // Tick marks and numbers
             Canvas { context, size in
-                let tickColor = Color.black.opacity(0.7)
                 let shortTick: CGFloat = 10
                 let medTick: CGFloat = 16
                 let longTick: CGFloat = 24
 
-                // Points per cm at 72 dpi (1 inch = 2.54cm, 1 inch = 72pt)
                 let ptPerCm: CGFloat = 72.0 / 2.54
                 let totalCm = Int(size.width / ptPerCm)
 
                 for cm in 0...totalCm {
-                    let baseX = CGFloat(cm) * ptPerCm + 16 // 16pt left padding
+                    let baseX = CGFloat(cm) * ptPerCm + 16
 
                     guard baseX < size.width - 8 else { break }
 
-                    // Draw cm tick (tall)
                     var longPath = Path()
                     longPath.move(to: CGPoint(x: baseX, y: 0))
                     longPath.addLine(to: CGPoint(x: baseX, y: longTick))
-                    context.stroke(longPath, with: .color(tickColor), lineWidth: 1.2)
+                    context.stroke(longPath, with: .color(tick), lineWidth: 1.2)
 
-                    // Number label
                     if cm > 0 {
                         let text = Text("\(cm)")
                             .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .foregroundColor(Color.black.opacity(0.6))
+                            .foregroundColor(label)
                         context.draw(
                             context.resolve(text),
                             at: CGPoint(x: baseX, y: longTick + 8),
@@ -92,7 +128,6 @@ struct RulerOverlayView: View {
                         )
                     }
 
-                    // Draw mm ticks within this cm
                     let ptPerMm = ptPerCm / 10.0
                     for mm in 1..<10 {
                         let x = baseX + CGFloat(mm) * ptPerMm
@@ -102,19 +137,18 @@ struct RulerOverlayView: View {
                         var mmPath = Path()
                         mmPath.move(to: CGPoint(x: x, y: 0))
                         mmPath.addLine(to: CGPoint(x: x, y: tickH))
-                        context.stroke(mmPath, with: .color(tickColor), lineWidth: mm == 5 ? 0.8 : 0.5)
+                        context.stroke(mmPath, with: .color(tick), lineWidth: mm == 5 ? 0.8 : 0.5)
                     }
                 }
 
-                // Bottom edge line (the straight edge for drawing)
                 var edgePath = Path()
                 edgePath.move(to: CGPoint(x: 0, y: size.height))
                 edgePath.addLine(to: CGPoint(x: size.width, y: size.height))
-                context.stroke(edgePath, with: .color(Color.black.opacity(0.5)), lineWidth: 2)
+                context.stroke(edgePath, with: .color(edge), lineWidth: 2)
             }
         }
         .frame(width: baseWidth, height: baseHeight)
-        .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .shadow(color: .black.opacity(isDark ? 0.4 : 0.15), radius: 8, x: 0, y: 4)
         .contentShape(Rectangle())
     }
 
