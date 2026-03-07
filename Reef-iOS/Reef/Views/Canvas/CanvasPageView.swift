@@ -11,14 +11,18 @@ import PDFKit
 struct CanvasPageView: UIViewRepresentable {
     let pdfDocument: PDFDocument
     let pageRange: ClosedRange<Int>?
+    var onVisiblePageChanged: ((Int) -> Void)?
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
+        container.onVisiblePageChanged = onVisiblePageChanged
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
         return container
     }
 
-    func updateUIView(_ uiView: CanvasContainerView, context: Context) {}
+    func updateUIView(_ uiView: CanvasContainerView, context: Context) {
+        uiView.onVisiblePageChanged = onVisiblePageChanged
+    }
 }
 
 // MARK: - Canvas Container View
@@ -30,7 +34,13 @@ final class CanvasContainerView: UIView {
 
     private var pageImageViews: [UIImageView] = []
     private var separatorViews: [UIView] = []
+    private var pageWrappers: [UIView] = []
     private var contentWidthConstraint: NSLayoutConstraint?
+
+    /// Callback reporting the currently visible page index (PDF-absolute)
+    var onVisiblePageChanged: ((Int) -> Void)?
+    private var startPageIndex: Int = 0
+    private var lastReportedPage: Int = -1
 
     /// Separator height between pages (increased for 3D shadow clearance)
     private static let separatorHeight: CGFloat = 16
@@ -102,6 +112,7 @@ final class CanvasContainerView: UIView {
     // MARK: - Configure
 
     func configure(pdfDocument: PDFDocument, pageRange: ClosedRange<Int>? = nil) {
+        startPageIndex = pageRange?.lowerBound ?? 0
         Task { [weak self] in
             guard let self else { return }
             let images = await self.renderPDFPages(document: pdfDocument, pageRange: pageRange)
@@ -151,6 +162,8 @@ final class CanvasContainerView: UIView {
         for view in separatorViews { view.removeFromSuperview() }
         pageImageViews.removeAll()
         separatorViews.removeAll()
+        pageWrappers.removeAll()
+        lastReportedPage = -1
         pagesStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         for (index, image) in images.enumerated() {
@@ -212,6 +225,7 @@ final class CanvasContainerView: UIView {
             ])
 
             pagesStackView.addArrangedSubview(wrapper)
+            pageWrappers.append(wrapper)
 
             // Separator between pages
             if index < images.count - 1 {
@@ -289,5 +303,33 @@ extension CanvasContainerView: UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         setNeedsLayout()
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        updateVisiblePage()
+    }
+
+    private func updateVisiblePage() {
+        guard !pageWrappers.isEmpty else { return }
+
+        let viewportCenterY = scrollView.bounds.height / 2
+        var closestIndex = 0
+        var closestDistance: CGFloat = .infinity
+
+        for (index, wrapper) in pageWrappers.enumerated() {
+            guard let superview = wrapper.superview else { continue }
+            let centerInScrollView = superview.convert(wrapper.center, to: scrollView)
+            let distance = abs(centerInScrollView.y - viewportCenterY)
+            if distance < closestDistance {
+                closestDistance = distance
+                closestIndex = index
+            }
+        }
+
+        let actualPage = startPageIndex + closestIndex
+        if actualPage != lastReportedPage {
+            lastReportedPage = actualPage
+            onVisiblePageChanged?(actualPage)
+        }
     }
 }

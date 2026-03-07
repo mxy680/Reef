@@ -16,6 +16,8 @@ struct DocumentCanvasView: View {
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
+    @State private var currentPageIndex = 0
+    @State private var pageVersion = UUID()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -53,7 +55,8 @@ struct DocumentCanvasView: View {
                         onClose: { onDismiss() },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
-                        documentName: document.displayName
+                        documentName: document.displayName,
+                        onPageAction: { handlePageAction($0) }
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -63,9 +66,10 @@ struct DocumentCanvasView: View {
 
                     CanvasPageView(
                         pdfDocument: pdf,
-                        pageRange: pageRange(for: currentQuestionIndex)
+                        pageRange: pageRange(for: currentQuestionIndex),
+                        onVisiblePageChanged: { currentPageIndex = $0 }
                     )
-                    .id(currentQuestionIndex)
+                    .id("\(currentQuestionIndex)-\(pageVersion)")
                     .background(Self.cream)
                 }
             }
@@ -82,6 +86,26 @@ struct DocumentCanvasView: View {
             #endif
             await viewModel.loadDocument(document)
         }
+    }
+
+    // MARK: - Page Actions
+
+    private func handlePageAction(_ action: PageAction) {
+        switch action {
+        case .addBlankAtEnd:
+            viewModel.addBlankPage(at: viewModel.pageCount)
+        case .addBlankAfterCurrent:
+            viewModel.addBlankPage(at: currentPageIndex + 1)
+        case .deleteCurrentPage:
+            viewModel.deletePageAt(currentPageIndex)
+            if currentPageIndex >= viewModel.pageCount {
+                currentPageIndex = max(0, viewModel.pageCount - 1)
+            }
+        case .deleteAllPages:
+            viewModel.deleteAllPages()
+            currentPageIndex = 0
+        }
+        pageVersion = UUID()
     }
 
     // MARK: - Page Range

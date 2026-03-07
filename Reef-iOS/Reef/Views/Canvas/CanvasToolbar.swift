@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+enum PageAction {
+    case addBlankAtEnd
+    case addBlankAfterCurrent
+    case deleteCurrentPage
+    case deleteAllPages
+}
+
 struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
     @Binding var currentQuestionIndex: Int
@@ -15,6 +22,9 @@ struct CanvasToolbar: View {
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
     var documentName: String = ""
+    var onPageAction: ((PageAction) -> Void)?
+
+    @State private var showPageMenu = false
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -212,7 +222,29 @@ struct CanvasToolbar: View {
         HStack(spacing: 0) {
             ToolbarButton(icon: "pencil.and.ruler.fill", isSelected: false, action: {})
             ToolbarButton(icon: "canvas.page_settings", isSelected: false, isCustomIcon: true, action: {})
-            ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
+
+            // Page menu button with popover
+            Button {
+                showPageMenu.toggle()
+            } label: {
+                Image("canvas.add_page")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(showPageMenu ? .white : Color.white.opacity(0.9))
+                    .frame(width: 36, height: 36, alignment: .center)
+                    .background(showPageMenu ? Color.white.opacity(0.25) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+            .frame(width: 36, height: 36)
+            .popover(isPresented: $showPageMenu, arrowEdge: .bottom) {
+                PageMenuView(onAction: { action in
+                    showPageMenu = false
+                    onPageAction?(action)
+                })
+            }
         }
     }
 
@@ -310,6 +342,51 @@ private struct ChromeTabShape: Shape {
         )
         path.closeSubpath()
         return path
+    }
+}
+
+// MARK: - Page Menu View
+
+private struct PageMenuView: View {
+    let onAction: (PageAction) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            menuRow(icon: "doc.badge.plus", label: "Add Page to End") {
+                onAction(.addBlankAtEnd)
+            }
+            Divider()
+            menuRow(icon: "plus.rectangle.on.rectangle", label: "Add Page After This") {
+                onAction(.addBlankAfterCurrent)
+            }
+            Divider()
+            menuRow(icon: "doc.badge.minus", label: "Delete This Page", isDestructive: true) {
+                onAction(.deleteCurrentPage)
+            }
+            Divider()
+            menuRow(icon: "trash", label: "Delete All Pages", isDestructive: true) {
+                onAction(.deleteAllPages)
+            }
+        }
+        .frame(width: 240)
+    }
+
+    private func menuRow(icon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 15))
+                    .frame(width: 22)
+                Text(label)
+                    .font(.system(size: 15))
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .foregroundColor(isDestructive ? .red : .primary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
