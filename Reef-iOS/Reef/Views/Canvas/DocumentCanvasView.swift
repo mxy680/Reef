@@ -37,10 +37,12 @@ struct DocumentCanvasView: View {
                     loadingView
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Self.cream)
+                        .transition(.opacity)
                 } else if let error = viewModel.error {
                     errorView(error)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Self.cream)
+                        .transition(.opacity)
                 } else if let pdf = viewModel.pdfDocument {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
@@ -68,6 +70,7 @@ struct DocumentCanvasView: View {
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
+            .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
         }
         .ignoresSafeArea()
         .task {
@@ -93,14 +96,67 @@ struct DocumentCanvasView: View {
     // MARK: - Loading
 
     private var loadingView: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .tint(ReefColors.primary)
+        VStack(spacing: 0) {
+            Spacer()
 
-            Text("Loading document...")
-                .font(.epilogue(15, weight: .medium))
-                .tracking(-0.04 * 15)
-                .foregroundStyle(ReefColors.gray600)
+            // Document skeleton placeholder
+            VStack(spacing: 0) {
+                // Page shape with ruled lines + shimmer
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.white)
+                        .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
+
+                    // Ruled lines
+                    GeometryReader { geo in
+                        let lineCount = 14
+                        let topInset = geo.size.height * 0.12
+                        let spacing = (geo.size.height * 0.72) / CGFloat(lineCount)
+                        let hPad = geo.size.width * 0.12
+
+                        ForEach(0..<lineCount, id: \.self) { i in
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(ReefColors.gray100)
+                                .frame(
+                                    width: i == 0
+                                        ? (geo.size.width - hPad * 2) * 0.6
+                                        : (geo.size.width - hPad * 2) * CGFloat([1.0, 0.92, 0.85, 1.0, 0.78, 0.95, 1.0, 0.88, 0.7, 1.0, 0.93, 0.82, 0.96, 0.6][i % 14]),
+                                    height: 4
+                                )
+                                .offset(x: hPad, y: topInset + CGFloat(i) * spacing)
+                        }
+                    }
+
+                    ShimmerOverlay()
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .frame(width: 200, height: 260)
+            }
+
+            Spacer().frame(height: 28)
+
+            // Document name
+            Text(document.displayName)
+                .font(.epilogue(16, weight: .semiBold))
+                .tracking(-0.04 * 16)
+                .foregroundStyle(ReefColors.black)
+                .lineLimit(1)
+
+            Spacer().frame(height: 10)
+
+            // Subtle loading indicator
+            HStack(spacing: 8) {
+                ProgressView()
+                    .tint(ReefColors.primary)
+                    .scaleEffect(0.8)
+
+                Text("Opening...")
+                    .font(.epilogue(14, weight: .medium))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(ReefColors.gray500)
+            }
+
+            Spacer()
         }
     }
 
