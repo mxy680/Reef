@@ -52,7 +52,7 @@ struct RulerOverlayView: View {
         ZStack(alignment: .top) {
             // Translucent ruler background
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.yellow.opacity(0.18))
+                .fill(Color(red: 0.96, green: 0.88, blue: 0.55))
                 .overlay(
                     RoundedRectangle(cornerRadius: 4)
                         .stroke(Color.black.opacity(0.35), lineWidth: 1.5)
