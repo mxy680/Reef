@@ -11,4 +11,5 @@ ios-old/
 xcuserdata/
 .vercel
 *.xcuserstate
-Reef-Server/data/
+Reef-Server/data/*
+!Reef-Server/data/reconstructions/
