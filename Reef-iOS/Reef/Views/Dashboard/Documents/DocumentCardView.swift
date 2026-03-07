@@ -60,7 +60,7 @@ struct DocumentCardView: View {
                     .foregroundStyle(statusColor)
             }
             .padding(.horizontal, 10)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .frame(height: footerHeight)
             .layoutPriority(1)
         }
