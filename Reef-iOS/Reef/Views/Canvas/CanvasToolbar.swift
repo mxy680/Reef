@@ -212,9 +212,8 @@ struct CanvasToolbar: View {
     private var canvasUtilitiesSection: some View {
         HStack(spacing: 0) {
             ToolbarButton(
-                icon: "canvas.ruler",
+                icon: "pencil.and.ruler.fill",
                 isSelected: showRuler,
-                isCustomIcon: true,
                 action: {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         showRuler.toggle()
