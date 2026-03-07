@@ -13,10 +13,14 @@ struct DocumentCanvasView: View {
     let document: Document
     let onDismiss: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var viewModel = CanvasViewModel()
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
+    @State private var currentPageIndex = 0
+    @State private var pageVersion = UUID()
+    @State private var showPageMenu = false
     @State private var showRuler = false
     @State private var drawingManager: DrawingManager?
     @State private var penColor: UIColor = .black
@@ -25,6 +29,8 @@ struct DocumentCanvasView: View {
     @State private var selectedToolMidX: CGFloat = 0
     @State private var customColors: [UIColor] = []
     @State private var showColorPicker = false
+    @State private var showPageSettings = false
+    @State private var pageOverlaySettings = PageOverlaySettings()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -41,21 +47,29 @@ struct DocumentCanvasView: View {
     /// RGB: (78,138,151) * 0.82 ≈ (64,113,124)
     private static let safeAreaColor = Color(red: 64/255.0, green: 113/255.0, blue: 124/255.0)
 
+    private var canvasBackground: Color {
+        theme.isDarkMode ? ReefColors.CanvasDark.background : Self.cream
+    }
+
+    private var canvasSafeArea: Color {
+        theme.isDarkMode ? ReefColors.CanvasDark.safeArea : Self.safeAreaColor
+    }
+
     var body: some View {
         ZStack {
             // Full-bleed tab strip teal so the safe area is never black
-            Self.safeAreaColor.ignoresSafeArea()
+            canvasSafeArea.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 if viewModel.isLoading {
                     loadingView
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Self.cream)
+                        .background(canvasBackground)
                         .transition(.opacity)
                 } else if let error = viewModel.error {
                     errorView(error)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Self.cream)
+                        .background(canvasBackground)
                         .transition(.opacity)
                 } else if let pdf = viewModel.pdfDocument, let manager = drawingManager {
                     CanvasToolbar(
@@ -66,19 +80,26 @@ struct DocumentCanvasView: View {
                             : 1,
                         onClose: {
                             manager.saveAll()
+                            Task { await viewModel.saveIfNeeded() }
                             onDismiss()
                         },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
+                        onPageAction: { handlePageAction($0) },
+                        showPageMenu: $showPageMenu,
                         showRuler: $showRuler,
                         onUndo: { manager.undo() },
                         onRedo: { manager.redo() },
                         onToolRetapped: { _ in
                             showToolSettings.toggle()
                         },
-                        selectedToolMidX: $selectedToolMidX
+                        selectedToolMidX: $selectedToolMidX,
+                        showPageSettings: $showPageSettings,
+                        hasActiveOverlay: pageOverlaySettings.type != .none,
+                        pageOverlaySettings: $pageOverlaySettings
                     )
+                    .zIndex(1)
 
                     if tutorModeOn && isReconstructed {
                         TutorStepToolbar(questionIndex: currentQuestionIndex)
@@ -90,9 +111,12 @@ struct DocumentCanvasView: View {
                             pdfDocument: pdf,
                             pageRange: pageRange(for: currentQuestionIndex),
                             drawingManager: manager,
-                            currentTool: currentPKTool
+                            currentTool: currentPKTool,
+                            onVisiblePageChanged: { currentPageIndex = $0 },
+                            darkMode: theme.isDarkMode,
+                            overlaySettings: pageOverlaySettings
                         )
-                        .id(currentQuestionIndex)
+                        .id("\(currentQuestionIndex)-\(pageVersion)")
 
                         if showRuler {
                             RulerOverlayView()
@@ -121,12 +145,21 @@ struct DocumentCanvasView: View {
                             .transition(.scale(scale: 0.95).combined(with: .opacity))
                         }
                     }
-                    .background(Self.cream)
+                    .background(canvasBackground)
                     .animation(.spring(duration: 0.2), value: showToolSettings)
+                    .overlay {
+                        // Tap-to-dismiss layer (covers canvas only, not toolbar)
+                        if showPageSettings {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { showPageSettings = false }
+                        }
+                    }
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
+            .animation(.easeInOut(duration: 0.3), value: theme.isDarkMode)
             .animation(.easeInOut(duration: 0.2), value: showRuler)
 
             // Centered color picker popup
@@ -147,7 +180,46 @@ struct DocumentCanvasView: View {
             }
         }
         .animation(.spring(duration: 0.2), value: showColorPicker)
+        .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
+        .overlayPreferenceValue(PageMenuAnchorKey.self) { anchor in
+            if showPageMenu, let anchor {
+                GeometryReader { proxy in
+                    let rect = proxy[anchor]
+                    let menuWidth: CGFloat = 230
+                    // Center menu horizontally under the button, clamped to screen
+                    let menuX = max(8, min(
+                        rect.midX - menuWidth / 2,
+                        proxy.size.width - menuWidth - 12
+                    ))
+
+                    // Dismiss backdrop
+                    Color.black.opacity(0.001)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.spring(duration: 0.2, bounce: 0.15)) {
+                                showPageMenu = false
+                            }
+                        }
+
+                    // Custom popover centered below button
+                    PageMenuView(onAction: { action in
+                        withAnimation(.spring(duration: 0.2, bounce: 0.15)) {
+                            showPageMenu = false
+                        }
+                        handlePageAction(action)
+                    }, canUndo: viewModel.canUndo)
+                    .transition(
+                        .scale(scale: 0.92, anchor: .top)
+                        .combined(with: .opacity)
+                        .combined(with: .offset(y: -4))
+                    )
+                    .offset(x: menuX, y: rect.maxY + 10)
+                }
+                .ignoresSafeArea()
+            }
+        }
+        .animation(.spring(duration: 0.25, bounce: 0.15), value: showPageMenu)
         .task {
             #if DEBUG
             if document.id == "dev-test" {
@@ -174,6 +246,33 @@ struct DocumentCanvasView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             drawingManager?.saveAll()
         }
+        .onDisappear {
+            Task { await viewModel.saveIfNeeded() }
+        }
+    }
+
+    // MARK: - Page Actions
+
+    private func handlePageAction(_ action: PageAction) {
+        switch action {
+        case .addBlankAtEnd:
+            viewModel.addBlankPage(at: viewModel.pageCount)
+        case .addBlankAfterCurrent:
+            viewModel.addBlankPage(at: currentPageIndex + 1)
+        case .deleteCurrentPage:
+            viewModel.deletePageAt(currentPageIndex)
+            if currentPageIndex >= viewModel.pageCount {
+                currentPageIndex = max(0, viewModel.pageCount - 1)
+            }
+        case .deleteAllPages:
+            viewModel.deleteAllPages()
+            currentPageIndex = 0
+        case .undo:
+            if viewModel.undo() {
+                currentPageIndex = min(currentPageIndex, max(0, viewModel.pageCount - 1))
+            }
+        }
+        pageVersion = UUID()
     }
 
     // MARK: - Page Range

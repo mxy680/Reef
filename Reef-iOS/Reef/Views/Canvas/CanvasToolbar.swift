@@ -7,7 +7,23 @@
 
 import SwiftUI
 
+enum PageAction {
+    case addBlankAtEnd
+    case addBlankAfterCurrent
+    case deleteCurrentPage
+    case deleteAllPages
+    case undo
+}
+
+struct PageMenuAnchorKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: Anchor<CGRect>?
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}
+
 struct CanvasToolbar: View {
+    @Environment(ThemeManager.self) private var theme
     @Binding var selectedTool: CanvasTool
     @Binding var currentQuestionIndex: Int
     let questionCount: Int
@@ -15,14 +31,24 @@ struct CanvasToolbar: View {
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
     var documentName: String = ""
+    var onPageAction: ((PageAction) -> Void)?
+    @Binding var showPageMenu: Bool
     @Binding var showRuler: Bool
     var onUndo: () -> Void = {}
     var onRedo: () -> Void = {}
     var onToolRetapped: (CanvasTool) -> Void = { _ in }
     @Binding var selectedToolMidX: CGFloat
+    @Binding var showPageSettings: Bool
+    var hasActiveOverlay: Bool = false
+    @Binding var pageOverlaySettings: PageOverlaySettings
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
+    private static let darkBarColor = ReefColors.CanvasDark.toolbar
+
+    private var activeBarColor: Color {
+        theme.isDarkMode ? Self.darkBarColor : Self.barColor
+    }
 
     private var safeAreaTop: CGFloat {
         UIApplication.shared.connectedScenes
@@ -52,7 +78,7 @@ struct CanvasToolbar: View {
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity)
             .frame(height: 48)
-            .background(Self.barColor)
+            .background(activeBarColor)
 
             // Bottom separator
             Rectangle()
@@ -63,8 +89,8 @@ struct CanvasToolbar: View {
         .background(
             // Tab strip = barColor darkened with black overlay, extends into safe area
             ZStack {
-                Self.barColor
-                Color.black.opacity(0.18)
+                activeBarColor
+                Color.black.opacity(theme.isDarkMode ? 0.3 : 0.18)
             }
             .ignoresSafeArea(edges: .top)
         )
@@ -75,8 +101,8 @@ struct CanvasToolbar: View {
     /// Tab strip background: barColor darkened by overlaying black.
     private var tabStripBg: some View {
         ZStack {
-            Self.barColor
-            Color.black.opacity(0.18)
+            activeBarColor
+            Color.black.opacity(theme.isDarkMode ? 0.3 : 0.18)
         }
     }
 
@@ -103,7 +129,7 @@ struct CanvasToolbar: View {
                                     )
                                     .frame(minWidth: 44, minHeight: 30)
                                     .padding(.horizontal, isReconstructed ? 6 : 16)
-                                    .background(isSelected ? Self.barColor : Color.clear)
+                                    .background(isSelected ? activeBarColor : Color.clear)
                                     .clipShape(ChromeTabShape())
                                     .overlay(
                                         isSelected
@@ -245,8 +271,49 @@ struct CanvasToolbar: View {
                     }
                 }
             )
-            ToolbarButton(icon: "canvas.page_settings", isSelected: false, isCustomIcon: true, action: {})
-            ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
+            ToolbarButton(icon: "canvas.page_settings", isSelected: hasActiveOverlay, isCustomIcon: true, action: {
+                showPageSettings.toggle()
+            })
+            .overlay(alignment: .top) {
+                if showPageSettings {
+                    PageSettingsPopover(settings: $pageOverlaySettings)
+                        .background(ReefColors.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(ReefColors.black, lineWidth: 1.5)
+                        )
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(ReefColors.black)
+                                .offset(x: 4, y: 4)
+                        )
+                        .fixedSize()
+                        .offset(y: 40)
+                        .transition(.opacity)
+                }
+            }
+            .zIndex(1)
+
+            // Page menu button
+            Button {
+                withAnimation(.spring(duration: 0.2)) {
+                    showPageMenu.toggle()
+                }
+            } label: {
+                Image("canvas.add_page")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(showPageMenu ? .white : Color.white.opacity(0.9))
+                    .frame(width: 36, height: 36, alignment: .center)
+                    .background(showPageMenu ? Color.white.opacity(0.25) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+            .frame(width: 36, height: 36)
+            .anchorPreference(key: PageMenuAnchorKey.self, value: .bounds) { $0 }
         }
     }
 
@@ -276,7 +343,11 @@ struct CanvasToolbar: View {
         HStack(spacing: 0) {
             ToolbarButton(icon: "sidebar.trailing", isSelected: false, action: {})
             ToolbarButton(icon: "square.and.arrow.up.fill", isSelected: false, action: {})
-            ToolbarButton(icon: "moon.fill", isSelected: false, action: {})
+            ToolbarButton(
+                icon: theme.isDarkMode ? "sun.max.fill" : "moon.fill",
+                isSelected: theme.isDarkMode,
+                action: { theme.isDarkMode.toggle() }
+            )
         }
     }
 
@@ -344,6 +415,72 @@ private struct ChromeTabShape: Shape {
         )
         path.closeSubpath()
         return path
+    }
+}
+
+// MARK: - Page Menu View
+
+struct PageMenuView: View {
+    let onAction: (PageAction) -> Void
+    var canUndo: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            menuRow(systemIcon: "doc.fill.badge.plus", label: "Add Page to End") {
+                onAction(.addBlankAtEnd)
+            }
+            menuRow(systemIcon: "doc.on.doc.fill", label: "Add Page After This") {
+                onAction(.addBlankAfterCurrent)
+            }
+            Divider()
+                .padding(.horizontal, 14)
+                .padding(.vertical, 2)
+            menuRow(systemIcon: "xmark.bin.fill", label: "Delete This Page", isDestructive: true) {
+                onAction(.deleteCurrentPage)
+            }
+            menuRow(systemIcon: "trash.fill", label: "Delete All Pages", isDestructive: true) {
+                onAction(.deleteAllPages)
+            }
+            if canUndo {
+                Divider()
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 2)
+                menuRow(systemIcon: "arrow.uturn.backward", label: "Undo") {
+                    onAction(.undo)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .frame(width: 230)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(ReefColors.black, lineWidth: 2)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(ReefColors.black)
+                .offset(x: 4, y: 4)
+        )
+    }
+
+    private func menuRow(systemIcon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemIcon)
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 20, height: 20)
+                Text(label)
+                    .font(.system(size: 14, weight: .medium))
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .foregroundColor(isDestructive ? .red : ReefColors.black)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 

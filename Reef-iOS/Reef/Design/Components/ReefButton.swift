@@ -6,38 +6,42 @@ enum ReefButtonVariant {
 }
 
 struct ReefButtonStyle: ButtonStyle {
+    @Environment(ThemeManager.self) private var theme
     let variant: ReefButtonVariant
 
-    private var backgroundColor: Color {
+    private func backgroundColor(_ dark: Bool) -> Color {
         switch variant {
         case .primary: ReefColors.primary
-        case .secondary: ReefColors.white
+        case .secondary: dark ? ReefColors.DashboardDark.card : ReefColors.white
         }
     }
 
-    private var foregroundColor: Color {
+    private func foregroundColor(_ dark: Bool) -> Color {
         switch variant {
         case .primary: ReefColors.white
-        case .secondary: ReefColors.black
+        case .secondary: dark ? ReefColors.DashboardDark.text : ReefColors.black
         }
     }
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
+        let dark = theme.isDarkMode
+        let borderColor = dark ? ReefColors.DashboardDark.popupBorder : ReefColors.black
+        let shadowColor = dark ? ReefColors.DashboardDark.popupShadow : ReefColors.black
         configuration.label
             .reefButton()
-            .foregroundStyle(foregroundColor)
+            .foregroundStyle(foregroundColor(dark))
             .frame(maxWidth: .infinity)
             .frame(height: 48)
-            .background(backgroundColor)
+            .background(backgroundColor(dark))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(ReefColors.black, lineWidth: 2)
+                    .stroke(borderColor, lineWidth: 2)
             )
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(ReefColors.black)
+                    .fill(shadowColor)
                     .offset(
                         x: pressed ? 0 : 4,
                         y: pressed ? 0 : 4
@@ -54,39 +58,43 @@ struct ReefButtonStyle: ButtonStyle {
 }
 
 struct ReefCompactButtonStyle: ButtonStyle {
+    @Environment(ThemeManager.self) private var theme
     let variant: ReefButtonVariant
 
-    private var backgroundColor: Color {
+    private func backgroundColor(_ dark: Bool) -> Color {
         switch variant {
         case .primary: ReefColors.primary
-        case .secondary: ReefColors.white
+        case .secondary: dark ? ReefColors.DashboardDark.card : ReefColors.white
         }
     }
 
-    private var foregroundColor: Color {
+    private func foregroundColor(_ dark: Bool) -> Color {
         switch variant {
         case .primary: ReefColors.white
-        case .secondary: ReefColors.black
+        case .secondary: dark ? ReefColors.DashboardDark.text : ReefColors.black
         }
     }
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
+        let dark = theme.isDarkMode
+        let borderColor = dark ? ReefColors.DashboardDark.popupBorder : ReefColors.black
+        let shadowColor = dark ? ReefColors.DashboardDark.popupShadow : ReefColors.black
         configuration.label
             .font(.epilogue(12, weight: .bold))
             .tracking(-0.04 * 12)
-            .foregroundStyle(foregroundColor)
+            .foregroundStyle(foregroundColor(dark))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(backgroundColor)
+            .background(backgroundColor(dark))
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(ReefColors.black, lineWidth: 1.5)
+                    .stroke(borderColor, lineWidth: 1.5)
             )
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(ReefColors.black)
+                    .fill(shadowColor)
                     .offset(
                         x: pressed ? 0 : 3,
                         y: pressed ? 0 : 3

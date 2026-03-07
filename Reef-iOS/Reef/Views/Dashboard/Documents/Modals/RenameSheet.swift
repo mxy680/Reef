@@ -5,6 +5,7 @@ struct RenameSheet: View {
     let onConfirm: (String) -> Void
     let onClose: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var name: String
     @FocusState private var isFocused: Bool
 
@@ -16,21 +17,22 @@ struct RenameSheet: View {
     }
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             Text("Rename Document")
                 .font(.epilogue(20, weight: .black))
                 .tracking(-0.04 * 20)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             TextField("Document name", text: $name)
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
                 .padding(12)
-                .background(ReefColors.white)
+                .background(dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(ReefColors.gray400, lineWidth: 1.5)
+                        .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
                 )
                 .focused($isFocused)
                 .onSubmit { submitIfValid() }
@@ -42,7 +44,7 @@ struct RenameSheet: View {
                 Text("Cancel")
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -79,18 +81,7 @@ struct RenameSheet: View {
             .padding(.top, 20)
         }
         .padding(32)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 2)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(ReefColors.black)
-                .offset(x: 4, y: 4)
-        )
-        .frame(maxWidth: 400)
+        .popupShell()
         .onAppear { isFocused = true }
     }
 

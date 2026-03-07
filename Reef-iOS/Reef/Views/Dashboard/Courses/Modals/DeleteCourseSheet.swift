@@ -5,20 +5,22 @@ struct DeleteCourseSheet: View {
     let onConfirm: () -> Void
     let onClose: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var isDeleting = false
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(spacing: 0) {
             Text("Delete \"\(course.name)\"?")
                 .font(.epilogue(20, weight: .black))
                 .tracking(-0.04 * 20)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .multilineTextAlignment(.center)
 
             Text("Documents in this course will be unlinked, not deleted.")
                 .font(.epilogue(14, weight: .medium))
                 .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .multilineTextAlignment(.center)
                 .padding(.top, 8)
 
@@ -26,7 +28,7 @@ struct DeleteCourseSheet: View {
                 Text("Cancel")
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -64,17 +66,6 @@ struct DeleteCourseSheet: View {
             .padding(.top, 24)
         }
         .padding(32)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 2)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(ReefColors.black)
-                .offset(x: 4, y: 4)
-        )
-        .frame(maxWidth: 400)
+        .popupShell()
     }
 }

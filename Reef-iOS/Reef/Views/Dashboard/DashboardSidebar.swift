@@ -6,6 +6,7 @@ struct DashboardSidebar: View {
     @Binding var courses: [Course]
     @Binding var isOpen: Bool
     @Environment(AuthManager.self) private var authManager
+    @Environment(ThemeManager.self) private var theme
 
     @State private var isCreating = false
     @Environment(\.layoutMetrics) private var metrics
@@ -39,14 +40,14 @@ struct DashboardSidebar: View {
                     .font(.epilogue(24, weight: .black))
                     .tracking(-0.04 * 24)
                     .textCase(.uppercase)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(theme.isDarkMode ? ReefColors.DashboardDark.text : ReefColors.black)
 
                 Spacer()
             }
 
             Image(systemName: "sidebar.left")
                 .font(.system(size: 18))
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(theme.isDarkMode ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .frame(width: 28, height: 28)
                 .compositingGroup()
                 .contentShape(Rectangle())
@@ -72,7 +73,7 @@ struct DashboardSidebar: View {
                         Text("WORKSPACE")
                             .font(.epilogue(11, weight: .bold))
                             .tracking(0.06 * 11)
-                            .foregroundStyle(ReefColors.gray400)
+                            .foregroundStyle(theme.isDarkMode ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
 
                         Spacer()
                     }
@@ -86,7 +87,7 @@ struct DashboardSidebar: View {
                 }
 
                 Rectangle()
-                    .fill(ReefColors.gray100)
+                    .fill(theme.isDarkMode ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                     .frame(height: 1)
                     .padding(.vertical, 4)
 
@@ -115,16 +116,16 @@ struct DashboardSidebar: View {
                     Text("COURSES")
                         .font(.epilogue(11, weight: .bold))
                         .tracking(0.06 * 11)
-                        .foregroundStyle(ReefColors.gray400)
+                        .foregroundStyle(theme.isDarkMode ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
 
                     if maxCourses != Int.max {
                         Text("\(courses.count)/\(maxCourses)")
                             .font(.epilogue(10, weight: .bold))
                             .tracking(-0.04 * 10)
-                            .foregroundStyle(atCourseLimit ? Color(hex: 0xC62828) : ReefColors.gray500)
+                            .foregroundStyle(atCourseLimit ? Color(hex: 0xC62828) : (theme.isDarkMode ? ReefColors.DashboardDark.textMuted : ReefColors.gray500))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(atCourseLimit ? Color(hex: 0xFDECEA) : ReefColors.gray100)
+                            .background(atCourseLimit ? Color(hex: 0xFDECEA) : (theme.isDarkMode ? ReefColors.DashboardDark.subtle : ReefColors.gray100))
                             .clipShape(Capsule())
                     }
 
@@ -133,7 +134,7 @@ struct DashboardSidebar: View {
 
                 Image(systemName: "plus")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(atCourseLimit ? ReefColors.gray200 : ReefColors.gray400)
+                    .foregroundStyle(theme.isDarkMode ? ReefColors.DashboardDark.textDisabled : (atCourseLimit ? ReefColors.gray200 : ReefColors.gray400))
                     .frame(width: 24, height: 24)
                     .compositingGroup()
                     .contentShape(Rectangle())
@@ -161,7 +162,7 @@ struct DashboardSidebar: View {
                             .tracking(-0.04 * 15)
                     }
                 }
-                .foregroundStyle(ReefColors.gray400)
+                .foregroundStyle(theme.isDarkMode ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
                 .padding(.vertical, 8)
                 .padding(.horizontal, isOpen ? 14 : 0)
                 .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
@@ -201,6 +202,7 @@ struct DashboardSidebar: View {
 
     private func navItem(_ tab: DashboardTab) -> some View {
         let isActive = selectedTab == tab
+        let dark = theme.isDarkMode
 
         return HStack(spacing: 12) {
             Group {
@@ -225,27 +227,27 @@ struct DashboardSidebar: View {
                 Spacer()
             }
         }
-        .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
+        .foregroundStyle(isActive ? (dark ? ReefColors.DashboardDark.text : ReefColors.black) : (dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600))
         .padding(.vertical, 8)
         .padding(.horizontal, isOpen ? 14 : 0)
         .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
         .background(
             isActive
                 ? RoundedRectangle(cornerRadius: 10)
-                    .fill(ReefColors.accent)
+                    .fill(dark ? ReefColors.DashboardDark.activeNavBg : ReefColors.accent)
                 : nil
         )
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             isActive
                 ? RoundedRectangle(cornerRadius: 10)
-                    .stroke(ReefColors.black, lineWidth: 2)
+                    .stroke(dark ? ReefColors.DashboardDark.activeNavBorder : ReefColors.black, lineWidth: 2)
                 : nil
         )
         .background(
             isActive
                 ? RoundedRectangle(cornerRadius: 10)
-                    .fill(ReefColors.black)
+                    .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                     .offset(x: 3, y: 3)
                 : nil
         )
@@ -262,6 +264,7 @@ struct DashboardSidebar: View {
 
     private func courseItem(_ course: Course) -> some View {
         let isActive = selectedCourseId == course.id
+        let dark = theme.isDarkMode
 
         return HStack(spacing: 12) {
             Image(course.emoji)
@@ -279,27 +282,27 @@ struct DashboardSidebar: View {
                 Spacer()
             }
         }
-        .foregroundStyle(isActive ? ReefColors.black : ReefColors.gray600)
+        .foregroundStyle(isActive ? (dark ? ReefColors.DashboardDark.text : ReefColors.black) : (dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600))
         .padding(.vertical, 8)
         .padding(.horizontal, isOpen ? 14 : 0)
         .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
         .background(
             isActive
                 ? RoundedRectangle(cornerRadius: 10)
-                    .fill(ReefColors.accent)
+                    .fill(dark ? ReefColors.DashboardDark.activeNavBg : ReefColors.accent)
                 : nil
         )
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             isActive
                 ? RoundedRectangle(cornerRadius: 10)
-                    .stroke(ReefColors.black, lineWidth: 2)
+                    .stroke(dark ? ReefColors.DashboardDark.activeNavBorder : ReefColors.black, lineWidth: 2)
                 : nil
         )
         .background(
             isActive
                 ? RoundedRectangle(cornerRadius: 10)
-                    .fill(ReefColors.black)
+                    .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
                     .offset(x: 3, y: 3)
                 : nil
         )
@@ -315,7 +318,8 @@ struct DashboardSidebar: View {
     // MARK: - Footer
 
     private var footer: some View {
-        VStack(spacing: 0) {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 0) {
             // Upgrade
             footerRow {
                 circleIcon(fill: ReefColors.accent) {
@@ -333,33 +337,33 @@ struct DashboardSidebar: View {
                     .font(.epilogue(10, weight: .black))
                     .tracking(0.02 * 10)
                     .textCase(.uppercase)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(ReefColors.surface)
+                    .background(dark ? ReefColors.DashboardDark.surface : ReefColors.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(ReefColors.black, lineWidth: 2)
+                            .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 2)
                     )
             }
 
             // Settings
             footerRow {
-                circleIcon(fill: ReefColors.gray100) {
+                circleIcon(fill: dark ? ReefColors.DashboardDark.subtle : ReefColors.gray100) {
                     Image("icon.settings")
                         .renderingMode(.template)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 16, height: 16)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
             } label: {
                 Text("Settings")
             } trailing: {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12))
-                    .foregroundStyle(ReefColors.gray400)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
             }
             .onTapGesture {
                 selectedTab = .settings
@@ -369,10 +373,10 @@ struct DashboardSidebar: View {
 
             // User
             footerRow {
-                circleIcon(fill: ReefColors.surface) {
+                circleIcon(fill: dark ? ReefColors.DashboardDark.surface : ReefColors.surface) {
                     Text(userInitials)
                         .font(.epilogue(12, weight: .black))
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
             } label: {
                 Text(displayName)
@@ -383,7 +387,7 @@ struct DashboardSidebar: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 18, height: 18)
-                    .foregroundStyle(ReefColors.gray400)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
             }
             .onTapGesture {
                 selectedTab = .settings
@@ -406,7 +410,7 @@ struct DashboardSidebar: View {
                 .fill(fill)
                 .frame(width: 32, height: 32)
                 .overlay(
-                    Circle().stroke(ReefColors.black, lineWidth: 2)
+                    Circle().stroke(theme.isDarkMode ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 2)
                 )
             content()
         }
@@ -424,7 +428,7 @@ struct DashboardSidebar: View {
                 label()
                     .font(.epilogue(14, weight: .bold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(theme.isDarkMode ? ReefColors.DashboardDark.text : ReefColors.black)
 
                 Spacer()
 

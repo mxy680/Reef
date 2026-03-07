@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct TutorStepToolbar: View {
+    @Environment(ThemeManager.self) private var theme
     let questionIndex: Int
     @State private var stepIndex = 0
     @State private var hintActive = false
@@ -79,8 +80,8 @@ struct TutorStepToolbar: View {
             .frame(height: 44)
             .background(
                 ZStack {
-                    CanvasToolbar.barColor
-                    Color.white.opacity(0.12)
+                    theme.isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasToolbar.barColor
+                    Color.white.opacity(theme.isDarkMode ? 0.06 : 0.12)
                 }
             )
             .animation(.easeInOut(duration: 0.25), value: stepIndex)

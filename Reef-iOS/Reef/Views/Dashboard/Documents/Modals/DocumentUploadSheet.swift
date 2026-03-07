@@ -6,36 +6,38 @@ struct DocumentUploadSheet: View {
     let onConfirm: (String?, Bool) -> Void
     let onClose: () -> Void
 
+    @Environment(ThemeManager.self) private var theme
     @State private var courses: [Course] = []
     @State private var isLoading = true
     @State private var selectedCourseId: String?
     @State private var reconstruct = true
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             Text("Upload Document")
                 .font(.epilogue(20, weight: .black))
                 .tracking(-0.04 * 20)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Text(filename)
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.top, 6)
 
             // Course picker
             Text("Course")
                 .font(.epilogue(13, weight: .bold))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.top, 24)
 
             if isLoading {
                 Text("Loading courses...")
                     .font(.epilogue(13, weight: .medium))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray500)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     .padding(.top, 8)
             } else {
                 Menu {
@@ -79,31 +81,31 @@ struct DocumentUploadSheet: View {
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 16, height: 16)
-                                    .foregroundStyle(ReefColors.gray600)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                                 Text(course.name)
                                     .font(.epilogue(14, weight: .semiBold))
                                     .tracking(-0.04 * 14)
-                                    .foregroundStyle(ReefColors.black)
+                                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                             }
                         } else {
                             Text("No course")
                                 .font(.epilogue(14, weight: .semiBold))
                                 .tracking(-0.04 * 14)
-                                .foregroundStyle(ReefColors.gray500)
+                                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                         }
 
                         Spacer()
 
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(ReefColors.gray500)
+                            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     }
                     .padding(12)
-                    .background(ReefColors.white)
+                    .background(dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.gray400, lineWidth: 1.5)
+                            .stroke(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400, lineWidth: 1.5)
                     )
                 }
                 .padding(.top, 8)
@@ -115,12 +117,12 @@ struct DocumentUploadSheet: View {
                     Text("Reconstruct document")
                         .font(.epilogue(14, weight: .semiBold))
                         .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                     Text("Extracts questions and enables tutor mode")
                         .font(.epilogue(12, weight: .medium))
                         .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray500)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                 }
 
                 Spacer()
@@ -138,7 +140,7 @@ struct DocumentUploadSheet: View {
                 Text("Cancel")
                     .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -173,18 +175,7 @@ struct DocumentUploadSheet: View {
             .padding(.top, 20)
         }
         .padding(32)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 2)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(ReefColors.black)
-                .offset(x: 4, y: 4)
-        )
-        .frame(maxWidth: 400)
+        .popupShell()
         .task {
             do {
                 courses = try await supabase
