@@ -355,19 +355,19 @@ struct PageMenuView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            menuRow(icon: "canvas.page_add_end", label: "Add Page to End") {
+            menuRow(systemIcon: "doc.fill.badge.plus", label: "Add Page to End") {
                 onAction(.addBlankAtEnd)
             }
-            menuRow(icon: "canvas.page_add_after", label: "Add Page After This") {
+            menuRow(systemIcon: "doc.on.doc.fill", label: "Add Page After This") {
                 onAction(.addBlankAfterCurrent)
             }
             Divider()
                 .padding(.horizontal, 14)
                 .padding(.vertical, 2)
-            menuRow(icon: "canvas.page_delete_one", label: "Delete This Page", isDestructive: true) {
+            menuRow(systemIcon: "doc.fill.badge.minus", label: "Delete This Page", isDestructive: true) {
                 onAction(.deleteCurrentPage)
             }
-            menuRow(icon: "canvas.page_delete_all", label: "Delete All Pages", isDestructive: true) {
+            menuRow(systemIcon: "trash.fill", label: "Delete All Pages", isDestructive: true) {
                 onAction(.deleteAllPages)
             }
         }
@@ -386,14 +386,12 @@ struct PageMenuView: View {
         )
     }
 
-    private func menuRow(icon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+    private func menuRow(systemIcon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(icon)
-                    .renderingMode(.template)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 18, height: 18)
+                Image(systemName: systemIcon)
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 20, height: 20)
                 Text(label)
                     .font(.system(size: 14, weight: .medium))
                 Spacer()
