@@ -3,15 +3,17 @@ import SwiftUI
 struct DocumentThumbnailView: View {
     let status: DocumentStatus
     let thumbnailURL: URL?
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
-        ZStack {
+        let dark = theme.isDarkMode
+        return ZStack {
             RoundedRectangle(cornerRadius: 8)
-                .fill(status == .failed ? Color(hex: 0xFFF5F5) : Color(hex: 0xFAFAFA))
+                .fill(status == .failed ? Color(hex: 0xFFF5F5) : (dark ? ReefColors.DashboardDark.subtle : Color(hex: 0xFAFAFA)))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(
-                            status == .failed ? Color(hex: 0xFFCDD2) : ReefColors.gray100,
+                            status == .failed ? Color(hex: 0xFFCDD2) : (dark ? ReefColors.DashboardDark.divider : ReefColors.gray100),
                             lineWidth: 1
                         )
                 )
@@ -43,7 +45,8 @@ struct DocumentThumbnailView: View {
     }
 
     private var ruledLines: some View {
-        GeometryReader { geo in
+        let dark = theme.isDarkMode
+        return GeometryReader { geo in
             let lineCount = 16
             let topInset = geo.size.height * 0.14
             let spacing = (geo.size.height * 0.72) / CGFloat(lineCount)
@@ -55,7 +58,7 @@ struct DocumentThumbnailView: View {
                     path.move(to: CGPoint(x: hPad, y: y))
                     path.addLine(to: CGPoint(x: geo.size.width - hPad, y: y))
                 }
-                .stroke(ReefColors.gray100, lineWidth: 0.5)
+                .stroke(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100, lineWidth: 0.5)
             }
         }
     }

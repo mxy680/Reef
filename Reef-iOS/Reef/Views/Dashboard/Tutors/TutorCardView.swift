@@ -12,17 +12,25 @@ struct TutorCardView: View {
     var cardHeight: CGFloat = 240
 
     @State private var isPressed = false
+    @Environment(ThemeManager.self) private var theme
 
     private var tintColor: Color {
         Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
     }
 
     private var borderColor: Color {
-        isActive ? tintColor : ReefColors.gray500
+        let dark = theme.isDarkMode
+        return isActive ? tintColor : (dark ? ReefColors.DashboardDark.border : ReefColors.gray400)
+    }
+
+    private var shadowColor: Color {
+        let dark = theme.isDarkMode
+        return isActive ? tintColor : (dark ? ReefColors.DashboardDark.shadow : ReefColors.gray500)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 0) {
             // Avatar area
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
@@ -41,7 +49,7 @@ struct TutorCardView: View {
                     Text(tutor.name)
                         .font(.epilogue(18, weight: .bold))
                         .tracking(-0.04 * 18)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                     Spacer()
 
@@ -60,7 +68,7 @@ struct TutorCardView: View {
                 Text(tutor.shortBio)
                     .font(.epilogue(11, weight: .medium))
                     .tracking(-0.04 * 11)
-                    .foregroundStyle(ReefColors.gray500)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                     .lineLimit(2)
             }
             .padding(.horizontal, 14)
@@ -101,7 +109,7 @@ struct TutorCardView: View {
             .padding(.bottom, 14)
         }
         .frame(width: cardWidth, height: cardHeight)
-        .background(ReefColors.white)
+        .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
@@ -109,7 +117,7 @@ struct TutorCardView: View {
         )
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(borderColor)
+                .fill(shadowColor)
                 .offset(x: isPressed ? 0 : 4, y: isPressed ? 0 : 4)
         )
         .offset(x: isPressed ? 4 : 0, y: isPressed ? 4 : 0)

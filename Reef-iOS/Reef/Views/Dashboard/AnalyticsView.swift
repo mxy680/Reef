@@ -54,8 +54,10 @@ private let statItems: [StatItem] = [
 struct AnalyticsView: View {
     @State private var appeared = false
     @Environment(\.layoutMetrics) private var metrics
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
+        let dark = theme.isDarkMode
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
                 headerSection
@@ -69,21 +71,23 @@ struct AnalyticsView: View {
         .padding(metrics.contentPadding)
         .dashboardCard()
         .onAppear { appeared = true }
+        .environment(theme)
     }
 
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 6) {
             Text("Study Analytics")
                 .font(.epilogue(24, weight: .black))
                 .tracking(-0.04 * 24)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Text("Track your progress, study time, and subject mastery over time.")
                 .font(.epilogue(14, weight: .medium))
                 .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
         }
         .padding(.horizontal, 4)
         .opacity(appeared ? 1 : 0)
@@ -103,16 +107,17 @@ struct AnalyticsView: View {
     }
 
     private func statCard(_ stat: StatItem, index: Int) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 6) {
             Text(stat.label)
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
             Text(stat.value)
                 .font(.epilogue(26, weight: .bold))
                 .tracking(-0.04 * 26)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Spacer(minLength: 0)
         }
@@ -149,19 +154,21 @@ struct AnalyticsView: View {
 private struct WeeklyActivityCard: View {
     let appeared: Bool
     let metrics: LayoutMetrics
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             Text("Weekly Activity")
                 .font(.epilogue(16, weight: .bold))
                 .tracking(-0.04 * 16)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .padding(.bottom, 4)
 
             Text("Daily study minutes this week")
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 20)
 
             WeeklyBarChart()
@@ -179,7 +186,15 @@ private struct WeeklyActivityCard: View {
 }
 
 private struct WeeklyBarChart: View {
+    @Environment(ThemeManager.self) private var theme
+
     var body: some View {
+        let dark = theme.isDarkMode
+        let gridLineColor = dark ? ReefColors.DashboardDark.divider : ReefColors.gray100
+        let emptyBarColor = dark ? ReefColors.DashboardDark.divider : ReefColors.gray100
+        let dayLabelColor = dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600
+        let valueLabelColor = dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500
+
         GeometryReader { geo in
             let maxMinutes = weeklyMinutes.max() ?? 1
             let barCount = CGFloat(weeklyMinutes.count)
@@ -195,7 +210,7 @@ private struct WeeklyBarChart: View {
                     var line = Path()
                     line.move(to: CGPoint(x: 0, y: y))
                     line.addLine(to: CGPoint(x: size.width, y: y))
-                    context.stroke(line, with: .color(ReefColors.gray100), lineWidth: 1)
+                    context.stroke(line, with: .color(gridLineColor), lineWidth: 1)
                 }
 
                 // Bars
@@ -203,7 +218,7 @@ private struct WeeklyBarChart: View {
                     let barH = maxMinutes > 0 ? (CGFloat(minutes) / CGFloat(maxMinutes)) * chartHeight : 0
                     let x = CGFloat(i) * (barWidth + spacing)
                     let y = chartHeight - barH
-                    let barColor = minutes == 0 ? ReefColors.gray100 : ReefColors.primary
+                    let barColor = minutes == 0 ? emptyBarColor : ReefColors.primary
 
                     let bar = Path(roundedRect: CGRect(x: x, y: y, width: barWidth, height: max(barH, 4)), cornerRadius: 5)
                     context.fill(bar, with: .color(barColor))
@@ -211,7 +226,7 @@ private struct WeeklyBarChart: View {
                     // Day label
                     let label = Text(dayLabels[i])
                         .font(.epilogue(11, weight: .medium))
-                        .foregroundStyle(ReefColors.gray600)
+                        .foregroundStyle(dayLabelColor)
                     context.draw(
                         context.resolve(label),
                         at: CGPoint(x: x + barWidth / 2, y: chartHeight + 14),
@@ -222,7 +237,7 @@ private struct WeeklyBarChart: View {
                     if minutes > 0 {
                         let value = Text("\(minutes)")
                             .font(.epilogue(10, weight: .bold))
-                            .foregroundStyle(ReefColors.gray500)
+                            .foregroundStyle(valueLabelColor)
                         context.draw(
                             context.resolve(value),
                             at: CGPoint(x: x + barWidth / 2, y: y - 8),
@@ -240,19 +255,21 @@ private struct WeeklyBarChart: View {
 private struct TimeBySubjectCard: View {
     let appeared: Bool
     let metrics: LayoutMetrics
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             Text("Time by Subject")
                 .font(.epilogue(16, weight: .bold))
                 .tracking(-0.04 * 16)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .padding(.bottom, 4)
 
             Text("Total hours studied")
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 20)
 
             VStack(spacing: 16) {
@@ -277,28 +294,30 @@ private struct SubjectBarRow: View {
     let index: Int
     let appeared: Bool
     private let maxHours: Double = subjects.map(\.hours).max() ?? 1
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(spacing: 6) {
             HStack {
                 Text(subject.name)
                     .font(.epilogue(13, weight: .semiBold))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                 Spacer()
 
                 Text(String(format: "%.1fh", subject.hours))
                     .font(.epilogue(13, weight: .bold))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
             }
 
             GeometryReader { geo in
                 let pct = maxHours > 0 ? subject.hours / maxHours : 0
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(ReefColors.gray100)
+                        .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
 
                     Capsule()
                         .fill(subject.color)
@@ -316,19 +335,21 @@ private struct SubjectBarRow: View {
 private struct MasteryBySubjectCard: View {
     let appeared: Bool
     let metrics: LayoutMetrics
+    @Environment(ThemeManager.self) private var theme
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             Text("Mastery by Subject")
                 .font(.epilogue(16, weight: .bold))
                 .tracking(-0.04 * 16)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .padding(.bottom, 4)
 
             Text("Based on session performance")
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 20)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -352,15 +373,17 @@ private struct DonutRing: View {
     let subject: SubjectData
     let index: Int
     let appeared: Bool
+    @Environment(ThemeManager.self) private var theme
 
     private let radius: CGFloat = 32
     private let strokeWidth: CGFloat = 6
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(spacing: 6) {
             ZStack {
                 Circle()
-                    .stroke(ReefColors.gray100, lineWidth: strokeWidth)
+                    .stroke(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100, lineWidth: strokeWidth)
 
                 Circle()
                     .trim(from: 0, to: appeared ? CGFloat(subject.mastery) / 100.0 : 0)
@@ -371,14 +394,14 @@ private struct DonutRing: View {
                 Text("\(subject.mastery)%")
                     .font(.epilogue(13, weight: .bold))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.black)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
             }
             .frame(width: radius * 2 + strokeWidth, height: radius * 2 + strokeWidth)
 
             Text(subject.name)
                 .font(.epilogue(11, weight: .semiBold))
                 .tracking(-0.04 * 11)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 80)
         }
@@ -390,32 +413,34 @@ private struct DonutRing: View {
 private struct RecentSessionsCard: View {
     let appeared: Bool
     let metrics: LayoutMetrics
+    @Environment(ThemeManager.self) private var theme
 
     private var subjectColorMap: [String: Color] {
         Dictionary(uniqueKeysWithValues: subjects.map { ($0.name, $0.color) })
     }
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             Text("Recent Sessions")
                 .font(.epilogue(16, weight: .bold))
                 .tracking(-0.04 * 16)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 .padding(.bottom, 4)
 
             Text("Your latest study activity")
                 .font(.epilogue(13, weight: .medium))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(ReefColors.gray600)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 20)
 
             VStack(spacing: 0) {
                 ForEach(Array(recentSessions.enumerated()), id: \.element.id) { index, session in
-                    sessionRow(session, color: subjectColorMap[session.subject] ?? ReefColors.primary)
+                    sessionRow(session, color: subjectColorMap[session.subject] ?? ReefColors.primary, dark: dark)
 
                     if index < recentSessions.count - 1 {
                         Rectangle()
-                            .fill(ReefColors.gray100)
+                            .fill(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                             .frame(height: 1)
                     }
                 }
@@ -431,7 +456,7 @@ private struct RecentSessionsCard: View {
         .animation(.easeOut(duration: 0.35).delay(0.45), value: appeared)
     }
 
-    private func sessionRow(_ session: SessionData, color: Color) -> some View {
+    private func sessionRow(_ session: SessionData, color: Color, dark: Bool) -> some View {
         HStack {
             HStack(spacing: 10) {
                 Circle()
@@ -442,13 +467,13 @@ private struct RecentSessionsCard: View {
                     Text(session.subject)
                         .font(.epilogue(14, weight: .semiBold))
                         .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                         .lineLimit(1)
 
                     Text(session.date)
                         .font(.epilogue(12, weight: .medium))
                         .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray500)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
                 }
             }
 
@@ -458,12 +483,12 @@ private struct RecentSessionsCard: View {
                 Text(session.duration)
                     .font(.epilogue(13, weight: .semiBold))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.gray600)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
 
                 Text("\(session.pages) \(session.pages == 1 ? "page" : "pages")")
                     .font(.epilogue(12, weight: .medium))
                     .tracking(-0.04 * 12)
-                    .foregroundStyle(ReefColors.gray400)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
                     .frame(minWidth: 44, alignment: .trailing)
             }
         }
