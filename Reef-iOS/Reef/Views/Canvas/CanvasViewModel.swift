@@ -36,6 +36,24 @@ final class CanvasViewModel {
         isLoading = false
     }
 
+    // MARK: - Undo
+
+    private var undoStack: [Data] = []
+
+    var canUndo: Bool { !undoStack.isEmpty }
+
+    private func saveSnapshot() {
+        guard let data = pdfDocument?.dataRepresentation() else { return }
+        undoStack.append(data)
+    }
+
+    func undo() -> Bool {
+        guard let data = undoStack.popLast(),
+              let restored = PDFDocument(data: data) else { return false }
+        pdfDocument = restored
+        return true
+    }
+
     // MARK: - Page Management
 
     var pageCount: Int {
@@ -44,17 +62,20 @@ final class CanvasViewModel {
 
     func addBlankPage(at index: Int) {
         guard let pdf = pdfDocument else { return }
+        saveSnapshot()
         let page = createBlankPage(matchingSizeOf: pdf)
         pdf.insert(page, at: min(index, pdf.pageCount))
     }
 
     func deletePageAt(_ index: Int) {
         guard let pdf = pdfDocument, pdf.pageCount > 1, index < pdf.pageCount else { return }
+        saveSnapshot()
         pdf.removePage(at: index)
     }
 
     func deleteAllPages() {
         guard let pdf = pdfDocument, pdf.pageCount > 0 else { return }
+        saveSnapshot()
         let size = pdf.page(at: 0)?.bounds(for: .mediaBox).size ?? CGSize(width: 612, height: 792)
         while pdf.pageCount > 0 {
             pdf.removePage(at: 0)

@@ -105,7 +105,7 @@ struct DocumentCanvasView: View {
                             showPageMenu = false
                         }
                         handlePageAction(action)
-                    })
+                    }, canUndo: viewModel.canUndo)
                     .transition(
                         .scale(scale: 0.92, anchor: .top)
                         .combined(with: .opacity)
@@ -144,6 +144,10 @@ struct DocumentCanvasView: View {
         case .deleteAllPages:
             viewModel.deleteAllPages()
             currentPageIndex = 0
+        case .undo:
+            if viewModel.undo() {
+                currentPageIndex = min(currentPageIndex, max(0, viewModel.pageCount - 1))
+            }
         }
         pageVersion = UUID()
     }

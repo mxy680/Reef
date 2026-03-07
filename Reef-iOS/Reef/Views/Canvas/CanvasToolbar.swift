@@ -12,6 +12,7 @@ enum PageAction {
     case addBlankAfterCurrent
     case deleteCurrentPage
     case deleteAllPages
+    case undo
 }
 
 struct PageMenuAnchorKey: PreferenceKey {
@@ -352,6 +353,7 @@ private struct ChromeTabShape: Shape {
 
 struct PageMenuView: View {
     let onAction: (PageAction) -> Void
+    var canUndo: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -369,6 +371,14 @@ struct PageMenuView: View {
             }
             menuRow(systemIcon: "trash.fill", label: "Delete All Pages", isDestructive: true) {
                 onAction(.deleteAllPages)
+            }
+            if canUndo {
+                Divider()
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 2)
+                menuRow(systemIcon: "arrow.uturn.backward", label: "Undo") {
+                    onAction(.undo)
+                }
             }
         }
         .padding(.vertical, 6)
