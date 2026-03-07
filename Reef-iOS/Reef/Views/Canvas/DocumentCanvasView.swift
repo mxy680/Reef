@@ -2,11 +2,12 @@
 //  DocumentCanvasView.swift
 //  Reef
 //
-//  Full-screen scrollable PDF viewer
+//  Full-screen scrollable PDF viewer with PencilKit drawing
 //
 
 import SwiftUI
 import UIKit
+import PencilKit
 
 struct DocumentCanvasView: View {
     let document: Document
@@ -21,11 +22,23 @@ struct DocumentCanvasView: View {
     @State private var pageVersion = UUID()
     @State private var showPageMenu = false
     @State private var showRuler = false
+    @State private var drawingManager: DrawingManager?
+    @State private var penColor: UIColor = .black
+    @State private var penWidth: CGFloat = 3.5
+    @State private var showToolSettings = false
+    @State private var selectedToolMidX: CGFloat = 0
+    @State private var customColors: [UIColor] = []
+    @State private var showColorPicker = false
     @State private var showPageSettings = false
     @State private var pageOverlaySettings = PageOverlaySettings()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
+    }
+
+    /// Current PencilKit tool derived from toolbar selection + settings
+    private var currentPKTool: PKTool {
+        selectedTool.pkTool(color: penColor, width: penWidth)
     }
 
     private static let cream = Color(hex: 0xF8F0E6)
@@ -58,7 +71,7 @@ struct DocumentCanvasView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(canvasBackground)
                         .transition(.opacity)
-                } else if let pdf = viewModel.pdfDocument {
+                } else if let pdf = viewModel.pdfDocument, let manager = drawingManager {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
                         currentQuestionIndex: $currentQuestionIndex,
@@ -66,6 +79,7 @@ struct DocumentCanvasView: View {
                             ? (document.problemCount ?? 1)
                             : 1,
                         onClose: {
+                            manager.saveAll()
                             Task { await viewModel.saveIfNeeded() }
                             onDismiss()
                         },
@@ -75,6 +89,12 @@ struct DocumentCanvasView: View {
                         onPageAction: { handlePageAction($0) },
                         showPageMenu: $showPageMenu,
                         showRuler: $showRuler,
+                        onUndo: { manager.undo() },
+                        onRedo: { manager.redo() },
+                        onToolRetapped: { _ in
+                            showToolSettings.toggle()
+                        },
+                        selectedToolMidX: $selectedToolMidX,
                         showPageSettings: $showPageSettings,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
                         pageOverlaySettings: $pageOverlaySettings
@@ -86,10 +106,12 @@ struct DocumentCanvasView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
-                    ZStack {
+                    ZStack(alignment: .top) {
                         CanvasPageView(
                             pdfDocument: pdf,
                             pageRange: pageRange(for: currentQuestionIndex),
+                            drawingManager: manager,
+                            currentTool: currentPKTool,
                             onVisiblePageChanged: { currentPageIndex = $0 },
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings
@@ -100,8 +122,31 @@ struct DocumentCanvasView: View {
                             RulerOverlayView()
                                 .transition(.opacity)
                         }
+
+                        if showToolSettings {
+                            // Tap-to-dismiss backdrop
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { showToolSettings = false }
+
+                            GeometryReader { geo in
+                                let containerMinX = geo.frame(in: .global).minX
+                                let popoverWidth: CGFloat = 240
+                                let offsetX = selectedToolMidX - containerMinX - popoverWidth / 2
+
+                                ToolSettingsPopover(
+                                    selectedColor: $penColor,
+                                    lineWidth: $penWidth,
+                                    customColors: $customColors,
+                                    onAddColorTapped: { showColorPicker = true }
+                                )
+                                .offset(x: offsetX, y: 8)
+                            }
+                            .transition(.scale(scale: 0.95).combined(with: .opacity))
+                        }
                     }
                     .background(canvasBackground)
+                    .animation(.spring(duration: 0.2), value: showToolSettings)
                     .overlay {
                         // Tap-to-dismiss layer (covers canvas only, not toolbar)
                         if showPageSettings {
@@ -116,7 +161,25 @@ struct DocumentCanvasView: View {
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
             .animation(.easeInOut(duration: 0.3), value: theme.isDarkMode)
             .animation(.easeInOut(duration: 0.2), value: showRuler)
+
+            // Centered color picker popup
+            if showColorPicker {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture { showColorPicker = false }
+
+                AddColorPopup(
+                    onAdd: { color in
+                        customColors.append(color)
+                        penColor = color
+                        showColorPicker = false
+                    },
+                    onDismiss: { showColorPicker = false }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
         }
+        .animation(.spring(duration: 0.2), value: showColorPicker)
         .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
         .overlayPreferenceValue(PageMenuAnchorKey.self) { anchor in
@@ -161,10 +224,27 @@ struct DocumentCanvasView: View {
             #if DEBUG
             if document.id == "dev-test" {
                 viewModel.loadTestDocument()
+                let manager = DrawingManager(documentId: "dev-test")
+                manager.loadAll(pageCount: 1)
+                drawingManager = manager
                 return
             }
             #endif
             await viewModel.loadDocument(document)
+            if let pdf = viewModel.pdfDocument {
+                let manager = DrawingManager(documentId: document.id)
+                manager.loadAll(pageCount: pdf.pageCount)
+                drawingManager = manager
+            }
+        }
+        .onChange(of: selectedTool) { _, _ in
+            showToolSettings = false
+        }
+        .onChange(of: currentQuestionIndex) { _, _ in
+            drawingManager?.saveAll()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            drawingManager?.saveAll()
         }
         .onDisappear {
             Task { await viewModel.saveIfNeeded() }

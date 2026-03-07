@@ -2,13 +2,15 @@
 //  Stroke.swift
 //  Reef
 //
-//  Custom drawing model — replaces PencilKit types
+//  DEPRECATED: Custom drawing model replaced by PencilKit (PKDrawing/PKStroke/PKStrokePoint).
+//  Kept temporarily for reference. Safe to delete once confirmed unused.
 //
 
 import UIKit
 
 // MARK: - Stroke Point
 
+@available(*, deprecated, message: "Use PKStrokePoint instead")
 struct StrokePoint: Codable, Sendable {
     let x: CGFloat
     let y: CGFloat
@@ -25,6 +27,7 @@ struct StrokePoint: Codable, Sendable {
 
 // MARK: - Stroke Color
 
+@available(*, deprecated, message: "Use UIColor directly with PKInkingTool instead")
 struct StrokeColor: Codable, Sendable, Hashable {
     let red: CGFloat
     let green: CGFloat
@@ -53,6 +56,7 @@ struct StrokeColor: Codable, Sendable, Hashable {
 
 // MARK: - Drawing Tool
 
+@available(*, deprecated, message: "Use CanvasTool.pkTool() instead")
 enum DrawingTool: String, Codable, Sendable {
     case pen
     case highlighter
@@ -61,6 +65,7 @@ enum DrawingTool: String, Codable, Sendable {
 
 // MARK: - Stroke
 
+@available(*, deprecated, message: "Use PKStroke instead")
 struct Stroke: Codable, Identifiable, Sendable {
     let id: UUID
     let tool: DrawingTool
@@ -79,6 +84,7 @@ struct Stroke: Codable, Identifiable, Sendable {
 
 // MARK: - Page Drawing
 
+@available(*, deprecated, message: "Use PKDrawing instead")
 struct PageDrawing: Codable, Sendable {
     var strokes: [Stroke]
 
@@ -89,6 +95,7 @@ struct PageDrawing: Codable, Sendable {
 
 // MARK: - Drawing Action
 
+@available(*, deprecated, message: "Use PKCanvasView's UndoManager instead")
 enum DrawingAction: Sendable {
     case addStroke(Stroke)
     case eraseStrokes(remaining: [Stroke])

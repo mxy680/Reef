@@ -3,20 +3,27 @@
 //  Reef
 //
 //  Renders all PDF pages vertically stacked in a zoomable scroll view
+//  with a transparent PKCanvasView overlay per page for drawing
 //
 
 import SwiftUI
 import PDFKit
+import PencilKit
 
 struct CanvasPageView: UIViewRepresentable {
     let pdfDocument: PDFDocument
     let pageRange: ClosedRange<Int>?
+    let drawingManager: DrawingManager
+    let currentTool: PKTool
     var onVisiblePageChanged: ((Int) -> Void)?
     var darkMode: Bool = false
     var overlaySettings: PageOverlaySettings = PageOverlaySettings()
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
+        container.drawingManager = drawingManager
+        container.pageIndexOffset = pageRange?.lowerBound ?? 0
+        container.currentTool = currentTool
         container.onVisiblePageChanged = onVisiblePageChanged
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
         container.applyDarkMode(darkMode)
@@ -25,6 +32,7 @@ struct CanvasPageView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: CanvasContainerView, context: Context) {
+        uiView.currentTool = currentTool
         uiView.onVisiblePageChanged = onVisiblePageChanged
         uiView.applyDarkMode(darkMode)
         uiView.updateOverlay(overlaySettings)
@@ -39,6 +47,7 @@ final class CanvasContainerView: UIView {
     let pagesStackView = UIStackView()
 
     private var pageImageViews: [UIImageView] = []
+    private var canvasViews: [PKCanvasView] = []
     private var pageContainerViews: [UIView] = []
     private var shadowViews: [UIView] = []
     private var pageOverlayViews: [PageOverlayView] = []
@@ -57,6 +66,19 @@ final class CanvasContainerView: UIView {
     var onVisiblePageChanged: ((Int) -> Void)?
     private var startPageIndex: Int = 0
     private var lastReportedPage: Int = -1
+
+    /// Drawing state manager (owned by DocumentCanvasView, passed down)
+    weak var drawingManager: DrawingManager?
+
+    /// Offset for question-based page ranges (e.g., question 2 starts at page 4)
+    var pageIndexOffset: Int = 0
+
+    /// Current PencilKit tool — updated from toolbar
+    var currentTool: PKTool = PKInkingTool(.pen, color: .black, width: 2) {
+        didSet {
+            canvasViews.forEach { $0.tool = currentTool }
+        }
+    }
 
     /// Separator height between pages (increased for 3D shadow clearance)
     private static let separatorHeight: CGFloat = 16
@@ -189,9 +211,11 @@ final class CanvasContainerView: UIView {
     private func setupPages(with images: [UIImage]) {
         // Clear existing
         for view in pageImageViews { view.removeFromSuperview() }
+        for view in canvasViews { view.removeFromSuperview() }
         for view in pageOverlayViews { view.removeFromSuperview() }
         for view in separatorViews { view.removeFromSuperview() }
         pageImageViews.removeAll()
+        canvasViews.removeAll()
         pageContainerViews.removeAll()
         shadowViews.removeAll()
         pageOverlayViews.removeAll()
@@ -234,11 +258,36 @@ final class CanvasContainerView: UIView {
             pageView.addSubview(imageView)
             pageImageViews.append(imageView)
 
+            // PKCanvasView overlay — transparent, on top of PDF image
+            let canvasView = PKCanvasView()
+            canvasView.translatesAutoresizingMaskIntoConstraints = false
+            canvasView.backgroundColor = .clear
+            canvasView.isOpaque = false
+            canvasView.drawingPolicy = .pencilOnly
+            canvasView.tool = currentTool
+            canvasView.delegate = self
+            canvasView.overrideUserInterfaceStyle = .light
+            canvasView.isScrollEnabled = false
+
+            // Load existing drawing
+            let absolutePageIndex = pageIndexOffset + index
+            if let manager = drawingManager {
+                canvasView.drawing = manager.drawing(for: absolutePageIndex)
+            }
+
+            pageView.addSubview(canvasView)
+            canvasViews.append(canvasView)
+
             NSLayoutConstraint.activate([
                 imageView.topAnchor.constraint(equalTo: pageView.topAnchor),
                 imageView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
                 imageView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
                 imageView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
+
+                canvasView.topAnchor.constraint(equalTo: pageView.topAnchor),
+                canvasView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
+                canvasView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
+                canvasView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
             ])
 
             // Page overlay (grid / dots / lines)
@@ -524,5 +573,19 @@ final class PageOverlayView: UIView {
             }
             ctx.strokePath()
         }
+    }
+}
+
+// MARK: - PKCanvasViewDelegate
+
+extension CanvasContainerView: PKCanvasViewDelegate {
+    func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+        guard let index = canvasViews.firstIndex(of: canvasView) else { return }
+        let absolutePageIndex = pageIndexOffset + index
+        drawingManager?.setDrawing(canvasView.drawing, for: absolutePageIndex)
+    }
+
+    func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
+        drawingManager?.activeCanvasView = canvasView
     }
 }

@@ -34,6 +34,10 @@ struct CanvasToolbar: View {
     var onPageAction: ((PageAction) -> Void)?
     @Binding var showPageMenu: Bool
     @Binding var showRuler: Bool
+    var onUndo: () -> Void = {}
+    var onRedo: () -> Void = {}
+    var onToolRetapped: (CanvasTool) -> Void = { _ in }
+    @Binding var selectedToolMidX: CGFloat
     @Binding var showPageSettings: Bool
     var hasActiveOverlay: Bool = false
     @Binding var pageOverlaySettings: PageOverlaySettings
@@ -60,13 +64,15 @@ struct CanvasToolbar: View {
             // Row 2: Tool bar
             HStack(spacing: 0) {
                 leftSection
-                makeDivider()
+
+                Spacer(minLength: 0)
                 centerSection
                 makeDivider()
                 canvasUtilitiesSection
                 makeDivider()
                 aiSection
                 Spacer(minLength: 0)
+
                 rightSection
             }
             .padding(.horizontal, 12)
@@ -209,8 +215,8 @@ struct CanvasToolbar: View {
 
     private var leftSection: some View {
         HStack(spacing: 0) {
-            ToolbarButton(icon: "arrow.uturn.backward", isSelected: false, action: {})
-            ToolbarButton(icon: "arrow.uturn.forward", isSelected: false, action: {})
+            ToolbarButton(icon: "arrow.uturn.backward", isSelected: false, action: onUndo)
+            ToolbarButton(icon: "arrow.uturn.forward", isSelected: false, action: onRedo)
         }
     }
 
@@ -224,9 +230,28 @@ struct CanvasToolbar: View {
                     isSelected: selectedTool == tool,
                     isCustomIcon: tool.isCustomIcon,
                     action: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedTool = tool
+                        if selectedTool == tool && tool.hasSettings {
+                            onToolRetapped(tool)
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedTool = tool
+                            }
                         }
+                    }
+                )
+                .overlay(
+                    GeometryReader { geo in
+                        Color.clear
+                            .onChange(of: selectedTool) { _, newTool in
+                                if newTool == tool {
+                                    selectedToolMidX = geo.frame(in: .global).midX
+                                }
+                            }
+                            .onAppear {
+                                if selectedTool == tool {
+                                    selectedToolMidX = geo.frame(in: .global).midX
+                                }
+                            }
                     }
                 )
             }
