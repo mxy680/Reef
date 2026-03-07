@@ -111,7 +111,9 @@ struct DocumentCanvasView: View {
             }
         }
         .onPreferenceChange(PageSettingsButtonFrameKey.self) { frame in
-            pageSettingsButtonFrame = frame
+            Task { @MainActor in
+                pageSettingsButtonFrame = frame
+            }
         }
         .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()

@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - Button Frame Preference Key
 
 struct PageSettingsButtonFrameKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
+    nonisolated(unsafe) static var defaultValue: CGRect = .zero
     static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
         value = nextValue()
     }
