@@ -131,6 +131,7 @@ final class CanvasContainerView: UIView {
         for overlay in pageOverlayViews {
             overlay.overlayType = settings.type
             overlay.spacing = settings.spacing
+            overlay.overlayOpacity = settings.opacity
             overlay.setNeedsDisplay()
         }
     }
@@ -334,8 +335,11 @@ extension CanvasContainerView: UIScrollViewDelegate {
 final class PageOverlayView: UIView {
     var overlayType: PageOverlayType = .none
     var spacing: CGFloat = 20
+    var overlayOpacity: CGFloat = 0.35
 
-    private static let overlayColor = UIColor(white: 0.72, alpha: 0.35)
+    private var overlayColor: UIColor {
+        UIColor(white: 0.72, alpha: overlayOpacity)
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -349,8 +353,8 @@ final class PageOverlayView: UIView {
         guard overlayType != .none else { return }
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
 
-        ctx.setStrokeColor(Self.overlayColor.cgColor)
-        ctx.setFillColor(Self.overlayColor.cgColor)
+        ctx.setStrokeColor(overlayColor.cgColor)
+        ctx.setFillColor(overlayColor.cgColor)
 
         // Scale spacing by the 2x render factor
         let scaledSpacing = spacing * 2.0

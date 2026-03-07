@@ -25,6 +25,7 @@ enum PageOverlayType: String, CaseIterable {
 struct PageOverlaySettings: Equatable {
     var type: PageOverlayType = .none
     var spacing: CGFloat = 20
+    var opacity: CGFloat = 0.35
     var showInExport: Bool = false
 }
 
@@ -81,6 +82,27 @@ struct PageSettingsPopover: View {
                 .padding(.bottom, 6)
 
                 Slider(value: $settings.spacing, in: 10...60, step: 2)
+                    .tint(ReefColors.primary)
+
+                Spacer().frame(height: 16)
+
+                HStack {
+                    Text("Opacity")
+                        .font(.epilogue(11, weight: .semiBold))
+                        .tracking(-0.04 * 11)
+                        .foregroundStyle(ReefColors.gray400)
+                        .textCase(.uppercase)
+
+                    Spacer()
+
+                    Text("\(Int(settings.opacity * 100))%")
+                        .font(.epilogue(12, weight: .bold))
+                        .tracking(-0.04 * 12)
+                        .foregroundStyle(ReefColors.black)
+                }
+                .padding(.bottom, 6)
+
+                Slider(value: $settings.opacity, in: 0.1...1.0, step: 0.05)
                     .tint(ReefColors.primary)
 
                 Spacer().frame(height: 16)
