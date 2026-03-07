@@ -19,6 +19,7 @@ struct CanvasToolbar: View {
     var onUndo: () -> Void = {}
     var onRedo: () -> Void = {}
     var onToolRetapped: (CanvasTool) -> Void = { _ in }
+    @Binding var selectedToolMidX: CGFloat
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -208,6 +209,21 @@ struct CanvasToolbar: View {
                                 selectedTool = tool
                             }
                         }
+                    }
+                )
+                .overlay(
+                    GeometryReader { geo in
+                        Color.clear
+                            .onChange(of: selectedTool) { _, newTool in
+                                if newTool == tool {
+                                    selectedToolMidX = geo.frame(in: .global).midX
+                                }
+                            }
+                            .onAppear {
+                                if selectedTool == tool {
+                                    selectedToolMidX = geo.frame(in: .global).midX
+                                }
+                            }
                     }
                 )
             }

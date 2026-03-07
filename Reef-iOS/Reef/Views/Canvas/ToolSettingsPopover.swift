@@ -48,28 +48,21 @@ struct ToolSettingsPopover: View {
                 }
             }
 
-            // Thickness slider
-            VStack(spacing: 8) {
-                HStack {
-                    // Thin line indicator
-                    Circle()
-                        .fill(Color(selectedColor))
-                        .frame(width: 4, height: 4)
-
-                    Slider(value: $lineWidth, in: 0.5...8.0)
-                        .tint(Color(selectedColor))
-
-                    // Thick line indicator
-                    Circle()
-                        .fill(Color(selectedColor))
-                        .frame(width: 14, height: 14)
-                }
-
-                // Preview stroke
-                RoundedRectangle(cornerRadius: lineWidth / 2)
+            // Thickness slider with preview dot
+            HStack(spacing: 10) {
+                // Thin indicator
+                Circle()
                     .fill(Color(selectedColor))
-                    .frame(height: lineWidth)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 4, height: 4)
+
+                Slider(value: $lineWidth, in: 0.5...8.0)
+                    .tint(Color(selectedColor))
+
+                // Live-size preview dot
+                Circle()
+                    .fill(Color(selectedColor))
+                    .frame(width: lineWidth * 2, height: lineWidth * 2)
+                    .frame(width: 18, height: 18)
             }
         }
         .padding(16)

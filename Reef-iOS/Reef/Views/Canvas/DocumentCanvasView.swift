@@ -22,6 +22,7 @@ struct DocumentCanvasView: View {
     @State private var penColor: UIColor = .black
     @State private var penWidth: CGFloat = 2.0
     @State private var showToolSettings = false
+    @State private var selectedToolMidX: CGFloat = 0
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -73,7 +74,8 @@ struct DocumentCanvasView: View {
                         onRedo: { manager.redo() },
                         onToolRetapped: { _ in
                             showToolSettings.toggle()
-                        }
+                        },
+                        selectedToolMidX: $selectedToolMidX
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -101,11 +103,17 @@ struct DocumentCanvasView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture { showToolSettings = false }
 
-                            ToolSettingsPopover(
-                                selectedColor: $penColor,
-                                lineWidth: $penWidth
-                            )
-                            .padding(.top, 8)
+                            GeometryReader { geo in
+                                let containerMinX = geo.frame(in: .global).minX
+                                let popoverWidth: CGFloat = 240
+                                let offsetX = selectedToolMidX - containerMinX - popoverWidth / 2
+
+                                ToolSettingsPopover(
+                                    selectedColor: $penColor,
+                                    lineWidth: $penWidth
+                                )
+                                .offset(x: offsetX, y: 8)
+                            }
                             .transition(.scale(scale: 0.95).combined(with: .opacity))
                         }
                     }
