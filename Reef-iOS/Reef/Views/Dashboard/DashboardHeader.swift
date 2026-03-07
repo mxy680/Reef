@@ -106,7 +106,7 @@ struct DashboardHeader: View {
                         )
                     Text(userInitials)
                         .font(.epilogue(12, weight: .bold))
-                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                        .foregroundStyle(ReefColors.black)
                 }
                 .onTapGesture {
                     withAnimation(.spring(duration: 0.2)) {
@@ -156,7 +156,7 @@ struct DashboardHeader: View {
                         .frame(width: 32, height: 32)
                     Text(userInitials)
                         .font(.epilogue(11, weight: .bold))
-                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                        .foregroundStyle(ReefColors.black)
                 }
 
                 VStack(alignment: .leading, spacing: 1) {

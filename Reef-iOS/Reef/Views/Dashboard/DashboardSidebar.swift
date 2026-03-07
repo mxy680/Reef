@@ -326,7 +326,7 @@ struct DashboardSidebar: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 16, height: 16)
-                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                        .foregroundStyle(ReefColors.black)
                 }
             } label: {
                 Text("Upgrade")
