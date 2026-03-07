@@ -53,7 +53,10 @@ struct DocumentCanvasView: View {
                         questionCount: isReconstructed
                             ? (document.problemCount ?? 1)
                             : 1,
-                        onClose: { onDismiss() },
+                        onClose: {
+                            Task { await viewModel.saveIfNeeded() }
+                            onDismiss()
+                        },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
@@ -125,6 +128,9 @@ struct DocumentCanvasView: View {
             }
             #endif
             await viewModel.loadDocument(document)
+        }
+        .onDisappear {
+            Task { await viewModel.saveIfNeeded() }
         }
     }
 

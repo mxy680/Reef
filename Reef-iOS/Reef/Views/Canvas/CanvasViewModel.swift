@@ -14,10 +14,13 @@ final class CanvasViewModel {
     var pdfDocument: PDFDocument?
     var isLoading = true
     var error: String?
+    private(set) var isDirty = false
+    private var documentId: String?
 
     func loadDocument(_ document: Document) async {
         isLoading = true
         error = nil
+        documentId = document.id
 
         do {
             let fileURL = try await DocumentService.shared.downloadPDF(document.id)
@@ -36,6 +39,19 @@ final class CanvasViewModel {
         isLoading = false
     }
 
+    /// Saves the current PDF back to Supabase if modified.
+    func saveIfNeeded() async {
+        guard isDirty,
+              let docId = documentId,
+              let data = pdfDocument?.dataRepresentation() else { return }
+        do {
+            try await DocumentService.shared.savePDF(data, docId: docId)
+            isDirty = false
+        } catch {
+            print("[CanvasViewModel] save failed: \(error)")
+        }
+    }
+
     // MARK: - Undo
 
     private var undoStack: [Data] = []
@@ -51,6 +67,7 @@ final class CanvasViewModel {
         guard let data = undoStack.popLast(),
               let restored = PDFDocument(data: data) else { return false }
         pdfDocument = restored
+        isDirty = !undoStack.isEmpty
         return true
     }
 
@@ -65,12 +82,14 @@ final class CanvasViewModel {
         saveSnapshot()
         let page = createBlankPage(matchingSizeOf: pdf)
         pdf.insert(page, at: min(index, pdf.pageCount))
+        isDirty = true
     }
 
     func deletePageAt(_ index: Int) {
         guard let pdf = pdfDocument, pdf.pageCount > 1, index < pdf.pageCount else { return }
         saveSnapshot()
         pdf.removePage(at: index)
+        isDirty = true
     }
 
     func deleteAllPages() {
@@ -82,6 +101,7 @@ final class CanvasViewModel {
         }
         let blank = createBlankPage(size: size)
         pdf.insert(blank, at: 0)
+        isDirty = true
     }
 
     private func createBlankPage(matchingSizeOf pdf: PDFDocument) -> PDFPage {
