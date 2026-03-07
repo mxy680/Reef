@@ -54,6 +54,21 @@ struct DashboardHeader: View {
                         .offset(x: 2, y: 2)
                 }
 
+                // Dark mode toggle
+                Image(systemName: dark ? "sun.max.fill" : "moon.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
+                    .frame(width: 32, height: 32)
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.3)) {
+                            theme.isDarkMode.toggle()
+                        }
+                    }
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityLabel(dark ? "Switch to light mode" : "Switch to dark mode")
+
                 // Streak pill
                 HStack(spacing: 4) {
                     Image("icon.streak")

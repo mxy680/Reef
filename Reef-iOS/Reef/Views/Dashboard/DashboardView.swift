@@ -256,36 +256,6 @@ struct DashboardView: View {
         .animation(.spring(duration: 0.2), value: documentsVM.moveToCourseTarget?.id)
         .animation(.spring(duration: 0.2), value: documentsVM.detailsTarget?.id)
         .animation(.spring(duration: 0.2), value: documentsVM.pendingUploadURL)
-        #if DEBUG
-        .overlay(alignment: .bottomTrailing) {
-            Button {
-                onOpenCanvas(Document(
-                    id: "dev-test",
-                    userId: "dev",
-                    filename: "Test Canvas.pdf",
-                    status: .completed,
-                    pageCount: 1,
-                    problemCount: nil,
-                    questionPages: nil,
-                    errorMessage: nil,
-                    statusMessage: nil,
-                    costCents: nil,
-                    courseId: nil,
-                    createdAt: "2026-01-01T00:00:00Z"
-                ))
-            } label: {
-                Text("Test Canvas")
-                    .font(.epilogue(12, weight: .bold))
-                    .tracking(-0.04 * 12)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(20)
-        }
-        #endif
         .task { await fetchCourses() }
     }
 
