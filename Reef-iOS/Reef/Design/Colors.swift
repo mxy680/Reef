@@ -16,16 +16,18 @@ enum ReefColors {
     // MARK: - Canvas Dark Mode
 
     enum CanvasDark {
-        static let background = Color(hex: 0x1A1A1E)
-        static let safeArea = Color(hex: 0x0F0F12)
-        static let pageFill = Color(hex: 0x2A2A2E)
-        static let pageBorder = Color(red: 80/255, green: 80/255, blue: 80/255)
-        static let pageShadow = Color(red: 0, green: 0, blue: 0).opacity(0.5)
+        /// Canvas scroll area — very dark
+        static let background = Color(hex: 0x111114)
+        /// Safe area behind toolbar
+        static let safeArea = Color(hex: 0x0A0A0D)
+        /// Darkened teal for toolbar (original #4E8A97 darkened ~40%)
+        static let toolbar = Color(hex: 0x2F535B)
+        /// Page card border in dark mode
+        static let pageBorder = Color(red: 60/255, green: 60/255, blue: 60/255)
 
         // UIKit equivalents
-        static let scrollBackground = UIColor(red: 0x1A/255.0, green: 0x1A/255.0, blue: 0x1E/255.0, alpha: 1)
-        static let pageBackgroundUI = UIColor(red: 0x2A/255.0, green: 0x2A/255.0, blue: 0x2E/255.0, alpha: 1)
-        static let pageBorderUI = UIColor(red: 80/255.0, green: 80/255.0, blue: 80/255.0, alpha: 1)
+        static let scrollBackground = UIColor(red: 0x11/255.0, green: 0x11/255.0, blue: 0x14/255.0, alpha: 1)
+        static let pageBorderUI = UIColor(red: 60/255.0, green: 60/255.0, blue: 60/255.0, alpha: 1)
     }
 }
 

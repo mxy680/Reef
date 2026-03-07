@@ -39,6 +39,11 @@ final class CanvasContainerView: UIView {
     private var contentWidthConstraint: NSLayoutConstraint?
     private var isDarkMode = false
 
+    /// Original rendered page images (light mode)
+    private var originalImages: [UIImage] = []
+    /// Color-inverted page images (dark mode) — lazily generated
+    private var invertedImages: [UIImage]?
+
     /// Separator height between pages (increased for 3D shadow clearance)
     private static let separatorHeight: CGFloat = 16
 
@@ -162,6 +167,9 @@ final class CanvasContainerView: UIView {
         separatorViews.removeAll()
         pagesStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
+        originalImages = images
+        invertedImages = nil
+
         for (index, image) in images.enumerated() {
             // Wrapper holds both the shadow and the page (for 3D effect)
             let wrapper = UIView()
@@ -171,9 +179,7 @@ final class CanvasContainerView: UIView {
             // 3D shadow — offset behind the page
             let shadowView = UIView()
             shadowView.translatesAutoresizingMaskIntoConstraints = false
-            shadowView.backgroundColor = isDarkMode
-                ? UIColor.black.withAlphaComponent(0.5)
-                : Self.pageBorderColor
+            shadowView.backgroundColor = Self.pageBorderColor
             shadowView.layer.cornerRadius = Self.pageCornerRadius
             wrapper.addSubview(shadowView)
             shadowViews.append(shadowView)
@@ -181,14 +187,10 @@ final class CanvasContainerView: UIView {
             // Page container — white background with rounded corners and border
             let pageView = UIView()
             pageView.translatesAutoresizingMaskIntoConstraints = false
-            pageView.backgroundColor = isDarkMode
-                ? ReefColors.CanvasDark.pageBackgroundUI
-                : .white
+            pageView.backgroundColor = .white
             pageView.layer.cornerRadius = Self.pageCornerRadius
             pageView.layer.borderWidth = 2
-            pageView.layer.borderColor = isDarkMode
-                ? ReefColors.CanvasDark.pageBorderUI.cgColor
-                : Self.pageBorderColor.cgColor
+            pageView.layer.borderColor = Self.pageBorderColor.cgColor
             pageView.clipsToBounds = true
             wrapper.addSubview(pageView)
             pageContainerViews.append(pageView)
@@ -261,18 +263,34 @@ final class CanvasContainerView: UIView {
         guard isDarkMode != dark else { return }
         isDarkMode = dark
 
-        UIView.animate(withDuration: 0.3) { [self] in
+        // Swap page images (invert colors for true dark mode reading)
+        let targetImages: [UIImage]
+        if dark {
+            if invertedImages == nil {
+                invertedImages = originalImages.map { Self.invertImage($0) }
+            }
+            targetImages = invertedImages!
+        } else {
+            targetImages = originalImages
+        }
+
+        UIView.transition(
+            with: self,
+            duration: 0.3,
+            options: .transitionCrossDissolve
+        ) { [self] in
             scrollView.backgroundColor = dark
                 ? ReefColors.CanvasDark.scrollBackground
                 : Self.scrollBackground
 
-            for pageView in pageContainerViews {
-                pageView.backgroundColor = dark
-                    ? ReefColors.CanvasDark.pageBackgroundUI
-                    : .white
+            for (i, pageView) in pageContainerViews.enumerated() {
                 pageView.layer.borderColor = dark
                     ? ReefColors.CanvasDark.pageBorderUI.cgColor
                     : Self.pageBorderColor.cgColor
+
+                if i < targetImages.count {
+                    pageImageViews[i].image = targetImages[i]
+                }
             }
 
             for shadowView in shadowViews {
@@ -281,6 +299,18 @@ final class CanvasContainerView: UIView {
                     : Self.pageBorderColor
             }
         }
+    }
+
+    /// Invert an image's colors using CIColorInvert
+    private static func invertImage(_ image: UIImage) -> UIImage {
+        guard let ciImage = CIImage(image: image),
+              let filter = CIFilter(name: "CIColorInvert") else { return image }
+        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        guard let output = filter.outputImage else { return image }
+
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(output, from: output.extent) else { return image }
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
     // MARK: - Layout

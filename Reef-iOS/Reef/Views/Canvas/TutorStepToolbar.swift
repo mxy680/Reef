@@ -80,7 +80,7 @@ struct TutorStepToolbar: View {
             .frame(height: 44)
             .background(
                 ZStack {
-                    darkMode ? Color(hex: 0x2A2A2E) : CanvasToolbar.barColor
+                    darkMode ? ReefColors.CanvasDark.toolbar : CanvasToolbar.barColor
                     Color.white.opacity(darkMode ? 0.06 : 0.12)
                 }
             )

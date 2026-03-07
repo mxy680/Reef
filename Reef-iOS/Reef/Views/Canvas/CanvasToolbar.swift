@@ -19,7 +19,7 @@ struct CanvasToolbar: View {
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
-    private static let darkBarColor = Color(hex: 0x2A2A2E)
+    private static let darkBarColor = ReefColors.CanvasDark.toolbar
 
     private var activeBarColor: Color {
         darkMode ? Self.darkBarColor : Self.barColor
