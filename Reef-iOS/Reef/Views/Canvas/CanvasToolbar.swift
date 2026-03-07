@@ -355,21 +355,23 @@ struct PageMenuView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            menuRow(icon: "doc.badge.plus", label: "Add Page to End") {
+            menuRow(icon: "canvas.page_add_end", label: "Add Page to End") {
                 onAction(.addBlankAtEnd)
             }
-            menuRow(icon: "plus.rectangle.on.rectangle", label: "Add Page After This") {
+            menuRow(icon: "canvas.page_add_after", label: "Add Page After This") {
                 onAction(.addBlankAfterCurrent)
             }
             Divider()
-                .padding(.horizontal, 12)
-            menuRow(icon: "doc.badge.minus", label: "Delete This Page", isDestructive: true) {
+                .padding(.horizontal, 14)
+                .padding(.vertical, 2)
+            menuRow(icon: "canvas.page_delete_one", label: "Delete This Page", isDestructive: true) {
                 onAction(.deleteCurrentPage)
             }
-            menuRow(icon: "trash", label: "Delete All Pages", isDestructive: true) {
+            menuRow(icon: "canvas.page_delete_all", label: "Delete All Pages", isDestructive: true) {
                 onAction(.deleteAllPages)
             }
         }
+        .padding(.vertical, 6)
         .frame(width: 230)
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -387,15 +389,17 @@ struct PageMenuView: View {
     private func menuRow(icon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(width: 20)
+                Image(icon)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 18, height: 18)
                 Text(label)
                     .font(.system(size: 14, weight: .medium))
                 Spacer()
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.vertical, 11)
             .foregroundColor(isDestructive ? .red : ReefColors.black)
             .contentShape(Rectangle())
         }

@@ -83,30 +83,40 @@ struct DocumentCanvasView: View {
             if showPageMenu, let anchor {
                 GeometryReader { proxy in
                     let rect = proxy[anchor]
+                    let menuWidth: CGFloat = 230
+                    // Center menu horizontally under the button, clamped to screen
+                    let menuX = max(8, min(
+                        rect.midX - menuWidth / 2,
+                        proxy.size.width - menuWidth - 12
+                    ))
 
                     // Dismiss backdrop
                     Color.black.opacity(0.001)
                         .ignoresSafeArea()
                         .onTapGesture {
-                            withAnimation(.spring(duration: 0.2)) {
+                            withAnimation(.spring(duration: 0.2, bounce: 0.15)) {
                                 showPageMenu = false
                             }
                         }
 
-                    // Custom popover anchored below button
+                    // Custom popover centered below button
                     PageMenuView(onAction: { action in
-                        withAnimation(.spring(duration: 0.2)) {
+                        withAnimation(.spring(duration: 0.2, bounce: 0.15)) {
                             showPageMenu = false
                         }
                         handlePageAction(action)
                     })
-                    .transition(.scale(scale: 0.95, anchor: .top).combined(with: .opacity))
-                    .offset(x: rect.maxX - 234, y: rect.maxY + 8)
+                    .transition(
+                        .scale(scale: 0.92, anchor: .top)
+                        .combined(with: .opacity)
+                        .combined(with: .offset(y: -4))
+                    )
+                    .offset(x: menuX, y: rect.maxY + 10)
                 }
                 .ignoresSafeArea()
             }
         }
-        .animation(.spring(duration: 0.2), value: showPageMenu)
+        .animation(.spring(duration: 0.25, bounce: 0.15), value: showPageMenu)
         .task {
             #if DEBUG
             if document.id == "dev-test" {
