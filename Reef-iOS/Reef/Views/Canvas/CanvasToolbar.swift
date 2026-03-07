@@ -17,7 +17,6 @@ struct CanvasToolbar: View {
     var documentName: String = ""
     @Binding var showPageSettings: Bool
     var hasActiveOverlay: Bool = false
-    @Binding var pageOverlaySettings: PageOverlaySettings
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -217,9 +216,6 @@ struct CanvasToolbar: View {
             ToolbarButton(icon: "canvas.page_settings", isSelected: hasActiveOverlay, isCustomIcon: true, action: {
                 showPageSettings.toggle()
             })
-            .popover(isPresented: $showPageSettings, arrowEdge: .bottom) {
-                PageSettingsPopover(settings: $pageOverlaySettings)
-            }
             ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
         }
     }

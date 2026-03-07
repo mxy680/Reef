@@ -23,6 +23,12 @@ struct DocumentCanvasView: View {
         document.questionPages != nil
     }
 
+    private var safeAreaTop: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.top ?? 0
+    }
+
     private static let cream = Color(hex: 0xF8F0E6)
 
     /// Tab strip = barColor (0x4E8A97) darkened 18% for safe area.
@@ -57,8 +63,7 @@ struct DocumentCanvasView: View {
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
                         showPageSettings: $showPageSettings,
-                        hasActiveOverlay: pageOverlaySettings.type != .none,
-                        pageOverlaySettings: $pageOverlaySettings
+                        hasActiveOverlay: pageOverlaySettings.type != .none
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -77,7 +82,39 @@ struct DocumentCanvasView: View {
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
+
+            // Page settings dropdown
+            if showPageSettings {
+                // Tap-to-dismiss layer (transparent, no dimming)
+                Color.clear
+                    .contentShape(Rectangle())
+                    .ignoresSafeArea()
+                    .onTapGesture { showPageSettings = false }
+
+                // Dropdown panel, anchored below toolbar
+                VStack(spacing: 0) {
+                    PageSettingsPopover(settings: $pageOverlaySettings)
+                        .background(ReefColors.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(ReefColors.black, lineWidth: 1.5)
+                        )
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(ReefColors.black)
+                                .offset(x: 4, y: 4)
+                        )
+
+                    Spacer()
+                }
+                .padding(.top, safeAreaTop + 88 + 4)
+                .padding(.trailing, 80)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
+        .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
         .task {
             #if DEBUG
