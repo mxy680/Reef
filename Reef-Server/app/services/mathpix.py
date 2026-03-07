@@ -6,12 +6,17 @@ Docs: https://docs.mathpix.com/reference/
 """
 
 import asyncio
+import base64
+import re
 
 import httpx
 
 from app.config import settings
 
 BASE_URL = "https://api.mathpix.com"
+
+# Matches ![alt](url) in Mathpix Markdown
+_IMAGE_RE = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
 
 
 def _auth_headers() -> dict[str, str]:
@@ -83,6 +88,50 @@ async def pdf_to_mmd(pdf_bytes: bytes, filename: str = "document.pdf") -> str:
     pdf_id = await submit_pdf(pdf_bytes, filename)
     await poll_pdf(pdf_id)
     return await download_mmd(pdf_id)
+
+
+async def download_mmd_images(mmd: str) -> tuple[str, dict[str, str]]:
+    """Download all images referenced in MMD and return updated MMD + image data.
+
+    Finds all ![alt](url) references, downloads each image, replaces the
+    markdown syntax with a filename marker for DeepSeek to reference,
+    and returns a dict of {filename: base64_data} for LaTeX compilation.
+
+    Returns (updated_mmd, image_data) where image_data maps filenames to
+    base64-encoded JPEG bytes.
+    """
+    matches = list(_IMAGE_RE.finditer(mmd))
+    if not matches:
+        return mmd, {}
+
+    image_data: dict[str, str] = {}
+    replacements: list[tuple[str, str]] = []
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for i, match in enumerate(matches):
+            url = match.group(2)
+            fname = f"figure_{i + 1}.jpg"
+
+            try:
+                resp = await client.get(url)
+                resp.raise_for_status()
+                image_data[fname] = base64.b64encode(resp.content).decode()
+                replacements.append((match.group(0), f"[Figure: {fname}]"))
+                print(f"  [mathpix] Downloaded image: {fname} ({len(resp.content)} bytes)")
+            except Exception as e:
+                print(f"  [mathpix] Failed to download image from {url}: {e}")
+                replacements.append((match.group(0), "[Figure: image unavailable]"))
+
+    updated_mmd = mmd
+    for old, new in replacements:
+        updated_mmd = updated_mmd.replace(old, new, 1)
+
+    return updated_mmd, image_data
+
+
+# ---------------------------------------------------------------------------
+# Strokes API (live handwriting recognition)
+# ---------------------------------------------------------------------------
 
 
 async def create_strokes_session(expires: int = 300) -> dict:

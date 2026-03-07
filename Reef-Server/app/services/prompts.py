@@ -159,7 +159,7 @@ into the structured JSON schema.
 ## Structure
 - number: The problem number as shown in the document.
 - text: The question stem / preamble. For simple questions with no parts, all content goes here.
-- figures: Always empty [] (figures are not available in this pipeline).
+- figures: List of figure filenames referenced by this question or part. The document may contain markers like [Figure: figure_1.jpg] — place the corresponding filename in the `figures` list at the level where it appears (question-level or part-level). If no figures are present, use [].
 - parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a → i, ii, iii).
   - If a question has unlabeled bullet points or numbered sub-items, use sequential letters (a, b, c...) as labels.
   - IMPORTANT: If a part contains multiple questions that each need a separate answer, extract each as a nested sub-part.

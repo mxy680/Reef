@@ -841,7 +841,7 @@ async def _run_mathpix_pipeline(
     ``(compiled, page_count, costs)`` where *compiled* is a list of
     ``(label, pdf_bytes, question_dict | None)`` tuples — one per problem.
     """
-    from app.services.mathpix import pdf_to_mmd
+    from app.services.mathpix import pdf_to_mmd, download_mmd_images
 
     if costs is None:
         costs = PipelineCosts()
@@ -863,6 +863,11 @@ async def _run_mathpix_pipeline(
     print(f"  [mathpix] Submitting {num_pages}-page PDF to Mathpix...")
     mmd = await pdf_to_mmd(pdf_bytes, f"{base_name}.pdf")
     print(f"  [mathpix] Got MMD: {len(mmd)} chars")
+
+    # Download images referenced in MMD
+    mmd, image_data = await download_mmd_images(mmd)
+    if image_data:
+        print(f"  [mathpix] Downloaded {len(image_data)} images")
 
     if debug:
         mmd_dir = data_dir / "mmd"
@@ -898,6 +903,15 @@ async def _run_mathpix_pipeline(
     questions.sort(key=lambda q: q.number)
     print(f"  [mathpix] Extracted {len(questions)} questions")
 
+    # Strip hallucinated figure filenames
+    valid_figs = set(image_data.keys())
+    for q in questions:
+        q.figures = [f for f in q.figures if f in valid_figs]
+        for part in q.parts:
+            part.figures = [f for f in part.figures if f in valid_figs]
+            for sub in part.parts:
+                sub.figures = [f for f in sub.figures if f in valid_figs]
+
     if debug and questions:
         structured_dir = data_dir / "structured"
         structured_dir.mkdir(parents=True, exist_ok=True)
@@ -908,6 +922,15 @@ async def _run_mathpix_pipeline(
     # --- Stage 3: Compile each question to LaTeX/PDF ---
     await progress(f"Compiling {len(questions)} problems...")
     compiler = LaTeXCompiler()
+
+    # Collect figure filenames used by each question for per-problem image_data
+    def _collect_figures(question: Question) -> set[str]:
+        figs: set[str] = set(question.figures)
+        for part in question.parts:
+            figs.update(part.figures)
+            for sub in part.parts:
+                figs.update(sub.figures)
+        return figs
 
     MAX_FIX_ATTEMPTS = 3
 
@@ -920,7 +943,14 @@ async def _run_mathpix_pipeline(
         latex = question_to_latex(question)
         question_dict = question.model_dump()
 
-        print(f"  [compile] {label}: {len(latex)} chars")
+        # Only pass images that this question actually uses
+        q_figs = _collect_figures(question)
+        q_image_data = {k: v for k, v in image_data.items() if k in q_figs} or None
+
+        print(
+            f"  [compile] {label}: {len(latex)} chars"
+            + (f", {len(q_figs)} figures" if q_figs else "")
+        )
 
         current_latex = latex
         pdf_result = None
@@ -928,7 +958,7 @@ async def _run_mathpix_pipeline(
             try:
                 content = f"\\textbf{{\\large {header}}}\n\n{current_latex}"
                 pdf_result = await asyncio.to_thread(
-                    compiler.compile_latex, content,
+                    compiler.compile_latex, content, image_data=q_image_data,
                 )
                 if attempt > 1:
                     print(f"  [compile] {label}: FIXED on attempt {attempt}")
