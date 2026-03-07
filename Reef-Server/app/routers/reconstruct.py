@@ -42,6 +42,7 @@ from app.services.prompts import (
     EXTRACT_QUESTION_PROMPT,
     GROUP_PROBLEMS_PROMPT,
     LATEX_FIX_PROMPT,
+    MATHPIX_EXTRACT_PROMPT,
     VISUAL_VERIFY_PROMPT,
 )
 from app.services.answer_keys import generate_answer_keys
@@ -817,6 +818,163 @@ async def _run_pipeline(
         f"{costs.input_tokens} in / {costs.output_tokens} out tokens, "
         f"{costs.gpu_seconds:.1f}s GPU, {costs.pipeline_seconds:.1f}s total, "
         f"~{costs.cost_cents}¢"
+    )
+
+    return compiled, num_pages, costs
+
+
+# ---------------------------------------------------------------------------
+# Mathpix-based pipeline (OCR + DeepSeek extraction)
+# ---------------------------------------------------------------------------
+
+
+async def _run_mathpix_pipeline(
+    pdf_bytes: bytes,
+    document_id: str | None = None,
+    debug: bool = False,
+    base_name: str = "document",
+    costs: PipelineCosts | None = None,
+) -> tuple[list[tuple[str, bytes, dict | None]], int, PipelineCosts]:
+    """Mathpix OCR + DeepSeek extraction pipeline.
+
+    Same return signature as _run_pipeline:
+    ``(compiled, page_count, costs)`` where *compiled* is a list of
+    ``(label, pdf_bytes, question_dict | None)`` tuples — one per problem.
+    """
+    from app.services.mathpix import pdf_to_mmd
+
+    if costs is None:
+        costs = PipelineCosts()
+    pipeline_start = time.monotonic()
+
+    async def progress(msg: str | None):
+        if document_id:
+            await update_progress(document_id, msg)
+
+    data_dir = Path(__file__).parent.parent.parent / "data"
+
+    # Count pages
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    num_pages = len(doc)
+    doc.close()
+
+    # --- Stage 1: Mathpix OCR ---
+    await progress("Running OCR...")
+    print(f"  [mathpix] Submitting {num_pages}-page PDF to Mathpix...")
+    mmd = await pdf_to_mmd(pdf_bytes, f"{base_name}.pdf")
+    print(f"  [mathpix] Got MMD: {len(mmd)} chars")
+
+    if debug:
+        mmd_dir = data_dir / "mmd"
+        mmd_dir.mkdir(parents=True, exist_ok=True)
+        (mmd_dir / f"{base_name}.mmd").write_text(mmd)
+
+    # --- Stage 2: DeepSeek extraction ---
+    await progress("Extracting problems...")
+    print(f"  [mathpix] Sending MMD to DeepSeek for extraction...")
+
+    llm_client = LLMClient(
+        api_key=settings.openrouter_api_key,
+        model="deepseek/deepseek-chat-v3-0324",
+        base_url="https://openrouter.ai/api/v1",
+    )
+
+    # Add DeepSeek pricing
+    costs.MODEL_RATES["deepseek/deepseek-chat-v3-0324"] = (
+        0.40 / 1_000_000,  # input
+        0.89 / 1_000_000,  # output (cache miss)
+    )
+
+    prompt = MATHPIX_EXTRACT_PROMPT.format(mmd_content=mmd)
+    extract_llm = await asyncio.to_thread(
+        llm_client.generate,
+        prompt=prompt,
+        response_schema=QuestionBatch.model_json_schema(),
+    )
+    costs.add(extract_llm, model=llm_client.model)
+
+    batch = QuestionBatch.model_validate_json(extract_llm.content)
+    questions = batch.questions
+    questions.sort(key=lambda q: q.number)
+    print(f"  [mathpix] Extracted {len(questions)} questions")
+
+    if debug and questions:
+        structured_dir = data_dir / "structured"
+        structured_dir.mkdir(parents=True, exist_ok=True)
+        (structured_dir / f"{base_name}.json").write_text(
+            json.dumps([q.model_dump() for q in questions], indent=2)
+        )
+
+    # --- Stage 3: Compile each question to LaTeX/PDF ---
+    await progress(f"Compiling {len(questions)} problems...")
+    compiler = LaTeXCompiler()
+
+    MAX_FIX_ATTEMPTS = 3
+
+    async def compile_question(
+        idx: int, question: Question,
+    ) -> tuple[str, bytes, dict | None]:
+        """Compile a single question, with LLM fix retry on failure."""
+        label = f"Problem {question.number}"
+        header = f"Problem {idx + 1}"
+        latex = question_to_latex(question)
+        question_dict = question.model_dump()
+
+        print(f"  [compile] {label}: {len(latex)} chars")
+
+        current_latex = latex
+        pdf_result = None
+        for attempt in range(1, MAX_FIX_ATTEMPTS + 1):
+            try:
+                content = f"\\textbf{{\\large {header}}}\n\n{current_latex}"
+                pdf_result = await asyncio.to_thread(
+                    compiler.compile_latex, content,
+                )
+                if attempt > 1:
+                    print(f"  [compile] {label}: FIXED on attempt {attempt}")
+                break
+            except Exception as e:
+                if attempt < MAX_FIX_ATTEMPTS:
+                    print(f"  [compile] {label}: attempt {attempt} failed — {e}")
+                    try:
+                        fix_prompt = LATEX_FIX_PROMPT.format(
+                            latex_body=current_latex, error_message=str(e)[:2000],
+                        )
+                        fix_llm = await asyncio.to_thread(
+                            llm_client.generate, prompt=fix_prompt,
+                        )
+                        costs.add(fix_llm, model=llm_client.model)
+                        current_latex = fix_llm.content
+                    except Exception as e2:
+                        print(f"  [compile] {label}: LLM fix failed — {e2}")
+                        break
+                else:
+                    print(f"  [compile] {label}: FAILED after {MAX_FIX_ATTEMPTS} attempts — {e}")
+
+        if pdf_result is None:
+            fallback = (
+                f"\\textbf{{\\large {header}}}\n\n"
+                f"\\textit{{LaTeX compilation failed for this problem.}}"
+            )
+            pdf_result = await asyncio.to_thread(compiler.compile_latex, fallback)
+            return (label, pdf_result, None)
+
+        return (label, pdf_result, question_dict)
+
+    # Compile all questions in parallel
+    compile_tasks = [
+        compile_question(i, q) for i, q in enumerate(questions)
+    ]
+    compiled = list(await asyncio.gather(*compile_tasks))
+
+    await progress("Finalizing PDF...")
+    await progress(None)
+
+    costs.pipeline_seconds = time.monotonic() - pipeline_start
+    print(
+        f"  [mathpix] Costs: {costs.llm_calls} LLM calls, "
+        f"{costs.input_tokens} in / {costs.output_tokens} out tokens, "
+        f"{costs.pipeline_seconds:.1f}s total, ~{costs.cost_cents}¢"
     )
 
     return compiled, num_pages, costs

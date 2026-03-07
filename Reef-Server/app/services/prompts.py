@@ -148,6 +148,55 @@ Minor typographic differences (font size, exact spacing, line breaks) are accept
 - Do NOT solve problems or fill in blanks — reproduce the original content exactly.
 """
 
+MATHPIX_EXTRACT_PROMPT = """\
+You are extracting structured question data from a Mathpix Markdown (MMD) document.
+The MMD was produced by OCR on a homework or exam PDF.
+
+## Input
+The full MMD text of the document is provided below. Extract every numbered problem
+into the structured JSON schema.
+
+## Structure
+- number: The problem number as shown in the document.
+- text: The question stem / preamble. For simple questions with no parts, all content goes here.
+- figures: Always empty [] (figures are not available in this pipeline).
+- parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a → i, ii, iii).
+  - If a question has unlabeled bullet points or numbered sub-items, use sequential letters (a, b, c...) as labels.
+  - IMPORTANT: If a part contains multiple questions that each need a separate answer, extract each as a nested sub-part.
+
+## CRITICAL: All text fields must be valid LaTeX body content
+
+Every `text` field will be compiled by a LaTeX engine.
+
+Rules:
+- Escape LaTeX special characters in prose: write \\& not &, \\% not %, \\# not #, \\$ not $ (when not math).
+- Inline math: $...$ delimiters. Display math: \\[...\\].
+- All LaTeX commands (\\Delta, \\sigma, \\rightarrow, \\text{{}}, \\frac{{}}{{}}, etc.) MUST be inside math delimiters.
+- Degree symbols: $^\\circ$ (e.g. $100^\\circ$C). Never use raw ° or \\degree.
+- Subscripts/superscripts: always in math mode ($H_2O$, $x^2$, $q_{{\\text{{rxn}}}}$).
+- Bold text: use \\textbf{{...}}, NOT markdown **bold**.
+- Tables: use \\begin{{tabular}}{{...}} with proper & column separators and \\\\ row endings.
+- NO Unicode symbols — use LaTeX equivalents (\\rightarrow not →, \\neq not ≠, \\leq not ≤, etc.).
+- NO markdown syntax whatsoever (no #, no *, no -, no ```).
+- Convert \\section{{}} and \\section*{{}} headers to \\textbf{{}} — do NOT include them as problems.
+- Combine all text for a section into a single string — do NOT split into separate blocks.
+- Square root: use $\\sqrt{{48}}$ not $\\sqrt{{ }}(48)$ — content must be inside the braces.
+
+## Answer space (based on difficulty)
+Estimate answer_space_cm at the most specific level (deepest part > parent part > question):
+- 1.0: multiple choice / true-false / short factual
+- 2.0: one-line calculation or brief explanation
+- 3.0: standard calculation or paragraph
+- 4.0: multi-step derivation or proof
+- 5.0: long proof, graph to sketch, or multi-part calculation
+- 6.0: very complex multi-step problem
+
+## Document content
+```
+{mmd_content}
+```
+"""
+
 ANSWER_KEY_PROMPT = """\
 You are generating a structured answer key for a homework or exam question. The answer key will be used by an AI tutor to guide students through the solution step by step.
 
