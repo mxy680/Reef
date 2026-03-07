@@ -8,8 +8,11 @@ struct ContentView: View {
         Group {
             if canvasDocument != nil {
                 DocumentCanvasView(document: canvasDocument!) {
-                    canvasDocument = nil
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        canvasDocument = nil
+                    }
                 }
+                .transition(.opacity)
             } else if authManager.isLoading && authManager.session == nil {
                 ZStack {
                     ReefColors.surface
@@ -18,7 +21,9 @@ struct ContentView: View {
                 }
             } else if authManager.isAuthenticated && authManager.onboardingCompleted {
                 LoggedInView(onOpenCanvas: { doc in
-                    canvasDocument = doc
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        canvasDocument = doc
+                    }
                 })
             } else if authManager.isAuthenticated {
                 OnboardingView()
