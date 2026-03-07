@@ -57,8 +57,10 @@ struct DocumentCanvasView: View {
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
                         showPageSettings: $showPageSettings,
-                        hasActiveOverlay: pageOverlaySettings.type != .none
+                        hasActiveOverlay: pageOverlaySettings.type != .none,
+                        pageOverlaySettings: $pageOverlaySettings
                     )
+                    .zIndex(1)
 
                     if tutorModeOn && isReconstructed {
                         TutorStepToolbar(questionIndex: currentQuestionIndex)
@@ -77,37 +79,12 @@ struct DocumentCanvasView: View {
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
 
-        }
-        .overlayPreferenceValue(PageSettingsButtonFrameKey.self) { buttonFrame in
+            // Tap-to-dismiss layer for page settings dropdown
             if showPageSettings {
-                // Tap-to-dismiss layer (transparent, no dimming)
                 Color.clear
                     .contentShape(Rectangle())
                     .ignoresSafeArea()
                     .onTapGesture { showPageSettings = false }
-
-                // Dropdown panel, centered under the button
-                GeometryReader { _ in
-                    PageSettingsPopover(settings: $pageOverlaySettings)
-                        .background(ReefColors.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(ReefColors.black, lineWidth: 1.5)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(ReefColors.black)
-                                .offset(x: 4, y: 4)
-                        )
-                        .fixedSize()
-                        .offset(
-                            x: buttonFrame.midX - 140,
-                            y: buttonFrame.maxY + 4
-                        )
-                }
-                .ignoresSafeArea()
-                .transition(.opacity)
             }
         }
         .animation(.spring(duration: 0.2), value: showPageSettings)

@@ -7,15 +7,6 @@
 
 import SwiftUI
 
-// MARK: - Button Frame Preference Key
-
-struct PageSettingsButtonFrameKey: PreferenceKey {
-    nonisolated(unsafe) static var defaultValue: CGRect = .zero
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
-    }
-}
-
 // MARK: - Model
 
 enum PageOverlayType: String, CaseIterable {

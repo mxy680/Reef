@@ -17,6 +17,7 @@ struct CanvasToolbar: View {
     var documentName: String = ""
     @Binding var showPageSettings: Bool
     var hasActiveOverlay: Bool = false
+    @Binding var pageOverlaySettings: PageOverlaySettings
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -216,14 +217,26 @@ struct CanvasToolbar: View {
             ToolbarButton(icon: "canvas.page_settings", isSelected: hasActiveOverlay, isCustomIcon: true, action: {
                 showPageSettings.toggle()
             })
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(
-                        key: PageSettingsButtonFrameKey.self,
-                        value: geo.frame(in: .global)
-                    )
+            .overlay(alignment: .top) {
+                if showPageSettings {
+                    PageSettingsPopover(settings: $pageOverlaySettings)
+                        .background(ReefColors.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(ReefColors.black, lineWidth: 1.5)
+                        )
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(ReefColors.black)
+                                .offset(x: 4, y: 4)
+                        )
+                        .fixedSize()
+                        .offset(y: 40)
+                        .transition(.opacity)
                 }
-            )
+            }
+            .zIndex(1)
             ToolbarButton(icon: "canvas.add_page", isSelected: false, isCustomIcon: true, action: {})
         }
     }
