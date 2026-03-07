@@ -2,7 +2,7 @@
 //  PageSettingsPopup.swift
 //  Reef
 //
-//  Page overlay settings popup — grid, dots, or lines over PDF pages
+//  Page overlay settings popover — grid, dots, or lines over PDF pages
 //
 
 import SwiftUI
@@ -28,53 +28,48 @@ struct PageOverlaySettings: Equatable {
     var showInExport: Bool = false
 }
 
-// MARK: - Popup View
+// MARK: - Popover View
 
-struct PageSettingsPopup: View {
+struct PageSettingsPopover: View {
     @Binding var settings: PageOverlaySettings
-    let onDismiss: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
-            HStack {
-                Text("Page Settings")
-                    .font(.epilogue(16, weight: .bold))
-                    .tracking(-0.04 * 16)
-                    .foregroundStyle(ReefColors.black)
+            Text("Page Settings")
+                .font(.epilogue(15, weight: .bold))
+                .tracking(-0.04 * 15)
+                .foregroundStyle(ReefColors.black)
 
-                Spacer()
+            Spacer().frame(height: 4)
 
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(ReefColors.gray500)
-                    .frame(width: 28, height: 28)
-                    .background(ReefColors.gray100)
-                    .clipShape(Circle())
-                    .contentShape(Circle())
-                    .onTapGesture { onDismiss() }
-            }
+            Text("Add an overlay to your pages.")
+                .font(.epilogue(12, weight: .medium))
+                .tracking(-0.04 * 12)
+                .foregroundStyle(ReefColors.gray500)
 
-            Spacer().frame(height: 20)
+            Spacer().frame(height: 16)
 
             // Overlay type segmented control
             Text("Overlay")
-                .font(.epilogue(12, weight: .semiBold))
-                .tracking(-0.04 * 12)
-                .foregroundStyle(ReefColors.gray500)
-                .padding(.bottom, 8)
+                .font(.epilogue(11, weight: .semiBold))
+                .tracking(-0.04 * 11)
+                .foregroundStyle(ReefColors.gray400)
+                .textCase(.uppercase)
+                .padding(.bottom, 6)
 
             overlayTypePicker
 
             // Spacing slider (only when overlay is active)
             if settings.type != .none {
-                Spacer().frame(height: 20)
+                Spacer().frame(height: 16)
 
                 HStack {
                     Text("Spacing")
-                        .font(.epilogue(12, weight: .semiBold))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.gray500)
+                        .font(.epilogue(11, weight: .semiBold))
+                        .tracking(-0.04 * 11)
+                        .foregroundStyle(ReefColors.gray400)
+                        .textCase(.uppercase)
 
                     Spacer()
 
@@ -83,12 +78,12 @@ struct PageSettingsPopup: View {
                         .tracking(-0.04 * 12)
                         .foregroundStyle(ReefColors.black)
                 }
-                .padding(.bottom, 8)
+                .padding(.bottom, 6)
 
                 Slider(value: $settings.spacing, in: 10...60, step: 2)
                     .tint(ReefColors.primary)
 
-                Spacer().frame(height: 20)
+                Spacer().frame(height: 16)
 
                 // Show in export toggle
                 HStack {
@@ -105,19 +100,8 @@ struct PageSettingsPopup: View {
                 }
             }
         }
-        .padding(24)
-        .background(ReefColors.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(ReefColors.black, lineWidth: 1.5)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(ReefColors.black)
-                .offset(x: 4, y: 4)
-        )
-        .frame(maxWidth: 340)
+        .padding(20)
+        .frame(width: 280)
     }
 
     // MARK: - Overlay Type Picker

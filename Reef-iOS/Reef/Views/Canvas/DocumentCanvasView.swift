@@ -57,7 +57,8 @@ struct DocumentCanvasView: View {
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
                         showPageSettings: $showPageSettings,
-                        hasActiveOverlay: pageOverlaySettings.type != .none
+                        hasActiveOverlay: pageOverlaySettings.type != .none,
+                        pageOverlaySettings: $pageOverlaySettings
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -76,29 +77,7 @@ struct DocumentCanvasView: View {
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
-
-            // Page settings popup overlay
-            if showPageSettings {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring(duration: 0.2)) {
-                            showPageSettings = false
-                        }
-                    }
-
-                PageSettingsPopup(
-                    settings: $pageOverlaySettings,
-                    onDismiss: {
-                        withAnimation(.spring(duration: 0.2)) {
-                            showPageSettings = false
-                        }
-                    }
-                )
-                .transition(.scale(scale: 0.95).combined(with: .opacity))
-            }
         }
-        .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
         .task {
             #if DEBUG
