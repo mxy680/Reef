@@ -18,7 +18,6 @@ struct DocumentCanvasView: View {
     @State private var tutorModeOn = false
     @State private var showPageSettings = false
     @State private var pageOverlaySettings = PageOverlaySettings()
-    @State private var pageSettingsButtonFrame: CGRect = .zero
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -78,7 +77,8 @@ struct DocumentCanvasView: View {
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
 
-            // Page settings dropdown
+        }
+        .overlayPreferenceValue(PageSettingsButtonFrameKey.self) { buttonFrame in
             if showPageSettings {
                 // Tap-to-dismiss layer (transparent, no dimming)
                 Color.clear
@@ -102,17 +102,12 @@ struct DocumentCanvasView: View {
                         )
                         .fixedSize()
                         .offset(
-                            x: pageSettingsButtonFrame.midX - 140,
-                            y: pageSettingsButtonFrame.maxY + 4
+                            x: buttonFrame.midX - 140,
+                            y: buttonFrame.maxY + 4
                         )
                 }
                 .ignoresSafeArea()
                 .transition(.opacity)
-            }
-        }
-        .onPreferenceChange(PageSettingsButtonFrameKey.self) { frame in
-            Task { @MainActor in
-                pageSettingsButtonFrame = frame
             }
         }
         .animation(.spring(duration: 0.2), value: showPageSettings)
