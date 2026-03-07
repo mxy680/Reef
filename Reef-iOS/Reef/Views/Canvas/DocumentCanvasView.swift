@@ -20,7 +20,7 @@ struct DocumentCanvasView: View {
     @State private var showRuler = false
     @State private var drawingManager: DrawingManager?
     @State private var penColor: UIColor = .black
-    @State private var penWidth: CGFloat = 2.0
+    @State private var penWidth: CGFloat = 3.5
     @State private var showToolSettings = false
     @State private var selectedToolMidX: CGFloat = 0
     @State private var customColors: [UIColor] = []
