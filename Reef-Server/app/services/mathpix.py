@@ -109,7 +109,7 @@ async def download_mmd_images(mmd: str) -> tuple[str, dict[str, str]]:
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         for i, match in enumerate(matches):
-            url = match.group(2)
+            url = match.group(2).replace('\\&', '&')
             fname = f"figure_{i + 1}.jpg"
 
             try:
