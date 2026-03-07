@@ -27,7 +27,7 @@ struct RulerOverlayView: View {
             let center = initialPosition ?? CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
             rulerBody
-                .scaleEffect(x: scale * scaleDelta, y: 1)
+                .scaleEffect(scale * scaleDelta)
                 .position(
                     x: (initialPosition == nil ? center.x : position.x) + dragOffset.width,
                     y: (initialPosition == nil ? center.y : position.y) + dragOffset.height
