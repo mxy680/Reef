@@ -74,18 +74,18 @@ struct DocumentCanvasView: View {
                     )
                     .id(currentQuestionIndex)
                     .background(Self.cream)
+                    .overlay {
+                        // Tap-to-dismiss layer (covers canvas only, not toolbar)
+                        if showPageSettings {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { showPageSettings = false }
+                        }
+                    }
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
-
-            // Tap-to-dismiss layer for page settings dropdown
-            if showPageSettings {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .ignoresSafeArea()
-                    .onTapGesture { showPageSettings = false }
-            }
         }
         .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
