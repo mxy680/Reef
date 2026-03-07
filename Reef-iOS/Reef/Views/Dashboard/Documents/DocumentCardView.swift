@@ -45,22 +45,26 @@ struct DocumentCardView: View {
                 .padding(.top, 10)
                 .layoutPriority(1)
 
-            // Info footer — 20% of card height
-            VStack(alignment: .leading, spacing: 4) {
-                Text(document.displayName)
-                    .font(.epilogue(13, weight: .bold))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.black)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+            // Info footer — 20% of card height, vertically centered
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(document.displayName)
+                        .font(.epilogue(13, weight: .bold))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(ReefColors.black)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
 
-                Text(document.statusLabel)
-                    .font(.epilogue(11, weight: .medium))
-                    .tracking(-0.04 * 11)
-                    .foregroundStyle(statusColor)
+                    Text(document.statusLabel)
+                        .font(.epilogue(11, weight: .medium))
+                        .tracking(-0.04 * 11)
+                        .foregroundStyle(statusColor)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 10)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .frame(height: footerHeight)
             .layoutPriority(1)
         }
