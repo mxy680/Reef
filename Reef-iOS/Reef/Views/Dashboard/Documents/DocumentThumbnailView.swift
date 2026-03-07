@@ -22,12 +22,23 @@ struct DocumentThumbnailView: View {
                 AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.25))) { phase in
                     switch phase {
                     case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .clipped()
-                            .transition(.opacity)
+                        Group {
+                            if dark {
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                                    .colorInvert()
+                            } else {
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            }
+                        }
+                        .transition(.opacity)
                     default:
                         ruledLines
                     }
