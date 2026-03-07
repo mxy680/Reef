@@ -22,25 +22,9 @@ struct DocumentCardView: View {
     @State private var isPressed = false
     @State private var showMenu = false
 
-    // Proportional padding scaled to card height for consistent spacing across iPad sizes
-    private var thumbPad: CGFloat {
-        guard let h = cardHeight else { return 8 }
-        return max(6, min(12, h * 0.035))
-    }
-
-    private var footerPadH: CGFloat {
-        guard let h = cardHeight else { return 12 }
-        return max(10, min(16, h * 0.05))
-    }
-
-    private var footerPadTop: CGFloat {
-        guard let h = cardHeight else { return 10 }
-        return max(8, min(14, h * 0.045))
-    }
-
-    private var footerBottomPad: CGFloat {
-        guard let h = cardHeight else { return 16 }
-        return max(12, min(22, h * 0.075))
+    private var footerHeight: CGFloat {
+        guard let h = cardHeight else { return 62 }
+        return h * 0.2
     }
 
     private var borderColor: Color {
@@ -51,17 +35,17 @@ struct DocumentCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Thumbnail — flexible, fills remaining space
             DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
-                .padding(.horizontal, thumbPad)
-                .padding(.top, thumbPad)
+                .padding(.horizontal, 10)
+                .padding(.top, 10)
 
             // Divider
             Rectangle()
                 .fill(ReefColors.gray200)
                 .frame(height: 1)
-                .padding(.top, thumbPad)
+                .padding(.top, 10)
                 .layoutPriority(1)
 
-            // Info footer — natural height, priority sizing
+            // Info footer — 20% of card height
             VStack(alignment: .leading, spacing: 4) {
                 Text(document.displayName)
                     .font(.epilogue(13, weight: .bold))
@@ -75,10 +59,9 @@ struct DocumentCardView: View {
                     .tracking(-0.04 * 11)
                     .foregroundStyle(statusColor)
             }
-            .padding(.horizontal, footerPadH)
-            .padding(.top, footerPadTop)
-            .padding(.bottom, footerBottomPad)
+            .padding(.horizontal, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: footerHeight)
             .layoutPriority(1)
         }
         .frame(height: cardHeight)
