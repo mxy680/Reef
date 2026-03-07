@@ -18,6 +18,7 @@ struct DocumentCanvasView: View {
     @State private var tutorModeOn = false
     @State private var currentPageIndex = 0
     @State private var pageVersion = UUID()
+    @State private var showPageMenu = false
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -56,7 +57,8 @@ struct DocumentCanvasView: View {
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
-                        onPageAction: { handlePageAction($0) }
+                        onPageAction: { handlePageAction($0) },
+                        showPageMenu: $showPageMenu
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -77,6 +79,34 @@ struct DocumentCanvasView: View {
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
         }
         .ignoresSafeArea()
+        .overlayPreferenceValue(PageMenuAnchorKey.self) { anchor in
+            if showPageMenu, let anchor {
+                GeometryReader { proxy in
+                    let rect = proxy[anchor]
+
+                    // Dismiss backdrop
+                    Color.black.opacity(0.001)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.spring(duration: 0.2)) {
+                                showPageMenu = false
+                            }
+                        }
+
+                    // Custom popover anchored below button
+                    PageMenuView(onAction: { action in
+                        withAnimation(.spring(duration: 0.2)) {
+                            showPageMenu = false
+                        }
+                        handlePageAction(action)
+                    })
+                    .transition(.scale(scale: 0.95, anchor: .top).combined(with: .opacity))
+                    .offset(x: rect.maxX - 234, y: rect.maxY + 8)
+                }
+                .ignoresSafeArea()
+            }
+        }
+        .animation(.spring(duration: 0.2), value: showPageMenu)
         .task {
             #if DEBUG
             if document.id == "dev-test" {

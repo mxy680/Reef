@@ -14,6 +14,13 @@ enum PageAction {
     case deleteAllPages
 }
 
+struct PageMenuAnchorKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: Anchor<CGRect>?
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}
+
 struct CanvasToolbar: View {
     @Binding var selectedTool: CanvasTool
     @Binding var currentQuestionIndex: Int
@@ -23,8 +30,7 @@ struct CanvasToolbar: View {
     let isReconstructed: Bool
     var documentName: String = ""
     var onPageAction: ((PageAction) -> Void)?
-
-    @State private var showPageMenu = false
+    @Binding var showPageMenu: Bool
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -223,9 +229,11 @@ struct CanvasToolbar: View {
             ToolbarButton(icon: "pencil.and.ruler.fill", isSelected: false, action: {})
             ToolbarButton(icon: "canvas.page_settings", isSelected: false, isCustomIcon: true, action: {})
 
-            // Page menu button with popover
+            // Page menu button
             Button {
-                showPageMenu.toggle()
+                withAnimation(.spring(duration: 0.2)) {
+                    showPageMenu.toggle()
+                }
             } label: {
                 Image("canvas.add_page")
                     .renderingMode(.template)
@@ -239,12 +247,7 @@ struct CanvasToolbar: View {
             }
             .buttonStyle(.plain)
             .frame(width: 36, height: 36)
-            .popover(isPresented: $showPageMenu, arrowEdge: .bottom) {
-                PageMenuView(onAction: { action in
-                    showPageMenu = false
-                    onPageAction?(action)
-                })
-            }
+            .anchorPreference(key: PageMenuAnchorKey.self, value: .bounds) { $0 }
         }
     }
 
@@ -347,7 +350,7 @@ private struct ChromeTabShape: Shape {
 
 // MARK: - Page Menu View
 
-private struct PageMenuView: View {
+struct PageMenuView: View {
     let onAction: (PageAction) -> Void
 
     var body: some View {
@@ -355,35 +358,45 @@ private struct PageMenuView: View {
             menuRow(icon: "doc.badge.plus", label: "Add Page to End") {
                 onAction(.addBlankAtEnd)
             }
-            Divider()
             menuRow(icon: "plus.rectangle.on.rectangle", label: "Add Page After This") {
                 onAction(.addBlankAfterCurrent)
             }
             Divider()
+                .padding(.horizontal, 12)
             menuRow(icon: "doc.badge.minus", label: "Delete This Page", isDestructive: true) {
                 onAction(.deleteCurrentPage)
             }
-            Divider()
             menuRow(icon: "trash", label: "Delete All Pages", isDestructive: true) {
                 onAction(.deleteAllPages)
             }
         }
-        .frame(width: 240)
+        .frame(width: 230)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(ReefColors.black, lineWidth: 2)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(ReefColors.black)
+                .offset(x: 4, y: 4)
+        )
     }
 
     private func menuRow(icon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 15))
-                    .frame(width: 22)
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 20)
                 Text(label)
-                    .font(.system(size: 15))
+                    .font(.system(size: 14, weight: .medium))
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .foregroundColor(isDestructive ? .red : .primary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .foregroundColor(isDestructive ? .red : ReefColors.black)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
