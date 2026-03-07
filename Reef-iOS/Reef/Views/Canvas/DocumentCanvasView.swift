@@ -19,14 +19,17 @@ struct DocumentCanvasView: View {
     @State private var tutorModeOn = false
     @State private var showRuler = false
     @State private var drawingManager: DrawingManager?
+    @State private var penColor: UIColor = .black
+    @State private var penWidth: CGFloat = 2.0
+    @State private var showToolSettings = false
 
     private var isReconstructed: Bool {
         document.questionPages != nil
     }
 
-    /// Current PencilKit tool derived from toolbar selection
+    /// Current PencilKit tool derived from toolbar selection + settings
     private var currentPKTool: PKTool {
-        selectedTool.pkTool()
+        selectedTool.pkTool(color: penColor, width: penWidth)
     }
 
     private static let cream = Color(hex: 0xF8F0E6)
@@ -67,7 +70,10 @@ struct DocumentCanvasView: View {
                         documentName: document.displayName,
                         showRuler: $showRuler,
                         onUndo: { manager.undo() },
-                        onRedo: { manager.redo() }
+                        onRedo: { manager.redo() },
+                        onToolRetapped: { _ in
+                            showToolSettings.toggle()
+                        }
                     )
 
                     if tutorModeOn && isReconstructed {
@@ -75,7 +81,7 @@ struct DocumentCanvasView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
-                    ZStack {
+                    ZStack(alignment: .top) {
                         CanvasPageView(
                             pdfDocument: pdf,
                             pageRange: pageRange(for: currentQuestionIndex),
@@ -88,8 +94,23 @@ struct DocumentCanvasView: View {
                             RulerOverlayView()
                                 .transition(.opacity)
                         }
+
+                        if showToolSettings {
+                            // Tap-to-dismiss backdrop
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { showToolSettings = false }
+
+                            ToolSettingsPopover(
+                                selectedColor: $penColor,
+                                lineWidth: $penWidth
+                            )
+                            .padding(.top, 8)
+                            .transition(.scale(scale: 0.95).combined(with: .opacity))
+                        }
                     }
                     .background(Self.cream)
+                    .animation(.spring(duration: 0.2), value: showToolSettings)
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
@@ -113,6 +134,9 @@ struct DocumentCanvasView: View {
                 manager.loadAll(pageCount: pdf.pageCount)
                 drawingManager = manager
             }
+        }
+        .onChange(of: selectedTool) { _, _ in
+            showToolSettings = false
         }
         .onChange(of: currentQuestionIndex) { _, _ in
             drawingManager?.saveAll()

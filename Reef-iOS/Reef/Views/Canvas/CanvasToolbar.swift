@@ -18,6 +18,7 @@ struct CanvasToolbar: View {
     @Binding var showRuler: Bool
     var onUndo: () -> Void = {}
     var onRedo: () -> Void = {}
+    var onToolRetapped: (CanvasTool) -> Void = { _ in }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -200,8 +201,12 @@ struct CanvasToolbar: View {
                     isSelected: selectedTool == tool,
                     isCustomIcon: tool.isCustomIcon,
                     action: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedTool = tool
+                        if selectedTool == tool && tool.hasSettings {
+                            onToolRetapped(tool)
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedTool = tool
+                            }
                         }
                     }
                 )

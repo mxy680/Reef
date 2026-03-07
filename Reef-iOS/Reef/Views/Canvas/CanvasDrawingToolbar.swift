@@ -32,6 +32,14 @@ enum CanvasTool: String, CaseIterable {
         }
     }
 
+    /// Whether this tool has color/thickness settings
+    var hasSettings: Bool {
+        switch self {
+        case .pen, .diagram: true
+        case .eraser, .lasso: false
+        }
+    }
+
     /// Convert to PencilKit tool
     func pkTool(color: UIColor = .black, width: CGFloat = 2.0) -> PKTool {
         switch self {
