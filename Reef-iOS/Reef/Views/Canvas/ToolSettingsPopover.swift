@@ -28,6 +28,19 @@ struct ToolSettingsPopover: View {
     private static let visibleCount = 5
 
     var body: some View {
+        ZStack {
+            mainPopover
+
+            if showColorPicker {
+                colorPickerPopup
+            }
+        }
+        .animation(.spring(duration: 0.2), value: showColorPicker)
+    }
+
+    // MARK: - Main Popover
+
+    private var mainPopover: some View {
         VStack(spacing: 16) {
             // Color row
             colorRow
@@ -51,36 +64,28 @@ struct ToolSettingsPopover: View {
         }
         .padding(16)
         .frame(width: 240)
-        .background(
-            ZStack {
-                // 3D shadow
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(ReefColors.black)
-                    .offset(x: 4, y: 4)
+        .background(popoverBackground)
+    }
 
-                // Main background
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(ReefColors.white)
+    // MARK: - Color Picker Popup
 
-                // Border
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(ReefColors.black, lineWidth: 2)
-            }
-        )
-        .sheet(isPresented: $showColorPicker) {
-            ColorPickerSheet(onColorPicked: { color in
+    private var colorPickerPopup: some View {
+        ColorPickerPopup(
+            onColorPicked: { color in
                 customColors.append(color)
                 selectedColor = color
-            })
-            .presentationDetents([.height(200)])
-        }
+                showColorPicker = false
+            },
+            onDismiss: { showColorPicker = false }
+        )
+        .offset(y: 120)
+        .transition(.scale(scale: 0.9, anchor: .top).combined(with: .opacity))
     }
 
     // MARK: - Color Row
 
     @ViewBuilder
     private var colorRow: some View {
-        // +1 for the add button
         let totalItems = allColors.count + 1
         let needsScroll = totalItems > Self.visibleCount
 
@@ -101,19 +106,24 @@ struct ToolSettingsPopover: View {
 
             // Add color button
             Button {
-                showColorPicker = true
+                showColorPicker.toggle()
             } label: {
                 Circle()
                     .fill(Color.clear)
                     .frame(width: 28, height: 28)
                     .overlay(
                         Circle()
-                            .stroke(ReefColors.gray400, lineWidth: 1.5)
+                            .stroke(
+                                showColorPicker ? ReefColors.primary : ReefColors.gray400,
+                                lineWidth: 1.5
+                            )
                     )
                     .overlay(
                         Image(systemName: "plus")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(ReefColors.gray400)
+                            .foregroundColor(
+                                showColorPicker ? ReefColors.primary : ReefColors.gray400
+                            )
                     )
             }
             .buttonStyle(.plain)
@@ -142,35 +152,109 @@ struct ToolSettingsPopover: View {
         }
         .buttonStyle(.plain)
     }
+
+    // MARK: - Shared Background
+
+    private var popoverBackground: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(ReefColors.black)
+                .offset(x: 4, y: 4)
+
+            RoundedRectangle(cornerRadius: 12)
+                .fill(ReefColors.white)
+
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(ReefColors.black, lineWidth: 2)
+        }
+    }
 }
 
-// MARK: - Color Picker Sheet
+// MARK: - Color Picker Popup
 
-private struct ColorPickerSheet: View {
+private struct ColorPickerPopup: View {
     let onColorPicked: (UIColor) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var pickedColor = Color.blue
+    let onDismiss: () -> Void
+    @State private var pickedColor = Color(UIColor(red: 0.95, green: 0.6, blue: 0.1, alpha: 1))
+
+    private let presetColors: [UIColor] = [
+        UIColor(red: 0.2, green: 0.7, blue: 0.3, alpha: 1),
+        UIColor(red: 0.95, green: 0.6, blue: 0.1, alpha: 1),
+        UIColor(red: 0.6, green: 0.3, blue: 0.8, alpha: 1),
+        UIColor(red: 0.0, green: 0.7, blue: 0.7, alpha: 1),
+        UIColor(red: 0.85, green: 0.4, blue: 0.6, alpha: 1),
+    ]
 
     var body: some View {
-        VStack(spacing: 20) {
-            ColorPicker("Pick a color", selection: $pickedColor, supportsOpacity: false)
-                .font(.system(size: 16, weight: .medium))
-                .padding(.horizontal, 20)
-
-            Button {
-                onColorPicked(UIColor(pickedColor))
-                dismiss()
-            } label: {
-                Text("Add Color")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 10)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+        VStack(spacing: 14) {
+            // Quick presets
+            HStack(spacing: 10) {
+                ForEach(Array(presetColors.enumerated()), id: \.offset) { _, color in
+                    Button {
+                        onColorPicked(color)
+                    } label: {
+                        Circle()
+                            .fill(Color(color))
+                            .frame(width: 26, height: 26)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-            .buttonStyle(.plain)
+
+            // Divider
+            Rectangle()
+                .fill(ReefColors.gray200)
+                .frame(height: 1)
+
+            // Custom color picker
+            HStack(spacing: 12) {
+                ColorPicker("", selection: $pickedColor, supportsOpacity: false)
+                    .labelsHidden()
+                    .frame(width: 32, height: 32)
+
+                // Preview circle
+                Circle()
+                    .fill(pickedColor)
+                    .frame(width: 24, height: 24)
+                    .overlay(
+                        Circle()
+                            .stroke(ReefColors.gray200, lineWidth: 1)
+                    )
+
+                Spacer()
+
+                Button {
+                    onColorPicked(UIColor(pickedColor))
+                } label: {
+                    Text("Add")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(ReefColors.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .padding(.top, 24)
+        .padding(14)
+        .frame(width: 240)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(ReefColors.black)
+                    .offset(x: 4, y: 4)
+
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(ReefColors.white)
+
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(ReefColors.black, lineWidth: 2)
+            }
+        )
     }
 }
