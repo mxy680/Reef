@@ -24,7 +24,7 @@ struct DocumentCardView: View {
 
     private var footerHeight: CGFloat {
         guard let h = cardHeight else { return 62 }
-        return h * 0.2
+        return max(60, h * 0.2)
     }
 
     private var borderColor: Color {
