@@ -22,49 +22,54 @@ struct DocumentCardView: View {
     @State private var isPressed = false
     @State private var showMenu = false
 
-    private var footerHeight: CGFloat {
-        guard let h = cardHeight else { return 62 }
-        return max(60, h * 0.2)
-    }
-
     private var borderColor: Color {
         document.status == .failed ? Color(hex: 0xE57373) : ReefColors.gray500
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Thumbnail — flexible, fills remaining space
-            DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
-                .padding(.horizontal, 10)
-                .padding(.top, 10)
+        GeometryReader { geo in
+            let pad: CGFloat = 10
+            let footerH = max(60, geo.size.height * 0.22)
+            let thumbnailH = geo.size.height - footerH - 1
 
-            // Divider
-            Rectangle()
-                .fill(ReefColors.gray200)
-                .frame(height: 1)
-                .padding(.top, 10)
-                .layoutPriority(1)
+            VStack(spacing: 0) {
+                // Thumbnail — explicit height from geometry
+                DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
+                    .padding(.horizontal, pad)
+                    .padding(.top, pad)
+                    .padding(.bottom, pad)
+                    .frame(height: thumbnailH)
+                    .clipped()
 
-            // Info footer — 20% of card height, vertically centered via overlay
-            Color.clear
-                .frame(height: footerHeight)
-                .overlay(alignment: .leading) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(document.displayName)
-                            .font(.epilogue(13, weight: .bold))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(ReefColors.black)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
+                // Divider
+                Rectangle()
+                    .fill(ReefColors.gray200)
+                    .frame(height: 1)
 
-                        Text(document.statusLabel)
-                            .font(.epilogue(11, weight: .medium))
-                            .tracking(-0.04 * 11)
-                            .foregroundStyle(statusColor)
+                // Footer — GeometryReader + .position() for guaranteed centering
+                GeometryReader { footerGeo in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(document.displayName)
+                                .font(.epilogue(13, weight: .bold))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(ReefColors.black)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+
+                            Text(document.statusLabel)
+                                .font(.epilogue(11, weight: .medium))
+                                .tracking(-0.04 * 11)
+                                .foregroundStyle(statusColor)
+                        }
+                        Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, pad)
+                    .frame(width: footerGeo.size.width)
+                    .position(x: footerGeo.size.width / 2, y: footerGeo.size.height / 2)
                 }
-                .layoutPriority(1)
+                .frame(height: footerH)
+            }
         }
         .frame(height: cardHeight)
         .background(ReefColors.white)
