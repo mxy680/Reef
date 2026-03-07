@@ -15,6 +15,7 @@ struct CanvasToolbar: View {
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
     var documentName: String = ""
+    @Binding var showRuler: Bool
     @Binding var showPageSettings: Bool
     var hasActiveOverlay: Bool = false
     @Binding var pageOverlaySettings: PageOverlaySettings
@@ -213,7 +214,15 @@ struct CanvasToolbar: View {
 
     private var canvasUtilitiesSection: some View {
         HStack(spacing: 0) {
-            ToolbarButton(icon: "pencil.and.ruler.fill", isSelected: false, action: {})
+            ToolbarButton(
+                icon: "pencil.and.ruler.fill",
+                isSelected: showRuler,
+                action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showRuler.toggle()
+                    }
+                }
+            )
             ToolbarButton(icon: "canvas.page_settings", isSelected: hasActiveOverlay, isCustomIcon: true, action: {
                 showPageSettings.toggle()
             })

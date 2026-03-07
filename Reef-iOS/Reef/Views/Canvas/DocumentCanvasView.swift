@@ -16,6 +16,7 @@ struct DocumentCanvasView: View {
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
+    @State private var showRuler = false
     @State private var showPageSettings = false
     @State private var pageOverlaySettings = PageOverlaySettings()
 
@@ -56,6 +57,7 @@ struct DocumentCanvasView: View {
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
+                        showRuler: $showRuler,
                         showPageSettings: $showPageSettings,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
                         pageOverlaySettings: $pageOverlaySettings
@@ -67,12 +69,19 @@ struct DocumentCanvasView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
-                    CanvasPageView(
-                        pdfDocument: pdf,
-                        pageRange: pageRange(for: currentQuestionIndex),
-                        overlaySettings: pageOverlaySettings
-                    )
-                    .id(currentQuestionIndex)
+                    ZStack {
+                        CanvasPageView(
+                            pdfDocument: pdf,
+                            pageRange: pageRange(for: currentQuestionIndex),
+                            overlaySettings: pageOverlaySettings
+                        )
+                        .id(currentQuestionIndex)
+
+                        if showRuler {
+                            RulerOverlayView()
+                                .transition(.opacity)
+                        }
+                    }
                     .background(Self.cream)
                     .overlay {
                         // Tap-to-dismiss layer (covers canvas only, not toolbar)
@@ -86,6 +95,7 @@ struct DocumentCanvasView: View {
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
+            .animation(.easeInOut(duration: 0.2), value: showRuler)
         }
         .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()

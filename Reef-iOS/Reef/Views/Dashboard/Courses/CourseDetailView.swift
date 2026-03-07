@@ -154,8 +154,12 @@ struct CourseDetailView: View {
     private var headerRow: some View {
         HStack(alignment: .top) {
             HStack(spacing: 10) {
-                Text(viewModel.course.emoji)
-                    .font(.system(size: 28))
+                Image(viewModel.course.emoji)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 26, height: 26)
+                    .foregroundStyle(ReefColors.gray600)
 
                 Text(viewModel.course.name)
                     .font(.epilogue(24, weight: .black))

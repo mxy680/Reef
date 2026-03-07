@@ -79,11 +79,12 @@
 		E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */; };
 		E1FE5B8F8C72B65D35C1A690 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 621895831183A84BD5E2F54B /* DashboardView.swift */; };
 		EEE6888BA6B0E77018D4F67F /* CanvasPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBAC810D46731DEC9B1AC08 /* CanvasPageView.swift */; };
+		F1A2B3C4D5E6F7081920ABCD /* RulerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* RulerOverlayView.swift */; };
 		F09115CEAAE583F111ABF4F7 /* TutorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE55B35776EF18319E886CB3 /* TutorService.swift */; };
 		F9425CBAF52188A136ADFCEF /* DocumentsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89828EF647D60F501B07B68 /* DocumentsContentView.swift */; };
 		FD40162D4542094829B3C5A3 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A58933EF653E5137FE20BA0 /* CanvasToolbar.swift */; };
 		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
-		A1B2C3D4E5F60718293A4B5C /* PageSettingsPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8091A2B3C4D5E6F7081 /* PageSettingsPopup.swift */; };
+		B2C3D4E5F607182930A1B5C6 /* PageSettingsPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8091A2B3C4D5E6F7081 /* PageSettingsPopup.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -91,6 +92,7 @@
 		03EFB80C39A971E1BDC73605 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleIcon.swift; sourceTree = "<group>"; };
 		0F1DB9597A94021843C8228F /* CanvasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* RulerOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulerOverlayView.swift; sourceTree = "<group>"; };
 		0F2272F12753F94D68D47474 /* ReefDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefDivider.swift; sourceTree = "<group>"; };
 		12B67D53D01AE43D3B31BDEE /* ReefButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefButton.swift; sourceTree = "<group>"; };
 		174AF4CC7C1EA4B8D4C88E52 /* DocumentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentService.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				88CBAB5E82734D68035A3F5B /* DocumentCanvasView.swift */,
 				88ED32B183BA25990245CDA4 /* PageNavigationBar.swift */,
 				D6E7F8091A2B3C4D5E6F7081 /* PageSettingsPopup.swift */,
+				A1B2C3D4E5F60718293A4B5C /* RulerOverlayView.swift */,
 				D0EE44C6EECF0A8DC228112C /* TutorStepToolbar.swift */,
 			);
 			path = Canvas;
@@ -571,7 +574,7 @@
 				AE1BE3E7815DBBE172F92BE7 /* OnboardingComponents.swift in Sources */,
 				B2489E124F224ADCD32F169F /* OnboardingView.swift in Sources */,
 				9ADE99D97C893E843E7D677D /* PageNavigationBar.swift in Sources */,
-				A1B2C3D4E5F60718293A4B5C /* PageSettingsPopup.swift in Sources */,
+				B2C3D4E5F607182930A1B5C6 /* PageSettingsPopup.swift in Sources */,
 				86EC51544647FC884C1827BD /* Profile.swift in Sources */,
 				72D09602B96DA1E7231038C2 /* ReefAPI.swift in Sources */,
 				2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */,
@@ -580,6 +583,7 @@
 				98E9547119361714B8EE388A /* ReefDivider.swift in Sources */,
 				8081686831DE310C575DC5EA /* ReefTextField.swift in Sources */,
 				39F5B0F07CB08E94B94A2D34 /* RenameSheet.swift in Sources */,
+				F1A2B3C4D5E6F7081920ABCD /* RulerOverlayView.swift in Sources */,
 				33FEDA7F8481CB0C7C82E18D /* SelectCourseSheet.swift in Sources */,
 				7CEDC9E329E1A97890E754CF /* SettingsView.swift in Sources */,
 				7EBF041F6AD776F21B069537 /* StepGrade.swift in Sources */,
