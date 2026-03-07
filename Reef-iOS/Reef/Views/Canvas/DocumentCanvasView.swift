@@ -16,6 +16,7 @@ struct DocumentCanvasView: View {
     @State private var selectedTool: CanvasTool = .pen
     @State private var currentQuestionIndex = 0
     @State private var tutorModeOn = false
+    @State private var darkMode = false
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -27,21 +28,29 @@ struct DocumentCanvasView: View {
     /// RGB: (78,138,151) * 0.82 ≈ (64,113,124)
     private static let safeAreaColor = Color(red: 64/255.0, green: 113/255.0, blue: 124/255.0)
 
+    private var canvasBackground: Color {
+        darkMode ? ReefColors.CanvasDark.background : Self.cream
+    }
+
+    private var canvasSafeArea: Color {
+        darkMode ? ReefColors.CanvasDark.safeArea : Self.safeAreaColor
+    }
+
     var body: some View {
         ZStack {
             // Full-bleed tab strip teal so the safe area is never black
-            Self.safeAreaColor.ignoresSafeArea()
+            canvasSafeArea.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 if viewModel.isLoading {
                     loadingView
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Self.cream)
+                        .background(canvasBackground)
                         .transition(.opacity)
                 } else if let error = viewModel.error {
                     errorView(error)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Self.cream)
+                        .background(canvasBackground)
                         .transition(.opacity)
                 } else if let pdf = viewModel.pdfDocument {
                     CanvasToolbar(
@@ -53,24 +62,27 @@ struct DocumentCanvasView: View {
                         onClose: { onDismiss() },
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
-                        documentName: document.displayName
+                        documentName: document.displayName,
+                        darkMode: $darkMode
                     )
 
                     if tutorModeOn && isReconstructed {
-                        TutorStepToolbar(questionIndex: currentQuestionIndex)
+                        TutorStepToolbar(questionIndex: currentQuestionIndex, darkMode: darkMode)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
                     CanvasPageView(
                         pdfDocument: pdf,
-                        pageRange: pageRange(for: currentQuestionIndex)
+                        pageRange: pageRange(for: currentQuestionIndex),
+                        darkMode: darkMode
                     )
                     .id(currentQuestionIndex)
-                    .background(Self.cream)
+                    .background(canvasBackground)
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
             .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
+            .animation(.easeInOut(duration: 0.3), value: darkMode)
         }
         .ignoresSafeArea()
         .task {

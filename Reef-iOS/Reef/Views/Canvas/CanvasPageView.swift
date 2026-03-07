@@ -11,14 +11,18 @@ import PDFKit
 struct CanvasPageView: UIViewRepresentable {
     let pdfDocument: PDFDocument
     let pageRange: ClosedRange<Int>?
+    var darkMode: Bool = false
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
+        container.applyDarkMode(darkMode)
         return container
     }
 
-    func updateUIView(_ uiView: CanvasContainerView, context: Context) {}
+    func updateUIView(_ uiView: CanvasContainerView, context: Context) {
+        uiView.applyDarkMode(darkMode)
+    }
 }
 
 // MARK: - Canvas Container View
@@ -29,8 +33,11 @@ final class CanvasContainerView: UIView {
     let pagesStackView = UIStackView()
 
     private var pageImageViews: [UIImageView] = []
+    private var pageContainerViews: [UIView] = []
+    private var shadowViews: [UIView] = []
     private var separatorViews: [UIView] = []
     private var contentWidthConstraint: NSLayoutConstraint?
+    private var isDarkMode = false
 
     /// Separator height between pages (increased for 3D shadow clearance)
     private static let separatorHeight: CGFloat = 16
@@ -150,6 +157,8 @@ final class CanvasContainerView: UIView {
         for view in pageImageViews { view.removeFromSuperview() }
         for view in separatorViews { view.removeFromSuperview() }
         pageImageViews.removeAll()
+        pageContainerViews.removeAll()
+        shadowViews.removeAll()
         separatorViews.removeAll()
         pagesStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
@@ -162,19 +171,27 @@ final class CanvasContainerView: UIView {
             // 3D shadow — offset behind the page
             let shadowView = UIView()
             shadowView.translatesAutoresizingMaskIntoConstraints = false
-            shadowView.backgroundColor = Self.pageBorderColor
+            shadowView.backgroundColor = isDarkMode
+                ? UIColor.black.withAlphaComponent(0.5)
+                : Self.pageBorderColor
             shadowView.layer.cornerRadius = Self.pageCornerRadius
             wrapper.addSubview(shadowView)
+            shadowViews.append(shadowView)
 
             // Page container — white background with rounded corners and border
             let pageView = UIView()
             pageView.translatesAutoresizingMaskIntoConstraints = false
-            pageView.backgroundColor = .white
+            pageView.backgroundColor = isDarkMode
+                ? ReefColors.CanvasDark.pageBackgroundUI
+                : .white
             pageView.layer.cornerRadius = Self.pageCornerRadius
             pageView.layer.borderWidth = 2
-            pageView.layer.borderColor = Self.pageBorderColor.cgColor
+            pageView.layer.borderColor = isDarkMode
+                ? ReefColors.CanvasDark.pageBorderUI.cgColor
+                : Self.pageBorderColor.cgColor
             pageView.clipsToBounds = true
             wrapper.addSubview(pageView)
+            pageContainerViews.append(pageView)
 
             let imageView = UIImageView(image: image)
             imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -236,6 +253,34 @@ final class CanvasContainerView: UIView {
         }
 
         layoutIfNeeded()
+    }
+
+    // MARK: - Dark Mode
+
+    func applyDarkMode(_ dark: Bool) {
+        guard isDarkMode != dark else { return }
+        isDarkMode = dark
+
+        UIView.animate(withDuration: 0.3) { [self] in
+            scrollView.backgroundColor = dark
+                ? ReefColors.CanvasDark.scrollBackground
+                : Self.scrollBackground
+
+            for pageView in pageContainerViews {
+                pageView.backgroundColor = dark
+                    ? ReefColors.CanvasDark.pageBackgroundUI
+                    : .white
+                pageView.layer.borderColor = dark
+                    ? ReefColors.CanvasDark.pageBorderUI.cgColor
+                    : Self.pageBorderColor.cgColor
+            }
+
+            for shadowView in shadowViews {
+                shadowView.backgroundColor = dark
+                    ? UIColor.black.withAlphaComponent(0.5)
+                    : Self.pageBorderColor
+            }
+        }
     }
 
     // MARK: - Layout

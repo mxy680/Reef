@@ -15,9 +15,15 @@ struct CanvasToolbar: View {
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
     var documentName: String = ""
+    @Binding var darkMode: Bool
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
+    private static let darkBarColor = Color(hex: 0x2A2A2E)
+
+    private var activeBarColor: Color {
+        darkMode ? Self.darkBarColor : Self.barColor
+    }
 
     private var safeAreaTop: CGFloat {
         UIApplication.shared.connectedScenes
@@ -45,7 +51,7 @@ struct CanvasToolbar: View {
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity)
             .frame(height: 48)
-            .background(Self.barColor)
+            .background(activeBarColor)
 
             // Bottom separator
             Rectangle()
@@ -56,8 +62,8 @@ struct CanvasToolbar: View {
         .background(
             // Tab strip = barColor darkened with black overlay, extends into safe area
             ZStack {
-                Self.barColor
-                Color.black.opacity(0.18)
+                activeBarColor
+                Color.black.opacity(darkMode ? 0.3 : 0.18)
             }
             .ignoresSafeArea(edges: .top)
         )
@@ -68,8 +74,8 @@ struct CanvasToolbar: View {
     /// Tab strip background: barColor darkened by overlaying black.
     private var tabStripBg: some View {
         ZStack {
-            Self.barColor
-            Color.black.opacity(0.18)
+            activeBarColor
+            Color.black.opacity(darkMode ? 0.3 : 0.18)
         }
     }
 
@@ -96,7 +102,7 @@ struct CanvasToolbar: View {
                                     )
                                     .frame(minWidth: 44, minHeight: 30)
                                     .padding(.horizontal, isReconstructed ? 6 : 16)
-                                    .background(isSelected ? Self.barColor : Color.clear)
+                                    .background(isSelected ? activeBarColor : Color.clear)
                                     .clipShape(ChromeTabShape())
                                     .overlay(
                                         isSelected
@@ -242,7 +248,11 @@ struct CanvasToolbar: View {
         HStack(spacing: 0) {
             ToolbarButton(icon: "sidebar.trailing", isSelected: false, action: {})
             ToolbarButton(icon: "square.and.arrow.up.fill", isSelected: false, action: {})
-            ToolbarButton(icon: "moon.fill", isSelected: false, action: {})
+            ToolbarButton(
+                icon: darkMode ? "sun.max.fill" : "moon.fill",
+                isSelected: darkMode,
+                action: { darkMode.toggle() }
+            )
         }
     }
 

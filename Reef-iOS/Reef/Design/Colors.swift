@@ -12,6 +12,21 @@ enum ReefColors {
     static let gray200 = Color(red: 200 / 255, green: 200 / 255, blue: 200 / 255)
     static let gray100 = Color(red: 235 / 255, green: 235 / 255, blue: 235 / 255)
     static let error = Color(hex: 0xD32F2F)
+
+    // MARK: - Canvas Dark Mode
+
+    enum CanvasDark {
+        static let background = Color(hex: 0x1A1A1E)
+        static let safeArea = Color(hex: 0x0F0F12)
+        static let pageFill = Color(hex: 0x2A2A2E)
+        static let pageBorder = Color(red: 80/255, green: 80/255, blue: 80/255)
+        static let pageShadow = Color(red: 0, green: 0, blue: 0).opacity(0.5)
+
+        // UIKit equivalents
+        static let scrollBackground = UIColor(red: 0x1A/255.0, green: 0x1A/255.0, blue: 0x1E/255.0, alpha: 1)
+        static let pageBackgroundUI = UIColor(red: 0x2A/255.0, green: 0x2A/255.0, blue: 0x2E/255.0, alpha: 1)
+        static let pageBorderUI = UIColor(red: 80/255.0, green: 80/255.0, blue: 80/255.0, alpha: 1)
+    }
 }
 
 extension Color {
