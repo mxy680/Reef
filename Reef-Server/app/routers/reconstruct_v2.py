@@ -6,6 +6,7 @@ accurate math recognition and structured output.
 
 import asyncio
 import base64
+import json
 import logging
 import math
 import re
@@ -65,10 +66,11 @@ class PipelineCosts:
     _llm_cost_dollars: float = 0.0
 
     MODEL_RATES: dict = field(default_factory=lambda: {
+        "deepseek/deepseek-v3.2": (0.25 / 1_000_000, 0.40 / 1_000_000),
         "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
         "google/gemini-3.1-pro-preview": (1.25 / 1_000_000, 10.00 / 1_000_000),
     })
-    _DEFAULT_RATE: tuple = (0.50 / 1_000_000, 3.00 / 1_000_000)
+    _DEFAULT_RATE: tuple = (0.25 / 1_000_000, 0.40 / 1_000_000)
 
     def add(self, result: LLMResult, model: str = "") -> None:
         self.input_tokens += result.input_tokens
@@ -162,15 +164,23 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         # ---------------------------------------------------------------
         llm_client = LLMClient(
             api_key=settings.openrouter_api_key,
-            model="google/gemini-3-flash-preview",
+            model="deepseek/deepseek-v3.2",
             base_url="https://openrouter.ai/api/v1",
         )
+        # DeepSeek doesn't support strict JSON schema via OpenRouter —
+        # skip straight to json_object mode to avoid schema echo bugs.
+        llm_client._strict_json_supported = False
 
         # Replace CDN URLs with local filenames so the LLM sees them inline
         cleaned_mmd = replace_urls_with_filenames(mmd_text, url_map)
 
+        schema_json = json.dumps(QuestionBatch.model_json_schema(), indent=2)
         parse_prompt = PARSE_MMD_PROMPT
-        parse_prompt += f"\n\n## MMD Content\n```\n{cleaned_mmd}\n```"
+        parse_prompt += (
+            f"\n\n## Output JSON Schema\n"
+            f"Return a JSON object matching this schema:\n```json\n{schema_json}\n```\n"
+            f"\n\n## MMD Content\n```\n{cleaned_mmd}\n```"
+        )
 
         parse_result = await asyncio.to_thread(
             llm_client.generate,

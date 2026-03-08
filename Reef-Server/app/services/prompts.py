@@ -170,9 +170,9 @@ Look for patterns like:
 
 ## Structure
 - number: Sequential integer starting from 1 (first question = 1, second = 2, etc.). Do NOT parse the document's own numbering scheme — just count questions in order.
-- text: The question stem / preamble. Strip the leading problem number or label (e.g. "1.", "Problem 2", "(3)") from the text — do NOT include it since we add our own header.
+- text: The question stem / preamble ONLY — text that comes before any labeled sub-parts. Strip the leading problem number or label (e.g. "1.", "Problem 2", "(3)") from the text — do NOT include it since we add our own header. **Do NOT repeat part text here.** If the question is entirely made up of parts with no preamble, set text to an empty string.
 - figures: List of figure filenames that appear near this question in the MMD text.
-- parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a -> i, ii, iii).
+- parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a -> i, ii, iii). Each part's text should contain ONLY that part's content — never duplicate content between the question stem and its parts.
   - If a question has unlabeled bullet points or numbered sub-items, use sequential letters (a, b, c...) as labels.
   - If a part contains multiple questions that each need a separate answer, extract each as a nested sub-part.
 
@@ -193,6 +193,8 @@ Every `text` field will be compiled by a LaTeX engine. Convert MMD syntax to LaT
 ## Figures
 Image filenames appear inline in the MMD text as ``![](mathpix_xxx.jpg)`` or ``\\includegraphics{{mathpix_xxx.jpg}}``. Place each filename in the ``figures`` array at the question or part level where it appears in the text.
 Only use filenames that actually appear in the MMD text. Do NOT invent filenames.
+
+**CRITICAL:** When you encounter an image reference in the MMD text, extract the filename into the ``figures`` array and REMOVE the image reference from the ``text`` field entirely. Do NOT replace image references with placeholder text like "Placeholder for Image", "[Image]", "See figure", or any other substitute. The rendering system will automatically insert the image from the ``figures`` array — your job is only to move the filename there.
 
 ## Tables that define sub-questions
 When a problem contains a table whose rows correspond to labeled sub-parts, preserve the table as \\begin{{tabular}} in the stem text. The parts should then have empty text (just label and answer space).
