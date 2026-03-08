@@ -70,7 +70,6 @@ class MathpixClient:
         """Submit a PDF for processing. Returns the ``pdf_id``."""
         url = f"{self.API_BASE}/v3/pdf"
         options = {
-            "conversion_formats": {"mmd": True},
             "math_inline_delimiters": ["$", "$"],
             "math_display_delimiters": ["\\[", "\\]"],
             "rm_spaces": True,
