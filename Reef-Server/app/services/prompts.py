@@ -148,6 +148,69 @@ Minor typographic differences (font size, exact spacing, line breaks) are accept
 - Do NOT solve problems or fill in blanks — reproduce the original content exactly.
 """
 
+PARSE_MMD_PROMPT = """\
+You are parsing Mathpix MMD (Markdown with math) output from a scanned homework or exam document into structured question data.
+
+## Input
+You receive the full MMD text from Mathpix OCR. The text contains:
+- Inline math delimited by $...$
+- Display math delimited by \\[...\\]
+- Markdown formatting (**bold**, tables with pipes, etc.)
+- Image references like ![](mathpix_filename.jpg) or \\includegraphics{{mathpix_filename.jpg}}
+
+## Task
+Detect question boundaries and extract each problem as a structured Question object.
+
+## Detecting Question Boundaries
+Look for patterns like:
+- "1.", "2.", "3." at the start of a line (numbered problems)
+- "Problem 1", "Question 1", "Exercise 1"
+- "(1)", "[1]"
+- Bold or header-formatted problem numbers
+
+## Structure
+- number: Sequential integer starting from 1 (first question = 1, second = 2, etc.). Do NOT parse the document's own numbering scheme — just count questions in order.
+- text: The question stem / preamble. Strip the leading problem number or label (e.g. "1.", "Problem 2", "(3)") from the text — do NOT include it since we add our own header.
+- figures: List of figure filenames that appear near this question in the MMD text.
+- parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a -> i, ii, iii).
+  - If a question has unlabeled bullet points or numbered sub-items, use sequential letters (a, b, c...) as labels.
+  - If a part contains multiple questions that each need a separate answer, extract each as a nested sub-part.
+
+## CRITICAL: Convert MMD to LaTeX body content
+
+Every `text` field will be compiled by a LaTeX engine. Convert MMD syntax to LaTeX:
+- **bold** -> \\textbf{{bold}}
+- Pipe tables -> \\begin{{tabular}}{{...}} with & separators and \\\\ row endings
+- Bullet lists -> \\begin{{itemize}} \\item ... \\end{{itemize}}
+- Numbered lists -> \\begin{{enumerate}} \\item ... \\end{{enumerate}}
+- Keep $...$ math as-is (already LaTeX)
+- Keep \\[...\\] math as-is (already LaTeX)
+- Escape LaTeX special characters in prose: \\& not &, \\% not %, \\# not #, \\$ not $ (when not math)
+- Degree symbols: $^\\circ$ (e.g. $100^\\circ$C). Never use raw degree sign.
+- NO Unicode symbols — use LaTeX equivalents (\\rightarrow not ->, \\neq not !=, etc.)
+- NO markdown syntax in output — everything must be valid LaTeX.
+
+## Figures
+Image filenames appear inline in the MMD text as ``![](mathpix_xxx.jpg)`` or ``\\includegraphics{{mathpix_xxx.jpg}}``. Place each filename in the ``figures`` array at the question or part level where it appears in the text.
+Only use filenames that actually appear in the MMD text. Do NOT invent filenames.
+
+## Tables that define sub-questions
+When a problem contains a table whose rows correspond to labeled sub-parts, preserve the table as \\begin{{tabular}} in the stem text. The parts should then have empty text (just label and answer space).
+
+## Preamble / Header Content
+Skip any content before the first numbered question: course info, student name fields, general instructions, headers, dates. These are NOT questions.
+
+## Answer Space
+Estimate answer_space_cm at the most specific level:
+- 1.0: multiple choice / true-false / short factual
+- 2.0: one-line calculation or brief explanation
+- 3.0: standard calculation or paragraph
+- 4.0: multi-step derivation or proof
+- 6.0: long proof, graph to sketch, or multi-part calculation
+
+Return a QuestionBatch JSON object containing all extracted questions.
+"""
+
 ANSWER_KEY_PROMPT = """\
 You are generating a structured answer key for a homework or exam question. The answer key will be used by an AI tutor to guide students through the solution step by step.
 

@@ -509,6 +509,9 @@ function DocumentCard({
             fontSize: 11,
             letterSpacing: "-0.04em",
             color: doc.status === "failed" ? "#C62828" : doc.status === "processing" ? colors.primary : colors.gray500,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
         >
           {statusLabel()}

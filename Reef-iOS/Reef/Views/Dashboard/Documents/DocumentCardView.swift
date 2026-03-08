@@ -64,6 +64,8 @@ struct DocumentCardView: View {
                                 .font(.epilogue(11, weight: .medium))
                                 .tracking(-0.04 * 11)
                                 .foregroundStyle(statusColor)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
                         Spacer(minLength: 0)
                     }
