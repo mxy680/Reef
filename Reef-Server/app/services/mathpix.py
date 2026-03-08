@@ -155,8 +155,10 @@ class MathpixClient:
 
     async def download_image(self, url: str) -> bytes:
         """Fetch a single image from the Mathpix CDN."""
+        # MMD sometimes contains LaTeX-escaped ampersands in URLs
+        clean_url = url.replace("\\&", "&")
         async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(url)
+            resp = await client.get(clean_url)
             resp.raise_for_status()
             return resp.content
 

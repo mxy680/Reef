@@ -11,6 +11,10 @@ from app.models.question import Part, Question
 
 _CONTROL_CHARS = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
 _MATH_SPLIT_RE = re.compile(r'(\$[^$]+\$|\\\[.*?\\\]|\\\(.*?\\\))', re.DOTALL)
+_TABULAR_RE = re.compile(
+    r'(\\begin\{tabular\}.*?\\end\{tabular\})',
+    re.DOTALL,
+)
 
 
 def _fix_json_latex_escapes(text: str) -> str:
@@ -26,7 +30,23 @@ def _sanitize_text(text: str) -> str:
     """Fix text issues caused by JSON serialization."""
     text = _fix_json_latex_escapes(text)
     text = _CONTROL_CHARS.sub('', text)
+    text = _isolate_tables(text)
     return text
+
+
+def _isolate_tables(text: str) -> str:
+    """Move inline tabular environments onto their own centered lines
+    and scale wide tables to fit within \\linewidth."""
+    def _replace_table(m: re.Match) -> str:
+        table = m.group(1)
+        return (
+            "\n\n\\begin{center}\n"
+            "\\begin{adjustbox}{max width=\\linewidth}\n"
+            f"{table}\n"
+            "\\end{adjustbox}\n"
+            "\\end{center}\n\n"
+        )
+    return _TABULAR_RE.sub(_replace_table, text)
 
 
 def question_to_latex(question: Question) -> str:

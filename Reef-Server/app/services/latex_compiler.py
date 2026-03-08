@@ -24,6 +24,7 @@ LATEX_TEMPLATE = r"""
 % Tables
 \usepackage{{booktabs}}
 \usepackage{{array}}
+\usepackage{{adjustbox}}
 
 % Colors
 \usepackage{{xcolor}}
