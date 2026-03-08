@@ -6,6 +6,7 @@ accurate math recognition and structured output.
 
 import asyncio
 import base64
+import json
 import logging
 import math
 import re
@@ -180,7 +181,15 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         )
         costs.add(parse_result, model=llm_client.model)
 
-        batch = QuestionBatch.model_validate_json(parse_result.content)
+        # Some models return questions as JSON strings instead of objects
+        # when falling back from strict JSON to json_object mode.
+        raw_data = json.loads(parse_result.content)
+        if "questions" in raw_data and raw_data["questions"]:
+            raw_data["questions"] = [
+                json.loads(q) if isinstance(q, str) else q
+                for q in raw_data["questions"]
+            ]
+        batch = QuestionBatch.model_validate(raw_data)
         questions = batch.questions
 
         if not questions:
