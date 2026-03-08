@@ -30,7 +30,27 @@ def _sanitize_text(text: str) -> str:
     """Fix text issues caused by JSON serialization."""
     text = _fix_json_latex_escapes(text)
     text = _CONTROL_CHARS.sub('', text)
+    text = _preserve_line_breaks(text)
     text = _isolate_tables(text)
+    return text
+
+
+def _preserve_line_breaks(text: str) -> str:
+    r"""Convert meaningful newlines to LaTeX line breaks.
+
+    LaTeX ignores single newlines. This converts:
+    - Double newlines (\n\n) to \par (paragraph break)
+    - Single newlines before MC answer choices (A), B), 1), etc.) to \\
+    - Other single newlines are left as-is (LaTeX treats them as spaces)
+    """
+    # Double newlines -> paragraph breaks
+    text = text.replace('\n\n', '\n\n\\par\n')
+    # Single newline before answer choice labels -> forced line break
+    text = re.sub(
+        r'\n(?=[A-E]\))',
+        r' \\\\\n',
+        text,
+    )
     return text
 
 
