@@ -169,8 +169,8 @@ Look for patterns like:
 - Bold or header-formatted problem numbers
 
 ## Structure
-- number: The problem number as shown in the document.
-- text: The question stem / preamble. For simple questions with no parts, all content goes here.
+- number: Sequential integer starting from 1 (first question = 1, second = 2, etc.). Do NOT parse the document's own numbering scheme — just count questions in order.
+- text: The question stem / preamble. Include the original problem identifier (e.g. "1.3-9", "Problem 2") at the start of the text so it appears in the output.
 - figures: List of figure filenames that appear near this question in the MMD text.
 - parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a -> i, ii, iii).
   - If a question has unlabeled bullet points or numbered sub-items, use sequential letters (a, b, c...) as labels.
