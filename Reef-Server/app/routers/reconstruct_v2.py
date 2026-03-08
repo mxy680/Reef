@@ -45,15 +45,6 @@ MAX_FIX_ATTEMPTS = 3
 # Regex to detect \includegraphics references
 _INCLUDEGRAPHICS_RE = re.compile(r'\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}')
 
-# Regex to strip LLM-hallucinated image placeholder text
-_PLACEHOLDER_RE = re.compile(
-    r'\\fbox\{Placeholder for Image\}|'
-    r'\bPlaceholder for Image\b|'
-    r'\\\[?\s*\\text\{Placeholder for Image\}\s*\\\]?|'
-    r'\[Image\]|\[Figure\]|\[See figure\]',
-    re.IGNORECASE,
-)
-
 # Strong references for fire-and-forget tasks to prevent GC mid-execution
 _background_tasks: set[asyncio.Task] = set()
 
@@ -74,10 +65,11 @@ class PipelineCosts:
     _llm_cost_dollars: float = 0.0
 
     MODEL_RATES: dict = field(default_factory=lambda: {
+        "deepseek/deepseek-v3.2": (0.25 / 1_000_000, 0.40 / 1_000_000),
         "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
         "google/gemini-3.1-pro-preview": (1.25 / 1_000_000, 10.00 / 1_000_000),
     })
-    _DEFAULT_RATE: tuple = (0.50 / 1_000_000, 3.00 / 1_000_000)
+    _DEFAULT_RATE: tuple = (0.25 / 1_000_000, 0.40 / 1_000_000)
 
     def add(self, result: LLMResult, model: str = "") -> None:
         self.input_tokens += result.input_tokens
@@ -171,7 +163,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         # ---------------------------------------------------------------
         llm_client = LLMClient(
             api_key=settings.openrouter_api_key,
-            model="google/gemini-3-flash-preview",
+            model="deepseek/deepseek-v3.2",
             base_url="https://openrouter.ai/api/v1",
         )
 
@@ -194,17 +186,14 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         if not questions:
             raise RuntimeError("LLM extracted zero questions from MMD output")
 
-        # Strip hallucinated figure filenames and placeholder text
+        # Strip hallucinated figure filenames
         valid_figures = set(mathpix_images.keys())
         for q in questions:
             q.figures = [f for f in q.figures if f in valid_figures]
-            q.text = _PLACEHOLDER_RE.sub('', q.text).strip()
             for part in q.parts:
                 part.figures = [f for f in part.figures if f in valid_figures]
-                part.text = _PLACEHOLDER_RE.sub('', part.text).strip()
                 for sub in part.parts:
                     sub.figures = [f for f in sub.figures if f in valid_figures]
-                    sub.text = _PLACEHOLDER_RE.sub('', sub.text).strip()
 
         logger.info(
             f"  [v2] {document_id}: parsed {len(questions)} questions "
