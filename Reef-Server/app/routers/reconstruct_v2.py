@@ -29,7 +29,7 @@ from app.services.cancellation import (
 )
 from app.services.latex_compiler import LaTeXCompiler
 from app.services.llm_client import LLMClient, LLMResult
-from app.services.mathpix import MathpixClient, mmd_url_to_filename, extract_image_urls
+from app.services.mathpix import MathpixClient, replace_urls_with_filenames
 from app.services.progress import update_document_status, update_progress
 from app.services.prompts import LATEX_FIX_PROMPT, PARSE_MMD_PROMPT
 from app.services.question_to_latex import question_to_latex, _sanitize_text
@@ -101,18 +101,6 @@ def _strip_invalid_figures(latex: str, valid_figures: set[str]) -> str:
     return '\n'.join(filtered)
 
 
-def _build_figure_mapping(mmd: str) -> str:
-    """Build the figure mapping string for the PARSE_MMD_PROMPT."""
-    urls = extract_image_urls(mmd)
-    if not urls:
-        return "(no figures detected)"
-    lines = []
-    for url in urls:
-        fname = mmd_url_to_filename(url)
-        lines.append(f"  - {url} -> {fname}")
-    return "\n".join(lines)
-
-
 # ---------------------------------------------------------------------------
 # Pipeline
 # ---------------------------------------------------------------------------
@@ -158,7 +146,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             app_id=settings.mathpix_app_id,
             app_key=settings.mathpix_app_key,
         )
-        mmd_text, mathpix_images = await mathpix.process_pdf(pdf_bytes)
+        mmd_text, mathpix_images, url_map = await mathpix.process_pdf(pdf_bytes)
 
         if is_cancelled(document_id):
             return
@@ -178,10 +166,11 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             base_url="https://openrouter.ai/api/v1",
         )
 
-        figure_mapping = _build_figure_mapping(mmd_text)
-        parse_prompt = PARSE_MMD_PROMPT.format(figure_mapping=figure_mapping)
-        # Append the actual MMD content
-        parse_prompt += f"\n\n## MMD Content\n```\n{mmd_text}\n```"
+        # Replace CDN URLs with local filenames so the LLM sees them inline
+        cleaned_mmd = replace_urls_with_filenames(mmd_text, url_map)
+
+        parse_prompt = PARSE_MMD_PROMPT
+        parse_prompt += f"\n\n## MMD Content\n```\n{cleaned_mmd}\n```"
 
         parse_result = await asyncio.to_thread(
             llm_client.generate,

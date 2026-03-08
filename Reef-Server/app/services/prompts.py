@@ -156,7 +156,7 @@ You receive the full MMD text from Mathpix OCR. The text contains:
 - Inline math delimited by $...$
 - Display math delimited by \\[...\\]
 - Markdown formatting (**bold**, tables with pipes, etc.)
-- Image references like ![description](https://cdn.mathpix.com/...)
+- Image references like ![](mathpix_filename.jpg) or \\includegraphics{{mathpix_filename.jpg}}
 
 ## Task
 Detect question boundaries and extract each problem as a structured Question object.
@@ -171,7 +171,7 @@ Look for patterns like:
 ## Structure
 - number: The problem number as shown in the document.
 - text: The question stem / preamble. For simple questions with no parts, all content goes here.
-- figures: List of figure filenames from the mapping below.
+- figures: List of figure filenames that appear near this question in the MMD text.
 - parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a -> i, ii, iii).
   - If a question has unlabeled bullet points or numbered sub-items, use sequential letters (a, b, c...) as labels.
   - If a part contains multiple questions that each need a separate answer, extract each as a nested sub-part.
@@ -191,11 +191,8 @@ Every `text` field will be compiled by a LaTeX engine. Convert MMD syntax to LaT
 - NO markdown syntax in output — everything must be valid LaTeX.
 
 ## Figures
-Available figure files (mapped from Mathpix CDN URLs):
-{figure_mapping}
-
-Place figure filenames at the level where they appear (question-level or part-level).
-Only use filenames from the mapping above. Do NOT invent filenames.
+Image filenames appear inline in the MMD text as ``![](mathpix_xxx.jpg)`` or ``\\includegraphics{{mathpix_xxx.jpg}}``. Place each filename in the ``figures`` array at the question or part level where it appears in the text.
+Only use filenames that actually appear in the MMD text. Do NOT invent filenames.
 
 ## Tables that define sub-questions
 When a problem contains a table whose rows correspond to labeled sub-parts, preserve the table as \\begin{{tabular}} in the stem text. The parts should then have empty text (just label and answer space).

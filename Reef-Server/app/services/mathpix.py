@@ -29,25 +29,48 @@ class MathpixTimeoutError(MathpixError):
 # Helpers
 # ---------------------------------------------------------------------------
 
-_IMAGE_URL_RE = re.compile(r"!\[[^\]]*\]\((https://cdn\.mathpix\.com/[^)]+)\)")
+_MD_IMAGE_RE = re.compile(r"!\[[^\]]*\]\((https://cdn\.mathpix\.com/[^)]+)\)")
+_LATEX_IMAGE_RE = re.compile(
+    r"\\includegraphics(?:\[[^\]]*\])?\{(https://cdn\.mathpix\.com/[^}]+)\}"
+)
 
 
 def extract_image_urls(mmd: str) -> list[str]:
-    """Extract all CDN image URLs from Mathpix MMD text."""
-    return _IMAGE_URL_RE.findall(mmd)
+    """Extract all CDN image URLs from Mathpix MMD text.
+
+    Handles both markdown ``![](url)`` and LaTeX ``\\includegraphics{url}``.
+    """
+    return _MD_IMAGE_RE.findall(mmd) + _LATEX_IMAGE_RE.findall(mmd)
 
 
 def mmd_url_to_filename(url: str) -> str:
     """Convert a Mathpix CDN URL to a local-friendly filename.
 
-    E.g. ``https://cdn.mathpix.com/cropped/2024_abc123.jpg?...``
-    -> ``mathpix_2024_abc123.jpg``
+    Includes a short hash of query params to disambiguate different crops
+    of the same base image (e.g. ``-3.jpg?height=660`` vs ``-3.jpg?height=476``).
     """
-    # Strip query params
-    path = url.split("?")[0]
-    # Get the last path segment
-    basename = path.rsplit("/", 1)[-1]
+    import hashlib
+
+    path_part, _, query = url.partition("?")
+    basename = path_part.rsplit("/", 1)[-1]
+    if query:
+        suffix = hashlib.md5(query.encode()).hexdigest()[:6]
+        name, dot, ext = basename.rpartition(".")
+        if dot:
+            return f"mathpix_{name}_{suffix}.{ext}"
+        return f"mathpix_{basename}_{suffix}"
     return f"mathpix_{basename}"
+
+
+def replace_urls_with_filenames(mmd: str, url_to_filename: dict[str, str]) -> str:
+    """Replace all Mathpix CDN URLs in MMD text with local filenames.
+
+    Operates on both markdown and LaTeX image references so the LLM
+    sees filenames inline next to each question.
+    """
+    for url, fname in url_to_filename.items():
+        mmd = mmd.replace(url, fname)
+    return mmd
 
 
 # ---------------------------------------------------------------------------
@@ -139,17 +162,24 @@ class MathpixClient:
 
     async def process_pdf(
         self, pdf_bytes: bytes
-    ) -> tuple[str, dict[str, bytes]]:
+    ) -> tuple[str, dict[str, bytes], dict[str, str]]:
         """Full flow: submit -> poll -> download MMD + images.
 
-        Returns ``(mmd_text, {filename: image_bytes})``.
+        Returns ``(mmd_text, {filename: image_bytes}, {url: filename})``.
+        The third element maps each CDN URL to its local filename, useful
+        for replacing URLs inline before sending MMD to the LLM.
         """
         pdf_id = await self.submit_pdf(pdf_bytes)
         await self.poll_until_complete(pdf_id)
         mmd = await self.download_mmd(pdf_id)
 
-        # Download all referenced images in parallel (bounded concurrency)
+        # Build URL -> filename mapping
         image_urls = extract_image_urls(mmd)
+        url_to_filename: dict[str, str] = {}
+        for url in image_urls:
+            url_to_filename[url] = mmd_url_to_filename(url)
+
+        # Download all referenced images in parallel (bounded concurrency)
         images: dict[str, bytes] = {}
         if image_urls:
             sem = asyncio.Semaphore(8)
@@ -157,7 +187,7 @@ class MathpixClient:
             async def _fetch(img_url: str) -> tuple[str, bytes]:
                 async with sem:
                     data = await self.download_image(img_url)
-                    return mmd_url_to_filename(img_url), data
+                    return url_to_filename[img_url], data
 
             results = await asyncio.gather(
                 *[_fetch(u) for u in image_urls], return_exceptions=True
@@ -172,7 +202,7 @@ class MathpixClient:
             f"  [mathpix] PDF {pdf_id}: {len(mmd)} chars MMD, "
             f"{len(images)} images downloaded"
         )
-        return mmd, images
+        return mmd, images, url_to_filename
 
 
 # ---------------------------------------------------------------------------
