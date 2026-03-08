@@ -167,12 +167,20 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             model="deepseek/deepseek-v3.2",
             base_url="https://openrouter.ai/api/v1",
         )
+        # DeepSeek doesn't support strict JSON schema via OpenRouter —
+        # skip straight to json_object mode to avoid schema echo bugs.
+        llm_client._strict_json_supported = False
 
         # Replace CDN URLs with local filenames so the LLM sees them inline
         cleaned_mmd = replace_urls_with_filenames(mmd_text, url_map)
 
+        schema_json = json.dumps(QuestionBatch.model_json_schema(), indent=2)
         parse_prompt = PARSE_MMD_PROMPT
-        parse_prompt += f"\n\n## MMD Content\n```\n{cleaned_mmd}\n```"
+        parse_prompt += (
+            f"\n\n## Output JSON Schema\n"
+            f"Return a JSON object matching this schema:\n```json\n{schema_json}\n```\n"
+            f"\n\n## MMD Content\n```\n{cleaned_mmd}\n```"
+        )
 
         parse_result = await asyncio.to_thread(
             llm_client.generate,
@@ -181,15 +189,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         )
         costs.add(parse_result, model=llm_client.model)
 
-        # Some models return questions as JSON strings instead of objects
-        # when falling back from strict JSON to json_object mode.
-        raw_data = json.loads(parse_result.content)
-        if "questions" in raw_data and raw_data["questions"]:
-            raw_data["questions"] = [
-                json.loads(q) if isinstance(q, str) else q
-                for q in raw_data["questions"]
-            ]
-        batch = QuestionBatch.model_validate(raw_data)
+        batch = QuestionBatch.model_validate_json(parse_result.content)
         questions = batch.questions
 
         if not questions:
