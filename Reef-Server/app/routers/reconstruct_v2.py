@@ -45,6 +45,15 @@ MAX_FIX_ATTEMPTS = 3
 # Regex to detect \includegraphics references
 _INCLUDEGRAPHICS_RE = re.compile(r'\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}')
 
+# Regex to strip LLM-hallucinated image placeholder text
+_PLACEHOLDER_RE = re.compile(
+    r'\\fbox\{Placeholder for Image\}|'
+    r'\bPlaceholder for Image\b|'
+    r'\\\[?\s*\\text\{Placeholder for Image\}\s*\\\]?|'
+    r'\[Image\]|\[Figure\]|\[See figure\]',
+    re.IGNORECASE,
+)
+
 # Strong references for fire-and-forget tasks to prevent GC mid-execution
 _background_tasks: set[asyncio.Task] = set()
 
@@ -185,14 +194,17 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         if not questions:
             raise RuntimeError("LLM extracted zero questions from MMD output")
 
-        # Strip hallucinated figure filenames
+        # Strip hallucinated figure filenames and placeholder text
         valid_figures = set(mathpix_images.keys())
         for q in questions:
             q.figures = [f for f in q.figures if f in valid_figures]
+            q.text = _PLACEHOLDER_RE.sub('', q.text).strip()
             for part in q.parts:
                 part.figures = [f for f in part.figures if f in valid_figures]
+                part.text = _PLACEHOLDER_RE.sub('', part.text).strip()
                 for sub in part.parts:
                     sub.figures = [f for f in sub.figures if f in valid_figures]
+                    sub.text = _PLACEHOLDER_RE.sub('', sub.text).strip()
 
         logger.info(
             f"  [v2] {document_id}: parsed {len(questions)} questions "

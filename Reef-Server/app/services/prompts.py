@@ -194,6 +194,8 @@ Every `text` field will be compiled by a LaTeX engine. Convert MMD syntax to LaT
 Image filenames appear inline in the MMD text as ``![](mathpix_xxx.jpg)`` or ``\\includegraphics{{mathpix_xxx.jpg}}``. Place each filename in the ``figures`` array at the question or part level where it appears in the text.
 Only use filenames that actually appear in the MMD text. Do NOT invent filenames.
 
+**CRITICAL:** When you encounter an image reference in the MMD text, extract the filename into the ``figures`` array and REMOVE the image reference from the ``text`` field entirely. Do NOT replace image references with placeholder text like "Placeholder for Image", "[Image]", "See figure", or any other substitute. The rendering system will automatically insert the image from the ``figures`` array — your job is only to move the filename there.
+
 ## Tables that define sub-questions
 When a problem contains a table whose rows correspond to labeled sub-parts, preserve the table as \\begin{{tabular}} in the stem text. The parts should then have empty text (just label and answer space).
 
