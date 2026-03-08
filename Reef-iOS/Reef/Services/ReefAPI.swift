@@ -59,12 +59,12 @@ actor ReefAPI {
     func triggerReconstruction(documentId: String) async throws {
         struct Body: Encodable { let document_id: String }
         struct Response: Decodable { let status: String; let document_id: String }
-        let _: Response = try await request("POST", path: "/ai/reconstruct-document", body: Body(document_id: documentId))
+        let _: Response = try await request("POST", path: "/ai/v2/reconstruct-document", body: Body(document_id: documentId))
     }
 
     func cancelReconstruction(documentId: String) async throws {
         struct Response: Decodable { let status: String; let document_id: String }
-        let _: Response = try await request("DELETE", path: "/ai/reconstruct-document/\(documentId)")
+        let _: Response = try await request("DELETE", path: "/ai/v2/reconstruct-document/\(documentId)")
     }
 
     // MARK: - WebSocket
