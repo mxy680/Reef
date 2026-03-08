@@ -170,9 +170,9 @@ Look for patterns like:
 
 ## Structure
 - number: Sequential integer starting from 1 (first question = 1, second = 2, etc.). Do NOT parse the document's own numbering scheme — just count questions in order.
-- text: The question stem / preamble. Strip the leading problem number or label (e.g. "1.", "Problem 2", "(3)") from the text — do NOT include it since we add our own header.
+- text: The question stem / preamble ONLY — text that comes before any labeled sub-parts. Strip the leading problem number or label (e.g. "1.", "Problem 2", "(3)") from the text — do NOT include it since we add our own header. **Do NOT repeat part text here.** If the question is entirely made up of parts with no preamble, set text to an empty string.
 - figures: List of figure filenames that appear near this question in the MMD text.
-- parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a -> i, ii, iii).
+- parts: Labeled sub-questions (a, b, c). Parts can nest recursively (a -> i, ii, iii). Each part's text should contain ONLY that part's content — never duplicate content between the question stem and its parts.
   - If a question has unlabeled bullet points or numbered sub-items, use sequential letters (a, b, c...) as labels.
   - If a part contains multiple questions that each need a separate answer, extract each as a nested sub-part.
 
