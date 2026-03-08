@@ -83,7 +83,7 @@ def supabase_insert_document(doc_id: str, user_id: str, name: str):
         json={
             "id": doc_id,
             "user_id": user_id,
-            "name": name,
+            "filename": name,
             "status": "uploaded",
         },
         headers={**HEADERS, "Content-Type": "application/json", "Prefer": "return=minimal"},
