@@ -131,22 +131,31 @@ struct DocumentCanvasView: View {
 
                             GeometryReader { geo in
                                 let containerMinX = geo.frame(in: .global).minX
+                                let containerWidth = geo.size.width
                                 let popoverWidth: CGFloat = 240
-                                let offsetX = selectedToolMidX - containerMinX - popoverWidth / 2
+                                let idealX = selectedToolMidX - containerMinX - popoverWidth / 2
+                                let clampedX = max(12, min(idealX, containerWidth - popoverWidth - 12))
+                                let arrowOffset = (selectedToolMidX - containerMinX) - (clampedX + popoverWidth / 2)
 
-                                ToolSettingsPopover(
-                                    selectedColor: $penColor,
-                                    lineWidth: $penWidth,
-                                    customColors: $customColors,
-                                    onAddColorTapped: { showColorPicker = true }
-                                )
-                                .offset(x: offsetX, y: 8)
+                                PopoverCard(arrowOffset: arrowOffset) {
+                                    ToolSettingsPopover(
+                                        selectedColor: $penColor,
+                                        lineWidth: $penWidth,
+                                        customColors: $customColors,
+                                        onAddColorTapped: { showColorPicker = true }
+                                    )
+                                }
+                                .offset(x: clampedX)
                             }
-                            .transition(.scale(scale: 0.95).combined(with: .opacity))
+                            .transition(
+                                .scale(scale: 0.96, anchor: .top)
+                                .combined(with: .opacity)
+                                .combined(with: .offset(y: -4))
+                            )
                         }
                     }
                     .background(canvasBackground)
-                    .animation(.spring(duration: 0.2), value: showToolSettings)
+                    .animation(.easeOut(duration: 0.2), value: showToolSettings)
                     .overlay {
                         // Tap-to-dismiss layer (covers canvas only, not toolbar)
                         if showPageSettings {

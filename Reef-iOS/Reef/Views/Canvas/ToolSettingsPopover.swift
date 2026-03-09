@@ -48,19 +48,6 @@ struct ToolSettingsPopover: View {
         }
         .padding(16)
         .frame(width: 240)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(ReefColors.black)
-                    .offset(x: 4, y: 4)
-
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(ReefColors.white)
-
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(ReefColors.black, lineWidth: 2)
-            }
-        )
     }
 
     // MARK: - Color Row
