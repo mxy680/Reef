@@ -15,13 +15,6 @@ enum PageAction {
     case undo
 }
 
-struct PageMenuAnchorKey: PreferenceKey {
-    nonisolated(unsafe) static var defaultValue: Anchor<CGRect>?
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        value = value ?? nextValue()
-    }
-}
-
 struct CanvasToolbar: View {
     @Environment(ThemeManager.self) private var theme
     @Binding var selectedTool: CanvasTool
@@ -40,6 +33,7 @@ struct CanvasToolbar: View {
     @Binding var selectedToolMidX: CGFloat
     @Binding var showPageSettings: Bool
     @Binding var pageSettingsMidX: CGFloat
+    @Binding var pageMenuMidX: CGFloat
     var hasActiveOverlay: Bool = false
     @Binding var pageOverlaySettings: PageOverlaySettings
 
@@ -289,24 +283,23 @@ struct CanvasToolbar: View {
             )
 
             // Page menu button
-            Button {
-                withAnimation(.spring(duration: 0.2)) {
-                    showPageMenu.toggle()
+            ToolbarButton(
+                icon: "canvas.add_page",
+                isSelected: showPageMenu,
+                isCustomIcon: true,
+                action: { showPageMenu = true }
+            )
+            .overlay(
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear {
+                            pageMenuMidX = geo.frame(in: .global).midX
+                        }
+                        .onChange(of: showPageMenu) { _, _ in
+                            pageMenuMidX = geo.frame(in: .global).midX
+                        }
                 }
-            } label: {
-                Image("canvas.add_page")
-                    .renderingMode(.template)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(showPageMenu ? .white : Color.white.opacity(0.9))
-                    .frame(width: 36, height: 36, alignment: .center)
-                    .background(showPageMenu ? Color.white.opacity(0.25) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
-            .frame(width: 36, height: 36)
-            .anchorPreference(key: PageMenuAnchorKey.self, value: .bounds) { $0 }
+            )
         }
     }
 
@@ -445,17 +438,6 @@ struct PageMenuView: View {
         }
         .padding(.vertical, 6)
         .frame(width: 230)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(ReefColors.black, lineWidth: 2)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(ReefColors.black)
-                .offset(x: 4, y: 4)
-        )
     }
 
     private func menuRow(systemIcon: String, label: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
