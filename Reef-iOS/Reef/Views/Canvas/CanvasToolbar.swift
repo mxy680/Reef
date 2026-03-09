@@ -2,7 +2,8 @@
 //  CanvasToolbar.swift
 //  Reef
 //
-//  GoodNotes 6-style two-row toolbar — problem tabs + drawing tools (UI only)
+//  Two-row toolbar: tutor info strip (Row 1) + drawing tools (Row 2).
+//  All questions are shown in a single scrollable canvas — no tabs.
 //
 
 import SwiftUI
@@ -25,12 +26,13 @@ struct PageMenuAnchorKey: PreferenceKey {
 struct CanvasToolbar: View {
     @Environment(ThemeManager.self) private var theme
     @Binding var selectedTool: CanvasTool
-    @Binding var currentQuestionIndex: Int
-    let questionCount: Int
+    var visibleQuestionIndex: Int = 0
     let onClose: () -> Void
     @Binding var tutorModeOn: Bool
     let isReconstructed: Bool
     var documentName: String = ""
+    var answerKey: QuestionAnswer? = nil
+    var questionCount: Int = 1
     var onPageAction: ((PageAction) -> Void)?
     @Binding var showPageMenu: Bool
     @Binding var showRuler: Bool
@@ -58,8 +60,8 @@ struct CanvasToolbar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Row 1: Problem tab bar (darkened teal)
-            problemTabBar
+            // Row 1: Info strip (home + tutor step or doc name + tutor toggle)
+            infoStrip
 
             // Row 2: Tool bar
             HStack(spacing: 0) {
@@ -87,7 +89,7 @@ struct CanvasToolbar: View {
         }
         .padding(.top, safeAreaTop)
         .background(
-            // Tab strip = barColor darkened with black overlay, extends into safe area
+            // Strip bg extends into safe area
             ZStack {
                 activeBarColor
                 Color.black.opacity(theme.isDarkMode ? 0.3 : 0.18)
@@ -96,119 +98,76 @@ struct CanvasToolbar: View {
         )
     }
 
-    // MARK: - Problem Tab Bar
+    // MARK: - Info Strip (Row 1)
 
-    /// Tab strip background: barColor darkened by overlaying black.
-    private var tabStripBg: some View {
+    /// Strip background: barColor darkened by overlaying black.
+    private var stripBg: some View {
         ZStack {
             activeBarColor
             Color.black.opacity(theme.isDarkMode ? 0.3 : 0.18)
         }
     }
 
-    private var problemTabBar: some View {
-        ZStack(alignment: .bottom) {
-            // Recessed tab strip background (same teal, darkened)
-            tabStripBg
-
-            // Scrollable Chrome-style tabs
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 0) {
-                        ForEach(0..<questionCount, id: \.self) { index in
-                            let isSelected = index == currentQuestionIndex
-
-                            Button {
-                                currentQuestionIndex = index
-                            } label: {
-                                Text(isReconstructed ? "Q\(index + 1)" : documentName)
-                                    .font(.system(size: 13, weight: isSelected ? .bold : .medium))
-                                    .lineLimit(1)
-                                    .foregroundColor(
-                                        isSelected ? .white : Color.white.opacity(0.6)
-                                    )
-                                    .frame(minWidth: 44, minHeight: 30)
-                                    .padding(.horizontal, isReconstructed ? 6 : 16)
-                                    .background(isSelected ? activeBarColor : Color.clear)
-                                    .clipShape(ChromeTabShape())
-                                    .overlay(
-                                        isSelected
-                                            ? ChromeTabShape()
-                                                .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
-                                            : nil
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                            .id(index)
-
-                            // Separator between unselected tabs
-                            if index < questionCount - 1
-                                && !isSelected
-                                && index + 1 != currentQuestionIndex
-                            {
-                                Rectangle()
-                                    .fill(Color.white.opacity(0.2))
-                                    .frame(width: 1, height: 16)
-                                    .padding(.vertical, 8)
-                            }
-                        }
-                    }
-                    .padding(.top, 6)
-                    .padding(.horizontal, 2)
+    private var infoStrip: some View {
+        HStack(spacing: 0) {
+            // Home button
+            HStack(spacing: 0) {
+                Button {
+                    onClose()
+                } label: {
+                    Image("canvas.home")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
                 }
-                .padding(.leading, 48)
-                .padding(.trailing, 150)
-                .onChange(of: currentQuestionIndex) { _, newValue in
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        proxy.scrollTo(newValue, anchor: .center)
-                    }
-                }
+                .buttonStyle(.plain)
+                .padding(.leading, 6)
             }
 
-            // Pinned edges: Home + Tutor Mode
-            HStack(spacing: 0) {
-                // Home button
-                HStack(spacing: 0) {
-                    Button {
-                        print("🏠 HOME BUTTON TAPPED")
-                        onClose()
-                    } label: {
-                        Image("canvas.home")
-                            .renderingMode(.template)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.leading, 6)
-                }
-                .background(tabStripBg)
-
+            // Center content
+            if tutorModeOn && isReconstructed {
+                TutorStepRow(
+                    questionIndex: visibleQuestionIndex,
+                    answerKey: answerKey
+                )
+            } else {
+                // Document name / question label
                 Spacer()
-
-                if isReconstructed {
-                    // Tutor Mode toggle
-                    HStack(spacing: 6) {
-                        Image(systemName: "graduationcap.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white)
-
-                        Toggle("", isOn: $tutorModeOn)
-                            .toggleStyle(TutorToggleStyle())
-                            .labelsHidden()
-                    }
-                    .padding(.trailing, 10)
-                    .padding(.leading, 4)
-                    .frame(height: 40)
-                    .background(tabStripBg)
+                if isReconstructed && questionCount > 1 {
+                    Text("Q\(visibleQuestionIndex + 1)")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                } else {
+                    Text(documentName)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
                 }
+                Spacer()
+            }
+
+            // Tutor toggle (right)
+            if isReconstructed {
+                HStack(spacing: 6) {
+                    Image(systemName: "graduationcap.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Toggle("", isOn: $tutorModeOn)
+                        .toggleStyle(TutorToggleStyle())
+                        .labelsHidden()
+                }
+                .padding(.trailing, 10)
+                .padding(.leading, 4)
             }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)
+        .background(stripBg)
     }
 
     // MARK: - Left Section (Undo / Redo)
@@ -358,6 +317,185 @@ struct CanvasToolbar: View {
             .font(.system(size: 24, weight: .ultraLight))
             .foregroundColor(.white.opacity(0.5))
             .frame(width: 20)
+    }
+}
+
+// MARK: - Tutor Step Row (inline in info strip)
+
+private struct TutorStepRow: View {
+    let questionIndex: Int
+    let answerKey: QuestionAnswer?
+    @State private var stepIndex = 0
+    @State private var hintActive = false
+    @State private var revealActive = false
+
+    private var steps: [TutorStep] {
+        guard let answerKey else { return [] }
+        return TutorStepConverter.steps(from: answerKey)
+    }
+
+    private var currentStep: TutorStep? {
+        guard !steps.isEmpty else { return nil }
+        return steps[min(stepIndex, steps.count - 1)]
+    }
+
+    var body: some View {
+        if let step = currentStep {
+            stepContent(step: step)
+                .animation(.easeInOut(duration: 0.25), value: stepIndex)
+        } else {
+            HStack(spacing: 6) {
+                ProgressView()
+                    .tint(.white.opacity(0.7))
+                    .scaleEffect(0.65)
+                Text("Loading...")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func stepContent(step: TutorStep) -> some View {
+        HStack(spacing: 0) {
+            stepDivider()
+
+            // Status icon + question + step counter
+            HStack(spacing: 5) {
+                statusIcon(for: step.status)
+
+                Text("Q\(questionIndex + 1)")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text("Step \(stepIndex + 1)/\(steps.count)")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .fixedSize()
+            }
+
+            stepDivider()
+
+            // Instruction text
+            Text(step.instruction)
+                .font(.epilogue(12, weight: .medium))
+                .tracking(-0.04 * 12)
+                .foregroundColor(.white.opacity(0.95))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 6)
+                .id(stepIndex)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
+
+            stepDivider()
+
+            // Hint + Reveal
+            HStack(spacing: 0) {
+                stepToggle(icon: "lightbulb.fill", isActive: $hintActive) {
+                    hintActive.toggle()
+                    if hintActive { revealActive = false }
+                    print("[Tutor] Hint: \(step.hint)")
+                }
+                stepToggle(icon: "eye.fill", isActive: $revealActive) {
+                    revealActive.toggle()
+                    if revealActive { hintActive = false }
+                    print("[Tutor] Work: \(step.work)")
+                }
+            }
+
+            #if DEBUG
+            stepDivider()
+
+            // Dev-only step navigation
+            HStack(spacing: 2) {
+                Button {
+                    if stepIndex > 0 { stepIndex -= 1 }
+                    hintActive = false; revealActive = false
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(stepIndex > 0 ? .white : .white.opacity(0.3))
+                        .frame(width: 26, height: 26)
+                }
+                .buttonStyle(.plain)
+                .disabled(stepIndex <= 0)
+
+                Button {
+                    if stepIndex < steps.count - 1 { stepIndex += 1 }
+                    hintActive = false; revealActive = false
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(stepIndex < steps.count - 1 ? .white : .white.opacity(0.3))
+                        .frame(width: 26, height: 26)
+                }
+                .buttonStyle(.plain)
+                .disabled(stepIndex >= steps.count - 1)
+            }
+            #endif
+        }
+        .onChange(of: questionIndex) { _, _ in
+            stepIndex = 0
+            hintActive = false
+            revealActive = false
+        }
+    }
+
+    // MARK: - Status Icon
+
+    @ViewBuilder
+    private func statusIcon(for status: StepStatus) -> some View {
+        switch status {
+        case .pending:
+            Image(systemName: "pencil.circle.fill")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white.opacity(0.7))
+        case .mistake:
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color(hex: 0xE57373))
+        case .completed:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color(hex: 0x81C784))
+        }
+    }
+
+    // MARK: - Step Toggle Button
+
+    private func stepToggle(
+        icon: String,
+        isActive: Binding<Bool>,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(isActive.wrappedValue ? .white : .white.opacity(0.9))
+                .frame(width: 32, height: 32, alignment: .center)
+                .background(
+                    isActive.wrappedValue
+                        ? Color.white.opacity(0.25)
+                        : Color.clear
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .animation(.easeInOut(duration: 0.15), value: isActive.wrappedValue)
+        }
+        .frame(width: 32, height: 32)
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Divider
+
+    private func stepDivider() -> some View {
+        Text("|")
+            .font(.system(size: 20, weight: .ultraLight))
+            .foregroundColor(.white.opacity(0.4))
+            .frame(width: 16)
     }
 }
 
