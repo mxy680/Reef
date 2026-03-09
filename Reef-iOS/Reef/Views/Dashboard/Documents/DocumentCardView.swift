@@ -38,9 +38,6 @@ struct DocumentCardView: View {
             VStack(spacing: 0) {
                 // Thumbnail — explicit height from geometry
                 DocumentThumbnailView(status: document.status, thumbnailURL: thumbnailURL)
-                    .padding(.horizontal, pad)
-                    .padding(.top, pad)
-                    .padding(.bottom, pad)
                     .frame(height: thumbnailH)
                     .clipped()
 
