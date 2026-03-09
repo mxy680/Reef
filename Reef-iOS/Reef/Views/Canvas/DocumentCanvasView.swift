@@ -118,7 +118,7 @@ struct DocumentCanvasView: View {
                                         onAddColorTapped: { showColorPicker = true }
                                     )
                                 }
-                                .transition(.scale(scale: 0.96, anchor: .top).combined(with: .opacity))
+                                .transition(.scale(scale: 0.01, anchor: .top))
                                 .offset(x: clampedX)
                             }
                             .fixedSize(horizontal: false, vertical: true)
