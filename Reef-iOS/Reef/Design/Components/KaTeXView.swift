@@ -57,6 +57,13 @@ struct KaTeXView: UIViewRepresentable {
             loadContent(in: webView)
         }
 
+        // Re-measure if the WebView now has a real width but we haven't measured yet
+        let viewWidth = webView.frame.width
+        if viewWidth > 0 && context.coordinator.lastMeasuredWidth != viewWidth {
+            context.coordinator.lastMeasuredWidth = viewWidth
+            context.coordinator.remeasure(webView: webView)
+        }
+
         webView.scrollView.isScrollEnabled = contentHeight >= maxHeight
     }
 
@@ -126,23 +133,33 @@ struct KaTeXView: UIViewRepresentable {
         var lastText: String = ""
         var onHeight: (@MainActor (CGFloat) -> Void)?
         var maxHeight: CGFloat = 300
+        var lastMeasuredWidth: CGFloat = 0
+
+        func remeasure(webView: WKWebView) {
+            Task { @MainActor in
+                await measureHeight(webView: webView)
+            }
+        }
 
         nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             Task { @MainActor in
-                do {
-                    let js = "await document.fonts.ready; return document.body.scrollHeight;"
-                    let result = try await webView.callAsyncJavaScript(
-                        js, arguments: [:], contentWorld: .page
-                    )
-                    if let num = result as? Double, num > 0 {
-                        self.onHeight?(CGFloat(num))
-                    }
-                } catch {
-                    // Fallback: measure without waiting for fonts
-                    if let result = try? await webView.evaluateJavaScript("document.body.scrollHeight"),
-                       let num = result as? Double, num > 0 {
-                        self.onHeight?(CGFloat(num))
-                    }
+                await self.measureHeight(webView: webView)
+            }
+        }
+
+        private func measureHeight(webView: WKWebView) async {
+            do {
+                let js = "await document.fonts.ready; return document.body.scrollHeight;"
+                let result = try await webView.callAsyncJavaScript(
+                    js, arguments: [:], contentWorld: .page
+                )
+                if let num = result as? Double, num > 0 {
+                    onHeight?(CGFloat(num))
+                }
+            } catch {
+                if let result = try? await webView.evaluateJavaScript("document.body.scrollHeight"),
+                   let num = result as? Double, num > 0 {
+                    onHeight?(CGFloat(num))
                 }
             }
         }
