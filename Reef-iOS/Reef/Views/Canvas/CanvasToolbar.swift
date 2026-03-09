@@ -39,6 +39,7 @@ struct CanvasToolbar: View {
     var onToolRetapped: (CanvasTool) -> Void = { _ in }
     @Binding var selectedToolMidX: CGFloat
     @Binding var showPageSettings: Bool
+    @Binding var pageSettingsMidX: CGFloat
     var hasActiveOverlay: Bool = false
     @Binding var pageOverlaySettings: PageOverlaySettings
 
@@ -273,28 +274,19 @@ struct CanvasToolbar: View {
                 }
             )
             ToolbarButton(icon: "canvas.page_settings", isSelected: hasActiveOverlay, isCustomIcon: true, action: {
-                showPageSettings.toggle()
+                showPageSettings = true
             })
-            .overlay(alignment: .top) {
-                if showPageSettings {
-                    PageSettingsPopover(settings: $pageOverlaySettings)
-                        .background(ReefColors.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(ReefColors.black, lineWidth: 1.5)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(ReefColors.black)
-                                .offset(x: 4, y: 4)
-                        )
-                        .fixedSize()
-                        .offset(y: 40)
-                        .transition(.opacity)
+            .overlay(
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear {
+                            pageSettingsMidX = geo.frame(in: .global).midX
+                        }
+                        .onChange(of: showPageSettings) { _, _ in
+                            pageSettingsMidX = geo.frame(in: .global).midX
+                        }
                 }
-            }
-            .zIndex(1)
+            )
 
             // Page menu button
             Button {

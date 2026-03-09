@@ -30,6 +30,7 @@ struct DocumentCanvasView: View {
     @State private var customColors: [UIColor] = []
     @State private var showColorPicker = false
     @State private var showPageSettings = false
+    @State private var pageSettingsMidX: CGFloat = 0
     @State private var pageOverlaySettings = PageOverlaySettings()
     @State private var answerKeys: [Int: QuestionAnswer] = [:]
 
@@ -97,6 +98,7 @@ struct DocumentCanvasView: View {
                         },
                         selectedToolMidX: $selectedToolMidX,
                         showPageSettings: $showPageSettings,
+                        pageSettingsMidX: $pageSettingsMidX,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
                         pageOverlaySettings: $pageOverlaySettings
                     )
@@ -126,7 +128,27 @@ struct DocumentCanvasView: View {
                         }
                     }
                     .animation(.easeOut(duration: 0.2), value: showToolSettings)
-                    .zIndex(2) // popover overlays step toolbar
+                    .overlay(alignment: .bottomLeading) {
+                        if showPageSettings {
+                            GeometryReader { geo in
+                                let containerMinX = geo.frame(in: .global).minX
+                                let containerWidth = geo.size.width
+                                let popoverWidth: CGFloat = 280
+                                let idealX = pageSettingsMidX - containerMinX - popoverWidth / 2
+                                let clampedX = max(12, min(idealX, containerWidth - popoverWidth - 12))
+                                let arrowOffset = (pageSettingsMidX - containerMinX) - (clampedX + popoverWidth / 2)
+
+                                PopoverCard(arrowOffset: arrowOffset, maxWidth: popoverWidth) {
+                                    PageSettingsPopover(settings: $pageOverlaySettings)
+                                }
+                                .transition(.scale(scale: 0.01, anchor: .top))
+                                .offset(x: clampedX)
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.2), value: showPageSettings)
+                    .zIndex(2) // popovers overlay step toolbar
 
                     if tutorModeOn && isReconstructed {
                         TutorStepToolbar(
@@ -257,6 +279,12 @@ struct DocumentCanvasView: View {
             if !newTool.hasSettings {
                 showToolSettings = false
             }
+        }
+        .onChange(of: showToolSettings) { _, isShowing in
+            if isShowing { showPageSettings = false }
+        }
+        .onChange(of: showPageSettings) { _, isShowing in
+            if isShowing { showToolSettings = false }
         }
         .onChange(of: currentQuestionIndex) { _, _ in
             drawingManager?.saveAll()
