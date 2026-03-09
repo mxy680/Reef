@@ -18,6 +18,7 @@ struct CanvasPageView: UIViewRepresentable {
     var onVisiblePageChanged: ((Int) -> Void)?
     var darkMode: Bool = false
     var overlaySettings: PageOverlaySettings = PageOverlaySettings()
+    var debugRegions: QuestionRegionData? = nil
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
@@ -28,6 +29,7 @@ struct CanvasPageView: UIViewRepresentable {
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
         container.applyDarkMode(darkMode)
         container.updateOverlay(overlaySettings)
+        container.updateDebugRegions(debugRegions)
         return container
     }
 
@@ -36,6 +38,7 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.onVisiblePageChanged = onVisiblePageChanged
         uiView.applyDarkMode(darkMode)
         uiView.updateOverlay(overlaySettings)
+        uiView.updateDebugRegions(debugRegions)
     }
 }
 
@@ -51,11 +54,13 @@ final class CanvasContainerView: UIView {
     private var pageContainerViews: [UIView] = []
     private var shadowViews: [UIView] = []
     private var pageOverlayViews: [PageOverlayView] = []
+    private var debugRegionViews: [DebugRegionOverlayView] = []
     private var separatorViews: [UIView] = []
     private var pageWrappers: [UIView] = []
     private var contentWidthConstraint: NSLayoutConstraint?
     private var isDarkMode = false
     private var currentOverlaySettings = PageOverlaySettings()
+    private var currentDebugRegions: QuestionRegionData?
 
     /// Original rendered page images (light mode)
     private var originalImages: [UIImage] = []
@@ -179,6 +184,25 @@ final class CanvasContainerView: UIView {
         }
     }
 
+    // MARK: - Debug Regions
+
+    func updateDebugRegions(_ regionData: QuestionRegionData?) {
+        guard currentDebugRegions != regionData else { return }
+        currentDebugRegions = regionData
+
+        for (pageLocalIndex, overlayView) in debugRegionViews.enumerated() {
+            guard let regionData else {
+                overlayView.regions = []
+                overlayView.setNeedsDisplay()
+                continue
+            }
+            // Collect regions for this page
+            let pageRegions = regionData.regions.filter { $0.page == pageLocalIndex }
+            overlayView.regions = pageRegions
+            overlayView.setNeedsDisplay()
+        }
+    }
+
     // MARK: - Render PDF
 
     private func renderPDFPages(document: PDFDocument, pageRange: ClosedRange<Int>? = nil) async -> [UIImage] {
@@ -213,12 +237,14 @@ final class CanvasContainerView: UIView {
         for view in pageImageViews { view.removeFromSuperview() }
         for view in canvasViews { view.removeFromSuperview() }
         for view in pageOverlayViews { view.removeFromSuperview() }
+        for view in debugRegionViews { view.removeFromSuperview() }
         for view in separatorViews { view.removeFromSuperview() }
         pageImageViews.removeAll()
         canvasViews.removeAll()
         pageContainerViews.removeAll()
         shadowViews.removeAll()
         pageOverlayViews.removeAll()
+        debugRegionViews.removeAll()
         separatorViews.removeAll()
         pageWrappers.removeAll()
         lastReportedPage = -1
@@ -304,6 +330,25 @@ final class CanvasContainerView: UIView {
                 overlayView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
                 overlayView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
                 overlayView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
+            ])
+
+            // Debug region overlay (red lines at subquestion boundaries)
+            let debugOverlay = DebugRegionOverlayView()
+            debugOverlay.translatesAutoresizingMaskIntoConstraints = false
+            debugOverlay.isUserInteractionEnabled = false
+            pageView.addSubview(debugOverlay)
+            debugRegionViews.append(debugOverlay)
+
+            // Populate with current regions if available
+            if let regionData = currentDebugRegions {
+                debugOverlay.regions = regionData.regions.filter { $0.page == index }
+            }
+
+            NSLayoutConstraint.activate([
+                debugOverlay.topAnchor.constraint(equalTo: pageView.topAnchor),
+                debugOverlay.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
+                debugOverlay.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
+                debugOverlay.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
             ])
 
             // Page sits at top-left of wrapper
@@ -572,6 +617,79 @@ final class PageOverlayView: UIView {
                 y += scaledSpacing
             }
             ctx.strokePath()
+        }
+    }
+}
+
+// MARK: - Debug Region Overlay View
+
+/// Draws red horizontal lines at subquestion region boundaries (DEBUG only).
+/// Each region's y_start and y_end are in PDF points — multiplied by 2.0 to
+/// match the 2× render scale used by CanvasContainerView.
+final class DebugRegionOverlayView: UIView {
+    var regions: [PartRegion] = []
+
+    private static let pdfScale: CGFloat = 2.0
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isOpaque = false
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ rect: CGRect) {
+        #if !DEBUG
+        return
+        #endif
+        guard !regions.isEmpty else { return }
+        guard let ctx = UIGraphicsGetCurrentContext() else { return }
+
+        let lineColor = UIColor.red.withAlphaComponent(0.6).cgColor
+        let labelFont = UIFont.systemFont(ofSize: 18, weight: .bold)
+
+        ctx.setLineWidth(2.0)
+
+        for region in regions {
+            let yStart = CGFloat(region.yStart) * Self.pdfScale
+            let yEnd = CGFloat(region.yEnd) * Self.pdfScale
+
+            // Draw line at y_start
+            ctx.setStrokeColor(lineColor)
+            ctx.move(to: CGPoint(x: 0, y: yStart))
+            ctx.addLine(to: CGPoint(x: rect.width, y: yStart))
+            ctx.strokePath()
+
+            // Draw dashed line at y_end
+            ctx.setLineDash(phase: 0, lengths: [6, 4])
+            ctx.move(to: CGPoint(x: 0, y: yEnd))
+            ctx.addLine(to: CGPoint(x: rect.width, y: yEnd))
+            ctx.strokePath()
+            ctx.setLineDash(phase: 0, lengths: [])
+
+            // Label
+            let label = region.label ?? "stem"
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: labelFont,
+                .foregroundColor: UIColor.red.withAlphaComponent(0.8),
+            ]
+            let labelStr = NSString(string: label)
+            let labelSize = labelStr.size(withAttributes: attrs)
+            let labelRect = CGRect(
+                x: 12,
+                y: yStart + 4,
+                width: labelSize.width,
+                height: labelSize.height
+            )
+            // Background pill for readability
+            let pillRect = labelRect.insetBy(dx: -4, dy: -2)
+            ctx.setFillColor(UIColor.white.withAlphaComponent(0.85).cgColor)
+            let pillPath = UIBezierPath(roundedRect: pillRect, cornerRadius: 4)
+            ctx.addPath(pillPath.cgPath)
+            ctx.fillPath()
+
+            labelStr.draw(in: labelRect, withAttributes: attrs)
         }
     }
 }
