@@ -8,15 +8,8 @@ struct DocumentThumbnailView: View {
     var body: some View {
         let dark = theme.isDarkMode
         return ZStack {
-            RoundedRectangle(cornerRadius: 8)
+            Rectangle()
                 .fill(status == .failed ? Color(hex: 0xFFF5F5) : (dark ? ReefColors.DashboardDark.subtle : Color(hex: 0xFAFAFA)))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(
-                            status == .failed ? Color(hex: 0xFFCDD2) : (dark ? ReefColors.DashboardDark.divider : ReefColors.gray100),
-                            lineWidth: 1
-                        )
-                )
 
             if let url = thumbnailURL {
                 AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.25))) { phase in
@@ -52,7 +45,6 @@ struct DocumentThumbnailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private var ruledLines: some View {
