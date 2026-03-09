@@ -17,7 +17,7 @@ struct DocumentCanvasView: View {
     @Environment(ThemeManager.self) private var theme
     @State private var viewModel = CanvasViewModel()
     @State private var selectedTool: CanvasTool = .pen
-    @State private var tutorModeOn = false
+    @State private var tutorModeOn = true
     @State private var currentPageIndex = 0
     @State private var pageVersion = UUID()
     @State private var showPageMenu = false

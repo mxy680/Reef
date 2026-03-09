@@ -81,6 +81,20 @@ struct CanvasToolbar: View {
         VStack(spacing: 0) {
             // Row 1: Info strip (home + tutor step or doc name + tutor toggle)
             infoStrip
+                // Tutor hint/reveal popover — anchored to bottom of info strip, overlays Row 2
+                .overlay(alignment: .bottomLeading) {
+                    if let step = currentTutorStep, showHint {
+                        tutorPopoverCard(triggerMidX: hintMidX, title: "Hint", text: step.hint)
+                    }
+                }
+                .overlay(alignment: .bottomLeading) {
+                    if let step = currentTutorStep, showReveal {
+                        tutorPopoverCard(triggerMidX: revealMidX, title: "Answer", text: step.work)
+                    }
+                }
+                .animation(.easeOut(duration: 0.2), value: showHint)
+                .animation(.easeOut(duration: 0.2), value: showReveal)
+                .zIndex(1) // renders above Row 2
 
             // Row 2: Tool bar
             HStack(spacing: 0) {
@@ -115,19 +129,6 @@ struct CanvasToolbar: View {
             }
             .ignoresSafeArea(edges: .top)
         )
-        // Tutor hint/reveal popover — overlays Row 2
-        .overlay(alignment: .bottomLeading) {
-            if let step = currentTutorStep, showHint {
-                tutorPopoverCard(triggerMidX: hintMidX, title: "Hint", text: step.hint)
-            }
-        }
-        .overlay(alignment: .bottomLeading) {
-            if let step = currentTutorStep, showReveal {
-                tutorPopoverCard(triggerMidX: revealMidX, title: "Answer", text: step.work)
-            }
-        }
-        .animation(.easeOut(duration: 0.2), value: showHint)
-        .animation(.easeOut(duration: 0.2), value: showReveal)
         .onChange(of: showHint) { _, _ in
             showTutorPopover = showHint || showReveal
         }
