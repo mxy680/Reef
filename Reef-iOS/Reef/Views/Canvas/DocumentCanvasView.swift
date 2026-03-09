@@ -31,6 +31,7 @@ struct DocumentCanvasView: View {
     @State private var showColorPicker = false
     @State private var showPageSettings = false
     @State private var pageOverlaySettings = PageOverlaySettings()
+    @State private var answerKeys: [Int: QuestionAnswer] = [:]
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -102,8 +103,11 @@ struct DocumentCanvasView: View {
                     .zIndex(1)
 
                     if tutorModeOn && isReconstructed {
-                        TutorStepToolbar(questionIndex: currentQuestionIndex)
-                            .transition(.move(edge: .top).combined(with: .opacity))
+                        TutorStepToolbar(
+                            questionIndex: currentQuestionIndex,
+                            answerKey: answerKeys[currentQuestionIndex + 1]
+                        )
+                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
                     ZStack(alignment: .top) {
@@ -235,6 +239,9 @@ struct DocumentCanvasView: View {
                 let manager = DrawingManager(documentId: document.id)
                 manager.loadAll(pageCount: pdf.pageCount)
                 drawingManager = manager
+            }
+            if isReconstructed {
+                answerKeys = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
             }
         }
         .onChange(of: selectedTool) { _, _ in

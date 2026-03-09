@@ -1,7 +1,7 @@
 """Fire-and-forget answer key generation for extracted questions.
 
 After the reconstruction pipeline extracts structured Question objects,
-this module generates step-by-step solutions using DeepSeek R1 and stores
+this module generates step-by-step solutions using Gemini Flash and stores
 them in the Supabase ``answer_keys`` table.  Each question is solved
 independently so a single failure never blocks the rest.
 """
@@ -19,7 +19,7 @@ from app.services.prompts import ANSWER_KEY_PROMPT
 
 logger = logging.getLogger(__name__)
 
-ANSWER_KEY_MODEL = "google/gemini-3.1-pro-preview"
+ANSWER_KEY_MODEL = "google/gemini-3-flash-preview"
 
 
 # ---------------------------------------------------------------------------
