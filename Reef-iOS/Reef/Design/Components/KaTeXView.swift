@@ -121,13 +121,18 @@ struct KaTeXView: UIViewRepresentable {
         var maxHeight: CGFloat = 300
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            // Measure after KaTeX fonts finish loading
-            let js = "document.fonts.ready.then(() => document.body.scrollHeight)"
-            webView.evaluateJavaScript(js) { [weak self] result, _ in
-                guard let height = result as? CGFloat, height > 0 else { return }
-                DispatchQueue.main.async {
-                    self?.onHeight?(height)
-                    webView.scrollView.isScrollEnabled = height >= (self?.maxHeight ?? 300)
+            // callAsyncJavaScript awaits the Promise from document.fonts.ready
+            let js = "await document.fonts.ready; return document.body.scrollHeight;"
+            webView.callAsyncJavaScript(js, arguments: [:], in: nil, contentWorld: .page) { [weak self] result in
+                switch result {
+                case .success(let value):
+                    guard let height = value as? CGFloat, height > 0 else { return }
+                    DispatchQueue.main.async {
+                        self?.onHeight?(height)
+                        webView.scrollView.isScrollEnabled = height >= (self?.maxHeight ?? 300)
+                    }
+                case .failure:
+                    break
                 }
             }
         }
