@@ -144,8 +144,7 @@ struct DocumentCanvasView: View {
                             currentTool: currentPKTool,
                             onVisiblePageChanged: { currentPageIndex = $0 },
                             darkMode: theme.isDarkMode,
-                            overlaySettings: pageOverlaySettings,
-                            debugRegions: debugRegionData(for: currentQuestionIndex)
+                            overlaySettings: pageOverlaySettings
                         )
                         .id("\(currentQuestionIndex)-\(pageVersion)")
 
@@ -299,18 +298,6 @@ struct DocumentCanvasView: View {
               questionIndex < pages.count,
               pages[questionIndex].count == 2 else { return nil }
         return pages[questionIndex][0]...pages[questionIndex][1]
-    }
-
-    // MARK: - Debug Regions
-
-    private func debugRegionData(for questionIndex: Int) -> QuestionRegionData? {
-        #if DEBUG
-        guard let regions = document.questionRegions,
-              questionIndex < regions.count else { return nil }
-        return regions[questionIndex]
-        #else
-        return nil
-        #endif
     }
 
     // MARK: - Loading
