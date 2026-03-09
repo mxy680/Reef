@@ -28,11 +28,11 @@ struct ToolSettingsPopover: View {
     private static let visibleCount = 5
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             colorRow
 
             // Thickness slider with preview dot
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Circle()
                     .fill(Color(selectedColor))
                     .frame(width: 4, height: 4)
@@ -46,8 +46,9 @@ struct ToolSettingsPopover: View {
                     .frame(width: 18, height: 18)
             }
         }
-        .padding(16)
-        .frame(width: 240)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(width: 220)
     }
 
     // MARK: - Color Row

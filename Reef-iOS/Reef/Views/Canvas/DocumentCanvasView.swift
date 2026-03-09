@@ -105,7 +105,7 @@ struct DocumentCanvasView: View {
                             GeometryReader { geo in
                                 let containerMinX = geo.frame(in: .global).minX
                                 let containerWidth = geo.size.width
-                                let popoverWidth: CGFloat = 240
+                                let popoverWidth: CGFloat = 220
                                 let idealX = selectedToolMidX - containerMinX - popoverWidth / 2
                                 let clampedX = max(12, min(idealX, containerWidth - popoverWidth - 12))
                                 let arrowOffset = (selectedToolMidX - containerMinX) - (clampedX + popoverWidth / 2)
@@ -121,11 +121,7 @@ struct DocumentCanvasView: View {
                                 .offset(x: clampedX)
                             }
                             .fixedSize(horizontal: false, vertical: true)
-                            .transition(
-                                .scale(scale: 0.96, anchor: .top)
-                                .combined(with: .opacity)
-                                .combined(with: .offset(y: -4))
-                            )
+                            .transition(.scale(scale: 0.96, anchor: .top).combined(with: .opacity))
                         }
                     }
                     .animation(.easeOut(duration: 0.2), value: showToolSettings)

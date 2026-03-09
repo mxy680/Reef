@@ -79,7 +79,7 @@ struct PopoverCard<Content: View>: View {
 
             // Card body
             content
-                .popupShell(cornerRadius: cornerRadius, maxWidth: 240, shadowOffset: shadowOffset)
+                .popupShell(cornerRadius: cornerRadius, maxWidth: 220, shadowOffset: shadowOffset)
         }
     }
 }
