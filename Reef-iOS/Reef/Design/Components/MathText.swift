@@ -26,17 +26,13 @@ struct MathText: View {
         return Self.latexPattern.firstMatch(in: text, range: range) != nil
     }
 
-    @State private var contentHeight: CGFloat = 100
-
     var body: some View {
         if hasLatex {
             KaTeXView(
                 text: text,
                 fontSize: fontSize,
-                textColor: color,
-                contentHeight: $contentHeight
+                textColor: color
             )
-            .frame(height: contentHeight)
         } else {
             Text(text)
                 .font(.system(size: fontSize, weight: .medium))

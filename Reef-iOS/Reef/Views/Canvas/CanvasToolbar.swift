@@ -159,21 +159,19 @@ struct CanvasToolbar: View {
             let arrowOffset = (triggerMidX - containerMinX) - (clampedX + Self.tutorPopoverWidth / 2)
 
             PopoverCard(arrowOffset: arrowOffset, maxWidth: Self.tutorPopoverWidth) {
-                ScrollView(.vertical, showsIndicators: true) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(title)
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(ReefColors.black)
-                        MathText(
-                            text: text,
-                            fontSize: 13,
-                            color: ReefColors.gray600
-                        )
-                    }
-                    .padding(12)
-                    .frame(width: Self.tutorPopoverWidth, alignment: .leading)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(ReefColors.black)
+                    MathText(
+                        text: text,
+                        fontSize: 13,
+                        color: ReefColors.gray600
+                    )
+                    .frame(height: popoverMaxHeight - 50)
                 }
-                .frame(maxHeight: popoverMaxHeight)
+                .padding(12)
+                .frame(width: Self.tutorPopoverWidth, alignment: .leading)
             }
             .transition(.scale(scale: 0.01, anchor: .top))
             .offset(x: clampedX)
