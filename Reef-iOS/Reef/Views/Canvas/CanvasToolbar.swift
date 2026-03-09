@@ -444,10 +444,11 @@ struct PageMenuView: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: systemIcon)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: 15, weight: .semibold))
                     .frame(width: 20, height: 20)
                 Text(label)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.epilogue(13, weight: .semiBold))
+                    .tracking(-0.04 * 13)
                 Spacer()
             }
             .padding(.horizontal, 14)
