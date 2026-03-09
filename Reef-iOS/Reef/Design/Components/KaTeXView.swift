@@ -3,7 +3,7 @@
 //  Reef
 //
 //  Renders LaTeX math using WKWebView + bundled KaTeX.
-//  Reports content height after page loads via evaluateJavaScript.
+//  Reports content height after page loads via callAsyncJavaScript.
 //
 
 import SwiftUI
@@ -32,19 +32,25 @@ struct KaTeXView: UIViewRepresentable {
         webView.scrollView.showsHorizontalScrollIndicator = false
 
         context.coordinator.lastText = text
-        context.coordinator.onHeight = { height in
-            self.contentHeight = min(height, maxHeight)
-        }
         context.coordinator.maxHeight = maxHeight
+        context.coordinator.onHeight = { [weak webView] height in
+            MainActor.assumeIsolated {
+                self.contentHeight = min(height, self.maxHeight)
+                webView?.scrollView.isScrollEnabled = height >= self.maxHeight
+            }
+        }
         loadContent(in: webView)
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        context.coordinator.onHeight = { height in
-            self.contentHeight = min(height, maxHeight)
-        }
         context.coordinator.maxHeight = maxHeight
+        context.coordinator.onHeight = { [weak webView] height in
+            MainActor.assumeIsolated {
+                self.contentHeight = min(height, self.maxHeight)
+                webView?.scrollView.isScrollEnabled = height >= self.maxHeight
+            }
+        }
 
         if context.coordinator.lastText != text {
             context.coordinator.lastText = text
@@ -115,24 +121,28 @@ struct KaTeXView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
+    @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
         var lastText: String = ""
-        var onHeight: ((CGFloat) -> Void)?
+        var onHeight: (@MainActor (CGFloat) -> Void)?
         var maxHeight: CGFloat = 300
 
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            // callAsyncJavaScript awaits the Promise from document.fonts.ready
-            let js = "await document.fonts.ready; return document.body.scrollHeight;"
-            webView.callAsyncJavaScript(js, arguments: [:], in: nil, contentWorld: .page) { [weak self] result in
-                switch result {
-                case .success(let value):
-                    guard let height = value as? CGFloat, height > 0 else { return }
-                    DispatchQueue.main.async {
-                        self?.onHeight?(height)
-                        webView.scrollView.isScrollEnabled = height >= (self?.maxHeight ?? 300)
+        nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            Task { @MainActor in
+                do {
+                    let js = "await document.fonts.ready; return document.body.scrollHeight;"
+                    let result = try await webView.callAsyncJavaScript(
+                        js, arguments: [:], contentWorld: .page
+                    )
+                    if let num = result as? Double, num > 0 {
+                        self.onHeight?(CGFloat(num))
                     }
-                case .failure:
-                    break
+                } catch {
+                    // Fallback: measure without waiting for fonts
+                    if let result = try? await webView.evaluateJavaScript("document.body.scrollHeight"),
+                       let num = result as? Double, num > 0 {
+                        self.onHeight?(CGFloat(num))
+                    }
                 }
             }
         }
