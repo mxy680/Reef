@@ -55,7 +55,7 @@ struct PopoverCard<Content: View>: View {
 
     var body: some View {
         let dark = theme.isDarkMode
-        let fillColor = dark ? ReefColors.CanvasDark.toolbar : CanvasToolbar.barColor
+        let fillColor = dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white
         let strokeColor = dark ? ReefColors.DashboardDark.popupBorder : ReefColors.black
         let shadowColor = dark ? ReefColors.DashboardDark.popupShadow : ReefColors.black
 
