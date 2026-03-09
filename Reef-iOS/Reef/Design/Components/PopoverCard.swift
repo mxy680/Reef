@@ -48,8 +48,12 @@ struct PopoverCard<Content: View>: View {
     private let borderWidth: CGFloat = 2
     private let shadowOffset: CGFloat = 4
 
-    init(arrowOffset: CGFloat = 0, @ViewBuilder content: () -> Content) {
+    /// Maximum card width (defaults to 190).
+    var maxWidth: CGFloat = 190
+
+    init(arrowOffset: CGFloat = 0, maxWidth: CGFloat = 190, @ViewBuilder content: () -> Content) {
         self.arrowOffset = arrowOffset
+        self.maxWidth = maxWidth
         self.content = content()
     }
 
@@ -89,7 +93,7 @@ struct PopoverCard<Content: View>: View {
                         .fill(shadowColor)
                         .offset(x: shadowOffset, y: shadowOffset)
                 )
-                .frame(maxWidth: 190)
+                .frame(maxWidth: maxWidth)
         }
     }
 }

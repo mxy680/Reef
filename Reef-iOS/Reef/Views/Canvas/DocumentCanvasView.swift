@@ -32,6 +32,7 @@ struct DocumentCanvasView: View {
     @State private var showPageSettings = false
     @State private var pageOverlaySettings = PageOverlaySettings()
     @State private var answerKeys: [Int: QuestionAnswer] = [:]
+    @State private var showTutorPopover = false
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -111,7 +112,8 @@ struct DocumentCanvasView: View {
                         selectedToolMidX: $selectedToolMidX,
                         showPageSettings: $showPageSettings,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
-                        pageOverlaySettings: $pageOverlaySettings
+                        pageOverlaySettings: $pageOverlaySettings,
+                        showTutorPopover: $showTutorPopover
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -171,6 +173,11 @@ struct DocumentCanvasView: View {
                             Color.clear
                                 .contentShape(Rectangle())
                                 .onTapGesture { showPageSettings = false }
+                        }
+                        if showTutorPopover {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { showTutorPopover = false }
                         }
                     }
                 }

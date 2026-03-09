@@ -43,6 +43,7 @@ struct CanvasToolbar: View {
     @Binding var showPageSettings: Bool
     var hasActiveOverlay: Bool = false
     @Binding var pageOverlaySettings: PageOverlaySettings
+    @Binding var showTutorPopover: Bool
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
     static let barColor = Color(hex: 0x4E8A97)
@@ -132,7 +133,8 @@ struct CanvasToolbar: View {
             if tutorModeOn && isReconstructed {
                 TutorStepRow(
                     questionIndex: visibleQuestionIndex,
-                    answerKey: answerKey
+                    answerKey: answerKey,
+                    showTutorPopover: $showTutorPopover
                 )
             } else {
                 // Document name / question label
@@ -325,9 +327,14 @@ struct CanvasToolbar: View {
 private struct TutorStepRow: View {
     let questionIndex: Int
     let answerKey: QuestionAnswer?
+    @Binding var showTutorPopover: Bool
     @State private var showHint = false
     @State private var showReveal = false
+    @State private var hintMidX: CGFloat = 0
+    @State private var revealMidX: CGFloat = 0
     @State private var pulseOpacity: Double = 1.0
+
+    private static let popoverWidth: CGFloat = 260
 
     private var steps: [TutorStep] {
         guard let answerKey else { return [] }
@@ -376,37 +383,66 @@ private struct TutorStepRow: View {
 
                 stepDivider()
 
-                // Hint button + popover
+                // Hint button
                 stepButton(icon: "lightbulb.fill", isActive: showHint) {
                     showHint.toggle()
                     if showHint { showReveal = false }
                 }
-                .overlay(alignment: .bottom) {
-                    if showHint {
-                        tutorPopover(title: "Hint", text: step.hint)
-                            .offset(y: 38)
-                    }
-                }
-                .zIndex(showHint ? 10 : 0)
+                .background(GeometryReader { geo in
+                    Color.clear
+                        .onAppear { hintMidX = geo.frame(in: .global).midX }
+                        .onChange(of: geo.frame(in: .global).midX) { _, v in hintMidX = v }
+                })
 
-                // Reveal button + popover
+                // Reveal button
                 stepButton(icon: "eye.fill", isActive: showReveal) {
                     showReveal.toggle()
                     if showReveal { showHint = false }
                 }
-                .overlay(alignment: .bottomTrailing) {
-                    if showReveal {
-                        tutorPopover(title: "Answer", text: step.work)
-                            .offset(y: 38)
-                    }
-                }
-                .zIndex(showReveal ? 10 : 0)
+                .background(GeometryReader { geo in
+                    Color.clear
+                        .onAppear { revealMidX = geo.frame(in: .global).midX }
+                        .onChange(of: geo.frame(in: .global).midX) { _, v in revealMidX = v }
+                })
             }
-            .animation(.spring(duration: 0.2), value: showHint)
-            .animation(.spring(duration: 0.2), value: showReveal)
+            // Popover overlay — positioned relative to the full HStack
+            .overlay(alignment: .bottomLeading) {
+                if showHint {
+                    popoverCard(
+                        triggerMidX: hintMidX,
+                        title: "Hint",
+                        text: step.hint
+                    )
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                if showReveal {
+                    popoverCard(
+                        triggerMidX: revealMidX,
+                        title: "Answer",
+                        text: step.work
+                    )
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: showHint)
+            .animation(.easeOut(duration: 0.2), value: showReveal)
+            .zIndex(showHint || showReveal ? 10 : 0)
             .onChange(of: questionIndex) { _, _ in
                 showHint = false
                 showReveal = false
+            }
+            .onChange(of: showHint) { _, _ in
+                showTutorPopover = showHint || showReveal
+            }
+            .onChange(of: showReveal) { _, _ in
+                showTutorPopover = showHint || showReveal
+            }
+            .onChange(of: showTutorPopover) { _, newValue in
+                // External dismiss (tap-to-dismiss on canvas)
+                if !newValue {
+                    showHint = false
+                    showReveal = false
+                }
             }
         } else {
             HStack(spacing: 6) {
@@ -419,6 +455,35 @@ private struct TutorStepRow: View {
             }
             .frame(maxWidth: .infinity)
         }
+    }
+
+    // MARK: - Popover Card
+
+    private func popoverCard(triggerMidX: CGFloat, title: String, text: String) -> some View {
+        GeometryReader { geo in
+            let containerMinX = geo.frame(in: .global).minX
+            let containerWidth = geo.size.width
+            let idealX = triggerMidX - containerMinX - Self.popoverWidth / 2
+            let clampedX = max(12, min(idealX, containerWidth - Self.popoverWidth - 12))
+            let arrowOffset = (triggerMidX - containerMinX) - (clampedX + Self.popoverWidth / 2)
+
+            PopoverCard(arrowOffset: arrowOffset, maxWidth: Self.popoverWidth) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(ReefColors.black)
+                    Text(text)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(ReefColors.gray600)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(12)
+                .frame(width: Self.popoverWidth, alignment: .leading)
+            }
+            .transition(.scale(scale: 0.01, anchor: .top))
+            .offset(x: clampedX)
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Progress Bar
@@ -479,34 +544,6 @@ private struct TutorStepRow: View {
                 pulseOpacity = 0.5
             }
         }
-    }
-
-    // MARK: - Popover
-
-    private func tutorPopover(title: String, text: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(ReefColors.black)
-            Text(text)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(ReefColors.gray600)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .frame(width: 260, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(ReefColors.black, lineWidth: 1.5)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(ReefColors.black)
-                .offset(x: 3, y: 3)
-        )
-        .transition(.scale(scale: 0.92, anchor: .top).combined(with: .opacity))
     }
 
     // MARK: - Status Icon
