@@ -93,7 +93,7 @@ struct DocumentCanvasView: View {
                         onUndo: { manager.undo() },
                         onRedo: { manager.redo() },
                         onToolRetapped: { _ in
-                            showToolSettings.toggle()
+                            showToolSettings = true
                         },
                         selectedToolMidX: $selectedToolMidX,
                         showPageSettings: $showPageSettings,
@@ -253,8 +253,10 @@ struct DocumentCanvasView: View {
                 answerKeys = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
             }
         }
-        .onChange(of: selectedTool) { _, _ in
-            showToolSettings = false
+        .onChange(of: selectedTool) { _, newTool in
+            if !newTool.hasSettings {
+                showToolSettings = false
+            }
         }
         .onChange(of: currentQuestionIndex) { _, _ in
             drawingManager?.saveAll()

@@ -230,12 +230,13 @@ struct CanvasToolbar: View {
                     isSelected: selectedTool == tool,
                     isCustomIcon: tool.isCustomIcon,
                     action: {
-                        if selectedTool == tool && tool.hasSettings {
-                            onToolRetapped(tool)
-                        } else {
+                        if selectedTool != tool {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedTool = tool
                             }
+                        }
+                        if tool.hasSettings {
+                            onToolRetapped(tool)
                         }
                     }
                 )
