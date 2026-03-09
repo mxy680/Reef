@@ -28,11 +28,11 @@ struct ToolSettingsPopover: View {
     private static let visibleCount = 5
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 10) {
             colorRow
 
             // Thickness slider with preview dot
-            HStack(spacing: 10) {
+            HStack(spacing: 6) {
                 Circle()
                     .fill(Color(selectedColor))
                     .frame(width: 4, height: 4)
@@ -43,24 +43,12 @@ struct ToolSettingsPopover: View {
                 Circle()
                     .fill(Color(selectedColor))
                     .frame(width: lineWidth * 2, height: lineWidth * 2)
-                    .frame(width: 18, height: 18)
+                    .frame(width: 16, height: 16)
             }
         }
-        .padding(16)
-        .frame(width: 240)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(ReefColors.black)
-                    .offset(x: 4, y: 4)
-
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(ReefColors.white)
-
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(ReefColors.black, lineWidth: 2)
-            }
-        )
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(width: 190)
     }
 
     // MARK: - Color Row
@@ -80,7 +68,7 @@ struct ToolSettingsPopover: View {
     }
 
     private var colorButtons: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             ForEach(Array(allColors.enumerated()), id: \.offset) { _, color in
                 colorCircle(color: color, isSelected: selectedColor == color)
             }
@@ -89,7 +77,7 @@ struct ToolSettingsPopover: View {
             Button(action: onAddColorTapped) {
                 Circle()
                     .fill(Color.clear)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 24, height: 24)
                     .overlay(
                         Circle()
                             .stroke(ReefColors.gray400, lineWidth: 1.5)
@@ -110,16 +98,16 @@ struct ToolSettingsPopover: View {
         } label: {
             Circle()
                 .fill(Color(color))
-                .frame(width: 28, height: 28)
+                .frame(width: 24, height: 24)
                 .overlay(
                     Circle()
-                        .stroke(Color.white, lineWidth: isSelected ? 2.5 : 0)
+                        .stroke(Color.white, lineWidth: isSelected ? 2 : 0)
                 )
                 .overlay(
                     Circle()
                         .stroke(
                             isSelected ? ReefColors.black : Color.clear,
-                            lineWidth: isSelected ? 2 : 0
+                            lineWidth: isSelected ? 1.5 : 0
                         )
                         .padding(-2)
                 )
