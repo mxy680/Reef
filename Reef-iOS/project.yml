@@ -19,9 +19,6 @@ packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: "8.0.0"
-  LaTeXSwiftUI:
-    url: https://github.com/colinc86/LaTeXSwiftUI
-    from: "1.3.0"
 
 configFiles:
   Debug: Secrets.xcconfig
@@ -36,6 +33,9 @@ targets:
     resources:
       - path: Reef/Resources/Fonts
         buildPhase: resources
+      - path: Reef/Resources/KaTeX
+        buildPhase: resources
+        type: folder
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.studyreef.app
@@ -48,5 +48,4 @@ targets:
     dependencies:
       - package: Supabase
       - package: GoogleSignIn
-      - package: LaTeXSwiftUI
       - sdk: AuthenticationServices.framework
