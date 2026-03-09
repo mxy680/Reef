@@ -38,17 +38,14 @@ enum TutorStepConverter {
         }
     }
 
-    private static func stepsFromPart(_ part: PartAnswer, prefix: String? = nil) -> [TutorStep] {
-        let label = prefix.map { "\($0)(\(part.label))" } ?? "(\(part.label))"
-
-        // Recurse into nested sub-parts
+    private static func stepsFromPart(_ part: PartAnswer) -> [TutorStep] {
         if !part.parts.isEmpty {
-            return part.parts.flatMap { stepsFromPart($0, prefix: label) }
+            return part.parts.flatMap { stepsFromPart($0) }
         }
 
         return part.steps.map { step in
             TutorStep(
-                instruction: "\(label) \(step.description)",
+                instruction: step.description,
                 hint: step.explanation,
                 work: step.work,
                 status: .pending,

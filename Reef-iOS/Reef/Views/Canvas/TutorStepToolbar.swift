@@ -94,10 +94,36 @@ struct TutorStepToolbar: View {
                 }
             }
 
+            #if DEBUG
             makeDivider()
 
-            // Progress bar
-            progressBar(progress: step.progress)
+            // Dev-only step navigation
+            HStack(spacing: 4) {
+                Button {
+                    if stepIndex > 0 { stepIndex -= 1 }
+                    hintActive = false; revealActive = false
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(stepIndex > 0 ? .white : .white.opacity(0.3))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .disabled(stepIndex <= 0)
+
+                Button {
+                    if stepIndex < steps.count - 1 { stepIndex += 1 }
+                    hintActive = false; revealActive = false
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(stepIndex < steps.count - 1 ? .white : .white.opacity(0.3))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .disabled(stepIndex >= steps.count - 1)
+            }
+            #endif
         }
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
