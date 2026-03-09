@@ -26,7 +26,7 @@ struct MathText: View {
         return Self.latexPattern.firstMatch(in: text, range: range) != nil
     }
 
-    @State private var contentHeight: CGFloat = 20
+    @State private var contentHeight: CGFloat = 100
 
     var body: some View {
         if hasLatex {

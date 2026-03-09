@@ -25,7 +25,7 @@ struct KaTeXView: UIViewRepresentable {
         userController.add(context.coordinator, name: "sizeNotifier")
         config.userContentController = userController
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 260, height: 400), configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.isOpaque = false
         webView.backgroundColor = .clear
@@ -111,11 +111,15 @@ struct KaTeXView: UIViewRepresentable {
             ],
             throwOnError: false
           });
-          setTimeout(function() {
-            window.webkit.messageHandlers.sizeNotifier.postMessage(
-              document.body.scrollHeight
-            );
-          }, 50);
+          function reportHeight() {
+            var h = document.body.scrollHeight;
+            if (h > 0) {
+              window.webkit.messageHandlers.sizeNotifier.postMessage(h);
+            }
+          }
+          // Report after render and again after fonts load
+          setTimeout(reportHeight, 100);
+          document.fonts.ready.then(function() { setTimeout(reportHeight, 50); });
         </script>
         </html>
         """
@@ -147,7 +151,14 @@ struct KaTeXView: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            // Fade-in happens via onHeight callback after JS reports size
+            // Re-measure after navigation completes (fonts may have loaded)
+            webView.evaluateJavaScript("document.body.scrollHeight") { [weak self] result, _ in
+                if let height = result as? CGFloat, height > 0 {
+                    DispatchQueue.main.async {
+                        self?.onHeight?(height)
+                    }
+                }
+            }
         }
     }
 }
