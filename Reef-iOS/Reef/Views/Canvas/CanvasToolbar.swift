@@ -192,8 +192,8 @@ struct CanvasToolbar: View {
                 if isReconstructed {
                     // Tutor Mode toggle
                     HStack(spacing: 6) {
-                        Text("Tutor Mode")
-                            .font(.system(size: 12, weight: .semibold))
+                        Image(systemName: "graduationcap.fill")
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white)
 
                         Toggle("", isOn: $tutorModeOn)
