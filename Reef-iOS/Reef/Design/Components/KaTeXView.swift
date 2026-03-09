@@ -3,7 +3,7 @@
 //  Reef
 //
 //  Renders LaTeX math using WKWebView + bundled KaTeX.
-//  Auto-sizes to content height, scrollable beyond maxHeight.
+//  Reports intrinsic content height; scrolling is disabled (parent owns scroll).
 //
 
 import SwiftUI
@@ -13,8 +13,6 @@ struct KaTeXView: UIViewRepresentable {
     let text: String
     var fontSize: CGFloat = 13
     var textColor: Color = ReefColors.gray600
-    var maxHeight: CGFloat = 300
-
     @Binding var contentHeight: CGFloat
 
     func makeCoordinator() -> Coordinator {
@@ -32,6 +30,7 @@ struct KaTeXView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
+        webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
         webView.scrollView.showsVerticalScrollIndicator = false
         webView.scrollView.showsHorizontalScrollIndicator = false
@@ -61,8 +60,6 @@ struct KaTeXView: UIViewRepresentable {
             webView.alpha = 0
             loadContent(in: webView)
         }
-
-        webView.scrollView.isScrollEnabled = contentHeight > maxHeight
     }
 
     private func loadContent(in webView: WKWebView) {

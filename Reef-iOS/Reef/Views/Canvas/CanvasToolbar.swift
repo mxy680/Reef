@@ -145,6 +145,11 @@ struct CanvasToolbar: View {
 
     // MARK: - Tutor Popover
 
+    /// Max popover body height = 40% of screen height.
+    private var popoverMaxHeight: CGFloat {
+        UIScreen.main.bounds.height * 0.4
+    }
+
     private func tutorPopoverCard(triggerMidX: CGFloat, title: String, text: String) -> some View {
         GeometryReader { geo in
             let containerMinX = geo.frame(in: .global).minX
@@ -154,18 +159,21 @@ struct CanvasToolbar: View {
             let arrowOffset = (triggerMidX - containerMinX) - (clampedX + Self.tutorPopoverWidth / 2)
 
             PopoverCard(arrowOffset: arrowOffset, maxWidth: Self.tutorPopoverWidth) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(title)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(ReefColors.black)
-                    MathText(
-                        text: text,
-                        fontSize: 13,
-                        color: ReefColors.gray600
-                    )
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(title)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(ReefColors.black)
+                        MathText(
+                            text: text,
+                            fontSize: 13,
+                            color: ReefColors.gray600
+                        )
+                    }
+                    .padding(12)
+                    .frame(width: Self.tutorPopoverWidth, alignment: .leading)
                 }
-                .padding(12)
-                .frame(width: Self.tutorPopoverWidth, alignment: .leading)
+                .frame(maxHeight: popoverMaxHeight)
             }
             .transition(.scale(scale: 0.01, anchor: .top))
             .offset(x: clampedX)

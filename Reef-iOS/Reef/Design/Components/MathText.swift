@@ -15,7 +15,6 @@ struct MathText: View {
     let text: String
     var fontSize: CGFloat = 13
     var color: Color = ReefColors.gray600
-    var maxHeight: CGFloat = 300
 
     /// Matches dollar-delimited LaTeX or common LaTeX commands.
     private static let latexPattern = try! NSRegularExpression(
@@ -27,7 +26,7 @@ struct MathText: View {
         return Self.latexPattern.firstMatch(in: text, range: range) != nil
     }
 
-    @State private var contentHeight: CGFloat = 0
+    @State private var contentHeight: CGFloat = 20
 
     var body: some View {
         if hasLatex {
@@ -35,10 +34,9 @@ struct MathText: View {
                 text: text,
                 fontSize: fontSize,
                 textColor: color,
-                maxHeight: maxHeight,
                 contentHeight: $contentHeight
             )
-            .frame(height: min(max(contentHeight, 20), maxHeight))
+            .frame(height: contentHeight)
         } else {
             Text(text)
                 .font(.system(size: fontSize, weight: .medium))
