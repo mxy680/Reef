@@ -30,6 +30,8 @@ struct DocumentCanvasView: View {
     @State private var customColors: [UIColor] = []
     @State private var showColorPicker = false
     @State private var showPageSettings = false
+    @State private var pageSettingsMidX: CGFloat = 0
+    @State private var pageMenuMidX: CGFloat = 0
     @State private var pageOverlaySettings = PageOverlaySettings()
     @State private var answerKeys: [Int: QuestionAnswer] = [:]
 
@@ -93,10 +95,12 @@ struct DocumentCanvasView: View {
                         onUndo: { manager.undo() },
                         onRedo: { manager.redo() },
                         onToolRetapped: { _ in
-                            showToolSettings.toggle()
+                            showToolSettings = true
                         },
                         selectedToolMidX: $selectedToolMidX,
                         showPageSettings: $showPageSettings,
+                        pageSettingsMidX: $pageSettingsMidX,
+                        pageMenuMidX: $pageMenuMidX,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
                         pageOverlaySettings: $pageOverlaySettings
                     )
@@ -126,7 +130,50 @@ struct DocumentCanvasView: View {
                         }
                     }
                     .animation(.easeOut(duration: 0.2), value: showToolSettings)
-                    .zIndex(2) // popover overlays step toolbar
+                    .overlay(alignment: .bottomLeading) {
+                        if showPageSettings {
+                            GeometryReader { geo in
+                                let containerMinX = geo.frame(in: .global).minX
+                                let containerWidth = geo.size.width
+                                let popoverWidth: CGFloat = 280
+                                let idealX = pageSettingsMidX - containerMinX - popoverWidth / 2
+                                let clampedX = max(12, min(idealX, containerWidth - popoverWidth - 12))
+                                let arrowOffset = (pageSettingsMidX - containerMinX) - (clampedX + popoverWidth / 2)
+
+                                PopoverCard(arrowOffset: arrowOffset, maxWidth: popoverWidth) {
+                                    PageSettingsPopover(settings: $pageOverlaySettings)
+                                }
+                                .transition(.scale(scale: 0.01, anchor: .top))
+                                .offset(x: clampedX)
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.2), value: showPageSettings)
+                    .overlay(alignment: .bottomLeading) {
+                        if showPageMenu {
+                            GeometryReader { geo in
+                                let containerMinX = geo.frame(in: .global).minX
+                                let containerWidth = geo.size.width
+                                let popoverWidth: CGFloat = 230
+                                let idealX = pageMenuMidX - containerMinX - popoverWidth / 2
+                                let clampedX = max(12, min(idealX, containerWidth - popoverWidth - 12))
+                                let arrowOffset = (pageMenuMidX - containerMinX) - (clampedX + popoverWidth / 2)
+
+                                PopoverCard(arrowOffset: arrowOffset, maxWidth: popoverWidth) {
+                                    PageMenuView(onAction: { action in
+                                        showPageMenu = false
+                                        handlePageAction(action)
+                                    }, canUndo: viewModel.canUndo)
+                                }
+                                .transition(.scale(scale: 0.01, anchor: .top))
+                                .offset(x: clampedX)
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.2), value: showPageMenu)
+                    .zIndex(2) // popovers overlay step toolbar
 
                     if tutorModeOn && isReconstructed {
                         TutorStepToolbar(
@@ -157,15 +204,14 @@ struct DocumentCanvasView: View {
                     .background(canvasBackground)
                     .overlay {
                         // Tap-to-dismiss layer (covers canvas only, not toolbar)
-                        if showToolSettings {
+                        if showToolSettings || showPageSettings || showPageMenu {
                             Color.clear
                                 .contentShape(Rectangle())
-                                .onTapGesture { showToolSettings = false }
-                        }
-                        if showPageSettings {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture { showPageSettings = false }
+                                .onTapGesture {
+                                    showToolSettings = false
+                                    showPageSettings = false
+                                    showPageMenu = false
+                                }
                         }
                     }
                 }
@@ -195,44 +241,6 @@ struct DocumentCanvasView: View {
         .animation(.spring(duration: 0.2), value: showColorPicker)
         .animation(.spring(duration: 0.2), value: showPageSettings)
         .ignoresSafeArea()
-        .overlayPreferenceValue(PageMenuAnchorKey.self) { anchor in
-            if showPageMenu, let anchor {
-                GeometryReader { proxy in
-                    let rect = proxy[anchor]
-                    let menuWidth: CGFloat = 230
-                    // Center menu horizontally under the button, clamped to screen
-                    let menuX = max(8, min(
-                        rect.midX - menuWidth / 2,
-                        proxy.size.width - menuWidth - 12
-                    ))
-
-                    // Dismiss backdrop
-                    Color.black.opacity(0.001)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation(.spring(duration: 0.2, bounce: 0.15)) {
-                                showPageMenu = false
-                            }
-                        }
-
-                    // Custom popover centered below button
-                    PageMenuView(onAction: { action in
-                        withAnimation(.spring(duration: 0.2, bounce: 0.15)) {
-                            showPageMenu = false
-                        }
-                        handlePageAction(action)
-                    }, canUndo: viewModel.canUndo)
-                    .transition(
-                        .scale(scale: 0.92, anchor: .top)
-                        .combined(with: .opacity)
-                        .combined(with: .offset(y: -4))
-                    )
-                    .offset(x: menuX, y: rect.maxY + 10)
-                }
-                .ignoresSafeArea()
-            }
-        }
-        .animation(.spring(duration: 0.25, bounce: 0.15), value: showPageMenu)
         .task {
             #if DEBUG
             if document.id == "dev-test" {
@@ -253,8 +261,19 @@ struct DocumentCanvasView: View {
                 answerKeys = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
             }
         }
-        .onChange(of: selectedTool) { _, _ in
-            showToolSettings = false
+        .onChange(of: selectedTool) { _, newTool in
+            if !newTool.hasSettings {
+                showToolSettings = false
+            }
+        }
+        .onChange(of: showToolSettings) { _, isShowing in
+            if isShowing { showPageSettings = false; showPageMenu = false }
+        }
+        .onChange(of: showPageSettings) { _, isShowing in
+            if isShowing { showToolSettings = false; showPageMenu = false }
+        }
+        .onChange(of: showPageMenu) { _, isShowing in
+            if isShowing { showToolSettings = false; showPageSettings = false }
         }
         .onChange(of: currentQuestionIndex) { _, _ in
             drawingManager?.saveAll()
