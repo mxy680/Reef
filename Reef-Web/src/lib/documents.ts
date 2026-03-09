@@ -12,6 +12,12 @@ export interface Document {
   status_message: string | null
   course_id: string | null
   created_at: string
+  question_pages: [number, number][] | null
+  input_tokens: number | null
+  output_tokens: number | null
+  llm_calls: number | null
+  pipeline_seconds: number | null
+  cost_cents: number | null
 }
 
 export async function listDocuments(): Promise<Document[]> {
@@ -137,6 +143,12 @@ export async function deleteDocument(docId: string): Promise<void> {
       .from("documents")
       .remove(files.map(f => `${prefix}/${f.name}`))
   }
+
+  // Delete answer keys for this document
+  await supabase
+    .from("answer_keys")
+    .delete()
+    .eq("document_id", docId)
 
   // Delete DB row
   const { error } = await supabase

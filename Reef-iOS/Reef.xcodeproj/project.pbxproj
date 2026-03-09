@@ -90,6 +90,8 @@
 		9573A0A9931F44A64F1E1ACB /* PopupShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0B47F9B18C4F2953AF26B1 /* PopupShell.swift */; };
 		A1B2C3D4E5F60718293A1B5C /* PopoverCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F70819203142 /* PopoverCard.swift */; };
 		B2C3D4E5F607182930A1B5C6 /* PageSettingsPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8091A2B3C4D5E6F7081 /* PageSettingsPopup.swift */; };
+		BB1122334455667788990011 /* AnswerKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1122334455667788990011 /* AnswerKey.swift */; };
+		DD1122334455667788990011 /* AnswerKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1122334455667788990011 /* AnswerKeyService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -177,6 +179,8 @@
 		5AF25026FF4DAD8B84CD3AF5 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		EE0B47F9B18C4F2953AF26B1 /* PopupShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupShell.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F70819203142 /* PopoverCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverCard.swift; sourceTree = "<group>"; };
+		AA1122334455667788990011 /* AnswerKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerKey.swift; sourceTree = "<group>"; };
+		CC1122334455667788990011 /* AnswerKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerKeyService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -214,6 +218,7 @@
 				8D7B0E365C03F320A771808A /* Stroke.swift */,
 				CB3CB769E3ED3BE1C744F53D /* Tutor.swift */,
 				D8E70E19FB02A673E57447BD /* TutorStepData.swift */,
+				AA1122334455667788990011 /* AnswerKey.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -284,6 +289,7 @@
 				8AF78B49877EF66B1BF1F451 /* ReefAPI.swift */,
 				BDA5038E8A3E9B2E3773B103 /* TierLimits.swift */,
 				BE55B35776EF18319E886CB3 /* TutorService.swift */,
+				CC1122334455667788990011 /* AnswerKeyService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -547,6 +553,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB1122334455667788990011 /* AnswerKey.swift in Sources */,
+				DD1122334455667788990011 /* AnswerKeyService.swift in Sources */,
 				18470D214CF1DF392B1E43CD /* AnalyticsView.swift in Sources */,
 				D07E9FEAC5D7A2AD66303B45 /* AppleSignInCoordinator.swift in Sources */,
 				FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */,

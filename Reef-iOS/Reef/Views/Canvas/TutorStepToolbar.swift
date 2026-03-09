@@ -11,80 +11,29 @@ import SwiftUI
 struct TutorStepToolbar: View {
     @Environment(ThemeManager.self) private var theme
     let questionIndex: Int
+    let answerKey: QuestionAnswer?
     @State private var stepIndex = 0
     @State private var hintActive = false
     @State private var revealActive = false
     @State private var pulseOpacity: Double = 1.0
 
     private var steps: [TutorStep] {
-        MockTutorSteps.steps(for: questionIndex)
+        guard let answerKey else { return [] }
+        return TutorStepConverter.steps(from: answerKey)
     }
 
-    private var currentStep: TutorStep {
-        steps[stepIndex]
+    private var currentStep: TutorStep? {
+        guard !steps.isEmpty else { return nil }
+        return steps[min(stepIndex, steps.count - 1)]
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                // Status indicator + step counter
-                HStack(spacing: 6) {
-                    statusIcon(for: currentStep.status)
-
-                    Text("Step \(stepIndex + 1) of \(steps.count)")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                        .fixedSize()
-                }
-
-                makeDivider()
-
-                // Instruction text
-                Text(currentStep.instruction)
-                    .font(.epilogue(13, weight: .medium))
-                    .tracking(-0.04 * 13)
-                    .foregroundColor(.white.opacity(0.95))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 8)
-                    .id(stepIndex)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
-
-                makeDivider()
-
-                // Hint + Reveal
-                HStack(spacing: 0) {
-                    toolbarToggle(icon: "lightbulb.fill", isActive: $hintActive) {
-                        hintActive.toggle()
-                        if hintActive { revealActive = false }
-                        print("💡 Hint: \(currentStep.hint)")
-                    }
-                    toolbarToggle(icon: "eye.fill", isActive: $revealActive) {
-                        revealActive.toggle()
-                        if revealActive { hintActive = false }
-                        print("👁 Reveal answer tapped for step \(stepIndex + 1)")
-                    }
-                }
-
-                makeDivider()
-
-                // Progress bar
-                progressBar(progress: currentStep.progress)
+            if let step = currentStep {
+                stepContent(step: step)
+            } else {
+                loadingContent
             }
-            .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .background(
-                ZStack {
-                    theme.isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasToolbar.barColor
-                    Color.white.opacity(theme.isDarkMode ? 0.06 : 0.12)
-                }
-            )
-            .animation(.easeInOut(duration: 0.25), value: stepIndex)
 
             // Bottom separator
             Rectangle()
@@ -95,6 +44,113 @@ struct TutorStepToolbar: View {
             stepIndex = 0
             hintActive = false
             revealActive = false
+        }
+    }
+
+    // MARK: - Content Views
+
+    private func stepContent(step: TutorStep) -> some View {
+        HStack(spacing: 0) {
+            // Status indicator + step counter
+            HStack(spacing: 6) {
+                statusIcon(for: step.status)
+
+                Text("Step \(stepIndex + 1) of \(steps.count)")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .fixedSize()
+            }
+
+            makeDivider()
+
+            // Instruction text
+            Text(step.instruction)
+                .font(.epilogue(13, weight: .medium))
+                .tracking(-0.04 * 13)
+                .foregroundColor(.white.opacity(0.95))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
+                .id(stepIndex)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
+
+            makeDivider()
+
+            // Hint + Reveal
+            HStack(spacing: 0) {
+                toolbarToggle(icon: "lightbulb.fill", isActive: $hintActive) {
+                    hintActive.toggle()
+                    if hintActive { revealActive = false }
+                    print("[Tutor] Hint: \(step.hint)")
+                }
+                toolbarToggle(icon: "eye.fill", isActive: $revealActive) {
+                    revealActive.toggle()
+                    if revealActive { hintActive = false }
+                    print("[Tutor] Work: \(step.work)")
+                }
+            }
+
+            #if DEBUG
+            makeDivider()
+
+            // Dev-only step navigation
+            HStack(spacing: 4) {
+                Button {
+                    if stepIndex > 0 { stepIndex -= 1 }
+                    hintActive = false; revealActive = false
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(stepIndex > 0 ? .white : .white.opacity(0.3))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .disabled(stepIndex <= 0)
+
+                Button {
+                    if stepIndex < steps.count - 1 { stepIndex += 1 }
+                    hintActive = false; revealActive = false
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(stepIndex < steps.count - 1 ? .white : .white.opacity(0.3))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .disabled(stepIndex >= steps.count - 1)
+            }
+            #endif
+        }
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
+        .background(toolbarBackground)
+        .animation(.easeInOut(duration: 0.25), value: stepIndex)
+    }
+
+    private var loadingContent: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .tint(.white.opacity(0.7))
+                .scaleEffect(0.7)
+            Text("Loading answer key...")
+                .font(.epilogue(13, weight: .medium))
+                .tracking(-0.04 * 13)
+                .foregroundColor(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
+        .background(toolbarBackground)
+    }
+
+    private var toolbarBackground: some View {
+        ZStack {
+            theme.isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasToolbar.barColor
+            Color.white.opacity(theme.isDarkMode ? 0.06 : 0.12)
         }
     }
 
@@ -116,7 +172,7 @@ struct TutorStepToolbar: View {
         let barHeight: CGFloat = 14
         let cornerRadius: CGFloat = 5
         let shadowOffset: CGFloat = 2
-        let isPending = currentStep.status == .pending
+        let isPending = currentStep?.status == .pending
 
         return HStack(alignment: .center, spacing: 7) {
             // Bar with 3D shadow

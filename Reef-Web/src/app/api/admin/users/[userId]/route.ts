@@ -37,16 +37,29 @@ export async function DELETE(
       await service.storage.from("documents").remove(paths)
     }
 
-    // 2. Delete documents
+    // 2. Delete answer keys for all user documents
+    const { data: docs } = await service
+      .from("documents")
+      .select("id")
+      .eq("user_id", userId)
+
+    if (docs && docs.length > 0) {
+      await service
+        .from("answer_keys")
+        .delete()
+        .in("document_id", docs.map((d: { id: string }) => d.id))
+    }
+
+    // 3. Delete documents
     await service.from("documents").delete().eq("user_id", userId)
 
-    // 3. Delete courses
+    // 4. Delete courses
     await service.from("courses").delete().eq("user_id", userId)
 
-    // 4. Delete profile
+    // 5. Delete profile
     await service.from("profiles").delete().eq("id", userId)
 
-    // 5. Delete auth user
+    // 6. Delete auth user
     const { error: authError } = await service.auth.admin.deleteUser(userId)
     if (authError) {
       return NextResponse.json({ error: authError.message }, { status: 500 })
