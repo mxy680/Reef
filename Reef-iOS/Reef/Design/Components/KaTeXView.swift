@@ -5,6 +5,7 @@
 //  Renders LaTeX math using WKWebView + bundled KaTeX.
 //  Reports content height after page loads via callAsyncJavaScript.
 //  Defers HTML loading until SwiftUI assigns a real frame width.
+//  Uses loadFileURL for local file access (loadHTMLString can't load local JS/CSS).
 //
 
 import SwiftUI
@@ -39,8 +40,6 @@ struct KaTeXView: UIViewRepresentable {
                 webView?.scrollView.isScrollEnabled = height >= self.maxHeight
             }
         }
-        // Do NOT load content here — frame is .zero, HTML would lay out at 0px width.
-        // Content is loaded in updateUIView once SwiftUI assigns a real frame.
         return webView
     }
 
@@ -55,14 +54,12 @@ struct KaTeXView: UIViewRepresentable {
 
         let viewWidth = webView.frame.width
 
-        // Load content once we have a real width
         if viewWidth > 0 && !context.coordinator.hasLoaded {
             context.coordinator.hasLoaded = true
             context.coordinator.lastText = text
             loadContent(in: webView)
         }
 
-        // Reload if text changed (after initial load)
         if context.coordinator.hasLoaded && context.coordinator.lastText != text {
             context.coordinator.lastText = text
             loadContent(in: webView)
@@ -72,8 +69,10 @@ struct KaTeXView: UIViewRepresentable {
     }
 
     private func loadContent(in webView: WKWebView) {
-        // KaTeX files are flattened into the bundle root by Xcode's copy phase
-        let baseURL: URL? = Bundle.main.resourceURL
+        guard let bundleURL = Bundle.main.resourceURL else { return }
+        let cssURL = bundleURL.appendingPathComponent("katex.min.css").absoluteString
+        let jsURL = bundleURL.appendingPathComponent("katex.min.js").absoluteString
+        let arURL = bundleURL.appendingPathComponent("auto-render.min.js").absoluteString
 
         let hexColor = Self.hexString(from: textColor)
         let jsonData = try? JSONEncoder().encode(text)
@@ -84,9 +83,9 @@ struct KaTeXView: UIViewRepresentable {
         <html>
         <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <link rel="stylesheet" href="katex.min.css">
-        <script src="katex.min.js"></script>
-        <script src="auto-render.min.js"></script>
+        <link rel="stylesheet" href="\(cssURL)">
+        <script src="\(jsURL)"></script>
+        <script src="\(arURL)"></script>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           html, body {
@@ -120,7 +119,17 @@ struct KaTeXView: UIViewRepresentable {
         </html>
         """
 
-        webView.loadHTMLString(html, baseURL: baseURL)
+        // Write HTML to a temp file inside the bundle directory so that
+        // loadFileURL can resolve relative CSS/JS paths. loadHTMLString
+        // doesn't grant WKWebView file-access permission to local resources.
+        // The temp file goes in Caches (writable) and allowingReadAccessTo
+        // covers both the temp file's parent and the bundle root.
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let tempHTML = cacheDir.appendingPathComponent("katex_render.html")
+        try? html.write(to: tempHTML, atomically: true, encoding: .utf8)
+
+        // Grant read access to "/" so both the cache file and bundle resources are accessible
+        webView.loadFileURL(tempHTML, allowingReadAccessTo: URL(fileURLWithPath: "/"))
     }
 
     private static func hexString(from color: Color) -> String {
