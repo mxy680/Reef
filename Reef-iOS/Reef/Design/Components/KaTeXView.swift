@@ -3,11 +3,40 @@
 //  Reef
 //
 //  Renders LaTeX math using WKWebView + bundled KaTeX.
-//  Reports intrinsic content height; scrolling is disabled (parent owns scroll).
+//  Self-sizes via intrinsicContentSize driven by scrollView.contentSize KVO.
 //
 
 import SwiftUI
 import WebKit
+
+// MARK: - Self-sizing WKWebView
+
+/// WKWebView subclass that reports its content size as intrinsicContentSize,
+/// allowing Auto Layout (and SwiftUI) to size it to fit content.
+final class SelfSizingWebView: WKWebView {
+    private var observation: NSKeyValueObservation?
+    var onContentSizeChange: ((CGSize) -> Void)?
+
+    override init(frame: CGRect, configuration: WKWebViewConfiguration) {
+        super.init(frame: frame, configuration: configuration)
+        observation = scrollView.observe(\.contentSize, options: .new) { [weak self] _, change in
+            guard let newSize = change.newValue, newSize.height > 0 else { return }
+            DispatchQueue.main.async {
+                self?.invalidateIntrinsicContentSize()
+                self?.onContentSizeChange?(newSize)
+            }
+        }
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    override var intrinsicContentSize: CGSize {
+        scrollView.contentSize
+    }
+}
+
+// MARK: - SwiftUI wrapper
 
 struct KaTeXView: UIViewRepresentable {
     let text: String
@@ -19,45 +48,38 @@ struct KaTeXView: UIViewRepresentable {
         Coordinator()
     }
 
-    func makeUIView(context: Context) -> WKWebView {
+    func makeUIView(context: Context) -> SelfSizingWebView {
         let config = WKWebViewConfiguration()
-        let userController = WKUserContentController()
-        userController.add(context.coordinator, name: "sizeNotifier")
-        config.userContentController = userController
+        config.userContentController = WKUserContentController()
 
-        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 260, height: 400), configuration: config)
-        webView.navigationDelegate = context.coordinator
+        let webView = SelfSizingWebView(frame: .zero, configuration: config)
         webView.isOpaque = false
         webView.backgroundColor = .clear
+        webView.underPageBackgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
-        webView.scrollView.showsVerticalScrollIndicator = false
-        webView.scrollView.showsHorizontalScrollIndicator = false
-        webView.alpha = 0
 
-        context.coordinator.lastText = text
-        context.coordinator.onHeight = { [weak webView] height in
-            self.contentHeight = height
-            UIView.animate(withDuration: 0.15) {
-                webView?.alpha = 1
+        webView.onContentSizeChange = { size in
+            if size.height > 0 {
+                self.contentHeight = size.height
             }
         }
+
+        context.coordinator.lastText = text
         loadContent(in: webView)
         return webView
     }
 
-    func updateUIView(_ webView: WKWebView, context: Context) {
-        context.coordinator.onHeight = { [weak webView] height in
-            self.contentHeight = height
-            UIView.animate(withDuration: 0.15) {
-                webView?.alpha = 1
+    func updateUIView(_ webView: SelfSizingWebView, context: Context) {
+        webView.onContentSizeChange = { size in
+            if size.height > 0 {
+                self.contentHeight = size.height
             }
         }
 
         if context.coordinator.lastText != text {
             context.coordinator.lastText = text
-            webView.alpha = 0
             loadContent(in: webView)
         }
     }
@@ -69,7 +91,6 @@ struct KaTeXView: UIViewRepresentable {
 
         let hexColor = Self.hexString(from: textColor)
 
-        // JSON-encode the text so it's safely embedded as a JS string literal
         let jsonData = try? JSONEncoder().encode(text)
         let jsonString = jsonData.flatMap { String(data: $0, encoding: .utf8) } ?? "\"\""
 
@@ -83,12 +104,11 @@ struct KaTeXView: UIViewRepresentable {
         <script src="auto-render.min.js"></script>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body {
+          html, body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             font-size: \(fontSize)px;
             color: \(hexColor);
             background: transparent;
-            padding: 0;
             line-height: 1.5;
             -webkit-text-size-adjust: none;
             overflow-wrap: break-word;
@@ -111,15 +131,6 @@ struct KaTeXView: UIViewRepresentable {
             ],
             throwOnError: false
           });
-          function reportHeight() {
-            var h = document.body.scrollHeight;
-            if (h > 0) {
-              window.webkit.messageHandlers.sizeNotifier.postMessage(h);
-            }
-          }
-          // Report after render and again after fonts load
-          setTimeout(reportHeight, 100);
-          document.fonts.ready.then(function() { setTimeout(reportHeight, 50); });
         </script>
         </html>
         """
@@ -136,29 +147,7 @@ struct KaTeXView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    final class Coordinator {
         var lastText: String = ""
-        var onHeight: ((CGFloat) -> Void)?
-
-        func userContentController(
-            _ userContentController: WKUserContentController,
-            didReceive message: WKScriptMessage
-        ) {
-            guard let height = message.body as? CGFloat, height > 0 else { return }
-            DispatchQueue.main.async { [weak self] in
-                self?.onHeight?(height)
-            }
-        }
-
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            // Re-measure after navigation completes (fonts may have loaded)
-            webView.evaluateJavaScript("document.body.scrollHeight") { [weak self] result, _ in
-                if let height = result as? CGFloat, height > 0 {
-                    DispatchQueue.main.async {
-                        self?.onHeight?(height)
-                    }
-                }
-            }
-        }
     }
 }
