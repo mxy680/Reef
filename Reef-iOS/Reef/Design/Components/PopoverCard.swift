@@ -55,18 +55,17 @@ struct PopoverCard<Content: View>: View {
 
     var body: some View {
         let dark = theme.isDarkMode
-        let fillColor = dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white
+        let fillColor = dark ? ReefColors.CanvasDark.toolbar : CanvasToolbar.barColor
         let strokeColor = dark ? ReefColors.DashboardDark.popupBorder : ReefColors.black
+        let shadowColor = dark ? ReefColors.DashboardDark.popupShadow : ReefColors.black
 
         VStack(spacing: 0) {
             // Arrow
             ZStack {
-                // White fill (covers card border beneath)
                 PopoverArrowFill()
                     .fill(fillColor)
                     .frame(width: arrowWidth, height: arrowHeight)
 
-                // Stroked diagonal sides only
                 PopoverArrowStroke()
                     .stroke(strokeColor, lineWidth: borderWidth)
                     .frame(width: arrowWidth, height: arrowHeight)
@@ -79,7 +78,18 @@ struct PopoverCard<Content: View>: View {
 
             // Card body
             content
-                .popupShell(cornerRadius: cornerRadius, maxWidth: 190, shadowOffset: shadowOffset)
+                .background(fillColor)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(strokeColor, lineWidth: borderWidth)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(shadowColor)
+                        .offset(x: shadowOffset, y: shadowOffset)
+                )
+                .frame(maxWidth: 190)
         }
     }
 }
