@@ -325,24 +325,89 @@ struct CanvasToolbar: View {
 private struct TutorStepRow: View {
     let questionIndex: Int
     let answerKey: QuestionAnswer?
-    @State private var stepIndex = 0
-    @State private var hintActive = false
-    @State private var revealActive = false
+    @State private var showHint = false
+    @State private var showReveal = false
+    @State private var pulseOpacity: Double = 1.0
 
     private var steps: [TutorStep] {
         guard let answerKey else { return [] }
         return TutorStepConverter.steps(from: answerKey)
     }
 
+    /// First non-completed step, or the last step if all complete.
     private var currentStep: TutorStep? {
-        guard !steps.isEmpty else { return nil }
-        return steps[min(stepIndex, steps.count - 1)]
+        steps.first(where: { $0.status != .completed }) ?? steps.last
+    }
+
+    /// Overall progress: fraction of completed steps.
+    private var overallProgress: Double {
+        guard !steps.isEmpty else { return 0 }
+        let completed = steps.filter { $0.status == .completed }.count
+        return Double(completed) / Double(steps.count)
     }
 
     var body: some View {
         if let step = currentStep {
-            stepContent(step: step)
-                .animation(.easeInOut(duration: 0.25), value: stepIndex)
+            HStack(spacing: 0) {
+                stepDivider()
+
+                // Q label + progress bar
+                HStack(spacing: 6) {
+                    statusIcon(for: step.status)
+
+                    Text("Q\(questionIndex + 1)")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+
+                    progressBar(progress: overallProgress)
+                }
+
+                stepDivider()
+
+                // Instruction text
+                Text(step.instruction)
+                    .font(.epilogue(12, weight: .medium))
+                    .tracking(-0.04 * 12)
+                    .foregroundColor(.white.opacity(0.95))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 6)
+
+                stepDivider()
+
+                // Hint button + popover
+                stepButton(icon: "lightbulb.fill", isActive: showHint) {
+                    showHint.toggle()
+                    if showHint { showReveal = false }
+                }
+                .overlay(alignment: .bottom) {
+                    if showHint {
+                        tutorPopover(title: "Hint", text: step.hint)
+                            .offset(y: 38)
+                    }
+                }
+                .zIndex(showHint ? 10 : 0)
+
+                // Reveal button + popover
+                stepButton(icon: "eye.fill", isActive: showReveal) {
+                    showReveal.toggle()
+                    if showReveal { showHint = false }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if showReveal {
+                        tutorPopover(title: "Answer", text: step.work)
+                            .offset(y: 38)
+                    }
+                }
+                .zIndex(showReveal ? 10 : 0)
+            }
+            .animation(.spring(duration: 0.2), value: showHint)
+            .animation(.spring(duration: 0.2), value: showReveal)
+            .onChange(of: questionIndex) { _, _ in
+                showHint = false
+                showReveal = false
+            }
         } else {
             HStack(spacing: 6) {
                 ProgressView()
@@ -356,93 +421,92 @@ private struct TutorStepRow: View {
         }
     }
 
-    private func stepContent(step: TutorStep) -> some View {
-        HStack(spacing: 0) {
-            stepDivider()
+    // MARK: - Progress Bar
 
-            // Status icon + question + step counter
-            HStack(spacing: 5) {
-                statusIcon(for: step.status)
-
-                Text("Q\(questionIndex + 1)")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
-
-                Text("Step \(stepIndex + 1)/\(steps.count)")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
-                    .fixedSize()
-            }
-
-            stepDivider()
-
-            // Instruction text
-            Text(step.instruction)
-                .font(.epilogue(12, weight: .medium))
-                .tracking(-0.04 * 12)
-                .foregroundColor(.white.opacity(0.95))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 6)
-                .id(stepIndex)
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
-
-            stepDivider()
-
-            // Hint + Reveal
-            HStack(spacing: 0) {
-                stepToggle(icon: "lightbulb.fill", isActive: $hintActive) {
-                    hintActive.toggle()
-                    if hintActive { revealActive = false }
-                    print("[Tutor] Hint: \(step.hint)")
-                }
-                stepToggle(icon: "eye.fill", isActive: $revealActive) {
-                    revealActive.toggle()
-                    if revealActive { hintActive = false }
-                    print("[Tutor] Work: \(step.work)")
-                }
-            }
-
-            #if DEBUG
-            stepDivider()
-
-            // Dev-only step navigation
-            HStack(spacing: 2) {
-                Button {
-                    if stepIndex > 0 { stepIndex -= 1 }
-                    hintActive = false; revealActive = false
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(stepIndex > 0 ? .white : .white.opacity(0.3))
-                        .frame(width: 26, height: 26)
-                }
-                .buttonStyle(.plain)
-                .disabled(stepIndex <= 0)
-
-                Button {
-                    if stepIndex < steps.count - 1 { stepIndex += 1 }
-                    hintActive = false; revealActive = false
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(stepIndex < steps.count - 1 ? .white : .white.opacity(0.3))
-                        .frame(width: 26, height: 26)
-                }
-                .buttonStyle(.plain)
-                .disabled(stepIndex >= steps.count - 1)
-            }
-            #endif
+    private func fillColor(for progress: Double) -> Color {
+        if progress < 0.5 {
+            return .white.opacity(0.85)
+        } else if progress < 0.8 {
+            return Color(hex: 0xA8D5D5)
+        } else {
+            return Color(hex: 0x81C784)
         }
-        .onChange(of: questionIndex) { _, _ in
-            stepIndex = 0
-            hintActive = false
-            revealActive = false
+    }
+
+    private func progressBar(progress: Double) -> some View {
+        let barHeight: CGFloat = 12
+        let cornerRadius: CGFloat = 4
+        let shadowOffset: CGFloat = 1.5
+        let isPending = currentStep?.status == .pending
+
+        return ZStack(alignment: .leading) {
+            // Shadow
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color.black.opacity(0.3))
+                .offset(x: shadowOffset, y: shadowOffset)
+
+            // Track
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color.black.opacity(0.2))
+
+            // Fill
+            GeometryReader { geo in
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(fillColor(for: progress))
+                    .frame(width: max(barHeight, geo.size.width * progress))
+                    .opacity(isPending ? pulseOpacity : 1.0)
+            }
+
+            // Top highlight
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.15), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: barHeight / 2)
+
+            // Border
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
         }
+        .frame(width: 80, height: barHeight)
+        .animation(.easeInOut(duration: 0.4), value: progress)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                pulseOpacity = 0.5
+            }
+        }
+    }
+
+    // MARK: - Popover
+
+    private func tutorPopover(title: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(ReefColors.black)
+            Text(text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(ReefColors.gray600)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(width: 260, alignment: .leading)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(ReefColors.black, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(ReefColors.black)
+                .offset(x: 3, y: 3)
+        )
+        .transition(.scale(scale: 0.92, anchor: .top).combined(with: .opacity))
     }
 
     // MARK: - Status Icon
@@ -465,25 +529,25 @@ private struct TutorStepRow: View {
         }
     }
 
-    // MARK: - Step Toggle Button
+    // MARK: - Button
 
-    private func stepToggle(
+    private func stepButton(
         icon: String,
-        isActive: Binding<Bool>,
+        isActive: Bool,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(isActive.wrappedValue ? .white : .white.opacity(0.9))
+                .foregroundColor(isActive ? .white : .white.opacity(0.9))
                 .frame(width: 32, height: 32, alignment: .center)
                 .background(
-                    isActive.wrappedValue
+                    isActive
                         ? Color.white.opacity(0.25)
                         : Color.clear
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 6))
-                .animation(.easeInOut(duration: 0.15), value: isActive.wrappedValue)
+                .animation(.easeInOut(duration: 0.15), value: isActive)
         }
         .frame(width: 32, height: 32)
         .buttonStyle(.plain)
