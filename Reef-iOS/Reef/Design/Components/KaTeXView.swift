@@ -4,6 +4,7 @@
 //
 //  Renders LaTeX math using WKWebView + bundled KaTeX.
 //  Reports content height after page loads via callAsyncJavaScript.
+//  Defers HTML loading until SwiftUI assigns a real frame width.
 //
 
 import SwiftUI
@@ -31,7 +32,6 @@ struct KaTeXView: UIViewRepresentable {
         webView.scrollView.bounces = false
         webView.scrollView.showsHorizontalScrollIndicator = false
 
-        context.coordinator.lastText = text
         context.coordinator.maxHeight = maxHeight
         context.coordinator.onHeight = { [weak webView] height in
             MainActor.assumeIsolated {
@@ -39,7 +39,8 @@ struct KaTeXView: UIViewRepresentable {
                 webView?.scrollView.isScrollEnabled = height >= self.maxHeight
             }
         }
-        loadContent(in: webView)
+        // Do NOT load content here — frame is .zero, HTML would lay out at 0px width.
+        // Content is loaded in updateUIView once SwiftUI assigns a real frame.
         return webView
     }
 
@@ -52,24 +53,27 @@ struct KaTeXView: UIViewRepresentable {
             }
         }
 
-        if context.coordinator.lastText != text {
+        let viewWidth = webView.frame.width
+
+        // Load content once we have a real width
+        if viewWidth > 0 && !context.coordinator.hasLoaded {
+            context.coordinator.hasLoaded = true
             context.coordinator.lastText = text
             loadContent(in: webView)
         }
 
-        // Re-measure if the WebView now has a real width but we haven't measured yet
-        let viewWidth = webView.frame.width
-        if viewWidth > 0 && context.coordinator.lastMeasuredWidth != viewWidth {
-            context.coordinator.lastMeasuredWidth = viewWidth
-            context.coordinator.remeasure(webView: webView)
+        // Reload if text changed (after initial load)
+        if context.coordinator.hasLoaded && context.coordinator.lastText != text {
+            context.coordinator.lastText = text
+            loadContent(in: webView)
         }
 
         webView.scrollView.isScrollEnabled = contentHeight >= maxHeight
     }
 
     private func loadContent(in webView: WKWebView) {
-        let baseURL: URL? = Bundle.main.url(forResource: "KaTeX", withExtension: nil)
-            ?? Bundle.main.resourceURL?.appendingPathComponent("KaTeX")
+        // KaTeX files are flattened into the bundle root by Xcode's copy phase
+        let baseURL: URL? = Bundle.main.resourceURL
 
         let hexColor = Self.hexString(from: textColor)
         let jsonData = try? JSONEncoder().encode(text)
@@ -131,15 +135,9 @@ struct KaTeXView: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
         var lastText: String = ""
+        var hasLoaded = false
         var onHeight: (@MainActor (CGFloat) -> Void)?
         var maxHeight: CGFloat = 300
-        var lastMeasuredWidth: CGFloat = 0
-
-        func remeasure(webView: WKWebView) {
-            Task { @MainActor in
-                await measureHeight(webView: webView)
-            }
-        }
 
         nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             Task { @MainActor in
