@@ -44,6 +44,7 @@ struct ContentView: View {
                     pageCount: 1,
                     problemCount: nil,
                     questionPages: nil,
+                    questionRegions: nil,
                     errorMessage: nil,
                     statusMessage: nil,
                     costCents: nil,

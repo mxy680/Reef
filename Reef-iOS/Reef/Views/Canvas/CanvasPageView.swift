@@ -56,7 +56,6 @@ final class CanvasContainerView: UIView {
     private var contentWidthConstraint: NSLayoutConstraint?
     private var isDarkMode = false
     private var currentOverlaySettings = PageOverlaySettings()
-
     /// Original rendered page images (light mode)
     private var originalImages: [UIImage] = []
     /// Color-inverted page images (dark mode) — lazily generated
