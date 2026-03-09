@@ -100,6 +100,36 @@ struct DocumentCanvasView: View {
                         pageOverlaySettings: $pageOverlaySettings
                     )
                     .zIndex(1)
+                    .overlay(alignment: .bottomLeading) {
+                        if showToolSettings {
+                            GeometryReader { geo in
+                                let containerMinX = geo.frame(in: .global).minX
+                                let containerWidth = geo.size.width
+                                let popoverWidth: CGFloat = 240
+                                let idealX = selectedToolMidX - containerMinX - popoverWidth / 2
+                                let clampedX = max(12, min(idealX, containerWidth - popoverWidth - 12))
+                                let arrowOffset = (selectedToolMidX - containerMinX) - (clampedX + popoverWidth / 2)
+
+                                PopoverCard(arrowOffset: arrowOffset) {
+                                    ToolSettingsPopover(
+                                        selectedColor: $penColor,
+                                        lineWidth: $penWidth,
+                                        customColors: $customColors,
+                                        onAddColorTapped: { showColorPicker = true }
+                                    )
+                                }
+                                .offset(x: clampedX)
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
+                            .transition(
+                                .scale(scale: 0.96, anchor: .top)
+                                .combined(with: .opacity)
+                                .combined(with: .offset(y: -4))
+                            )
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.2), value: showToolSettings)
+                    .zIndex(2) // popover overlays step toolbar
 
                     if tutorModeOn && isReconstructed {
                         TutorStepToolbar(questionIndex: currentQuestionIndex)
@@ -123,41 +153,15 @@ struct DocumentCanvasView: View {
                                 .transition(.opacity)
                         }
 
+                    }
+                    .background(canvasBackground)
+                    .overlay {
+                        // Tap-to-dismiss layer (covers canvas only, not toolbar)
                         if showToolSettings {
-                            // Tap-to-dismiss backdrop
                             Color.clear
                                 .contentShape(Rectangle())
                                 .onTapGesture { showToolSettings = false }
-
-                            GeometryReader { geo in
-                                let containerMinX = geo.frame(in: .global).minX
-                                let containerWidth = geo.size.width
-                                let popoverWidth: CGFloat = 240
-                                let idealX = selectedToolMidX - containerMinX - popoverWidth / 2
-                                let clampedX = max(12, min(idealX, containerWidth - popoverWidth - 12))
-                                let arrowOffset = (selectedToolMidX - containerMinX) - (clampedX + popoverWidth / 2)
-
-                                PopoverCard(arrowOffset: arrowOffset) {
-                                    ToolSettingsPopover(
-                                        selectedColor: $penColor,
-                                        lineWidth: $penWidth,
-                                        customColors: $customColors,
-                                        onAddColorTapped: { showColorPicker = true }
-                                    )
-                                }
-                                .offset(x: clampedX)
-                            }
-                            .transition(
-                                .scale(scale: 0.96, anchor: .top)
-                                .combined(with: .opacity)
-                                .combined(with: .offset(y: -4))
-                            )
                         }
-                    }
-                    .background(canvasBackground)
-                    .animation(.easeOut(duration: 0.2), value: showToolSettings)
-                    .overlay {
-                        // Tap-to-dismiss layer (covers canvas only, not toolbar)
                         if showPageSettings {
                             Color.clear
                                 .contentShape(Rectangle())

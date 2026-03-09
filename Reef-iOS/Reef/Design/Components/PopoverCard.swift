@@ -57,17 +57,10 @@ struct PopoverCard<Content: View>: View {
         let dark = theme.isDarkMode
         let fillColor = dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white
         let strokeColor = dark ? ReefColors.DashboardDark.popupBorder : ReefColors.black
-        let shadowColor = dark ? ReefColors.DashboardDark.popupShadow : ReefColors.black
 
         VStack(spacing: 0) {
             // Arrow
             ZStack {
-                // Shadow triangle
-                PopoverArrowFill()
-                    .fill(shadowColor)
-                    .frame(width: arrowWidth, height: arrowHeight)
-                    .offset(x: shadowOffset, y: shadowOffset)
-
                 // White fill (covers card border beneath)
                 PopoverArrowFill()
                     .fill(fillColor)
