@@ -166,9 +166,9 @@ struct CanvasToolbar: View {
                     MathText(
                         text: text,
                         fontSize: 13,
-                        color: ReefColors.gray600
+                        color: ReefColors.gray600,
+                        maxHeight: popoverMaxHeight - 50
                     )
-                    .frame(height: popoverMaxHeight - 50)
                 }
                 .padding(12)
                 .frame(width: Self.tutorPopoverWidth, alignment: .leading)

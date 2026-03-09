@@ -3,7 +3,7 @@
 //  Reef
 //
 //  Renders LaTeX math using WKWebView + bundled KaTeX.
-//  Fixed frame — parent controls size, WebView scrolls internally if needed.
+//  Reports content height after page loads via evaluateJavaScript.
 //
 
 import SwiftUI
@@ -13,6 +13,8 @@ struct KaTeXView: UIViewRepresentable {
     let text: String
     var fontSize: CGFloat = 13
     var textColor: Color = ReefColors.gray600
+    var maxHeight: CGFloat = 300
+    @Binding var contentHeight: CGFloat
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -21,6 +23,7 @@ struct KaTeXView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         let webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = context.coordinator
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.underPageBackgroundColor = .clear
@@ -29,15 +32,26 @@ struct KaTeXView: UIViewRepresentable {
         webView.scrollView.showsHorizontalScrollIndicator = false
 
         context.coordinator.lastText = text
+        context.coordinator.onHeight = { height in
+            self.contentHeight = min(height, maxHeight)
+        }
+        context.coordinator.maxHeight = maxHeight
         loadContent(in: webView)
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
+        context.coordinator.onHeight = { height in
+            self.contentHeight = min(height, maxHeight)
+        }
+        context.coordinator.maxHeight = maxHeight
+
         if context.coordinator.lastText != text {
             context.coordinator.lastText = text
             loadContent(in: webView)
         }
+
+        webView.scrollView.isScrollEnabled = contentHeight >= maxHeight
     }
 
     private func loadContent(in webView: WKWebView) {
@@ -45,7 +59,6 @@ struct KaTeXView: UIViewRepresentable {
             ?? Bundle.main.resourceURL?.appendingPathComponent("KaTeX")
 
         let hexColor = Self.hexString(from: textColor)
-
         let jsonData = try? JSONEncoder().encode(text)
         let jsonString = jsonData.flatMap { String(data: $0, encoding: .utf8) } ?? "\"\""
 
@@ -100,7 +113,23 @@ struct KaTeXView: UIViewRepresentable {
         return String(format: "#%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
     }
 
-    final class Coordinator {
+    // MARK: - Coordinator
+
+    final class Coordinator: NSObject, WKNavigationDelegate {
         var lastText: String = ""
+        var onHeight: ((CGFloat) -> Void)?
+        var maxHeight: CGFloat = 300
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            // Measure after KaTeX fonts finish loading
+            let js = "document.fonts.ready.then(() => document.body.scrollHeight)"
+            webView.evaluateJavaScript(js) { [weak self] result, _ in
+                guard let height = result as? CGFloat, height > 0 else { return }
+                DispatchQueue.main.async {
+                    self?.onHeight?(height)
+                    webView.scrollView.isScrollEnabled = height >= (self?.maxHeight ?? 300)
+                }
+            }
+        }
     }
 }
