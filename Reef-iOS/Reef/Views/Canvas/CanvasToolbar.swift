@@ -158,10 +158,12 @@ struct CanvasToolbar: View {
                     Text(title)
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(ReefColors.black)
-                    Text(text)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(ReefColors.gray600)
-                        .fixedSize(horizontal: false, vertical: true)
+                    MathText(
+                        text: text,
+                        font: .system(size: 13, weight: .medium),
+                        color: ReefColors.gray600
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(12)
                 .frame(width: Self.tutorPopoverWidth, alignment: .leading)
