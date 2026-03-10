@@ -18,8 +18,9 @@ final class TranscriptionService {
     /// Currently active subquestion key
     private(set) var activeKey: String?
 
-    /// In-flight request — cancelled when a new stroke arrives
-    private var inflightTask: Task<Void, Never>?
+    /// Generation counter — incremented on each transcribe call.
+    /// Only the response matching the latest generation is applied.
+    private var generation: Int = 0
 
     // MARK: - Session Management
 
@@ -40,8 +41,8 @@ final class TranscriptionService {
         let key = "\(questionIndex)-\(partLabel)"
         activeKey = key
 
-        // Cancel stale request
-        inflightTask?.cancel()
+        generation += 1
+        let myGeneration = generation
 
         guard !strokes.isEmpty else { return }
 
@@ -55,7 +56,7 @@ final class TranscriptionService {
         let sessionId = sessionIds[questionIndex]
         let isNewSession = sessionId == nil
 
-        inflightTask = Task { [weak self] in
+        Task { [weak self] in
             do {
                 let body = TranscribeRequest(
                     strokes: strokes.map { points in
@@ -71,8 +72,9 @@ final class TranscriptionService {
                     path: "/ai/transcribe-strokes",
                     body: body
                 )
-                guard !Task.isCancelled, let self else { return }
+                guard let self, self.generation == myGeneration else { return }
                 self.transcriptions[key] = response.latex
+                print("[TranscriptionService] Q\(questionIndex+1)(\(partLabel)): \(response.latex)")
 
                 // Store session ID from first response
                 if isNewSession, let newSessionId = response.session_id {
@@ -80,9 +82,7 @@ final class TranscriptionService {
                     self.sessionStartTimes[questionIndex] = Date()
                 }
             } catch {
-                if !Task.isCancelled {
-                    print("[TranscriptionService] Error: \(error)")
-                }
+                print("[TranscriptionService] Error: \(error)")
             }
         }
     }
