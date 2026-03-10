@@ -272,6 +272,19 @@ struct DocumentCanvasView: View {
                 let manager = DrawingManager(documentId: "dev-test")
                 manager.loadAll(pageCount: 1)
                 drawingManager = manager
+                // Seed fake answer keys so tutor popovers can be tested
+                answerKeys = [1: QuestionAnswer(
+                    questionNumber: 1,
+                    steps: [
+                        AnswerKeyStep(
+                            description: "Set up the equation",
+                            explanation: "Start by isolating the variable on one side. Move all terms with x to the left and constants to the right.",
+                            work: "Given $2x + 5 = 13$, subtract 5 from both sides:\n$2x = 8$\nDivide by 2:\n$x = 4$"
+                        )
+                    ],
+                    finalAnswer: "$x = 4$",
+                    parts: []
+                )]
                 return
             }
             #endif

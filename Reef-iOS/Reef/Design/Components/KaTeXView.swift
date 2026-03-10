@@ -3,7 +3,8 @@
 //  Reef
 //
 //  Renders LaTeX math using WKWebView + bundled KaTeX.
-//  Reports content height after page loads via callAsyncJavaScript.
+//  Primary height: KVO on scrollView.contentSize (ensures frame updates during load).
+//  Secondary height: JS message handler (document.body.scrollHeight) for accuracy.
 //  Defers HTML loading until SwiftUI assigns a real frame width.
 //  Uses loadFileURL for local file access (loadHTMLString can't load local JS/CSS).
 //
@@ -24,6 +25,7 @@ struct KaTeXView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
+        config.userContentController.add(context.coordinator, name: "heightReporter")
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.isOpaque = false
@@ -40,6 +42,10 @@ struct KaTeXView: UIViewRepresentable {
                 webView?.scrollView.isScrollEnabled = height >= self.maxHeight
             }
         }
+
+        // KVO on scrollView.contentSize ensures frame grows during load
+        context.coordinator.observeContentSize(of: webView)
+
         return webView
     }
 
@@ -58,6 +64,14 @@ struct KaTeXView: UIViewRepresentable {
             context.coordinator.hasLoaded = true
             context.coordinator.lastText = text
             loadContent(in: webView)
+        } else if viewWidth == 0 && !context.coordinator.hasLoaded {
+            // Frame not assigned yet — retry after UIKit layout pass.
+            DispatchQueue.main.async { [text] in
+                guard !context.coordinator.hasLoaded, webView.frame.width > 0 else { return }
+                context.coordinator.hasLoaded = true
+                context.coordinator.lastText = text
+                self.loadContent(in: webView)
+            }
         }
 
         if context.coordinator.hasLoaded && context.coordinator.lastText != text {
@@ -115,20 +129,22 @@ struct KaTeXView: UIViewRepresentable {
             ],
             throwOnError: false
           });
+          // Report precise DOM height after KaTeX layout completes.
+          function reportHeight() {
+            window.webkit.messageHandlers.heightReporter.postMessage(
+              document.body.scrollHeight
+            );
+          }
+          requestAnimationFrame(() => requestAnimationFrame(reportHeight));
+          new ResizeObserver(reportHeight).observe(document.body);
         </script>
         </html>
         """
 
-        // Write HTML to a temp file inside the bundle directory so that
-        // loadFileURL can resolve relative CSS/JS paths. loadHTMLString
-        // doesn't grant WKWebView file-access permission to local resources.
-        // The temp file goes in Caches (writable) and allowingReadAccessTo
-        // covers both the temp file's parent and the bundle root.
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
         let tempHTML = cacheDir.appendingPathComponent("katex_render.html")
         try? html.write(to: tempHTML, atomically: true, encoding: .utf8)
 
-        // Grant read access to "/" so both the cache file and bundle resources are accessible
         webView.loadFileURL(tempHTML, allowingReadAccessTo: URL(fileURLWithPath: "/"))
     }
 
@@ -142,33 +158,40 @@ struct KaTeXView: UIViewRepresentable {
     // MARK: - Coordinator
 
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var lastText: String = ""
         var hasLoaded = false
         var onHeight: (@MainActor (CGFloat) -> Void)?
         var maxHeight: CGFloat = 300
+        private var contentSizeObservation: NSKeyValueObservation?
 
-        nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            Task { @MainActor in
-                await self.measureHeight(webView: webView)
+        func observeContentSize(of webView: WKWebView) {
+            contentSizeObservation = webView.scrollView.observe(
+                \.contentSize, options: [.new]
+            ) { [weak self] scrollView, _ in
+                MainActor.assumeIsolated {
+                    let height = scrollView.contentSize.height
+                    if height > 0 {
+                        self?.onHeight?(height)
+                    }
+                }
             }
         }
 
-        private func measureHeight(webView: WKWebView) async {
-            do {
-                let js = "await document.fonts.ready; return document.body.scrollHeight;"
-                let result = try await webView.callAsyncJavaScript(
-                    js, arguments: [:], contentWorld: .page
-                )
-                if let num = result as? Double, num > 0 {
-                    onHeight?(CGFloat(num))
-                }
-            } catch {
-                if let result = try? await webView.evaluateJavaScript("document.body.scrollHeight"),
-                   let num = result as? Double, num > 0 {
-                    onHeight?(CGFloat(num))
-                }
+        nonisolated func userContentController(
+            _ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage
+        ) {
+            Task { @MainActor in
+                guard let height = message.body as? Double, height > 0 else { return }
+                self.onHeight?(CGFloat(height))
             }
+        }
+
+        nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {}
+
+        deinit {
+            contentSizeObservation?.invalidate()
         }
     }
 }
