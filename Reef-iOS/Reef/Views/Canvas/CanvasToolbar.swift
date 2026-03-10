@@ -45,6 +45,7 @@ struct CanvasToolbar: View {
     @State private var showReveal = false
     @State private var hintMidX: CGFloat = 0
     @State private var revealMidX: CGFloat = 0
+    @State private var pulseOpacity: Double = 1.0
 
     private static let tutorPopoverWidth: CGFloat = 260
 
@@ -56,6 +57,12 @@ struct CanvasToolbar: View {
 
     private var currentTutorStep: TutorStep? {
         tutorSteps.first(where: { $0.status != .completed }) ?? tutorSteps.last
+    }
+
+    private var overallProgress: Double {
+        guard !tutorSteps.isEmpty else { return 0 }
+        let completed = tutorSteps.filter { $0.status == .completed }.count
+        return Double(completed) / Double(tutorSteps.count)
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
@@ -76,20 +83,6 @@ struct CanvasToolbar: View {
         VStack(spacing: 0) {
             // Row 1: Info strip (home + tutor step or doc name + tutor toggle)
             infoStrip
-                // Tutor hint/reveal popover — anchored to bottom of info strip, overlays Row 2
-                .overlay(alignment: .bottomLeading) {
-                    if let step = currentTutorStep, showHint {
-                        tutorPopoverCard(triggerMidX: hintMidX, title: "Hint", text: step.hint)
-                    }
-                }
-                .overlay(alignment: .bottomLeading) {
-                    if let step = currentTutorStep, showReveal {
-                        tutorPopoverCard(triggerMidX: revealMidX, title: "Answer", text: step.work)
-                    }
-                }
-                .animation(.easeOut(duration: 0.2), value: showHint)
-                .animation(.easeOut(duration: 0.2), value: showReveal)
-                .zIndex(1) // renders above Row 2
 
             // Row 2: Tool bar
             HStack(spacing: 0) {
@@ -109,6 +102,20 @@ struct CanvasToolbar: View {
             .frame(maxWidth: .infinity)
             .frame(height: 48)
             .background(activeBarColor)
+            // Tutor hint/reveal popovers — hang below Row 2, arrow points up to buttons
+            .overlay(alignment: .bottomLeading) {
+                if let step = currentTutorStep, showHint {
+                    tutorPopoverCard(triggerMidX: hintMidX, title: "Hint", text: step.hint)
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                if let step = currentTutorStep, showReveal {
+                    tutorPopoverCard(triggerMidX: revealMidX, title: "Answer", text: step.work)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: showHint)
+            .animation(.easeOut(duration: 0.2), value: showReveal)
+            .zIndex(1)
 
             // Bottom separator
             Rectangle()
@@ -208,11 +215,7 @@ struct CanvasToolbar: View {
             if tutorModeOn && isReconstructed {
                 TutorStepRow(
                     questionIndex: visibleQuestionIndex,
-                    answerKey: answerKey,
-                    showHint: $showHint,
-                    showReveal: $showReveal,
-                    onHintMidX: { hintMidX = $0 },
-                    onRevealMidX: { revealMidX = $0 }
+                    answerKey: answerKey
                 )
             } else {
                 // Document name / question label
@@ -230,9 +233,13 @@ struct CanvasToolbar: View {
                 Spacer()
             }
 
-            // Tutor toggle (right)
+            // Progress bar + tutor toggle (right)
             if isReconstructed {
                 HStack(spacing: 6) {
+                    if tutorModeOn && currentTutorStep != nil {
+                        progressBar(progress: overallProgress)
+                    }
+
                     Image(systemName: "graduationcap.fill")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white)
@@ -364,6 +371,29 @@ struct CanvasToolbar: View {
                     .offset(x: -2, y: 2)
             }
             .frame(width: 36, height: 36)
+
+            // Hint + Reveal buttons (tutor mode only)
+            if tutorModeOn && isReconstructed && currentTutorStep != nil {
+                stepButton(icon: "lightbulb.fill", isActive: showHint) {
+                    showHint.toggle()
+                    if showHint { showReveal = false }
+                }
+                .background(GeometryReader { geo in
+                    Color.clear
+                        .onAppear { hintMidX = geo.frame(in: .global).midX }
+                        .onChange(of: geo.frame(in: .global).midX) { _, v in hintMidX = v }
+                })
+
+                stepButton(icon: "eye.fill", isActive: showReveal) {
+                    showReveal.toggle()
+                    if showReveal { showHint = false }
+                }
+                .background(GeometryReader { geo in
+                    Color.clear
+                        .onAppear { revealMidX = geo.frame(in: .global).midX }
+                        .onChange(of: geo.frame(in: .global).midX) { _, v in revealMidX = v }
+                })
+            }
         }
     }
 
@@ -389,182 +419,8 @@ struct CanvasToolbar: View {
             .foregroundColor(.white.opacity(0.5))
             .frame(width: 20)
     }
-}
 
-// MARK: - Tutor Step Row (inline in info strip)
-
-private struct TutorStepRow: View {
-    let questionIndex: Int
-    let answerKey: QuestionAnswer?
-    @Binding var showHint: Bool
-    @Binding var showReveal: Bool
-    var onHintMidX: (CGFloat) -> Void = { _ in }
-    var onRevealMidX: (CGFloat) -> Void = { _ in }
-    @State private var pulseOpacity: Double = 1.0
-
-    private var steps: [TutorStep] {
-        guard let answerKey else { return [] }
-        return TutorStepConverter.steps(from: answerKey)
-    }
-
-    /// First non-completed step, or the last step if all complete.
-    private var currentStep: TutorStep? {
-        steps.first(where: { $0.status != .completed }) ?? steps.last
-    }
-
-    /// Overall progress: fraction of completed steps.
-    private var overallProgress: Double {
-        guard !steps.isEmpty else { return 0 }
-        let completed = steps.filter { $0.status == .completed }.count
-        return Double(completed) / Double(steps.count)
-    }
-
-    var body: some View {
-        if currentStep != nil {
-            HStack(spacing: 0) {
-                stepDivider()
-
-                // Q label + progress bar
-                HStack(spacing: 6) {
-                    statusIcon(for: currentStep!.status)
-
-                    Text("Q\(questionIndex + 1)")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
-
-                    progressBar(progress: overallProgress)
-                }
-
-                stepDivider()
-
-                // Instruction text
-                Text(currentStep!.instruction)
-                    .font(.epilogue(12, weight: .medium))
-                    .tracking(-0.04 * 12)
-                    .foregroundColor(.white.opacity(0.95))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 6)
-
-                stepDivider()
-
-                // Hint button
-                stepButton(icon: "lightbulb.fill", isActive: showHint) {
-                    showHint.toggle()
-                    if showHint { showReveal = false }
-                }
-                .background(GeometryReader { geo in
-                    Color.clear
-                        .onAppear { onHintMidX(geo.frame(in: .global).midX) }
-                        .onChange(of: geo.frame(in: .global).midX) { _, v in onHintMidX(v) }
-                })
-
-                // Reveal button
-                stepButton(icon: "eye.fill", isActive: showReveal) {
-                    showReveal.toggle()
-                    if showReveal { showHint = false }
-                }
-                .background(GeometryReader { geo in
-                    Color.clear
-                        .onAppear { onRevealMidX(geo.frame(in: .global).midX) }
-                        .onChange(of: geo.frame(in: .global).midX) { _, v in onRevealMidX(v) }
-                })
-            }
-        } else {
-            HStack(spacing: 6) {
-                ProgressView()
-                    .tint(.white.opacity(0.7))
-                    .scaleEffect(0.65)
-                Text("Loading...")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    // MARK: - Progress Bar
-
-    private func fillColor(for progress: Double) -> Color {
-        if progress < 0.5 {
-            return .white.opacity(0.85)
-        } else if progress < 0.8 {
-            return Color(hex: 0xA8D5D5)
-        } else {
-            return Color(hex: 0x81C784)
-        }
-    }
-
-    private func progressBar(progress: Double) -> some View {
-        let barHeight: CGFloat = 12
-        let cornerRadius: CGFloat = 4
-        let shadowOffset: CGFloat = 1.5
-        let isPending = currentStep?.status == .pending
-
-        return ZStack(alignment: .leading) {
-            // Shadow
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color.black.opacity(0.3))
-                .offset(x: shadowOffset, y: shadowOffset)
-
-            // Track
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color.black.opacity(0.2))
-
-            // Fill
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(fillColor(for: progress))
-                    .frame(width: max(barHeight, geo.size.width * progress))
-                    .opacity(isPending ? pulseOpacity : 1.0)
-            }
-
-            // Top highlight
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.15), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(height: barHeight / 2)
-
-            // Border
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
-        }
-        .frame(width: 80, height: barHeight)
-        .animation(.easeInOut(duration: 0.4), value: progress)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                pulseOpacity = 0.5
-            }
-        }
-    }
-
-    // MARK: - Status Icon
-
-    @ViewBuilder
-    private func statusIcon(for status: StepStatus) -> some View {
-        switch status {
-        case .pending:
-            Image(systemName: "pencil.circle.fill")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white.opacity(0.7))
-        case .mistake:
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(Color(hex: 0xE57373))
-        case .completed:
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(Color(hex: 0x81C784))
-        }
-    }
-
-    // MARK: - Button
+    // MARK: - Tutor Step Button
 
     private func stepButton(
         icon: String,
@@ -586,6 +442,136 @@ private struct TutorStepRow: View {
         }
         .frame(width: 32, height: 32)
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Progress Bar
+
+    private func fillColor(for progress: Double) -> Color {
+        if progress < 0.5 {
+            return .white.opacity(0.85)
+        } else if progress < 0.8 {
+            return Color(hex: 0xA8D5D5)
+        } else {
+            return Color(hex: 0x81C784)
+        }
+    }
+
+    private func progressBar(progress: Double) -> some View {
+        let barHeight: CGFloat = 12
+        let cornerRadius: CGFloat = 4
+        let shadowOffset: CGFloat = 1.5
+        let isPending = currentTutorStep?.status == .pending
+
+        return ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color.black.opacity(0.3))
+                .offset(x: shadowOffset, y: shadowOffset)
+
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color.black.opacity(0.2))
+
+            GeometryReader { geo in
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(fillColor(for: progress))
+                    .frame(width: max(barHeight, geo.size.width * progress))
+                    .opacity(isPending ? pulseOpacity : 1.0)
+            }
+
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.15), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: barHeight / 2)
+
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+        }
+        .frame(width: 80, height: barHeight)
+        .animation(.easeInOut(duration: 0.4), value: progress)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                pulseOpacity = 0.5
+            }
+        }
+    }
+}
+
+// MARK: - Tutor Step Row (inline in info strip)
+
+private struct TutorStepRow: View {
+    let questionIndex: Int
+    let answerKey: QuestionAnswer?
+
+    private var steps: [TutorStep] {
+        guard let answerKey else { return [] }
+        return TutorStepConverter.steps(from: answerKey)
+    }
+
+    private var currentStep: TutorStep? {
+        steps.first(where: { $0.status != .completed }) ?? steps.last
+    }
+
+    var body: some View {
+        if currentStep != nil {
+            HStack(spacing: 0) {
+                stepDivider()
+
+                // Q label
+                HStack(spacing: 6) {
+                    statusIcon(for: currentStep!.status)
+
+                    Text("Q\(questionIndex + 1)")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                }
+
+                stepDivider()
+
+                // Instruction text
+                Text(currentStep!.instruction)
+                    .font(.epilogue(12, weight: .medium))
+                    .tracking(-0.04 * 12)
+                    .foregroundColor(.white.opacity(0.95))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 6)
+            }
+        } else {
+            HStack(spacing: 6) {
+                ProgressView()
+                    .tint(.white.opacity(0.7))
+                    .scaleEffect(0.65)
+                Text("Loading...")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: - Status Icon
+
+    @ViewBuilder
+    private func statusIcon(for status: StepStatus) -> some View {
+        switch status {
+        case .pending:
+            Image(systemName: "pencil.circle.fill")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white.opacity(0.7))
+        case .mistake:
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color(hex: 0xE57373))
+        case .completed:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color(hex: 0x81C784))
+        }
     }
 
     // MARK: - Divider
