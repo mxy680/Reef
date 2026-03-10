@@ -8,9 +8,10 @@
 import Foundation
 
 enum StepStatus {
-    case pending
-    case mistake
-    case completed
+    case idle       // Not yet started
+    case working    // Actively being worked on
+    case mistake    // Error detected
+    case completed  // Correct / done
 }
 
 struct TutorStep {
@@ -32,7 +33,7 @@ enum TutorStepConverter {
                 instruction: step.description,
                 hint: step.explanation,
                 work: step.work,
-                status: .pending,
+                status: .idle,
                 progress: 0.0
             )
         }
@@ -48,7 +49,7 @@ enum TutorStepConverter {
                 instruction: step.description,
                 hint: step.explanation,
                 work: step.work,
-                status: .pending,
+                status: .idle,
                 progress: 0.0
             )
         }

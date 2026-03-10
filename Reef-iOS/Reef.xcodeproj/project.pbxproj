@@ -90,7 +90,6 @@
 		9657E5881EF0C5562B13ACEF /* PopupShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9076E1BD2DE18B50317AE5 /* PopupShell.swift */; };
 		9787D96FD49B9BF7FF5AC6AE /* TutorSpotlightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE24D45EA867265C71FFD78 /* TutorSpotlightView.swift */; };
 		98E9547119361714B8EE388A /* ReefDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F2272F12753F94D68D47474 /* ReefDivider.swift */; };
-		9A797D6DF2FF6F2D11FA6C3B /* test.html in Resources */ = {isa = PBXBuildFile; fileRef = 4053B4FB87751BCB6D79E07F /* test.html */; };
 		9ADE99D97C893E843E7D677D /* PageNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88ED32B183BA25990245CDA4 /* PageNavigationBar.swift */; };
 		A25948F8B9DE842DED9CE349 /* TutorStepData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E70E19FB02A673E57447BD /* TutorStepData.swift */; };
 		A371C46423DF8A87C7CB0F3B /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 585B9AFB26D4C25AB8FFF803 /* Colors.swift */; };
@@ -193,7 +192,6 @@
 		38DBC03D6F697DC001368372 /* KaTeX_Size1-Regular.woff */ = {isa = PBXFileReference; path = "KaTeX_Size1-Regular.woff"; sourceTree = "<group>"; };
 		3BE24D45EA867265C71FFD78 /* TutorSpotlightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorSpotlightView.swift; sourceTree = "<group>"; };
 		3F68AC1C3432E326DB646676 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		4053B4FB87751BCB6D79E07F /* test.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = test.html; sourceTree = "<group>"; };
 		41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Black.ttf"; sourceTree = "<group>"; };
 		43A46BEA40192D4E1199A48C /* KaTeX_Typewriter-Regular.woff */ = {isa = PBXFileReference; path = "KaTeX_Typewriter-Regular.woff"; sourceTree = "<group>"; };
 		47EE0F7965A070BD244FA35D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -536,7 +534,6 @@
 				05301F8907BB1E2A7D8292CB /* auto-render.min.js */,
 				705AA155E4D80F612A997ADD /* katex.min.css */,
 				AFCB1D742B3A8666259D63FC /* katex.min.js */,
-				4053B4FB87751BCB6D79E07F /* test.html */,
 				0D925FAB52008A0075E1FC07 /* fonts */,
 			);
 			path = KaTeX;
@@ -818,7 +815,6 @@
 				BBD6C30D1F07B0C355D94D3B /* auto-render.min.js in Resources */,
 				E6492D1B81A4EAC6C79707C0 /* katex.min.css in Resources */,
 				FF2DD9A4B1F8143249411273 /* katex.min.js in Resources */,
-				9A797D6DF2FF6F2D11FA6C3B /* test.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
