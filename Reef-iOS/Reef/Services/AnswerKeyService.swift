@@ -6,7 +6,7 @@ private struct AnswerKeyRow: Codable {
     let documentId: String
     let questionNumber: Int
     let answerText: String
-    let questionJson: String?
+    let questionJson: QuestionData?
 
     enum CodingKeys: String, CodingKey {
         case documentId = "document_id"
@@ -51,9 +51,7 @@ actor AnswerKeyService {
                 }
                 answers[row.questionNumber] = answer
 
-                if let jsonStr = row.questionJson,
-                   let jsonData = jsonStr.data(using: .utf8),
-                   let qd = try? decoder.decode(QuestionData.self, from: jsonData) {
+                if let qd = row.questionJson {
                     questions[row.questionNumber] = qd
                 }
             }
