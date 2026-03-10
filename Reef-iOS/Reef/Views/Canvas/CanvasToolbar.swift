@@ -236,17 +236,18 @@ struct CanvasToolbar: View {
             if isReconstructed {
                 HStack(spacing: 0) {
                     if tutorModeOn && currentTutorStep != nil {
-                        HStack(spacing: 0) {
+                        HStack(spacing: 4) {
                             progressBar(progress: stepProgress)
 
-                            Text("\(Int(stepProgress * 100))")
-                                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                                .foregroundColor(.white)
-                                .frame(width: 26, alignment: .trailing)
-                            Text("%")
-                                .font(.system(size: 8, weight: .bold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.6))
-                                .baselineOffset(1)
+                            HStack(spacing: 0) {
+                                Text("\(Int(stepProgress * 100))")
+                                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                    .foregroundColor(.white)
+                                Text("%")
+                                    .font(.system(size: 8, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .baselineOffset(1)
+                            }
                         }
 
                         // Divider between progress and tutor toggle
@@ -472,7 +473,7 @@ struct CanvasToolbar: View {
         let barHeight: CGFloat = 12
         let cornerRadius: CGFloat = 4
         let shadowOffset: CGFloat = 1.5
-        let isPending = currentTutorStep?.status == .pending
+        let isPending = currentTutorStep?.status == .idle || currentTutorStep?.status == .working
 
         return ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: cornerRadius)
@@ -571,18 +572,38 @@ private struct TutorStepRow: View {
     @ViewBuilder
     private func statusIcon(for status: StepStatus) -> some View {
         switch status {
-        case .pending:
-            Image(systemName: "pencil.circle.fill")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white.opacity(0.7))
+        case .idle:
+            Circle()
+                .fill(Color.white.opacity(0.25))
+                .frame(width: 14, height: 14)
+                .overlay(
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.5), lineWidth: 1.5)
+                )
+        case .working:
+            Circle()
+                .fill(Color.white.opacity(0.15))
+                .frame(width: 14, height: 14)
+                .overlay(
+                    Circle()
+                        .trim(from: 0, to: 0.65)
+                        .stroke(Color.white.opacity(0.9), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                )
         case .mistake:
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(Color(hex: 0xE57373))
+            Image(systemName: "xmark")
+                .font(.system(size: 9, weight: .black))
+                .foregroundColor(.white)
+                .frame(width: 14, height: 14)
+                .background(Color(hex: 0xE57373))
+                .clipShape(Circle())
         case .completed:
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(Color(hex: 0x81C784))
+            Image(systemName: "checkmark")
+                .font(.system(size: 9, weight: .black))
+                .foregroundColor(.white)
+                .frame(width: 14, height: 14)
+                .background(Color(hex: 0x81C784))
+                .clipShape(Circle())
         }
     }
 
