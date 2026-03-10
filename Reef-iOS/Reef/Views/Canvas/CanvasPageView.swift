@@ -188,6 +188,16 @@ final class CanvasContainerView: UIView {
         // Hover gesture for Apple Pencil
         let hoverGesture = UIHoverGestureRecognizer(target: self, action: #selector(handleHover(_:)))
         scrollView.addGestureRecognizer(hoverGesture)
+
+        // Pan gesture to track touch position during active erasing
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleEraserPan(_:)))
+        panGesture.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.pencil.rawValue)]
+        panGesture.minimumNumberOfTouches = 1
+        panGesture.maximumNumberOfTouches = 1
+        panGesture.cancelsTouchesInView = false
+        panGesture.delaysTouchesBegan = false
+        panGesture.delegate = self
+        scrollView.addGestureRecognizer(panGesture)
     }
 
     // MARK: - Configure
@@ -516,11 +526,40 @@ final class CanvasContainerView: UIView {
         }
     }
 
+    @objc private func handleEraserPan(_ gesture: UIPanGestureRecognizer) {
+        guard isEraserActive else {
+            eraserCursorView.isHidden = true
+            return
+        }
+
+        switch gesture.state {
+        case .began, .changed:
+            let location = gesture.location(in: scrollView)
+            eraserCursorView.isHidden = false
+            eraserCursorView.center = location
+        case .ended, .cancelled:
+            eraserCursorView.isHidden = true
+        default:
+            break
+        }
+    }
+
     private func updateEraserCursorSize() {
         // eraserWidth is in PDF points; canvas renders at 2x, then scrollView zoom applies
         let canvasSize = eraserWidth * 2.0 * scrollView.zoomScale
         eraserCursorView.bounds = CGRect(x: 0, y: 0, width: canvasSize, height: canvasSize)
         eraserCursorView.layer.cornerRadius = canvasSize / 2
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension CanvasContainerView: UIGestureRecognizerDelegate {
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        true
     }
 }
 
