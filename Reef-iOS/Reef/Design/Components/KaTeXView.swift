@@ -3,7 +3,8 @@
 //  Reef
 //
 //  Renders LaTeX math using WKWebView + bundled KaTeX.
-//  Reports content height via KVO on scrollView.contentSize.
+//  Primary height: KVO on scrollView.contentSize (ensures frame updates during load).
+//  Secondary height: JS message handler (document.body.scrollHeight) for accuracy.
 //  Defers HTML loading until SwiftUI assigns a real frame width.
 //  Uses loadFileURL for local file access (loadHTMLString can't load local JS/CSS).
 //
@@ -24,6 +25,7 @@ struct KaTeXView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
+        config.userContentController.add(context.coordinator, name: "heightReporter")
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.isOpaque = false
@@ -41,7 +43,7 @@ struct KaTeXView: UIViewRepresentable {
             }
         }
 
-        // Observe scrollView.contentSize for reliable height updates
+        // KVO on scrollView.contentSize ensures frame grows during load
         context.coordinator.observeContentSize(of: webView)
 
         return webView
@@ -127,6 +129,14 @@ struct KaTeXView: UIViewRepresentable {
             ],
             throwOnError: false
           });
+          // Report precise DOM height after KaTeX layout completes.
+          function reportHeight() {
+            window.webkit.messageHandlers.heightReporter.postMessage(
+              document.body.scrollHeight
+            );
+          }
+          requestAnimationFrame(() => requestAnimationFrame(reportHeight));
+          new ResizeObserver(reportHeight).observe(document.body);
         </script>
         </html>
         """
@@ -148,7 +158,7 @@ struct KaTeXView: UIViewRepresentable {
     // MARK: - Coordinator
 
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var lastText: String = ""
         var hasLoaded = false
         var onHeight: (@MainActor (CGFloat) -> Void)?
@@ -168,9 +178,17 @@ struct KaTeXView: UIViewRepresentable {
             }
         }
 
-        nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            // Height is handled by KVO on scrollView.contentSize
+        nonisolated func userContentController(
+            _ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage
+        ) {
+            Task { @MainActor in
+                guard let height = message.body as? Double, height > 0 else { return }
+                self.onHeight?(CGFloat(height))
+            }
         }
+
+        nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {}
 
         deinit {
             contentSizeObservation?.invalidate()
