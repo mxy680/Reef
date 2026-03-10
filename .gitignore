@@ -12,3 +12,4 @@ xcuserdata/
 .vercel
 *.xcuserstate
 Reef-Server/data/
+build/
