@@ -36,13 +36,15 @@ struct DocumentCanvasView: View {
     @State private var answerKeys: [Int: QuestionAnswer] = [:]
     @State private var showTutorPopover = false
     @State private var activePartLabel: String?
+    /// Writing-detected question index (overrides page-based detection)
+    @State private var activeQuestionIndex: Int?
 
     private var isReconstructed: Bool {
         document.questionPages != nil
     }
 
-    /// Derive which question is visible from the current page index.
-    private var visibleQuestionIndex: Int {
+    /// Page-based question index (fallback when no writing detected).
+    private var pageBasedQuestionIndex: Int {
         guard let pages = document.questionPages else { return 0 }
         for (index, range) in pages.enumerated() {
             guard range.count == 2 else { continue }
@@ -51,6 +53,11 @@ struct DocumentCanvasView: View {
             }
         }
         return 0
+    }
+
+    /// The active question index — prefers writing-detected, falls back to page-based.
+    private var visibleQuestionIndex: Int {
+        activeQuestionIndex ?? pageBasedQuestionIndex
     }
 
     /// Current PencilKit tool derived from toolbar selection + settings
@@ -293,7 +300,9 @@ struct DocumentCanvasView: View {
         .onChange(of: showPageMenu) { _, isShowing in
             if isShowing { showToolSettings = false; showPageSettings = false }
         }
-        .onChange(of: visibleQuestionIndex) { _, newIndex in
+        .onChange(of: pageBasedQuestionIndex) { _, newIndex in
+            // When user scrolls to a different page-based question, reset writing-detected state
+            activeQuestionIndex = nil
             setDefaultPartLabel(for: newIndex)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
@@ -306,37 +315,32 @@ struct DocumentCanvasView: View {
 
     // MARK: - Active Part Detection
 
-    /// Match a writing position to a subquestion region and update the active part label.
+    /// Match a writing position to a subquestion region and update both active question and part.
     private func updateActivePartFromWriting(pageIndex: Int, yPDFPoints: Double) {
         guard let regions = document.questionRegions,
               let questionPages = document.questionPages else { return }
 
-        // Find which question this page belongs to
-        var questionIdx: Int?
-        for (idx, range) in questionPages.enumerated() {
-            guard range.count == 2 else { continue }
-            if pageIndex >= range[0] && pageIndex <= range[1] {
-                questionIdx = idx
-                break
-            }
-        }
-        guard let qi = questionIdx,
-              qi < regions.count,
-              let regionData = regions[qi] else { return }
+        // Search across ALL questions' regions to find the match
+        for (qi, range) in questionPages.enumerated() {
+            guard range.count == 2,
+                  pageIndex >= range[0] && pageIndex <= range[1],
+                  qi < regions.count,
+                  let regionData = regions[qi] else { continue }
 
-        // Page index within this question's page range
-        let questionStartPage = questionPages[qi][0]
-        let localPage = pageIndex - questionStartPage
+            let localPage = pageIndex - range[0]
 
-        // Find the region containing this y-coordinate on this local page
-        for region in regionData.regions {
-            if region.page == localPage &&
-               yPDFPoints >= region.yStart &&
-               yPDFPoints <= region.yEnd {
-                if activePartLabel != region.label {
-                    activePartLabel = region.label
+            for region in regionData.regions {
+                if region.page == localPage &&
+                   yPDFPoints >= region.yStart &&
+                   yPDFPoints <= region.yEnd {
+                    if activeQuestionIndex != qi {
+                        activeQuestionIndex = qi
+                    }
+                    if activePartLabel != region.label {
+                        activePartLabel = region.label
+                    }
+                    return
                 }
-                return
             }
         }
     }
