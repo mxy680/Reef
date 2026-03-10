@@ -19,6 +19,8 @@ struct CanvasPageView: UIViewRepresentable {
     var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     var darkMode: Bool = false
     var overlaySettings: PageOverlaySettings = PageOverlaySettings()
+    var isEraserActive: Bool = false
+    var eraserWidth: CGFloat = 8.0
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
@@ -27,6 +29,8 @@ struct CanvasPageView: UIViewRepresentable {
         container.currentTool = currentTool
         container.onVisiblePageChanged = onVisiblePageChanged
         container.onWritingPositionChanged = onWritingPositionChanged
+        container.isEraserActive = isEraserActive
+        container.eraserWidth = eraserWidth
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
         container.applyDarkMode(darkMode)
         container.updateOverlay(overlaySettings)
@@ -37,6 +41,8 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.currentTool = currentTool
         uiView.onVisiblePageChanged = onVisiblePageChanged
         uiView.onWritingPositionChanged = onWritingPositionChanged
+        uiView.isEraserActive = isEraserActive
+        uiView.eraserWidth = eraserWidth
         uiView.applyDarkMode(darkMode)
         uiView.updateOverlay(overlaySettings)
     }
@@ -59,6 +65,28 @@ final class CanvasContainerView: UIView {
     private var contentWidthConstraint: NSLayoutConstraint?
     private var isDarkMode = false
     private var currentOverlaySettings = PageOverlaySettings()
+
+    /// Whether the eraser tool is currently active
+    var isEraserActive = false {
+        didSet { eraserCursorView.isHidden = !isEraserActive }
+    }
+
+    /// Eraser width in PDF points (canvas is 2x)
+    var eraserWidth: CGFloat = 8.0 {
+        didSet { updateEraserCursorSize() }
+    }
+
+    /// Faint circle showing eraser bounds during hover
+    private let eraserCursorView: UIView = {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        view.isHidden = true
+        view.layer.borderColor = UIColor.gray.cgColor
+        view.layer.borderWidth = 1
+        view.backgroundColor = UIColor.gray.withAlphaComponent(0.15)
+        return view
+    }()
+
     /// Original rendered page images (light mode)
     private var originalImages: [UIImage] = []
     /// Color-inverted page images (dark mode) — lazily generated
@@ -151,6 +179,15 @@ final class CanvasContainerView: UIView {
             pagesStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             pagesStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
         ])
+
+        // Eraser cursor (floats above canvas, follows hover)
+        eraserCursorView.frame = CGRect(x: 0, y: 0, width: 16, height: 16)
+        eraserCursorView.layer.cornerRadius = 8
+        scrollView.addSubview(eraserCursorView)
+
+        // Hover gesture for Apple Pencil
+        let hoverGesture = UIHoverGestureRecognizer(target: self, action: #selector(handleHover(_:)))
+        scrollView.addGestureRecognizer(hoverGesture)
     }
 
     // MARK: - Configure
@@ -458,6 +495,33 @@ final class CanvasContainerView: UIView {
             bottom: offsetY, right: offsetX
         )
     }
+
+    // MARK: - Eraser Cursor
+
+    @objc private func handleHover(_ gesture: UIHoverGestureRecognizer) {
+        guard isEraserActive else {
+            eraserCursorView.isHidden = true
+            return
+        }
+
+        switch gesture.state {
+        case .began, .changed:
+            let location = gesture.location(in: scrollView)
+            eraserCursorView.isHidden = false
+            eraserCursorView.center = location
+        case .ended, .cancelled:
+            eraserCursorView.isHidden = true
+        default:
+            break
+        }
+    }
+
+    private func updateEraserCursorSize() {
+        // eraserWidth is in PDF points; canvas renders at 2x, then scrollView zoom applies
+        let canvasSize = eraserWidth * 2.0 * scrollView.zoomScale
+        eraserCursorView.bounds = CGRect(x: 0, y: 0, width: canvasSize, height: canvasSize)
+        eraserCursorView.layer.cornerRadius = canvasSize / 2
+    }
 }
 
 // MARK: - UIScrollViewDelegate
@@ -469,6 +533,7 @@ extension CanvasContainerView: UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         setNeedsLayout()
+        updateEraserCursorSize()
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
