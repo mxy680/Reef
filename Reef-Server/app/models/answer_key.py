@@ -16,15 +16,15 @@ class Step(BaseModel):
 
     description: str = Field(
         ...,
-        description="Short label shown to the student, e.g. 'Set up the equation', 'Apply the chain rule'",
+        description="Clear sentence describing what this step does and why (10-20 words), e.g. 'Apply Newton's second law to relate the net force to acceleration'",
     )
     explanation: str = Field(
         ...,
-        description="Teaching guidance for the tutor: why this step matters, common mistakes, pedagogy hints",
+        description="Short, punchy hint for a stuck student — one sentence max, e.g. 'What does F=ma solve for here?'",
     )
     work: str = Field(
         ...,
-        description="Actual solution content for this step (LaTeX math with $...$ inline, \\[...\\] display, or plain text)",
+        description="Just the math or key reasoning — no narration (LaTeX with $...$ inline, \\[...\\] display, or plain text)",
     )
 
 

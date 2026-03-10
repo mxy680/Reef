@@ -225,9 +225,9 @@ You are generating a structured answer key for a homework or exam question. The 
 
 Break every solution into discrete **steps**. Each step has three fields:
 
-- `description` — A short label shown directly to the student (e.g. "Identify the given values", "Apply Newton's second law", "Simplify the expression"). Keep it under ~10 words. This is the student-facing hint.
-- `explanation` — Teaching guidance for the AI tutor: why this step is important, what concept it exercises, common mistakes students make here, and how to explain it if the student is stuck. This is NOT shown to the student directly.
-- `work` — The actual solution content for this step: calculations, equations, reasoning, or prose. Use LaTeX math notation ($...$ inline, \\[...\\] display). This is the ground truth the tutor uses to check the student's work.
+- `description` — A clear, descriptive sentence shown to the student explaining what this step does and why (e.g. "Identify the given values from the problem and assign variables", "Apply Newton's second law to relate the net force to acceleration", "Simplify the resulting expression by combining like terms"). Aim for 10-20 words — enough that a student understands the purpose and approach of the step at a glance.
+- `explanation` — A short, punchy hint for the student when they're stuck. One sentence max — like a nudge, not a lecture (e.g. "What does F=ma solve for here?", "Try factoring out the common term", "Check your units"). The student is already confused, so keep it dead simple.
+- `work` — The actual solution for this step: just the math or key reasoning, nothing extra. Use LaTeX ($...$ inline, \\[...\\] display). No narration or restatement of the description — just the work itself.
 
 ## Rules
 
@@ -235,7 +235,7 @@ Break every solution into discrete **steps**. Each step has three fields:
 - For each `parts` entry, match `label` exactly ('a', 'b', 'i', 'ii', etc.).
 - If the question has **no parts**: put steps and final_answer at the top level. Leave `parts` empty.
 - If the question has **parts**: put per-part steps in the `parts` array. Top-level `steps` and `final_answer` can be empty.
-- `final_answer` should be concise — just the answer itself (e.g. "$x = 5$", "$42$ cm$^2$", "True", "The reaction is exothermic").
+- `final_answer` should be the bare answer only — no explanation, no restating the question (e.g. "$x = 5$", "$42$ cm$^2$", "True", "exothermic").
 - Use LaTeX for all math: $...$ inline, \\[...\\] display. No Unicode math symbols.
 - If the question references a figure you cannot see, state what information would be needed and solve symbolically.
 - Be rigorous with units, significant figures, and notation.
