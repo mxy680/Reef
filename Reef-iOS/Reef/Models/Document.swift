@@ -6,6 +6,33 @@ enum DocumentStatus: String, Codable {
     case failed
 }
 
+/// A region in a compiled question PDF corresponding to a subquestion part.
+/// Coordinates are in PDF points (72 DPI), origin at top-left.
+struct PartRegion: Codable, Hashable {
+    let label: String?
+    let page: Int
+    let yStart: Double
+    let yEnd: Double
+
+    enum CodingKeys: String, CodingKey {
+        case label
+        case page
+        case yStart = "y_start"
+        case yEnd = "y_end"
+    }
+}
+
+/// Region data for a single question: page heights and part regions.
+struct QuestionRegionData: Codable, Hashable {
+    let pageHeights: [Double]
+    let regions: [PartRegion]
+
+    enum CodingKeys: String, CodingKey {
+        case pageHeights = "page_heights"
+        case regions
+    }
+}
+
 struct Document: Identifiable, Codable, Hashable {
     let id: String
     let userId: String
@@ -14,6 +41,7 @@ struct Document: Identifiable, Codable, Hashable {
     let pageCount: Int?
     let problemCount: Int?
     let questionPages: [[Int]]?
+    let questionRegions: [QuestionRegionData?]?
     let errorMessage: String?
     let statusMessage: String?
     let costCents: Int?
@@ -28,6 +56,7 @@ struct Document: Identifiable, Codable, Hashable {
         case pageCount = "page_count"
         case problemCount = "problem_count"
         case questionPages = "question_pages"
+        case questionRegions = "question_regions"
         case errorMessage = "error_message"
         case statusMessage = "status_message"
         case costCents = "cost_cents"

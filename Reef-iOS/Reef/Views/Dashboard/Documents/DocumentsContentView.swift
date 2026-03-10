@@ -185,6 +185,7 @@ final class DocumentsViewModel {
                     id: doc.id, userId: doc.userId, filename: doc.filename,
                     status: .processing, pageCount: doc.pageCount,
                     problemCount: doc.problemCount, questionPages: doc.questionPages,
+                    questionRegions: doc.questionRegions,
                     errorMessage: nil, statusMessage: nil, costCents: nil,
                     courseId: doc.courseId, createdAt: doc.createdAt
                 )

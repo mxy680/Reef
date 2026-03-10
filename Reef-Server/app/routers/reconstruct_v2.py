@@ -34,6 +34,7 @@ from app.services.mathpix import MathpixClient, replace_urls_with_filenames
 from app.services.progress import update_document_status, update_progress
 from app.services.prompts import LATEX_FIX_PROMPT, PARSE_MMD_PROMPT
 from app.services.question_to_latex import question_to_latex, _sanitize_text
+from app.services.region_extractor import extract_question_regions
 from app.services.storage import download_document_pdf, upload_document_pdf
 
 logger = logging.getLogger(__name__)
@@ -304,19 +305,32 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             return
 
         # ---------------------------------------------------------------
-        # Stage 5: Merge PDFs and upload
+        # Stage 5: Merge PDFs, extract regions, and upload
         # ---------------------------------------------------------------
         await update_progress(document_id, "Merging and uploading PDF...")
 
         merged = fitz.open()
         question_pages: list[list[int]] = []
+        question_regions: list[dict | None] = []
         running_page = 0
-        for label, problem_pdf_bytes, _ in compiled:
+        for label, problem_pdf_bytes, q_dict in compiled:
             sub_doc = fitz.open(stream=problem_pdf_bytes, filetype="pdf")
             question_pages.append([running_page, running_page + sub_doc.page_count - 1])
             running_page += sub_doc.page_count
             merged.insert_pdf(sub_doc)
             sub_doc.close()
+
+            # Extract part regions from the compiled question PDF
+            if q_dict is not None:
+                try:
+                    regions = extract_question_regions(problem_pdf_bytes, q_dict)
+                    question_regions.append(regions)
+                except Exception as e:
+                    logger.warning(f"  [v2] Region extraction failed for {label}: {e}")
+                    question_regions.append(None)
+            else:
+                question_regions.append(None)
+
         merged_bytes = merged.tobytes()
         merged.close()
 
@@ -346,6 +360,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             page_count=num_pages,
             problem_count=len(compiled),
             question_pages=question_pages,
+            question_regions=question_regions,
             status_message=None,
             input_tokens=costs.input_tokens,
             output_tokens=costs.output_tokens,
