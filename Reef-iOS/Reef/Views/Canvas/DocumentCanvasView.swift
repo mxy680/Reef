@@ -34,11 +34,13 @@ struct DocumentCanvasView: View {
     @State private var pageMenuMidX: CGFloat = 0
     @State private var pageOverlaySettings = PageOverlaySettings()
     @State private var answerKeys: [Int: QuestionAnswer] = [:]
+    @State private var questionData: [Int: QuestionData] = [:]
     @State private var showTutorPopover = false
     @State private var activePartLabel: String?
     /// Writing-detected question index (overrides page-based detection)
     @State private var activeQuestionIndex: Int?
     @State private var transcriptionService = TranscriptionService()
+    @State private var feedbackService = TutorFeedbackService()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -127,7 +129,8 @@ struct DocumentCanvasView: View {
                         activePartLabel: activePartLabel,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
                         pageOverlaySettings: $pageOverlaySettings,
-                        showTutorPopover: $showTutorPopover
+                        showTutorPopover: $showTutorPopover,
+                        stepProgressData: feedbackService.stepProgress
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -315,7 +318,9 @@ struct DocumentCanvasView: View {
                 drawingManager = manager
             }
             if isReconstructed {
-                answerKeys = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
+                let result = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
+                answerKeys = result.answers
+                questionData = result.questions
                 setDefaultPartLabel(for: visibleQuestionIndex)
             }
         }
@@ -337,6 +342,28 @@ struct DocumentCanvasView: View {
             // When user scrolls to a different page-based question, reset writing-detected state
             activeQuestionIndex = nil
             setDefaultPartLabel(for: newIndex)
+        }
+        .onChange(of: transcriptionService.transcriptions) { _, newTranscriptions in
+            guard tutorModeOn, let partLabel = activePartLabel else { return }
+            let qi = visibleQuestionIndex
+            let key = "\(qi)-\(partLabel)"
+            guard let latex = newTranscriptions[key] else { return }
+
+            // Get question text from questionData
+            let qNum = qi + 1  // 1-based
+            let questionText = questionData[qNum]?.textForPart(partLabel) ?? ""
+
+            // Get steps for the current part
+            guard let answerKey = answerKeys[qNum] else { return }
+            let partSteps = stepsForPart(answerKey: answerKey, partLabel: partLabel)
+
+            feedbackService.onTranscriptionChanged(
+                questionIndex: qi,
+                partLabel: partLabel,
+                latex: latex,
+                questionText: questionText,
+                steps: partSteps
+            )
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             drawingManager?.saveAll()
@@ -568,6 +595,21 @@ struct DocumentCanvasView: View {
             return
         }
         activePartLabel = regionData.regions.first?.label
+    }
+
+    // MARK: - Step Lookup
+
+    private func stepsForPart(answerKey: QuestionAnswer, partLabel: String) -> [AnswerKeyStep] {
+        if answerKey.parts.isEmpty { return answerKey.steps }
+        return findPartSteps(partLabel, in: answerKey.parts) ?? []
+    }
+
+    private func findPartSteps(_ label: String, in parts: [PartAnswer]) -> [AnswerKeyStep]? {
+        for part in parts {
+            if part.label == label { return part.steps }
+            if let found = findPartSteps(label, in: part.parts) { return found }
+        }
+        return nil
     }
 
     // MARK: - Page Actions

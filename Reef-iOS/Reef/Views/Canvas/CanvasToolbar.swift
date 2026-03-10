@@ -40,6 +40,7 @@ struct CanvasToolbar: View {
     var hasActiveOverlay: Bool = false
     @Binding var pageOverlaySettings: PageOverlaySettings
     @Binding var showTutorPopover: Bool
+    var stepProgressData: [String: StepProgress]? = nil
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -55,7 +56,7 @@ struct CanvasToolbar: View {
     /// Current tutor step (computed from answerKey)
     private var tutorSteps: [TutorStep] {
         guard let answerKey else { return [] }
-        return TutorStepConverter.steps(from: answerKey)
+        return TutorStepConverter.steps(from: answerKey, progress: stepProgressData, questionIndex: visibleQuestionIndex)
     }
 
     private var currentTutorStep: TutorStep? {
@@ -244,7 +245,8 @@ struct CanvasToolbar: View {
                 TutorStepRow(
                     questionIndex: visibleQuestionIndex,
                     activePartLabel: activePartLabel,
-                    answerKey: answerKey
+                    answerKey: answerKey,
+                    stepProgressData: stepProgressData
                 )
             } else {
                 // Document name / question label
@@ -549,10 +551,11 @@ private struct TutorStepRow: View {
     let questionIndex: Int
     var activePartLabel: String? = nil
     let answerKey: QuestionAnswer?
+    var stepProgressData: [String: StepProgress]? = nil
 
     private var steps: [TutorStep] {
         guard let answerKey else { return [] }
-        return TutorStepConverter.steps(from: answerKey)
+        return TutorStepConverter.steps(from: answerKey, progress: stepProgressData, questionIndex: questionIndex)
     }
 
     private var currentStep: TutorStep? {
