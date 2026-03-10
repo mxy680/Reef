@@ -36,6 +36,7 @@ struct CanvasToolbar: View {
     @Binding var showPageSettings: Bool
     @Binding var pageSettingsMidX: CGFloat
     @Binding var pageMenuMidX: CGFloat
+    var activePartLabel: String? = nil
     var hasActiveOverlay: Bool = false
     @Binding var pageOverlaySettings: PageOverlaySettings
     @Binding var showTutorPopover: Bool
@@ -62,6 +63,15 @@ struct CanvasToolbar: View {
     /// Progress for the current step (0.0–1.0).
     private var stepProgress: Double {
         currentTutorStep?.progress ?? 0
+    }
+
+    /// Formatted question label, e.g. "Q1" or "Q1 (a)"
+    private var questionLabel: String {
+        let base = "Q\(visibleQuestionIndex + 1)"
+        if let label = activePartLabel {
+            return "\(base) (\(label))"
+        }
+        return base
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
@@ -214,13 +224,14 @@ struct CanvasToolbar: View {
             if tutorModeOn && isReconstructed {
                 TutorStepRow(
                     questionIndex: visibleQuestionIndex,
+                    activePartLabel: activePartLabel,
                     answerKey: answerKey
                 )
             } else {
                 // Document name / question label
                 Spacer()
                 if isReconstructed && questionCount > 1 {
-                    Text("Q\(visibleQuestionIndex + 1)")
+                    Text(questionLabel)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white)
                 } else {
@@ -517,6 +528,7 @@ struct CanvasToolbar: View {
 
 private struct TutorStepRow: View {
     let questionIndex: Int
+    var activePartLabel: String? = nil
     let answerKey: QuestionAnswer?
 
     private var steps: [TutorStep] {
@@ -537,7 +549,13 @@ private struct TutorStepRow: View {
                 HStack(spacing: 6) {
                     statusIcon(for: currentStep!.status)
 
-                    Text("Q\(questionIndex + 1)")
+                    Text({
+                        let base = "Q\(questionIndex + 1)"
+                        if let label = activePartLabel {
+                            return "\(base) (\(label))"
+                        }
+                        return base
+                    }())
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                 }

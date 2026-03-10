@@ -35,13 +35,16 @@ struct DocumentCanvasView: View {
     @State private var pageOverlaySettings = PageOverlaySettings()
     @State private var answerKeys: [Int: QuestionAnswer] = [:]
     @State private var showTutorPopover = false
+    @State private var activePartLabel: String?
+    /// Writing-detected question index (overrides page-based detection)
+    @State private var activeQuestionIndex: Int?
 
     private var isReconstructed: Bool {
         document.questionPages != nil
     }
 
-    /// Derive which question is visible from the current page index.
-    private var visibleQuestionIndex: Int {
+    /// Page-based question index (fallback when no writing detected).
+    private var pageBasedQuestionIndex: Int {
         guard let pages = document.questionPages else { return 0 }
         for (index, range) in pages.enumerated() {
             guard range.count == 2 else { continue }
@@ -50,6 +53,11 @@ struct DocumentCanvasView: View {
             }
         }
         return 0
+    }
+
+    /// The active question index — prefers writing-detected, falls back to page-based.
+    private var visibleQuestionIndex: Int {
+        activeQuestionIndex ?? pageBasedQuestionIndex
     }
 
     /// Current PencilKit tool derived from toolbar selection + settings
@@ -115,6 +123,7 @@ struct DocumentCanvasView: View {
                         showPageSettings: $showPageSettings,
                         pageSettingsMidX: $pageSettingsMidX,
                         pageMenuMidX: $pageMenuMidX,
+                        activePartLabel: activePartLabel,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
                         pageOverlaySettings: $pageOverlaySettings,
                         showTutorPopover: $showTutorPopover
@@ -197,6 +206,9 @@ struct DocumentCanvasView: View {
                             drawingManager: manager,
                             currentTool: currentPKTool,
                             onVisiblePageChanged: { currentPageIndex = $0 },
+                            onWritingPositionChanged: { pageIndex, yPDFPoints in
+                                updateActivePartFromWriting(pageIndex: pageIndex, yPDFPoints: yPDFPoints)
+                            },
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings
                         )
@@ -271,6 +283,7 @@ struct DocumentCanvasView: View {
             }
             if isReconstructed {
                 answerKeys = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
+                setDefaultPartLabel(for: visibleQuestionIndex)
             }
         }
         .onChange(of: selectedTool) { _, newTool in
@@ -287,12 +300,60 @@ struct DocumentCanvasView: View {
         .onChange(of: showPageMenu) { _, isShowing in
             if isShowing { showToolSettings = false; showPageSettings = false }
         }
+        .onChange(of: pageBasedQuestionIndex) { _, newIndex in
+            // When user scrolls to a different page-based question, reset writing-detected state
+            activeQuestionIndex = nil
+            setDefaultPartLabel(for: newIndex)
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             drawingManager?.saveAll()
         }
         .onDisappear {
             Task { await viewModel.saveIfNeeded() }
         }
+    }
+
+    // MARK: - Active Part Detection
+
+    /// Match a writing position to a subquestion region and update both active question and part.
+    private func updateActivePartFromWriting(pageIndex: Int, yPDFPoints: Double) {
+        guard let regions = document.questionRegions,
+              let questionPages = document.questionPages else { return }
+
+        // Search across ALL questions' regions to find the match
+        for (qi, range) in questionPages.enumerated() {
+            guard range.count == 2,
+                  pageIndex >= range[0] && pageIndex <= range[1],
+                  qi < regions.count,
+                  let regionData = regions[qi] else { continue }
+
+            let localPage = pageIndex - range[0]
+
+            for region in regionData.regions {
+                if region.page == localPage &&
+                   yPDFPoints >= region.yStart &&
+                   yPDFPoints <= region.yEnd {
+                    if activeQuestionIndex != qi {
+                        activeQuestionIndex = qi
+                    }
+                    if activePartLabel != region.label {
+                        activePartLabel = region.label
+                    }
+                    return
+                }
+            }
+        }
+    }
+
+    /// Set the default active part label for the given question index.
+    private func setDefaultPartLabel(for questionIndex: Int) {
+        guard let regions = document.questionRegions,
+              questionIndex < regions.count,
+              let regionData = regions[questionIndex] else {
+            activePartLabel = nil
+            return
+        }
+        activePartLabel = regionData.regions.first?.label
     }
 
     // MARK: - Page Actions
