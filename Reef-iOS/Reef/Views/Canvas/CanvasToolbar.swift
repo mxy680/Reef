@@ -115,18 +115,25 @@ struct CanvasToolbar: View {
                     }
                 }
             )
-            // Tutor hint/reveal popovers — hang below Row 2, arrow points up to buttons
-            .overlay(alignment: .topLeading) {
+            // Tutor hint/reveal popovers — hang below Row 2, arrow points up.
+            // Zero-height anchor at .bottomLeading so the scale transition
+            // originates from Row 2's bottom edge (the arrow tip), matching
+            // the drawing-tool popover animation exactly.
+            .overlay(alignment: .bottomLeading) {
                 if let step = currentTutorStep, showHint {
-                    tutorPopoverCard(triggerMidX: hintMidX, title: "Hint", text: step.hint)
-                        .offset(y: 48)
+                    Color.clear.frame(height: 0)
+                        .overlay(alignment: .topLeading) {
+                            tutorPopoverCard(triggerMidX: hintMidX, title: "Hint", text: step.hint)
+                        }
                 }
             }
             .animation(.easeOut(duration: 0.2), value: showHint)
-            .overlay(alignment: .topLeading) {
+            .overlay(alignment: .bottomLeading) {
                 if let step = currentTutorStep, showReveal {
-                    tutorPopoverCard(triggerMidX: revealMidX, title: "Answer", text: step.work)
-                        .offset(y: 48)
+                    Color.clear.frame(height: 0)
+                        .overlay(alignment: .topLeading) {
+                            tutorPopoverCard(triggerMidX: revealMidX, title: "Answer", text: step.work)
+                        }
                 }
             }
             .animation(.easeOut(duration: 0.2), value: showReveal)
