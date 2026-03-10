@@ -235,18 +235,32 @@ struct CanvasToolbar: View {
 
             // Progress bar + tutor toggle (right)
             if isReconstructed {
-                HStack(spacing: 6) {
+                HStack(spacing: 0) {
                     if tutorModeOn && currentTutorStep != nil {
-                        progressBar(progress: overallProgress)
+                        HStack(spacing: 5) {
+                            progressBar(progress: overallProgress)
+
+                            Text("\(Int(overallProgress * 100))%")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+
+                        // Divider between progress and tutor toggle
+                        Text("|")
+                            .font(.system(size: 20, weight: .ultraLight))
+                            .foregroundColor(.white.opacity(0.4))
+                            .frame(width: 16)
                     }
 
-                    Image(systemName: "graduationcap.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 6) {
+                        Image(systemName: "graduationcap.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
 
-                    Toggle("", isOn: $tutorModeOn)
-                        .toggleStyle(TutorToggleStyle())
-                        .labelsHidden()
+                        Toggle("", isOn: $tutorModeOn)
+                            .toggleStyle(TutorToggleStyle())
+                            .labelsHidden()
+                    }
                 }
                 .padding(.trailing, 10)
                 .padding(.leading, 4)
@@ -358,20 +372,6 @@ struct CanvasToolbar: View {
 
     private var aiSection: some View {
         HStack(spacing: 0) {
-            // Mic with status indicator
-            ZStack(alignment: .topTrailing) {
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
-                    .frame(width: 36, height: 36)
-
-                Circle()
-                    .fill(Color.white.opacity(0.7))
-                    .frame(width: 7, height: 7)
-                    .offset(x: -2, y: 2)
-            }
-            .frame(width: 36, height: 36)
-
             // Hint + Reveal buttons (tutor mode only)
             if tutorModeOn && isReconstructed && currentTutorStep != nil {
                 stepButton(icon: "lightbulb.fill", isActive: showHint) {
@@ -394,6 +394,12 @@ struct CanvasToolbar: View {
                         .onChange(of: geo.frame(in: .global).midX) { _, v in revealMidX = v }
                 })
             }
+
+            // Mic (push to talk)
+            Image(systemName: "mic.fill")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(.white.opacity(0.9))
+                .frame(width: 36, height: 36)
         }
     }
 
