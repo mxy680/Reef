@@ -344,14 +344,20 @@ struct DocumentCanvasView: View {
             setDefaultPartLabel(for: newIndex)
         }
         .onChange(of: transcriptionService.transcriptions) { _, newTranscriptions in
-            guard tutorModeOn, let partLabel = activePartLabel else { return }
+            guard tutorModeOn else { return }
             let qi = visibleQuestionIndex
+            let partLabel = activePartLabel ?? ""
             let key = "\(qi)-\(partLabel)"
             guard let latex = newTranscriptions[key] else { return }
 
             // Get question text from questionData
             let qNum = qi + 1  // 1-based
-            let questionText = questionData[qNum]?.textForPart(partLabel) ?? ""
+            let questionText: String
+            if partLabel.isEmpty {
+                questionText = questionData[qNum]?.text ?? ""
+            } else {
+                questionText = questionData[qNum]?.textForPart(partLabel) ?? ""
+            }
 
             // Get steps for the current part
             guard let answerKey = answerKeys[qNum] else { return }
@@ -600,7 +606,7 @@ struct DocumentCanvasView: View {
     // MARK: - Step Lookup
 
     private func stepsForPart(answerKey: QuestionAnswer, partLabel: String) -> [AnswerKeyStep] {
-        if answerKey.parts.isEmpty { return answerKey.steps }
+        if partLabel.isEmpty || answerKey.parts.isEmpty { return answerKey.steps }
         return findPartSteps(partLabel, in: answerKey.parts) ?? []
     }
 
