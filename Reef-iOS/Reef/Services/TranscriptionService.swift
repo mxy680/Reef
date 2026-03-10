@@ -4,6 +4,7 @@
 //
 //  Sends pen strokes to Reef-Server for Mathpix transcription
 //  and caches the latest LaTeX per subquestion.
+//  Manages Mathpix sessions (up to 300s) per question for better recognition.
 //
 
 import Foundation
@@ -20,6 +21,17 @@ final class TranscriptionService {
     /// In-flight request — cancelled when a new stroke arrives
     private var inflightTask: Task<Void, Never>?
 
+    // MARK: - Session Management
+
+    /// Active Mathpix session ID per question index
+    private var sessionIds: [Int: String] = [:]
+
+    /// When each session was created
+    private var sessionStartTimes: [Int: Date] = [:]
+
+    /// Sessions expire after 300 seconds
+    private static let sessionTTL: TimeInterval = 300
+
     func transcribe(
         questionIndex: Int,
         partLabel: String,
@@ -33,7 +45,17 @@ final class TranscriptionService {
 
         guard !strokes.isEmpty else { return }
 
-        inflightTask = Task {
+        // Check if session has expired
+        if let startTime = sessionStartTimes[questionIndex],
+           Date().timeIntervalSince(startTime) >= Self.sessionTTL {
+            sessionIds.removeValue(forKey: questionIndex)
+            sessionStartTimes.removeValue(forKey: questionIndex)
+        }
+
+        let sessionId = sessionIds[questionIndex]
+        let isNewSession = sessionId == nil
+
+        inflightTask = Task { [weak self] in
             do {
                 let body = TranscribeRequest(
                     strokes: strokes.map { points in
@@ -41,15 +63,22 @@ final class TranscriptionService {
                             x: points.map(\.x),
                             y: points.map(\.y)
                         )
-                    }
+                    },
+                    session_id: sessionId
                 )
                 let response: TranscribeResponse = try await ReefAPI.shared.request(
                     "POST",
                     path: "/ai/transcribe-strokes",
                     body: body
                 )
-                guard !Task.isCancelled else { return }
-                transcriptions[key] = response.latex
+                guard !Task.isCancelled, let self else { return }
+                self.transcriptions[key] = response.latex
+
+                // Store session ID from first response
+                if isNewSession, let newSessionId = response.session_id {
+                    self.sessionIds[questionIndex] = newSessionId
+                    self.sessionStartTimes[questionIndex] = Date()
+                }
             } catch {
                 if !Task.isCancelled {
                     print("[TranscriptionService] Error: \(error)")
@@ -68,8 +97,10 @@ private struct StrokePayload: Encodable {
 
 private struct TranscribeRequest: Encodable {
     let strokes: [StrokePayload]
+    let session_id: String?
 }
 
 private struct TranscribeResponse: Decodable {
     let latex: String
+    let session_id: String?
 }

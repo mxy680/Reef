@@ -21,10 +21,12 @@ class StrokeData(BaseModel):
 
 class TranscribeStrokesRequest(BaseModel):
     strokes: list[StrokeData]
+    session_id: str | None = None
 
 
 class TranscribeStrokesResponse(BaseModel):
     latex: str
+    session_id: str | None = None
 
 
 @router.post("/transcribe-strokes", response_model=TranscribeStrokesResponse)
@@ -35,9 +37,11 @@ async def transcribe_strokes(
     if not settings.mathpix_app_id or not settings.mathpix_app_key:
         raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
 
-    payload = {
+    payload: dict = {
         "strokes": [{"x": s.x, "y": s.y} for s in body.strokes],
     }
+    if body.session_id:
+        payload["session_id"] = body.session_id
 
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.post(
@@ -56,4 +60,5 @@ async def transcribe_strokes(
 
     data = resp.json()
     latex = data.get("latex", data.get("text", ""))
-    return TranscribeStrokesResponse(latex=latex)
+    session_id = data.get("session_id")
+    return TranscribeStrokesResponse(latex=latex, session_id=session_id)
