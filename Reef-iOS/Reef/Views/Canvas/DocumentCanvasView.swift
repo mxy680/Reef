@@ -213,6 +213,9 @@ struct DocumentCanvasView: View {
                             onNewPenStroke: { pageIndex, yPDFPoints in
                                 handleNewPenStroke(pageIndex: pageIndex, yPDFPoints: yPDFPoints)
                             },
+                            onStrokesErased: { pageIndex in
+                                handleStrokesErased(pageIndex: pageIndex)
+                            },
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings
                         )
@@ -481,6 +484,66 @@ struct DocumentCanvasView: View {
             partLabel: partLabel,
             strokes: allStrokes
         )
+    }
+
+    /// Re-transcribe after strokes are erased, using the current active question/part.
+    private func handleStrokesErased(pageIndex: Int) {
+        guard let partLabel = activePartLabel else { return }
+
+        let qi = visibleQuestionIndex
+        guard let regions = document.questionRegions,
+              let questionPages = document.questionPages,
+              let manager = drawingManager,
+              qi < regions.count,
+              qi < questionPages.count,
+              questionPages[qi].count == 2,
+              let regionData = regions[qi] else { return }
+
+        let startPage = questionPages[qi][0]
+        let endPage = questionPages[qi][1]
+        let matchingRegions = regionData.regions.filter { $0.label == partLabel }
+        guard !matchingRegions.isEmpty else { return }
+
+        // Collect remaining pen strokes in the region
+        var allStrokes: [[(x: Double, y: Double)]] = []
+
+        for absPage in startPage...endPage {
+            let localPage = absPage - startPage
+            let pageRegions = matchingRegions.filter { $0.page == localPage }
+            guard !pageRegions.isEmpty else { continue }
+
+            let drawing = manager.drawing(for: absPage)
+            for stroke in drawing.strokes {
+                guard stroke.ink.inkType == .pen else { continue }
+                let midY = stroke.renderBounds.midY / 2.0
+                let inRegion = pageRegions.contains { $0.yStart <= midY && midY <= $0.yEnd }
+                guard inRegion else { continue }
+
+                var points: [(x: Double, y: Double)] = []
+                for i in stride(from: 0, to: stroke.path.count, by: 1) {
+                    let loc = stroke.path[i].location
+                    points.append((x: Double(loc.x), y: Double(loc.y)))
+                }
+                if !points.isEmpty { allStrokes.append(points) }
+            }
+        }
+
+        // Normalize
+        if !allStrokes.isEmpty {
+            var minX = Double.infinity, minY = Double.infinity
+            for stroke in allStrokes { for pt in stroke { minX = min(minX, pt.x); minY = min(minY, pt.y) } }
+            allStrokes = allStrokes.map { $0.map { (x: $0.x - minX, y: $0.y - minY) } }
+        }
+
+        print("[Transcription] Q\(qi+1)(\(partLabel)): erased → re-sending \(allStrokes.count) strokes")
+
+        if allStrokes.isEmpty {
+            // All strokes erased — clear transcription
+            let key = "\(qi)-\(partLabel)"
+            transcriptionService.transcriptions[key] = nil
+        } else {
+            transcriptionService.transcribe(questionIndex: qi, partLabel: partLabel, strokes: allStrokes)
+        }
     }
 
     /// Set the default active part label for the given question index.

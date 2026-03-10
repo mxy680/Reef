@@ -18,6 +18,7 @@ struct CanvasPageView: UIViewRepresentable {
     var onVisiblePageChanged: ((Int) -> Void)?
     var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     var onNewPenStroke: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
+    var onStrokesErased: ((_ pageIndex: Int) -> Void)?
     var darkMode: Bool = false
     var overlaySettings: PageOverlaySettings = PageOverlaySettings()
 
@@ -29,6 +30,7 @@ struct CanvasPageView: UIViewRepresentable {
         container.onVisiblePageChanged = onVisiblePageChanged
         container.onWritingPositionChanged = onWritingPositionChanged
         container.onNewPenStroke = onNewPenStroke
+        container.onStrokesErased = onStrokesErased
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
         container.applyDarkMode(darkMode)
         container.updateOverlay(overlaySettings)
@@ -40,6 +42,7 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.onVisiblePageChanged = onVisiblePageChanged
         uiView.onWritingPositionChanged = onWritingPositionChanged
         uiView.onNewPenStroke = onNewPenStroke
+        uiView.onStrokesErased = onStrokesErased
         uiView.applyDarkMode(darkMode)
         uiView.updateOverlay(overlaySettings)
     }
@@ -73,6 +76,7 @@ final class CanvasContainerView: UIView {
     var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     /// Callback fired when a new pen stroke (not diagram/monoline) is added
     var onNewPenStroke: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
+    var onStrokesErased: ((_ pageIndex: Int) -> Void)?
     private var startPageIndex: Int = 0
     private var lastReportedPage: Int = -1
     /// Track stroke counts per canvas to detect new strokes
@@ -595,7 +599,7 @@ extension CanvasContainerView: PKCanvasViewDelegate {
         let absolutePageIndex = pageIndexOffset + index
         drawingManager?.setDrawing(canvasView.drawing, for: absolutePageIndex)
 
-        // Detect new stroke and report writing position
+        // Detect stroke changes and report
         let currentCount = canvasView.drawing.strokes.count
         let previousCount = lastStrokeCounts[index] ?? 0
         if currentCount > previousCount,
@@ -610,6 +614,9 @@ extension CanvasContainerView: PKCanvasViewDelegate {
             if lastStroke.ink.inkType == .pen {
                 onNewPenStroke?(absolutePageIndex, yPDFPoints)
             }
+        } else if currentCount < previousCount {
+            // Strokes were erased — notify for re-transcription
+            onStrokesErased?(absolutePageIndex)
         }
         lastStrokeCounts[index] = currentCount
     }

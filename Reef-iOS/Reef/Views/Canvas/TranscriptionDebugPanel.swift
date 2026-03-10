@@ -23,7 +23,7 @@ struct TranscriptionDebugPanel: View {
 
             if let latex, !latex.isEmpty {
                 KaTeXView(
-                    text: "$$\(latex)$$",
+                    text: "$$\(Self.stripDelimiters(latex))$$",
                     fontSize: 14,
                     textColor: .primary,
                     maxHeight: 120,
@@ -51,6 +51,26 @@ struct TranscriptionDebugPanel: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
         )
+    }
+
+    /// Strip math delimiters that Mathpix may include in its response.
+    private static func stripDelimiters(_ s: String) -> String {
+        var t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Remove outer display delimiters
+        for (open, close) in [("$$", "$$"), ("\\[", "\\]")] {
+            if t.hasPrefix(open) && t.hasSuffix(close) {
+                t = String(t.dropFirst(open.count).dropLast(close.count))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        // Remove outer inline delimiters
+        for (open, close) in [("\\(", "\\)"), ("$", "$")] {
+            if t.hasPrefix(open) && t.hasSuffix(close) {
+                t = String(t.dropFirst(open.count).dropLast(close.count))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        return t
     }
 
     private var label: String {

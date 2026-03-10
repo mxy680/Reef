@@ -13,7 +13,7 @@ import Foundation
 @MainActor
 final class TranscriptionService {
     /// Latest LaTeX result per subquestion key (e.g. "0-a", "1-b")
-    private(set) var transcriptions: [String: String] = [:]
+    var transcriptions: [String: String] = [:]
 
     /// Currently active subquestion key
     private(set) var activeKey: String?
