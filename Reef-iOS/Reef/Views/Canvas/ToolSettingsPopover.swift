@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PencilKit
 
 struct ToolSettingsPopover: View {
     @Binding var selectedColor: UIColor
@@ -113,6 +114,46 @@ struct ToolSettingsPopover: View {
                 )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Eraser Settings Popover
+
+struct EraserSettingsPopover: View {
+    @Binding var eraserMode: PKEraserTool.EraserType
+    @Binding var eraserWidth: CGFloat
+
+    var body: some View {
+        VStack(spacing: 10) {
+            // Mode toggle
+            Picker("Eraser Mode", selection: $eraserMode) {
+                Text("Stroke").tag(PKEraserTool.EraserType.vector)
+                Text("Pixel").tag(PKEraserTool.EraserType.bitmap)
+            }
+            .pickerStyle(.segmented)
+
+            // Thickness slider with preview circle
+            HStack(spacing: 6) {
+                Circle()
+                    .stroke(Color.gray, lineWidth: 1)
+                    .frame(width: 4, height: 4)
+
+                Slider(value: $eraserWidth, in: 4...40)
+                    .tint(.gray)
+
+                Circle()
+                    .stroke(Color.gray, lineWidth: 1)
+                    .background(Circle().fill(Color.gray.opacity(0.15)))
+                    .frame(
+                        width: min(eraserWidth * 0.5, 16),
+                        height: min(eraserWidth * 0.5, 16)
+                    )
+                    .frame(width: 16, height: 16)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(width: 190)
     }
 }
 
