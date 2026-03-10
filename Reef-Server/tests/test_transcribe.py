@@ -32,7 +32,7 @@ def _mock_mathpix_response(latex: str, session_id: str | None = None, status_cod
     """Create a mock httpx.Response from Mathpix."""
     data = {"latex": latex}
     if session_id:
-        data["session_id"] = session_id
+        data["strokes_session_id"] = session_id
     return httpx.Response(status_code=status_code, json=data)
 
 
@@ -82,10 +82,13 @@ class TestTranscribeStrokes:
         assert resp.status_code == 200
         assert resp.json()["session_id"] == "sess-123"
 
-        # Verify session_id was included in the Mathpix payload
+        # Verify strokes_session_id was included in the Mathpix payload
         call_kwargs = mock_client.post.call_args
         sent_payload = call_kwargs.kwargs.get("json") or call_kwargs[1].get("json")
-        assert sent_payload["session_id"] == "sess-123"
+        assert sent_payload["strokes_session_id"] == "sess-123"
+        # Verify nested strokes format
+        assert "x" in sent_payload["strokes"]["strokes"]
+        assert "y" in sent_payload["strokes"]["strokes"]
 
     @patch("app.routers.transcribe.httpx.AsyncClient")
     @patch("app.routers.transcribe.settings")
@@ -121,10 +124,10 @@ class TestTranscribeStrokes:
         assert resp.status_code == 200
         assert resp.json()["session_id"] is None
 
-        # Verify session_id was NOT in the Mathpix payload
+        # Verify strokes_session_id was NOT in the Mathpix payload
         call_kwargs = mock_client.post.call_args
         sent_payload = call_kwargs.kwargs.get("json") or call_kwargs[1].get("json")
-        assert "session_id" not in sent_payload
+        assert "strokes_session_id" not in sent_payload
 
     @patch("app.routers.transcribe.httpx.AsyncClient")
     @patch("app.routers.transcribe.settings")

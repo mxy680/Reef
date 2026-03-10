@@ -38,16 +38,22 @@ async def transcribe_strokes(
         raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
 
     payload: dict = {
-        "strokes": [{"x": s.x, "y": s.y} for s in body.strokes],
+        "strokes": {
+            "strokes": {
+                "x": [s.x for s in body.strokes],
+                "y": [s.y for s in body.strokes],
+            }
+        },
     }
     if body.session_id:
-        payload["session_id"] = body.session_id
+        payload["strokes_session_id"] = body.session_id
 
     # Log stroke coordinate ranges for debugging
+    print(f"[transcribe] {len(body.strokes)} strokes, session_id={body.session_id}")
     for i, s in enumerate(body.strokes):
         if s.x and s.y:
-            logger.info(
-                f"Stroke {i}: x=[{min(s.x):.1f}..{max(s.x):.1f}] "
+            print(
+                f"[transcribe] Stroke {i}: x=[{min(s.x):.1f}..{max(s.x):.1f}] "
                 f"y=[{min(s.y):.1f}..{max(s.y):.1f}] pts={len(s.x)}"
             )
 
@@ -62,13 +68,16 @@ async def transcribe_strokes(
             },
         )
 
-    logger.info(f"Mathpix response status={resp.status_code} body={resp.text[:500]}")
+    print(f"[transcribe] Mathpix status={resp.status_code} body={resp.text[:500]}")
 
     if resp.status_code != 200:
         logger.warning(f"Mathpix strokes API returned {resp.status_code}: {resp.text}")
         raise HTTPException(status_code=502, detail="Mathpix transcription failed")
 
     data = resp.json()
+    if "error" in data:
+        print(f"[transcribe] Mathpix error: {data}")
+        raise HTTPException(status_code=502, detail=f"Mathpix error: {data.get('error')}")
     latex = data.get("latex", data.get("text", ""))
-    session_id = data.get("session_id")
+    session_id = data.get("strokes_session_id", data.get("session_id"))
     return TranscribeStrokesResponse(latex=latex, session_id=session_id)
