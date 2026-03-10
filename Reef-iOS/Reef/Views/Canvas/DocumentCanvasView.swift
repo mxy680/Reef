@@ -449,15 +449,29 @@ struct DocumentCanvasView: View {
                 }
                 guard inRegion else { continue }
 
-                // Extract points from the stroke path
+                // Extract points from the stroke path (canvas scale, not PDF points)
                 var points: [(x: Double, y: Double)] = []
                 for i in stride(from: 0, to: stroke.path.count, by: 1) {
                     let loc = stroke.path[i].location
-                    points.append((x: loc.x / 2.0, y: loc.y / 2.0))
+                    points.append((x: Double(loc.x), y: Double(loc.y)))
                 }
                 if !points.isEmpty {
                     allStrokes.append(points)
                 }
+            }
+        }
+
+        // Normalize: translate all strokes so bounding box starts at (0,0)
+        if !allStrokes.isEmpty {
+            var minX = Double.infinity, minY = Double.infinity
+            for stroke in allStrokes {
+                for pt in stroke {
+                    minX = min(minX, pt.x)
+                    minY = min(minY, pt.y)
+                }
+            }
+            allStrokes = allStrokes.map { stroke in
+                stroke.map { (x: $0.x - minX, y: $0.y - minY) }
             }
         }
 

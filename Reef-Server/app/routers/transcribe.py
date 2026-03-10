@@ -43,6 +43,14 @@ async def transcribe_strokes(
     if body.session_id:
         payload["session_id"] = body.session_id
 
+    # Log stroke coordinate ranges for debugging
+    for i, s in enumerate(body.strokes):
+        if s.x and s.y:
+            logger.info(
+                f"Stroke {i}: x=[{min(s.x):.1f}..{max(s.x):.1f}] "
+                f"y=[{min(s.y):.1f}..{max(s.y):.1f}] pts={len(s.x)}"
+            )
+
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.post(
             "https://api.mathpix.com/v3/strokes",
@@ -53,6 +61,8 @@ async def transcribe_strokes(
                 "Content-Type": "application/json",
             },
         )
+
+    logger.info(f"Mathpix response status={resp.status_code} body={resp.text[:500]}")
 
     if resp.status_code != 200:
         logger.warning(f"Mathpix strokes API returned {resp.status_code}: {resp.text}")
