@@ -38,6 +38,7 @@ struct DocumentCanvasView: View {
     @State private var activePartLabel: String?
     /// Writing-detected question index (overrides page-based detection)
     @State private var activeQuestionIndex: Int?
+    @State private var transcriptionService = TranscriptionService()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -209,6 +210,9 @@ struct DocumentCanvasView: View {
                             onWritingPositionChanged: { pageIndex, yPDFPoints in
                                 updateActivePartFromWriting(pageIndex: pageIndex, yPDFPoints: yPDFPoints)
                             },
+                            onNewPenStroke: { pageIndex in
+                                handleNewPenStroke(pageIndex: pageIndex)
+                            },
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings
                         )
@@ -220,6 +224,19 @@ struct DocumentCanvasView: View {
                         }
 
                     }
+                    #if DEBUG
+                    .overlay(alignment: .bottomTrailing) {
+                        if let partLabel = activePartLabel {
+                            let key = "\(visibleQuestionIndex)-\(partLabel)"
+                            TranscriptionDebugPanel(
+                                questionIndex: visibleQuestionIndex,
+                                partLabel: partLabel,
+                                latex: transcriptionService.transcriptions[key]
+                            )
+                            .padding(16)
+                        }
+                    }
+                    #endif
                     .background(canvasBackground)
                     .overlay {
                         // Tap-to-dismiss layer (covers canvas only, not toolbar)
@@ -342,7 +359,78 @@ struct DocumentCanvasView: View {
                     return
                 }
             }
+
+            // Page is within this question but no region matched.
+            // If the question has subquestion regions, the user is annotating
+            // (writing above/between parts) — nil out the part label.
+            if !regionData.regions.isEmpty {
+                if activeQuestionIndex != qi { activeQuestionIndex = qi }
+                activePartLabel = nil
+                return
+            }
         }
+    }
+
+    // MARK: - Stroke Transcription
+
+    /// Collect all pen strokes in the active subquestion region and send for transcription.
+    private func handleNewPenStroke(pageIndex: Int) {
+        guard let partLabel = activePartLabel,
+              let regions = document.questionRegions,
+              let questionPages = document.questionPages,
+              let manager = drawingManager else { return }
+
+        let qi = visibleQuestionIndex
+        guard qi < questionPages.count, qi < regions.count,
+              let regionData = regions[qi],
+              questionPages[qi].count == 2 else { return }
+
+        let startPage = questionPages[qi][0]
+        let endPage = questionPages[qi][1]
+
+        // Find all PartRegions matching the active label (may span multiple pages)
+        let matchingRegions = regionData.regions.filter { $0.label == partLabel }
+        guard !matchingRegions.isEmpty else { return }
+
+        // Collect all pen strokes that fall within matching regions
+        var allStrokes: [[(x: Double, y: Double)]] = []
+
+        for absPage in startPage...endPage {
+            let localPage = absPage - startPage
+            let pageRegions = matchingRegions.filter { $0.page == localPage }
+            guard !pageRegions.isEmpty else { continue }
+
+            let drawing = manager.drawing(for: absPage)
+            for stroke in drawing.strokes {
+                // Only pen strokes, not diagram (monoline)
+                guard stroke.ink.inkType == .pen else { continue }
+
+                // Use the stroke's midpoint Y to determine if it's in the region
+                let bounds = stroke.renderBounds
+                let midY = bounds.midY / 2.0  // Convert canvas coords to PDF points
+
+                let inRegion = pageRegions.contains { region in
+                    midY >= region.yStart && midY <= region.yEnd
+                }
+                guard inRegion else { continue }
+
+                // Extract points from the stroke path
+                var points: [(x: Double, y: Double)] = []
+                for i in stride(from: 0, to: stroke.path.count, by: 1) {
+                    let loc = stroke.path[i].location
+                    points.append((x: loc.x / 2.0, y: loc.y / 2.0))
+                }
+                if !points.isEmpty {
+                    allStrokes.append(points)
+                }
+            }
+        }
+
+        transcriptionService.transcribe(
+            questionIndex: qi,
+            partLabel: partLabel,
+            strokes: allStrokes
+        )
     }
 
     /// Set the default active part label for the given question index.
