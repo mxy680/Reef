@@ -210,8 +210,8 @@ struct DocumentCanvasView: View {
                             onWritingPositionChanged: { pageIndex, yPDFPoints in
                                 updateActivePartFromWriting(pageIndex: pageIndex, yPDFPoints: yPDFPoints)
                             },
-                            onNewPenStroke: { pageIndex in
-                                handleNewPenStroke(pageIndex: pageIndex)
+                            onNewPenStroke: { pageIndex, yPDFPoints in
+                                handleNewPenStroke(pageIndex: pageIndex, yPDFPoints: yPDFPoints)
                             },
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings
@@ -374,16 +374,51 @@ struct DocumentCanvasView: View {
     // MARK: - Stroke Transcription
 
     /// Collect all pen strokes in the active subquestion region and send for transcription.
-    private func handleNewPenStroke(pageIndex: Int) {
-        guard let partLabel = activePartLabel,
-              let regions = document.questionRegions,
+    /// Does its own region lookup from pageIndex + yPDFPoints (can't rely on @State which
+    /// hasn't propagated yet when both callbacks fire in the same delegate call).
+    private func handleNewPenStroke(pageIndex: Int, yPDFPoints: Double) {
+        guard let regions = document.questionRegions,
               let questionPages = document.questionPages,
               let manager = drawingManager else { return }
 
-        let qi = visibleQuestionIndex
-        guard qi < questionPages.count, qi < regions.count,
-              let regionData = regions[qi],
-              questionPages[qi].count == 2 else { return }
+        // Find which question and part this stroke belongs to
+        var matchedQI: Int?
+        var matchedPartLabel: String?
+
+        for (qi, range) in questionPages.enumerated() {
+            guard range.count == 2,
+                  pageIndex >= range[0] && pageIndex <= range[1],
+                  qi < regions.count,
+                  let regionData = regions[qi] else { continue }
+
+            let localPage = pageIndex - range[0]
+
+            for region in regionData.regions {
+                if region.page == localPage &&
+                   yPDFPoints >= region.yStart &&
+                   yPDFPoints <= region.yEnd {
+                    matchedQI = qi
+                    matchedPartLabel = region.label
+                    break
+                }
+            }
+
+            // If we're in this question's page range but no region matched,
+            // and the question has subquestion regions, this is annotation — skip.
+            if matchedPartLabel == nil && !regionData.regions.isEmpty {
+                print("[Transcription] Annotation area — skipping")
+                return
+            }
+            break
+        }
+
+        guard let qi = matchedQI, let partLabel = matchedPartLabel else {
+            print("[Transcription] No matching region for page=\(pageIndex) y=\(yPDFPoints)")
+            return
+        }
+
+        guard questionPages[qi].count == 2,
+              let regionData = regions[qi] else { return }
 
         let startPage = questionPages[qi][0]
         let endPage = questionPages[qi][1]
@@ -426,6 +461,7 @@ struct DocumentCanvasView: View {
             }
         }
 
+        print("[Transcription] Q\(qi+1)(\(partLabel)): sending \(allStrokes.count) strokes")
         transcriptionService.transcribe(
             questionIndex: qi,
             partLabel: partLabel,

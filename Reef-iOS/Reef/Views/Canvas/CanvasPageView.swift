@@ -17,7 +17,7 @@ struct CanvasPageView: UIViewRepresentable {
     let currentTool: PKTool
     var onVisiblePageChanged: ((Int) -> Void)?
     var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
-    var onNewPenStroke: ((_ pageIndex: Int) -> Void)?
+    var onNewPenStroke: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     var darkMode: Bool = false
     var overlaySettings: PageOverlaySettings = PageOverlaySettings()
 
@@ -72,7 +72,7 @@ final class CanvasContainerView: UIView {
     /// Callback reporting the writing position (page index + y in PDF points)
     var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     /// Callback fired when a new pen stroke (not diagram/monoline) is added
-    var onNewPenStroke: ((_ pageIndex: Int) -> Void)?
+    var onNewPenStroke: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     private var startPageIndex: Int = 0
     private var lastReportedPage: Int = -1
     /// Track stroke counts per canvas to detect new strokes
@@ -608,7 +608,7 @@ extension CanvasContainerView: PKCanvasViewDelegate {
 
             // Trigger transcription only for pen strokes (not diagram/monoline)
             if lastStroke.ink.inkType == .pen {
-                onNewPenStroke?(absolutePageIndex)
+                onNewPenStroke?(absolutePageIndex, yPDFPoints)
             }
         }
         lastStrokeCounts[index] = currentCount
