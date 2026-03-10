@@ -59,10 +59,9 @@ struct CanvasToolbar: View {
         tutorSteps.first(where: { $0.status != .completed }) ?? tutorSteps.last
     }
 
-    private var overallProgress: Double {
-        guard !tutorSteps.isEmpty else { return 0 }
-        let completed = tutorSteps.filter { $0.status == .completed }.count
-        return Double(completed) / Double(tutorSteps.count)
+    /// Progress for the current step (0.0–1.0).
+    private var stepProgress: Double {
+        currentTutorStep?.progress ?? 0
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
@@ -237,12 +236,17 @@ struct CanvasToolbar: View {
             if isReconstructed {
                 HStack(spacing: 0) {
                     if tutorModeOn && currentTutorStep != nil {
-                        HStack(spacing: 5) {
-                            progressBar(progress: overallProgress)
+                        HStack(spacing: 0) {
+                            progressBar(progress: stepProgress)
 
-                            Text("\(Int(overallProgress * 100))%")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.8))
+                            Text("\(Int(stepProgress * 100))")
+                                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                .foregroundColor(.white)
+                                .frame(width: 26, alignment: .trailing)
+                            Text("%")
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.6))
+                                .baselineOffset(1)
                         }
 
                         // Divider between progress and tutor toggle
@@ -393,6 +397,8 @@ struct CanvasToolbar: View {
                         .onAppear { revealMidX = geo.frame(in: .global).midX }
                         .onChange(of: geo.frame(in: .global).midX) { _, v in revealMidX = v }
                 })
+
+                makeDivider()
             }
 
             // Mic (push to talk)
