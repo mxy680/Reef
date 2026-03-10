@@ -249,7 +249,7 @@ struct DashboardHeader: View {
             // Log Out
             profileMenuItem(icon: "rectangle.portrait.and.arrow.right", label: "Log Out", isDestructive: true) {
                 showProfileMenu = false
-                authManager.signOut()
+                Task { await authManager.signOut() }
             }
         }
         .background(dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white)

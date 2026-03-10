@@ -966,7 +966,7 @@ extension SettingsView {
             SettingsCard {
                 HStack(spacing: 12) {
                     Button {
-                        authManager.signOut()
+                        Task { await authManager.signOut() }
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")

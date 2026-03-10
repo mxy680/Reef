@@ -217,19 +217,17 @@ final class AuthManager {
 
     // MARK: - Sign Out
 
-    func signOut() {
-        Task {
-            do {
-                try await supabase.auth.signOut()
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-            #if DEBUG
-            devMode = false
-            #endif
-            session = nil
-            profile = nil
+    func signOut() async {
+        do {
+            try await supabase.auth.signOut()
+        } catch {
+            errorMessage = error.localizedDescription
         }
+        #if DEBUG
+        devMode = false
+        #endif
+        session = nil
+        profile = nil
     }
 
     // MARK: - Nonce Utilities
