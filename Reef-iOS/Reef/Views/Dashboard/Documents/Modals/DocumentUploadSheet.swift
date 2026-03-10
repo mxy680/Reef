@@ -119,7 +119,7 @@ struct DocumentUploadSheet: View {
                         .tracking(-0.04 * 14)
                         .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
-                    Text("Extracts questions and enables tutor mode")
+                    Text("Extracts questions and enables tutoring")
                         .font(.epilogue(12, weight: .medium))
                         .tracking(-0.04 * 12)
                         .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)

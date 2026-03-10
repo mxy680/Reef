@@ -2,7 +2,8 @@
 //  DocumentCanvasView.swift
 //  Reef
 //
-//  Full-screen scrollable PDF viewer with PencilKit drawing
+//  Full-screen scrollable PDF viewer with PencilKit drawing.
+//  All questions render in a single scrollable view.
 //
 
 import SwiftUI
@@ -16,8 +17,7 @@ struct DocumentCanvasView: View {
     @Environment(ThemeManager.self) private var theme
     @State private var viewModel = CanvasViewModel()
     @State private var selectedTool: CanvasTool = .pen
-    @State private var currentQuestionIndex = 0
-    @State private var tutorModeOn = false
+    @State private var tutorModeOn = true
     @State private var currentPageIndex = 0
     @State private var pageVersion = UUID()
     @State private var showPageMenu = false
@@ -34,9 +34,22 @@ struct DocumentCanvasView: View {
     @State private var pageMenuMidX: CGFloat = 0
     @State private var pageOverlaySettings = PageOverlaySettings()
     @State private var answerKeys: [Int: QuestionAnswer] = [:]
+    @State private var showTutorPopover = false
 
     private var isReconstructed: Bool {
         document.questionPages != nil
+    }
+
+    /// Derive which question is visible from the current page index.
+    private var visibleQuestionIndex: Int {
+        guard let pages = document.questionPages else { return 0 }
+        for (index, range) in pages.enumerated() {
+            guard range.count == 2 else { continue }
+            if currentPageIndex >= range[0] && currentPageIndex <= range[1] {
+                return index
+            }
+        }
+        return 0
     }
 
     /// Current PencilKit tool derived from toolbar selection + settings
@@ -77,10 +90,7 @@ struct DocumentCanvasView: View {
                 } else if let pdf = viewModel.pdfDocument, let manager = drawingManager {
                     CanvasToolbar(
                         selectedTool: $selectedTool,
-                        currentQuestionIndex: $currentQuestionIndex,
-                        questionCount: isReconstructed
-                            ? (document.problemCount ?? 1)
-                            : 1,
+                        visibleQuestionIndex: visibleQuestionIndex,
                         onClose: {
                             manager.saveAll()
                             Task { await viewModel.saveIfNeeded() }
@@ -89,6 +99,10 @@ struct DocumentCanvasView: View {
                         tutorModeOn: $tutorModeOn,
                         isReconstructed: isReconstructed,
                         documentName: document.displayName,
+                        answerKey: answerKeys[visibleQuestionIndex + 1],
+                        questionCount: isReconstructed
+                            ? (document.problemCount ?? 1)
+                            : 1,
                         onPageAction: { handlePageAction($0) },
                         showPageMenu: $showPageMenu,
                         showRuler: $showRuler,
@@ -102,7 +116,8 @@ struct DocumentCanvasView: View {
                         pageSettingsMidX: $pageSettingsMidX,
                         pageMenuMidX: $pageMenuMidX,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
-                        pageOverlaySettings: $pageOverlaySettings
+                        pageOverlaySettings: $pageOverlaySettings,
+                        showTutorPopover: $showTutorPopover
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -173,27 +188,19 @@ struct DocumentCanvasView: View {
                         }
                     }
                     .animation(.easeOut(duration: 0.2), value: showPageMenu)
-                    .zIndex(2) // popovers overlay step toolbar
-
-                    if tutorModeOn && isReconstructed {
-                        TutorStepToolbar(
-                            questionIndex: currentQuestionIndex,
-                            answerKey: answerKeys[currentQuestionIndex + 1]
-                        )
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
+                    .zIndex(2)
 
                     ZStack(alignment: .top) {
                         CanvasPageView(
                             pdfDocument: pdf,
-                            pageRange: pageRange(for: currentQuestionIndex),
+                            pageRange: nil,
                             drawingManager: manager,
                             currentTool: currentPKTool,
                             onVisiblePageChanged: { currentPageIndex = $0 },
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings
                         )
-                        .id("\(currentQuestionIndex)-\(pageVersion)")
+                        .id(pageVersion)
 
                         if showRuler {
                             RulerOverlayView()
@@ -212,6 +219,11 @@ struct DocumentCanvasView: View {
                                     showPageSettings = false
                                     showPageMenu = false
                                 }
+                        }
+                        if showTutorPopover {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { showTutorPopover = false }
                         }
                     }
                 }
@@ -275,9 +287,6 @@ struct DocumentCanvasView: View {
         .onChange(of: showPageMenu) { _, isShowing in
             if isShowing { showToolSettings = false; showPageSettings = false }
         }
-        .onChange(of: currentQuestionIndex) { _, _ in
-            drawingManager?.saveAll()
-        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             drawingManager?.saveAll()
         }
@@ -308,15 +317,6 @@ struct DocumentCanvasView: View {
             }
         }
         pageVersion = UUID()
-    }
-
-    // MARK: - Page Range
-
-    private func pageRange(for questionIndex: Int) -> ClosedRange<Int>? {
-        guard let pages = document.questionPages,
-              questionIndex < pages.count,
-              pages[questionIndex].count == 2 else { return nil }
-        return pages[questionIndex][0]...pages[questionIndex][1]
     }
 
     // MARK: - Loading

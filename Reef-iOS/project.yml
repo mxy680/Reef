@@ -33,6 +33,8 @@ targets:
     resources:
       - path: Reef/Resources/Fonts
         buildPhase: resources
+      - path: Reef/Resources/KaTeX
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.studyreef.app
