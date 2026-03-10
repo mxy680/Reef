@@ -46,6 +46,8 @@ struct CanvasToolbar: View {
     @State private var hintMidX: CGFloat = 0
     @State private var revealMidX: CGFloat = 0
     @State private var pulseOpacity: Double = 1.0
+    @State private var toolbarRowMinX: CGFloat = 0
+    @State private var toolbarRowWidth: CGFloat = 0
 
     private static let tutorPopoverWidth: CGFloat = 260
 
@@ -101,16 +103,30 @@ struct CanvasToolbar: View {
             .frame(maxWidth: .infinity)
             .frame(height: 48)
             .background(activeBarColor)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.onAppear {
+                        toolbarRowMinX = geo.frame(in: .global).minX
+                        toolbarRowWidth = geo.size.width
+                    }
+                    .onChange(of: geo.size) { _, _ in
+                        toolbarRowMinX = geo.frame(in: .global).minX
+                        toolbarRowWidth = geo.size.width
+                    }
+                }
+            )
             // Tutor hint/reveal popovers — hang below Row 2, arrow points up to buttons
-            .overlay(alignment: .bottomLeading) {
+            .overlay(alignment: .topLeading) {
                 if let step = currentTutorStep, showHint {
                     tutorPopoverCard(triggerMidX: hintMidX, title: "Hint", text: step.hint)
+                        .offset(y: 48)
                 }
             }
             .animation(.easeOut(duration: 0.2), value: showHint)
-            .overlay(alignment: .bottomLeading) {
+            .overlay(alignment: .topLeading) {
                 if let step = currentTutorStep, showReveal {
                     tutorPopoverCard(triggerMidX: revealMidX, title: "Answer", text: step.work)
+                        .offset(y: 48)
                 }
             }
             .animation(.easeOut(duration: 0.2), value: showReveal)
@@ -152,33 +168,28 @@ struct CanvasToolbar: View {
     }
 
     private func tutorPopoverCard(triggerMidX: CGFloat, title: String, text: String) -> some View {
-        GeometryReader { geo in
-            let containerMinX = geo.frame(in: .global).minX
-            let containerWidth = geo.size.width
-            let idealX = triggerMidX - containerMinX - Self.tutorPopoverWidth / 2
-            let clampedX = max(12, min(idealX, containerWidth - Self.tutorPopoverWidth - 12))
-            let arrowOffset = (triggerMidX - containerMinX) - (clampedX + Self.tutorPopoverWidth / 2)
+        let idealX = triggerMidX - toolbarRowMinX - Self.tutorPopoverWidth / 2
+        let clampedX = max(12, min(idealX, toolbarRowWidth - Self.tutorPopoverWidth - 12))
+        let arrowOffset = (triggerMidX - toolbarRowMinX) - (clampedX + Self.tutorPopoverWidth / 2)
 
-            PopoverCard(arrowOffset: arrowOffset, maxWidth: Self.tutorPopoverWidth) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(title)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(ReefColors.black)
-                    MathText(
-                        text: text,
-                        fontSize: 13,
-                        color: ReefColors.gray600,
-                        maxHeight: popoverMaxHeight - 50
-                    )
-                }
-                .padding(12)
-                .frame(width: Self.tutorPopoverWidth, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
+        return PopoverCard(arrowOffset: arrowOffset, maxWidth: Self.tutorPopoverWidth) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(ReefColors.black)
+                MathText(
+                    text: text,
+                    fontSize: 13,
+                    color: ReefColors.gray600,
+                    maxHeight: popoverMaxHeight - 50
+                )
             }
-            .transition(.scale(scale: 0.01, anchor: .top))
-            .offset(x: clampedX)
+            .padding(12)
+            .frame(width: Self.tutorPopoverWidth, alignment: .leading)
         }
         .fixedSize(horizontal: false, vertical: true)
+        .transition(.scale(scale: 0.01, anchor: .top))
+        .offset(x: clampedX)
     }
 
     // MARK: - Info Strip (Row 1)

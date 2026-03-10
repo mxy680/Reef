@@ -34,23 +34,34 @@ struct ContentView: View {
         }
         .hoverEffectDisabled()
         #if DEBUG
-        .onAppear {
+        .overlay(alignment: .bottomTrailing) {
             if authManager.devMode && canvasDocument == nil {
-                canvasDocument = Document(
-                    id: "dev-test",
-                    userId: "dev",
-                    filename: "Test Canvas.pdf",
-                    status: .completed,
-                    pageCount: 1,
-                    problemCount: nil,
-                    questionPages: nil,
-                    questionRegions: nil,
-                    errorMessage: nil,
-                    statusMessage: nil,
-                    costCents: nil,
-                    courseId: nil,
-                    createdAt: "2026-01-01T00:00:00Z"
-                )
+                Button {
+                    canvasDocument = Document(
+                        id: "dev-test",
+                        userId: "dev",
+                        filename: "Test Canvas.pdf",
+                        status: .completed,
+                        pageCount: 1,
+                        problemCount: 1,
+                        questionPages: [[0, 0]],
+                        questionRegions: nil,
+                        errorMessage: nil,
+                        statusMessage: nil,
+                        costCents: nil,
+                        courseId: nil,
+                        createdAt: "2026-01-01T00:00:00Z"
+                    )
+                } label: {
+                    Text("Test Canvas")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.red)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .padding(20)
             }
         }
         #endif
