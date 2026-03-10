@@ -374,12 +374,12 @@ struct DashboardSidebar: View {
             // User
             footerRow {
                 circleIcon(fill: dark ? ReefColors.DashboardDark.surface : ReefColors.surface) {
-                    Text(userInitials)
+                    Text(authManager.userInitials)
                         .font(.epilogue(12, weight: .black))
                         .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
             } label: {
-                Text(displayName)
+                Text(authManager.displayName)
                     .lineLimit(1)
             } trailing: {
                 Image("icon.settings")
@@ -442,21 +442,4 @@ struct DashboardSidebar: View {
         .contentShape(Rectangle())
     }
 
-    // MARK: - User Info
-
-    private var displayName: String {
-        if let meta = authManager.session?.user.userMetadata["display_name"],
-           case .string(let name) = meta {
-            return name
-        }
-        return authManager.session?.user.email?.components(separatedBy: "@").first ?? "User"
-    }
-
-    private var userInitials: String {
-        let parts = displayName.split(separator: " ")
-        if parts.count >= 2 {
-            return "\(parts[0].prefix(1))\(parts[1].prefix(1))".uppercased()
-        }
-        return String(displayName.prefix(2)).uppercased()
-    }
 }

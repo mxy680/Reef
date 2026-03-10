@@ -200,6 +200,7 @@ final class CanvasContainerView: UIView {
         let scale: CGFloat = 2.0
         var images: [UIImage] = []
 
+        guard document.pageCount > 0 else { return images }
         let range = pageRange ?? 0...(document.pageCount - 1)
         for i in range {
             guard i < document.pageCount, let page = document.page(at: i) else { continue }

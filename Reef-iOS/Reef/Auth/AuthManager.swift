@@ -217,19 +217,17 @@ final class AuthManager {
 
     // MARK: - Sign Out
 
-    func signOut() {
-        Task {
-            do {
-                try await supabase.auth.signOut()
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-            #if DEBUG
-            devMode = false
-            #endif
-            session = nil
-            profile = nil
+    func signOut() async {
+        do {
+            try await supabase.auth.signOut()
+        } catch {
+            errorMessage = error.localizedDescription
         }
+        #if DEBUG
+        devMode = false
+        #endif
+        session = nil
+        profile = nil
     }
 
     // MARK: - Nonce Utilities
@@ -254,5 +252,23 @@ final class AuthManager {
         let data = Data(input.utf8)
         let hash = SHA256.hash(data: data)
         return hash.compactMap { String(format: "%02x", $0) }.joined()
+    }
+
+    // MARK: - Display Helpers
+
+    var displayName: String {
+        if let meta = session?.user.userMetadata["display_name"],
+           case .string(let name) = meta {
+            return name
+        }
+        return session?.user.email?.components(separatedBy: "@").first ?? "User"
+    }
+
+    var userInitials: String {
+        let parts = displayName.split(separator: " ")
+        if parts.count >= 2 {
+            return "\(parts[0].prefix(1))\(parts[1].prefix(1))".uppercased()
+        }
+        return String(displayName.prefix(2)).uppercased()
     }
 }

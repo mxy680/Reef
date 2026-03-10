@@ -142,10 +142,11 @@ struct KaTeXView: UIViewRepresentable {
         """
 
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let tempHTML = cacheDir.appendingPathComponent("katex_render.html")
+        let tempHTML = cacheDir.appendingPathComponent("katex_\(UUID().uuidString).html")
         try? html.write(to: tempHTML, atomically: true, encoding: .utf8)
 
-        webView.loadFileURL(tempHTML, allowingReadAccessTo: URL(fileURLWithPath: "/"))
+        let allowAccessTo = Bundle.main.resourceURL ?? cacheDir
+        webView.loadFileURL(tempHTML, allowingReadAccessTo: allowAccessTo)
     }
 
     private static func hexString(from color: Color) -> String {

@@ -32,22 +32,24 @@ struct PageOverlaySettings: Equatable {
 // MARK: - Popover View
 
 struct PageSettingsPopover: View {
+    @Environment(ThemeManager.self) private var theme
     @Binding var settings: PageOverlaySettings
 
     var body: some View {
+        let dark = theme.isDarkMode
         VStack(alignment: .leading, spacing: 0) {
             // Header
             Text("Page Settings")
                 .font(.epilogue(15, weight: .bold))
                 .tracking(-0.04 * 15)
-                .foregroundStyle(ReefColors.black)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Spacer().frame(height: 4)
 
             Text("Add an overlay to your pages.")
                 .font(.epilogue(12, weight: .medium))
                 .tracking(-0.04 * 12)
-                .foregroundStyle(ReefColors.gray500)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray500)
 
             Spacer().frame(height: 16)
 
@@ -55,11 +57,11 @@ struct PageSettingsPopover: View {
             Text("Overlay")
                 .font(.epilogue(11, weight: .semiBold))
                 .tracking(-0.04 * 11)
-                .foregroundStyle(ReefColors.gray400)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray400)
                 .textCase(.uppercase)
                 .padding(.bottom, 6)
 
-            overlayTypePicker
+            overlayTypePicker(dark: dark)
 
             // Spacing slider (only when overlay is active)
             if settings.type != .none {
@@ -69,7 +71,7 @@ struct PageSettingsPopover: View {
                     Text("Spacing")
                         .font(.epilogue(11, weight: .semiBold))
                         .tracking(-0.04 * 11)
-                        .foregroundStyle(ReefColors.gray400)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray400)
                         .textCase(.uppercase)
 
                     Spacer()
@@ -77,7 +79,7 @@ struct PageSettingsPopover: View {
                     Text("\(Int(settings.spacing))pt")
                         .font(.epilogue(12, weight: .bold))
                         .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
                 .padding(.bottom, 6)
 
@@ -90,7 +92,7 @@ struct PageSettingsPopover: View {
                     Text("Opacity")
                         .font(.epilogue(11, weight: .semiBold))
                         .tracking(-0.04 * 11)
-                        .foregroundStyle(ReefColors.gray400)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray400)
                         .textCase(.uppercase)
 
                     Spacer()
@@ -98,7 +100,7 @@ struct PageSettingsPopover: View {
                     Text("\(Int(settings.opacity * 100))%")
                         .font(.epilogue(12, weight: .bold))
                         .tracking(-0.04 * 12)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
                 .padding(.bottom, 6)
 
@@ -112,7 +114,7 @@ struct PageSettingsPopover: View {
                     Text("Show in export")
                         .font(.epilogue(13, weight: .semiBold))
                         .tracking(-0.04 * 13)
-                        .foregroundStyle(ReefColors.black)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
                     Spacer()
 
@@ -128,16 +130,19 @@ struct PageSettingsPopover: View {
 
     // MARK: - Overlay Type Picker
 
-    private var overlayTypePicker: some View {
-        HStack(spacing: 0) {
+    private func overlayTypePicker(dark: Bool) -> some View {
+        let borderColor = dark ? ReefColors.DashboardDark.popupBorder : ReefColors.black
+        let bgColor = dark ? ReefColors.DashboardDark.card : ReefColors.white
+
+        return HStack(spacing: 0) {
             ForEach(PageOverlayType.allCases, id: \.self) { type in
                 Text(type.label)
                     .font(.epilogue(12, weight: .bold))
                     .tracking(-0.04 * 12)
-                    .foregroundStyle(settings.type == type ? ReefColors.white : ReefColors.black)
+                    .foregroundStyle(settings.type == type ? ReefColors.white : (dark ? ReefColors.DashboardDark.text : ReefColors.black))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(settings.type == type ? ReefColors.primary : ReefColors.white)
+                    .background(settings.type == type ? ReefColors.primary : bgColor)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         withAnimation(.spring(duration: 0.2)) {
@@ -149,11 +154,11 @@ struct PageSettingsPopover: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(ReefColors.black, lineWidth: 1.5)
+                .stroke(borderColor, lineWidth: 1.5)
         )
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(ReefColors.black)
+                .fill(dark ? ReefColors.DashboardDark.popupShadow : ReefColors.black)
                 .offset(x: 3, y: 3)
         )
     }
