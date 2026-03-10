@@ -236,17 +236,17 @@ struct CanvasToolbar: View {
             if isReconstructed {
                 HStack(spacing: 0) {
                     if tutorModeOn && currentTutorStep != nil {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 6) {
                             progressBar(progress: stepProgress)
 
                             HStack(spacing: 0) {
                                 Text("\(Int(stepProgress * 100))")
-                                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                    .font(.system(size: 12, weight: .heavy, design: .rounded))
                                     .foregroundColor(.white)
                                 Text("%")
-                                    .font(.system(size: 8, weight: .bold, design: .rounded))
+                                    .font(.system(size: 9, weight: .bold, design: .rounded))
                                     .foregroundColor(.white.opacity(0.6))
-                                    .baselineOffset(1)
+                                    .baselineOffset(1.5)
                             }
                         }
 
