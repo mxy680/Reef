@@ -16,6 +16,7 @@ struct CanvasPageView: UIViewRepresentable {
     let drawingManager: DrawingManager
     let currentTool: PKTool
     var onVisiblePageChanged: ((Int) -> Void)?
+    var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     var darkMode: Bool = false
     var overlaySettings: PageOverlaySettings = PageOverlaySettings()
 
@@ -25,6 +26,7 @@ struct CanvasPageView: UIViewRepresentable {
         container.pageIndexOffset = pageRange?.lowerBound ?? 0
         container.currentTool = currentTool
         container.onVisiblePageChanged = onVisiblePageChanged
+        container.onWritingPositionChanged = onWritingPositionChanged
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
         container.applyDarkMode(darkMode)
         container.updateOverlay(overlaySettings)
@@ -34,6 +36,7 @@ struct CanvasPageView: UIViewRepresentable {
     func updateUIView(_ uiView: CanvasContainerView, context: Context) {
         uiView.currentTool = currentTool
         uiView.onVisiblePageChanged = onVisiblePageChanged
+        uiView.onWritingPositionChanged = onWritingPositionChanged
         uiView.applyDarkMode(darkMode)
         uiView.updateOverlay(overlaySettings)
     }
@@ -63,8 +66,12 @@ final class CanvasContainerView: UIView {
 
     /// Callback reporting the currently visible page index (PDF-absolute)
     var onVisiblePageChanged: ((Int) -> Void)?
+    /// Callback reporting the writing position (page index + y in PDF points)
+    var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     private var startPageIndex: Int = 0
     private var lastReportedPage: Int = -1
+    /// Track stroke counts per canvas to detect new strokes
+    private var lastStrokeCounts: [Int: Int] = [:]
 
     /// Drawing state manager (owned by DocumentCanvasView, passed down)
     weak var drawingManager: DrawingManager?
@@ -582,6 +589,19 @@ extension CanvasContainerView: PKCanvasViewDelegate {
         guard let index = canvasViews.firstIndex(of: canvasView) else { return }
         let absolutePageIndex = pageIndexOffset + index
         drawingManager?.setDrawing(canvasView.drawing, for: absolutePageIndex)
+
+        // Detect new stroke and report writing position
+        let currentCount = canvasView.drawing.strokes.count
+        let previousCount = lastStrokeCounts[index] ?? 0
+        if currentCount > previousCount,
+           let lastStroke = canvasView.drawing.strokes.last,
+           lastStroke.path.count > 0 {
+            let startPoint = lastStroke.path.interpolatedLocation(at: 0)
+            // Canvas coordinates are at 2x render scale; divide by 2 for PDF points
+            let yPDFPoints = startPoint.y / 2.0
+            onWritingPositionChanged?(absolutePageIndex, yPDFPoints)
+        }
+        lastStrokeCounts[index] = currentCount
     }
 
     func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
