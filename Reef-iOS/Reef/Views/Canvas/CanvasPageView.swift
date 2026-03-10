@@ -188,16 +188,6 @@ final class CanvasContainerView: UIView {
         // Hover gesture for Apple Pencil
         let hoverGesture = UIHoverGestureRecognizer(target: self, action: #selector(handleHover(_:)))
         scrollView.addGestureRecognizer(hoverGesture)
-
-        // Pan gesture to track touch position during active erasing
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleEraserPan(_:)))
-        panGesture.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.pencil.rawValue)]
-        panGesture.minimumNumberOfTouches = 1
-        panGesture.maximumNumberOfTouches = 1
-        panGesture.cancelsTouchesInView = false
-        panGesture.delaysTouchesBegan = false
-        panGesture.delegate = self
-        scrollView.addGestureRecognizer(panGesture)
     }
 
     // MARK: - Configure
@@ -327,6 +317,16 @@ final class CanvasContainerView: UIView {
             if let manager = drawingManager {
                 canvasView.drawing = manager.drawing(for: absolutePageIndex)
             }
+
+            // Pan gesture to track pencil position during active erasing
+            let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleEraserPan(_:)))
+            panGesture.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.pencil.rawValue)]
+            panGesture.minimumNumberOfTouches = 1
+            panGesture.maximumNumberOfTouches = 1
+            panGesture.cancelsTouchesInView = false
+            panGesture.delaysTouchesBegan = false
+            panGesture.delegate = self
+            canvasView.addGestureRecognizer(panGesture)
 
             pageView.addSubview(canvasView)
             canvasViews.append(canvasView)
@@ -527,16 +527,17 @@ final class CanvasContainerView: UIView {
     }
 
     @objc private func handleEraserPan(_ gesture: UIPanGestureRecognizer) {
-        guard isEraserActive else {
+        guard isEraserActive, let canvasView = gesture.view else {
             eraserCursorView.isHidden = true
             return
         }
 
         switch gesture.state {
         case .began, .changed:
-            let location = gesture.location(in: scrollView)
+            let locationInCanvas = gesture.location(in: canvasView)
+            let locationInScroll = canvasView.convert(locationInCanvas, to: scrollView)
             eraserCursorView.isHidden = false
-            eraserCursorView.center = location
+            eraserCursorView.center = locationInScroll
         case .ended, .cancelled:
             eraserCursorView.isHidden = true
         default:
