@@ -104,7 +104,7 @@ struct DashboardHeader: View {
                                 .frame(width: 32, height: 32)
                                 .offset(x: 2, y: 2)
                         )
-                    Text(userInitials)
+                    Text(authManager.userInitials)
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
                 }
@@ -154,13 +154,13 @@ struct DashboardHeader: View {
                     Circle()
                         .fill(ReefColors.accent)
                         .frame(width: 32, height: 32)
-                    Text(userInitials)
+                    Text(authManager.userInitials)
                         .font(.epilogue(11, weight: .bold))
                         .foregroundStyle(ReefColors.black)
                 }
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(displayName)
+                    Text(authManager.displayName)
                         .font(.epilogue(14, weight: .bold))
                         .tracking(-0.04 * 14)
                         .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
@@ -312,14 +312,6 @@ struct DashboardHeader: View {
         .accessibilityAddTraits(.isButton)
     }
 
-    private var displayName: String {
-        if let meta = authManager.session?.user.userMetadata["display_name"],
-           case .string(let name) = meta {
-            return name
-        }
-        return authManager.session?.user.email?.components(separatedBy: "@").first ?? "User"
-    }
-
     private var userEmail: String {
         authManager.session?.user.email ?? ""
     }
@@ -334,13 +326,5 @@ struct DashboardHeader: View {
 
     private var tierLabel: String {
         "Shore · Free"
-    }
-
-    private var userInitials: String {
-        let parts = displayName.split(separator: " ")
-        if parts.count >= 2 {
-            return "\(parts[0].prefix(1))\(parts[1].prefix(1))".uppercased()
-        }
-        return String(displayName.prefix(2)).uppercased()
     }
 }
