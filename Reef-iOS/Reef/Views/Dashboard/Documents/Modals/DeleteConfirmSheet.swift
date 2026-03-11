@@ -35,32 +35,10 @@ struct DeleteConfirmSheet: View {
                     }
                     .accessibilityAddTraits(.isButton)
 
-                Text(isDeleting ? "Deleting..." : "Delete")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(Color(hex: 0xC62828))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 4, y: 4)
-                    )
-                    .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        isDeleting = true
-                        onConfirm()
-                    }
-                    .accessibilityAddTraits(.isButton)
-                    .allowsHitTesting(!isDeleting)
-                    .opacity(isDeleting ? 0.4 : 1)
+                ReefModalButton(isDeleting ? "Deleting..." : "Delete", variant: .destructive, isEnabled: !isDeleting) {
+                    isDeleting = true
+                    onConfirm()
+                }
             }
             .padding(.top, 24)
         }

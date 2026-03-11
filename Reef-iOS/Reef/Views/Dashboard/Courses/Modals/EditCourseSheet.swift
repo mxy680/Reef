@@ -109,31 +109,9 @@ struct EditCourseSheet: View {
                     }
                     .accessibilityAddTraits(.isButton)
 
-                Text("Save")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(canSave ? ReefColors.white : (dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500))
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(canSave ? ReefColors.primary : (dark ? ReefColors.DashboardDark.divider : ReefColors.gray100))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 4, y: 4)
-                    )
-                    .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        submitIfValid()
-                    }
-                    .accessibilityAddTraits(.isButton)
-                    .allowsHitTesting(canSave)
-                    .opacity(!canSave ? 0.4 : 1)
+                ReefModalButton("Save", isEnabled: canSave) {
+                    submitIfValid()
+                }
             }
         }
         .padding(.horizontal, 32)
@@ -159,21 +137,14 @@ struct EditCourseSheet: View {
                     .frame(width: 40, height: 40)
                     .background(selected ? ReefColors.primary : (dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 3, y: 3)
-                    )
-                    .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    .reef3DPush(
+                        cornerRadius: 10,
+                        shadowOffset: 3,
+                        borderColor: ReefColors.black,
+                        shadowColor: ReefColors.black
+                    ) {
                         selectedIcon = icon
                     }
-                    .accessibilityAddTraits(.isButton)
             }
         }
     }
@@ -183,20 +154,17 @@ struct EditCourseSheet: View {
     private var colorPicker: some View {
         HStack(spacing: 10) {
             ForEach(colorPresets, id: \.self) { c in
-                let selected = selectedColor == c
                 Circle()
                     .fill(Color(hex: c))
                     .frame(width: 32, height: 32)
-                    .overlay(
-                        Circle()
-                            .stroke(selected ? ReefColors.black : ReefColors.gray400, lineWidth: selected ? 3 : 2)
-                    )
-                    .shadow(color: selected ? ReefColors.black.opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
-                    .contentShape(Circle())
-                    .onTapGesture {
+                    .clipShape(Circle())
+                    .reef3DPushCircle(
+                        borderWidth: selectedColor == c ? 3 : 2,
+                        borderColor: selectedColor == c ? ReefColors.black : ReefColors.gray400,
+                        shadowColor: ReefColors.black
+                    ) {
                         selectedColor = c
                     }
-                    .accessibilityAddTraits(.isButton)
             }
         }
     }

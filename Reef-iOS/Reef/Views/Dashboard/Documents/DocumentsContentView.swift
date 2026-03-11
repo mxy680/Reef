@@ -104,21 +104,13 @@ struct DocumentsContentView: View {
         .padding(.vertical, 10)
         .background(ReefColors.primary)
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
-                .offset(x: 4, y: 4)
-        )
-        .compositingGroup()
-        .contentShape(Rectangle())
-        .onTapGesture {
+        .reef3DPush(
+            cornerRadius: 10,
+            borderColor: dark ? ReefColors.DashboardDark.border : ReefColors.black,
+            shadowColor: dark ? ReefColors.DashboardDark.shadow : ReefColors.black
+        ) {
             viewModel.showFilePicker = true
         }
-        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Grid
