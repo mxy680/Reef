@@ -352,17 +352,22 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         const segs = parsePathSegments(refPath.getAttribute('d'));
         if (segs.length === 0) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
 
-        // Create stroke path in same parent with same transform
+        // Create wrapper with use transform, then stroke path with def transform
+        const wrapper = document.createElementNS(NS, 'g');
+        const useT = item.el.getAttribute('transform') || '';
+        const defT = refPath.getAttribute('transform') || '';
+        if (useT) wrapper.setAttribute('transform', useT);
+
         const strokePath = document.createElementNS(NS, 'path');
-        const t = item.el.getAttribute('transform');
-        if (t) strokePath.setAttribute('transform', t);
+        if (defT) strokePath.setAttribute('transform', defT);
         strokePath.style.fill = 'none';
         strokePath.style.stroke = '#1a1a1a';
         strokePath.style.strokeWidth = '40';
         strokePath.style.strokeLinecap = 'round';
         strokePath.style.strokeLinejoin = 'round';
-        item.parentG.appendChild(strokePath);
-        created.push(strokePath);
+        wrapper.appendChild(strokePath);
+        item.parentG.appendChild(wrapper);
+        created.push(wrapper);
 
         // Progressively add segments
         let segIdx = 0;
@@ -373,7 +378,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           if (segIdx >= segs.length) {
             // Done: show original filled glyph, remove stroke
             item.el.style.opacity = '1';
-            strokePath.style.opacity = '0';
+            wrapper.style.display = 'none';
             // Small gap before next character
             timeouts.push(setTimeout(() => animateItem(idx + 1), 30));
             return;
