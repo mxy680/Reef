@@ -248,42 +248,43 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   let animCleanup = null;
 
-  // Compute a stroke path through a glyph by sampling its outline sequentially
-  function computeCenterline(pathD, svg, NS) {
-    const tmp = document.createElementNS(NS, 'path');
-    tmp.setAttribute('d', pathD);
-    tmp.style.visibility = 'hidden';
-    svg.appendChild(tmp);
-
-    const totalLen = tmp.getTotalLength();
-    const numSamples = 200;
-    const points = [];
-    for (let i = 0; i <= numSamples; i++) {
-      const pt = tmp.getPointAtLength((i / numSamples) * totalLen);
-      points.push({ x: pt.x, y: pt.y });
+  function parsePathSegments(d) {
+    const segs = [];
+    const tokens = d.match(/[MLQCZHVSmlqczhvs]|[-+]?\d*\.?\d+/g);
+    if (!tokens) return segs;
+    let i = 0, cmd = '', cx = 0, cy = 0;
+    while (i < tokens.length) {
+      const t = tokens[i];
+      if (/[A-Za-z]/.test(t)) { cmd = t; i++; if (cmd === 'Z' || cmd === 'z') { segs.push({ cmd: 'Z', str: 'Z' }); continue; } }
+      if (cmd === 'M') {
+        const x = tokens[i], y = tokens[i+1];
+        cx = +x; cy = +y;
+        segs.push({ cmd: 'M', str: `M ${x} ${y}`, x: cx, y: cy });
+        i += 2; cmd = 'L';
+      } else if (cmd === 'L') {
+        const x = tokens[i], y = tokens[i+1];
+        cx = +x; cy = +y;
+        segs.push({ cmd: 'L', str: `L ${x} ${y}`, x: cx, y: cy });
+        i += 2;
+      } else if (cmd === 'Q') {
+        segs.push({ cmd: 'Q', str: `Q ${tokens[i]} ${tokens[i+1]} ${tokens[i+2]} ${tokens[i+3]}`, x: +tokens[i+2], y: +tokens[i+3] });
+        cx = +tokens[i+2]; cy = +tokens[i+3];
+        i += 4;
+      } else if (cmd === 'C') {
+        segs.push({ cmd: 'C', str: `C ${tokens[i]} ${tokens[i+1]} ${tokens[i+2]} ${tokens[i+3]} ${tokens[i+4]} ${tokens[i+5]}`, x: +tokens[i+4], y: +tokens[i+5] });
+        cx = +tokens[i+4]; cy = +tokens[i+5];
+        i += 6;
+      } else if (cmd === 'H') {
+        cx = +tokens[i];
+        segs.push({ cmd: 'L', str: `L ${cx} ${cy}`, x: cx, y: cy });
+        i++;
+      } else if (cmd === 'V') {
+        cy = +tokens[i];
+        segs.push({ cmd: 'L', str: `L ${cx} ${cy}`, x: cx, y: cy });
+        i++;
+      } else { i++; }
     }
-    tmp.remove();
-
-    if (points.length < 2) return null;
-
-    // Compute bounds for thickness
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    points.forEach(p => {
-      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
-      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
-    });
-    const w = maxX - minX, h = maxY - minY;
-    if (w === 0 && h === 0) return null;
-
-    const isVertical = h > w * 1.5;
-    const thickness = (isVertical ? w : h) * 0.9;
-
-    // Build path connecting points sequentially
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      d += ` L ${points[i].x} ${points[i].y}`;
-    }
-    return { d, thickness, points };
+    return segs;
   }
 
   function playAnimation() {
@@ -292,13 +293,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     const btn = $('play-btn');
     btn.disabled = true;
 
+    // Clean up any previous animation artifacts
     if (animCleanup) { animCleanup(); animCleanup = null; }
 
     const NS = 'http://www.w3.org/2000/svg';
     const textGroup = svg.querySelector('#text_1');
     if (!textGroup) { btn.disabled = false; return; }
 
-    // Collect <use> glyphs and standalone <path>s
+    // Collect <use> glyphs and standalone <path>s (fraction lines, sqrt bars)
     const items = [];
     function collect(el) {
       for (const child of el.children) {
@@ -316,7 +318,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     collect(textGroup);
     if (items.length === 0) { btn.disabled = false; return; }
 
-    // Sort by screen position
+    // Sort by position: left-to-right, top-to-bottom for overlapping
     items.forEach(item => {
       const r = item.el.getBoundingClientRect();
       item.x = r.left; item.y = r.top; item.w = r.width; item.h = r.height;
@@ -327,20 +329,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       return a.x - b.x;
     });
 
-    // Create anim defs for clip paths
-    let animDefs = svg.querySelector('defs.anim-clips');
-    if (!animDefs) {
-      animDefs = document.createElementNS(NS, 'defs');
-      animDefs.setAttribute('class', 'anim-clips');
-      svg.insertBefore(animDefs, svg.firstChild);
-    }
-
     const created = [];
     const timeouts = [];
 
-    // Hide all
+    // Hide all original elements upfront
     items.forEach(item => { item.el.style.opacity = '0'; });
 
+    // Animate each item sequentially
     function animateItem(idx) {
       if (idx >= items.length) {
         timeouts.push(setTimeout(() => { btn.disabled = false; }, 200));
@@ -349,118 +344,91 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const item = items[idx];
 
       if (item.type === 'use') {
+        // Resolve referenced path
         const href = item.el.getAttribute('xlink:href') || item.el.getAttribute('href');
-        const refPath = svg.querySelector(href) || textGroup.querySelector(href);
-        if (!refPath) { console.warn('centerline: no refPath for', href); item.el.style.opacity = '1'; animateItem(idx + 1); return; }
+        const refPath = textGroup.querySelector(href);
+        if (!refPath) { animateItem(idx + 1); return; }
 
-        const pathD = refPath.getAttribute('d');
-        const cl = computeCenterline(pathD, svg, NS);
-        if (!cl) { console.warn('centerline: null for', href, 'pathD length:', pathD?.length); item.el.style.opacity = '1'; animateItem(idx + 1); return; }
+        const segs = parsePathSegments(refPath.getAttribute('d'));
+        if (segs.length === 0) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
 
-        // Create clip path from glyph outline (in raw font units)
-        const clipId = 'anim-clip-' + idx;
-        const clipPathEl = document.createElementNS(NS, 'clipPath');
-        clipPathEl.id = clipId;
-        const clipShape = document.createElementNS(NS, 'path');
-        clipShape.setAttribute('d', pathD);
-        clipPathEl.appendChild(clipShape);
-        animDefs.appendChild(clipPathEl);
-
-        // Build: <g transform="useT"> → <g transform="defT" clip-path> → <path d="centerline">
-        const wrapper = document.createElementNS(NS, 'g');
-        const useT = item.el.getAttribute('transform') || '';
-        const defT = refPath.getAttribute('transform') || '';
-        if (useT) wrapper.setAttribute('transform', useT);
-
-        const innerG = document.createElementNS(NS, 'g');
-        if (defT) innerG.setAttribute('transform', defT);
-        // Clip is in innerG's coordinate system (after defT scale),
-        // but clipShape uses raw font units. Since defT is scale(0.015625),
-        // and clipPathUnits defaults to userSpaceOnUse (parent coords of innerG = wrapper coords),
-        // we need the clipShape in wrapper coords. So add defT to clipShape too.
-        if (defT) clipShape.setAttribute('transform', defT);
-
-        innerG.setAttribute('clip-path', `url(#${clipId})`);
-
+        // Create stroke path in same parent with same transform
         const strokePath = document.createElementNS(NS, 'path');
-        strokePath.setAttribute('d', cl.d);
-        strokePath.setAttribute('transform', defT || '');
+        const t = item.el.getAttribute('transform');
+        if (t) strokePath.setAttribute('transform', t);
         strokePath.style.fill = 'none';
         strokePath.style.stroke = '#1a1a1a';
-        strokePath.style.strokeWidth = cl.thickness;
+        strokePath.style.strokeWidth = '40';
         strokePath.style.strokeLinecap = 'round';
         strokePath.style.strokeLinejoin = 'round';
+        item.parentG.appendChild(strokePath);
+        created.push(strokePath);
 
-        innerG.appendChild(strokePath);
-        wrapper.appendChild(innerG);
-        item.parentG.appendChild(wrapper);
-        created.push(wrapper);
+        // Progressively add segments
+        let segIdx = 0;
+        let dStr = '';
+        const segDelay = 25; // ms per segment
 
-        // Animate point-by-point: progressively build the path from n=0 → n+1 → n+2 ...
-        const pts = cl.points;
-        if (pts.length < 2) { item.el.style.opacity = '1'; wrapper.remove(); animateItem(idx + 1); return; }
-
-        const totalDur = Math.max(300, Math.min(800, pts.length * 3));
-        const interval = totalDur / pts.length;
-        let ptIdx = 1;
-        strokePath.setAttribute('d', `M ${pts[0].x} ${pts[0].y}`);
-
-        function drawNext() {
-          if (ptIdx >= pts.length) {
-            // Done — snap to clean filled glyph
-            timeouts.push(setTimeout(() => {
-              item.el.style.opacity = '1';
-              wrapper.style.display = 'none';
-              timeouts.push(setTimeout(() => animateItem(idx + 1), 40));
-            }, 50));
+        function addNextSeg() {
+          if (segIdx >= segs.length) {
+            // Done: show original filled glyph, remove stroke
+            item.el.style.opacity = '1';
+            strokePath.style.opacity = '0';
+            // Small gap before next character
+            timeouts.push(setTimeout(() => animateItem(idx + 1), 30));
             return;
           }
-          let curD = `M ${pts[0].x} ${pts[0].y}`;
-          for (let k = 1; k <= ptIdx; k++) {
-            curD += ` L ${pts[k].x} ${pts[k].y}`;
-          }
-          strokePath.setAttribute('d', curD);
-          ptIdx++;
-          timeouts.push(setTimeout(drawNext, interval));
+          dStr += (dStr ? ' ' : '') + segs[segIdx].str;
+          strokePath.setAttribute('d', dStr);
+          segIdx++;
+          timeouts.push(setTimeout(addNextSeg, segDelay));
         }
-        drawNext();
+        addNextSeg();
 
       } else {
-        // Standalone path (fraction line, sqrt bar): simple dasharray wipe
-        const el = item.el;
-        const len = el.getTotalLength();
-        el.style.opacity = '1';
-        if (len > 0) {
-          el.style.strokeDasharray = len;
-          el.style.strokeDashoffset = len;
-          el.getBoundingClientRect();
-          const dur = Math.max(150, Math.min(400, len * 2));
-          el.style.transition = `stroke-dashoffset ${dur}ms ease-out`;
-          el.style.strokeDashoffset = '0';
-          timeouts.push(setTimeout(() => {
-            el.style.strokeDasharray = '';
-            el.style.strokeDashoffset = '';
-            el.style.transition = '';
-            animateItem(idx + 1);
-          }, dur));
-        } else {
-          animateItem(idx + 1);
+        // Standalone path — progressive segment draw
+        const d = item.el.getAttribute('d');
+        const segs = parsePathSegments(d);
+        if (segs.length === 0) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
+
+        // Hide original, create stroke version
+        const strokePath = document.createElementNS(NS, 'path');
+        strokePath.style.fill = 'none';
+        strokePath.style.stroke = item.el.getAttribute('stroke') || item.el.style.stroke || '#1a1a1a';
+        strokePath.style.strokeWidth = item.el.getAttribute('stroke-width') || item.el.style.strokeWidth || '40';
+        strokePath.style.strokeLinecap = 'round';
+        strokePath.style.strokeLinejoin = 'round';
+        // Copy transform if any
+        const t = item.el.getAttribute('transform');
+        if (t) strokePath.setAttribute('transform', t);
+        item.parentG.appendChild(strokePath);
+        created.push(strokePath);
+
+        let segIdx = 0, dStr = '';
+        const segDelay = 25;
+        function addNextSeg() {
+          if (segIdx >= segs.length) {
+            item.el.style.opacity = '1';
+            strokePath.style.opacity = '0';
+            timeouts.push(setTimeout(() => animateItem(idx + 1), 30));
+            return;
+          }
+          dStr += (dStr ? ' ' : '') + segs[segIdx].str;
+          strokePath.setAttribute('d', dStr);
+          segIdx++;
+          timeouts.push(setTimeout(addNextSeg, segDelay));
         }
+        addNextSeg();
       }
     }
 
     animateItem(0);
 
+    // Store cleanup function
     animCleanup = () => {
       timeouts.forEach(clearTimeout);
-      created.forEach(el => { try { el.remove(); } catch(e) {} });
-      items.forEach(item => {
-        item.el.style.opacity = '1';
-        item.el.style.strokeDasharray = '';
-        item.el.style.strokeDashoffset = '';
-        item.el.style.transition = '';
-      });
-      if (animDefs) { animDefs.innerHTML = ''; animDefs.remove(); }
+      created.forEach(p => { try { p.remove(); } catch(e) {} });
+      items.forEach(item => { item.el.style.opacity = '1'; });
     };
   }
 
@@ -578,48 +546,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         s.appendChild(dot);
         s.appendChild(txt);
       });
-
-      // Overlay centerline (orange) computed by the animation algorithm
-      const mainSvg = $('output').querySelector('svg');
-      if (mainSvg) {
-        const cl = computeCenterline(d, mainSvg, NS);
-        if (cl) {
-          // Draw the centerline path as a thick orange stroke
-          const clPath = document.createElementNS(NS, 'path');
-          clPath.setAttribute('d', cl.d);
-          clPath.style.fill = 'none';
-          clPath.style.stroke = '#e67e22';
-          clPath.style.strokeWidth = cl.thickness;
-          clPath.style.strokeLinecap = 'round';
-          clPath.style.strokeLinejoin = 'round';
-          clPath.style.opacity = '0.3';
-          s.appendChild(clPath);
-
-          // Draw the thin centerline on top
-          const clLine = document.createElementNS(NS, 'path');
-          clLine.setAttribute('d', cl.d);
-          clLine.style.fill = 'none';
-          clLine.style.stroke = '#e67e22';
-          clLine.style.strokeWidth = '30';
-          clLine.style.strokeLinecap = 'round';
-          clLine.style.strokeLinejoin = 'round';
-          s.appendChild(clLine);
-
-          // Draw centerline sample points
-          // Re-parse the centerline d to get points
-          const clTokens = cl.d.match(/[-+]?\d*\.?\d+/g);
-          if (clTokens) {
-            for (let ci = 0; ci < clTokens.length; ci += 2) {
-              const cx = +clTokens[ci], cy = +clTokens[ci + 1];
-              const cdot = document.createElementNS(NS, 'circle');
-              cdot.setAttribute('cx', cx); cdot.setAttribute('cy', cy);
-              cdot.setAttribute('r', '45');
-              cdot.style.fill = '#e67e22';
-              s.appendChild(cdot);
-            }
-          }
-        }
-      }
 
       container.appendChild(s);
       dbg.appendChild(container);
