@@ -14,7 +14,9 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, Query
+import traceback
+
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 import uvicorn
 
@@ -27,12 +29,26 @@ DEFAULT_UDID = "13F0B842-54EA-46DA-B5D9-2E74C4D8F30C"
 LANDSCAPE_WIDTH, LANDSCAPE_HEIGHT = 1210, 834
 
 XCODEPROJ = Path(__file__).parent.parent / "Reef-iOS" / "Reef.xcodeproj"
+IDB = "/Users/markshteyn/.local/bin/idb"
+IDB_COMPANION = "/opt/homebrew/bin/idb_companion"
 
 app = FastAPI(title="Reef Simulator")
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"ok": False, "error": f"{type(exc).__name__}: {exc}", "traceback": traceback.format_exc()},
+    )
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+_idb_connected = False
 
 
 def _run(cmd: list[str], *, timeout: int = 300, check: bool = True) -> subprocess.CompletedProcess:
@@ -46,11 +62,43 @@ def _landscape_to_portrait(x: float, y: float) -> tuple[float, float]:
 def _booted_udid() -> str:
     result = _run(["xcrun", "simctl", "list", "devices", "-j"])
     devices = json.loads(result.stdout)
+    # Prefer iPad simulators over iPhone
+    fallback = None
     for runtime, device_list in devices.get("devices", {}).items():
         for d in device_list:
             if d.get("state") == "Booted":
-                return d["udid"]
+                if "iPad" in d.get("name", ""):
+                    return d["udid"]
+                if fallback is None:
+                    fallback = d["udid"]
+    if fallback:
+        return fallback
     raise RuntimeError("No booted simulator found. Call /boot first.")
+
+
+def _ensure_idb(udid: str) -> None:
+    """Ensure idb companion is running and connected for the given UDID."""
+    global _idb_connected
+    if _idb_connected:
+        return
+    # Start companion in background if not already running
+    companion_check = _run(["pgrep", "-f", f"idb_companion.*{udid}"], check=False)
+    if companion_check.returncode != 0:
+        subprocess.Popen(
+            [IDB_COMPANION, "--udid", udid],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        import time
+        time.sleep(2)
+    # Connect
+    _run([IDB, "connect", udid], timeout=10, check=False)
+    _idb_connected = True
+
+
+def _idb_tap(portrait_x: float, portrait_y: float, udid: str) -> None:
+    """Tap using idb with automatic companion connection."""
+    _ensure_idb(udid)
+    _run([IDB, "ui", "tap", str(int(portrait_x)), str(int(portrait_y)), "--udid", udid], timeout=15)
 
 
 def _ok(msg: str) -> JSONResponse:
@@ -177,14 +225,16 @@ def screenshot_raw():
 @app.post("/tap")
 def tap(x: float, y: float):
     """Tap at landscape coordinates (auto-converts for simulator)."""
+    udid = _booted_udid()
     px, py = _landscape_to_portrait(x, y)
-    _run(["xcrun", "simctl", "io", "booted", "tap", str(px), str(py)])
+    _idb_tap(px, py, udid)
     return _ok(f"Tapped landscape ({x}, {y}) → portrait ({px}, {py}).")
 
 
 @app.post("/tap_element")
 def tap_element(label: str):
     """Find element by accessibility label substring and tap its center."""
+    udid = _booted_udid()
     elements = _get_ui_elements()
     label_lower = label.lower()
     matches = [e for e in elements if label_lower in e["label"].lower()]
@@ -200,7 +250,7 @@ def tap_element(label: str):
 
     cx, cy = target["center"]
     px, py = _landscape_to_portrait(cx, cy)
-    _run(["xcrun", "simctl", "io", "booted", "tap", str(px), str(py)])
+    _idb_tap(px, py, udid)
     return _ok(f"Tapped '{target['label']}' at landscape ({cx}, {cy}).{warning}")
 
 
@@ -214,16 +264,20 @@ def describe_ui(role: str | None = None):
 @app.post("/type")
 def type_text(text: str):
     """Type text into focused text field."""
-    _run(["xcrun", "simctl", "io", "booted", "type", text])
+    udid = _booted_udid()
+    _ensure_idb(udid)
+    _run([IDB, "ui", "text", text, "--udid", udid], timeout=15)
     return _ok(f"Typed: {text}")
 
 
 @app.post("/swipe")
 def swipe(start_x: float, start_y: float, end_x: float, end_y: float):
     """Swipe in landscape coordinates (auto-converts for simulator)."""
+    udid = _booted_udid()
+    _ensure_idb(udid)
     sx, sy = _landscape_to_portrait(start_x, start_y)
     ex, ey = _landscape_to_portrait(end_x, end_y)
-    _run(["xcrun", "simctl", "io", "booted", "swipe", str(sx), str(sy), str(ex), str(ey)])
+    _run([IDB, "ui", "swipe", str(int(sx)), str(int(sy)), str(int(ex)), str(int(ey)), "--udid", udid], timeout=15)
     return _ok(f"Swiped landscape ({start_x},{start_y})→({end_x},{end_y}).")
 
 
@@ -233,7 +287,7 @@ def swipe(start_x: float, start_y: float, end_x: float, end_y: float):
 
 def _get_ui_elements(role_filter: str | None = None) -> list[dict]:
     udid = _booted_udid()
-    result = _run(["idb", "ui", "describe-all", "--udid", udid], check=False)
+    result = _run([IDB, "ui", "describe-all", "--udid", udid], check=False)
     if result.returncode != 0:
         result = _run(["xcrun", "simctl", "ui", udid, "describe-all"], check=False)
         if result.returncode != 0:
