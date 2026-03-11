@@ -248,123 +248,68 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   let animCleanup = null;
 
-  // Compute a centerline through a glyph using canvas rasterization + scanline
+  // Compute a centerline through a glyph by sampling its outline and averaging
   function computeCenterline(pathD, svg, NS) {
-    // 1. Parse bounding box from path data (including control points for accuracy)
-    const pts = parsePath(pathD);
-    if (pts.length < 2) return null;
+    // Create temp path to sample points
+    const tmp = document.createElementNS(NS, 'path');
+    tmp.setAttribute('d', pathD);
+    tmp.style.visibility = 'hidden';
+    svg.appendChild(tmp);
 
+    const totalLen = tmp.getTotalLength();
+    const numSamples = 200;
+    const samples = [];
+    for (let i = 0; i <= numSamples; i++) {
+      const pt = tmp.getPointAtLength((i / numSamples) * totalLen);
+      samples.push({ x: pt.x, y: pt.y });
+    }
+    tmp.remove();
+
+    // Compute bounds
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    pts.forEach(p => {
+    samples.forEach(p => {
       minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
       minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
-      if (p.cpx !== undefined) {
-        minX = Math.min(minX, p.cpx); maxX = Math.max(maxX, p.cpx);
-        minY = Math.min(minY, p.cpy); maxY = Math.max(maxY, p.cpy);
-      }
     });
-    const fontW = maxX - minX, fontH = maxY - minY;
-    if (fontW === 0 && fontH === 0) return null;
+    const w = maxX - minX, h = maxY - minY;
+    if (w === 0 && h === 0) return null;
 
-    // 2. Rasterize to offscreen canvas (200px on longest side)
-    const canvasSize = 200;
-    const longest = Math.max(fontW, fontH);
-    const scale = canvasSize / longest;
-    const cw = Math.max(1, Math.ceil(fontW * scale));
-    const ch = Math.max(1, Math.ceil(fontH * scale));
+    const isVertical = h > w * 1.5;
+    const numBins = 25;
+    const bins = Array.from({length: numBins}, () => []);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = cw;
-    canvas.height = ch;
-    const ctx = canvas.getContext('2d');
-
-    ctx.setTransform(scale, 0, 0, scale, -minX * scale, -minY * scale);
-    const path2d = new Path2D(pathD);
-    ctx.fill(path2d);
-
-    const imageData = ctx.getImageData(0, 0, cw, ch);
-    const alpha = imageData.data; // RGBA, check alpha channel (index 3)
-
-    // 3. Scanline: find top/bottom or left/right edges
-    const isVertical = fontH > fontW * 1.5;
-    const rawCenterline = [];
-    const thicknesses = [];
-
+    let centerline, thickness;
     if (isVertical) {
-      // Scan each row to find leftmost and rightmost filled pixel
-      for (let row = 0; row < ch; row++) {
-        let left = -1, right = -1;
-        for (let col = 0; col < cw; col++) {
-          if (alpha[(row * cw + col) * 4 + 3] > 0) {
-            if (left === -1) left = col;
-            right = col;
-          }
-        }
-        if (left !== -1) {
-          rawCenterline.push({ x: (left + right) / 2, y: row });
-          thicknesses.push(right - left);
-        }
-      }
-    } else {
-      // Scan each column to find topmost and bottommost filled pixel
-      for (let col = 0; col < cw; col++) {
-        let top = -1, bottom = -1;
-        for (let row = 0; row < ch; row++) {
-          if (alpha[(row * cw + col) * 4 + 3] > 0) {
-            if (top === -1) top = row;
-            bottom = row;
-          }
-        }
-        if (top !== -1) {
-          rawCenterline.push({ x: col, y: (top + bottom) / 2 });
-          thicknesses.push(bottom - top);
-        }
-      }
-    }
-
-    if (rawCenterline.length < 2) return null;
-
-    // 4. Downsample to ~30 evenly-spaced points
-    const targetPts = 30;
-    const step = Math.max(1, Math.floor(rawCenterline.length / targetPts));
-    let downsampled = [];
-    for (let i = 0; i < rawCenterline.length; i += step) {
-      downsampled.push(rawCenterline[i]);
-    }
-    // Ensure last point is included
-    if (downsampled[downsampled.length - 1] !== rawCenterline[rawCenterline.length - 1]) {
-      downsampled.push(rawCenterline[rawCenterline.length - 1]);
-    }
-
-    // 5. Smooth with 2 passes of moving-average (window=3)
-    for (let pass = 0; pass < 2; pass++) {
-      const smoothed = downsampled.map((p, i, arr) => {
-        if (i === 0 || i === arr.length - 1) return p;
-        if (isVertical) {
-          return { x: (arr[i-1].x + p.x + arr[i+1].x) / 3, y: p.y };
-        } else {
-          return { x: p.x, y: (arr[i-1].y + p.y + arr[i+1].y) / 3 };
-        }
+      // Bin by Y, centerline runs top-to-bottom
+      samples.forEach(p => {
+        const b = Math.min(Math.floor(((p.y - minY) / h) * numBins), numBins - 1);
+        bins[b].push(p.x);
       });
-      downsampled = smoothed;
+      centerline = bins.map((bin, i) => {
+        if (bin.length === 0) return null;
+        return { x: bin.reduce((s,v) => s+v, 0) / bin.length, y: minY + (i/(numBins-1)) * h };
+      }).filter(Boolean);
+      thickness = w * 0.9;
+    } else {
+      // Bin by X, centerline runs left-to-right
+      samples.forEach(p => {
+        const b = Math.min(Math.floor(((p.x - minX) / w) * numBins), numBins - 1);
+        bins[b].push(p.y);
+      });
+      centerline = bins.map((bin, i) => {
+        if (bin.length === 0) return null;
+        return { x: minX + (i/(numBins-1)) * w, y: bin.reduce((s,v) => s+v, 0) / bin.length };
+      }).filter(Boolean);
+      thickness = h * 0.9;
     }
 
-    // 6. Convert back to font units and build SVG path
-    const centerline = downsampled.map(p => ({
-      x: p.x / scale + minX,
-      y: p.y / scale + minY
-    }));
+    if (centerline.length < 2) return null;
 
+    // Build path string
     let d = `M ${centerline[0].x} ${centerline[0].y}`;
     for (let i = 1; i < centerline.length; i++) {
       d += ` L ${centerline[i].x} ${centerline[i].y}`;
     }
-
-    // 7. Thickness = median of recorded thicknesses * 0.9 (in font units)
-    thicknesses.sort((a, b) => a - b);
-    const medianThick = thicknesses[Math.floor(thicknesses.length / 2)];
-    const thickness = (medianThick / scale) * 0.9;
-
     return { d, thickness };
   }
 
