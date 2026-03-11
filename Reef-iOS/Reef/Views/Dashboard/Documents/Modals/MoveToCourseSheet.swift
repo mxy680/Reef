@@ -135,23 +135,15 @@ struct MoveToCourseSheet: View {
                     .padding(.vertical, 10)
                     .background(ReefColors.primary)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 4, y: 4)
-                    )
-                    .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    .reef3DPush(
+                        cornerRadius: 10,
+                        borderColor: ReefColors.black,
+                        shadowColor: ReefColors.black
+                    ) {
                         if hasChange {
                             onConfirm(selectedCourseId)
                         }
                     }
-                    .accessibilityAddTraits(.isButton)
                     .allowsHitTesting(hasChange)
                     .opacity(hasChange ? 1 : 0.4)
             }

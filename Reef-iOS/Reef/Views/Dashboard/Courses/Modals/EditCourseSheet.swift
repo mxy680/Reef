@@ -117,21 +117,13 @@ struct EditCourseSheet: View {
                     .padding(.vertical, 10)
                     .background(canSave ? ReefColors.primary : (dark ? ReefColors.DashboardDark.divider : ReefColors.gray100))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 4, y: 4)
-                    )
-                    .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    .reef3DPush(
+                        cornerRadius: 10,
+                        borderColor: ReefColors.black,
+                        shadowColor: ReefColors.black
+                    ) {
                         submitIfValid()
                     }
-                    .accessibilityAddTraits(.isButton)
                     .allowsHitTesting(canSave)
                     .opacity(!canSave ? 0.4 : 1)
             }
@@ -159,21 +151,14 @@ struct EditCourseSheet: View {
                     .frame(width: 40, height: 40)
                     .background(selected ? ReefColors.primary : (dark ? ReefColors.DashboardDark.cardElevated : ReefColors.white))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 3, y: 3)
-                    )
-                    .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    .reef3DPush(
+                        cornerRadius: 10,
+                        shadowOffset: 3,
+                        borderColor: ReefColors.black,
+                        shadowColor: ReefColors.black
+                    ) {
                         selectedIcon = icon
                     }
-                    .accessibilityAddTraits(.isButton)
             }
         }
     }

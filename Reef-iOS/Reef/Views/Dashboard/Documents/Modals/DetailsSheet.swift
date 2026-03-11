@@ -45,21 +45,13 @@ struct DetailsSheet: View {
                     .padding(.vertical, 10)
                     .background(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(ReefColors.black, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(ReefColors.black)
-                            .offset(x: 4, y: 4)
-                    )
-                    .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    .reef3DPush(
+                        cornerRadius: 10,
+                        borderColor: ReefColors.black,
+                        shadowColor: ReefColors.black
+                    ) {
                         onClose()
                     }
-                    .accessibilityAddTraits(.isButton)
             }
             .padding(.top, 24)
         }
