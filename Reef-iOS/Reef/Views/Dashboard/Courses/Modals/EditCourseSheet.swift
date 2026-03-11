@@ -109,23 +109,9 @@ struct EditCourseSheet: View {
                     }
                     .accessibilityAddTraits(.isButton)
 
-                Text("Save")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(canSave ? ReefColors.white : (dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500))
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(canSave ? ReefColors.primary : (dark ? ReefColors.DashboardDark.divider : ReefColors.gray100))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .reef3DPush(
-                        cornerRadius: 10,
-                        borderColor: ReefColors.black,
-                        shadowColor: ReefColors.black
-                    ) {
-                        submitIfValid()
-                    }
-                    .allowsHitTesting(canSave)
-                    .opacity(!canSave ? 0.4 : 1)
+                ReefModalButton("Save", isEnabled: canSave) {
+                    submitIfValid()
+                }
             }
         }
         .padding(.horizontal, 32)

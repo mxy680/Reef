@@ -37,21 +37,9 @@ struct DetailsSheet: View {
             HStack {
                 Spacer()
 
-                Text("Close")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(dark ? ReefColors.DashboardDark.divider : ReefColors.gray100)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .reef3DPush(
-                        cornerRadius: 10,
-                        borderColor: ReefColors.black,
-                        shadowColor: ReefColors.black
-                    ) {
-                        onClose()
-                    }
+                ReefModalButton("Close", variant: .secondary) {
+                    onClose()
+                }
             }
             .padding(.top, 24)
         }

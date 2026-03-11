@@ -36,24 +36,10 @@ struct DeleteCourseSheet: View {
                     }
                     .accessibilityAddTraits(.isButton)
 
-                Text(isDeleting ? "Deleting..." : "Delete")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(Color(hex: 0xC62828))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .reef3DPush(
-                        cornerRadius: 10,
-                        borderColor: ReefColors.black,
-                        shadowColor: ReefColors.black
-                    ) {
-                        isDeleting = true
-                        onConfirm()
-                    }
-                    .allowsHitTesting(!isDeleting)
-                    .opacity(isDeleting ? 0.4 : 1)
+                ReefModalButton(isDeleting ? "Deleting..." : "Delete", variant: .destructive, isEnabled: !isDeleting) {
+                    isDeleting = true
+                    onConfirm()
+                }
             }
             .padding(.top, 24)
         }

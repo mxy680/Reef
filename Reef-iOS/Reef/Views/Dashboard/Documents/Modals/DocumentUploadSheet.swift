@@ -148,21 +148,9 @@ struct DocumentUploadSheet: View {
                     }
                     .accessibilityAddTraits(.isButton)
 
-                Text("Upload")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .reef3DPush(
-                        cornerRadius: 10,
-                        borderColor: ReefColors.black,
-                        shadowColor: ReefColors.black
-                    ) {
-                        onConfirm(selectedCourseId, reconstruct)
-                    }
+                ReefModalButton("Upload") {
+                    onConfirm(selectedCourseId, reconstruct)
+                }
             }
             .padding(.top, 20)
         }

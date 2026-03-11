@@ -127,25 +127,12 @@ struct MoveToCourseSheet: View {
                     }
                     .accessibilityAddTraits(.isButton)
 
-                Text(selectedCourseId == nil && document.courseId != nil ? "Remove" : "Move")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .reef3DPush(
-                        cornerRadius: 10,
-                        borderColor: ReefColors.black,
-                        shadowColor: ReefColors.black
-                    ) {
-                        if hasChange {
-                            onConfirm(selectedCourseId)
-                        }
-                    }
-                    .allowsHitTesting(hasChange)
-                    .opacity(hasChange ? 1 : 0.4)
+                ReefModalButton(
+                    selectedCourseId == nil && document.courseId != nil ? "Remove" : "Move",
+                    isEnabled: hasChange
+                ) {
+                    onConfirm(selectedCourseId)
+                }
             }
             .padding(.top, 20)
         }

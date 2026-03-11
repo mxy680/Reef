@@ -52,23 +52,9 @@ struct RenameSheet: View {
                     }
                     .accessibilityAddTraits(.isButton)
 
-                Text("Rename")
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(ReefColors.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .reef3DPush(
-                        cornerRadius: 10,
-                        borderColor: ReefColors.black,
-                        shadowColor: ReefColors.black
-                    ) {
-                        submitIfValid()
-                    }
-                    .allowsHitTesting(!name.trimmingCharacters(in: .whitespaces).isEmpty)
-                    .opacity(name.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
+                ReefModalButton("Rename", isEnabled: !name.trimmingCharacters(in: .whitespaces).isEmpty) {
+                    submitIfValid()
+                }
             }
             .padding(.top, 20)
         }
