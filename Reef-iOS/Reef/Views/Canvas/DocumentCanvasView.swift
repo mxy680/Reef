@@ -226,7 +226,13 @@ struct DocumentCanvasView: View {
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings,
                             isEraserActive: selectedTool == .eraser,
-                            eraserWidth: eraserWidth
+                            eraserWidth: eraserWidth,
+                            onCanvasTouchBegan: {
+                                showToolSettings = false
+                                showPageSettings = false
+                                showPageMenu = false
+                                showTutorPopover = false
+                            }
                         )
                         .id(pageVersion)
 

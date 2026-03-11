@@ -21,6 +21,7 @@ struct CanvasPageView: UIViewRepresentable {
     var overlaySettings: PageOverlaySettings = PageOverlaySettings()
     var isEraserActive: Bool = false
     var eraserWidth: CGFloat = 8.0
+    var onCanvasTouchBegan: (() -> Void)?
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
@@ -29,6 +30,7 @@ struct CanvasPageView: UIViewRepresentable {
         container.currentTool = currentTool
         container.onVisiblePageChanged = onVisiblePageChanged
         container.onWritingPositionChanged = onWritingPositionChanged
+        container.onCanvasTouchBegan = onCanvasTouchBegan
         container.isEraserActive = isEraserActive
         container.eraserWidth = eraserWidth
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
@@ -41,6 +43,7 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.currentTool = currentTool
         uiView.onVisiblePageChanged = onVisiblePageChanged
         uiView.onWritingPositionChanged = onWritingPositionChanged
+        uiView.onCanvasTouchBegan = onCanvasTouchBegan
         uiView.isEraserActive = isEraserActive
         uiView.eraserWidth = eraserWidth
         uiView.applyDarkMode(darkMode)
@@ -68,7 +71,9 @@ final class CanvasContainerView: UIView {
 
     /// Whether the eraser tool is currently active
     var isEraserActive = false {
-        didSet { eraserCursorView.isHidden = !isEraserActive }
+        didSet {
+            if !isEraserActive { eraserCursorView.isHidden = true }
+        }
     }
 
     /// Eraser width in PDF points (canvas is 2x)
@@ -96,6 +101,8 @@ final class CanvasContainerView: UIView {
     var onVisiblePageChanged: ((Int) -> Void)?
     /// Callback reporting the writing position (page index + y in PDF points)
     var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
+    /// Callback when pencil touches down on canvas (dismiss popovers)
+    var onCanvasTouchBegan: (() -> Void)?
     private var startPageIndex: Int = 0
     private var lastReportedPage: Int = -1
     /// Track stroke counts per canvas to detect new strokes
@@ -304,6 +311,7 @@ final class CanvasContainerView: UIView {
             // PKCanvasView overlay — transparent, on top of PDF image
             let canvasView = TouchTrackingCanvasView()
             canvasView.onPencilTouch = { [weak self] location, phase in
+                if phase == .began { self?.onCanvasTouchBegan?() }
                 self?.handlePencilTouch(location: location, phase: phase, from: canvasView)
             }
             canvasView.translatesAutoresizingMaskIntoConstraints = false
