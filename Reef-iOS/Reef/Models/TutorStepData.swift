@@ -38,7 +38,7 @@ enum TutorStepConverter {
             return answer.parts.flatMap { stepsFromPart($0, progress: progress, questionIndex: questionIndex) }
         }
         return answer.steps.enumerated().map { idx, step in
-            let key = "\(questionIndex)--\(idx)"
+            let key = "\(questionIndex)-_-\(idx)"
             let sp = progress?[key]
             return TutorStep(
                 instruction: step.description,

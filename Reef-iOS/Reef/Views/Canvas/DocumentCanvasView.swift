@@ -68,7 +68,7 @@ struct DocumentCanvasView: View {
 
     /// Current step index for the active subquestion (from feedback service).
     private var currentStepIndexForToolbar: Int {
-        let subKey = "\(visibleQuestionIndex)-\(activePartLabel ?? "")"
+        let subKey = "\(visibleQuestionIndex)-\(activePartLabel ?? "_")"
         return feedbackService.currentStepIndices[subKey] ?? 0
     }
 
@@ -76,7 +76,7 @@ struct DocumentCanvasView: View {
     private var totalStepCountForToolbar: Int {
         let qNum = visibleQuestionIndex + 1
         guard let answerKey = answerKeys[qNum] else { return 0 }
-        let partLabel = activePartLabel ?? ""
+        let partLabel = activePartLabel ?? "_"
         return stepsForPart(answerKey: answerKey, partLabel: partLabel).count
     }
 
@@ -158,7 +158,7 @@ struct DocumentCanvasView: View {
                         onAdvanceStep: {
                             feedbackService.advanceStep(
                                 questionIndex: visibleQuestionIndex,
-                                partLabel: activePartLabel ?? ""
+                                partLabel: activePartLabel ?? "_"
                             )
                         }
                     )
