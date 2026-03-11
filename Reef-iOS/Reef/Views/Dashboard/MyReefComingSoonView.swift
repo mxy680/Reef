@@ -7,8 +7,8 @@ struct MyReefComingSoonView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // Illustration area
-                illustrationArea
+                // Hero illustration area
+                heroArea
 
                 // Content area
                 contentArea
@@ -18,32 +18,82 @@ struct MyReefComingSoonView: View {
         .onAppear { appeared = true }
     }
 
-    // MARK: - Illustration
+    // MARK: - Hero
 
-    private var illustrationArea: some View {
+    private var heroArea: some View {
         let dark = theme.isDarkMode
-        return VStack(spacing: 24) {
-            CoralReefIllustration(
-                borderColor: dark ? ReefColors.DashboardDark.border : ReefColors.black,
-                textDisabledColor: dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400
+        return ZStack {
+            // Ocean gradient background
+            LinearGradient(
+                colors: [
+                    Color(red: 0.70, green: 0.90, blue: 0.95),
+                    ReefColors.accent
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
-            .frame(width: 200, height: 160)
 
-            VStack(spacing: 6) {
-                Text("My Reef")
-                    .font(.epilogue(32, weight: .black))
-                    .tracking(-0.04 * 32)
-                    .foregroundStyle(ReefColors.black)
+            // Animated floating bubbles
+            FloatingBubblesView(dark: dark)
 
-                Text("Your personal ocean ecosystem")
-                    .font(.epilogue(15, weight: .medium))
-                    .tracking(-0.04 * 15)
-                    .foregroundStyle(ReefColors.gray600)
+            // Emoji heroes + title
+            VStack(spacing: 24) {
+                // Emoji arrangement
+                VStack(spacing: 8) {
+                    HStack(spacing: 16) {
+                        Text("🐠")
+                            .font(.system(size: 56))
+                            .opacity(appeared ? 1 : 0)
+                            .offset(y: appeared ? 0 : 16)
+                            .animation(.easeOut(duration: 0.4).delay(0.05), value: appeared)
+
+                        Text("🪸")
+                            .font(.system(size: 72))
+                            .opacity(appeared ? 1 : 0)
+                            .offset(y: appeared ? 0 : 16)
+                            .animation(.easeOut(duration: 0.4).delay(0.0), value: appeared)
+
+                        Text("🐠")
+                            .font(.system(size: 44))
+                            .scaleEffect(x: -1, y: 1) // mirror for variety
+                            .opacity(appeared ? 1 : 0)
+                            .offset(y: appeared ? 0 : 16)
+                            .animation(.easeOut(duration: 0.4).delay(0.10), value: appeared)
+                    }
+
+                    HStack(spacing: 32) {
+                        Text("🐚")
+                            .font(.system(size: 40))
+                            .opacity(appeared ? 1 : 0)
+                            .offset(y: appeared ? 0 : 12)
+                            .animation(.easeOut(duration: 0.4).delay(0.15), value: appeared)
+
+                        Text("🦀")
+                            .font(.system(size: 44))
+                            .opacity(appeared ? 1 : 0)
+                            .offset(y: appeared ? 0 : 12)
+                            .animation(.easeOut(duration: 0.4).delay(0.20), value: appeared)
+                    }
+                }
+
+                VStack(spacing: 6) {
+                    Text("My Reef")
+                        .font(.epilogue(32, weight: .black))
+                        .tracking(-0.04 * 32)
+                        .foregroundStyle(ReefColors.black)
+
+                    Text("Your personal ocean ecosystem")
+                        .font(.epilogue(15, weight: .medium))
+                        .tracking(-0.04 * 15)
+                        .foregroundStyle(ReefColors.gray600)
+                }
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 8)
+                .animation(.easeOut(duration: 0.35).delay(0.25), value: appeared)
             }
+            .padding(.vertical, 48)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 48)
-        .background(ReefColors.accent)
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
@@ -73,12 +123,8 @@ struct MyReefComingSoonView: View {
                 .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                 .padding(.bottom, 20)
 
-            // Feature list
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(features.enumerated()), id: \.element.label) { index, feature in
-                    featureRow(feature, index: index)
-                }
-            }
+            // Feature cards
+            featureCardsRow
         }
         .padding(.horizontal, 32)
         .padding(.vertical, 24)
@@ -87,7 +133,6 @@ struct MyReefComingSoonView: View {
     private var comingSoonBadge: some View {
         let dark = theme.isDarkMode
         return HStack(spacing: 6) {
-            // Star icon
             Image(systemName: "star.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(ReefColors.accent)
@@ -112,176 +157,168 @@ struct MyReefComingSoonView: View {
         .animation(.easeOut(duration: 0.3).delay(0.35), value: appeared)
     }
 
-    private func featureRow(_ feature: ReefFeature, index: Int) -> some View {
-        let dark = theme.isDarkMode
-        return HStack(spacing: 10) {
-            Circle()
-                .fill(feature.color)
-                .overlay(Circle().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
-                .frame(width: 8, height: 8)
-
-            Text(feature.label)
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.02 * 14)
-                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+    private var featureCardsRow: some View {
+        HStack(spacing: 10) {
+            ForEach(Array(featureCards.enumerated()), id: \.element.title) { index, card in
+                featureCard(card, index: index)
+            }
         }
         .opacity(appeared ? 1 : 0)
-        .offset(x: appeared ? 0 : -12)
-        .animation(.easeOut(duration: 0.3).delay(0.45 + Double(index) * 0.08), value: appeared)
+        .offset(y: appeared ? 0 : 12)
+        .animation(.easeOut(duration: 0.3).delay(0.45), value: appeared)
+    }
+
+    private func featureCard(_ card: ReefFeatureCard, index: Int) -> some View {
+        let dark = theme.isDarkMode
+        return VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: card.icon)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+
+            Text(card.title)
+                .font(.epilogue(13, weight: .bold))
+                .tracking(-0.02 * 13)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(card.description)
+                .font(.epilogue(12, weight: .medium))
+                .tracking(-0.02 * 12)
+                .lineSpacing(2)
+                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(card.background)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5)
+        )
+        .opacity(appeared ? 1 : 0)
+        .scaleEffect(appeared ? 1 : 0.95)
+        .animation(.easeOut(duration: 0.25).delay(0.50 + Double(index) * 0.07), value: appeared)
     }
 
     // MARK: - Data
 
-    private struct ReefFeature {
-        let label: String
-        let color: Color
+    private struct ReefFeatureCard {
+        let icon: String
+        let title: String
+        let description: String
+        let background: Color
     }
 
-    private let features: [ReefFeature] = [
-        .init(label: "Unlock species as you learn", color: ReefColors.accent),
-        .init(label: "Track mastery across subjects", color: ReefColors.surface),
-        .init(label: "Compare reefs with friends", color: ReefColors.accent),
+    private let featureCards: [ReefFeatureCard] = [
+        .init(
+            icon: "fish.fill",
+            title: "Unlock Species",
+            description: "Earn new ocean creatures as you master topics.",
+            background: ReefColors.accent
+        ),
+        .init(
+            icon: "chart.bar.fill",
+            title: "Track Mastery",
+            description: "Watch your reef grow as subjects click into place.",
+            background: ReefColors.surface
+        ),
+        .init(
+            icon: "person.2.fill",
+            title: "Compare Reefs",
+            description: "See how your ecosystem stacks up with friends.",
+            background: ReefColors.surface
+        ),
     ]
 }
 
-// MARK: - Coral Reef Illustration
+// MARK: - Floating Bubbles
 
-private struct CoralReefIllustration: View {
-    let borderColor: Color
-    let textDisabledColor: Color
+private struct FloatingBubblesView: View {
+    let dark: Bool
+
+    // Fixed set of bubbles so the layout stays stable across re-renders
+    private let bubbles: [BubbleSpec] = [
+        .init(id: 0, x: 0.12, size: 18, duration: 5.8, delay: 0.0),
+        .init(id: 1, x: 0.28, size: 10, duration: 4.5, delay: 1.2),
+        .init(id: 2, x: 0.45, size: 24, duration: 6.5, delay: 0.4),
+        .init(id: 3, x: 0.62, size: 14, duration: 5.2, delay: 2.1),
+        .init(id: 4, x: 0.78, size: 8,  duration: 4.0, delay: 0.9),
+        .init(id: 5, x: 0.90, size: 20, duration: 6.0, delay: 1.7),
+        .init(id: 6, x: 0.35, size: 12, duration: 5.5, delay: 3.0),
+        .init(id: 7, x: 0.68, size: 16, duration: 4.8, delay: 0.5),
+    ]
 
     var body: some View {
-        Canvas { context, size in
-            let scaleX = size.width / 200
-            let scaleY = size.height / 160
-
-            // Ocean floor
-            var floor = Path()
-            floor.move(to: CGPoint(x: 0 * scaleX, y: 140 * scaleY))
-            floor.addQuadCurve(
-                to: CGPoint(x: 100 * scaleX, y: 135 * scaleY),
-                control: CGPoint(x: 50 * scaleX, y: 130 * scaleY)
-            )
-            floor.addQuadCurve(
-                to: CGPoint(x: 200 * scaleX, y: 132 * scaleY),
-                control: CGPoint(x: 150 * scaleX, y: 140 * scaleY)
-            )
-            floor.addLine(to: CGPoint(x: 200 * scaleX, y: 160 * scaleY))
-            floor.addLine(to: CGPoint(x: 0 * scaleX, y: 160 * scaleY))
-            floor.closeSubpath()
-            context.fill(floor, with: .color(ReefColors.accent))
-            context.stroke(floor, with: .color(borderColor), lineWidth: 2)
-
-            // Coral branch 1
-            var coral1a = Path()
-            coral1a.move(to: p(40, 140, scaleX, scaleY))
-            coral1a.addQuadCurve(to: p(30, 90, scaleX, scaleY), control: p(38, 110, scaleX, scaleY))
-            coral1a.addQuadCurve(to: p(40, 60, scaleX, scaleY), control: p(25, 80, scaleX, scaleY))
-            coral1a.addQuadCurve(to: p(45, 45, scaleX, scaleY), control: p(35, 50, scaleX, scaleY))
-            context.stroke(coral1a, with: .color(ReefColors.primary), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-
-            var coral1b = Path()
-            coral1b.move(to: p(40, 140, scaleX, scaleY))
-            coral1b.addQuadCurve(to: p(50, 100, scaleX, scaleY), control: p(42, 115, scaleX, scaleY))
-            coral1b.addQuadCurve(to: p(45, 85, scaleX, scaleY), control: p(55, 90, scaleX, scaleY))
-            context.stroke(coral1b, with: .color(ReefColors.primary), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-
-            // Coral tips
-            drawCircle(context: context, cx: 45, cy: 45, r: 5, fill: ReefColors.accent, scaleX: scaleX, scaleY: scaleY)
-            drawCircle(context: context, cx: 30, cy: 75, r: 4, fill: ReefColors.accent, scaleX: scaleX, scaleY: scaleY)
-
-            // Coral branch 2 - fan
-            let coral2Color = Color(red: 232 / 255, green: 132 / 255, blue: 124 / 255) // #E8847C
-            for (startX, endX, endY): (CGFloat, CGFloat, CGFloat) in [(120, 105, 80), (120, 120, 75), (120, 135, 80)] {
-                var fan = Path()
-                fan.move(to: p(startX, 135, scaleX, scaleY))
-                fan.addQuadCurve(
-                    to: p(endX, endY, scaleX, scaleY),
-                    control: p((startX + endX) / 2, 100, scaleX, scaleY)
+        GeometryReader { geo in
+            ForEach(bubbles) { bubble in
+                FloatingBubble(
+                    spec: bubble,
+                    containerWidth: geo.size.width,
+                    containerHeight: geo.size.height,
+                    dark: dark
                 )
-                context.stroke(fan, with: .color(coral2Color), style: StrokeStyle(lineWidth: 3, lineCap: .round))
             }
-            drawCircle(context: context, cx: 105, cy: 77, r: 4, fill: ReefColors.surface, scaleX: scaleX, scaleY: scaleY)
-            drawCircle(context: context, cx: 120, cy: 72, r: 4, fill: ReefColors.surface, scaleX: scaleX, scaleY: scaleY)
-            drawCircle(context: context, cx: 135, cy: 77, r: 4, fill: ReefColors.surface, scaleX: scaleX, scaleY: scaleY)
-
-            // Seaweed
-            var seaweed = Path()
-            seaweed.move(to: p(170, 140, scaleX, scaleY))
-            seaweed.addQuadCurve(to: p(165, 105, scaleX, scaleY), control: p(175, 120, scaleX, scaleY))
-            seaweed.addQuadCurve(to: p(165, 75, scaleX, scaleY), control: p(155, 90, scaleX, scaleY))
-            seaweed.addQuadCurve(to: p(168, 45, scaleX, scaleY), control: p(175, 60, scaleX, scaleY))
-            context.stroke(seaweed, with: .color(ReefColors.accent), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-
-            // Fish (large)
-            let fishBody = Path(ellipseIn: CGRect(
-                x: (80 - 12) * scaleX, y: (50 - 7) * scaleY,
-                width: 24 * scaleX, height: 14 * scaleY
-            ))
-            context.fill(fishBody, with: .color(ReefColors.surface))
-            context.stroke(fishBody, with: .color(borderColor), lineWidth: 1.5)
-
-            var fishTail = Path()
-            fishTail.move(to: p(92, 50, scaleX, scaleY))
-            fishTail.addLine(to: p(100, 44, scaleX, scaleY))
-            fishTail.addLine(to: p(100, 56, scaleX, scaleY))
-            fishTail.closeSubpath()
-            context.fill(fishTail, with: .color(ReefColors.surface))
-            context.stroke(fishTail, with: .color(borderColor), lineWidth: 1.5)
-
-            let fishEye = Path(ellipseIn: CGRect(
-                x: (75 - 1.5) * scaleX, y: (49 - 1.5) * scaleY,
-                width: 3 * scaleX, height: 3 * scaleY
-            ))
-            context.fill(fishEye, with: .color(borderColor))
-
-            // Small fish
-            let smallFish = Path(ellipseIn: CGRect(
-                x: (155 - 8) * scaleX, y: (35 - 5) * scaleY,
-                width: 16 * scaleX, height: 10 * scaleY
-            ))
-            context.fill(smallFish, with: .color(ReefColors.accent))
-            context.stroke(smallFish, with: .color(borderColor), lineWidth: 1.5)
-
-            var smallTail = Path()
-            smallTail.move(to: p(163, 35, scaleX, scaleY))
-            smallTail.addLine(to: p(169, 30, scaleX, scaleY))
-            smallTail.addLine(to: p(169, 40, scaleX, scaleY))
-            smallTail.closeSubpath()
-            context.fill(smallTail, with: .color(ReefColors.accent))
-            context.stroke(smallTail, with: .color(borderColor), lineWidth: 1.5)
-
-            let smallEye = Path(ellipseIn: CGRect(
-                x: (151 - 1) * scaleX, y: (34 - 1) * scaleY,
-                width: 2 * scaleX, height: 2 * scaleY
-            ))
-            context.fill(smallEye, with: .color(borderColor))
-
-            // Bubbles
-            drawBubble(context: context, cx: 60, cy: 25, r: 3, scaleX: scaleX, scaleY: scaleY)
-            drawBubble(context: context, cx: 140, cy: 18, r: 2, scaleX: scaleX, scaleY: scaleY)
-            drawBubble(context: context, cx: 95, cy: 12, r: 2.5, scaleX: scaleX, scaleY: scaleY)
         }
+        .allowsHitTesting(false)
     }
 
-    private func p(_ x: CGFloat, _ y: CGFloat, _ sx: CGFloat, _ sy: CGFloat) -> CGPoint {
-        CGPoint(x: x * sx, y: y * sy)
+    fileprivate struct BubbleSpec: Identifiable {
+        let id: Int
+        let x: CGFloat        // fractional horizontal position 0–1
+        let size: CGFloat
+        let duration: Double
+        let delay: Double
     }
+}
 
-    private func drawCircle(context: GraphicsContext, cx: CGFloat, cy: CGFloat, r: CGFloat, fill: Color, scaleX: CGFloat, scaleY: CGFloat) {
-        let circle = Path(ellipseIn: CGRect(
-            x: (cx - r) * scaleX, y: (cy - r) * scaleY,
-            width: 2 * r * scaleX, height: 2 * r * scaleY
-        ))
-        context.fill(circle, with: .color(fill))
-        context.stroke(circle, with: .color(borderColor), lineWidth: 1.5)
-    }
+private struct FloatingBubble: View {
+    let spec: FloatingBubblesView.BubbleSpec
+    let containerWidth: CGFloat
+    let containerHeight: CGFloat
+    let dark: Bool
 
-    private func drawBubble(context: GraphicsContext, cx: CGFloat, cy: CGFloat, r: CGFloat, scaleX: CGFloat, scaleY: CGFloat) {
-        let bubble = Path(ellipseIn: CGRect(
-            x: (cx - r) * scaleX, y: (cy - r) * scaleY,
-            width: 2 * r * scaleX, height: 2 * r * scaleY
-        ))
-        context.stroke(bubble, with: .color(textDisabledColor), lineWidth: 1)
+    @State private var offset: CGFloat = 0
+    @State private var opacity: Double = 0
+
+    var body: some View {
+        Circle()
+            .fill(
+                dark
+                    ? Color.white.opacity(0.07)
+                    : Color.white.opacity(0.45)
+            )
+            .overlay(
+                Circle()
+                    .stroke(
+                        dark
+                            ? Color.white.opacity(0.12)
+                            : Color.white.opacity(0.7),
+                        lineWidth: 1
+                    )
+            )
+            .frame(width: spec.size, height: spec.size)
+            .position(
+                x: spec.x * containerWidth,
+                y: containerHeight - spec.size / 2 + offset
+            )
+            .opacity(opacity)
+            .onAppear {
+                // Start from bottom, float upward past the top
+                let travel = containerHeight + spec.size + 20
+                withAnimation(
+                    .easeInOut(duration: spec.duration)
+                    .delay(spec.delay)
+                    .repeatForever(autoreverses: false)
+                ) {
+                    offset = -travel
+                }
+                withAnimation(.easeIn(duration: 0.6).delay(spec.delay)) {
+                    opacity = 1
+                }
+            }
     }
 }
