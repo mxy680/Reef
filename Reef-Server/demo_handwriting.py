@@ -283,7 +283,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     for (let i = 1; i < points.length; i++) {
       d += ` L ${points[i].x} ${points[i].y}`;
     }
-    return { d, thickness };
+    return { d, thickness, points };
   }
 
   function playAnimation() {
@@ -396,23 +396,34 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         item.parentG.appendChild(wrapper);
         created.push(wrapper);
 
-        // Animate with stroke-dasharray
-        const len = strokePath.getTotalLength();
-        if (len === 0) { item.el.style.opacity = '1'; wrapper.remove(); animateItem(idx + 1); return; }
-        strokePath.style.strokeDasharray = len;
-        strokePath.style.strokeDashoffset = len;
-        strokePath.getBoundingClientRect(); // force reflow
+        // Animate point-by-point: progressively build the path from n=0 → n+1 → n+2 ...
+        const pts = cl.points;
+        if (pts.length < 2) { item.el.style.opacity = '1'; wrapper.remove(); animateItem(idx + 1); return; }
 
-        const dur = Math.max(200, Math.min(600, len * 3));
-        strokePath.style.transition = `stroke-dashoffset ${dur}ms ease-out`;
-        strokePath.style.strokeDashoffset = '0';
+        const totalDur = Math.max(300, Math.min(800, pts.length * 3));
+        const interval = totalDur / pts.length;
+        let ptIdx = 1;
+        strokePath.setAttribute('d', `M ${pts[0].x} ${pts[0].y}`);
 
-        // After stroke finishes, snap to clean filled glyph
-        timeouts.push(setTimeout(() => {
-          item.el.style.opacity = '1';
-          wrapper.style.display = 'none';
-          timeouts.push(setTimeout(() => animateItem(idx + 1), 40));
-        }, dur));
+        function drawNext() {
+          if (ptIdx >= pts.length) {
+            // Done — snap to clean filled glyph
+            timeouts.push(setTimeout(() => {
+              item.el.style.opacity = '1';
+              wrapper.style.display = 'none';
+              timeouts.push(setTimeout(() => animateItem(idx + 1), 40));
+            }, 50));
+            return;
+          }
+          let curD = `M ${pts[0].x} ${pts[0].y}`;
+          for (let k = 1; k <= ptIdx; k++) {
+            curD += ` L ${pts[k].x} ${pts[k].y}`;
+          }
+          strokePath.setAttribute('d', curD);
+          ptIdx++;
+          timeouts.push(setTimeout(drawNext, interval));
+        }
+        drawNext();
 
       } else {
         // Standalone path (fraction line, sqrt bar): simple dasharray wipe
