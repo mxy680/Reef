@@ -5,13 +5,12 @@ struct MyReefComingSoonView: View {
     @Environment(ThemeManager.self) private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Hero illustration area
-                heroArea
-
-                // Content area
-                contentArea
+        GeometryReader { geo in
+            ScrollView {
+                VStack(spacing: 0) {
+                    heroArea(height: geo.size.height * 0.48)
+                    contentArea
+                }
             }
         }
         .dashboardCard()
@@ -20,41 +19,19 @@ struct MyReefComingSoonView: View {
 
     // MARK: - Hero
 
-    private var heroArea: some View {
+    private func heroArea(height: CGFloat) -> some View {
         let dark = theme.isDarkMode
-        return ZStack(alignment: .bottom) {
-            Image("reef-hero")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(maxWidth: .infinity)
-                .frame(height: 280)
-                .clipped()
-
-            // Title overlay at bottom
-            VStack(spacing: 6) {
-                Text("My Reef")
-                    .font(.epilogue(32, weight: .black))
-                    .tracking(-0.04 * 32)
-                    .foregroundStyle(ReefColors.white)
-                    .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-
-                Text("Your personal ocean ecosystem")
-                    .font(.epilogue(15, weight: .medium))
-                    .tracking(-0.04 * 15)
-                    .foregroundStyle(ReefColors.white.opacity(0.9))
-                    .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+        return Image("reef-hero")
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
+                    .frame(height: 1.5)
             }
-            .padding(.bottom, 24)
-            .opacity(appeared ? 1 : 0)
-            .offset(y: appeared ? 0 : 8)
-            .animation(.easeOut(duration: 0.35).delay(0.15), value: appeared)
-        }
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
-                .frame(height: 1.5)
-        }
     }
 
     // MARK: - Content
@@ -62,28 +39,26 @@ struct MyReefComingSoonView: View {
     private var contentArea: some View {
         let dark = theme.isDarkMode
         return VStack(alignment: .leading, spacing: 0) {
-            // Badge
             comingSoonBadge
-                .padding(.bottom, 16)
+                .padding(.bottom, 12)
 
             Text("Build Your Reef Ecosystem")
                 .font(.epilogue(22, weight: .black))
                 .tracking(-0.04 * 22)
                 .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
-                .padding(.bottom, 10)
+                .padding(.bottom, 8)
 
             Text("As you study and master new topics, you'll unlock species for your personal reef. Watch your ocean grow from a quiet sandy floor into a thriving coral ecosystem.")
                 .font(.epilogue(15, weight: .medium))
                 .tracking(-0.02 * 15)
                 .lineSpacing(4)
                 .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
-                .padding(.bottom, 20)
+                .padding(.bottom, 16)
 
-            // Feature cards
             featureCardsRow
         }
-        .padding(.horizontal, 32)
-        .padding(.vertical, 24)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
     }
 
     private var comingSoonBadge: some View {
@@ -126,29 +101,27 @@ struct MyReefComingSoonView: View {
 
     private func featureCard(_ card: ReefFeatureCard, index: Int) -> some View {
         let dark = theme.isDarkMode
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
             Image(systemName: card.icon)
-                .font(.system(size: 22, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
             Text(card.title)
                 .font(.epilogue(13, weight: .bold))
                 .tracking(-0.02 * 13)
                 .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
 
             Text(card.description)
-                .font(.epilogue(12, weight: .medium))
-                .tracking(-0.02 * 12)
+                .font(.epilogue(11, weight: .medium))
+                .tracking(-0.02 * 11)
                 .lineSpacing(2)
                 .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
-                .lineLimit(3)
+                .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 14)
+        .padding(12)
         .background(card.background)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
