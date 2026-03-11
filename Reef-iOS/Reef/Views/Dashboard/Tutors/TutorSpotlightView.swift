@@ -8,10 +8,16 @@ struct TutorSpotlightView: View {
     var avatarSize: CGFloat = 120
 
     @Environment(ThemeManager.self) private var theme
+    @Environment(\.layoutMetrics) private var metrics
 
     private var tintColor: Color {
         Color(hex: UInt(tutor.accentColor, radix: 16) ?? 0x5B9EAD)
     }
+
+    // Scale-adaptive spacing: tight on small iPads, roomy on large
+    private var sectionSpacing: CGFloat { metrics.scale * 10 + 8 }   // 8–18
+    private var cardPadding: CGFloat    { metrics.scale * 6 + 16 }    // 16–22
+    private var labelBodyGap: CGFloat   { metrics.scale * 2 + 3 }     // 3–5
 
     var body: some View {
         let dark = theme.isDarkMode
@@ -34,7 +40,7 @@ struct TutorSpotlightView: View {
             }
 
             // Right: info + actions
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: sectionSpacing) {
                 // Name + species header
                 VStack(alignment: .leading, spacing: 4) {
                     Text(tutor.name)
@@ -96,11 +102,10 @@ struct TutorSpotlightView: View {
                     }
                     .reefCompactStyle(.primary)
                 }
-                .padding(.top, 4)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(24)
+        .padding(cardPadding)
         .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
@@ -117,7 +122,7 @@ struct TutorSpotlightView: View {
     }
 
     private func infoSection(label: String, text: String, labelColor: Color, bodyColor: Color) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: labelBodyGap) {
             Text(label)
                 .font(.epilogue(10, weight: .bold))
                 .tracking(0.06 * 10)

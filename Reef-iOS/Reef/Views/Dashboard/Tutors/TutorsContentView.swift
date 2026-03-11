@@ -23,7 +23,7 @@ struct TutorsContentView: View {
                     emptyState
                     Spacer()
                 } else {
-                    Spacer(minLength: 12)
+                    Spacer(minLength: 4)
 
                     // Spotlight hero
                     if let tutor = viewModel.activeTutor {
@@ -39,10 +39,10 @@ struct TutorsContentView: View {
                         .animation(.spring(duration: 0.35), value: viewModel.activeTutorId)
                     }
 
-                    Spacer(minLength: 16)
+                    Spacer(minLength: 6)
 
                     // Carousel section
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
                         Text("CHOOSE YOUR TUTOR")
                             .font(.epilogue(11, weight: .bold))
                             .tracking(0.06 * 11)
@@ -51,7 +51,7 @@ struct TutorsContentView: View {
                         tutorCarousel
                     }
 
-                    Spacer(minLength: 8)
+                    Spacer(minLength: 0)
                 }
             }
         }
