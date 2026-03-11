@@ -448,13 +448,16 @@ def latex_to_handwriting_svg(
         return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><text x="10" y="30" font-size="14" fill="#999">No path data</text></svg>'
 
     rng = np.random.default_rng(seed)
-    polylines = []
     all_points = []
 
     for sp in subpaths:
         noisy = add_handwriting_noise(sp, amplitude=noise, smoothness=0.85, rng=rng)
-        polylines.append(points_to_svg_polyline(noisy, stroke_width, color="#1a1a1a"))
         all_points.append(noisy)
+
+    # Flip Y axis: TextPath uses math coords (y-up), SVG is y-down
+    for i, pts in enumerate(all_points):
+        all_points[i] = pts.copy()
+        all_points[i][:, 1] *= -1
 
     all_pts = np.vstack(all_points)
     x_min, y_min = all_pts.min(axis=0)
@@ -465,18 +468,19 @@ def latex_to_handwriting_svg(
     vb_w = (x_max - x_min) + 2 * pad
     vb_h = (y_max - y_min) + 2 * pad
 
-    # Flip Y axis since TextPath uses math coords (y-up) but SVG is y-down
-    transform = f'transform="scale(1, -1) translate(0, {-(y_min + y_max):.2f})"'
+    polylines = [
+        points_to_svg_polyline(pts, stroke_width, color="#1a1a1a")
+        for pts in all_points
+    ]
 
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'viewBox="{vb_x:.2f} {-y_max - pad:.2f} {vb_w:.2f} {vb_h:.2f}" '
+        f'viewBox="{vb_x:.2f} {vb_y:.2f} {vb_w:.2f} {vb_h:.2f}" '
         f'width="{vb_w:.0f}" height="{vb_h:.0f}">\n'
-        f'  <g {transform}>\n'
     )
     for pl in polylines:
-        svg += f"    {pl}\n"
-    svg += "  </g>\n</svg>"
+        svg += f"  {pl}\n"
+    svg += "</svg>"
     return svg
 
 
