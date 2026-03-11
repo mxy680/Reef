@@ -248,13 +248,77 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   let animCleanup = null;
 
+  // Compute a centerline through a glyph by sampling its outline and averaging
+  function computeCenterline(pathD, svg, NS) {
+    // Create temp path to sample points
+    const tmp = document.createElementNS(NS, 'path');
+    tmp.setAttribute('d', pathD);
+    tmp.style.visibility = 'hidden';
+    svg.appendChild(tmp);
+
+    const totalLen = tmp.getTotalLength();
+    const numSamples = 200;
+    const samples = [];
+    for (let i = 0; i <= numSamples; i++) {
+      const pt = tmp.getPointAtLength((i / numSamples) * totalLen);
+      samples.push({ x: pt.x, y: pt.y });
+    }
+    tmp.remove();
+
+    // Compute bounds
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    samples.forEach(p => {
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+    });
+    const w = maxX - minX, h = maxY - minY;
+    if (w === 0 && h === 0) return null;
+
+    const isVertical = h > w * 1.5;
+    const numBins = 25;
+    const bins = Array.from({length: numBins}, () => []);
+
+    let centerline, thickness;
+    if (isVertical) {
+      // Bin by Y, centerline runs top-to-bottom
+      samples.forEach(p => {
+        const b = Math.min(Math.floor(((p.y - minY) / h) * numBins), numBins - 1);
+        bins[b].push(p.x);
+      });
+      centerline = bins.map((bin, i) => {
+        if (bin.length === 0) return null;
+        return { x: bin.reduce((s,v) => s+v, 0) / bin.length, y: minY + (i/(numBins-1)) * h };
+      }).filter(Boolean);
+      thickness = w * 0.9;
+    } else {
+      // Bin by X, centerline runs left-to-right
+      samples.forEach(p => {
+        const b = Math.min(Math.floor(((p.x - minX) / w) * numBins), numBins - 1);
+        bins[b].push(p.y);
+      });
+      centerline = bins.map((bin, i) => {
+        if (bin.length === 0) return null;
+        return { x: minX + (i/(numBins-1)) * w, y: bin.reduce((s,v) => s+v, 0) / bin.length };
+      }).filter(Boolean);
+      thickness = h * 0.9;
+    }
+
+    if (centerline.length < 2) return null;
+
+    // Build path string
+    let d = `M ${centerline[0].x} ${centerline[0].y}`;
+    for (let i = 1; i < centerline.length; i++) {
+      d += ` L ${centerline[i].x} ${centerline[i].y}`;
+    }
+    return { d, thickness };
+  }
+
   function playAnimation() {
     const svg = $('output').querySelector('svg');
     if (!svg) return;
     const btn = $('play-btn');
     btn.disabled = true;
 
-    // Clean up any previous animation
     if (animCleanup) { animCleanup(); animCleanup = null; }
 
     const NS = 'http://www.w3.org/2000/svg';
@@ -279,7 +343,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     collect(textGroup);
     if (items.length === 0) { btn.disabled = false; return; }
 
-    // Sort by screen position: left-to-right, top-to-bottom for overlapping
+    // Sort by screen position
     items.forEach(item => {
       const r = item.el.getBoundingClientRect();
       item.x = r.left; item.y = r.top; item.w = r.width; item.h = r.height;
@@ -290,7 +354,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       return a.x - b.x;
     });
 
-    // Get or create a <defs> inside the SVG for our clip paths
+    // Create anim defs for clip paths
     let animDefs = svg.querySelector('defs.anim-clips');
     if (!animDefs) {
       animDefs = document.createElementNS(NS, 'defs');
@@ -298,101 +362,121 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       svg.insertBefore(animDefs, svg.firstChild);
     }
 
+    const created = [];
     const timeouts = [];
-    const cleanups = []; // functions to restore each element
 
-    // Hide all elements upfront
+    // Hide all
     items.forEach(item => { item.el.style.opacity = '0'; });
 
-    // Reveal each item left-to-right using SVG clipPath
     function animateItem(idx) {
       if (idx >= items.length) {
         timeouts.push(setTimeout(() => { btn.disabled = false; }, 200));
         return;
       }
       const item = items[idx];
-      const el = item.el;
 
-      // Get bounding box in screen coords, then map to SVG coords
-      const bbox = el.getBBox();
-      // bbox is in the element's local coordinate system
-      // For clip-path with clipPathUnits="userSpaceOnUse", we need coords in
-      // the element's parent coordinate system
+      if (item.type === 'use') {
+        const href = item.el.getAttribute('xlink:href') || item.el.getAttribute('href');
+        const refPath = textGroup.querySelector(href);
+        if (!refPath) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
 
-      // Build a clip rect that covers the full glyph bbox with padding
-      const pad = Math.max(bbox.width, bbox.height) * 0.15;
-      const clipId = 'anim-clip-' + idx;
+        const pathD = refPath.getAttribute('d');
+        const cl = computeCenterline(pathD, svg, NS);
+        if (!cl) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
 
-      const clipPath = document.createElementNS(NS, 'clipPath');
-      clipPath.id = clipId;
-      // objectBoundingBox units make the rect relative to the element's bbox
-      clipPath.setAttribute('clipPathUnits', 'objectBoundingBox');
+        // Create clip path from glyph outline (in raw font units)
+        const clipId = 'anim-clip-' + idx;
+        const clipPathEl = document.createElementNS(NS, 'clipPath');
+        clipPathEl.id = clipId;
+        const clipShape = document.createElementNS(NS, 'path');
+        clipShape.setAttribute('d', pathD);
+        clipPathEl.appendChild(clipShape);
+        animDefs.appendChild(clipPathEl);
 
-      const clipRect = document.createElementNS(NS, 'rect');
-      // In objectBoundingBox units: 0,0 = top-left, 1,1 = bottom-right
-      // Start with width=0 (hidden), animate to width > 1 (fully revealed)
-      clipRect.setAttribute('x', '-0.15');
-      clipRect.setAttribute('y', '-0.5');
-      clipRect.setAttribute('width', '0');
-      clipRect.setAttribute('height', '2');
-      clipPath.appendChild(clipRect);
-      animDefs.appendChild(clipPath);
+        // Build: <g transform="useT"> → <g transform="defT" clip-path> → <path d="centerline">
+        const wrapper = document.createElementNS(NS, 'g');
+        const useT = item.el.getAttribute('transform') || '';
+        const defT = refPath.getAttribute('transform') || '';
+        if (useT) wrapper.setAttribute('transform', useT);
 
-      // Apply clip and show the element
-      el.style.opacity = '1';
-      el.setAttribute('clip-path', `url(#${clipId})`);
+        const innerG = document.createElementNS(NS, 'g');
+        if (defT) innerG.setAttribute('transform', defT);
+        // Clip is in innerG's coordinate system (after defT scale),
+        // but clipShape uses raw font units. Since defT is scale(0.015625),
+        // and clipPathUnits defaults to userSpaceOnUse (parent coords of innerG = wrapper coords),
+        // we need the clipShape in wrapper coords. So add defT to clipShape too.
+        if (defT) clipShape.setAttribute('transform', defT);
 
-      // Store cleanup for this element
-      cleanups.push(() => {
-        el.removeAttribute('clip-path');
+        innerG.setAttribute('clip-path', `url(#${clipId})`);
+
+        const strokePath = document.createElementNS(NS, 'path');
+        strokePath.setAttribute('d', cl.d);
+        strokePath.setAttribute('transform', defT || '');
+        strokePath.style.fill = 'none';
+        strokePath.style.stroke = '#1a1a1a';
+        strokePath.style.strokeWidth = cl.thickness;
+        strokePath.style.strokeLinecap = 'round';
+        strokePath.style.strokeLinejoin = 'round';
+
+        innerG.appendChild(strokePath);
+        wrapper.appendChild(innerG);
+        item.parentG.appendChild(wrapper);
+        created.push(wrapper);
+
+        // Animate with stroke-dasharray
+        const len = strokePath.getTotalLength();
+        if (len === 0) { item.el.style.opacity = '1'; wrapper.remove(); animateItem(idx + 1); return; }
+        strokePath.style.strokeDasharray = len;
+        strokePath.style.strokeDashoffset = len;
+        strokePath.getBoundingClientRect(); // force reflow
+
+        const dur = Math.max(200, Math.min(600, len * 3));
+        strokePath.style.transition = `stroke-dashoffset ${dur}ms ease-out`;
+        strokePath.style.strokeDashoffset = '0';
+
+        // After stroke finishes, snap to clean filled glyph
+        timeouts.push(setTimeout(() => {
+          item.el.style.opacity = '1';
+          wrapper.style.display = 'none';
+          timeouts.push(setTimeout(() => animateItem(idx + 1), 40));
+        }, dur));
+
+      } else {
+        // Standalone path (fraction line, sqrt bar): simple dasharray wipe
+        const el = item.el;
+        const len = el.getTotalLength();
         el.style.opacity = '1';
-        clipPath.remove();
-      });
-
-      // Animate: step the clip rect width from 0 to 1.3 over ~300ms
-      const steps = 20;
-      const targetWidth = 1.3; // > 1 to account for padding
-      const stepDelay = 15;
-      let step = 0;
-
-      function tick() {
-        step++;
-        const progress = step / steps;
-        // Ease-out for natural deceleration
-        const eased = 1 - Math.pow(1 - progress, 2);
-        clipRect.setAttribute('width', (eased * targetWidth).toFixed(4));
-
-        if (step < steps) {
-          timeouts.push(setTimeout(tick, stepDelay));
+        if (len > 0) {
+          el.style.strokeDasharray = len;
+          el.style.strokeDashoffset = len;
+          el.getBoundingClientRect();
+          const dur = Math.max(150, Math.min(400, len * 2));
+          el.style.transition = `stroke-dashoffset ${dur}ms ease-out`;
+          el.style.strokeDashoffset = '0';
+          timeouts.push(setTimeout(() => {
+            el.style.strokeDasharray = '';
+            el.style.strokeDashoffset = '';
+            el.style.transition = '';
+            animateItem(idx + 1);
+          }, dur));
         } else {
-          // Fully revealed — clean up clip
-          el.removeAttribute('clip-path');
-          clipPath.remove();
-          // Start next glyph with slight overlap
-          timeouts.push(setTimeout(() => animateItem(idx + 1), 20));
+          animateItem(idx + 1);
         }
       }
-
-      // Start next glyph slightly before this one finishes (overlap)
-      const overlapDelay = steps * stepDelay * 0.4;
-      timeouts.push(setTimeout(() => {
-        if (idx + 1 < items.length) {
-          // Pre-start next item (but animateItem handles it sequentially,
-          // so we just let it flow naturally)
-        }
-      }, overlapDelay));
-
-      timeouts.push(setTimeout(tick, stepDelay));
     }
 
     animateItem(0);
 
-    // Cleanup function
     animCleanup = () => {
       timeouts.forEach(clearTimeout);
-      cleanups.forEach(fn => fn());
-      items.forEach(item => { item.el.style.opacity = '1'; item.el.removeAttribute('clip-path'); });
-      if (animDefs) { animDefs.remove(); }
+      created.forEach(el => { try { el.remove(); } catch(e) {} });
+      items.forEach(item => {
+        item.el.style.opacity = '1';
+        item.el.style.strokeDasharray = '';
+        item.el.style.strokeDashoffset = '';
+        item.el.style.transition = '';
+      });
+      if (animDefs) { animDefs.innerHTML = ''; animDefs.remove(); }
     };
   }
 
