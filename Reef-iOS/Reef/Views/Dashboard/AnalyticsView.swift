@@ -133,11 +133,10 @@ struct AnalyticsView: View {
     // MARK: - Chart rows
 
     private var chartRowTop: some View {
-        HStack(spacing: metrics.sectionSpacing) {
+        HStack(alignment: .top, spacing: metrics.sectionSpacing) {
             WeeklyActivityCard(appeared: appeared, metrics: metrics)
             RecentSessionsCard(appeared: appeared, metrics: metrics)
         }
-        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var chartRowBottom: some View {
@@ -173,10 +172,8 @@ private struct WeeklyActivityCard: View {
 
             WeeklyBarChart()
                 .frame(height: metrics.chartHeight)
-
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(metrics.chartCardPadding)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
@@ -446,9 +443,8 @@ private struct RecentSessionsCard: View {
                 }
             }
 
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(metrics.chartCardPadding)
         .dashboardCard()
         .opacity(appeared ? 1 : 0)
