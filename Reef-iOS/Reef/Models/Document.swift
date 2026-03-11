@@ -68,6 +68,17 @@ struct Document: Identifiable, Codable, Hashable {
         filename.replacingOccurrences(of: ".pdf", with: "", options: .caseInsensitive)
     }
 
+    private static let iso8601Formatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        return f
+    }()
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return f
+    }()
+
     var statusLabel: String {
         switch status {
         case .processing:
@@ -83,10 +94,8 @@ struct Document: Identifiable, Codable, Hashable {
                 parts.append("\(problems) \(problems == 1 ? "problem" : "problems")")
             }
             if parts.isEmpty {
-                let date = ISO8601DateFormatter().date(from: createdAt) ?? Date()
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
-                return formatter.string(from: date)
+                let date = Self.iso8601Formatter.date(from: createdAt) ?? Date()
+                return Self.dateFormatter.string(from: date)
             }
             return parts.joined(separator: " · ")
         }

@@ -72,15 +72,17 @@ actor ReefAPI {
     func connectWebSocket() async throws {
         guard let baseURL else { return }
         let token = try await getAccessToken()
-        var components = URLComponents(
+        guard var components = URLComponents(
             url: baseURL.appendingPathComponent("ws"),
             resolvingAgainstBaseURL: false
-        )!
+        ) else { throw URLError(.badURL) }
         components.scheme = baseURL.scheme == "https" ? "wss" : "ws"
         components.queryItems = [URLQueryItem(name: "token", value: token)]
 
+        guard let wsURL = components.url else { throw URLError(.badURL) }
+
         let session = URLSession(configuration: .default)
-        wsTask = session.webSocketTask(with: components.url!)
+        wsTask = session.webSocketTask(with: wsURL)
         wsTask?.resume()
         isConnected = true
 
@@ -95,7 +97,9 @@ actor ReefAPI {
 
     func sendMessage(_ message: [String: Any]) async throws {
         let data = try JSONSerialization.data(withJSONObject: message)
-        let string = String(data: data, encoding: .utf8)!
+        guard let string = String(data: data, encoding: .utf8) else {
+            throw URLError(.cannotParseResponse)
+        }
         try await wsTask?.send(.string(string))
     }
 
@@ -115,6 +119,7 @@ actor ReefAPI {
             }
         } catch {
             isConnected = false
+            print("[ReefAPI] WebSocket disconnected: \(error)")
         }
     }
 }

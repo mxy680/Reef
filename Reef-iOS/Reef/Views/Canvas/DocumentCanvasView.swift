@@ -40,6 +40,7 @@ struct DocumentCanvasView: View {
     @State private var activePartLabel: String?
     /// Writing-detected question index (overrides page-based detection)
     @State private var activeQuestionIndex: Int?
+    @State private var transcriptionService = TranscriptionService()
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -223,6 +224,12 @@ struct DocumentCanvasView: View {
                             onWritingPositionChanged: { pageIndex, yPDFPoints in
                                 updateActivePartFromWriting(pageIndex: pageIndex, yPDFPoints: yPDFPoints)
                             },
+                            onNewPenStroke: { pageIndex, yPDFPoints in
+                                handleNewPenStroke(pageIndex: pageIndex, yPDFPoints: yPDFPoints)
+                            },
+                            onStrokesErased: { pageIndex in
+                                handleStrokesErased(pageIndex: pageIndex)
+                            },
                             darkMode: theme.isDarkMode,
                             overlaySettings: pageOverlaySettings,
                             isEraserActive: selectedTool == .eraser,
@@ -242,6 +249,19 @@ struct DocumentCanvasView: View {
                         }
 
                     }
+                    #if DEBUG
+                    .overlay(alignment: .bottomTrailing) {
+                        if let partLabel = activePartLabel {
+                            let key = "\(visibleQuestionIndex)-\(partLabel)"
+                            TranscriptionDebugPanel(
+                                questionIndex: visibleQuestionIndex,
+                                partLabel: partLabel,
+                                latex: transcriptionService.transcriptions[key]
+                            )
+                            .padding(16)
+                        }
+                    }
+                    #endif
                     .background(canvasBackground)
                 }
             }
@@ -338,28 +358,78 @@ struct DocumentCanvasView: View {
         guard let regions = document.questionRegions,
               let questionPages = document.questionPages else { return }
 
-        // Search across ALL questions' regions to find the match
-        for (qi, range) in questionPages.enumerated() {
-            guard range.count == 2,
-                  pageIndex >= range[0] && pageIndex <= range[1],
-                  qi < regions.count,
-                  let regionData = regions[qi] else { continue }
+        guard let match = CanvasStrokeCollector.matchRegion(
+            pageIndex: pageIndex,
+            yPDFPoints: yPDFPoints,
+            questionPages: questionPages,
+            questionRegions: regions
+        ) else { return }
 
-            let localPage = pageIndex - range[0]
+        if activeQuestionIndex != match.questionIndex {
+            activeQuestionIndex = match.questionIndex
+        }
+        if activePartLabel != match.partLabel {
+            activePartLabel = match.partLabel
+        }
+    }
 
-            for region in regionData.regions {
-                if region.page == localPage &&
-                   yPDFPoints >= region.yStart &&
-                   yPDFPoints <= region.yEnd {
-                    if activeQuestionIndex != qi {
-                        activeQuestionIndex = qi
-                    }
-                    if activePartLabel != region.label {
-                        activePartLabel = region.label
-                    }
-                    return
-                }
-            }
+    // MARK: - Stroke Transcription
+
+    /// Collect all pen strokes in the active subquestion region and send for transcription.
+    private func handleNewPenStroke(pageIndex: Int, yPDFPoints: Double) {
+        guard let regions = document.questionRegions,
+              let questionPages = document.questionPages,
+              let manager = drawingManager else { return }
+
+        guard let match = CanvasStrokeCollector.matchRegion(
+            pageIndex: pageIndex,
+            yPDFPoints: yPDFPoints,
+            questionPages: questionPages,
+            questionRegions: regions
+        ), let partLabel = match.partLabel else {
+            print("[Transcription] No matching region for page=\(pageIndex) y=\(yPDFPoints)")
+            return
+        }
+
+        let allStrokes = CanvasStrokeCollector.collectStrokes(
+            questionIndex: match.questionIndex,
+            partLabel: partLabel,
+            questionPages: questionPages,
+            questionRegions: regions,
+            drawingManager: manager
+        )
+
+        print("[Transcription] Q\(match.questionIndex+1)(\(partLabel)): sending \(allStrokes.count) strokes")
+        transcriptionService.transcribe(
+            questionIndex: match.questionIndex,
+            partLabel: partLabel,
+            strokes: allStrokes
+        )
+    }
+
+    /// Re-transcribe after strokes are erased, using the current active question/part.
+    private func handleStrokesErased(pageIndex: Int) {
+        guard let partLabel = activePartLabel,
+              let regions = document.questionRegions,
+              let questionPages = document.questionPages,
+              let manager = drawingManager else { return }
+
+        let qi = visibleQuestionIndex
+        let allStrokes = CanvasStrokeCollector.collectStrokes(
+            questionIndex: qi,
+            partLabel: partLabel,
+            questionPages: questionPages,
+            questionRegions: regions,
+            drawingManager: manager
+        )
+
+        print("[Transcription] Q\(qi+1)(\(partLabel)): erased → re-sending \(allStrokes.count) strokes")
+
+        if allStrokes.isEmpty {
+            let key = "\(qi)-\(partLabel)"
+            transcriptionService.transcriptions[key] = nil
+        } else {
+            transcriptionService.transcribe(questionIndex: qi, partLabel: partLabel, strokes: allStrokes)
         }
     }
 
