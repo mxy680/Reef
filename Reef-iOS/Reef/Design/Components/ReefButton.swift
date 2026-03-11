@@ -125,3 +125,79 @@ extension Button {
         self.buttonStyle(ReefCompactButtonStyle(variant: variant))
     }
 }
+
+// MARK: - 3D Push Modifier
+
+/// Adds the 3D push-down animation to any view that already has a neobrutalist
+/// shadow/border setup. Replaces the static shadow + onTapGesture pattern with
+/// an animated press effect.
+///
+/// The view content should already include its own background, clipShape, and
+/// overlay stroke. This modifier wraps it with:
+/// - A shadow layer that retracts on press
+/// - An offset that pushes the view into the shadow on press
+/// - A DragGesture to track press state
+/// - An onTapGesture for the action
+struct Reef3DPushModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    let shadowOffset: CGFloat
+    let borderWidth: CGFloat
+    let borderColor: Color
+    let shadowColor: Color
+    let action: () -> Void
+
+    @State private var isPressed = false
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(borderColor, lineWidth: borderWidth)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(shadowColor)
+                    .offset(
+                        x: isPressed ? 0 : shadowOffset,
+                        y: isPressed ? 0 : shadowOffset
+                    )
+            )
+            .offset(
+                x: isPressed ? shadowOffset : 0,
+                y: isPressed ? shadowOffset : 0
+            )
+            .compositingGroup()
+            .animation(.spring(duration: 0.2, bounce: 0.1), value: isPressed)
+            .contentShape(Rectangle())
+            .onTapGesture { action() }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in isPressed = true }
+                    .onEnded { _ in isPressed = false }
+            )
+            .accessibilityAddTraits(.isButton)
+    }
+}
+
+extension View {
+    /// Adds a 3D neobrutalist push effect. Apply this to a view that already
+    /// has its own background and clipShape — this adds the border, shadow,
+    /// press animation, and tap action.
+    func reef3DPush(
+        cornerRadius: CGFloat = 10,
+        shadowOffset: CGFloat = 4,
+        borderWidth: CGFloat = 1.5,
+        borderColor: Color,
+        shadowColor: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        modifier(Reef3DPushModifier(
+            cornerRadius: cornerRadius,
+            shadowOffset: shadowOffset,
+            borderWidth: borderWidth,
+            borderColor: borderColor,
+            shadowColor: shadowColor,
+            action: action
+        ))
+    }
+}
