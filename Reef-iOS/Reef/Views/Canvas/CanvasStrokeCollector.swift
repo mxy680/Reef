@@ -48,7 +48,7 @@ enum CanvasStrokeCollector {
     }
 
     /// Collect all pen strokes in matching regions for a given question and part label.
-    static func collectStrokes(
+    @MainActor static func collectStrokes(
         questionIndex: Int,
         partLabel: String,
         questionPages: [[Int]],

@@ -68,7 +68,7 @@ struct Document: Identifiable, Codable, Hashable {
         filename.replacingOccurrences(of: ".pdf", with: "", options: .caseInsensitive)
     }
 
-    private static let iso8601Formatter: ISO8601DateFormatter = {
+    private nonisolated(unsafe) static let iso8601Formatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         return f
     }()
