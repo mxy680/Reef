@@ -200,12 +200,13 @@ private struct WeeklyBarChart: View {
             let spacing: CGFloat = 10
             let totalSpacing = spacing * (barCount - 1)
             let barWidth = (geo.size.width - totalSpacing) / barCount
-            let chartHeight = geo.size.height - 24
+            let topInset: CGFloat = 20
+            let chartHeight = geo.size.height - 24 - topInset
 
             Canvas { context, size in
                 // Grid lines
                 for frac in [0.0, 0.25, 0.5, 0.75, 1.0] {
-                    let y = chartHeight * (1 - frac)
+                    let y = topInset + chartHeight * (1 - frac)
                     var line = Path()
                     line.move(to: CGPoint(x: 0, y: y))
                     line.addLine(to: CGPoint(x: size.width, y: y))
@@ -216,7 +217,7 @@ private struct WeeklyBarChart: View {
                 for (i, minutes) in weeklyMinutes.enumerated() {
                     let barH = maxMinutes > 0 ? (CGFloat(minutes) / CGFloat(maxMinutes)) * chartHeight : 0
                     let x = CGFloat(i) * (barWidth + spacing)
-                    let y = chartHeight - barH
+                    let y = topInset + chartHeight - barH
                     let barColor = minutes == 0 ? emptyBarColor : ReefColors.primary
 
                     let bar = Path(roundedRect: CGRect(x: x, y: y, width: barWidth, height: max(barH, 4)), cornerRadius: 5)
@@ -228,7 +229,7 @@ private struct WeeklyBarChart: View {
                         .foregroundStyle(dayLabelColor)
                     context.draw(
                         context.resolve(label),
-                        at: CGPoint(x: x + barWidth / 2, y: chartHeight + 14),
+                        at: CGPoint(x: x + barWidth / 2, y: topInset + chartHeight + 14),
                         anchor: .center
                     )
 
