@@ -5,15 +5,36 @@ Open: http://localhost:8123
 """
 
 import io
+from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.font_manager import FontProperties, fontManager
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
 matplotlib.use("Agg")
+
+# ---------------------------------------------------------------------------
+# Load handwriting font (Caveat)
+# ---------------------------------------------------------------------------
+
+_FONT_PATH = Path(__file__).parent / "fonts" / "Caveat-Regular.ttf"
+_HAND_FONT = FontProperties(fname=str(_FONT_PATH))
+
+# Register font so matplotlib's mathtext engine can find it
+fontManager.addfont(str(_FONT_PATH))
+_font_family = _HAND_FONT.get_name()
+
+# Configure mathtext to use the handwriting font for all symbol classes
+matplotlib.rcParams["mathtext.fontset"] = "custom"
+matplotlib.rcParams["mathtext.rm"] = _font_family
+matplotlib.rcParams["mathtext.it"] = _font_family
+matplotlib.rcParams["mathtext.bf"] = _font_family
+matplotlib.rcParams["mathtext.sf"] = _font_family
+matplotlib.rcParams["mathtext.tt"] = _font_family
 
 app = FastAPI()
 
@@ -247,6 +268,7 @@ def latex_to_handwriting_svg(latex: str, seed: int = 42) -> str:
     ax.text(
         0.5, 0.5, text,
         fontsize=36,
+        fontproperties=_HAND_FONT,
         ha="center", va="center",
         transform=ax.transAxes,
         color="#1a1a1a",
