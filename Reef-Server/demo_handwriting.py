@@ -4,15 +4,13 @@ Run: python demo_handwriting.py
 Open: http://localhost:8123
 """
 
-import io
-from typing import Optional
-
 import numpy as np
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from matplotlib.path import Path as MplPath
 from matplotlib.textpath import TextPath
 from pydantic import BaseModel
+from scipy.ndimage import gaussian_filter1d
 
 app = FastAPI()
 
@@ -83,28 +81,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     transition: background 0.15s;
   }
   .preset-btn:hover { background: #e8e3d9; }
-  .controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px 24px;
-    margin-bottom: 24px;
-  }
-  .control-group { display: flex; flex-direction: column; }
-  .slider-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-  .slider-value {
-    font-family: 'SF Mono', monospace;
-    font-size: 0.82rem;
-    color: #666;
-  }
-  input[type="range"] {
-    width: 100%;
-    margin-top: 4px;
-    accent-color: #4a7c59;
-  }
   .btn-row { display: flex; gap: 10px; margin-bottom: 24px; }
   button.convert {
     padding: 10px 28px;
@@ -119,14 +95,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   }
   button.convert:hover { background: #333; }
   button.convert:disabled { opacity: 0.5; cursor: wait; }
-  .auto-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.88rem;
-    cursor: pointer;
-    user-select: none;
-  }
   .output-card {
     background: #fff;
     border: 2px solid #1a1a1a;
@@ -141,6 +109,17 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .output-card svg { max-width: 100%; height: auto; }
   .placeholder { color: #aaa; font-style: italic; }
   .error { color: #c0392b; font-size: 0.9rem; margin-top: 8px; }
+  .reseed {
+    padding: 10px 20px;
+    background: #fff;
+    border: 2px solid #1a1a1a;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .reseed:hover { background: #e8e3d9; }
 </style>
 </head>
 <body>
@@ -160,42 +139,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <button class="preset-btn" data-latex="$e^{i\pi} + 1 = 0$">Euler</button>
   </div>
 
-  <div class="controls">
-    <div class="control-group">
-      <div class="slider-header">
-        <label for="noise">Noise</label>
-        <span class="slider-value" id="noise-val">1.0</span>
-      </div>
-      <input type="range" id="noise" min="0" max="3" step="0.1" value="1.0">
-    </div>
-    <div class="control-group">
-      <div class="slider-header">
-        <label for="stroke">Stroke Width</label>
-        <span class="slider-value" id="stroke-val">1.0</span>
-      </div>
-      <input type="range" id="stroke" min="0.2" max="2" step="0.1" value="1.0">
-    </div>
-    <div class="control-group">
-      <div class="slider-header">
-        <label for="spacing">Point Spacing</label>
-        <span class="slider-value" id="spacing-val">1.5</span>
-      </div>
-      <input type="range" id="spacing" min="0.5" max="5" step="0.1" value="1.5">
-    </div>
-    <div class="control-group">
-      <div class="slider-header">
-        <label for="seed">Seed</label>
-        <span class="slider-value" id="seed-val">42</span>
-      </div>
-      <input type="range" id="seed" min="0" max="999" step="1" value="42">
-    </div>
-  </div>
-
   <div class="btn-row">
     <button class="convert" id="convert-btn" onclick="convert()">Convert</button>
-    <label class="auto-label">
-      <input type="checkbox" id="auto-render" checked> Auto-render
-    </label>
+    <button class="reseed" id="reseed-btn" onclick="reseed()">Reseed</button>
   </div>
 
   <div class="output-card" id="output">
@@ -207,31 +153,25 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <script>
   const $ = id => document.getElementById(id);
   let debounceTimer = null;
-
-  // Wire up sliders
-  for (const name of ['noise', 'stroke', 'spacing', 'seed']) {
-    const el = $(name);
-    el.addEventListener('input', () => {
-      $(name + '-val').textContent = el.value;
-      scheduleAutoRender();
-    });
-  }
+  let seed = Math.floor(Math.random() * 10000);
 
   // Wire up presets
   document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       $('latex').value = btn.dataset.latex;
-      scheduleAutoRender();
+      convert();
     });
   });
 
-  // Wire up textarea
-  $('latex').addEventListener('input', () => scheduleAutoRender());
-
-  function scheduleAutoRender() {
-    if (!$('auto-render').checked) return;
+  // Auto-render on typing
+  $('latex').addEventListener('input', () => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(convert, 400);
+    debounceTimer = setTimeout(convert, 500);
+  });
+
+  function reseed() {
+    seed = Math.floor(Math.random() * 10000);
+    convert();
   }
 
   async function convert() {
@@ -243,13 +183,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const res = await fetch('/convert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          latex: $('latex').value,
-          noise: parseFloat($('noise').value),
-          stroke_width: parseFloat($('stroke').value),
-          spacing: parseFloat($('spacing').value),
-          seed: parseInt($('seed').value),
-        }),
+        body: JSON.stringify({ latex: $('latex').value, seed }),
       });
       const data = await res.json();
       if (data.error) {
@@ -276,6 +210,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 # ---------------------------------------------------------------------------
 # Core algorithm
 # ---------------------------------------------------------------------------
+
+# Tuned defaults
+SPACING = 1.0       # Dense sampling for smooth curves
+AMPLITUDE = 0.6     # Subtle but visible wobble
+SMOOTH_SIGMA = 3.0  # Gaussian smoothing kernel for wobble (larger = smoother waves)
+JITTER = 0.08       # Tiny micro-tremor
+STROKE_WIDTH = 0.5  # Thin outline stroke on filled shapes
 
 
 def _bezier2(p0, p1, p2, t):
@@ -305,11 +246,8 @@ def _estimate_bezier3_length(p0, p1, p2, p3, n=10):
     return np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1))
 
 
-def sample_path_points(path, spacing: float = 1.5) -> list[np.ndarray]:
-    """Split matplotlib Path into subpaths and sample points at regular intervals.
-
-    Returns a list of numpy arrays, each shape (N, 2), one per subpath.
-    """
+def sample_path_points(path, spacing: float = SPACING) -> list[np.ndarray]:
+    """Split matplotlib Path into subpaths and sample points at regular intervals."""
     vertices = path.vertices
     codes = path.codes
 
@@ -322,7 +260,6 @@ def sample_path_points(path, spacing: float = 1.5) -> list[np.ndarray]:
         code = codes[i]
 
         if code == MplPath.MOVETO:
-            # Start a new subpath
             if current:
                 subpaths.append(current)
             current = [vertices[i].copy()]
@@ -340,8 +277,8 @@ def sample_path_points(path, spacing: float = 1.5) -> list[np.ndarray]:
 
         elif code == MplPath.CURVE3:
             p0 = current[-1]
-            p1 = vertices[i]      # control point
-            p2 = vertices[i + 1]  # end point
+            p1 = vertices[i]
+            p2 = vertices[i + 1]
             arc_len = _estimate_bezier2_length(p0, p1, p2)
             n_pts = max(3, int(arc_len / spacing))
             for t in np.linspace(0, 1, n_pts)[1:]:
@@ -350,9 +287,9 @@ def sample_path_points(path, spacing: float = 1.5) -> list[np.ndarray]:
 
         elif code == MplPath.CURVE4:
             p0 = current[-1]
-            p1 = vertices[i]      # control point 1
-            p2 = vertices[i + 1]  # control point 2
-            p3 = vertices[i + 2]  # end point
+            p1 = vertices[i]
+            p2 = vertices[i + 1]
+            p3 = vertices[i + 2]
             arc_len = _estimate_bezier3_length(p0, p1, p2, p3)
             n_pts = max(3, int(arc_len / spacing))
             for t in np.linspace(0, 1, n_pts)[1:]:
@@ -360,7 +297,6 @@ def sample_path_points(path, spacing: float = 1.5) -> list[np.ndarray]:
             i += 3
 
         elif code == MplPath.CLOSEPOLY:
-            # Close back to start
             if start_pt is not None and current:
                 p0 = current[-1]
                 seg_len = np.linalg.norm(start_pt - p0)
@@ -385,29 +321,28 @@ def sample_path_points(path, spacing: float = 1.5) -> list[np.ndarray]:
 
 def add_handwriting_noise(
     points: np.ndarray,
-    amplitude: float = 1.0,
-    smoothness: float = 0.85,
-    rng: np.random.Generator | None = None,
+    rng: np.random.Generator,
 ) -> np.ndarray:
-    """Displace points with random-walk wobble + Gaussian jitter."""
-    if rng is None:
-        rng = np.random.default_rng()
-    if amplitude == 0:
+    """Displace points with smooth Gaussian-filtered wobble + micro jitter."""
+    n = len(points)
+    if n < 3:
         return points.copy()
 
-    n = len(points)
     result = points.copy()
 
-    # Low-frequency wobble: random walk with mean reversion
-    walk = np.zeros((n, 2))
-    for i in range(1, n):
-        walk[i] = smoothness * walk[i - 1] + rng.normal(0, 0.3, size=2)
-    walk *= amplitude * 0.4
+    # Generate white noise, then smooth it with a Gaussian kernel
+    # This creates natural, low-frequency waves along the contour
+    raw_noise = rng.normal(0, 1, size=(n, 2))
+    smooth_wobble = np.column_stack([
+        gaussian_filter1d(raw_noise[:, 0], sigma=SMOOTH_SIGMA, mode="wrap"),
+        gaussian_filter1d(raw_noise[:, 1], sigma=SMOOTH_SIGMA, mode="wrap"),
+    ])
+    smooth_wobble *= AMPLITUDE
 
-    # High-frequency jitter
-    jitter = rng.normal(0, amplitude * 0.15, size=(n, 2))
+    # Tiny high-frequency jitter for pen texture
+    jitter = rng.normal(0, JITTER, size=(n, 2))
 
-    result += walk + jitter
+    result += smooth_wobble + jitter
     return result
 
 
@@ -420,15 +355,8 @@ def points_to_svg_subpath(points: np.ndarray) -> str:
     return " ".join(parts)
 
 
-def latex_to_handwriting_svg(
-    latex: str,
-    noise: float = 1.0,
-    stroke_width: float = 1.0,
-    spacing: float = 1.5,
-    seed: int = 42,
-) -> str:
+def latex_to_handwriting_svg(latex: str, seed: int = 42) -> str:
     """Full pipeline: LaTeX → TextPath → sample → noise → SVG string."""
-    # Strip $ wrappers — TextPath's mathtext expects raw math
     text = latex.strip()
     if text.startswith("$") and text.endswith("$"):
         text = "$" + text[1:-1] + "$"
@@ -436,16 +364,19 @@ def latex_to_handwriting_svg(
         text = "$" + text + "$"
 
     path = TextPath((0, 0), text, size=48)
-    subpaths = sample_path_points(path, spacing=spacing)
+    subpaths = sample_path_points(path)
 
     if not subpaths:
-        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><text x="10" y="30" font-size="14" fill="#999">No path data</text></svg>'
+        return (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50">'
+            '<text x="10" y="30" font-size="14" fill="#999">No path data</text></svg>'
+        )
 
     rng = np.random.default_rng(seed)
     all_points = []
 
     for sp in subpaths:
-        noisy = add_handwriting_noise(sp, amplitude=noise, smoothness=0.85, rng=rng)
+        noisy = add_handwriting_noise(sp, rng)
         all_points.append(noisy)
 
     # Flip Y axis: TextPath uses math coords (y-up), SVG is y-down
@@ -456,14 +387,12 @@ def latex_to_handwriting_svg(
     all_pts = np.vstack(all_points)
     x_min, y_min = all_pts.min(axis=0)
     x_max, y_max = all_pts.max(axis=0)
-    pad = max(stroke_width * 3, 8)
+    pad = 10
     vb_x = x_min - pad
     vb_y = y_min - pad
     vb_w = (x_max - x_min) + 2 * pad
     vb_h = (y_max - y_min) + 2 * pad
 
-    # Combine all subpaths into one <path> with evenodd fill
-    # so inner contours (holes in O, e, etc.) are cut out
     d = " ".join(points_to_svg_subpath(pts) for pts in all_points)
 
     svg = (
@@ -471,7 +400,7 @@ def latex_to_handwriting_svg(
         f'viewBox="{vb_x:.2f} {vb_y:.2f} {vb_w:.2f} {vb_h:.2f}" '
         f'width="{vb_w:.0f}" height="{vb_h:.0f}">\n'
         f'  <path d="{d}" fill="#1a1a1a" fill-rule="evenodd" '
-        f'stroke="#1a1a1a" stroke-width="{stroke_width * 0.5}" '
+        f'stroke="#1a1a1a" stroke-width="{STROKE_WIDTH}" '
         f'stroke-linejoin="round" />\n'
         f'</svg>'
     )
@@ -485,9 +414,6 @@ def latex_to_handwriting_svg(
 
 class ConvertRequest(BaseModel):
     latex: str
-    noise: float = 1.0
-    stroke_width: float = 1.0
-    spacing: float = 1.5
     seed: int = 42
 
 
@@ -499,13 +425,7 @@ async def index():
 @app.post("/convert")
 async def convert(req: ConvertRequest):
     try:
-        svg = latex_to_handwriting_svg(
-            latex=req.latex,
-            noise=req.noise,
-            stroke_width=req.stroke_width,
-            spacing=req.spacing,
-            seed=req.seed,
-        )
+        svg = latex_to_handwriting_svg(latex=req.latex, seed=req.seed)
         return JSONResponse({"svg": svg})
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=400)
