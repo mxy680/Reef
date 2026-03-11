@@ -16,7 +16,6 @@
 		159FE31668B8992B32E4C322 /* KaTeX_Typewriter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FD4BE6F06A3FF2CFCF388C60 /* KaTeX_Typewriter-Regular.ttf */; };
 		15A7F7327D87C4A7010DD0EE /* MyReefComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B0F2EF5A865F74D7E7DD1D /* MyReefComingSoonView.swift */; };
 		18470D214CF1DF392B1E43CD /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D02F378056B2BB49C4E152 /* AnalyticsView.swift */; };
-		1859DAF23B73A60D14A89C75 /* Stroke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7B0E365C03F320A771808A /* Stroke.swift */; };
 		1B7DC7404AC46691E8FE909C /* TierLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA5038E8A3E9B2E3773B103 /* TierLimits.swift */; };
 		1C1C0847C2B712AF90229BE2 /* Tutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3CB769E3ED3BE1C744F53D /* Tutor.swift */; };
 		1D0F8C36565814C7658038AA /* DetailsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87A842EDF6A095888CFDDD9 /* DetailsSheet.swift */; };
@@ -235,7 +234,6 @@
 		89D457DD4A19BE44FB1B756A /* DocumentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCardView.swift; sourceTree = "<group>"; };
 		8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Bold.ttf"; sourceTree = "<group>"; };
 		8AF78B49877EF66B1BF1F451 /* ReefAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefAPI.swift; sourceTree = "<group>"; };
-		8D7B0E365C03F320A771808A /* Stroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stroke.swift; sourceTree = "<group>"; };
 		8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Medium.ttf"; sourceTree = "<group>"; };
 		8F905AA243B35B0F2634361D /* TutorsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorsContentView.swift; sourceTree = "<group>"; };
 		8FD4D552F83298FB7A1D5F74 /* CanvasDrawingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDrawingToolbar.swift; sourceTree = "<group>"; };
@@ -423,7 +421,6 @@
 				018AA0C6595861D1E872AB8D /* Course.swift */,
 				265263583EBF3C1E1930E940 /* Document.swift */,
 				03EFB80C39A971E1BDC73605 /* Profile.swift */,
-				8D7B0E365C03F320A771808A /* Stroke.swift */,
 				CB3CB769E3ED3BE1C744F53D /* Tutor.swift */,
 				D8E70E19FB02A673E57447BD /* TutorStepData.swift */,
 			);
@@ -903,7 +900,6 @@
 				5D2AD13513DF7173DB05E905 /* StepName.swift in Sources */,
 				B139C22ACB1BB96D3F97B84C /* StepReferral.swift in Sources */,
 				DF4791ADB383CB19C8C4EDB5 /* StepSubjects.swift in Sources */,
-				1859DAF23B73A60D14A89C75 /* Stroke.swift in Sources */,
 				689EDB34F09D6D2BB8CED1D2 /* Supabase.swift in Sources */,
 				6295A3C9FDC893FC75EE0877 /* ThemeManager.swift in Sources */,
 				1B7DC7404AC46691E8FE909C /* TierLimits.swift in Sources */,
