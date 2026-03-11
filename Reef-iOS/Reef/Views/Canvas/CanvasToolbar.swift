@@ -40,6 +40,10 @@ struct CanvasToolbar: View {
     var hasActiveOverlay: Bool = false
     @Binding var pageOverlaySettings: PageOverlaySettings
     @Binding var showTutorPopover: Bool
+    var stepProgressData: [String: StepProgress]? = nil
+    var currentStepIndex: Int = 0
+    var totalStepCount: Int = 0
+    var onAdvanceStep: () -> Void = {}
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -50,12 +54,12 @@ struct CanvasToolbar: View {
     @State private var toolbarRowMinX: CGFloat = 0
     @State private var toolbarRowWidth: CGFloat = 0
 
-    private static let tutorPopoverWidth: CGFloat = 260
+    static let tutorPopoverWidth: CGFloat = 320
 
     /// Current tutor step (computed from answerKey)
     private var tutorSteps: [TutorStep] {
         guard let answerKey else { return [] }
-        return TutorStepConverter.steps(from: answerKey)
+        return TutorStepConverter.steps(from: answerKey, progress: stepProgressData, questionIndex: visibleQuestionIndex)
     }
 
     private var currentTutorStep: TutorStep? {
@@ -190,14 +194,14 @@ struct CanvasToolbar: View {
         let arrowOffset = (triggerMidX - toolbarRowMinX) - (clampedX + Self.tutorPopoverWidth / 2)
 
         return PopoverCard(arrowOffset: arrowOffset, maxWidth: Self.tutorPopoverWidth) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(spacing: 6) {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(ReefColors.black)
-                MathText(
+                    .frame(maxWidth: .infinity, alignment: .center)
+                RenderedLatexImage(
                     text: text,
-                    fontSize: 13,
-                    color: ReefColors.gray600,
+                    maxWidth: Int(Self.tutorPopoverWidth - 24),
                     maxHeight: popoverMaxHeight - 50
                 )
             }
@@ -244,7 +248,10 @@ struct CanvasToolbar: View {
                 TutorStepRow(
                     questionIndex: visibleQuestionIndex,
                     activePartLabel: activePartLabel,
-                    answerKey: answerKey
+                    answerKey: answerKey,
+                    stepProgressData: stepProgressData,
+                    currentStepIndex: currentStepIndex,
+                    totalStepCount: totalStepCount
                 )
             } else {
                 // Document name / question label
@@ -278,7 +285,22 @@ struct CanvasToolbar: View {
                                     .foregroundColor(.white.opacity(0.6))
                                     .baselineOffset(1.5)
                             }
+
+                            // Next step chevron — appears when current step is completed
+                            if currentTutorStep?.status == .completed && currentStepIndex < totalStepCount - 1 {
+                                Button(action: onAdvanceStep) {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 24, height: 24)
+                                        .background(Color.white.opacity(0.25))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(.plain)
+                                .transition(.scale.combined(with: .opacity))
+                            }
                         }
+                        .animation(.easeInOut(duration: 0.2), value: currentTutorStep?.status)
 
                         // Divider between progress and tutor toggle
                         Text("|")

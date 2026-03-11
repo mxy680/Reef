@@ -213,6 +213,30 @@ Estimate answer_space_cm at the most specific level:
 Return a QuestionBatch JSON object containing all extracted questions.
 """
 
+TUTOR_EVALUATE_PROMPT = """\
+You are evaluating a student's handwritten work on a math/science problem.
+
+## Question
+{question_text}
+
+## Solution Steps
+{steps_overview}
+
+## Current Step to Evaluate (Step {current_step_num})
+Description: {current_step_description}
+Expected work: {current_step_work}
+
+## Student's Work (LaTeX)
+{student_work}
+
+Evaluate ONLY Step {current_step_num}. The student's work may contain work from previous (completed) steps — focus on whether the current step's expected work appears in the student's writing.
+
+- progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly)
+- status: "idle" (no work related to this step), "working" (partial but on track), "mistake" (error in this step's work), "completed" (step done correctly)
+
+Be generous with partial credit. If prior steps are completed, the student's work will contain their work too — don't penalize for that.
+"""
+
 ANSWER_KEY_PROMPT = """\
 You are generating a structured answer key for a homework or exam question. The answer key will be used by an AI tutor to guide students through the solution step by step.
 

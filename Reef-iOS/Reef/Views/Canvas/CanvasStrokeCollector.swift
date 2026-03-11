@@ -48,7 +48,7 @@ enum CanvasStrokeCollector {
     }
 
     /// Collect all pen strokes in matching regions for a given question and part label.
-    static func collectStrokes(
+    @MainActor static func collectStrokes(
         questionIndex: Int,
         partLabel: String,
         questionPages: [[Int]],
@@ -60,7 +60,10 @@ enum CanvasStrokeCollector {
 
         let startPage = questionPages[questionIndex][0]
         let endPage = questionPages[questionIndex][1]
-        let matchingRegions = regionData.regions.filter { $0.label == partLabel }
+        // "_" is the sentinel for questions without subquestion parts (label is nil)
+        let matchingRegions = regionData.regions.filter {
+            partLabel == "_" ? $0.label == nil : $0.label == partLabel
+        }
         guard !matchingRegions.isEmpty else { return [] }
 
         var allStrokes: [[(x: Double, y: Double)]] = []

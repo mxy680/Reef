@@ -7,11 +7,16 @@
 
 import Foundation
 
-enum StepStatus {
+enum StepStatus: Equatable {
     case idle       // Not yet started
     case working    // Actively being worked on
     case mistake    // Error detected
     case completed  // Correct / done
+}
+
+struct StepProgress: Equatable {
+    var status: StepStatus
+    var progress: Double
 }
 
 struct TutorStep {
@@ -24,33 +29,45 @@ struct TutorStep {
 
 /// Convert a `QuestionAnswer` into a flat array of `TutorStep` for the toolbar.
 enum TutorStepConverter {
-    static func steps(from answer: QuestionAnswer) -> [TutorStep] {
+    static func steps(
+        from answer: QuestionAnswer,
+        progress: [String: StepProgress]? = nil,
+        questionIndex: Int = 0
+    ) -> [TutorStep] {
         if !answer.parts.isEmpty {
-            return answer.parts.flatMap { stepsFromPart($0) }
+            return answer.parts.flatMap { stepsFromPart($0, progress: progress, questionIndex: questionIndex) }
         }
-        return answer.steps.map { step in
-            TutorStep(
+        return answer.steps.enumerated().map { idx, step in
+            let key = "\(questionIndex)-_-\(idx)"
+            let sp = progress?[key]
+            return TutorStep(
                 instruction: step.description,
                 hint: step.explanation,
                 work: step.work,
-                status: .idle,
-                progress: 0.0
+                status: sp?.status ?? .idle,
+                progress: sp?.progress ?? 0.0
             )
         }
     }
 
-    private static func stepsFromPart(_ part: PartAnswer) -> [TutorStep] {
+    private static func stepsFromPart(
+        _ part: PartAnswer,
+        progress: [String: StepProgress]?,
+        questionIndex: Int
+    ) -> [TutorStep] {
         if !part.parts.isEmpty {
-            return part.parts.flatMap { stepsFromPart($0) }
+            return part.parts.flatMap { stepsFromPart($0, progress: progress, questionIndex: questionIndex) }
         }
 
-        return part.steps.map { step in
-            TutorStep(
+        return part.steps.enumerated().map { idx, step in
+            let key = "\(questionIndex)-\(part.label)-\(idx)"
+            let sp = progress?[key]
+            return TutorStep(
                 instruction: step.description,
                 hint: step.explanation,
                 work: step.work,
-                status: .idle,
-                progress: 0.0
+                status: sp?.status ?? .idle,
+                progress: sp?.progress ?? 0.0
             )
         }
     }

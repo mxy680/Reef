@@ -30,3 +30,34 @@ struct QuestionAnswer: Codable, Sendable {
         case finalAnswer = "final_answer"
     }
 }
+
+struct QuestionData: Codable, Sendable {
+    let number: Int
+    let text: String
+    let parts: [QuestionPart]
+
+    struct QuestionPart: Codable, Sendable {
+        let label: String
+        let text: String
+        let parts: [QuestionPart]
+    }
+
+    /// Returns the question stem + the matching part's text for a given label.
+    /// Searches recursively through nested parts.
+    func textForPart(_ label: String) -> String {
+        var result = text
+        if let partText = findPartText(label, in: parts) {
+            if !result.isEmpty { result += "\n\n" }
+            result += partText
+        }
+        return result
+    }
+
+    private func findPartText(_ label: String, in parts: [QuestionPart]) -> String? {
+        for part in parts {
+            if part.label == label { return part.text }
+            if let found = findPartText(label, in: part.parts) { return found }
+        }
+        return nil
+    }
+}

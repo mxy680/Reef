@@ -36,11 +36,14 @@ struct DocumentCanvasView: View {
     @State private var pageMenuMidX: CGFloat = 0
     @State private var pageOverlaySettings = PageOverlaySettings()
     @State private var answerKeys: [Int: QuestionAnswer] = [:]
+    @State private var questionData: [Int: QuestionData] = [:]
     @State private var showTutorPopover = false
     @State private var activePartLabel: String?
     /// Writing-detected question index (overrides page-based detection)
     @State private var activeQuestionIndex: Int?
     @State private var transcriptionService = TranscriptionService()
+    @State private var feedbackService = TutorFeedbackService()
+    @State private var strokeCounts: [String: Int] = [:]
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -61,6 +64,20 @@ struct DocumentCanvasView: View {
     /// The active question index — prefers writing-detected, falls back to page-based.
     private var visibleQuestionIndex: Int {
         activeQuestionIndex ?? pageBasedQuestionIndex
+    }
+
+    /// Current step index for the active subquestion (from feedback service).
+    private var currentStepIndexForToolbar: Int {
+        let subKey = "\(visibleQuestionIndex)-\(activePartLabel ?? "_")"
+        return feedbackService.currentStepIndices[subKey] ?? 0
+    }
+
+    /// Total step count for the active subquestion.
+    private var totalStepCountForToolbar: Int {
+        let qNum = visibleQuestionIndex + 1
+        guard let answerKey = answerKeys[qNum] else { return 0 }
+        let partLabel = activePartLabel ?? "_"
+        return stepsForPart(answerKey: answerKey, partLabel: partLabel).count
     }
 
     /// Current PencilKit tool derived from toolbar selection + settings
@@ -134,7 +151,16 @@ struct DocumentCanvasView: View {
                         activePartLabel: activePartLabel,
                         hasActiveOverlay: pageOverlaySettings.type != .none,
                         pageOverlaySettings: $pageOverlaySettings,
-                        showTutorPopover: $showTutorPopover
+                        showTutorPopover: $showTutorPopover,
+                        stepProgressData: feedbackService.stepProgress,
+                        currentStepIndex: currentStepIndexForToolbar,
+                        totalStepCount: totalStepCountForToolbar,
+                        onAdvanceStep: {
+                            feedbackService.advanceStep(
+                                questionIndex: visibleQuestionIndex,
+                                partLabel: activePartLabel ?? "_"
+                            )
+                        }
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -239,7 +265,8 @@ struct DocumentCanvasView: View {
                                 showPageSettings = false
                                 showPageMenu = false
                                 showTutorPopover = false
-                            }
+                            },
+                            debugRegions: computeDebugRegions()
                         )
                         .id(pageVersion)
 
@@ -249,7 +276,6 @@ struct DocumentCanvasView: View {
                         }
 
                     }
-                    #if DEBUG
                     .overlay(alignment: .bottomTrailing) {
                         if let partLabel = activePartLabel {
                             let key = "\(visibleQuestionIndex)-\(partLabel)"
@@ -261,7 +287,6 @@ struct DocumentCanvasView: View {
                             .padding(16)
                         }
                     }
-                    #endif
                     .background(canvasBackground)
                 }
             }
@@ -320,8 +345,16 @@ struct DocumentCanvasView: View {
                 drawingManager = manager
             }
             if isReconstructed {
-                answerKeys = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
+                let result = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
+                answerKeys = result.answers
+                questionData = result.questions
                 setDefaultPartLabel(for: visibleQuestionIndex)
+
+                // Pre-cache all hint/answer LaTeX images in background
+                let allAnswers = result.answers
+                Task.detached(priority: .utility) {
+                    await preCacheAllStepTexts(answers: allAnswers)
+                }
             }
         }
         .onChange(of: selectedTool) { _, newTool in
@@ -342,6 +375,36 @@ struct DocumentCanvasView: View {
             // When user scrolls to a different page-based question, reset writing-detected state
             activeQuestionIndex = nil
             setDefaultPartLabel(for: newIndex)
+        }
+        .onChange(of: transcriptionService.transcriptions) { _, newTranscriptions in
+            guard tutorModeOn else { return }
+            let qi = visibleQuestionIndex
+            // "_" is the sentinel for questions without subquestion parts
+            let partLabel = activePartLabel ?? "_"
+            let key = "\(qi)-\(partLabel)"
+            guard let latex = newTranscriptions[key] else { return }
+
+            // Get question text from questionData
+            let qNum = qi + 1  // 1-based
+            let questionText: String
+            if partLabel == "_" {
+                questionText = questionData[qNum]?.text ?? ""
+            } else {
+                questionText = questionData[qNum]?.textForPart(partLabel) ?? ""
+            }
+
+            // Get steps for the current part
+            guard let answerKey = answerKeys[qNum] else { return }
+            let partSteps = stepsForPart(answerKey: answerKey, partLabel: partLabel)
+
+            feedbackService.onTranscriptionChanged(
+                questionIndex: qi,
+                partLabel: partLabel,
+                latex: latex,
+                questionText: questionText,
+                steps: partSteps,
+                strokeCount: strokeCounts[key] ?? 0
+            )
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             drawingManager?.saveAll()
@@ -373,6 +436,28 @@ struct DocumentCanvasView: View {
         }
     }
 
+    // MARK: - Debug Regions
+
+    private func computeDebugRegions() -> [DebugRegion] {
+        guard let regions = document.questionRegions,
+              let questionPages = document.questionPages else { return [] }
+
+        var result: [DebugRegion] = []
+        for (qi, range) in questionPages.enumerated() {
+            guard range.count == 2, qi < regions.count, let regionData = regions[qi] else { continue }
+            let startPage = range[0]
+            for region in regionData.regions {
+                result.append(DebugRegion(
+                    page: startPage + region.page,
+                    yStart: region.yStart,
+                    yEnd: region.yEnd,
+                    label: "Q\(qi+1):\(region.label ?? "_")"
+                ))
+            }
+        }
+        return result
+    }
+
     // MARK: - Stroke Transcription
 
     /// Collect all pen strokes in the active subquestion region and send for transcription.
@@ -386,10 +471,13 @@ struct DocumentCanvasView: View {
             yPDFPoints: yPDFPoints,
             questionPages: questionPages,
             questionRegions: regions
-        ), let partLabel = match.partLabel else {
+        ) else {
             print("[Transcription] No matching region for page=\(pageIndex) y=\(yPDFPoints)")
             return
         }
+
+        // Use "_" as default label for questions without subquestion parts
+        let partLabel = match.partLabel ?? "_"
 
         let allStrokes = CanvasStrokeCollector.collectStrokes(
             questionIndex: match.questionIndex,
@@ -398,6 +486,9 @@ struct DocumentCanvasView: View {
             questionRegions: regions,
             drawingManager: manager
         )
+
+        let key = "\(match.questionIndex)-\(partLabel)"
+        strokeCounts[key] = allStrokes.count
 
         print("[Transcription] Q\(match.questionIndex+1)(\(partLabel)): sending \(allStrokes.count) strokes")
         transcriptionService.transcribe(
@@ -409,8 +500,8 @@ struct DocumentCanvasView: View {
 
     /// Re-transcribe after strokes are erased, using the current active question/part.
     private func handleStrokesErased(pageIndex: Int) {
-        guard let partLabel = activePartLabel,
-              let regions = document.questionRegions,
+        let partLabel = activePartLabel ?? "_"
+        guard let regions = document.questionRegions,
               let questionPages = document.questionPages,
               let manager = drawingManager else { return }
 
@@ -423,10 +514,12 @@ struct DocumentCanvasView: View {
             drawingManager: manager
         )
 
+        let key = "\(qi)-\(partLabel)"
+        strokeCounts[key] = allStrokes.count
+
         print("[Transcription] Q\(qi+1)(\(partLabel)): erased → re-sending \(allStrokes.count) strokes")
 
         if allStrokes.isEmpty {
-            let key = "\(qi)-\(partLabel)"
             transcriptionService.transcriptions[key] = nil
         } else {
             transcriptionService.transcribe(questionIndex: qi, partLabel: partLabel, strokes: allStrokes)
@@ -442,6 +535,53 @@ struct DocumentCanvasView: View {
             return
         }
         activePartLabel = regionData.regions.first?.label
+    }
+
+    // MARK: - Step Lookup
+
+    private func stepsForPart(answerKey: QuestionAnswer, partLabel: String) -> [AnswerKeyStep] {
+        if partLabel == "_" || partLabel.isEmpty || answerKey.parts.isEmpty { return answerKey.steps }
+        return findPartSteps(partLabel, in: answerKey.parts) ?? []
+    }
+
+    private func findPartSteps(_ label: String, in parts: [PartAnswer]) -> [AnswerKeyStep]? {
+        for part in parts {
+            if part.label == label { return part.steps }
+            if let found = findPartSteps(label, in: part.parts) { return found }
+        }
+        return nil
+    }
+
+    // MARK: - LaTeX Pre-caching
+
+    /// Pre-cache all hint and answer LaTeX images for instant popover opens.
+    private func preCacheAllStepTexts(answers: [Int: QuestionAnswer]) async {
+        let maxWidth = Int(CanvasToolbar.tutorPopoverWidth - 24)
+        var texts: [String] = []
+        for answer in answers.values {
+            for step in answer.steps {
+                texts.append(step.explanation)
+                texts.append(step.work)
+            }
+            collectPartTexts(answer.parts, into: &texts)
+        }
+        await withTaskGroup(of: Void.self) { group in
+            for text in texts where !text.isEmpty {
+                group.addTask {
+                    await RenderedLatexImage.preCache(text: text, maxWidth: maxWidth)
+                }
+            }
+        }
+    }
+
+    private func collectPartTexts(_ parts: [PartAnswer], into texts: inout [String]) {
+        for part in parts {
+            for step in part.steps {
+                texts.append(step.explanation)
+                texts.append(step.work)
+            }
+            collectPartTexts(part.parts, into: &texts)
+        }
     }
 
     // MARK: - Page Actions

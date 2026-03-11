@@ -11,10 +11,13 @@ struct TutorStepRow: View {
     let questionIndex: Int
     var activePartLabel: String? = nil
     let answerKey: QuestionAnswer?
+    var stepProgressData: [String: StepProgress]? = nil
+    var currentStepIndex: Int = 0
+    var totalStepCount: Int = 0
 
     private var steps: [TutorStep] {
         guard let answerKey else { return [] }
-        return TutorStepConverter.steps(from: answerKey)
+        return TutorStepConverter.steps(from: answerKey, progress: stepProgressData, questionIndex: questionIndex)
     }
 
     private var currentStep: TutorStep? {
@@ -26,7 +29,7 @@ struct TutorStepRow: View {
             HStack(spacing: 0) {
                 stepDivider()
 
-                // Q label
+                // Q label + Step indicator
                 HStack(spacing: 6) {
                     statusIcon(for: currentStep!.status)
 
@@ -39,6 +42,12 @@ struct TutorStepRow: View {
                     }())
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
+
+                    if totalStepCount > 0 {
+                        Text("Step \(currentStepIndex + 1)/\(totalStepCount)")
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
                 }
 
                 stepDivider()

@@ -84,9 +84,6 @@ struct KaTeXView: UIViewRepresentable {
 
     private func loadContent(in webView: WKWebView) {
         guard let bundleURL = Bundle.main.resourceURL else { return }
-        let cssURL = bundleURL.appendingPathComponent("katex.min.css").absoluteString
-        let jsURL = bundleURL.appendingPathComponent("katex.min.js").absoluteString
-        let arURL = bundleURL.appendingPathComponent("auto-render.min.js").absoluteString
 
         let hexColor = Self.hexString(from: textColor)
         let jsonData = try? JSONEncoder().encode(text)
@@ -97,9 +94,9 @@ struct KaTeXView: UIViewRepresentable {
         <html>
         <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <link rel="stylesheet" href="\(cssURL)">
-        <script src="\(jsURL)"></script>
-        <script src="\(arURL)"></script>
+        <link rel="stylesheet" href="katex.min.css">
+        <script src="katex.min.js"></script>
+        <script src="auto-render.min.js"></script>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           html, body {
@@ -141,12 +138,9 @@ struct KaTeXView: UIViewRepresentable {
         </html>
         """
 
-        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let tempHTML = cacheDir.appendingPathComponent("katex_\(UUID().uuidString).html")
-        try? html.write(to: tempHTML, atomically: true, encoding: .utf8)
-
-        let allowAccessTo = Bundle.main.resourceURL ?? cacheDir
-        webView.loadFileURL(tempHTML, allowingReadAccessTo: allowAccessTo)
+        // Use loadHTMLString with baseURL pointing to the bundle so that
+        // relative references to katex.min.css/js resolve correctly.
+        webView.loadHTMLString(html, baseURL: bundleURL)
     }
 
     private static func hexString(from color: Color) -> String {
