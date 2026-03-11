@@ -265,7 +265,8 @@ struct DocumentCanvasView: View {
                                 showPageSettings = false
                                 showPageMenu = false
                                 showTutorPopover = false
-                            }
+                            },
+                            debugRegions: computeDebugRegions()
                         )
                         .id(pageVersion)
 
@@ -426,6 +427,28 @@ struct DocumentCanvasView: View {
         if activePartLabel != match.partLabel {
             activePartLabel = match.partLabel
         }
+    }
+
+    // MARK: - Debug Regions
+
+    private func computeDebugRegions() -> [DebugRegion] {
+        guard let regions = document.questionRegions,
+              let questionPages = document.questionPages else { return [] }
+
+        var result: [DebugRegion] = []
+        for (qi, range) in questionPages.enumerated() {
+            guard range.count == 2, qi < regions.count, let regionData = regions[qi] else { continue }
+            let startPage = range[0]
+            for region in regionData.regions {
+                result.append(DebugRegion(
+                    page: startPage + region.page,
+                    yStart: region.yStart,
+                    yEnd: region.yEnd,
+                    label: region.label
+                ))
+            }
+        }
+        return result
     }
 
     // MARK: - Stroke Transcription

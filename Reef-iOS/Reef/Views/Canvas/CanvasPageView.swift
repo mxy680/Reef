@@ -10,6 +10,14 @@ import SwiftUI
 import PDFKit
 import PencilKit
 
+/// Debug region boundary for visualization on canvas pages.
+struct DebugRegion {
+    let page: Int       // Absolute page index
+    let yStart: Double  // PDF points
+    let yEnd: Double    // PDF points
+    let label: String?
+}
+
 struct CanvasPageView: UIViewRepresentable {
     let pdfDocument: PDFDocument
     let pageRange: ClosedRange<Int>?
@@ -24,6 +32,7 @@ struct CanvasPageView: UIViewRepresentable {
     var isEraserActive: Bool = false
     var eraserWidth: CGFloat = 8.0
     var onCanvasTouchBegan: (() -> Void)?
+    var debugRegions: [DebugRegion] = []
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
@@ -40,6 +49,7 @@ struct CanvasPageView: UIViewRepresentable {
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
         container.applyDarkMode(darkMode)
         container.updateOverlay(overlaySettings)
+        container.updateDebugRegions(debugRegions)
         return container
     }
 
@@ -54,6 +64,7 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.onStrokesErased = onStrokesErased
         uiView.applyDarkMode(darkMode)
         uiView.updateOverlay(overlaySettings)
+        uiView.updateDebugRegions(debugRegions)
     }
 }
 
@@ -69,6 +80,7 @@ final class CanvasContainerView: UIView {
     private var pageContainerViews: [UIView] = []
     private var shadowViews: [UIView] = []
     private var pageOverlayViews: [PageOverlayView] = []
+    private var debugOverlayViews: [DebugRegionOverlayView] = []
     private var separatorViews: [UIView] = []
     private var pageWrappers: [UIView] = []
     private var contentWidthConstraint: NSLayoutConstraint?
@@ -235,6 +247,37 @@ final class CanvasContainerView: UIView {
             overlay.spacing = settings.spacing
             overlay.overlayOpacity = settings.opacity
             overlay.setNeedsDisplay()
+        }
+    }
+
+    // MARK: - Debug Regions
+
+    func updateDebugRegions(_ regions: [DebugRegion]) {
+        // Remove old debug overlays
+        for view in debugOverlayViews { view.removeFromSuperview() }
+        debugOverlayViews.removeAll()
+
+        guard !regions.isEmpty else { return }
+
+        // Group regions by local page index (relative to startPageIndex)
+        for (localIndex, pageView) in pageContainerViews.enumerated() {
+            let absPage = startPageIndex + localIndex
+            let pageRegions = regions.filter { $0.page == absPage }
+            guard !pageRegions.isEmpty else { continue }
+
+            let overlay = DebugRegionOverlayView()
+            overlay.translatesAutoresizingMaskIntoConstraints = false
+            overlay.isUserInteractionEnabled = false
+            overlay.regions = pageRegions
+            pageView.addSubview(overlay)
+            debugOverlayViews.append(overlay)
+
+            NSLayoutConstraint.activate([
+                overlay.topAnchor.constraint(equalTo: pageView.topAnchor),
+                overlay.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
+                overlay.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
+                overlay.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
+            ])
         }
     }
 
@@ -684,6 +727,64 @@ final class PageOverlayView: UIView {
                 y += scaledSpacing
             }
             ctx.strokePath()
+        }
+    }
+}
+
+// MARK: - Debug Region Overlay View
+
+/// Draws red boundary lines and tinted regions for debugging question region detection.
+final class DebugRegionOverlayView: UIView {
+    var regions: [DebugRegion] = [] {
+        didSet { setNeedsDisplay() }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isOpaque = false
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ rect: CGRect) {
+        guard !regions.isEmpty, let ctx = UIGraphicsGetCurrentContext() else { return }
+
+        let colors: [UIColor] = [
+            .systemRed, .systemBlue, .systemGreen, .systemOrange, .systemPurple, .systemTeal
+        ]
+
+        for (i, region) in regions.enumerated() {
+            let color = colors[i % colors.count]
+            // PDF points → canvas coords (2x)
+            let y1 = region.yStart * 2.0
+            let y2 = region.yEnd * 2.0
+
+            // Tinted fill
+            ctx.setFillColor(color.withAlphaComponent(0.08).cgColor)
+            ctx.fill(CGRect(x: 0, y: y1, width: rect.width, height: y2 - y1))
+
+            // Top boundary line
+            ctx.setStrokeColor(color.withAlphaComponent(0.6).cgColor)
+            ctx.setLineWidth(2.0)
+            ctx.setLineDash(phase: 0, lengths: [8, 4])
+            ctx.move(to: CGPoint(x: 0, y: y1))
+            ctx.addLine(to: CGPoint(x: rect.width, y: y1))
+            ctx.strokePath()
+
+            // Bottom boundary line
+            ctx.move(to: CGPoint(x: 0, y: y2))
+            ctx.addLine(to: CGPoint(x: rect.width, y: y2))
+            ctx.strokePath()
+
+            // Label
+            let label = region.label ?? "none"
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 20),
+                .foregroundColor: color.withAlphaComponent(0.7),
+            ]
+            let text = "[\(label)] y:\(Int(region.yStart))–\(Int(region.yEnd))" as NSString
+            text.draw(at: CGPoint(x: 12, y: y1 + 4), withAttributes: attrs)
         }
     }
 }
