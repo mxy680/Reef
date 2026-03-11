@@ -32,8 +32,6 @@ struct OnboardingOptionButton: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @State private var isPressed = false
-
     var body: some View {
         let dark = theme.isDarkMode
         Text(label)
@@ -45,35 +43,14 @@ struct OnboardingOptionButton: View {
             .padding(.vertical, 14)
             .background(isSelected ? ReefColors.primary : (dark ? ReefColors.DashboardDark.card : ReefColors.white))
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 2)
+            .reef3DPush(
+                cornerRadius: 12,
+                borderWidth: 2,
+                borderColor: dark ? ReefColors.DashboardDark.border : ReefColors.black,
+                shadowColor: dark ? ReefColors.DashboardDark.shadow : ReefColors.black,
+                action: action
             )
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
-                    .offset(
-                        x: isPressed ? 0 : (isSelected ? 3 : 4),
-                        y: isPressed ? 0 : (isSelected ? 3 : 4)
-                    )
-            )
-            .offset(
-                x: isPressed ? (isSelected ? 3 : 4) : 0,
-                y: isPressed ? (isSelected ? 3 : 4) : 0
-            )
-            .animation(.spring(duration: 0.3, bounce: 0.2), value: isPressed)
             .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
-            .compositingGroup()
-            .contentShape(Rectangle())
-            .onTapGesture {
-                action()
-            }
-            .accessibilityAddTraits(.isButton)
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in isPressed = true }
-                    .onEnded { _ in isPressed = false }
-            )
     }
 }
 
@@ -85,8 +62,6 @@ struct SubjectPill: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @State private var isPressed = false
-
     var body: some View {
         let dark = theme.isDarkMode
         Text(label)
@@ -97,34 +72,13 @@ struct SubjectPill: View {
             .padding(.vertical, 8)
             .background(isSelected ? ReefColors.primary : (dark ? ReefColors.DashboardDark.card : ReefColors.white))
             .clipShape(Capsule())
-            .overlay(
-                Capsule().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 2)
+            .reef3DPushCapsule(
+                borderWidth: 2,
+                borderColor: dark ? ReefColors.DashboardDark.border : ReefColors.black,
+                shadowColor: dark ? ReefColors.DashboardDark.shadow : ReefColors.black,
+                action: action
             )
-            .background(
-                Capsule()
-                    .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
-                    .offset(
-                        x: isPressed ? 0 : 3,
-                        y: isPressed ? 0 : 3
-                    )
-            )
-            .offset(
-                x: isPressed ? 3 : 0,
-                y: isPressed ? 3 : 0
-            )
-            .animation(.spring(duration: 0.3, bounce: 0.2), value: isPressed)
             .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
-            .compositingGroup()
-            .contentShape(Rectangle())
-            .onTapGesture {
-                action()
-            }
-            .accessibilityAddTraits(.isButton)
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in isPressed = true }
-                    .onEnded { _ in isPressed = false }
-            )
     }
 }
 

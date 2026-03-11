@@ -85,30 +85,28 @@ struct DashboardHeader: View {
                 .frame(height: 32)
                 .background(dark ? ReefColors.DashboardDark.surface : ReefColors.surface)
                 .clipShape(Capsule())
-                .overlay(Capsule().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
-                .background(
-                    Capsule()
-                        .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
-                        .offset(x: 2, y: 2)
-                )
+                .reef3DPushCapsule(
+                    shadowOffset: 2,
+                    borderColor: dark ? ReefColors.DashboardDark.border : ReefColors.black,
+                    shadowColor: dark ? ReefColors.DashboardDark.shadow : ReefColors.black
+                ) {
+                    // TODO: streak details
+                }
 
                 // Profile circle
                 ZStack {
                     Circle()
                         .fill(ReefColors.accent)
-                        .frame(width: 32, height: 32)
-                        .overlay(Circle().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
-                        .background(
-                            Circle()
-                                .fill(dark ? ReefColors.DashboardDark.shadow : ReefColors.black)
-                                .frame(width: 32, height: 32)
-                                .offset(x: 2, y: 2)
-                        )
                     Text(authManager.userInitials)
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
                 }
-                .onTapGesture {
+                .frame(width: 32, height: 32)
+                .clipShape(Circle())
+                .reef3DPushCircle(
+                    borderColor: dark ? ReefColors.DashboardDark.border : ReefColors.black,
+                    shadowColor: dark ? ReefColors.DashboardDark.shadow : ReefColors.black
+                ) {
                     withAnimation(.spring(duration: 0.2)) {
                         showProfileMenu.toggle()
                     }

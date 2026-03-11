@@ -131,18 +131,11 @@ extension Button {
 
 // MARK: - 3D Push Modifier
 
-/// Adds the 3D push-down animation to any view that already has a neobrutalist
-/// shadow/border setup. Replaces the static shadow + onTapGesture pattern with
-/// an animated press effect.
-///
-/// The view content should already include its own background, clipShape, and
-/// overlay stroke. This modifier wraps it with:
-/// - A shadow layer that retracts on press
-/// - An offset that pushes the view into the shadow on press
-/// - A DragGesture to track press state
-/// - An onTapGesture for the action
-struct Reef3DPushModifier: ViewModifier {
-    let cornerRadius: CGFloat
+/// Adds a 3D neobrutalist push-down animation to any view. Generic over
+/// `Shape` so it works with RoundedRectangle, Capsule, Circle, etc.
+/// The view should already have its own background and clipShape applied.
+struct Reef3DPushModifier<S: Shape>: ViewModifier {
+    let shape: S
     let shadowOffset: CGFloat
     let borderWidth: CGFloat
     let borderColor: Color
@@ -153,13 +146,9 @@ struct Reef3DPushModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(borderColor, lineWidth: borderWidth)
-            )
+            .overlay(shape.stroke(borderColor, lineWidth: borderWidth))
             .background(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(shadowColor)
+                shape.fill(shadowColor)
                     .offset(
                         x: isPressed ? 0 : shadowOffset,
                         y: isPressed ? 0 : shadowOffset
@@ -183,9 +172,7 @@ struct Reef3DPushModifier: ViewModifier {
 }
 
 extension View {
-    /// Adds a 3D neobrutalist push effect. Apply this to a view that already
-    /// has its own background and clipShape — this adds the border, shadow,
-    /// press animation, and tap action.
+    /// 3D push effect with RoundedRectangle shape (most common).
     func reef3DPush(
         cornerRadius: CGFloat = 10,
         shadowOffset: CGFloat = 4,
@@ -195,7 +182,43 @@ extension View {
         action: @escaping () -> Void
     ) -> some View {
         modifier(Reef3DPushModifier(
-            cornerRadius: cornerRadius,
+            shape: RoundedRectangle(cornerRadius: cornerRadius),
+            shadowOffset: shadowOffset,
+            borderWidth: borderWidth,
+            borderColor: borderColor,
+            shadowColor: shadowColor,
+            action: action
+        ))
+    }
+
+    /// 3D push effect with Capsule shape (pills, tags).
+    func reef3DPushCapsule(
+        shadowOffset: CGFloat = 3,
+        borderWidth: CGFloat = 1.5,
+        borderColor: Color,
+        shadowColor: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        modifier(Reef3DPushModifier(
+            shape: Capsule(),
+            shadowOffset: shadowOffset,
+            borderWidth: borderWidth,
+            borderColor: borderColor,
+            shadowColor: shadowColor,
+            action: action
+        ))
+    }
+
+    /// 3D push effect with Circle shape (avatars, round buttons).
+    func reef3DPushCircle(
+        shadowOffset: CGFloat = 2,
+        borderWidth: CGFloat = 1.5,
+        borderColor: Color,
+        shadowColor: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        modifier(Reef3DPushModifier(
+            shape: Circle(),
             shadowOffset: shadowOffset,
             borderWidth: borderWidth,
             borderColor: borderColor,
