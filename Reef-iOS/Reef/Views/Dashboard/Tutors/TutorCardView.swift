@@ -31,15 +31,15 @@ struct TutorCardView: View {
     var body: some View {
         let dark = theme.isDarkMode
         return VStack(alignment: .leading, spacing: 0) {
-            // Avatar area — scales with card
+            // Avatar area
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(tintColor.opacity(isActive ? 0.2 : 0.1))
 
                 Text(tutor.emoji)
-                    .font(.system(size: min(40, cardHeight * 0.14)))
+                    .font(.system(size: 32))
             }
-            .frame(height: cardHeight * 0.25)
+            .frame(height: 60)
             .padding(.horizontal, 14)
             .padding(.top, 14)
 

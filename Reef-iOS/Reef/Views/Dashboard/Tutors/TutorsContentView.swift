@@ -10,28 +10,21 @@ struct TutorsContentView: View {
     var body: some View {
         let dark = theme.isDarkMode
         return GeometryReader { geo in
-            let availableHeight = geo.size.height
-            // Reserve fixed space for header (~90pt) and section label (~30pt), dots (~30pt), paddings
-            let fixedChrome: CGFloat = 180
-            let flexHeight = max(0, availableHeight - fixedChrome)
-            // Spotlight gets ~40% of flex space, carousel gets ~60%
-            let spotlightHeight = flexHeight * 0.38
-            let carouselHeight = flexHeight * 0.55
-
             VStack(spacing: 0) {
                 headerRow
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, 16)
 
                 if viewModel.isLoading {
+                    Spacer()
                     skeletonCarousel
-                        .padding(.top, 24)
                     Spacer()
                 } else if viewModel.tutors.isEmpty {
+                    Spacer()
                     emptyState
-                        .padding(.top, 40)
                     Spacer()
                 } else {
+                    Spacer(minLength: 12)
+
                     // Spotlight hero
                     if let tutor = viewModel.activeTutor {
                         TutorSpotlightView(
@@ -39,26 +32,26 @@ struct TutorsContentView: View {
                             isSpeaking: viewModel.speakingTutorId == tutor.id,
                             onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
                             onStartSession: { /* placeholder */ },
-                            avatarSize: min(spotlightHeight * 0.55, metrics.spotlightAvatarSize * 1.3)
+                            avatarSize: metrics.spotlightAvatarSize
                         )
-                        .frame(maxHeight: spotlightHeight)
                         .id(viewModel.activeTutorId)
                         .transition(.opacity.combined(with: .scale(scale: 0.97)))
                         .animation(.spring(duration: 0.35), value: viewModel.activeTutorId)
-                        .padding(.bottom, 16)
                     }
 
+                    Spacer(minLength: 16)
+
                     // Carousel section
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("CHOOSE YOUR TUTOR")
                             .font(.epilogue(11, weight: .bold))
                             .tracking(0.06 * 11)
                             .foregroundStyle(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
 
-                        tutorCarousel(cardHeight: carouselHeight * 0.85)
+                        tutorCarousel
                     }
 
-                    Spacer(minLength: 0)
+                    Spacer(minLength: 8)
                 }
             }
         }
@@ -160,13 +153,8 @@ struct TutorsContentView: View {
 
     // MARK: - Carousel
 
-    private func tutorCarousel(cardHeight: CGFloat) -> some View {
+    private var tutorCarousel: some View {
         let dark = theme.isDarkMode
-        // Clamp card height to reasonable bounds
-        let clampedHeight = max(200, min(cardHeight, 340))
-        // Card width derived from height with aspect ratio
-        let cardWidth = clampedHeight * 0.9
-
         return VStack(spacing: 12) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 20) {
@@ -179,8 +167,8 @@ struct TutorsContentView: View {
                             onTap: { withAnimation(.spring(duration: 0.3)) { viewModel.selectedTutor = tutor } },
                             onVoicePreview: { viewModel.toggleVoicePreview(for: tutor) },
                             onSelect: { viewModel.selectTutor(tutor) },
-                            cardWidth: cardWidth,
-                            cardHeight: clampedHeight
+                            cardWidth: metrics.tutorCardWidth,
+                            cardHeight: metrics.tutorCardHeight
                         )
                     }
                 }

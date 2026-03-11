@@ -15,7 +15,10 @@ struct TutorSpotlightView: View {
 
     var body: some View {
         let dark = theme.isDarkMode
-        return HStack(alignment: .center, spacing: 20) {
+        let labelColor = dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400
+        let bodyColor = dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600
+
+        return HStack(alignment: .top, spacing: 20) {
             // Left: avatar circle
             ZStack {
                 Circle()
@@ -31,42 +34,46 @@ struct TutorSpotlightView: View {
             }
 
             // Right: info + actions
-            VStack(alignment: .leading, spacing: 6) {
-                Text(tutor.name)
-                    .font(.epilogue(22, weight: .black))
-                    .tracking(-0.04 * 22)
-                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+            VStack(alignment: .leading, spacing: 8) {
+                // Name + species header
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(tutor.name)
+                        .font(.epilogue(22, weight: .black))
+                        .tracking(-0.04 * 22)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
 
-                Text(tutor.species.uppercased())
-                    .font(.epilogue(11, weight: .bold))
-                    .tracking(0.06 * 11)
-                    .foregroundStyle(tintColor)
-
-                Text(tutor.teachingStyle)
-                    .font(.epilogue(13, weight: .medium))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
-                    .lineLimit(4)
-                    .padding(.top, 2)
-
-                Spacer(minLength: 4)
-
-                // Voice description pill
-                HStack(spacing: 5) {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(tutor.voiceDescription)
-                        .font(.epilogue(11, weight: .semiBold))
-                        .tracking(-0.04 * 11)
+                    Text(tutor.species.uppercased())
+                        .font(.epilogue(11, weight: .bold))
+                        .tracking(0.06 * 11)
+                        .foregroundStyle(tintColor)
                 }
-                .foregroundStyle(tintColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(tintColor.opacity(0.1))
-                .clipShape(Capsule())
 
-                // Bottom actions
-                HStack(spacing: 10) {
+                // About
+                infoSection(label: "ABOUT", text: tutor.shortBio, labelColor: labelColor, bodyColor: bodyColor)
+
+                // Teaching style
+                infoSection(label: "TEACHING STYLE", text: tutor.teachingStyle, labelColor: labelColor, bodyColor: bodyColor)
+
+                // Fun fact
+                infoSection(label: "FUN FACT", text: tutor.funFact, labelColor: labelColor, bodyColor: bodyColor)
+
+                // Voice pill + actions row
+                HStack(spacing: 12) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "waveform")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text(tutor.voiceDescription)
+                            .font(.epilogue(11, weight: .semiBold))
+                            .tracking(-0.04 * 11)
+                    }
+                    .foregroundStyle(tintColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(tintColor.opacity(0.1))
+                    .clipShape(Capsule())
+
+                    Spacer()
+
                     Button {
                         onVoicePreview()
                     } label: {
@@ -89,9 +96,10 @@ struct TutorSpotlightView: View {
                     }
                     .reefCompactStyle(.primary)
                 }
+                .padding(.top, 4)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -106,5 +114,20 @@ struct TutorSpotlightView: View {
         )
         .padding(.trailing, 6)
         .padding(.bottom, 6)
+    }
+
+    private func infoSection(label: String, text: String, labelColor: Color, bodyColor: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(.epilogue(10, weight: .bold))
+                .tracking(0.06 * 10)
+                .foregroundStyle(labelColor)
+
+            Text(text)
+                .font(.epilogue(13, weight: .medium))
+                .tracking(-0.04 * 13)
+                .foregroundStyle(bodyColor)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
