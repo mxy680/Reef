@@ -41,6 +41,9 @@ struct CanvasToolbar: View {
     @Binding var pageOverlaySettings: PageOverlaySettings
     @Binding var showTutorPopover: Bool
     var stepProgressData: [String: StepProgress]? = nil
+    var currentStepIndex: Int = 0
+    var totalStepCount: Int = 0
+    var onAdvanceStep: () -> Void = {}
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -246,7 +249,9 @@ struct CanvasToolbar: View {
                     questionIndex: visibleQuestionIndex,
                     activePartLabel: activePartLabel,
                     answerKey: answerKey,
-                    stepProgressData: stepProgressData
+                    stepProgressData: stepProgressData,
+                    currentStepIndex: currentStepIndex,
+                    totalStepCount: totalStepCount
                 )
             } else {
                 // Document name / question label
@@ -280,7 +285,22 @@ struct CanvasToolbar: View {
                                     .foregroundColor(.white.opacity(0.6))
                                     .baselineOffset(1.5)
                             }
+
+                            // Next step chevron — appears when current step is completed
+                            if currentTutorStep?.status == .completed && currentStepIndex < totalStepCount - 1 {
+                                Button(action: onAdvanceStep) {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 24, height: 24)
+                                        .background(Color.white.opacity(0.25))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(.plain)
+                                .transition(.scale.combined(with: .opacity))
+                            }
                         }
+                        .animation(.easeInOut(duration: 0.2), value: currentTutorStep?.status)
 
                         // Divider between progress and tutor toggle
                         Text("|")
@@ -552,6 +572,8 @@ private struct TutorStepRow: View {
     var activePartLabel: String? = nil
     let answerKey: QuestionAnswer?
     var stepProgressData: [String: StepProgress]? = nil
+    var currentStepIndex: Int = 0
+    var totalStepCount: Int = 0
 
     private var steps: [TutorStep] {
         guard let answerKey else { return [] }
@@ -567,7 +589,7 @@ private struct TutorStepRow: View {
             HStack(spacing: 0) {
                 stepDivider()
 
-                // Q label
+                // Q label + Step indicator
                 HStack(spacing: 6) {
                     statusIcon(for: currentStep!.status)
 
@@ -580,6 +602,12 @@ private struct TutorStepRow: View {
                     }())
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
+
+                    if totalStepCount > 0 {
+                        Text("Step \(currentStepIndex + 1)/\(totalStepCount)")
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
                 }
 
                 stepDivider()

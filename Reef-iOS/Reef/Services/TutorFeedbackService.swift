@@ -111,6 +111,13 @@ final class TutorFeedbackService {
         }
     }
 
+    /// Manually advance to the next step for the given subquestion.
+    func advanceStep(questionIndex: Int, partLabel: String) {
+        let subKey = "\(questionIndex)-\(partLabel)"
+        let current = currentStepIndices[subKey] ?? 0
+        currentStepIndices[subKey] = current + 1
+    }
+
     /// Reset progress when switching questions/parts
     func reset() {
         debounceTask?.cancel()

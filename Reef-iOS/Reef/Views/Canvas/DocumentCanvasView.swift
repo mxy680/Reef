@@ -63,6 +63,20 @@ struct DocumentCanvasView: View {
         activeQuestionIndex ?? pageBasedQuestionIndex
     }
 
+    /// Current step index for the active subquestion (from feedback service).
+    private var currentStepIndexForToolbar: Int {
+        let subKey = "\(visibleQuestionIndex)-\(activePartLabel ?? "")"
+        return feedbackService.currentStepIndices[subKey] ?? 0
+    }
+
+    /// Total step count for the active subquestion.
+    private var totalStepCountForToolbar: Int {
+        let qNum = visibleQuestionIndex + 1
+        guard let answerKey = answerKeys[qNum] else { return 0 }
+        let partLabel = activePartLabel ?? ""
+        return stepsForPart(answerKey: answerKey, partLabel: partLabel).count
+    }
+
     /// Current PencilKit tool derived from toolbar selection + settings
     private var currentPKTool: PKTool {
         selectedTool.pkTool(color: penColor, width: penWidth)
@@ -130,7 +144,15 @@ struct DocumentCanvasView: View {
                         hasActiveOverlay: pageOverlaySettings.type != .none,
                         pageOverlaySettings: $pageOverlaySettings,
                         showTutorPopover: $showTutorPopover,
-                        stepProgressData: feedbackService.stepProgress
+                        stepProgressData: feedbackService.stepProgress,
+                        currentStepIndex: currentStepIndexForToolbar,
+                        totalStepCount: totalStepCountForToolbar,
+                        onAdvanceStep: {
+                            feedbackService.advanceStep(
+                                questionIndex: visibleQuestionIndex,
+                                partLabel: activePartLabel ?? ""
+                            )
+                        }
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -230,7 +252,6 @@ struct DocumentCanvasView: View {
                         }
 
                     }
-                    #if DEBUG
                     .overlay(alignment: .bottomTrailing) {
                         if let partLabel = activePartLabel {
                             let key = "\(visibleQuestionIndex)-\(partLabel)"
@@ -242,7 +263,6 @@ struct DocumentCanvasView: View {
                             .padding(16)
                         }
                     }
-                    #endif
                     .background(canvasBackground)
                     .overlay {
                         // Tap-to-dismiss layer (covers canvas only, not toolbar)
