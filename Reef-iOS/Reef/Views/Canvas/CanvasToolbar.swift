@@ -54,7 +54,7 @@ struct CanvasToolbar: View {
     @State private var toolbarRowMinX: CGFloat = 0
     @State private var toolbarRowWidth: CGFloat = 0
 
-    private static let tutorPopoverWidth: CGFloat = 320
+    static let tutorPopoverWidth: CGFloat = 320
 
     /// Current tutor step (computed from answerKey)
     private var tutorSteps: [TutorStep] {
@@ -194,10 +194,11 @@ struct CanvasToolbar: View {
         let arrowOffset = (triggerMidX - toolbarRowMinX) - (clampedX + Self.tutorPopoverWidth / 2)
 
         return PopoverCard(arrowOffset: arrowOffset, maxWidth: Self.tutorPopoverWidth) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(spacing: 6) {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(ReefColors.black)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 RenderedLatexImage(
                     text: text,
                     maxWidth: Int(Self.tutorPopoverWidth - 24),

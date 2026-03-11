@@ -349,6 +349,12 @@ struct DocumentCanvasView: View {
                 answerKeys = result.answers
                 questionData = result.questions
                 setDefaultPartLabel(for: visibleQuestionIndex)
+
+                // Pre-cache all hint/answer LaTeX images in background
+                let allAnswers = result.answers
+                Task.detached(priority: .utility) {
+                    await preCacheAllStepTexts(answers: allAnswers)
+                }
             }
         }
         .onChange(of: selectedTool) { _, newTool in
@@ -544,6 +550,38 @@ struct DocumentCanvasView: View {
             if let found = findPartSteps(label, in: part.parts) { return found }
         }
         return nil
+    }
+
+    // MARK: - LaTeX Pre-caching
+
+    /// Pre-cache all hint and answer LaTeX images for instant popover opens.
+    private func preCacheAllStepTexts(answers: [Int: QuestionAnswer]) async {
+        let maxWidth = Int(CanvasToolbar.tutorPopoverWidth - 24)
+        var texts: [String] = []
+        for answer in answers.values {
+            for step in answer.steps {
+                texts.append(step.explanation)
+                texts.append(step.work)
+            }
+            collectPartTexts(answer.parts, into: &texts)
+        }
+        await withTaskGroup(of: Void.self) { group in
+            for text in texts where !text.isEmpty {
+                group.addTask {
+                    await RenderedLatexImage.preCache(text: text, maxWidth: maxWidth)
+                }
+            }
+        }
+    }
+
+    private func collectPartTexts(_ parts: [PartAnswer], into texts: inout [String]) {
+        for part in parts {
+            for step in part.steps {
+                texts.append(step.explanation)
+                texts.append(step.work)
+            }
+            collectPartTexts(part.parts, into: &texts)
+        }
     }
 
     // MARK: - Page Actions

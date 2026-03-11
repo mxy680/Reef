@@ -43,6 +43,21 @@ struct RenderedLatexImage: View {
         }
     }
 
+    /// Pre-render and cache a LaTeX string so it's instant when the popover opens.
+    static func preCache(text: String, fontSize: CGFloat = 18, maxWidth: Int = 236) async {
+        guard !text.isEmpty else { return }
+        let cacheKey = "\(text)-\(fontSize)-\(maxWidth)" as NSString
+        if cache.object(forKey: cacheKey) != nil { return }
+        do {
+            let rendered = try await ReefAPI.shared.renderLatex(
+                text: text, fontSize: fontSize, maxWidth: maxWidth
+            )
+            cache.setObject(rendered, forKey: cacheKey)
+        } catch {
+            print("[RenderedLatexImage] preCache failed: \(error)")
+        }
+    }
+
     private func loadImage() async {
         guard !text.isEmpty else { return }
 
