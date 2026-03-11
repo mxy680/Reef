@@ -34,9 +34,9 @@ struct TutorSpotlightView: View {
             }
 
             // Right: info + actions
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 16) {
                 // Name + species header
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(tutor.name)
                         .font(.epilogue(22, weight: .black))
                         .tracking(-0.04 * 22)
@@ -100,7 +100,7 @@ struct TutorSpotlightView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
+        .padding(24)
         .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
@@ -117,7 +117,7 @@ struct TutorSpotlightView: View {
     }
 
     private func infoSection(label: String, text: String, labelColor: Color, bodyColor: Color) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 5) {
             Text(label)
                 .font(.epilogue(10, weight: .bold))
                 .tracking(0.06 * 10)
