@@ -26,7 +26,8 @@ final class TutorFeedbackService {
         partLabel: String,
         latex: String,
         questionText: String,
-        steps: [AnswerKeyStep]
+        steps: [AnswerKeyStep],
+        strokeCount: Int
     ) {
         let subKey = "\(questionIndex)-\(partLabel)"
         let stepIdx = currentStepIndices[subKey] ?? 0
@@ -47,11 +48,15 @@ final class TutorFeedbackService {
 
         generation += 1
         let myGeneration = generation
-        let step = steps[stepIdx]
+
+        // Adaptive exponential debounce: more strokes → shorter delay
+        // debounce(n) = 0.5 + 1.5 * e^(-0.15 * n)
+        // n=0: 2.0s, n=5: 1.2s, n=10: 0.83s, n=20: 0.57s, n=30+: ~0.5s
+        let delay = 0.5 + 1.5 * exp(-0.15 * Double(strokeCount))
 
         debounceTask?.cancel()
         debounceTask = Task {
-            try? await Task.sleep(for: .seconds(1.0))
+            try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled, generation == myGeneration else { return }
 
             await evaluate(
@@ -60,7 +65,7 @@ final class TutorFeedbackService {
                 progressKey: progressKey,
                 latex: latex,
                 questionText: questionText,
-                step: step
+                steps: steps
             )
         }
     }
@@ -71,17 +76,24 @@ final class TutorFeedbackService {
         progressKey: String,
         latex: String,
         questionText: String,
-        step: AnswerKeyStep
+        steps: [AnswerKeyStep]
     ) async {
         // Mark as working while evaluating
         stepProgress[progressKey] = StepProgress(status: .working, progress: stepProgress[progressKey]?.progress ?? 0.0)
 
         do {
+            // Collect completed step indices
+            let completedIndices = (0..<stepIndex).filter { i in
+                let key = "\(subKey)-\(i)"
+                return stepProgress[key]?.status == .completed
+            }
+
             let body = EvaluateStepRequest(
                 question_text: questionText,
-                step_description: step.description,
-                step_work: step.work,
-                student_work: latex
+                student_work: latex,
+                steps: steps.map { StepInfo(description: $0.description, work: $0.work) },
+                current_step_index: stepIndex,
+                completed_step_indices: completedIndices
             )
             let response: EvaluateStepResponse = try await ReefAPI.shared.request(
                 "POST",
@@ -127,11 +139,17 @@ final class TutorFeedbackService {
 
 // MARK: - API Models
 
+private struct StepInfo: Encodable {
+    let description: String
+    let work: String
+}
+
 private struct EvaluateStepRequest: Encodable {
     let question_text: String
-    let step_description: String
-    let step_work: String
     let student_work: String
+    let steps: [StepInfo]
+    let current_step_index: Int
+    let completed_step_indices: [Int]
 }
 
 private struct EvaluateStepResponse: Decodable {

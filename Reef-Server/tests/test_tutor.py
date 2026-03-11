@@ -22,9 +22,13 @@ client = TestClient(app)
 
 VALID_BODY = {
     "question_text": "Solve for x: 2x + 4 = 10",
-    "step_description": "Subtract 4 from both sides to isolate the variable term",
-    "step_work": "2x = 6",
     "student_work": "2x = 6",
+    "steps": [
+        {"description": "Subtract 4 from both sides to isolate the variable term", "work": "2x = 6"},
+        {"description": "Divide both sides by 2", "work": "x = 3"},
+    ],
+    "current_step_index": 0,
+    "completed_step_indices": [],
 }
 
 
@@ -54,7 +58,7 @@ class TestEvaluateStep:
         assert resp.status_code == 422
 
     def test_returns_422_with_partial_fields(self):
-        partial = {"question_text": "Q", "step_description": "S"}
+        partial = {"question_text": "Q", "student_work": "S"}
         resp = client.post("/ai/evaluate-step", json=partial)
         assert resp.status_code == 422
 

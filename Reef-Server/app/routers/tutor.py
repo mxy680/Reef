@@ -19,11 +19,17 @@ router = APIRouter(prefix="/ai", tags=["tutor"])
 TUTOR_EVAL_MODEL = "google/gemini-3-flash-preview"
 
 
+class StepInfo(BaseModel):
+    description: str
+    work: str
+
+
 class EvaluateStepRequest(BaseModel):
-    question_text: str       # Question stem + active subquestion text
-    step_description: str    # Current step's description
-    step_work: str           # Current step's expected answer/work
-    student_work: str        # Transcribed LaTeX from student
+    question_text: str                # Question stem + active subquestion text
+    student_work: str                 # Transcribed LaTeX from student
+    steps: list[StepInfo]             # ALL steps for the subquestion
+    current_step_index: int           # Which step to evaluate (0-based)
+    completed_step_indices: list[int]  # Already-completed step indices
 
 
 class EvaluateStepResponse(BaseModel):
@@ -39,10 +45,27 @@ async def evaluate_step(
     if not settings.openrouter_api_key:
         raise HTTPException(status_code=503, detail="OpenRouter API key not configured")
 
+    if body.current_step_index < 0 or body.current_step_index >= len(body.steps):
+        raise HTTPException(status_code=422, detail="current_step_index out of range")
+
+    # Build step overview with completion markers
+    step_lines = []
+    for i, step in enumerate(body.steps):
+        if i in body.completed_step_indices:
+            marker = "✓ COMPLETED"
+        elif i == body.current_step_index:
+            marker = "→ CURRENT"
+        else:
+            marker = "  PENDING"
+        step_lines.append(f"  [{marker}] Step {i+1}: {step.description}\n    Expected: {step.work}")
+
+    current_step = body.steps[body.current_step_index]
     prompt = TUTOR_EVALUATE_PROMPT.format(
         question_text=body.question_text,
-        step_description=body.step_description,
-        step_work=body.step_work,
+        steps_overview="\n".join(step_lines),
+        current_step_num=body.current_step_index + 1,
+        current_step_description=current_step.description,
+        current_step_work=current_step.work,
         student_work=body.student_work,
     )
 

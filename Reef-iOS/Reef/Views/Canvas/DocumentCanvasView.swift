@@ -41,6 +41,7 @@ struct DocumentCanvasView: View {
     @State private var activeQuestionIndex: Int?
     @State private var transcriptionService = TranscriptionService()
     @State private var feedbackService = TutorFeedbackService()
+    @State private var strokeCounts: [String: Int] = [:]
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -388,7 +389,8 @@ struct DocumentCanvasView: View {
                 partLabel: partLabel,
                 latex: latex,
                 questionText: questionText,
-                steps: partSteps
+                steps: partSteps,
+                strokeCount: strokeCounts[key] ?? 0
             )
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
@@ -544,6 +546,9 @@ struct DocumentCanvasView: View {
             }
         }
 
+        let key = "\(qi)-\(partLabel)"
+        strokeCounts[key] = allStrokes.count
+
         print("[Transcription] Q\(qi+1)(\(partLabel)): sending \(allStrokes.count) strokes")
         transcriptionService.transcribe(
             questionIndex: qi,
@@ -601,11 +606,13 @@ struct DocumentCanvasView: View {
             allStrokes = allStrokes.map { $0.map { (x: $0.x - minX, y: $0.y - minY) } }
         }
 
+        let key = "\(qi)-\(partLabel)"
+        strokeCounts[key] = allStrokes.count
+
         print("[Transcription] Q\(qi+1)(\(partLabel)): erased → re-sending \(allStrokes.count) strokes")
 
         if allStrokes.isEmpty {
             // All strokes erased — clear transcription
-            let key = "\(qi)-\(partLabel)"
             transcriptionService.transcriptions[key] = nil
         } else {
             transcriptionService.transcribe(questionIndex: qi, partLabel: partLabel, strokes: allStrokes)

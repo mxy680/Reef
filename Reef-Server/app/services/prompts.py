@@ -216,17 +216,25 @@ Return a QuestionBatch JSON object containing all extracted questions.
 TUTOR_EVALUATE_PROMPT = """\
 You are evaluating a student's handwritten work on a math/science problem.
 
-Question: {question_text}
-Current step: {step_description}
-Expected work: {step_work}
-Student's work (LaTeX): {student_work}
+## Question
+{question_text}
 
-Evaluate the student's progress on this specific step:
-- progress: 0.0 (nothing relevant written yet) to 1.0 (step fully completed correctly)
-- status: "idle" (empty or unrelated work), "working" (partial but correct so far), "mistake" (error detected), "completed" (step done correctly)
+## Solution Steps
+{steps_overview}
 
-If the student's work is empty or completely unrelated to the step, return progress 0.0 and status "idle".
-Be generous with partial credit — if the student is on the right track, reflect that in progress.
+## Current Step to Evaluate (Step {current_step_num})
+Description: {current_step_description}
+Expected work: {current_step_work}
+
+## Student's Work (LaTeX)
+{student_work}
+
+Evaluate ONLY Step {current_step_num}. The student's work may contain work from previous (completed) steps — focus on whether the current step's expected work appears in the student's writing.
+
+- progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly)
+- status: "idle" (no work related to this step), "working" (partial but on track), "mistake" (error in this step's work), "completed" (step done correctly)
+
+Be generous with partial credit. If prior steps are completed, the student's work will contain their work too — don't penalize for that.
 """
 
 ANSWER_KEY_PROMPT = """\
