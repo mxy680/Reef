@@ -358,37 +358,81 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         const defT = refPath.getAttribute('transform') || '';
         if (useT) wrapper.setAttribute('transform', useT);
 
-        const strokePath = document.createElementNS(NS, 'path');
-        if (defT) strokePath.setAttribute('transform', defT);
-        strokePath.style.fill = 'none';
-        strokePath.style.stroke = '#1a1a1a';
-        strokePath.style.strokeWidth = '40';
-        strokePath.style.strokeLinecap = 'round';
-        strokePath.style.strokeLinejoin = 'round';
-        wrapper.appendChild(strokePath);
+        // Two stroke paths: one goes forward, one goes backward from start
+        const strokeFwd = document.createElementNS(NS, 'path');
+        const strokeBwd = document.createElementNS(NS, 'path');
+        [strokeFwd, strokeBwd].forEach(sp => {
+          if (defT) sp.setAttribute('transform', defT);
+          sp.style.fill = 'none';
+          sp.style.stroke = '#1a1a1a';
+          sp.style.strokeWidth = '40';
+          sp.style.strokeLinecap = 'round';
+          sp.style.strokeLinejoin = 'round';
+          wrapper.appendChild(sp);
+        });
         item.parentG.appendChild(wrapper);
         created.push(wrapper);
 
-        // Progressively add segments
-        let segIdx = 0;
-        let dStr = '';
-        const segDelay = 25; // ms per segment
+        // Find the leftmost segment as the starting point
+        let startIdx = 0;
+        let minSegX = Infinity;
+        segs.forEach((seg, si) => {
+          if (seg.x !== undefined && seg.x < minSegX) { minSegX = seg.x; startIdx = si; }
+        });
 
-        function addNextSeg() {
-          if (segIdx >= segs.length) {
-            // Done: show original filled glyph, remove stroke
+        // Build forward path (startIdx → end, wrapping to → startIdx)
+        // Build backward path (startIdx → 0, wrapping to → startIdx)
+        const n = segs.length;
+        const fwdSegs = []; // segments in forward order from start
+        const bwdSegs = []; // segments in backward order from start
+        for (let i = 1; i < n; i++) {
+          fwdSegs.push(segs[(startIdx + i) % n]);
+        }
+        for (let i = 1; i < n; i++) {
+          bwdSegs.push(segs[((startIdx - i) + n) % n]);
+        }
+
+        // Start point for both paths
+        const startSeg = segs[startIdx];
+        const startPt = startSeg.x !== undefined ? `M ${startSeg.x} ${startSeg.y}` : startSeg.str;
+
+        let fwdIdx = 0, bwdIdx = 0;
+        let fwdD = startPt, bwdD = startPt;
+        const halfLen = Math.max(fwdSegs.length, bwdSegs.length);
+        const segDelay = 25;
+        let fwdDone = false, bwdDone = false;
+
+        strokeFwd.setAttribute('d', fwdD);
+        strokeBwd.setAttribute('d', bwdD);
+
+        function addNextPair() {
+          if (fwdDone && bwdDone) {
             item.el.style.opacity = '1';
             wrapper.style.display = 'none';
-            // Small gap before next character
             timeouts.push(setTimeout(() => animateItem(idx + 1), 30));
             return;
           }
-          dStr += (dStr ? ' ' : '') + segs[segIdx].str;
-          strokePath.setAttribute('d', dStr);
-          segIdx++;
-          timeouts.push(setTimeout(addNextSeg, segDelay));
+
+          if (fwdIdx < fwdSegs.length) {
+            const seg = fwdSegs[fwdIdx];
+            fwdD += ' ' + seg.str;
+            strokeFwd.setAttribute('d', fwdD);
+            fwdIdx++;
+          } else { fwdDone = true; }
+
+          if (bwdIdx < bwdSegs.length) {
+            const seg = bwdSegs[bwdIdx];
+            // For backward traversal, draw a line to each segment's endpoint
+            if (seg.x !== undefined) {
+              bwdD += ` L ${seg.x} ${seg.y}`;
+            }
+            strokeBwd.setAttribute('d', bwdD);
+            bwdIdx++;
+          } else { bwdDone = true; }
+
+          timeouts.push(setTimeout(addNextPair, segDelay));
         }
-        addNextSeg();
+        addNextPair();
 
       } else {
         // Standalone path — progressive segment draw
