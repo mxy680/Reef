@@ -32,4 +32,13 @@ else
   echo "Warning: $SHARED_DIR/web.env.local not found, skipping Reef-Web"
 fi
 
+# Reef-iOS
+if [ -f "$SHARED_DIR/Secrets.xcconfig" ]; then
+  rm -f "$REPO_ROOT/Reef-iOS/Secrets.xcconfig"
+  ln -s "$SHARED_DIR/Secrets.xcconfig" "$REPO_ROOT/Reef-iOS/Secrets.xcconfig"
+  echo "Linked Reef-iOS/Secrets.xcconfig -> $SHARED_DIR/Secrets.xcconfig"
+else
+  echo "Warning: $SHARED_DIR/Secrets.xcconfig not found, skipping Reef-iOS"
+fi
+
 echo "Done."

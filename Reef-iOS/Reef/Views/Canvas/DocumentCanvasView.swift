@@ -266,7 +266,7 @@ struct DocumentCanvasView: View {
                                 showPageMenu = false
                                 showTutorPopover = false
                             },
-                            debugRegions: computeDebugRegions()
+                            debugRegions: []
                         )
                         .id(pageVersion)
 

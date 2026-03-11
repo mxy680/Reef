@@ -30,10 +30,6 @@ struct DashboardView: View {
                     courses: $courses,
                     isOpen: $sidebarOpen
                 )
-                .padding(.leading, 12)
-                .padding(.top, 12)
-                .padding(.bottom, 6)
-
                 // Main column
                 VStack(spacing: 0) {
                     DashboardHeader(
@@ -41,13 +37,11 @@ struct DashboardView: View {
                         selectedTab: $selectedTab,
                         selectedCourseId: $selectedCourseId
                     )
-                        .padding(.top, 12)
                         .padding(.horizontal, 12)
 
                     contentArea
                         .padding(.horizontal, 12)
                         .padding(.top, 12)
-                        .padding(.bottom, 6)
                 }
             }
 
