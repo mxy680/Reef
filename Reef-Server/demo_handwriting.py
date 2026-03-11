@@ -248,61 +248,20 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   let animCleanup = null;
 
-  // Parse SVG path d-string into segments preserving full command data
-  // Returns array of { cmd, args[], str } where str is the reconstructable command string
-  function parsePathSegments(d) {
-    const segs = [];
-    const tokens = d.match(/[MLQCZHVSmlqczhvs]|[-+]?\d*\.?\d+/g);
-    if (!tokens) return segs;
-    let i = 0, cmd = '', cx = 0, cy = 0;
-    while (i < tokens.length) {
-      const t = tokens[i];
-      if (/[A-Za-z]/.test(t)) { cmd = t; i++; if (cmd === 'Z' || cmd === 'z') { segs.push({ cmd: 'Z', str: 'Z' }); continue; } }
-      if (cmd === 'M') {
-        const x = tokens[i], y = tokens[i+1];
-        cx = +x; cy = +y;
-        segs.push({ cmd: 'M', str: `M ${x} ${y}`, x: cx, y: cy });
-        i += 2; cmd = 'L';
-      } else if (cmd === 'L') {
-        const x = tokens[i], y = tokens[i+1];
-        cx = +x; cy = +y;
-        segs.push({ cmd: 'L', str: `L ${x} ${y}`, x: cx, y: cy });
-        i += 2;
-      } else if (cmd === 'Q') {
-        segs.push({ cmd: 'Q', str: `Q ${tokens[i]} ${tokens[i+1]} ${tokens[i+2]} ${tokens[i+3]}`, x: +tokens[i+2], y: +tokens[i+3] });
-        cx = +tokens[i+2]; cy = +tokens[i+3];
-        i += 4;
-      } else if (cmd === 'C') {
-        segs.push({ cmd: 'C', str: `C ${tokens[i]} ${tokens[i+1]} ${tokens[i+2]} ${tokens[i+3]} ${tokens[i+4]} ${tokens[i+5]}`, x: +tokens[i+4], y: +tokens[i+5] });
-        cx = +tokens[i+4]; cy = +tokens[i+5];
-        i += 6;
-      } else if (cmd === 'H') {
-        cx = +tokens[i];
-        segs.push({ cmd: 'L', str: `L ${cx} ${cy}`, x: cx, y: cy });
-        i++;
-      } else if (cmd === 'V') {
-        cy = +tokens[i];
-        segs.push({ cmd: 'L', str: `L ${cx} ${cy}`, x: cx, y: cy });
-        i++;
-      } else { i++; }
-    }
-    return segs;
-  }
-
   function playAnimation() {
     const svg = $('output').querySelector('svg');
     if (!svg) return;
     const btn = $('play-btn');
     btn.disabled = true;
 
-    // Clean up any previous animation artifacts
+    // Clean up any previous animation
     if (animCleanup) { animCleanup(); animCleanup = null; }
 
     const NS = 'http://www.w3.org/2000/svg';
     const textGroup = svg.querySelector('#text_1');
     if (!textGroup) { btn.disabled = false; return; }
 
-    // Collect <use> glyphs and standalone <path>s (fraction lines, sqrt bars)
+    // Collect <use> glyphs and standalone <path>s
     const items = [];
     function collect(el) {
       for (const child of el.children) {
@@ -320,7 +279,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     collect(textGroup);
     if (items.length === 0) { btn.disabled = false; return; }
 
-    // Sort by position: left-to-right, top-to-bottom for overlapping
+    // Sort by screen position: left-to-right, top-to-bottom for overlapping
     items.forEach(item => {
       const r = item.el.getBoundingClientRect();
       item.x = r.left; item.y = r.top; item.w = r.width; item.h = r.height;
@@ -331,107 +290,109 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       return a.x - b.x;
     });
 
-    const created = [];
-    const timeouts = [];
-    let totalDelay = 0;
+    // Get or create a <defs> inside the SVG for our clip paths
+    let animDefs = svg.querySelector('defs.anim-clips');
+    if (!animDefs) {
+      animDefs = document.createElementNS(NS, 'defs');
+      animDefs.setAttribute('class', 'anim-clips');
+      svg.insertBefore(animDefs, svg.firstChild);
+    }
 
-    // Hide all original elements upfront
+    const timeouts = [];
+    const cleanups = []; // functions to restore each element
+
+    // Hide all elements upfront
     items.forEach(item => { item.el.style.opacity = '0'; });
 
-    // Animate each item sequentially
+    // Reveal each item left-to-right using SVG clipPath
     function animateItem(idx) {
       if (idx >= items.length) {
         timeouts.push(setTimeout(() => { btn.disabled = false; }, 200));
         return;
       }
       const item = items[idx];
+      const el = item.el;
 
-      if (item.type === 'use') {
-        // Resolve referenced path
-        const href = item.el.getAttribute('xlink:href') || item.el.getAttribute('href');
-        const refPath = textGroup.querySelector(href);
-        if (!refPath) { animateItem(idx + 1); return; }
+      // Get bounding box in screen coords, then map to SVG coords
+      const bbox = el.getBBox();
+      // bbox is in the element's local coordinate system
+      // For clip-path with clipPathUnits="userSpaceOnUse", we need coords in
+      // the element's parent coordinate system
 
-        const segs = parsePathSegments(refPath.getAttribute('d'));
-        if (segs.length === 0) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
+      // Build a clip rect that covers the full glyph bbox with padding
+      const pad = Math.max(bbox.width, bbox.height) * 0.15;
+      const clipId = 'anim-clip-' + idx;
 
-        // Create stroke path in same parent with same transform
-        const strokePath = document.createElementNS(NS, 'path');
-        const t = item.el.getAttribute('transform');
-        if (t) strokePath.setAttribute('transform', t);
-        strokePath.style.fill = 'none';
-        strokePath.style.stroke = '#1a1a1a';
-        strokePath.style.strokeWidth = '40';
-        strokePath.style.strokeLinecap = 'round';
-        strokePath.style.strokeLinejoin = 'round';
-        item.parentG.appendChild(strokePath);
-        created.push(strokePath);
+      const clipPath = document.createElementNS(NS, 'clipPath');
+      clipPath.id = clipId;
+      // objectBoundingBox units make the rect relative to the element's bbox
+      clipPath.setAttribute('clipPathUnits', 'objectBoundingBox');
 
-        // Progressively add segments
-        let segIdx = 0;
-        let dStr = '';
-        const segDelay = 25; // ms per segment
+      const clipRect = document.createElementNS(NS, 'rect');
+      // In objectBoundingBox units: 0,0 = top-left, 1,1 = bottom-right
+      // Start with width=0 (hidden), animate to width > 1 (fully revealed)
+      clipRect.setAttribute('x', '-0.15');
+      clipRect.setAttribute('y', '-0.5');
+      clipRect.setAttribute('width', '0');
+      clipRect.setAttribute('height', '2');
+      clipPath.appendChild(clipRect);
+      animDefs.appendChild(clipPath);
 
-        function addNextSeg() {
-          if (segIdx >= segs.length) {
-            // Done: show original filled glyph, remove stroke
-            item.el.style.opacity = '1';
-            strokePath.style.opacity = '0';
-            // Small gap before next character
-            timeouts.push(setTimeout(() => animateItem(idx + 1), 30));
-            return;
-          }
-          dStr += (dStr ? ' ' : '') + segs[segIdx].str;
-          strokePath.setAttribute('d', dStr);
-          segIdx++;
-          timeouts.push(setTimeout(addNextSeg, segDelay));
+      // Apply clip and show the element
+      el.style.opacity = '1';
+      el.setAttribute('clip-path', `url(#${clipId})`);
+
+      // Store cleanup for this element
+      cleanups.push(() => {
+        el.removeAttribute('clip-path');
+        el.style.opacity = '1';
+        clipPath.remove();
+      });
+
+      // Animate: step the clip rect width from 0 to 1.3 over ~300ms
+      const steps = 20;
+      const targetWidth = 1.3; // > 1 to account for padding
+      const stepDelay = 15;
+      let step = 0;
+
+      function tick() {
+        step++;
+        const progress = step / steps;
+        // Ease-out for natural deceleration
+        const eased = 1 - Math.pow(1 - progress, 2);
+        clipRect.setAttribute('width', (eased * targetWidth).toFixed(4));
+
+        if (step < steps) {
+          timeouts.push(setTimeout(tick, stepDelay));
+        } else {
+          // Fully revealed — clean up clip
+          el.removeAttribute('clip-path');
+          clipPath.remove();
+          // Start next glyph with slight overlap
+          timeouts.push(setTimeout(() => animateItem(idx + 1), 20));
         }
-        addNextSeg();
-
-      } else {
-        // Standalone path — progressive segment draw
-        const d = item.el.getAttribute('d');
-        const segs = parsePathSegments(d);
-        if (segs.length === 0) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
-
-        // Hide original, create stroke version
-        const strokePath = document.createElementNS(NS, 'path');
-        strokePath.style.fill = 'none';
-        strokePath.style.stroke = item.el.getAttribute('stroke') || item.el.style.stroke || '#1a1a1a';
-        strokePath.style.strokeWidth = item.el.getAttribute('stroke-width') || item.el.style.strokeWidth || '40';
-        strokePath.style.strokeLinecap = 'round';
-        strokePath.style.strokeLinejoin = 'round';
-        // Copy transform if any
-        const t = item.el.getAttribute('transform');
-        if (t) strokePath.setAttribute('transform', t);
-        item.parentG.appendChild(strokePath);
-        created.push(strokePath);
-
-        let segIdx = 0, dStr = '';
-        const segDelay = 25;
-        function addNextSeg() {
-          if (segIdx >= segs.length) {
-            item.el.style.opacity = '1';
-            strokePath.style.opacity = '0';
-            timeouts.push(setTimeout(() => animateItem(idx + 1), 30));
-            return;
-          }
-          dStr += (dStr ? ' ' : '') + segs[segIdx].str;
-          strokePath.setAttribute('d', dStr);
-          segIdx++;
-          timeouts.push(setTimeout(addNextSeg, segDelay));
-        }
-        addNextSeg();
       }
+
+      // Start next glyph slightly before this one finishes (overlap)
+      const overlapDelay = steps * stepDelay * 0.4;
+      timeouts.push(setTimeout(() => {
+        if (idx + 1 < items.length) {
+          // Pre-start next item (but animateItem handles it sequentially,
+          // so we just let it flow naturally)
+        }
+      }, overlapDelay));
+
+      timeouts.push(setTimeout(tick, stepDelay));
     }
 
     animateItem(0);
 
-    // Store cleanup function
+    // Cleanup function
     animCleanup = () => {
       timeouts.forEach(clearTimeout);
-      created.forEach(p => { try { p.remove(); } catch(e) {} });
-      items.forEach(item => { item.el.style.opacity = '1'; });
+      cleanups.forEach(fn => fn());
+      items.forEach(item => { item.el.style.opacity = '1'; item.el.removeAttribute('clip-path'); });
+      if (animDefs) { animDefs.remove(); }
     };
   }
 
