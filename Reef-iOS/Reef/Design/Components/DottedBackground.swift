@@ -7,7 +7,7 @@ struct DottedBackground: View {
 
     var body: some View {
         let dark = theme.isDarkMode
-        let dotColor = dark ? ReefColors.DashboardDark.subtle : ReefColors.gray300
+        let dotColor = dark ? ReefColors.DashboardDark.subtle : ReefColors.gray200
         let bgColor = dark ? ReefColors.DashboardDark.background : ReefColors.white
 
         Canvas { context, size in
