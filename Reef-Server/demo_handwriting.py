@@ -4,13 +4,16 @@ Run: python demo_handwriting.py
 Open: http://localhost:8123
 """
 
+import io
+
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
-from matplotlib.path import Path as MplPath
-from matplotlib.textpath import TextPath
 from pydantic import BaseModel
-from scipy.ndimage import gaussian_filter1d
+
+matplotlib.use("Agg")
 
 app = FastAPI()
 
@@ -155,7 +158,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   let debounceTimer = null;
   let seed = Math.floor(Math.random() * 10000);
 
-  // Wire up presets
   document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       $('latex').value = btn.dataset.latex;
@@ -163,7 +165,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     });
   });
 
-  // Auto-render on typing
   $('latex').addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(convert, 500);
@@ -199,7 +200,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
   }
 
-  // Initial render
   convert();
 </script>
 </body>
@@ -208,203 +208,85 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
 
 # ---------------------------------------------------------------------------
-# Core algorithm
+# Core: render LaTeX via matplotlib, inject SVG displacement filter
 # ---------------------------------------------------------------------------
 
-# Tuned defaults
-SPACING = 1.0       # Dense sampling for smooth curves
-AMPLITUDE = 0.6     # Subtle but visible wobble
-SMOOTH_SIGMA = 3.0  # Gaussian smoothing kernel for wobble (larger = smoother waves)
-JITTER = 0.08       # Tiny micro-tremor
-STROKE_WIDTH = 0.5  # Thin outline stroke on filled shapes
-
-
-def _bezier2(p0, p1, p2, t):
-    """Evaluate quadratic Bezier at parameter t."""
-    return (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t**2 * p2
-
-
-def _bezier3(p0, p1, p2, p3, t):
-    """Evaluate cubic Bezier at parameter t."""
-    return (
-        (1 - t) ** 3 * p0
-        + 3 * (1 - t) ** 2 * t * p1
-        + 3 * (1 - t) * t**2 * p2
-        + t**3 * p3
-    )
-
-
-def _estimate_bezier2_length(p0, p1, p2, n=10):
-    ts = np.linspace(0, 1, n)
-    pts = np.array([_bezier2(p0, p1, p2, t) for t in ts])
-    return np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1))
-
-
-def _estimate_bezier3_length(p0, p1, p2, p3, n=10):
-    ts = np.linspace(0, 1, n)
-    pts = np.array([_bezier3(p0, p1, p2, p3, t) for t in ts])
-    return np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1))
-
-
-def sample_path_points(path, spacing: float = SPACING) -> list[np.ndarray]:
-    """Split matplotlib Path into subpaths and sample points at regular intervals."""
-    vertices = path.vertices
-    codes = path.codes
-
-    subpaths: list[list[np.ndarray]] = []
-    current: list[np.ndarray] = []
-    start_pt = None
-    i = 0
-
-    while i < len(codes):
-        code = codes[i]
-
-        if code == MplPath.MOVETO:
-            if current:
-                subpaths.append(current)
-            current = [vertices[i].copy()]
-            start_pt = vertices[i].copy()
-            i += 1
-
-        elif code == MplPath.LINETO:
-            p0 = current[-1]
-            p1 = vertices[i]
-            seg_len = np.linalg.norm(p1 - p0)
-            n_pts = max(2, int(seg_len / spacing))
-            for t in np.linspace(0, 1, n_pts)[1:]:
-                current.append(p0 + t * (p1 - p0))
-            i += 1
-
-        elif code == MplPath.CURVE3:
-            p0 = current[-1]
-            p1 = vertices[i]
-            p2 = vertices[i + 1]
-            arc_len = _estimate_bezier2_length(p0, p1, p2)
-            n_pts = max(3, int(arc_len / spacing))
-            for t in np.linspace(0, 1, n_pts)[1:]:
-                current.append(_bezier2(p0, p1, p2, t))
-            i += 2
-
-        elif code == MplPath.CURVE4:
-            p0 = current[-1]
-            p1 = vertices[i]
-            p2 = vertices[i + 1]
-            p3 = vertices[i + 2]
-            arc_len = _estimate_bezier3_length(p0, p1, p2, p3)
-            n_pts = max(3, int(arc_len / spacing))
-            for t in np.linspace(0, 1, n_pts)[1:]:
-                current.append(_bezier3(p0, p1, p2, p3, t))
-            i += 3
-
-        elif code == MplPath.CLOSEPOLY:
-            if start_pt is not None and current:
-                p0 = current[-1]
-                seg_len = np.linalg.norm(start_pt - p0)
-                if seg_len > 0.1:
-                    n_pts = max(2, int(seg_len / spacing))
-                    for t in np.linspace(0, 1, n_pts)[1:]:
-                        current.append(p0 + t * (start_pt - p0))
-                current.append(start_pt.copy())
-            subpaths.append(current)
-            current = []
-            start_pt = None
-            i += 1
-
-        else:
-            i += 1
-
-    if current:
-        subpaths.append(current)
-
-    return [np.array(sp) for sp in subpaths if len(sp) >= 2]
-
-
-def add_handwriting_noise(
-    points: np.ndarray,
-    rng: np.random.Generator,
-) -> np.ndarray:
-    """Displace points with smooth Gaussian-filtered wobble + micro jitter."""
-    n = len(points)
-    if n < 3:
-        return points.copy()
-
-    result = points.copy()
-
-    # Generate white noise, then smooth it with a Gaussian kernel
-    # This creates natural, low-frequency waves along the contour
-    raw_noise = rng.normal(0, 1, size=(n, 2))
-    smooth_wobble = np.column_stack([
-        gaussian_filter1d(raw_noise[:, 0], sigma=SMOOTH_SIGMA, mode="wrap"),
-        gaussian_filter1d(raw_noise[:, 1], sigma=SMOOTH_SIGMA, mode="wrap"),
-    ])
-    smooth_wobble *= AMPLITUDE
-
-    # Tiny high-frequency jitter for pen texture
-    jitter = rng.normal(0, JITTER, size=(n, 2))
-
-    result += smooth_wobble + jitter
-    return result
-
-
-def points_to_svg_subpath(points: np.ndarray) -> str:
-    """Generate an SVG path 'd' subpath (M...L...Z) from a point array."""
-    parts = [f"M{points[0][0]:.2f},{points[0][1]:.2f}"]
-    for x, y in points[1:]:
-        parts.append(f"L{x:.2f},{y:.2f}")
-    parts.append("Z")
-    return " ".join(parts)
+SVG_FILTER = """
+<defs>
+  <filter id="handdrawn" x="-5%%" y="-5%%" width="110%%" height="110%%">
+    <!-- Low-freq warping for overall shape distortion -->
+    <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="3"
+                  seed="%d" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="4"
+                       xChannelSelector="R" yChannelSelector="G" result="warped"/>
+    <!-- High-freq roughness for ink texture -->
+    <feTurbulence type="turbulence" baseFrequency="0.06" numOctaves="2"
+                  seed="%d" result="rough"/>
+    <feDisplacementMap in="warped" in2="rough" scale="1.5"
+                       xChannelSelector="R" yChannelSelector="G" result="roughed"/>
+    <!-- Slight thickening to simulate ink spread -->
+    <feMorphology operator="dilate" radius="0.3" in="roughed" result="thick"/>
+    <!-- Soften edges slightly -->
+    <feGaussianBlur stdDeviation="0.2" in="thick"/>
+  </filter>
+</defs>
+"""
 
 
 def latex_to_handwriting_svg(latex: str, seed: int = 42) -> str:
-    """Full pipeline: LaTeX → TextPath → sample → noise → SVG string."""
+    """Render LaTeX via matplotlib SVG backend, then inject handwriting filter."""
     text = latex.strip()
-    if text.startswith("$") and text.endswith("$"):
-        text = "$" + text[1:-1] + "$"
-    elif not text.startswith("$"):
+    if not text.startswith("$"):
         text = "$" + text + "$"
+    if not text.endswith("$"):
+        text = text + "$"
 
-    path = TextPath((0, 0), text, size=48)
-    subpaths = sample_path_points(path)
-
-    if not subpaths:
-        return (
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50">'
-            '<text x="10" y="30" font-size="14" fill="#999">No path data</text></svg>'
-        )
-
-    rng = np.random.default_rng(seed)
-    all_points = []
-
-    for sp in subpaths:
-        noisy = add_handwriting_noise(sp, rng)
-        all_points.append(noisy)
-
-    # Flip Y axis: TextPath uses math coords (y-up), SVG is y-down
-    for i, pts in enumerate(all_points):
-        all_points[i] = pts.copy()
-        all_points[i][:, 1] *= -1
-
-    all_pts = np.vstack(all_points)
-    x_min, y_min = all_pts.min(axis=0)
-    x_max, y_max = all_pts.max(axis=0)
-    pad = 10
-    vb_x = x_min - pad
-    vb_y = y_min - pad
-    vb_w = (x_max - x_min) + 2 * pad
-    vb_h = (y_max - y_min) + 2 * pad
-
-    d = " ".join(points_to_svg_subpath(pts) for pts in all_points)
-
-    svg = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'viewBox="{vb_x:.2f} {vb_y:.2f} {vb_w:.2f} {vb_h:.2f}" '
-        f'width="{vb_w:.0f}" height="{vb_h:.0f}">\n'
-        f'  <path d="{d}" fill="#1a1a1a" fill-rule="evenodd" '
-        f'stroke="#1a1a1a" stroke-width="{STROKE_WIDTH}" '
-        f'stroke-linejoin="round" />\n'
-        f'</svg>'
+    # Render with matplotlib to SVG (paths, not fonts)
+    plt.rcParams["svg.fonttype"] = "path"
+    fig, ax = plt.subplots(figsize=(8, 2))
+    ax.text(
+        0.5, 0.5, text,
+        fontsize=36,
+        ha="center", va="center",
+        transform=ax.transAxes,
+        color="#1a1a1a",
     )
-    return svg
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+    fig.patch.set_alpha(0)
+    ax.patch.set_alpha(0)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="svg", transparent=True, bbox_inches="tight", pad_inches=0.1)
+    plt.close(fig)
+
+    svg_str = buf.getvalue().decode("utf-8")
+
+    # Inject the handwriting filter into the SVG
+    rng = np.random.default_rng(seed)
+    seed1 = int(rng.integers(0, 100000))
+    seed2 = int(rng.integers(0, 100000))
+    filter_def = SVG_FILTER % (seed1, seed2)
+
+    # Insert filter defs after opening <svg> tag
+    svg_str = svg_str.replace(
+        "<defs>",
+        filter_def + "\n<defs>" if "<defs>" in svg_str else filter_def,
+        1,
+    )
+
+    # Wrap all content in a filtered group
+    # Find the first <g> after defs and add filter
+    svg_str = svg_str.replace(
+        '</defs>\n',
+        '</defs>\n<g filter="url(#handdrawn)">\n',
+        1,
+    )
+    # Close the filter group before </svg>
+    svg_str = svg_str.replace("</svg>", "</g>\n</svg>")
+
+    return svg_str
 
 
 # ---------------------------------------------------------------------------
