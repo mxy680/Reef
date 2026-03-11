@@ -30,8 +30,6 @@ struct DashboardView: View {
                     courses: $courses,
                     isOpen: $sidebarOpen
                 )
-                .padding(.leading, 12)
-
                 // Main column
                 VStack(spacing: 0) {
                     DashboardHeader(
