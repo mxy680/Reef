@@ -595,6 +595,48 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         s.appendChild(txt);
       });
 
+      // Overlay centerline (orange) computed by the animation algorithm
+      const mainSvg = $('output').querySelector('svg');
+      if (mainSvg) {
+        const cl = computeCenterline(d, mainSvg, NS);
+        if (cl) {
+          // Draw the centerline path as a thick orange stroke
+          const clPath = document.createElementNS(NS, 'path');
+          clPath.setAttribute('d', cl.d);
+          clPath.style.fill = 'none';
+          clPath.style.stroke = '#e67e22';
+          clPath.style.strokeWidth = cl.thickness;
+          clPath.style.strokeLinecap = 'round';
+          clPath.style.strokeLinejoin = 'round';
+          clPath.style.opacity = '0.3';
+          s.appendChild(clPath);
+
+          // Draw the thin centerline on top
+          const clLine = document.createElementNS(NS, 'path');
+          clLine.setAttribute('d', cl.d);
+          clLine.style.fill = 'none';
+          clLine.style.stroke = '#e67e22';
+          clLine.style.strokeWidth = '30';
+          clLine.style.strokeLinecap = 'round';
+          clLine.style.strokeLinejoin = 'round';
+          s.appendChild(clLine);
+
+          // Draw centerline sample points
+          // Re-parse the centerline d to get points
+          const clTokens = cl.d.match(/[-+]?\d*\.?\d+/g);
+          if (clTokens) {
+            for (let ci = 0; ci < clTokens.length; ci += 2) {
+              const cx = +clTokens[ci], cy = +clTokens[ci + 1];
+              const cdot = document.createElementNS(NS, 'circle');
+              cdot.setAttribute('cx', cx); cdot.setAttribute('cy', cy);
+              cdot.setAttribute('r', '45');
+              cdot.style.fill = '#e67e22';
+              s.appendChild(cdot);
+            }
+          }
+        }
+      }
+
       container.appendChild(s);
       dbg.appendChild(container);
     });
