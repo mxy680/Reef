@@ -1,0 +1,16 @@
+[project]
+name = "reef-simulator"
+version = "0.1.0"
+description = "REST API for Reef iOS simulator automation"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
