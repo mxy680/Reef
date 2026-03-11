@@ -248,30 +248,87 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   let animCleanup = null;
 
-  // Compute a centerline through a glyph by connecting parsed path coordinates sequentially
+  // Compute a centerline through a glyph by sampling outline, binning top/bottom edges, and midpointing
   function computeCenterline(pathD, svg, NS) {
-    const points = parsePath(pathD);
-    if (points.length < 2) return null;
+    // Sample outline points
+    const tmp = document.createElementNS(NS, 'path');
+    tmp.setAttribute('d', pathD);
+    tmp.style.visibility = 'hidden';
+    svg.appendChild(tmp);
+
+    const totalLen = tmp.getTotalLength();
+    const numSamples = 400;
+    const samples = [];
+    for (let i = 0; i <= numSamples; i++) {
+      const pt = tmp.getPointAtLength((i / numSamples) * totalLen);
+      samples.push({ x: pt.x, y: pt.y });
+    }
+    tmp.remove();
 
     // Compute bounds
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    points.forEach(p => {
+    samples.forEach(p => {
       minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
       minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
     });
     const w = maxX - minX, h = maxY - minY;
     if (w === 0 && h === 0) return null;
 
-    // Build path string connecting points sequentially
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      d += ` L ${points[i].x} ${points[i].y}`;
+    const isVertical = h > w * 1.5;
+    const numBins = 30;
+
+    let centerline, thickness;
+    if (isVertical) {
+      // Bin by Y, find min/max X per bin (left/right edges), then midpoint
+      const bins = Array.from({length: numBins}, () => ({ min: Infinity, max: -Infinity }));
+      samples.forEach(p => {
+        const b = Math.min(Math.floor(((p.y - minY) / h) * numBins), numBins - 1);
+        bins[b].min = Math.min(bins[b].min, p.x);
+        bins[b].max = Math.max(bins[b].max, p.x);
+      });
+      centerline = bins.map((bin, i) => {
+        if (bin.min === Infinity) return null;
+        return { x: (bin.min + bin.max) / 2, y: minY + (i / (numBins - 1)) * h };
+      }).filter(Boolean);
+      const thicknesses = bins.filter(b => b.min !== Infinity).map(b => b.max - b.min);
+      thicknesses.sort((a, b) => a - b);
+      thickness = thicknesses[Math.floor(thicknesses.length / 2)] * 0.9;
+    } else {
+      // Bin by X, find min/max Y per bin (top/bottom edges), then midpoint
+      const bins = Array.from({length: numBins}, () => ({ min: Infinity, max: -Infinity }));
+      samples.forEach(p => {
+        const b = Math.min(Math.floor(((p.x - minX) / w) * numBins), numBins - 1);
+        bins[b].min = Math.min(bins[b].min, p.y);
+        bins[b].max = Math.max(bins[b].max, p.y);
+      });
+      centerline = bins.map((bin, i) => {
+        if (bin.min === Infinity) return null;
+        return { x: minX + (i / (numBins - 1)) * w, y: (bin.min + bin.max) / 2 };
+      }).filter(Boolean);
+      const thicknesses = bins.filter(b => b.min !== Infinity).map(b => b.max - b.min);
+      thicknesses.sort((a, b) => a - b);
+      thickness = thicknesses[Math.floor(thicknesses.length / 2)] * 0.9;
     }
 
-    // Thickness based on the narrower dimension
-    const isVertical = h > w * 1.5;
-    const thickness = (isVertical ? w : h) * 0.9;
+    if (centerline.length < 2) return null;
 
+    // Smooth with 3 passes of moving-average (window=3) on cross-axis
+    for (let pass = 0; pass < 3; pass++) {
+      centerline = centerline.map((p, i, arr) => {
+        if (i === 0 || i === arr.length - 1) return p;
+        if (isVertical) {
+          return { x: (arr[i-1].x + p.x + arr[i+1].x) / 3, y: p.y };
+        } else {
+          return { x: p.x, y: (arr[i-1].y + p.y + arr[i+1].y) / 3 };
+        }
+      });
+    }
+
+    // Build path string
+    let d = `M ${centerline[0].x} ${centerline[0].y}`;
+    for (let i = 1; i < centerline.length; i++) {
+      d += ` L ${centerline[i].x} ${centerline[i].y}`;
+    }
     return { d, thickness };
   }
 
