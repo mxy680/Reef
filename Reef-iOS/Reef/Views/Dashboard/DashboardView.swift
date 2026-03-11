@@ -32,7 +32,6 @@ struct DashboardView: View {
                 )
                 .padding(.leading, 12)
                 .padding(.top, 12)
-                .padding(.bottom, 2)
 
                 // Main column
                 VStack(spacing: 0) {
@@ -47,7 +46,6 @@ struct DashboardView: View {
                     contentArea
                         .padding(.horizontal, 12)
                         .padding(.top, 12)
-                        .padding(.bottom, 2)
                 }
             }
 
