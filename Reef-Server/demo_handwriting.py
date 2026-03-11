@@ -411,19 +411,13 @@ def add_handwriting_noise(
     return result
 
 
-def points_to_svg_polyline(
-    points: np.ndarray,
-    stroke_width: float = 1.0,
-    color: str = "#1a1a1a",
-) -> str:
-    """Generate <polyline> SVG element from a point array."""
-    coords = " ".join(f"{x:.2f},{y:.2f}" for x, y in points)
-    return (
-        f'<polyline points="{coords}" '
-        f'fill="none" stroke="{color}" '
-        f'stroke-width="{stroke_width}" '
-        f'stroke-linecap="round" stroke-linejoin="round" />'
-    )
+def points_to_svg_subpath(points: np.ndarray) -> str:
+    """Generate an SVG path 'd' subpath (M...L...Z) from a point array."""
+    parts = [f"M{points[0][0]:.2f},{points[0][1]:.2f}"]
+    for x, y in points[1:]:
+        parts.append(f"L{x:.2f},{y:.2f}")
+    parts.append("Z")
+    return " ".join(parts)
 
 
 def latex_to_handwriting_svg(
@@ -468,19 +462,19 @@ def latex_to_handwriting_svg(
     vb_w = (x_max - x_min) + 2 * pad
     vb_h = (y_max - y_min) + 2 * pad
 
-    polylines = [
-        points_to_svg_polyline(pts, stroke_width, color="#1a1a1a")
-        for pts in all_points
-    ]
+    # Combine all subpaths into one <path> with evenodd fill
+    # so inner contours (holes in O, e, etc.) are cut out
+    d = " ".join(points_to_svg_subpath(pts) for pts in all_points)
 
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="{vb_x:.2f} {vb_y:.2f} {vb_w:.2f} {vb_h:.2f}" '
         f'width="{vb_w:.0f}" height="{vb_h:.0f}">\n'
+        f'  <path d="{d}" fill="#1a1a1a" fill-rule="evenodd" '
+        f'stroke="#1a1a1a" stroke-width="{stroke_width * 0.5}" '
+        f'stroke-linejoin="round" />\n'
+        f'</svg>'
     )
-    for pl in polylines:
-        svg += f"  {pl}\n"
-    svg += "</svg>"
     return svg
 
 
