@@ -35,7 +35,7 @@ struct LayoutMetrics {
 
     // MARK: - Analytics
 
-    var chartHeight: CGFloat       { lerp(130, 180) }
+    var chartHeight: CGFloat       { lerp(180, 240) }
     var chartCardPadding: CGFloat  { lerp(16, 24) }
     var statCardVPadding: CGFloat  { lerp(14, 20) }
 

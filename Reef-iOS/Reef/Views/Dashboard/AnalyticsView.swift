@@ -233,16 +233,14 @@ private struct WeeklyBarChart: View {
                     )
 
                     // Value above bar
-                    if minutes > 0 {
-                        let value = Text("\(minutes)")
-                            .font(.epilogue(10, weight: .bold))
-                            .foregroundStyle(valueLabelColor)
-                        context.draw(
-                            context.resolve(value),
-                            at: CGPoint(x: x + barWidth / 2, y: y - 8),
-                            anchor: .center
-                        )
-                    }
+                    let value = Text("\(minutes)")
+                        .font(.epilogue(10, weight: .bold))
+                        .foregroundStyle(valueLabelColor)
+                    context.draw(
+                        context.resolve(value),
+                        at: CGPoint(x: x + barWidth / 2, y: y - 8),
+                        anchor: .center
+                    )
                 }
             }
         }
