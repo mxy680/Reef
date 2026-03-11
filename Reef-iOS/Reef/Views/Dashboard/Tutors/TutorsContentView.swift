@@ -9,19 +9,22 @@ struct TutorsContentView: View {
 
     var body: some View {
         let dark = theme.isDarkMode
-        return ScrollView(.vertical, showsIndicators: false) {
+        return GeometryReader { geo in
             VStack(spacing: 0) {
                 headerRow
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, 20)
 
                 if viewModel.isLoading {
+                    Spacer()
                     skeletonCarousel
-                        .padding(.top, 24)
+                    Spacer()
                 } else if viewModel.tutors.isEmpty {
+                    Spacer()
                     emptyState
-                        .padding(.top, 40)
+                    Spacer()
                 } else {
+                    Spacer(minLength: 4)
+
                     // Spotlight hero
                     if let tutor = viewModel.activeTutor {
                         TutorSpotlightView(
@@ -34,11 +37,12 @@ struct TutorsContentView: View {
                         .id(viewModel.activeTutorId)
                         .transition(.opacity.combined(with: .scale(scale: 0.97)))
                         .animation(.spring(duration: 0.35), value: viewModel.activeTutorId)
-                        .padding(.bottom, 24)
                     }
 
+                    Spacer(minLength: 6)
+
                     // Carousel section
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
                         Text("CHOOSE YOUR TUTOR")
                             .font(.epilogue(11, weight: .bold))
                             .tracking(0.06 * 11)
@@ -46,6 +50,8 @@ struct TutorsContentView: View {
 
                         tutorCarousel
                     }
+
+                    Spacer(minLength: 0)
                 }
             }
         }
@@ -141,7 +147,7 @@ struct TutorsContentView: View {
 
     private var tutorCarousel: some View {
         let dark = theme.isDarkMode
-        return VStack(spacing: 16) {
+        return VStack(spacing: 12) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 20) {
                     ForEach(Array(viewModel.tutors.enumerated()), id: \.element.id) { index, tutor in
