@@ -22,76 +22,32 @@ struct MyReefComingSoonView: View {
 
     private var heroArea: some View {
         let dark = theme.isDarkMode
-        return ZStack {
-            // Ocean gradient background
-            LinearGradient(
-                colors: [
-                    Color(red: 0.70, green: 0.90, blue: 0.95),
-                    ReefColors.accent
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+        return ZStack(alignment: .bottom) {
+            Image("reef-hero")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(maxWidth: .infinity)
+                .frame(height: 280)
+                .clipped()
 
-            // Animated floating bubbles
-            FloatingBubblesView(dark: dark)
+            // Title overlay at bottom
+            VStack(spacing: 6) {
+                Text("My Reef")
+                    .font(.epilogue(32, weight: .black))
+                    .tracking(-0.04 * 32)
+                    .foregroundStyle(ReefColors.white)
+                    .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
 
-            // Emoji heroes + title
-            VStack(spacing: 24) {
-                // Emoji arrangement
-                VStack(spacing: 8) {
-                    HStack(spacing: 16) {
-                        Text("🐠")
-                            .font(.system(size: 56))
-                            .opacity(appeared ? 1 : 0)
-                            .offset(y: appeared ? 0 : 16)
-                            .animation(.easeOut(duration: 0.4).delay(0.05), value: appeared)
-
-                        Text("🪸")
-                            .font(.system(size: 72))
-                            .opacity(appeared ? 1 : 0)
-                            .offset(y: appeared ? 0 : 16)
-                            .animation(.easeOut(duration: 0.4).delay(0.0), value: appeared)
-
-                        Text("🐠")
-                            .font(.system(size: 44))
-                            .scaleEffect(x: -1, y: 1) // mirror for variety
-                            .opacity(appeared ? 1 : 0)
-                            .offset(y: appeared ? 0 : 16)
-                            .animation(.easeOut(duration: 0.4).delay(0.10), value: appeared)
-                    }
-
-                    HStack(spacing: 32) {
-                        Text("🐚")
-                            .font(.system(size: 40))
-                            .opacity(appeared ? 1 : 0)
-                            .offset(y: appeared ? 0 : 12)
-                            .animation(.easeOut(duration: 0.4).delay(0.15), value: appeared)
-
-                        Text("🦀")
-                            .font(.system(size: 44))
-                            .opacity(appeared ? 1 : 0)
-                            .offset(y: appeared ? 0 : 12)
-                            .animation(.easeOut(duration: 0.4).delay(0.20), value: appeared)
-                    }
-                }
-
-                VStack(spacing: 6) {
-                    Text("My Reef")
-                        .font(.epilogue(32, weight: .black))
-                        .tracking(-0.04 * 32)
-                        .foregroundStyle(ReefColors.black)
-
-                    Text("Your personal ocean ecosystem")
-                        .font(.epilogue(15, weight: .medium))
-                        .tracking(-0.04 * 15)
-                        .foregroundStyle(ReefColors.gray600)
-                }
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 8)
-                .animation(.easeOut(duration: 0.35).delay(0.25), value: appeared)
+                Text("Your personal ocean ecosystem")
+                    .font(.epilogue(15, weight: .medium))
+                    .tracking(-0.04 * 15)
+                    .foregroundStyle(ReefColors.white.opacity(0.9))
+                    .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
             }
-            .padding(.vertical, 48)
+            .padding(.bottom, 24)
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 8)
+            .animation(.easeOut(duration: 0.35).delay(0.15), value: appeared)
         }
         .frame(maxWidth: .infinity)
         .overlay(alignment: .bottom) {
@@ -233,92 +189,4 @@ struct MyReefComingSoonView: View {
             background: ReefColors.surface
         ),
     ]
-}
-
-// MARK: - Floating Bubbles
-
-private struct FloatingBubblesView: View {
-    let dark: Bool
-
-    // Fixed set of bubbles so the layout stays stable across re-renders
-    private let bubbles: [BubbleSpec] = [
-        .init(id: 0, x: 0.12, size: 18, duration: 5.8, delay: 0.0),
-        .init(id: 1, x: 0.28, size: 10, duration: 4.5, delay: 1.2),
-        .init(id: 2, x: 0.45, size: 24, duration: 6.5, delay: 0.4),
-        .init(id: 3, x: 0.62, size: 14, duration: 5.2, delay: 2.1),
-        .init(id: 4, x: 0.78, size: 8,  duration: 4.0, delay: 0.9),
-        .init(id: 5, x: 0.90, size: 20, duration: 6.0, delay: 1.7),
-        .init(id: 6, x: 0.35, size: 12, duration: 5.5, delay: 3.0),
-        .init(id: 7, x: 0.68, size: 16, duration: 4.8, delay: 0.5),
-    ]
-
-    var body: some View {
-        GeometryReader { geo in
-            ForEach(bubbles) { bubble in
-                FloatingBubble(
-                    spec: bubble,
-                    containerWidth: geo.size.width,
-                    containerHeight: geo.size.height,
-                    dark: dark
-                )
-            }
-        }
-        .allowsHitTesting(false)
-    }
-
-    fileprivate struct BubbleSpec: Identifiable {
-        let id: Int
-        let x: CGFloat        // fractional horizontal position 0–1
-        let size: CGFloat
-        let duration: Double
-        let delay: Double
-    }
-}
-
-private struct FloatingBubble: View {
-    let spec: FloatingBubblesView.BubbleSpec
-    let containerWidth: CGFloat
-    let containerHeight: CGFloat
-    let dark: Bool
-
-    @State private var offset: CGFloat = 0
-    @State private var opacity: Double = 0
-
-    var body: some View {
-        Circle()
-            .fill(
-                dark
-                    ? Color.white.opacity(0.07)
-                    : Color.white.opacity(0.45)
-            )
-            .overlay(
-                Circle()
-                    .stroke(
-                        dark
-                            ? Color.white.opacity(0.12)
-                            : Color.white.opacity(0.7),
-                        lineWidth: 1
-                    )
-            )
-            .frame(width: spec.size, height: spec.size)
-            .position(
-                x: spec.x * containerWidth,
-                y: containerHeight - spec.size / 2 + offset
-            )
-            .opacity(opacity)
-            .onAppear {
-                // Start from bottom, float upward past the top
-                let travel = containerHeight + spec.size + 20
-                withAnimation(
-                    .easeInOut(duration: spec.duration)
-                    .delay(spec.delay)
-                    .repeatForever(autoreverses: false)
-                ) {
-                    offset = -travel
-                }
-                withAnimation(.easeIn(duration: 0.6).delay(spec.delay)) {
-                    opacity = 1
-                }
-            }
-    }
 }
