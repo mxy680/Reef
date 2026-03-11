@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import health, reconstruct, reconstruct_v2, transcribe, tutor, ws
+from app.routers import health, reconstruct, reconstruct_v2, render_latex, transcribe, tutor, ws
 from app.services.cancellation import get_in_flight_ids
 from app.services.progress import update_document_status
 
@@ -99,6 +99,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(reconstruct.router)
 app.include_router(reconstruct_v2.router)
+app.include_router(render_latex.router)
 app.include_router(transcribe.router)
 app.include_router(tutor.router)
 app.include_router(ws.router)
