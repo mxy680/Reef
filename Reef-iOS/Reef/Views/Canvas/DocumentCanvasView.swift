@@ -25,6 +25,8 @@ struct DocumentCanvasView: View {
     @State private var drawingManager: DrawingManager?
     @State private var penColor: UIColor = .black
     @State private var penWidth: CGFloat = 3.5
+    @State private var eraserMode: PKEraserTool.EraserType = .vector
+    @State private var eraserWidth: CGFloat = 8.0
     @State private var showToolSettings = false
     @State private var selectedToolMidX: CGFloat = 0
     @State private var customColors: [UIColor] = []
@@ -63,7 +65,12 @@ struct DocumentCanvasView: View {
 
     /// Current PencilKit tool derived from toolbar selection + settings
     private var currentPKTool: PKTool {
-        selectedTool.pkTool(color: penColor, width: penWidth)
+        selectedTool.pkTool(
+            color: penColor,
+            width: penWidth,
+            eraserType: eraserMode,
+            eraserWidth: eraserWidth
+        )
     }
 
     private static let cream = Color(hex: 0xF8F0E6)
@@ -141,12 +148,19 @@ struct DocumentCanvasView: View {
                                 let arrowOffset = (selectedToolMidX - containerMinX) - (clampedX + popoverWidth / 2)
 
                                 PopoverCard(arrowOffset: arrowOffset) {
-                                    ToolSettingsPopover(
-                                        selectedColor: $penColor,
-                                        lineWidth: $penWidth,
-                                        customColors: $customColors,
-                                        onAddColorTapped: { showColorPicker = true }
-                                    )
+                                    if selectedTool == .eraser {
+                                        EraserSettingsPopover(
+                                            eraserMode: $eraserMode,
+                                            eraserWidth: $eraserWidth
+                                        )
+                                    } else {
+                                        ToolSettingsPopover(
+                                            selectedColor: $penColor,
+                                            lineWidth: $penWidth,
+                                            customColors: $customColors,
+                                            onAddColorTapped: { showColorPicker = true }
+                                        )
+                                    }
                                 }
                                 .transition(.scale(scale: 0.01, anchor: .top))
                                 .offset(x: clampedX)
@@ -217,7 +231,15 @@ struct DocumentCanvasView: View {
                                 handleStrokesErased(pageIndex: pageIndex)
                             },
                             darkMode: theme.isDarkMode,
-                            overlaySettings: pageOverlaySettings
+                            overlaySettings: pageOverlaySettings,
+                            isEraserActive: selectedTool == .eraser,
+                            eraserWidth: eraserWidth,
+                            onCanvasTouchBegan: {
+                                showToolSettings = false
+                                showPageSettings = false
+                                showPageMenu = false
+                                showTutorPopover = false
+                            }
                         )
                         .id(pageVersion)
 
@@ -241,23 +263,6 @@ struct DocumentCanvasView: View {
                     }
                     #endif
                     .background(canvasBackground)
-                    .overlay {
-                        // Tap-to-dismiss layer (covers canvas only, not toolbar)
-                        if showToolSettings || showPageSettings || showPageMenu {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    showToolSettings = false
-                                    showPageSettings = false
-                                    showPageMenu = false
-                                }
-                        }
-                        if showTutorPopover {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture { showTutorPopover = false }
-                        }
-                    }
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
