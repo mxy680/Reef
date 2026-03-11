@@ -310,8 +310,10 @@ final class CanvasContainerView: UIView {
 
             // PKCanvasView overlay — transparent, on top of PDF image
             let canvasView = TouchTrackingCanvasView()
+            canvasView.onAnyTouchBegan = { [weak self] in
+                self?.onCanvasTouchBegan?()
+            }
             canvasView.onPencilTouch = { [weak self] location, phase in
-                if phase == .began { self?.onCanvasTouchBegan?() }
                 self?.handlePencilTouch(location: location, phase: phase, from: canvasView)
             }
             canvasView.translatesAutoresizingMaskIntoConstraints = false
@@ -709,9 +711,11 @@ extension CanvasContainerView: PKCanvasViewDelegate {
 /// via a closure, while still letting PencilKit handle all drawing.
 final class TouchTrackingCanvasView: PKCanvasView {
     var onPencilTouch: ((_ location: CGPoint, _ phase: UITouch.Phase) -> Void)?
+    var onAnyTouchBegan: (() -> Void)?
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
+        onAnyTouchBegan?()
         reportPencilTouch(touches)
     }
 

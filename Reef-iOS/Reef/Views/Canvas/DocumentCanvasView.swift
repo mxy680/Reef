@@ -243,26 +243,6 @@ struct DocumentCanvasView: View {
 
                     }
                     .background(canvasBackground)
-                    .overlay {
-                        // Touch-to-dismiss layer (covers canvas only, not toolbar)
-                        // Uses DragGesture(minimumDistance: 0) so taps, swipes, and pen strokes all dismiss
-                        if showToolSettings || showPageSettings || showPageMenu {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .gesture(DragGesture(minimumDistance: 0).onChanged { _ in
-                                    showToolSettings = false
-                                    showPageSettings = false
-                                    showPageMenu = false
-                                })
-                        }
-                        if showTutorPopover {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .gesture(DragGesture(minimumDistance: 0).onChanged { _ in
-                                    showTutorPopover = false
-                                })
-                        }
-                    }
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
