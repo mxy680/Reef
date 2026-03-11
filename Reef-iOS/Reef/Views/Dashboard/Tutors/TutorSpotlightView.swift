@@ -15,7 +15,7 @@ struct TutorSpotlightView: View {
 
     var body: some View {
         let dark = theme.isDarkMode
-        return HStack(alignment: .top, spacing: 20) {
+        return HStack(alignment: .center, spacing: 20) {
             // Left: avatar circle
             ZStack {
                 Circle()
@@ -49,6 +49,8 @@ struct TutorSpotlightView: View {
                     .lineLimit(4)
                     .padding(.top, 2)
 
+                Spacer(minLength: 4)
+
                 // Voice description pill
                 HStack(spacing: 5) {
                     Image(systemName: "waveform")
@@ -62,8 +64,6 @@ struct TutorSpotlightView: View {
                 .padding(.vertical, 5)
                 .background(tintColor.opacity(0.1))
                 .clipShape(Capsule())
-                .padding(.top, 4)
-                .padding(.bottom, 6)
 
                 // Bottom actions
                 HStack(spacing: 10) {
@@ -91,7 +91,7 @@ struct TutorSpotlightView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .padding(20)
         .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
