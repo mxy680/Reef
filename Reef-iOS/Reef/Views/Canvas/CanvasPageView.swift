@@ -302,7 +302,10 @@ final class CanvasContainerView: UIView {
             pageImageViews.append(imageView)
 
             // PKCanvasView overlay — transparent, on top of PDF image
-            let canvasView = PKCanvasView()
+            let canvasView = TouchTrackingCanvasView()
+            canvasView.onPencilTouch = { [weak self] location, phase in
+                self?.handlePencilTouch(location: location, phase: phase, from: canvasView)
+            }
             canvasView.translatesAutoresizingMaskIntoConstraints = false
             canvasView.backgroundColor = .clear
             canvasView.isOpaque = false
@@ -317,16 +320,6 @@ final class CanvasContainerView: UIView {
             if let manager = drawingManager {
                 canvasView.drawing = manager.drawing(for: absolutePageIndex)
             }
-
-            // Pan gesture to track pencil position during active erasing
-            let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleEraserPan(_:)))
-            panGesture.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.pencil.rawValue)]
-            panGesture.minimumNumberOfTouches = 1
-            panGesture.maximumNumberOfTouches = 1
-            panGesture.cancelsTouchesInView = false
-            panGesture.delaysTouchesBegan = false
-            panGesture.delegate = self
-            canvasView.addGestureRecognizer(panGesture)
 
             pageView.addSubview(canvasView)
             canvasViews.append(canvasView)
@@ -526,16 +519,15 @@ final class CanvasContainerView: UIView {
         }
     }
 
-    @objc private func handleEraserPan(_ gesture: UIPanGestureRecognizer) {
-        guard isEraserActive, let canvasView = gesture.view else {
+    private func handlePencilTouch(location: CGPoint, phase: UITouch.Phase, from view: UIView) {
+        guard isEraserActive else {
             eraserCursorView.isHidden = true
             return
         }
 
-        switch gesture.state {
-        case .began, .changed:
-            let locationInCanvas = gesture.location(in: canvasView)
-            let locationInScroll = canvasView.convert(locationInCanvas, to: scrollView)
+        switch phase {
+        case .began, .moved:
+            let locationInScroll = view.convert(location, to: scrollView)
             eraserCursorView.isHidden = false
             eraserCursorView.center = locationInScroll
         case .ended, .cancelled:
@@ -550,17 +542,6 @@ final class CanvasContainerView: UIView {
         let canvasSize = eraserWidth * 2.0 * scrollView.zoomScale
         eraserCursorView.bounds = CGRect(x: 0, y: 0, width: canvasSize, height: canvasSize)
         eraserCursorView.layer.cornerRadius = canvasSize / 2
-    }
-}
-
-// MARK: - UIGestureRecognizerDelegate
-
-extension CanvasContainerView: UIGestureRecognizerDelegate {
-    func gestureRecognizer(
-        _ gestureRecognizer: UIGestureRecognizer,
-        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
-    ) -> Bool {
-        true
     }
 }
 
@@ -711,5 +692,41 @@ extension CanvasContainerView: PKCanvasViewDelegate {
 
     func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
         drawingManager?.activeCanvasView = canvasView
+    }
+}
+
+// MARK: - Touch Tracking Canvas View
+
+/// PKCanvasView subclass that reports Apple Pencil touch positions
+/// via a closure, while still letting PencilKit handle all drawing.
+final class TouchTrackingCanvasView: PKCanvasView {
+    var onPencilTouch: ((_ location: CGPoint, _ phase: UITouch.Phase) -> Void)?
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        reportPencilTouch(touches)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesMoved(touches, with: event)
+        reportPencilTouch(touches)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        reportPencilTouch(touches)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        for touch in touches where touch.type == .pencil {
+            onPencilTouch?(touch.location(in: self), .cancelled)
+        }
+    }
+
+    private func reportPencilTouch(_ touches: Set<UITouch>) {
+        for touch in touches where touch.type == .pencil {
+            onPencilTouch?(touch.location(in: self), touch.phase)
+        }
     }
 }
