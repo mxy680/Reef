@@ -25,7 +25,7 @@ class RenderLatexRequest(BaseModel):
         min_length=1,
     )
     font_size: float = Field(
-        default=14.0,
+        default=18.0,
         ge=6.0,
         le=72.0,
         description="Base font size in points.",

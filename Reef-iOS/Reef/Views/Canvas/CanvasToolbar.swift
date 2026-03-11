@@ -54,7 +54,7 @@ struct CanvasToolbar: View {
     @State private var toolbarRowMinX: CGFloat = 0
     @State private var toolbarRowWidth: CGFloat = 0
 
-    private static let tutorPopoverWidth: CGFloat = 260
+    private static let tutorPopoverWidth: CGFloat = 320
 
     /// Current tutor step (computed from answerKey)
     private var tutorSteps: [TutorStep] {
@@ -198,10 +198,9 @@ struct CanvasToolbar: View {
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(ReefColors.black)
-                MathText(
+                RenderedLatexImage(
                     text: text,
-                    fontSize: 13,
-                    color: ReefColors.gray600,
+                    maxWidth: Int(Self.tutorPopoverWidth - 24),
                     maxHeight: popoverMaxHeight - 50
                 )
             }

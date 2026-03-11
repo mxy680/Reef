@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 actor ReefAPI {
     static let shared = ReefAPI()
@@ -52,6 +53,51 @@ actor ReefAPI {
             throw URLError(.badServerResponse)
         }
         return try JSONDecoder().decode(T.self, from: data)
+    }
+
+    /// POST request that returns raw bytes (not JSON).
+    func rawData(
+        path: String,
+        body: (any Encodable)? = nil
+    ) async throws -> Data {
+        guard let baseURL else { throw URLError(.badURL) }
+        let url = baseURL.appendingPathComponent(path)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let token = try await getAccessToken()
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        if let body {
+            request.httpBody = try JSONEncoder().encode(body)
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              200 ..< 300 ~= httpResponse.statusCode
+        else {
+            throw URLError(.badServerResponse)
+        }
+        return data
+    }
+
+    // MARK: - LaTeX Rendering
+
+    func renderLatex(text: String, fontSize: CGFloat = 14, maxWidth: Int = 260) async throws -> UIImage {
+        struct Body: Encodable {
+            let text: String
+            let font_size: CGFloat
+            let max_width: Int
+        }
+        let data = try await rawData(
+            path: "/render-latex",
+            body: Body(text: text, font_size: fontSize, max_width: maxWidth)
+        )
+        guard let image = UIImage(data: data) else {
+            throw URLError(.cannotDecodeContentData)
+        }
+        return image
     }
 
     // MARK: - Document Reconstruction

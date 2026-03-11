@@ -1,11 +1,8 @@
-"""LaTeX-to-PNG rendering service using matplotlib's mathtext engine.
+"""LaTeX-to-PNG rendering service using tectonic + PyMuPDF.
 
-Accepts mixed text with inline `$...$` and display `\\[...\\]` math blocks and
-renders them to a tight-fitting PNG image.
-
-Matplotlib's mathtext renderer understands TeX math syntax natively inside
-`$...$` delimiters.  Plain text segments are rendered as-is.  Display-math
-blocks (`\\[...\\]`) are rendered centered on their own line.
+Compiles mixed text with LaTeX math to a tight-cropped PNG image.
+Uses the same tectonic TeX engine as the document reconstruction pipeline
+for high-quality output with proper fonts and math rendering.
 
 This module is CPU-bound and synchronous; callers should use
 `asyncio.to_thread` to avoid blocking the event loop.
@@ -14,292 +11,149 @@ This module is CPU-bound and synchronous; callers should use
 from __future__ import annotations
 
 import io
-import re
-import textwrap
-from dataclasses import dataclass, field
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
 
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-
-# Use the non-interactive Agg backend so no display is required.
-matplotlib.use("Agg")
+import fitz  # PyMuPDF
+from PIL import Image, ImageChops
 
 # ---------------------------------------------------------------------------
-# Text segmentation
+# LaTeX template
 # ---------------------------------------------------------------------------
 
-@dataclass
-class _Segment:
-    """A run of text that is either plain prose or a math expression."""
-    text: str
-    is_display_math: bool = False   # True → \\[...\\] block (centered, own line)
-    is_inline_math: bool = False    # True → $...$ span
+_TEMPLATE = r"""
+\documentclass[{base_size}pt]{{article}}
 
+\usepackage[
+  paperwidth={paper_w}pt,
+  paperheight=1440pt,
+  margin=0pt,
+  top={pad}pt,
+  left={pad}pt,
+  right={pad}pt,
+  bottom={pad}pt
+]{{geometry}}
 
-def _parse_segments(text: str) -> list[_Segment]:
-    """Split *text* into alternating plain-text and math segments.
+\usepackage{{amsmath}}
+\usepackage{{amssymb}}
+\usepackage{{amsfonts}}
+\usepackage{{lmodern}}
+\usepackage[T1]{{fontenc}}
 
-    Handles:
-    - Display math: ``\\[...\\]`` (may span newlines)
-    - Inline math:  ``$...$``
+\pagestyle{{empty}}
+\setlength{{\parindent}}{{0pt}}
+\setlength{{\parskip}}{{0.5em}}
+\binoppenalty=10000
+\relpenalty=10000
 
-    Plain newlines in prose segments are preserved so that callers can decide
-    how to wrap them.
-    """
-    segments: list[_Segment] = []
-
-    # Combined pattern: display math (\\[...\\]) takes priority over inline ($...$).
-    # We use non-greedy matching and DOTALL so display blocks can span lines.
-    pattern = re.compile(
-        r'(\\\[.*?\\\]|\$[^$]+?\$)',
-        re.DOTALL,
-    )
-
-    pos = 0
-    for m in pattern.finditer(text):
-        start, end = m.start(), m.end()
-
-        # Plain-text segment before this match
-        if start > pos:
-            segments.append(_Segment(text=text[pos:start]))
-
-        raw = m.group(0)
-        if raw.startswith(r'\['):
-            # Strip the \\[ ... \\] delimiters; keep inner content.
-            inner = raw[2:-2].strip()
-            segments.append(_Segment(text=inner, is_display_math=True))
-        else:
-            # Inline $...$: keep the delimiters so matplotlib renders it as math.
-            segments.append(_Segment(text=raw, is_inline_math=True))
-
-        pos = end
-
-    # Trailing plain text
-    if pos < len(text):
-        segments.append(_Segment(text=text[pos:]))
-
-    return segments
-
-
-# ---------------------------------------------------------------------------
-# Line builder
-# ---------------------------------------------------------------------------
-
-@dataclass
-class _Line:
-    """A single rendered line composed of one or more (text, style) pairs."""
-    parts: list[tuple[str, dict]] = field(default_factory=list)
-    is_display: bool = False  # Centred display-math line
-
-
-def _build_lines(segments: list[_Segment], max_width: int, font_size: float) -> list[_Line]:
-    """Convert segments into renderable lines, honouring *max_width* (pixels).
-
-    Plain-text is word-wrapped.  Display-math blocks are placed on their own
-    centred line.  Inline math stays inline with adjacent prose.
-
-    *max_width* is in pixels at 96 dpi; we use a rough character-width
-    estimate to wrap prose so we don't over-rely on font metrics at this stage.
-    """
-    # Approximate characters per line based on font size and pixel width.
-    # At 96 dpi, font_size pts ≈ font_size * 96/72 px per em.
-    px_per_char = font_size * 96 / 72 * 0.55  # 0.55 = typical width/height ratio
-    chars_per_line = max(20, int(max_width / px_per_char))
-
-    lines: list[_Line] = []
-    current_line = _Line()
-
-    def flush():
-        nonlocal current_line
-        if current_line.parts:
-            lines.append(current_line)
-            current_line = _Line()
-
-    plain_style: dict = {"color": "black"}
-    math_style: dict = {"color": "black"}
-
-    for seg in segments:
-        if seg.is_display_math:
-            # Display math always starts and ends on its own line.
-            flush()
-            # Wrap the math expression itself in $...$ for matplotlib rendering.
-            lines.append(_Line(parts=[("$" + seg.text + "$", math_style)], is_display=True))
-
-        elif seg.is_inline_math:
-            current_line.parts.append((seg.text, math_style))
-
-        else:
-            # Plain text — split on hard newlines first, then word-wrap each chunk.
-            hard_lines = seg.text.split("\n")
-            for hi, hard_line in enumerate(hard_lines):
-                if hi > 0:
-                    flush()
-                if not hard_line:
-                    continue
-                # Word-wrap this chunk
-                wrapped = textwrap.wrap(hard_line, width=chars_per_line) or [hard_line]
-                for wi, chunk in enumerate(wrapped):
-                    if wi > 0:
-                        flush()
-                    current_line.parts.append((chunk, plain_style))
-
-    flush()
-    return lines
+\begin{{document}}
+{font_cmd}
+{content}
+\end{{document}}
+"""
 
 
 # ---------------------------------------------------------------------------
 # Renderer
 # ---------------------------------------------------------------------------
 
-_DISPLAY_MATH_FONT_SCALE = 1.15  # Display math rendered slightly larger
-
-
 def render_latex_to_png(
     text: str,
-    font_size: float = 14.0,
+    font_size: float = 18.0,
     max_width: int = 260,
-    dpi: int = 144,
-    padding: int = 12,
+    dpi: int = 216,
+    padding: int = 16,
 ) -> bytes:
     """Render *text* (mixed prose + LaTeX math) to a PNG and return raw bytes.
 
     Parameters
     ----------
     text:
-        Input string with optional ``$...$`` inline math and ``\\[...\\]``
-        display-math blocks.
+        Input string with LaTeX markup (``$...$``, ``\\[...\\]``, etc.).
     font_size:
         Base font size in points.
     max_width:
-        Soft maximum content width in *points* (not pixels).  The actual image
-        may be slightly wider if a single math expression is wider.
+        Text area width in points.
     dpi:
-        Output resolution.  144 dpi gives crisp results on Retina / HiDPI
-        displays without being excessively large.
+        Output resolution.
     padding:
-        Horizontal and vertical padding in points around the content.
+        Padding in points around the content.
 
     Returns
     -------
     bytes
         Raw PNG image data.
     """
-    segments = _parse_segments(text)
-    lines = _build_lines(segments, max_width=max_width, font_size=font_size)
-
-    if not lines:
-        # Return a 1×1 transparent PNG for empty input.
-        fig = Figure(figsize=(0.01, 0.01), dpi=dpi)
+    if not text.strip():
+        img = Image.new("RGB", (1, 1), (255, 255, 255))
         buf = io.BytesIO()
-        fig.savefig(buf, format="png", transparent=True)
+        img.save(buf, format="PNG")
         return buf.getvalue()
 
-    # ------------------------------------------------------------------ #
-    # Measure each line using a temporary figure, then produce the final  #
-    # figure sized to exactly fit the content.                            #
-    # ------------------------------------------------------------------ #
+    # Build LaTeX document
+    base_size = min([10, 11, 12], key=lambda s: abs(s - font_size))
+    paper_w = max_width + 2 * padding
 
-    # Points per inch — matplotlib uses inches internally.
-    PPI = 72.0
+    if font_size not in (10.0, 11.0, 12.0):
+        font_cmd = rf"\fontsize{{{font_size:.1f}pt}}{{{font_size * 1.2:.1f}pt}}\selectfont"
+    else:
+        font_cmd = ""
 
-    # Create a scratch figure for measurement.  We give it a generous size so
-    # text never clips during measurement.
-    scratch_width_in = (max_width + 4 * padding) / PPI
-    scratch_height_in = max(4.0, len(lines) * (font_size + 4) * len(lines) / PPI)
-    scratch = Figure(figsize=(scratch_width_in, scratch_height_in), dpi=dpi)
-    ax = scratch.add_axes([0, 0, 1, 1])
-    ax.set_axis_off()
-    ax.set_xlim(0, scratch_width_in * PPI)
-    ax.set_ylim(0, scratch_height_in * PPI)
+    document = _TEMPLATE.format(
+        base_size=base_size,
+        paper_w=paper_w,
+        pad=padding,
+        font_cmd=font_cmd,
+        content=text,
+    )
 
-    line_height = font_size * 1.6   # points (leading)
-    display_line_height = font_size * _DISPLAY_MATH_FONT_SCALE * 2.0
+    # Compile with tectonic
+    temp_dir = Path(tempfile.mkdtemp())
+    try:
+        tex_file = temp_dir / "render.tex"
+        tex_file.write_text(document, encoding="utf-8")
 
-    line_heights: list[float] = []
-    line_widths: list[float] = []
-
-    renderer = scratch.canvas.get_renderer()
-
-    for line in lines:
-        if line.is_display:
-            lh = display_line_height
-        else:
-            lh = line_height
-
-        # Measure total width of parts joined together.
-        combined = "".join(p for p, _ in line.parts)
-        fs = font_size * _DISPLAY_MATH_FONT_SCALE if line.is_display else font_size
-        t = ax.text(
-            0, 0, combined,
-            fontsize=fs,
-            usetex=False,  # matplotlib mathtext, not full LaTeX
-            va="baseline",
-            ha="left",
-        )
-        try:
-            bb = t.get_window_extent(renderer=renderer)
-            # Convert from display units (pixels) back to points.
-            w_pts = bb.width * PPI / dpi
-        except Exception:
-            w_pts = max_width
-        t.remove()
-
-        line_heights.append(lh)
-        line_widths.append(w_pts)
-
-    plt.close("all")
-
-    # Final image dimensions
-    content_width = min(max(line_widths) if line_widths else max_width, max_width * 2)
-    content_height = sum(line_heights)
-    img_width_in = (content_width + 2 * padding) / PPI
-    img_height_in = (content_height + 2 * padding) / PPI
-
-    fig = Figure(figsize=(img_width_in, img_height_in), dpi=dpi)
-    fig.patch.set_facecolor("white")
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.set_axis_off()
-    ax.set_facecolor("white")
-
-    fig_width_pts = img_width_in * PPI
-    fig_height_pts = img_height_in * PPI
-
-    # Draw lines top-to-bottom.  Matplotlib y=0 is bottom, so we start near
-    # the top and work downward.
-    y = fig_height_pts - padding  # current baseline (pts from bottom)
-
-    for i, line in enumerate(lines):
-        y -= line_heights[i]  # move baseline down by this line's height
-
-        fs = font_size * _DISPLAY_MATH_FONT_SCALE if line.is_display else font_size
-
-        # Combine all parts into a single string — matplotlib handles the
-        # math segments because they remain wrapped in `$...$`.
-        combined = "".join(p for p, _ in line.parts)
-
-        if line.is_display:
-            x = fig_width_pts / 2.0
-            ha = "center"
-        else:
-            x = padding
-            ha = "left"
-
-        ax.text(
-            x, y,
-            combined,
-            fontsize=fs,
-            color="black",
-            va="baseline",
-            ha=ha,
-            transform=ax.transData,
-            usetex=False,
+        result = subprocess.run(
+            ["tectonic", str(tex_file), "--outdir", str(temp_dir)],
+            capture_output=True, text=True, timeout=30,
         )
 
-    ax.set_xlim(0, fig_width_pts)
-    ax.set_ylim(0, fig_height_pts)
+        if result.returncode != 0:
+            raise RuntimeError(f"tectonic failed: {result.stderr}")
+
+        pdf_bytes = (temp_dir / "render.pdf").read_bytes()
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+    # Render PDF to pixmap
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    page = doc[0]
+    mat = fitz.Matrix(dpi / 72, dpi / 72)
+    pix = page.get_pixmap(matrix=mat, alpha=False)
+
+    # Crop whitespace
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    doc.close()
+
+    bg = Image.new("RGB", img.size, (255, 255, 255))
+    diff = ImageChops.difference(img, bg)
+    bbox = diff.getbbox()
+
+    if bbox is None:
+        buf = io.BytesIO()
+        Image.new("RGB", (1, 1), (255, 255, 255)).save(buf, format="PNG")
+        return buf.getvalue()
+
+    # Add padding back around content
+    pad_px = int(padding * dpi / 72)
+    x0 = max(0, bbox[0] - pad_px)
+    y0 = max(0, bbox[1] - pad_px)
+    x1 = min(img.width, bbox[2] + pad_px)
+    y1 = min(img.height, bbox[3] + pad_px)
+    cropped = img.crop((x0, y0, x1, y1))
 
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=dpi, bbox_inches=None, facecolor="white")
-    plt.close("all")
+    cropped.save(buf, format="PNG")
     return buf.getvalue()

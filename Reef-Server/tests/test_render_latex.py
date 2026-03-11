@@ -1,8 +1,7 @@
 """Tests for POST /render-latex endpoint and the latex_renderer service."""
 
-import io
+import shutil
 import struct
-import zlib
 from unittest.mock import patch
 
 import pytest
@@ -10,7 +9,12 @@ from fastapi.testclient import TestClient
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.main import app
-from app.services.latex_renderer import _parse_segments, _build_lines, render_latex_to_png
+from app.services.latex_renderer import render_latex_to_png
+
+pytestmark = pytest.mark.skipif(
+    shutil.which("tectonic") is None,
+    reason="tectonic not installed",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -37,53 +41,6 @@ def _is_valid_png(data: bytes) -> bool:
 def _png_dimensions(data: bytes) -> tuple[int, int]:
     """Return (width, height) from a PNG IHDR chunk (bytes 16-24)."""
     return struct.unpack(">II", data[16:24])
-
-
-# ---------------------------------------------------------------------------
-# Unit tests: _parse_segments
-# ---------------------------------------------------------------------------
-
-class TestParseSegments:
-    def test_plain_text_only(self):
-        segs = _parse_segments("Hello world")
-        assert len(segs) == 1
-        assert segs[0].text == "Hello world"
-        assert not segs[0].is_inline_math
-        assert not segs[0].is_display_math
-
-    def test_inline_math(self):
-        segs = _parse_segments("See $x^2$ here")
-        assert len(segs) == 3
-        assert segs[0].text == "See "
-        assert segs[1].is_inline_math
-        assert segs[1].text == "$x^2$"
-        assert segs[2].text == " here"
-
-    def test_display_math(self):
-        segs = _parse_segments(r"\[ E = mc^2 \]")
-        assert len(segs) == 1
-        assert segs[0].is_display_math
-        assert "E = mc^2" in segs[0].text
-
-    def test_mixed_inline_and_display(self):
-        text = r"Recall $P(A)$ and \[ P(B) = 0.5 \] done"
-        segs = _parse_segments(text)
-        # Should have: "Recall ", inline, " and ", display, " done"
-        types = [(s.is_inline_math, s.is_display_math) for s in segs]
-        inline_count = sum(1 for im, _ in types if im)
-        display_count = sum(1 for _, dm in types if dm)
-        assert inline_count == 1
-        assert display_count == 1
-
-    def test_empty_string(self):
-        segs = _parse_segments("")
-        assert segs == []
-
-    def test_multiple_inline(self):
-        text = "We have $a$ and $b$."
-        segs = _parse_segments(text)
-        inline_segs = [s for s in segs if s.is_inline_math]
-        assert len(inline_segs) == 2
 
 
 # ---------------------------------------------------------------------------
