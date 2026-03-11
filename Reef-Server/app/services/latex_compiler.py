@@ -52,7 +52,7 @@ LATEX_TEMPLATE = r"""
 
 % Prevent paragraph indentation
 \setlength{{\parindent}}{{0pt}}
-\setlength{{\parskip}}{{1em}}
+\setlength{{\parskip}}{{1.25em}}
 
 % Remove page numbers for single-question pages
 \pagenumbering{{gobble}}

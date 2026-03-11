@@ -36,19 +36,25 @@ enum CanvasTool: String, CaseIterable {
     var hasSettings: Bool {
         switch self {
         case .pen, .diagram: true
-        case .eraser, .lasso: false
+        case .eraser: true
+        case .lasso: false
         }
     }
 
     /// Convert to PencilKit tool
-    func pkTool(color: UIColor = .black, width: CGFloat = 2.0) -> PKTool {
+    func pkTool(
+        color: UIColor = .black,
+        width: CGFloat = 2.0,
+        eraserType: PKEraserTool.EraserType = .vector,
+        eraserWidth: CGFloat = 8.0
+    ) -> PKTool {
         switch self {
         case .pen:
             return PKInkingTool(.pen, color: color, width: width)
         case .diagram:
             return PKInkingTool(.monoline, color: color, width: width * 2)
         case .eraser:
-            return PKEraserTool(.vector)
+            return PKEraserTool(eraserType, width: eraserWidth)
         case .lasso:
             return PKLassoTool()
         }

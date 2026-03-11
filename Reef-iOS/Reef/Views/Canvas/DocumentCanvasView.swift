@@ -25,6 +25,8 @@ struct DocumentCanvasView: View {
     @State private var drawingManager: DrawingManager?
     @State private var penColor: UIColor = .black
     @State private var penWidth: CGFloat = 3.5
+    @State private var eraserMode: PKEraserTool.EraserType = .vector
+    @State private var eraserWidth: CGFloat = 8.0
     @State private var showToolSettings = false
     @State private var selectedToolMidX: CGFloat = 0
     @State private var customColors: [UIColor] = []
@@ -80,7 +82,12 @@ struct DocumentCanvasView: View {
 
     /// Current PencilKit tool derived from toolbar selection + settings
     private var currentPKTool: PKTool {
-        selectedTool.pkTool(color: penColor, width: penWidth)
+        selectedTool.pkTool(
+            color: penColor,
+            width: penWidth,
+            eraserType: eraserMode,
+            eraserWidth: eraserWidth
+        )
     }
 
     private static let cream = Color(hex: 0xF8F0E6)
@@ -167,12 +174,19 @@ struct DocumentCanvasView: View {
                                 let arrowOffset = (selectedToolMidX - containerMinX) - (clampedX + popoverWidth / 2)
 
                                 PopoverCard(arrowOffset: arrowOffset) {
-                                    ToolSettingsPopover(
-                                        selectedColor: $penColor,
-                                        lineWidth: $penWidth,
-                                        customColors: $customColors,
-                                        onAddColorTapped: { showColorPicker = true }
-                                    )
+                                    if selectedTool == .eraser {
+                                        EraserSettingsPopover(
+                                            eraserMode: $eraserMode,
+                                            eraserWidth: $eraserWidth
+                                        )
+                                    } else {
+                                        ToolSettingsPopover(
+                                            selectedColor: $penColor,
+                                            lineWidth: $penWidth,
+                                            customColors: $customColors,
+                                            onAddColorTapped: { showColorPicker = true }
+                                        )
+                                    }
                                 }
                                 .transition(.scale(scale: 0.01, anchor: .top))
                                 .offset(x: clampedX)
@@ -243,7 +257,15 @@ struct DocumentCanvasView: View {
                                 handleStrokesErased(pageIndex: pageIndex)
                             },
                             darkMode: theme.isDarkMode,
-                            overlaySettings: pageOverlaySettings
+                            overlaySettings: pageOverlaySettings,
+                            isEraserActive: selectedTool == .eraser,
+                            eraserWidth: eraserWidth,
+                            onCanvasTouchBegan: {
+                                showToolSettings = false
+                                showPageSettings = false
+                                showPageMenu = false
+                                showTutorPopover = false
+                            }
                         )
                         .id(pageVersion)
 
@@ -265,23 +287,6 @@ struct DocumentCanvasView: View {
                         }
                     }
                     .background(canvasBackground)
-                    .overlay {
-                        // Tap-to-dismiss layer (covers canvas only, not toolbar)
-                        if showToolSettings || showPageSettings || showPageMenu {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    showToolSettings = false
-                                    showPageSettings = false
-                                    showPageMenu = false
-                                }
-                        }
-                        if showTutorPopover {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture { showTutorPopover = false }
-                        }
-                    }
                 }
             }
             .animation(.spring(duration: 0.25), value: tutorModeOn)
@@ -408,150 +413,53 @@ struct DocumentCanvasView: View {
         guard let regions = document.questionRegions,
               let questionPages = document.questionPages else { return }
 
-        // Search across ALL questions' regions to find the match
-        for (qi, range) in questionPages.enumerated() {
-            guard range.count == 2,
-                  pageIndex >= range[0] && pageIndex <= range[1],
-                  qi < regions.count,
-                  let regionData = regions[qi] else { continue }
+        guard let match = CanvasStrokeCollector.matchRegion(
+            pageIndex: pageIndex,
+            yPDFPoints: yPDFPoints,
+            questionPages: questionPages,
+            questionRegions: regions
+        ) else { return }
 
-            let localPage = pageIndex - range[0]
-
-            for region in regionData.regions {
-                if region.page == localPage &&
-                   yPDFPoints >= region.yStart &&
-                   yPDFPoints <= region.yEnd {
-                    if activeQuestionIndex != qi {
-                        activeQuestionIndex = qi
-                    }
-                    if activePartLabel != region.label {
-                        activePartLabel = region.label
-                    }
-                    return
-                }
-            }
-
-            // Page is within this question but no region matched.
-            // If the question has subquestion regions, the user is annotating
-            // (writing above/between parts) — nil out the part label.
-            if !regionData.regions.isEmpty {
-                if activeQuestionIndex != qi { activeQuestionIndex = qi }
-                activePartLabel = nil
-                return
-            }
+        if activeQuestionIndex != match.questionIndex {
+            activeQuestionIndex = match.questionIndex
+        }
+        if activePartLabel != match.partLabel {
+            activePartLabel = match.partLabel
         }
     }
 
     // MARK: - Stroke Transcription
 
     /// Collect all pen strokes in the active subquestion region and send for transcription.
-    /// Does its own region lookup from pageIndex + yPDFPoints (can't rely on @State which
-    /// hasn't propagated yet when both callbacks fire in the same delegate call).
     private func handleNewPenStroke(pageIndex: Int, yPDFPoints: Double) {
         guard let regions = document.questionRegions,
               let questionPages = document.questionPages,
               let manager = drawingManager else { return }
 
-        // Find which question and part this stroke belongs to
-        var matchedQI: Int?
-        var matchedPartLabel: String?
-
-        for (qi, range) in questionPages.enumerated() {
-            guard range.count == 2,
-                  pageIndex >= range[0] && pageIndex <= range[1],
-                  qi < regions.count,
-                  let regionData = regions[qi] else { continue }
-
-            let localPage = pageIndex - range[0]
-
-            for region in regionData.regions {
-                if region.page == localPage &&
-                   yPDFPoints >= region.yStart &&
-                   yPDFPoints <= region.yEnd {
-                    matchedQI = qi
-                    matchedPartLabel = region.label
-                    break
-                }
-            }
-
-            // If we're in this question's page range but no region matched,
-            // and the question has subquestion regions, this is annotation — skip.
-            if matchedPartLabel == nil && !regionData.regions.isEmpty {
-                print("[Transcription] Annotation area — skipping")
-                return
-            }
-            break
-        }
-
-        guard let qi = matchedQI, let partLabel = matchedPartLabel else {
+        guard let match = CanvasStrokeCollector.matchRegion(
+            pageIndex: pageIndex,
+            yPDFPoints: yPDFPoints,
+            questionPages: questionPages,
+            questionRegions: regions
+        ), let partLabel = match.partLabel else {
             print("[Transcription] No matching region for page=\(pageIndex) y=\(yPDFPoints)")
             return
         }
 
-        guard questionPages[qi].count == 2,
-              let regionData = regions[qi] else { return }
+        let allStrokes = CanvasStrokeCollector.collectStrokes(
+            questionIndex: match.questionIndex,
+            partLabel: partLabel,
+            questionPages: questionPages,
+            questionRegions: regions,
+            drawingManager: manager
+        )
 
-        let startPage = questionPages[qi][0]
-        let endPage = questionPages[qi][1]
-
-        // Find all PartRegions matching the active label (may span multiple pages)
-        let matchingRegions = regionData.regions.filter { $0.label == partLabel }
-        guard !matchingRegions.isEmpty else { return }
-
-        // Collect all pen strokes that fall within matching regions
-        var allStrokes: [[(x: Double, y: Double)]] = []
-
-        for absPage in startPage...endPage {
-            let localPage = absPage - startPage
-            let pageRegions = matchingRegions.filter { $0.page == localPage }
-            guard !pageRegions.isEmpty else { continue }
-
-            let drawing = manager.drawing(for: absPage)
-            for stroke in drawing.strokes {
-                // Only pen strokes, not diagram (monoline)
-                guard stroke.ink.inkType == .pen else { continue }
-
-                // Use the stroke's midpoint Y to determine if it's in the region
-                let bounds = stroke.renderBounds
-                let midY = bounds.midY / 2.0  // Convert canvas coords to PDF points
-
-                let inRegion = pageRegions.contains { region in
-                    midY >= region.yStart && midY <= region.yEnd
-                }
-                guard inRegion else { continue }
-
-                // Extract points from the stroke path (canvas scale, not PDF points)
-                var points: [(x: Double, y: Double)] = []
-                for i in stride(from: 0, to: stroke.path.count, by: 1) {
-                    let loc = stroke.path[i].location
-                    points.append((x: Double(loc.x), y: Double(loc.y)))
-                }
-                if !points.isEmpty {
-                    allStrokes.append(points)
-                }
-            }
-        }
-
-        // Normalize: translate all strokes so bounding box starts at (0,0)
-        if !allStrokes.isEmpty {
-            var minX = Double.infinity, minY = Double.infinity
-            for stroke in allStrokes {
-                for pt in stroke {
-                    minX = min(minX, pt.x)
-                    minY = min(minY, pt.y)
-                }
-            }
-            allStrokes = allStrokes.map { stroke in
-                stroke.map { (x: $0.x - minX, y: $0.y - minY) }
-            }
-        }
-
-        let key = "\(qi)-\(partLabel)"
+        let key = "\(match.questionIndex)-\(partLabel)"
         strokeCounts[key] = allStrokes.count
 
-        print("[Transcription] Q\(qi+1)(\(partLabel)): sending \(allStrokes.count) strokes")
+        print("[Transcription] Q\(match.questionIndex+1)(\(partLabel)): sending \(allStrokes.count) strokes")
         transcriptionService.transcribe(
-            questionIndex: qi,
+            questionIndex: match.questionIndex,
             partLabel: partLabel,
             strokes: allStrokes
         )
@@ -559,52 +467,19 @@ struct DocumentCanvasView: View {
 
     /// Re-transcribe after strokes are erased, using the current active question/part.
     private func handleStrokesErased(pageIndex: Int) {
-        guard let partLabel = activePartLabel else { return }
+        guard let partLabel = activePartLabel,
+              let regions = document.questionRegions,
+              let questionPages = document.questionPages,
+              let manager = drawingManager else { return }
 
         let qi = visibleQuestionIndex
-        guard let regions = document.questionRegions,
-              let questionPages = document.questionPages,
-              let manager = drawingManager,
-              qi < regions.count,
-              qi < questionPages.count,
-              questionPages[qi].count == 2,
-              let regionData = regions[qi] else { return }
-
-        let startPage = questionPages[qi][0]
-        let endPage = questionPages[qi][1]
-        let matchingRegions = regionData.regions.filter { $0.label == partLabel }
-        guard !matchingRegions.isEmpty else { return }
-
-        // Collect remaining pen strokes in the region
-        var allStrokes: [[(x: Double, y: Double)]] = []
-
-        for absPage in startPage...endPage {
-            let localPage = absPage - startPage
-            let pageRegions = matchingRegions.filter { $0.page == localPage }
-            guard !pageRegions.isEmpty else { continue }
-
-            let drawing = manager.drawing(for: absPage)
-            for stroke in drawing.strokes {
-                guard stroke.ink.inkType == .pen else { continue }
-                let midY = stroke.renderBounds.midY / 2.0
-                let inRegion = pageRegions.contains { $0.yStart <= midY && midY <= $0.yEnd }
-                guard inRegion else { continue }
-
-                var points: [(x: Double, y: Double)] = []
-                for i in stride(from: 0, to: stroke.path.count, by: 1) {
-                    let loc = stroke.path[i].location
-                    points.append((x: Double(loc.x), y: Double(loc.y)))
-                }
-                if !points.isEmpty { allStrokes.append(points) }
-            }
-        }
-
-        // Normalize
-        if !allStrokes.isEmpty {
-            var minX = Double.infinity, minY = Double.infinity
-            for stroke in allStrokes { for pt in stroke { minX = min(minX, pt.x); minY = min(minY, pt.y) } }
-            allStrokes = allStrokes.map { $0.map { (x: $0.x - minX, y: $0.y - minY) } }
-        }
+        let allStrokes = CanvasStrokeCollector.collectStrokes(
+            questionIndex: qi,
+            partLabel: partLabel,
+            questionPages: questionPages,
+            questionRegions: regions,
+            drawingManager: manager
+        )
 
         let key = "\(qi)-\(partLabel)"
         strokeCounts[key] = allStrokes.count
@@ -612,7 +487,6 @@ struct DocumentCanvasView: View {
         print("[Transcription] Q\(qi+1)(\(partLabel)): erased → re-sending \(allStrokes.count) strokes")
 
         if allStrokes.isEmpty {
-            // All strokes erased — clear transcription
             transcriptionService.transcriptions[key] = nil
         } else {
             transcriptionService.transcribe(questionIndex: qi, partLabel: partLabel, strokes: allStrokes)

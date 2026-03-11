@@ -21,6 +21,9 @@ struct CanvasPageView: UIViewRepresentable {
     var onStrokesErased: ((_ pageIndex: Int) -> Void)?
     var darkMode: Bool = false
     var overlaySettings: PageOverlaySettings = PageOverlaySettings()
+    var isEraserActive: Bool = false
+    var eraserWidth: CGFloat = 8.0
+    var onCanvasTouchBegan: (() -> Void)?
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
@@ -29,6 +32,9 @@ struct CanvasPageView: UIViewRepresentable {
         container.currentTool = currentTool
         container.onVisiblePageChanged = onVisiblePageChanged
         container.onWritingPositionChanged = onWritingPositionChanged
+        container.onCanvasTouchBegan = onCanvasTouchBegan
+        container.isEraserActive = isEraserActive
+        container.eraserWidth = eraserWidth
         container.onNewPenStroke = onNewPenStroke
         container.onStrokesErased = onStrokesErased
         container.configure(pdfDocument: pdfDocument, pageRange: pageRange)
@@ -41,6 +47,9 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.currentTool = currentTool
         uiView.onVisiblePageChanged = onVisiblePageChanged
         uiView.onWritingPositionChanged = onWritingPositionChanged
+        uiView.onCanvasTouchBegan = onCanvasTouchBegan
+        uiView.isEraserActive = isEraserActive
+        uiView.eraserWidth = eraserWidth
         uiView.onNewPenStroke = onNewPenStroke
         uiView.onStrokesErased = onStrokesErased
         uiView.applyDarkMode(darkMode)
@@ -65,6 +74,30 @@ final class CanvasContainerView: UIView {
     private var contentWidthConstraint: NSLayoutConstraint?
     private var isDarkMode = false
     private var currentOverlaySettings = PageOverlaySettings()
+
+    /// Whether the eraser tool is currently active
+    var isEraserActive = false {
+        didSet {
+            if !isEraserActive { eraserCursorView.isHidden = true }
+        }
+    }
+
+    /// Eraser width in PDF points (canvas is 2x)
+    var eraserWidth: CGFloat = 8.0 {
+        didSet { updateEraserCursorSize() }
+    }
+
+    /// Faint circle showing eraser bounds during hover
+    private let eraserCursorView: UIView = {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        view.isHidden = true
+        view.layer.borderColor = UIColor.gray.cgColor
+        view.layer.borderWidth = 1
+        view.backgroundColor = UIColor.gray.withAlphaComponent(0.15)
+        return view
+    }()
+
     /// Original rendered page images (light mode)
     private var originalImages: [UIImage] = []
     /// Color-inverted page images (dark mode) — lazily generated
@@ -74,6 +107,8 @@ final class CanvasContainerView: UIView {
     var onVisiblePageChanged: ((Int) -> Void)?
     /// Callback reporting the writing position (page index + y in PDF points)
     var onWritingPositionChanged: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
+    /// Callback when pencil touches down on canvas (dismiss popovers)
+    var onCanvasTouchBegan: (() -> Void)?
     /// Callback fired when a new pen stroke (not diagram/monoline) is added
     var onNewPenStroke: ((_ pageIndex: Int, _ yPDFPoints: Double) -> Void)?
     var onStrokesErased: ((_ pageIndex: Int) -> Void)?
@@ -160,6 +195,15 @@ final class CanvasContainerView: UIView {
             pagesStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             pagesStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
         ])
+
+        // Eraser cursor (floats above canvas, follows hover)
+        eraserCursorView.frame = CGRect(x: 0, y: 0, width: 16, height: 16)
+        eraserCursorView.layer.cornerRadius = 8
+        scrollView.addSubview(eraserCursorView)
+
+        // Hover gesture for Apple Pencil
+        let hoverGesture = UIHoverGestureRecognizer(target: self, action: #selector(handleHover(_:)))
+        scrollView.addGestureRecognizer(hoverGesture)
     }
 
     // MARK: - Configure
@@ -200,6 +244,7 @@ final class CanvasContainerView: UIView {
         let scale: CGFloat = 2.0
         var images: [UIImage] = []
 
+        guard document.pageCount > 0 else { return images }
         let range = pageRange ?? 0...(document.pageCount - 1)
         for i in range {
             guard i < document.pageCount, let page = document.page(at: i) else { continue }
@@ -274,7 +319,13 @@ final class CanvasContainerView: UIView {
             pageImageViews.append(imageView)
 
             // PKCanvasView overlay — transparent, on top of PDF image
-            let canvasView = PKCanvasView()
+            let canvasView = TouchTrackingCanvasView()
+            canvasView.onAnyTouchBegan = { [weak self] in
+                self?.onCanvasTouchBegan?()
+            }
+            canvasView.onPencilTouch = { [weak self] location, phase in
+                self?.handlePencilTouch(location: location, phase: phase, from: canvasView)
+            }
             canvasView.translatesAutoresizingMaskIntoConstraints = false
             canvasView.backgroundColor = .clear
             canvasView.isOpaque = false
@@ -467,6 +518,51 @@ final class CanvasContainerView: UIView {
             bottom: offsetY, right: offsetX
         )
     }
+
+    // MARK: - Eraser Cursor
+
+    @objc private func handleHover(_ gesture: UIHoverGestureRecognizer) {
+        guard isEraserActive else {
+            eraserCursorView.isHidden = true
+            return
+        }
+
+        switch gesture.state {
+        case .began, .changed:
+            let location = gesture.location(in: scrollView)
+            eraserCursorView.isHidden = false
+            eraserCursorView.center = location
+        case .ended, .cancelled:
+            eraserCursorView.isHidden = true
+        default:
+            break
+        }
+    }
+
+    private func handlePencilTouch(location: CGPoint, phase: UITouch.Phase, from view: UIView) {
+        guard isEraserActive else {
+            eraserCursorView.isHidden = true
+            return
+        }
+
+        switch phase {
+        case .began, .moved:
+            let locationInScroll = view.convert(location, to: scrollView)
+            eraserCursorView.isHidden = false
+            eraserCursorView.center = locationInScroll
+        case .ended, .cancelled:
+            eraserCursorView.isHidden = true
+        default:
+            break
+        }
+    }
+
+    private func updateEraserCursorSize() {
+        // eraserWidth is in PDF points; canvas renders at 2x, then scrollView zoom applies
+        let canvasSize = eraserWidth * 2.0 * scrollView.zoomScale
+        eraserCursorView.bounds = CGRect(x: 0, y: 0, width: canvasSize, height: canvasSize)
+        eraserCursorView.layer.cornerRadius = canvasSize / 2
+    }
 }
 
 // MARK: - UIScrollViewDelegate
@@ -478,6 +574,7 @@ extension CanvasContainerView: UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         setNeedsLayout()
+        updateEraserCursorSize()
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -623,5 +720,43 @@ extension CanvasContainerView: PKCanvasViewDelegate {
 
     func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
         drawingManager?.activeCanvasView = canvasView
+    }
+}
+
+// MARK: - Touch Tracking Canvas View
+
+/// PKCanvasView subclass that reports Apple Pencil touch positions
+/// via a closure, while still letting PencilKit handle all drawing.
+final class TouchTrackingCanvasView: PKCanvasView {
+    var onPencilTouch: ((_ location: CGPoint, _ phase: UITouch.Phase) -> Void)?
+    var onAnyTouchBegan: (() -> Void)?
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        onAnyTouchBegan?()
+        reportPencilTouch(touches)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesMoved(touches, with: event)
+        reportPencilTouch(touches)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        reportPencilTouch(touches)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        for touch in touches where touch.type == .pencil {
+            onPencilTouch?(touch.location(in: self), .cancelled)
+        }
+    }
+
+    private func reportPencilTouch(_ touches: Set<UITouch>) {
+        for touch in touches where touch.type == .pencil {
+            onPencilTouch?(touch.location(in: self), touch.phase)
+        }
     }
 }

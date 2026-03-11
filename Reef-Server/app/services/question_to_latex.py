@@ -82,9 +82,12 @@ def question_to_latex(question: Question) -> str:
         lines.append("")
 
     if question.parts:
-        for part in question.parts:
+        for i, part in enumerate(question.parts):
             lines.append(_render_part(part, depth=0))
-            lines.append("")
+            if i < len(question.parts) - 1:
+                lines.append("")
+                lines.append("\\vspace{1.5em}")
+                lines.append("")
     else:
         lines.append(f"\\vspace{{{question.answer_space_cm:.1f}cm}}")
         lines.append("")
@@ -105,9 +108,12 @@ def _render_part(part: Part, depth: int) -> str:
 
     if part.parts:
         lines.append("")
-        for sub in part.parts:
+        for j, sub in enumerate(part.parts):
             lines.append(_render_part(sub, depth=depth + 1))
-            lines.append("")
+            if j < len(part.parts) - 1:
+                lines.append("")
+                lines.append("\\vspace{1em}")
+                lines.append("")
     else:
         lines.append("")
         lines.append(f"\\vspace{{{part.answer_space_cm:.1f}cm}}")
