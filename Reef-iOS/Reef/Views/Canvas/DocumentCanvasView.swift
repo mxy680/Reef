@@ -373,14 +373,15 @@ struct DocumentCanvasView: View {
         .onChange(of: transcriptionService.transcriptions) { _, newTranscriptions in
             guard tutorModeOn else { return }
             let qi = visibleQuestionIndex
-            let partLabel = activePartLabel ?? ""
+            // "_" is the sentinel for questions without subquestion parts
+            let partLabel = activePartLabel ?? "_"
             let key = "\(qi)-\(partLabel)"
             guard let latex = newTranscriptions[key] else { return }
 
             // Get question text from questionData
             let qNum = qi + 1  // 1-based
             let questionText: String
-            if partLabel.isEmpty {
+            if partLabel == "_" {
                 questionText = questionData[qNum]?.text ?? ""
             } else {
                 questionText = questionData[qNum]?.textForPart(partLabel) ?? ""
@@ -464,10 +465,13 @@ struct DocumentCanvasView: View {
             yPDFPoints: yPDFPoints,
             questionPages: questionPages,
             questionRegions: regions
-        ), let partLabel = match.partLabel else {
+        ) else {
             print("[Transcription] No matching region for page=\(pageIndex) y=\(yPDFPoints)")
             return
         }
+
+        // Use "_" as default label for questions without subquestion parts
+        let partLabel = match.partLabel ?? "_"
 
         let allStrokes = CanvasStrokeCollector.collectStrokes(
             questionIndex: match.questionIndex,
@@ -490,8 +494,8 @@ struct DocumentCanvasView: View {
 
     /// Re-transcribe after strokes are erased, using the current active question/part.
     private func handleStrokesErased(pageIndex: Int) {
-        guard let partLabel = activePartLabel,
-              let regions = document.questionRegions,
+        let partLabel = activePartLabel ?? "_"
+        guard let regions = document.questionRegions,
               let questionPages = document.questionPages,
               let manager = drawingManager else { return }
 
@@ -530,7 +534,7 @@ struct DocumentCanvasView: View {
     // MARK: - Step Lookup
 
     private func stepsForPart(answerKey: QuestionAnswer, partLabel: String) -> [AnswerKeyStep] {
-        if partLabel.isEmpty || answerKey.parts.isEmpty { return answerKey.steps }
+        if partLabel == "_" || partLabel.isEmpty || answerKey.parts.isEmpty { return answerKey.steps }
         return findPartSteps(partLabel, in: answerKey.parts) ?? []
     }
 
