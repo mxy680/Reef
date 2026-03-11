@@ -154,20 +154,17 @@ struct EditCourseSheet: View {
     private var colorPicker: some View {
         HStack(spacing: 10) {
             ForEach(colorPresets, id: \.self) { c in
-                let selected = selectedColor == c
                 Circle()
                     .fill(Color(hex: c))
                     .frame(width: 32, height: 32)
-                    .overlay(
-                        Circle()
-                            .stroke(selected ? ReefColors.black : ReefColors.gray400, lineWidth: selected ? 3 : 2)
-                    )
-                    .shadow(color: selected ? ReefColors.black.opacity(0.3) : .clear, radius: 0, x: 2, y: 2)
-                    .contentShape(Circle())
-                    .onTapGesture {
+                    .clipShape(Circle())
+                    .reef3DPushCircle(
+                        borderWidth: selectedColor == c ? 3 : 2,
+                        borderColor: selectedColor == c ? ReefColors.black : ReefColors.gray400,
+                        shadowColor: ReefColors.black
+                    ) {
                         selectedColor = c
                     }
-                    .accessibilityAddTraits(.isButton)
             }
         }
     }
