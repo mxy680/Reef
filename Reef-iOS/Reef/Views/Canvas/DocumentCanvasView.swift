@@ -445,7 +445,7 @@ struct DocumentCanvasView: View {
                     page: startPage + region.page,
                     yStart: region.yStart,
                     yEnd: region.yEnd,
-                    label: region.label
+                    label: "Q\(qi+1):\(region.label ?? "_")"
                 ))
             }
         }
