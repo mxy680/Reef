@@ -21,20 +21,22 @@ matplotlib.use("Agg")
 # Load handwriting font (Caveat)
 # ---------------------------------------------------------------------------
 
-_FONT_PATH = Path(__file__).parent / "fonts" / "Caveat-Regular.ttf"
+_FONT_PATH = Path(__file__).parent / "fonts" / "IndieFlower-Regular.ttf"
 _HAND_FONT = FontProperties(fname=str(_FONT_PATH))
 
 # Register font so matplotlib's mathtext engine can find it
 fontManager.addfont(str(_FONT_PATH))
 _font_family = _HAND_FONT.get_name()
 
-# Configure mathtext to use the handwriting font for all symbol classes
+# Configure mathtext to use the handwriting font for letters/numbers,
+# falling back to STIX for math operators (∫, Σ, √, etc.)
 matplotlib.rcParams["mathtext.fontset"] = "custom"
 matplotlib.rcParams["mathtext.rm"] = _font_family
 matplotlib.rcParams["mathtext.it"] = _font_family
 matplotlib.rcParams["mathtext.bf"] = _font_family
 matplotlib.rcParams["mathtext.sf"] = _font_family
 matplotlib.rcParams["mathtext.tt"] = _font_family
+matplotlib.rcParams["mathtext.fallback"] = "stix"
 
 app = FastAPI()
 
@@ -144,6 +146,22 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     transition: background 0.15s;
   }
   .reseed:hover { background: #e8e3d9; }
+  .play {
+    padding: 10px 20px;
+    background: #fff;
+    border: 2px solid #1a1a1a;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .play:hover { background: #e8e3d9; }
+  .play:disabled { opacity: 0.5; cursor: wait; }
+  @keyframes glyphFadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 </style>
 </head>
 <body>
@@ -166,12 +184,19 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <div class="btn-row">
     <button class="convert" id="convert-btn" onclick="convert()">Convert</button>
     <button class="reseed" id="reseed-btn" onclick="reseed()">Reseed</button>
+    <button class="play" id="play-btn" onclick="playAnimation()">Play</button>
   </div>
 
   <div class="output-card" id="output">
     <span class="placeholder">Rendered handwriting will appear here</span>
   </div>
   <div class="error" id="error"></div>
+
+  <h2 style="margin-top:32px; font-size:1.2rem;">Debug: Path Points</h2>
+  <p style="color:#555; font-size:0.85rem; margin-bottom:12px;">Shows the raw SVG path commands for each glyph. Red=MoveTo, Blue=LineTo, Green=Curve endpoints, Gray=Control points.</p>
+  <div class="output-card" id="debug-output" style="min-height:200px; overflow:auto;">
+    <span class="placeholder">Click Convert, then points appear here</span>
+  </div>
 </div>
 
 <script>
@@ -221,6 +246,370 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
   }
 
+  let animCleanup = null;
+
+  // Parse SVG path d-string into segments preserving full command data
+  // Returns array of { cmd, args[], str } where str is the reconstructable command string
+  function parsePathSegments(d) {
+    const segs = [];
+    const tokens = d.match(/[MLQCZHVSmlqczhvs]|[-+]?\d*\.?\d+/g);
+    if (!tokens) return segs;
+    let i = 0, cmd = '', cx = 0, cy = 0;
+    while (i < tokens.length) {
+      const t = tokens[i];
+      if (/[A-Za-z]/.test(t)) { cmd = t; i++; if (cmd === 'Z' || cmd === 'z') { segs.push({ cmd: 'Z', str: 'Z' }); continue; } }
+      if (cmd === 'M') {
+        const x = tokens[i], y = tokens[i+1];
+        cx = +x; cy = +y;
+        segs.push({ cmd: 'M', str: `M ${x} ${y}`, x: cx, y: cy });
+        i += 2; cmd = 'L';
+      } else if (cmd === 'L') {
+        const x = tokens[i], y = tokens[i+1];
+        cx = +x; cy = +y;
+        segs.push({ cmd: 'L', str: `L ${x} ${y}`, x: cx, y: cy });
+        i += 2;
+      } else if (cmd === 'Q') {
+        segs.push({ cmd: 'Q', str: `Q ${tokens[i]} ${tokens[i+1]} ${tokens[i+2]} ${tokens[i+3]}`, x: +tokens[i+2], y: +tokens[i+3] });
+        cx = +tokens[i+2]; cy = +tokens[i+3];
+        i += 4;
+      } else if (cmd === 'C') {
+        segs.push({ cmd: 'C', str: `C ${tokens[i]} ${tokens[i+1]} ${tokens[i+2]} ${tokens[i+3]} ${tokens[i+4]} ${tokens[i+5]}`, x: +tokens[i+4], y: +tokens[i+5] });
+        cx = +tokens[i+4]; cy = +tokens[i+5];
+        i += 6;
+      } else if (cmd === 'H') {
+        cx = +tokens[i];
+        segs.push({ cmd: 'L', str: `L ${cx} ${cy}`, x: cx, y: cy });
+        i++;
+      } else if (cmd === 'V') {
+        cy = +tokens[i];
+        segs.push({ cmd: 'L', str: `L ${cx} ${cy}`, x: cx, y: cy });
+        i++;
+      } else { i++; }
+    }
+    return segs;
+  }
+
+  function playAnimation() {
+    const svg = $('output').querySelector('svg');
+    if (!svg) return;
+    const btn = $('play-btn');
+    btn.disabled = true;
+
+    // Clean up any previous animation artifacts
+    if (animCleanup) { animCleanup(); animCleanup = null; }
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const textGroup = svg.querySelector('#text_1');
+    if (!textGroup) { btn.disabled = false; return; }
+
+    // Collect <use> glyphs and standalone <path>s (fraction lines, sqrt bars)
+    const items = [];
+    function collect(el) {
+      for (const child of el.children) {
+        if (child.tagName === 'use') {
+          items.push({ el: child, type: 'use', parentG: child.parentElement });
+        } else if (child.tagName === 'path') {
+          const p = child.closest('[id]');
+          if (p && p.id === 'patch_1') continue;
+          items.push({ el: child, type: 'path', parentG: child.parentElement });
+        } else if (child.tagName === 'g') {
+          collect(child);
+        }
+      }
+    }
+    collect(textGroup);
+    if (items.length === 0) { btn.disabled = false; return; }
+
+    // Sort by position: left-to-right, top-to-bottom for overlapping
+    items.forEach(item => {
+      const r = item.el.getBoundingClientRect();
+      item.x = r.left; item.y = r.top; item.w = r.width; item.h = r.height;
+    });
+    items.sort((a, b) => {
+      const xOverlap = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+      if (xOverlap > Math.min(a.w, b.w) * 0.3) return a.y - b.y;
+      return a.x - b.x;
+    });
+
+    const created = [];
+    const timeouts = [];
+    let totalDelay = 0;
+
+    // Hide all original elements upfront
+    items.forEach(item => { item.el.style.opacity = '0'; });
+
+    // Animate each item sequentially
+    function animateItem(idx) {
+      if (idx >= items.length) {
+        timeouts.push(setTimeout(() => { btn.disabled = false; }, 200));
+        return;
+      }
+      const item = items[idx];
+
+      if (item.type === 'use') {
+        // Resolve referenced path
+        const href = item.el.getAttribute('xlink:href') || item.el.getAttribute('href');
+        const refPath = textGroup.querySelector(href);
+        if (!refPath) { animateItem(idx + 1); return; }
+
+        const segs = parsePathSegments(refPath.getAttribute('d'));
+        if (segs.length === 0) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
+
+        // Create stroke path in same parent with same transform
+        const strokePath = document.createElementNS(NS, 'path');
+        const t = item.el.getAttribute('transform');
+        if (t) strokePath.setAttribute('transform', t);
+        strokePath.style.fill = 'none';
+        strokePath.style.stroke = '#1a1a1a';
+        strokePath.style.strokeWidth = '40';
+        strokePath.style.strokeLinecap = 'round';
+        strokePath.style.strokeLinejoin = 'round';
+        item.parentG.appendChild(strokePath);
+        created.push(strokePath);
+
+        // Progressively add segments
+        let segIdx = 0;
+        let dStr = '';
+        const segDelay = 25; // ms per segment
+
+        function addNextSeg() {
+          if (segIdx >= segs.length) {
+            // Done: show original filled glyph, remove stroke
+            item.el.style.opacity = '1';
+            strokePath.style.opacity = '0';
+            // Small gap before next character
+            timeouts.push(setTimeout(() => animateItem(idx + 1), 30));
+            return;
+          }
+          dStr += (dStr ? ' ' : '') + segs[segIdx].str;
+          strokePath.setAttribute('d', dStr);
+          segIdx++;
+          timeouts.push(setTimeout(addNextSeg, segDelay));
+        }
+        addNextSeg();
+
+      } else {
+        // Standalone path — progressive segment draw
+        const d = item.el.getAttribute('d');
+        const segs = parsePathSegments(d);
+        if (segs.length === 0) { item.el.style.opacity = '1'; animateItem(idx + 1); return; }
+
+        // Hide original, create stroke version
+        const strokePath = document.createElementNS(NS, 'path');
+        strokePath.style.fill = 'none';
+        strokePath.style.stroke = item.el.getAttribute('stroke') || item.el.style.stroke || '#1a1a1a';
+        strokePath.style.strokeWidth = item.el.getAttribute('stroke-width') || item.el.style.strokeWidth || '40';
+        strokePath.style.strokeLinecap = 'round';
+        strokePath.style.strokeLinejoin = 'round';
+        // Copy transform if any
+        const t = item.el.getAttribute('transform');
+        if (t) strokePath.setAttribute('transform', t);
+        item.parentG.appendChild(strokePath);
+        created.push(strokePath);
+
+        let segIdx = 0, dStr = '';
+        const segDelay = 25;
+        function addNextSeg() {
+          if (segIdx >= segs.length) {
+            item.el.style.opacity = '1';
+            strokePath.style.opacity = '0';
+            timeouts.push(setTimeout(() => animateItem(idx + 1), 30));
+            return;
+          }
+          dStr += (dStr ? ' ' : '') + segs[segIdx].str;
+          strokePath.setAttribute('d', dStr);
+          segIdx++;
+          timeouts.push(setTimeout(addNextSeg, segDelay));
+        }
+        addNextSeg();
+      }
+    }
+
+    animateItem(0);
+
+    // Store cleanup function
+    animCleanup = () => {
+      timeouts.forEach(clearTimeout);
+      created.forEach(p => { try { p.remove(); } catch(e) {} });
+      items.forEach(item => { item.el.style.opacity = '1'; });
+    };
+  }
+
+  // Debug: visualize path points after each convert
+  function debugPaths() {
+    const svg = $('output').querySelector('svg');
+    if (!svg) return;
+
+    const textGroup = svg.querySelector('#text_1');
+    if (!textGroup) return;
+
+    // Glyph path defs are nested inside text_1's child <g> > <defs>
+    const allDefPaths = textGroup.querySelectorAll('defs path[id]');
+    const uses = textGroup.querySelectorAll('use');
+
+    const dbg = $('debug-output');
+    dbg.innerHTML = '';
+
+    // Build a mapping of href -> path data
+    const pathMap = {};
+    allDefPaths.forEach(p => { pathMap['#' + p.id] = p.getAttribute('d'); });
+
+    // For each use, show the path points
+    uses.forEach((use, idx) => {
+      const href = use.getAttribute('xlink:href') || use.getAttribute('href');
+      const d = pathMap[href];
+      if (!d) return;
+
+      // Parse path commands
+      const points = parsePath(d);
+
+      // Find bounds
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      points.forEach(p => {
+        if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+      });
+      const pad = 100;
+      const w = maxX - minX + pad * 2;
+      const h = maxY - minY + pad * 2;
+
+      // Create a mini SVG for this glyph
+      const container = document.createElement('div');
+      container.style.cssText = 'display:inline-block; margin:8px; vertical-align:top;';
+
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:0.75rem; font-weight:600; margin-bottom:4px;';
+      label.textContent = href.replace('#', '') + ` (${points.length} pts)`;
+      container.appendChild(label);
+
+      const NS = 'http://www.w3.org/2000/svg';
+      const s = document.createElementNS(NS, 'svg');
+      const scale = Math.min(200 / w, 200 / h);
+      s.setAttribute('width', Math.ceil(w * scale));
+      s.setAttribute('height', Math.ceil(h * scale));
+      s.setAttribute('viewBox', `${minX - pad} ${minY - pad} ${w} ${h}`);
+      s.style.border = '1px solid #ccc';
+      s.style.borderRadius = '6px';
+      s.style.background = '#fafafa';
+
+      // Draw the filled path faintly
+      const bg = document.createElementNS(NS, 'path');
+      bg.setAttribute('d', d);
+      bg.style.fill = '#eee';
+      bg.style.stroke = '#ccc';
+      bg.style.strokeWidth = '20';
+      s.appendChild(bg);
+
+      // Draw line segments between consecutive points
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const cur = points[i];
+        if (cur.cmd === 'M') continue; // new subpath, no line
+        const line = document.createElementNS(NS, 'line');
+        line.setAttribute('x1', prev.x); line.setAttribute('y1', prev.y);
+        line.setAttribute('x2', cur.x); line.setAttribute('y2', cur.y);
+        line.style.stroke = '#bbb';
+        line.style.strokeWidth = '15';
+        s.appendChild(line);
+      }
+
+      // Draw control points for curves
+      points.forEach(p => {
+        if (p.cpx !== undefined) {
+          const cp = document.createElementNS(NS, 'circle');
+          cp.setAttribute('cx', p.cpx); cp.setAttribute('cy', p.cpy);
+          cp.setAttribute('r', '40');
+          cp.style.fill = '#aaa';
+          s.appendChild(cp);
+          // Line from control point to endpoint
+          const cl = document.createElementNS(NS, 'line');
+          cl.setAttribute('x1', p.cpx); cl.setAttribute('y1', p.cpy);
+          cl.setAttribute('x2', p.x); cl.setAttribute('y2', p.y);
+          cl.style.stroke = '#ddd'; cl.style.strokeWidth = '10';
+          s.appendChild(cl);
+        }
+      });
+
+      // Draw endpoint dots
+      points.forEach((p, i) => {
+        const dot = document.createElementNS(NS, 'circle');
+        dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y);
+        dot.setAttribute('r', '50');
+        if (p.cmd === 'M') dot.style.fill = '#e74c3c'; // red = moveTo
+        else if (p.cmd === 'L') dot.style.fill = '#3498db'; // blue = lineTo
+        else dot.style.fill = '#2ecc71'; // green = curve endpoint
+
+        // Add order number
+        const txt = document.createElementNS(NS, 'text');
+        txt.setAttribute('x', p.x + 60); txt.setAttribute('y', p.y + 30);
+        txt.style.fontSize = '80px';
+        txt.style.fill = '#666';
+        txt.textContent = i;
+
+        s.appendChild(dot);
+        s.appendChild(txt);
+      });
+
+      container.appendChild(s);
+      dbg.appendChild(container);
+    });
+  }
+
+  // Parse SVG path d-string into array of {x, y, cmd, cpx?, cpy?}
+  function parsePath(d) {
+    const points = [];
+    // Tokenize: split into command + numbers
+    const tokens = d.match(/[MLQCZHVSmlqczhvs]|[-+]?\d*\.?\d+/g);
+    if (!tokens) return points;
+
+    let i = 0;
+    let cmd = '';
+    let cx = 0, cy = 0; // current point
+
+    while (i < tokens.length) {
+      const t = tokens[i];
+      if (/[A-Za-z]/.test(t)) {
+        cmd = t;
+        i++;
+        if (cmd === 'Z' || cmd === 'z') continue;
+      }
+      // Read numbers based on command
+      if (cmd === 'M' || cmd === 'L') {
+        cx = parseFloat(tokens[i]); cy = parseFloat(tokens[i+1]);
+        points.push({ x: cx, y: cy, cmd });
+        i += 2;
+        if (cmd === 'M') cmd = 'L'; // implicit lineTo after moveTo
+      } else if (cmd === 'Q') {
+        const cpx = parseFloat(tokens[i]), cpy = parseFloat(tokens[i+1]);
+        cx = parseFloat(tokens[i+2]); cy = parseFloat(tokens[i+3]);
+        points.push({ x: cx, y: cy, cmd: 'Q', cpx, cpy });
+        i += 4;
+      } else if (cmd === 'C') {
+        const cp1x = parseFloat(tokens[i]), cp1y = parseFloat(tokens[i+1]);
+        const cp2x = parseFloat(tokens[i+2]), cp2y = parseFloat(tokens[i+3]);
+        cx = parseFloat(tokens[i+4]); cy = parseFloat(tokens[i+5]);
+        points.push({ x: cx, y: cy, cmd: 'C', cpx: cp2x, cpy: cp2y });
+        i += 6;
+      } else if (cmd === 'H') {
+        cx = parseFloat(tokens[i]); i++;
+        points.push({ x: cx, y: cy, cmd: 'L' });
+      } else if (cmd === 'V') {
+        cy = parseFloat(tokens[i]); i++;
+        points.push({ x: cx, y: cy, cmd: 'L' });
+      } else {
+        i++; // skip unknown
+      }
+    }
+    return points;
+  }
+
+  // Hook into convert to also update debug
+  const _origConvert = convert;
+  convert = async function() {
+    await _origConvert();
+    setTimeout(debugPaths, 100);
+  };
+
   convert();
 </script>
 </body>
@@ -234,21 +623,19 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
 SVG_FILTER = """
 <defs>
-  <filter id="handdrawn" x="-5%%" y="-5%%" width="110%%" height="110%%">
+  <filter id="handdrawn" x="-10%%" y="-10%%" width="120%%" height="120%%">
     <!-- Low-freq warping for overall shape distortion -->
-    <feTurbulence type="turbulence" baseFrequency="0.015" numOctaves="3"
+    <feTurbulence type="turbulence" baseFrequency="0.008" numOctaves="4"
                   seed="%d" result="warp"/>
-    <feDisplacementMap in="SourceGraphic" in2="warp" scale="4"
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="5"
                        xChannelSelector="R" yChannelSelector="G" result="warped"/>
     <!-- High-freq roughness for ink texture -->
-    <feTurbulence type="turbulence" baseFrequency="0.06" numOctaves="2"
+    <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="3"
                   seed="%d" result="rough"/>
-    <feDisplacementMap in="warped" in2="rough" scale="1.5"
+    <feDisplacementMap in="warped" in2="rough" scale="2"
                        xChannelSelector="R" yChannelSelector="G" result="roughed"/>
-    <!-- Slight thickening to simulate ink spread -->
-    <feMorphology operator="dilate" radius="0.3" in="roughed" result="thick"/>
     <!-- Soften edges slightly -->
-    <feGaussianBlur stdDeviation="0.2" in="thick"/>
+    <feGaussianBlur stdDeviation="0.15" in="roughed"/>
   </filter>
 </defs>
 """
@@ -268,7 +655,6 @@ def latex_to_handwriting_svg(latex: str, seed: int = 42) -> str:
     ax.text(
         0.5, 0.5, text,
         fontsize=36,
-        fontproperties=_HAND_FONT,
         ha="center", va="center",
         transform=ax.transAxes,
         color="#1a1a1a",
