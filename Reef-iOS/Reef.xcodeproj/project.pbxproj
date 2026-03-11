@@ -145,6 +145,7 @@
 		EAA1CCE17889D8DE9FC87857 /* KaTeX_Fraktur-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7126F5D666EA789D306482F5 /* KaTeX_Fraktur-Bold.ttf */; };
 		ECBE21AA8842360C1CEB1322 /* KaTeX_Size2-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FBC116C2E3C45C5D3EA2AEFB /* KaTeX_Size2-Regular.ttf */; };
 		EEE6888BA6B0E77018D4F67F /* CanvasPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBAC810D46731DEC9B1AC08 /* CanvasPageView.swift */; };
+		F1A2B3C4D5E6F70819A2B3C4 /* CanvasStrokeCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A1B2C3D4 /* CanvasStrokeCollector.swift */; };
 		F09115CEAAE583F111ABF4F7 /* TutorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE55B35776EF18319E886CB3 /* TutorService.swift */; };
 		A4F3E2D1C0B9A8F7E6D5C4B3 /* TranscriptionDebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4D5E6F7A8B9C0D1E2F3A4 /* TranscriptionDebugPanel.swift */; };
 		F2E1D0C9B8A7F6E5D4C3B2A1 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* TranscriptionService.swift */; };
@@ -216,6 +217,7 @@
 		621895831183A84BD5E2F54B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		62609C1F14871136AE0C0DD0 /* KaTeX_SansSerif-Bold.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Bold.woff2"; sourceTree = "<group>"; };
 		6DBAC810D46731DEC9B1AC08 /* CanvasPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPageView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718A1B2C3D4 /* CanvasStrokeCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasStrokeCollector.swift; sourceTree = "<group>"; };
 		6F848213A4E4864DCEB85FAE /* KaTeX_Script-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Script-Regular.ttf"; sourceTree = "<group>"; };
 		705AA155E4D80F612A997ADD /* katex.min.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = katex.min.css; sourceTree = "<group>"; };
 		7126F5D666EA789D306482F5 /* KaTeX_Fraktur-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Fraktur-Bold.ttf"; sourceTree = "<group>"; };
@@ -440,6 +442,7 @@
 			children = (
 				8FD4D552F83298FB7A1D5F74 /* CanvasDrawingToolbar.swift */,
 				6DBAC810D46731DEC9B1AC08 /* CanvasPageView.swift */,
+				A1B2C3D4E5F60718A1B2C3D4 /* CanvasStrokeCollector.swift */,
 				2A58933EF653E5137FE20BA0 /* CanvasToolbar.swift */,
 				0F1DB9597A94021843C8228F /* CanvasViewModel.swift */,
 				88CBAB5E82734D68035A3F5B /* DocumentCanvasView.swift */,
@@ -842,6 +845,7 @@
 				D127D837D809C7679D5F1098 /* AuthView.swift in Sources */,
 				DA76E99FB2AF561DDF93E324 /* CanvasDrawingToolbar.swift in Sources */,
 				EEE6888BA6B0E77018D4F67F /* CanvasPageView.swift in Sources */,
+				F1A2B3C4D5E6F70819A2B3C4 /* CanvasStrokeCollector.swift in Sources */,
 				FD40162D4542094829B3C5A3 /* CanvasToolbar.swift in Sources */,
 				D90D66552E64DEAC25C27A6B /* CanvasViewModel.swift in Sources */,
 				A371C46423DF8A87C7CB0F3B /* Colors.swift in Sources */,
