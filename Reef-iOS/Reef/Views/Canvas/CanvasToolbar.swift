@@ -72,6 +72,12 @@ struct CanvasToolbar: View {
         currentTutorStep?.progress ?? 0
     }
 
+    /// Whether the step at currentStepIndex is completed.
+    private var isCurrentStepCompleted: Bool {
+        guard currentStepIndex < tutorSteps.count else { return false }
+        return tutorSteps[currentStepIndex].status == .completed
+    }
+
     /// Formatted question label, e.g. "Q1" or "Q1 (a)"
     private var questionLabel: String {
         let base = "Q\(visibleQuestionIndex + 1)"
@@ -288,7 +294,7 @@ struct CanvasToolbar: View {
                             }
 
                             // Reset problem button
-                            if currentStepIndex > 0 || currentTutorStep?.status == .completed {
+                            if currentStepIndex > 0 || isCurrentStepCompleted {
                                 Button(action: onResetProblem) {
                                     Image(systemName: "arrow.counterclockwise")
                                         .font(.system(size: 11, weight: .bold))
@@ -301,7 +307,7 @@ struct CanvasToolbar: View {
                                 .transition(.scale.combined(with: .opacity))
                             }
 
-                            if currentTutorStep?.status == .completed {
+                            if isCurrentStepCompleted {
                                 if currentStepIndex < totalStepCount - 1 {
                                     // Next step chevron
                                     Button(action: onAdvanceStep) {
@@ -334,7 +340,7 @@ struct CanvasToolbar: View {
                                 }
                             }
                         }
-                        .animation(.easeInOut(duration: 0.2), value: currentTutorStep?.status)
+                        .animation(.easeInOut(duration: 0.2), value: isCurrentStepCompleted)
 
                         // Divider between progress and tutor toggle
                         Text("|")
