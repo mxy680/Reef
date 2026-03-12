@@ -44,6 +44,7 @@ struct DocumentCanvasView: View {
     @State private var transcriptionService = TranscriptionService()
     @State private var feedbackService: TutorFeedbackService
     @State private var strokeCounts: [String: Int] = [:]
+    @State private var scrollToPageTarget: Int?
 
     init(document: Document, onDismiss: @escaping () -> Void) {
         self.document = document
@@ -174,6 +175,9 @@ struct DocumentCanvasView: View {
                                 questionIndex: visibleQuestionIndex,
                                 partLabel: activePartLabel ?? "_"
                             )
+                        },
+                        onNextQuestion: {
+                            navigateToNextQuestion()
                         }
                     )
                     .zIndex(1)
@@ -280,7 +284,8 @@ struct DocumentCanvasView: View {
                                 showPageMenu = false
                                 showTutorPopover = false
                             },
-                            debugRegions: []
+                            debugRegions: [],
+                            scrollToPageIndex: scrollToPageTarget
                         )
                         .id(pageVersion)
 
@@ -599,6 +604,21 @@ struct DocumentCanvasView: View {
                 texts.append(step.work)
             }
             collectPartTexts(part.parts, into: &texts)
+        }
+    }
+
+    // MARK: - Question Navigation
+
+    private func navigateToNextQuestion() {
+        guard let pages = document.questionPages else { return }
+        let nextQI = visibleQuestionIndex + 1
+        if nextQI < pages.count, pages[nextQI].count >= 1 {
+            // Scroll to first page of next question
+            scrollToPageTarget = pages[nextQI][0]
+            // Reset so repeated taps work (SwiftUI won't re-trigger if value stays the same)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                scrollToPageTarget = nil
+            }
         }
     }
 

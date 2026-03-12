@@ -33,6 +33,7 @@ struct CanvasPageView: UIViewRepresentable {
     var eraserWidth: CGFloat = 8.0
     var onCanvasTouchBegan: (() -> Void)?
     var debugRegions: [DebugRegion] = []
+    var scrollToPageIndex: Int?
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
@@ -65,6 +66,9 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.applyDarkMode(darkMode)
         uiView.updateOverlay(overlaySettings)
         uiView.updateDebugRegions(debugRegions)
+        if let targetPage = scrollToPageIndex {
+            uiView.scrollToPage(targetPage)
+        }
     }
 }
 
@@ -622,6 +626,17 @@ extension CanvasContainerView: UIScrollViewDelegate {
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         updateVisiblePage()
+    }
+
+    /// Programmatically scroll so the given absolute page index is at the top.
+    func scrollToPage(_ absoluteIndex: Int) {
+        let localIndex = absoluteIndex - startPageIndex
+        guard localIndex >= 0, localIndex < pageWrappers.count else { return }
+        let wrapper = pageWrappers[localIndex]
+        guard let superview = wrapper.superview else { return }
+        let frameInContent = superview.convert(wrapper.frame, to: contentView)
+        let targetY = frameInContent.origin.y * scrollView.zoomScale
+        scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: targetY), animated: true)
     }
 
     private func updateVisiblePage() {

@@ -45,6 +45,7 @@ struct CanvasToolbar: View {
     var totalStepCount: Int = 0
     var onAdvanceStep: () -> Void = {}
     var onResetProblem: () -> Void = {}
+    var onNextQuestion: () -> Void = {}
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -336,45 +337,38 @@ struct CanvasToolbar: View {
                                     .baselineOffset(1.5)
                             }
 
-                            // Reset problem button (always visible when there are steps)
+                            // Retry button (always visible when there are steps)
                             if totalStepCount > 0 {
                                 Button(action: onResetProblem) {
-                                    Image(systemName: "arrow.counterclockwise")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(width: 24, height: 24)
-                                        .background(Color.white.opacity(0.25))
-                                        .clipShape(Circle())
-                                }
-                                .buttonStyle(.plain)
-                            }
-
-                            if isCurrentStepCompleted && currentStepIndex >= totalStepCount - 1 {
-                                // All steps done — show Done
-                                Button(action: onAdvanceStep) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 10, weight: .black))
-                                        Text("Done")
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "arrow.counterclockwise")
+                                            .font(.system(size: 10, weight: .bold))
+                                        Text("Retry")
                                             .font(.system(size: 11, weight: .bold, design: .rounded))
                                     }
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 8)
                                     .frame(height: 24)
-                                    .background(Color(hex: 0x81C784))
+                                    .background(Color.white.opacity(0.25))
                                     .clipShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
-                                .transition(.scale.combined(with: .opacity))
-                            } else if currentStepIndex < totalStepCount - 1 {
-                                // Skip to next step (always available)
-                                Button(action: onAdvanceStep) {
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(width: 24, height: 24)
-                                        .background(Color.white.opacity(0.25))
-                                        .clipShape(Circle())
+                            }
+
+                            // Next question button
+                            if questionCount > 1 {
+                                Button(action: onNextQuestion) {
+                                    HStack(spacing: 3) {
+                                        Text("Next")
+                                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 10, weight: .bold))
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .frame(height: 24)
+                                    .background(Color.white.opacity(0.25))
+                                    .clipShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
                             }
