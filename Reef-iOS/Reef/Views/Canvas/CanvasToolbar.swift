@@ -174,10 +174,13 @@ struct CanvasToolbar: View {
             }
             .animation(.easeOut(duration: 0.2), value: showReveal)
             .overlay(alignment: .bottomLeading) {
-                if showMistake && !currentMistakeFeedback.isEmpty {
+                if showMistake {
+                    let text = currentMistakeFeedback.isEmpty
+                        ? (currentTutorStep?.hint ?? "Check your work for this step.")
+                        : currentMistakeFeedback
                     Color.clear.frame(height: 0)
                         .overlay(alignment: .topLeading) {
-                            tutorPopoverCard(triggerMidX: mistakeIconMidX, title: "Mistake", text: currentMistakeFeedback)
+                            tutorPopoverCard(triggerMidX: mistakeIconMidX, title: "Mistake", text: text)
                         }
                 }
             }

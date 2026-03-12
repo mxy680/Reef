@@ -34,6 +34,7 @@ struct TutorStepRow: View {
                 // Q label + Step indicator
                 HStack(spacing: 6) {
                     statusIcon(for: currentStep!.status)
+                        .padding(6)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             if currentStep!.status == .mistake {
