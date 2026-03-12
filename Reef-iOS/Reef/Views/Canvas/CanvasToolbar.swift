@@ -153,15 +153,6 @@ struct CanvasToolbar: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: showReveal)
-            .overlay(alignment: .bottomLeading) {
-                if let step = currentTutorStep, showMistake, let explanation = step.mistakeExplanation, !explanation.isEmpty {
-                    Color.clear.frame(height: 0)
-                        .overlay(alignment: .topLeading) {
-                            tutorPopoverCard(triggerMidX: mistakeMidX, title: "Mistake", text: explanation)
-                        }
-                }
-            }
-            .animation(.easeOut(duration: 0.2), value: showMistake)
             .zIndex(1)
 
             // Bottom separator
@@ -345,6 +336,16 @@ struct CanvasToolbar: View {
         .frame(maxWidth: .infinity)
         .frame(height: 40)
         .background(stripBg)
+        .overlay(alignment: .bottomLeading) {
+            if let step = currentTutorStep, showMistake, let explanation = step.mistakeExplanation, !explanation.isEmpty {
+                Color.clear.frame(height: 0)
+                    .overlay(alignment: .topLeading) {
+                        tutorPopoverCard(triggerMidX: mistakeMidX, title: "Mistake", text: explanation)
+                    }
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: showMistake)
+        .zIndex(1)
     }
 
     // MARK: - Left Section (Undo / Redo)
