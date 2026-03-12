@@ -1,5 +1,9 @@
 import logging
+import os
 from contextlib import asynccontextmanager
+
+# Set root logger to INFO so all app loggers emit info-level messages
+logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO").upper())
 
 import httpx
 from fastapi import FastAPI
