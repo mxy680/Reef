@@ -530,15 +530,15 @@ struct CanvasToolbar: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundColor(.white)
                 .frame(width: 26, height: 22)
-                .background(Color.white.opacity(0.25))
+                .background(Self.barColor)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
                 )
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.black.opacity(0.35))
+                        .fill(Color.white.opacity(0.8))
                         .offset(x: 1.5, y: 1.5)
                 )
         }
