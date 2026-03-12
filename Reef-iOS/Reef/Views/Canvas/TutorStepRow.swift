@@ -138,7 +138,7 @@ struct TutorStepRow: View {
             )
             .background(
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(Color.white.opacity(0.8))
+                    .fill(Color.black.opacity(0.5))
                     .offset(x: 1.5, y: 1.5)
             )
     }
