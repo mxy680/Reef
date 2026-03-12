@@ -272,8 +272,7 @@ Write like a chill, knowledgeable friend — someone who makes hard problems fee
 
 - Match `question_number` exactly from the input.
 - For each `parts` entry, match `label` exactly ('a', 'b', 'i', 'ii', etc.).
-- If the question has **no parts**: put steps and final_answer at the top level. Leave `parts` empty.
-- If the question has **parts**: put per-part steps in the `parts` array. Top-level `steps` and `final_answer` can be empty.
+- **Every question must have parts.** If the question has no labeled sub-questions, create a single part with label `"a"` containing all steps and the final answer. Top-level `steps` and `final_answer` should always be empty — all content goes in `parts`.
 - `final_answer` should be the bare answer only — no explanation, no restating the question (e.g. "$x = 5$", "$42$ cm$^2$", "True", "exothermic").
 - Use LaTeX for all math: $...$ inline, \\[...\\] display. No Unicode math symbols.
 - If the question references a figure you cannot see, state what information would be needed and solve symbolically.

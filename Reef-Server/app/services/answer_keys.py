@@ -13,7 +13,7 @@ import logging
 import httpx
 
 from app.config import settings
-from app.models.answer_key import QuestionAnswer
+from app.models.answer_key import PartAnswer, QuestionAnswer
 from app.services.llm_client import LLMClient
 from app.services.prompts import ANSWER_KEY_PROMPT
 
@@ -95,6 +95,20 @@ async def _generate_single_answer(
         )
 
         answer = QuestionAnswer.model_validate_json(result.content)
+
+        # Normalize: every question must have parts. If the LLM put steps
+        # at the top level (no parts), wrap them into a single part "a".
+        if answer.steps and not answer.parts:
+            answer = QuestionAnswer(
+                question_number=answer.question_number,
+                steps=[],
+                final_answer="",
+                parts=[PartAnswer(
+                    label="a",
+                    steps=answer.steps,
+                    final_answer=answer.final_answer,
+                )],
+            )
 
         await _upsert_answer_key(
             document_id=document_id,

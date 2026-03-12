@@ -77,7 +77,7 @@ struct CanvasToolbar: View {
 
     /// Progress key for the current step: "questionIndex-partLabel-stepIndex"
     private var currentStepKey: String {
-        "\(visibleQuestionIndex)-\(activePartLabel ?? "_")-\(currentStepIndex)"
+        "\(visibleQuestionIndex)-\(activePartLabel ?? "a")-\(currentStepIndex)"
     }
 
     /// Whether the step at currentStepIndex is completed.
@@ -92,18 +92,15 @@ struct CanvasToolbar: View {
 
     /// Feedback text for the current step's mistake (from LLM).
     private var currentMistakeFeedback: String {
-        let partLabel = activePartLabel ?? "_"
+        let partLabel = activePartLabel ?? "a"
         let key = "\(visibleQuestionIndex)-\(partLabel)-\(currentStepIndex)"
         return stepProgressData?[key]?.feedback ?? ""
     }
 
-    /// Formatted question label, e.g. "Q1" or "Q1 (a)"
+    /// Formatted question label, e.g. "Q1a" or "Q2b"
     private var questionLabel: String {
-        let base = "Q\(visibleQuestionIndex + 1)"
-        if let label = activePartLabel {
-            return "\(base) (\(label))"
-        }
-        return base
+        let label = activePartLabel ?? "a"
+        return "Q\(visibleQuestionIndex + 1)\(label)"
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
