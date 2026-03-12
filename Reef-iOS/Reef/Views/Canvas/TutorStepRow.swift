@@ -95,42 +95,52 @@ struct TutorStepRow: View {
 
     // MARK: - Status Icon
 
+    private static let barColor = Color(hex: 0x4E8A97)
+
     @ViewBuilder
     private func statusIcon(for status: StepStatus) -> some View {
         switch status {
         case .idle:
-            Circle()
-                .fill(Color.white.opacity(0.25))
-                .frame(width: 14, height: 14)
-                .overlay(
-                    Circle()
-                        .strokeBorder(Color.white.opacity(0.5), lineWidth: 1.5)
-                )
+            statusIcon3D(bgColor: Self.barColor) {
+                Circle()
+                    .strokeBorder(Color.white.opacity(0.6), lineWidth: 1.5)
+            }
         case .working:
-            Circle()
-                .fill(Color.white.opacity(0.15))
-                .frame(width: 14, height: 14)
-                .overlay(
-                    Circle()
-                        .trim(from: 0, to: 0.65)
-                        .stroke(Color.white.opacity(0.9), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                )
+            statusIcon3D(bgColor: Self.barColor) {
+                Circle()
+                    .trim(from: 0, to: 0.65)
+                    .stroke(Color.white.opacity(0.9), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
         case .mistake:
-            Image(systemName: "xmark")
-                .font(.system(size: 9, weight: .black))
-                .foregroundColor(.white)
-                .frame(width: 14, height: 14)
-                .background(Color(hex: 0xE57373))
-                .clipShape(Circle())
+            statusIcon3D(bgColor: Color(hex: 0xE57373)) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .black))
+                    .foregroundColor(.white)
+            }
         case .completed:
-            Image(systemName: "checkmark")
-                .font(.system(size: 9, weight: .black))
-                .foregroundColor(.white)
-                .frame(width: 14, height: 14)
-                .background(Color(hex: 0x81C784))
-                .clipShape(Circle())
+            statusIcon3D(bgColor: Color(hex: 0x81C784)) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 8, weight: .black))
+                    .foregroundColor(.white)
+            }
         }
+    }
+
+    private func statusIcon3D<Content: View>(bgColor: Color, @ViewBuilder content: () -> Content) -> some View {
+        content()
+            .frame(width: 16, height: 16)
+            .background(bgColor)
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.white.opacity(0.8))
+                    .offset(x: 1.5, y: 1.5)
+            )
     }
 
     // MARK: - Divider

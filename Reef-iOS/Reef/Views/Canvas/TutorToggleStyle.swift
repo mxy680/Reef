@@ -7,8 +7,10 @@ import SwiftUI
 
 // MARK: - Tutor Toggle Style
 
-/// Custom toggle using only white/black opacity on the teal toolbar background.
+/// Custom toggle with 3D neobrutalist styling on the teal toolbar.
 struct TutorToggleStyle: ToggleStyle {
+    private static let barColor = Color(hex: 0x4E8A97)
+
     func makeBody(configuration: Configuration) -> some View {
         let trackWidth: CGFloat = 36
         let trackHeight: CGFloat = 20
@@ -23,16 +25,21 @@ struct TutorToggleStyle: ToggleStyle {
             ZStack(alignment: configuration.isOn ? .trailing : .leading) {
                 Capsule()
                     .fill(configuration.isOn
-                          ? Color.white.opacity(0.35)
+                          ? Self.barColor
                           : Color.black.opacity(0.15))
                     .overlay(
                         Capsule()
                             .strokeBorder(
-                                Color.white.opacity(0.25),
-                                lineWidth: 0.5
+                                Color.white.opacity(0.7),
+                                lineWidth: 1.5
                             )
                     )
                     .frame(width: trackWidth, height: trackHeight)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.8))
+                            .offset(x: 1.5, y: 1.5)
+                    )
 
                 Circle()
                     .fill(Color.white)

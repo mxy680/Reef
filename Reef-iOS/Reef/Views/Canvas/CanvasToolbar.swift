@@ -272,20 +272,8 @@ struct CanvasToolbar: View {
         HStack(spacing: 0) {
             // Home button
             HStack(spacing: 0) {
-                Button {
-                    onClose()
-                } label: {
-                    Image("canvas.home")
-                        .renderingMode(.template)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 6)
+                toolbar3DButton(icon: "canvas.home", isCustomIcon: true, action: onClose)
+                    .padding(.leading, 6)
             }
 
             // Center content
@@ -524,23 +512,33 @@ struct CanvasToolbar: View {
 
     // MARK: - 3D Toolbar Button
 
-    private func toolbar3DButton(icon: String, action: @escaping () -> Void) -> some View {
+    private func toolbar3DButton(icon: String, isCustomIcon: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.white)
-                .frame(width: 26, height: 22)
-                .background(Self.barColor)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
-                )
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.white.opacity(0.8))
-                        .offset(x: 1.5, y: 1.5)
-                )
+            Group {
+                if isCustomIcon {
+                    Image(icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 14, height: 14)
+                } else {
+                    Image(systemName: icon)
+                        .font(.system(size: 11, weight: .bold))
+                }
+            }
+            .foregroundColor(.white)
+            .frame(width: 26, height: 22)
+            .background(Self.barColor)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.white.opacity(0.8))
+                    .offset(x: 1.5, y: 1.5)
+            )
         }
         .buttonStyle(.plain)
     }
