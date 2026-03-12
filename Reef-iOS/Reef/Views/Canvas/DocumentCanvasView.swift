@@ -602,17 +602,44 @@ struct DocumentCanvasView: View {
 
     // MARK: - Question Navigation
 
+    /// Ordered part labels for the given question (e.g. ["a", "b"]).
+    private func partLabels(for questionIndex: Int) -> [String] {
+        guard let regions = document.questionRegions,
+              questionIndex < regions.count,
+              let regionData = regions[questionIndex] else { return [] }
+        // Unique labels in order, skipping nil (stem region)
+        var seen = Set<String>()
+        var labels: [String] = []
+        for region in regionData.regions {
+            if let label = region.label, !seen.contains(label) {
+                seen.insert(label)
+                labels.append(label)
+            }
+        }
+        return labels
+    }
+
     private func navigateToNextQuestion() {
         guard let pages = document.questionPages else { return }
-        let nextQI = visibleQuestionIndex + 1
+        let qi = visibleQuestionIndex
+        let currentPart = activePartLabel ?? "a"
+        let parts = partLabels(for: qi)
+
+        // Try advancing to next part within the same question
+        if let currentIdx = parts.firstIndex(of: currentPart),
+           currentIdx + 1 < parts.count {
+            activePartLabel = parts[currentIdx + 1]
+            return
+        }
+
+        // All parts exhausted — advance to next question
+        let nextQI = qi + 1
         if nextQI < pages.count, pages[nextQI].count >= 1 {
-            // Update toolbar state immediately (don't wait for scroll callback)
             activeQuestionIndex = nextQI
             setDefaultPartLabel(for: nextQI)
 
             // Scroll to first page of next question
             scrollToPageTarget = pages[nextQI][0]
-            // Reset so repeated taps work (SwiftUI won't re-trigger if value stays the same)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 scrollToPageTarget = nil
             }
