@@ -13,6 +13,8 @@ struct ToolbarButton: View {
     var isCustomIcon: Bool = false
     let action: () -> Void
 
+    private static let barColor = Color(hex: 0x4E8A97)
+
     var body: some View {
         Button(action: action) {
             Group {
@@ -27,16 +29,25 @@ struct ToolbarButton: View {
                         .font(.system(size: 18, weight: .medium))
                 }
             }
-            .foregroundColor(isSelected ? .white : Color.white.opacity(0.9))
-            .frame(width: 36, height: 36, alignment: .center)
+            .foregroundColor(.white)
+            .frame(width: 32, height: 32, alignment: .center)
             .background(
                 isSelected
                     ? Color.white.opacity(0.25)
-                    : Color.clear
+                    : Self.barColor
             )
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.black.opacity(0.5), lineWidth: 1.5)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.black.opacity(0.5))
+                    .offset(x: 1.5, y: 1.5)
+            )
         }
-        .frame(width: 36, height: 36)
+        .frame(width: 40, height: 40)
         .buttonStyle(.plain)
     }
 }

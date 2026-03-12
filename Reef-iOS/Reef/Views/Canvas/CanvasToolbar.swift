@@ -491,8 +491,20 @@ struct CanvasToolbar: View {
             // Mic (push to talk)
             Image(systemName: "mic.fill")
                 .font(.system(size: 18, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
-                .frame(width: 36, height: 36)
+                .foregroundColor(.white)
+                .frame(width: 32, height: 32)
+                .background(Self.barColor)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.black.opacity(0.5), lineWidth: 1.5)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.black.opacity(0.5))
+                        .offset(x: 1.5, y: 1.5)
+                )
+                .frame(width: 40, height: 40)
         }
     }
 
@@ -562,14 +574,23 @@ struct CanvasToolbar: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(isActive ? .white : .white.opacity(0.9))
+                .foregroundColor(.white)
                 .frame(width: 32, height: 32, alignment: .center)
                 .background(
                     isActive
                         ? Color.white.opacity(0.25)
-                        : Color.clear
+                        : Self.barColor
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.black.opacity(0.5), lineWidth: 1.5)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.black.opacity(0.5))
+                        .offset(x: 1.5, y: 1.5)
+                )
                 .animation(.easeInOut(duration: 0.15), value: isActive)
         }
         .frame(width: 32, height: 32)
