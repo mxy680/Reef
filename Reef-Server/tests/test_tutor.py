@@ -48,7 +48,7 @@ class TestEvaluateStep:
         try:
             no_auth_client = TestClient(app, raise_server_exceptions=False)
             resp = no_auth_client.post("/ai/evaluate-step", json=VALID_BODY)
-            assert resp.status_code == 403  # HTTPBearer returns 403 for missing credentials
+            assert resp.status_code in (401, 403)  # HTTPBearer returns 401 or 403 depending on version
         finally:
             # Restore the fake-user override for the rest of the tests
             app.dependency_overrides[get_current_user] = _fake_user
@@ -167,8 +167,7 @@ class TestNormalizeLatex:
 
     def test_strips_left_right(self):
         from app.routers.tutor import _normalize_latex
-        assert _normalize_latex(r"\left(\frac{a}{b}\right)") == r"(\frac{a}{b})"
-        # After full normalization (braces removed)
+        # Braces are also stripped, so full normalization gives:
         assert _normalize_latex(r"\left(\frac{a}{b}\right)") == "(\\fracab)"
 
     def test_strips_text_command(self):
@@ -246,12 +245,16 @@ class TestCompletionOverride:
 
         mock_to_thread.side_effect = _fake_to_thread
 
-        # Student hasn't written the expected result for step 1 (x = 3)
+        # Use steps with a longer expected result (>= 2 chars after normalization)
+        # so the min-length guard doesn't skip validation
         body = {
-            **VALID_BODY,
-            "student_work": "$2x = 6$",  # only step 0 work, not step 1
-            "current_step_index": 1,
-            "completed_step_indices": [0],
+            "question_text": "Find the derivative of f(x) = 3x^2 + 2x",
+            "student_work": "$6x$",  # missing the "+ 2" part
+            "steps": [
+                {"description": "Apply power rule", "work": "f'(x) = 6x + 2"},
+            ],
+            "current_step_index": 0,
+            "completed_step_indices": [],
         }
         resp = client.post("/ai/evaluate-step", json=body)
         assert resp.status_code == 200
@@ -271,12 +274,15 @@ class TestCompletionOverride:
 
         mock_to_thread.side_effect = _fake_to_thread
 
-        # Student has written the expected result for step 1
+        # Student has written the expected result
         body = {
-            **VALID_BODY,
-            "student_work": "$2x = 6$ $x = 3$",
-            "current_step_index": 1,
-            "completed_step_indices": [0],
+            "question_text": "Find the derivative of f(x) = 3x^2 + 2x",
+            "student_work": "$f'(x) = 6x + 2$",
+            "steps": [
+                {"description": "Apply power rule", "work": "f'(x) = 6x + 2"},
+            ],
+            "current_step_index": 0,
+            "completed_step_indices": [],
         }
         resp = client.post("/ai/evaluate-step", json=body)
         assert resp.status_code == 200
