@@ -86,29 +86,47 @@
 - **File**: `Reef/Services/DocumentService.swift:250`
 - **Issue**: Download URLs valid for 1 hour; share URLs valid for 7 days. If leaked, documents accessible without auth for that window.
 
+### 17. Untracked Auth State Task — No Cancellation
+- **File**: `Reef/Auth/AuthManager.swift:47-59`
+- **Issue**: The `authStateChanges` async sequence is consumed in a fire-and-forget `Task {}` with no stored reference. It can't be cancelled on logout or deallocation. Nested `Task { await ReefAPI.shared.connectWebSocket() }` calls inside are also untracked.
+- **Fix**: Store the Task reference and cancel it during sign-out.
+
+### 18. `MainActor.assumeIsolated` in KVO Callback
+- **File**: `Reef/Design/Components/KaTeXView.swift:167`
+- **Issue**: `MainActor.assumeIsolated` is used inside a KVO observation closure. If WebKit ever calls this from a background thread, this is undefined behavior. The `userContentController(didReceive:)` handler (line 176) correctly uses `Task { @MainActor in }` instead — the KVO callback should do the same.
+
+### 19. `nonisolated(unsafe)` on DateFormatter
+- **File**: `Reef/Models/Document.swift:71-74`
+- **Issue**: `nonisolated(unsafe)` disables thread safety checks on a static `ISO8601DateFormatter`. While `ISO8601DateFormatter` is likely thread-safe, the `nonisolated(unsafe)` annotation suppresses all compiler isolation checks, which could mask real issues if the code evolves.
+
+### 20. WebSocket Receive Task Not Cancellable
+- **File**: `Reef/Services/ReefAPI.swift:135`
+- **Code**: `Task { await receiveLoop() }`
+- **Issue**: The receive loop Task is not stored, so `disconnectWebSocket()` can't cancel it. The loop relies on the `isConnected` flag, but `ws.receive()` blocks until a message arrives — so the loop won't check the flag until the next message. If `connectWebSocket()` is called again before the old loop exits, two loops run concurrently on different tasks.
+
 ## Low
 
-### 17. `try!` on Regex Compilation
+### 21. `try!` on Regex Compilation
 - **File**: `Reef/Design/Components/MathText.swift:21`
 - **Issue**: Static regex crash on invalid pattern. Low risk since pattern is a compile-time constant.
 
-### 18. No Client-Side Email Validation
+### 22. No Client-Side Email Validation
 - **File**: `Reef/Auth/AuthManager.swift:191`
 - **Issue**: Email sent to Supabase OTP without format validation.
 
-### 19. Generic Error Messages
+### 23. Generic Error Messages
 - **Files**: `DocumentsViewModel.swift` (lines 128, 140, 163, etc.)
 - **Issue**: "Something went wrong" for all errors — users can't distinguish network vs auth vs server issues.
 
-### 20. Polling Timer Lifetime
+### 24. Polling Timer Lifetime
 - **File**: `Reef/Views/Dashboard/Documents/DocumentsViewModel.swift:62`
 - **Issue**: Timer uses `[weak self]` correctly but could continue if view model is retained elsewhere.
 
-### 21. Unbounded In-Memory Cache
+### 25. Unbounded In-Memory Cache
 - **File**: `Reef/Services/AnswerKeyService.swift:28`
 - **Issue**: `[String: AnswerKeyResult]` cache never evicts entries. Use `NSCache` instead.
 
-### 22. Temp PDF Files Never Cleaned Up
+### 26. Temp PDF Files Never Cleaned Up
 - **File**: `Reef/Services/DocumentService.swift:306-311`
 - **Issue**: Downloaded PDFs written to temp dir but never explicitly deleted.
 
