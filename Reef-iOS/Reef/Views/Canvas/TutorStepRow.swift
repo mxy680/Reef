@@ -134,7 +134,7 @@ struct TutorStepRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 5))
             .overlay(
                 RoundedRectangle(cornerRadius: 5)
-                    .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
+                    .stroke(Color.black.opacity(0.5), lineWidth: 1.5)
             )
             .background(
                 RoundedRectangle(cornerRadius: 5)

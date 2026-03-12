@@ -30,7 +30,7 @@ struct TutorToggleStyle: ToggleStyle {
                     .overlay(
                         Capsule()
                             .strokeBorder(
-                                Color.white.opacity(0.7),
+                                Color.black.opacity(0.5),
                                 lineWidth: 1.5
                             )
                     )

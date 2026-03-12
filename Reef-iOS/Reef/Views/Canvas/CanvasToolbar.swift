@@ -532,7 +532,7 @@ struct CanvasToolbar: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
+                    .stroke(Color.black.opacity(0.5), lineWidth: 1.5)
             )
             .background(
                 RoundedRectangle(cornerRadius: 6)
