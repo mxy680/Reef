@@ -336,8 +336,8 @@ struct CanvasToolbar: View {
                                     .baselineOffset(1.5)
                             }
 
-                            // Reset problem button
-                            if currentStepIndex > 0 || isCurrentStepCompleted {
+                            // Reset problem button (always visible when there are steps)
+                            if totalStepCount > 0 {
                                 Button(action: onResetProblem) {
                                     Image(systemName: "arrow.counterclockwise")
                                         .font(.system(size: 11, weight: .bold))
@@ -347,43 +347,38 @@ struct CanvasToolbar: View {
                                         .clipShape(Circle())
                                 }
                                 .buttonStyle(.plain)
-                                .transition(.scale.combined(with: .opacity))
                             }
 
-                            if isCurrentStepCompleted {
-                                if currentStepIndex < totalStepCount - 1 {
-                                    // Next step chevron
-                                    Button(action: onAdvanceStep) {
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .frame(width: 24, height: 24)
-                                            .background(Color.white.opacity(0.25))
-                                            .clipShape(Circle())
+                            if isCurrentStepCompleted && currentStepIndex >= totalStepCount - 1 {
+                                // All steps done — show Done
+                                Button(action: onAdvanceStep) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 10, weight: .black))
+                                        Text("Done")
+                                            .font(.system(size: 11, weight: .bold, design: .rounded))
                                     }
-                                    .buttonStyle(.plain)
-                                    .transition(.scale.combined(with: .opacity))
-                                } else {
-                                    // All steps done — show continue / done
-                                    Button(action: onAdvanceStep) {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 10, weight: .black))
-                                            Text("Done")
-                                                .font(.system(size: 11, weight: .bold, design: .rounded))
-                                        }
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 8)
-                                        .frame(height: 24)
-                                        .background(Color(hex: 0x81C784))
-                                        .clipShape(Capsule())
-                                    }
-                                    .buttonStyle(.plain)
-                                    .transition(.scale.combined(with: .opacity))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .frame(height: 24)
+                                    .background(Color(hex: 0x81C784))
+                                    .clipShape(Capsule())
                                 }
+                                .buttonStyle(.plain)
+                                .transition(.scale.combined(with: .opacity))
+                            } else if currentStepIndex < totalStepCount - 1 {
+                                // Skip to next step (always available)
+                                Button(action: onAdvanceStep) {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 24, height: 24)
+                                        .background(Color.white.opacity(0.25))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
-                        .animation(.easeInOut(duration: 0.2), value: isCurrentStepCompleted)
 
                         // Divider between progress and tutor toggle
                         Text("|")
