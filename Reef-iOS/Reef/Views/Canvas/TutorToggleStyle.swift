@@ -28,11 +28,11 @@ struct TutorToggleStyle: ToggleStyle {
             ZStack(alignment: configuration.isOn ? .trailing : .leading) {
                 Capsule()
                     .fill(configuration.isOn
-                          ? Self.barColor
-                          : Color.black.opacity(0.15))
+                          ? Color.white
+                          : ReefColors.gray400)
                     .overlay(
                         Capsule()
-                            .strokeBorder(Self.borderColor, lineWidth: 1.5)
+                            .strokeBorder(ReefColors.gray500, lineWidth: 1.5)
                     )
                     .frame(width: trackWidth, height: trackHeight)
                     .background(
@@ -43,7 +43,7 @@ struct TutorToggleStyle: ToggleStyle {
                     .offset(x: isPressed ? 2 : 0, y: isPressed ? 2 : 0)
 
                 Circle()
-                    .fill(Color.white)
+                    .fill(configuration.isOn ? Self.barColor : Color.white)
                     .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
                     .frame(width: knobSize, height: knobSize)
                     .padding(knobPadding)

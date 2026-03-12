@@ -32,12 +32,12 @@ struct ToolbarButton: View {
                         .font(.system(size: 18, weight: .medium))
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(ReefColors.gray600)
             .frame(width: 32, height: 32, alignment: .center)
             .background(
                 isSelected
-                    ? Color.white.opacity(0.25)
-                    : Self.barColor
+                    ? Color(hex: 0x4E8A97).opacity(0.15)
+                    : Color.white
             )
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .overlay(
@@ -91,9 +91,9 @@ struct Toolbar3DSmallButton: View {
                         .font(.system(size: 11, weight: .bold))
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(ReefColors.gray600)
             .frame(width: 26, height: 22)
-            .background(Self.barColor)
+            .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .overlay(
                 RoundedRectangle(cornerRadius: 6)

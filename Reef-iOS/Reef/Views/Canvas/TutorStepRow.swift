@@ -95,21 +95,21 @@ struct TutorStepRow: View {
 
     // MARK: - Status Icon
 
-    private static let barColor = Color(hex: 0x4E8A97)
+    private static let btnBg = Color.white
 
     @ViewBuilder
     private func statusIcon(for status: StepStatus) -> some View {
         switch status {
         case .idle:
-            statusIcon3D(bgColor: Self.barColor) {
+            statusIcon3D(bgColor: Self.btnBg) {
                 Circle()
-                    .strokeBorder(Color.white.opacity(0.6), lineWidth: 1.5)
+                    .strokeBorder(ReefColors.gray500, lineWidth: 1.5)
             }
         case .working:
-            statusIcon3D(bgColor: Self.barColor) {
+            statusIcon3D(bgColor: Self.btnBg) {
                 Circle()
                     .trim(from: 0, to: 0.65)
-                    .stroke(Color.white.opacity(0.9), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .stroke(ReefColors.gray500, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
         case .mistake:
