@@ -158,7 +158,8 @@ struct DocumentCanvasView: View {
                         onAdvanceStep: {
                             feedbackService.advanceStep(
                                 questionIndex: visibleQuestionIndex,
-                                partLabel: activePartLabel ?? "_"
+                                partLabel: activePartLabel ?? "_",
+                                totalSteps: totalStepCountForToolbar
                             )
                         }
                     )

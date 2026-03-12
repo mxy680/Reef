@@ -114,9 +114,9 @@ final class TutorFeedbackService {
 
             print("[TutorFeedback] \(progressKey): \(response.status) (\(Int(response.progress * 100))%)")
 
-            // Auto-advance on completion
+            // Auto-advance on completion (clamped to last step)
             if status == .completed {
-                currentStepIndices[subKey] = stepIndex + 1
+                currentStepIndices[subKey] = min(stepIndex + 1, steps.count - 1)
             }
         } catch {
             print("[TutorFeedback] Error: \(error)")
@@ -124,10 +124,10 @@ final class TutorFeedbackService {
     }
 
     /// Manually advance to the next step for the given subquestion.
-    func advanceStep(questionIndex: Int, partLabel: String) {
+    func advanceStep(questionIndex: Int, partLabel: String, totalSteps: Int) {
         let subKey = "\(questionIndex)-\(partLabel)"
         let current = currentStepIndices[subKey] ?? 0
-        currentStepIndices[subKey] = current + 1
+        currentStepIndices[subKey] = min(current + 1, totalSteps - 1)
     }
 
     /// Reset progress when switching questions/parts
