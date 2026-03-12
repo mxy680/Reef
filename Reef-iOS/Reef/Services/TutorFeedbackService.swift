@@ -183,10 +183,18 @@ final class TutorFeedbackService {
             default: .idle
             }
 
-            stepProgress[progressKey] = StepProgress(status: status, progress: response.progress)
+            // On mistake, never let progress increase — lock to previous value or lower
+            let finalProgress: Double
+            if status == .mistake, let existing = stepProgress[progressKey] {
+                finalProgress = min(existing.progress, response.progress)
+            } else {
+                finalProgress = response.progress
+            }
+
+            stepProgress[progressKey] = StepProgress(status: status, progress: finalProgress)
             lastEvaluatedLatex[progressKey] = latex
 
-            print("[TutorFeedback] \(progressKey): \(response.status) (\(Int(response.progress * 100))%)")
+            print("[TutorFeedback] \(progressKey): \(response.status) (\(Int(finalProgress * 100))%)")
 
             // Auto-advance on completion (clamped to last step)
             if status == .completed {

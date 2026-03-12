@@ -78,6 +78,12 @@ struct CanvasToolbar: View {
         return tutorSteps[currentStepIndex].status == .completed
     }
 
+    /// Whether the step at currentStepIndex has a mistake.
+    private var isCurrentStepMistake: Bool {
+        guard currentStepIndex < tutorSteps.count else { return false }
+        return tutorSteps[currentStepIndex].status == .mistake
+    }
+
     /// Formatted question label, e.g. "Q1" or "Q1 (a)"
     private var questionLabel: String {
         let base = "Q\(visibleQuestionIndex + 1)"
@@ -185,6 +191,12 @@ struct CanvasToolbar: View {
         }
         .onChange(of: visibleQuestionIndex) { _, _ in
             showHint = false; showReveal = false
+        }
+        .onChange(of: isCurrentStepMistake) { _, isMistake in
+            if isMistake {
+                showReveal = false
+                showHint = true
+            }
         }
     }
 
