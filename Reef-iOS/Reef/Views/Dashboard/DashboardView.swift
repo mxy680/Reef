@@ -44,6 +44,7 @@ struct DashboardView: View {
                         .padding(.top, 12)
                 }
             }
+            .padding(.horizontal, 12)
 
             // Modal backdrop + content in the same ZStack so the TextField
             // participates in the main responder chain (keyboard works).
