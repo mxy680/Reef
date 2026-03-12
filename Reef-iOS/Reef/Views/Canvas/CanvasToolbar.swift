@@ -272,8 +272,20 @@ struct CanvasToolbar: View {
         HStack(spacing: 0) {
             // Home button
             HStack(spacing: 0) {
-                toolbar3DButton(icon: "canvas.home", isCustomIcon: true, action: onClose)
-                    .padding(.leading, 6)
+                Button {
+                    onClose()
+                } label: {
+                    Image("canvas.home")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 6)
             }
 
             // Center content
@@ -327,12 +339,38 @@ struct CanvasToolbar: View {
 
                             // Retry button (always visible when there are steps)
                             if totalStepCount > 0 {
-                                toolbar3DButton(icon: "arrow.counterclockwise", action: onResetProblem)
+                                Button(action: onResetProblem) {
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "arrow.counterclockwise")
+                                            .font(.system(size: 10, weight: .bold))
+                                        Text("Retry")
+                                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .frame(height: 24)
+                                    .background(Color.white.opacity(0.25))
+                                    .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
                             }
 
                             // Next question button
                             if questionCount > 1 {
-                                toolbar3DButton(icon: "chevron.right", action: onNextQuestion)
+                                Button(action: onNextQuestion) {
+                                    HStack(spacing: 3) {
+                                        Text("Next")
+                                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 10, weight: .bold))
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .frame(height: 24)
+                                    .background(Color.white.opacity(0.25))
+                                    .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
 
@@ -489,7 +527,10 @@ struct CanvasToolbar: View {
             }
 
             // Mic (push to talk)
-            ToolbarButton(icon: "mic.fill", isSelected: false, action: {})
+            Image(systemName: "mic.fill")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(.white.opacity(0.9))
+                .frame(width: 36, height: 36)
         }
     }
 
@@ -505,12 +546,6 @@ struct CanvasToolbar: View {
                 action: { theme.isDarkMode.toggle() }
             )
         }
-    }
-
-    // MARK: - 3D Toolbar Button
-
-    private func toolbar3DButton(icon: String, isCustomIcon: Bool = false, action: @escaping () -> Void) -> some View {
-        Toolbar3DSmallButton(icon: icon, isCustomIcon: isCustomIcon, action: action)
     }
 
     // MARK: - Divider
@@ -529,8 +564,21 @@ struct CanvasToolbar: View {
         isActive: Bool,
         action: @escaping () -> Void
     ) -> some View {
-        // Uses ToolbarButton which already has 3D + press animation
-        ToolbarButton(icon: icon, isSelected: isActive, action: action)
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(isActive ? .white : .white.opacity(0.9))
+                .frame(width: 32, height: 32, alignment: .center)
+                .background(
+                    isActive
+                        ? Color.white.opacity(0.25)
+                        : Color.clear
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .animation(.easeInOut(duration: 0.15), value: isActive)
+        }
+        .frame(width: 32, height: 32)
+        .buttonStyle(.plain)
     }
 
     // MARK: - Progress Bar
