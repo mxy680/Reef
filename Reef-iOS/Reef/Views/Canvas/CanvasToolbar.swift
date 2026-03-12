@@ -489,22 +489,7 @@ struct CanvasToolbar: View {
             }
 
             // Mic (push to talk)
-            Image(systemName: "mic.fill")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundColor(.white)
-                .frame(width: 32, height: 32)
-                .background(Self.barColor)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.black.opacity(0.5), lineWidth: 1.5)
-                )
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.black.opacity(0.5))
-                        .offset(x: 1.5, y: 1.5)
-                )
-                .frame(width: 40, height: 40)
+            ToolbarButton(icon: "mic.fill", isSelected: false, action: {})
         }
     }
 
@@ -525,34 +510,7 @@ struct CanvasToolbar: View {
     // MARK: - 3D Toolbar Button
 
     private func toolbar3DButton(icon: String, isCustomIcon: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Group {
-                if isCustomIcon {
-                    Image(icon)
-                        .renderingMode(.template)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 14, height: 14)
-                } else {
-                    Image(systemName: icon)
-                        .font(.system(size: 11, weight: .bold))
-                }
-            }
-            .foregroundColor(.white)
-            .frame(width: 26, height: 22)
-            .background(Self.barColor)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.black.opacity(0.5), lineWidth: 1.5)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.black.opacity(0.5))
-                    .offset(x: 1.5, y: 1.5)
-            )
-        }
-        .buttonStyle(.plain)
+        Toolbar3DSmallButton(icon: icon, isCustomIcon: isCustomIcon, action: action)
     }
 
     // MARK: - Divider
@@ -571,30 +529,8 @@ struct CanvasToolbar: View {
         isActive: Bool,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white)
-                .frame(width: 32, height: 32, alignment: .center)
-                .background(
-                    isActive
-                        ? Color.white.opacity(0.25)
-                        : Self.barColor
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.black.opacity(0.5), lineWidth: 1.5)
-                )
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.black.opacity(0.5))
-                        .offset(x: 1.5, y: 1.5)
-                )
-                .animation(.easeInOut(duration: 0.15), value: isActive)
-        }
-        .frame(width: 32, height: 32)
-        .buttonStyle(.plain)
+        // Uses ToolbarButton which already has 3D + press animation
+        ToolbarButton(icon: icon, isSelected: isActive, action: action)
     }
 
     // MARK: - Progress Bar
