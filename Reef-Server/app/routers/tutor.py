@@ -132,10 +132,31 @@ async def evaluate_step(
         data = json.loads(result.content)
         response = EvaluateStepResponse(**data)
 
+        logger.info(
+            "[evaluate-step] LLM returned: status=%s progress=%.2f feedback=%s",
+            response.status, response.progress, response.feedback[:80] if response.feedback else "",
+        )
+        logger.info(
+            "[evaluate-step] student_work (first 200): %s",
+            body.student_work[:200],
+        )
+        logger.info(
+            "[evaluate-step] expected step.work: %s",
+            current_step.work[:200],
+        )
+
         # Deterministic stop condition: validate that student actually wrote the expected result
         if response.status == "completed":
             expected_work = current_step.work
-            if not _student_work_contains_expected(body.student_work, expected_work):
+            key_result = _extract_key_result(expected_work)
+            norm_result = _normalize_latex(key_result)
+            norm_student = _normalize_latex(body.student_work)
+            contains = _student_work_contains_expected(body.student_work, expected_work)
+            logger.info(
+                "[evaluate-step] Stop condition: key_result=%r norm_result=%r (len=%d) norm_student=%r contains=%s",
+                key_result, norm_result, len(norm_result), norm_student[:100], contains,
+            )
+            if not contains:
                 logger.info(
                     "[evaluate-step] Overriding completed → working: "
                     "student work missing expected result"
@@ -146,6 +167,7 @@ async def evaluate_step(
                     feedback="",
                 )
 
+        logger.info("[evaluate-step] Final response: status=%s progress=%.2f", response.status, response.progress)
         return response
     except Exception as e:
         logger.error(f"[evaluate-step] LLM call failed: {e}")
