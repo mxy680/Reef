@@ -44,6 +44,8 @@ struct CanvasToolbar: View {
     var currentStepIndex: Int = 0
     var totalStepCount: Int = 0
     var onAdvanceStep: () -> Void = {}
+    var onNextQuestion: () -> Void = {}
+    var isLastQuestion: Bool = false
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -78,6 +80,20 @@ struct CanvasToolbar: View {
             return "\(base) (\(label))"
         }
         return base
+    }
+
+    /// "Next Question" button — chevron.right.2 in a circular background.
+    private var nextQuestionButton: some View {
+        Button(action: onNextQuestion) {
+            Image(systemName: "chevron.right.2")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(isLastQuestion ? .white.opacity(0.3) : .white)
+                .frame(width: 26, height: 26)
+                .background(isLastQuestion ? Color.white.opacity(0.1) : Color.white.opacity(0.25))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isLastQuestion)
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
@@ -253,13 +269,22 @@ struct CanvasToolbar: View {
                     currentStepIndex: currentStepIndex,
                     totalStepCount: totalStepCount
                 )
+
+                if questionCount > 1 {
+                    nextQuestionButton
+                        .padding(.trailing, 4)
+                }
             } else {
                 // Document name / question label
                 Spacer()
                 if isReconstructed && questionCount > 1 {
-                    Text(questionLabel)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 8) {
+                        Text(questionLabel)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+
+                        nextQuestionButton
+                    }
                 } else {
                     Text(documentName)
                         .font(.system(size: 13, weight: .medium))

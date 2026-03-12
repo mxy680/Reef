@@ -33,6 +33,8 @@ struct CanvasPageView: UIViewRepresentable {
     var eraserWidth: CGFloat = 8.0
     var onCanvasTouchBegan: (() -> Void)?
     var debugRegions: [DebugRegion] = []
+    var scrollToPageIndex: Int? = nil
+    var onScrollToPageComplete: (() -> Void)?
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
@@ -65,6 +67,12 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.applyDarkMode(darkMode)
         uiView.updateOverlay(overlaySettings)
         uiView.updateDebugRegions(debugRegions)
+
+        if let targetPage = scrollToPageIndex {
+            let localIndex = targetPage - (pageRange?.lowerBound ?? 0)
+            uiView.scrollToPage(localIndex)
+            DispatchQueue.main.async { onScrollToPageComplete?() }
+        }
     }
 }
 
@@ -519,6 +527,22 @@ final class CanvasContainerView: UIView {
         let context = CIContext()
         guard let cgImage = context.createCGImage(output, from: output.extent) else { return image }
         return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+
+    // MARK: - Scroll To Page
+
+    func scrollToPage(_ localIndex: Int) {
+        guard localIndex >= 0, localIndex < pageWrappers.count else { return }
+        layoutIfNeeded()
+
+        let wrapper = pageWrappers[localIndex]
+        let frameInContent = wrapper.convert(wrapper.bounds, to: contentView)
+        // Account for zoom scale and content inset
+        let targetY = frameInContent.origin.y * scrollView.zoomScale - scrollView.contentInset.top
+        scrollView.setContentOffset(
+            CGPoint(x: scrollView.contentOffset.x, y: targetY),
+            animated: true
+        )
     }
 
     // MARK: - Layout

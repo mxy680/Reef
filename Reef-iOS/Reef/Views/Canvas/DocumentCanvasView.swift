@@ -44,6 +44,7 @@ struct DocumentCanvasView: View {
     @State private var transcriptionService = TranscriptionService()
     @State private var feedbackService = TutorFeedbackService()
     @State private var strokeCounts: [String: Int] = [:]
+    @State private var scrollToPageIndex: Int? = nil
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -160,7 +161,11 @@ struct DocumentCanvasView: View {
                                 questionIndex: visibleQuestionIndex,
                                 partLabel: activePartLabel ?? "_"
                             )
-                        }
+                        },
+                        onNextQuestion: {
+                            scrollToNextQuestion()
+                        },
+                        isLastQuestion: visibleQuestionIndex >= (document.problemCount ?? 1) - 1
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -266,7 +271,9 @@ struct DocumentCanvasView: View {
                                 showPageMenu = false
                                 showTutorPopover = false
                             },
-                            debugRegions: []
+                            debugRegions: [],
+                            scrollToPageIndex: scrollToPageIndex,
+                            onScrollToPageComplete: { scrollToPageIndex = nil }
                         )
                         .id(pageVersion)
 
@@ -434,6 +441,17 @@ struct DocumentCanvasView: View {
         if activePartLabel != match.partLabel {
             activePartLabel = match.partLabel
         }
+    }
+
+    // MARK: - Scroll To Next Question
+
+    private func scrollToNextQuestion() {
+        guard let questionPages = document.questionPages else { return }
+        let nextIndex = visibleQuestionIndex + 1
+        guard nextIndex < questionPages.count else { return }
+        let nextPageRange = questionPages[nextIndex]
+        guard let firstPage = nextPageRange.first else { return }
+        scrollToPageIndex = firstPage
     }
 
     // MARK: - Debug Regions
