@@ -17,6 +17,7 @@ enum StepStatus: Equatable {
 struct StepProgress: Equatable {
     var status: StepStatus
     var progress: Double
+    var mistakeExplanation: String? = nil
 }
 
 struct TutorStep {
@@ -25,6 +26,7 @@ struct TutorStep {
     let work: String
     let status: StepStatus
     let progress: Double  // 0.0 (cold) to 1.0 (hot)
+    let mistakeExplanation: String?
 }
 
 /// Convert a `QuestionAnswer` into a flat array of `TutorStep` for the toolbar.
@@ -45,7 +47,8 @@ enum TutorStepConverter {
                 hint: step.explanation,
                 work: step.work,
                 status: sp?.status ?? .idle,
-                progress: sp?.progress ?? 0.0
+                progress: sp?.progress ?? 0.0,
+                mistakeExplanation: sp?.mistakeExplanation
             )
         }
     }
@@ -67,7 +70,8 @@ enum TutorStepConverter {
                 hint: step.explanation,
                 work: step.work,
                 status: sp?.status ?? .idle,
-                progress: sp?.progress ?? 0.0
+                progress: sp?.progress ?? 0.0,
+                mistakeExplanation: sp?.mistakeExplanation
             )
         }
     }

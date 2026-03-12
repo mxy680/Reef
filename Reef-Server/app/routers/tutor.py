@@ -35,6 +35,7 @@ class EvaluateStepRequest(BaseModel):
 class EvaluateStepResponse(BaseModel):
     progress: float          # 0.0–1.0
     status: str              # "idle" | "working" | "mistake" | "completed"
+    mistake_explanation: str | None = None  # Concise LaTeX explanation when status is "mistake"
 
 
 @router.post("/evaluate-step", response_model=EvaluateStepResponse)

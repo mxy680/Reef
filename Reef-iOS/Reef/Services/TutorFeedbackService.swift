@@ -109,7 +109,7 @@ final class TutorFeedbackService {
             default: .idle
             }
 
-            stepProgress[progressKey] = StepProgress(status: status, progress: response.progress)
+            stepProgress[progressKey] = StepProgress(status: status, progress: response.progress, mistakeExplanation: response.mistake_explanation)
             lastEvaluatedLatex[progressKey] = latex
 
             print("[TutorFeedback] \(progressKey): \(response.status) (\(Int(response.progress * 100))%)")
@@ -155,4 +155,5 @@ private struct EvaluateStepRequest: Encodable {
 private struct EvaluateStepResponse: Decodable {
     let progress: Double
     let status: String
+    let mistake_explanation: String?
 }

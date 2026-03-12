@@ -48,8 +48,10 @@ struct CanvasToolbar: View {
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
     @State private var showReveal = false
+    @State private var showMistake = false
     @State private var hintMidX: CGFloat = 0
     @State private var revealMidX: CGFloat = 0
+    @State private var mistakeMidX: CGFloat = 0
     @State private var pulseOpacity: Double = 1.0
     @State private var toolbarRowMinX: CGFloat = 0
     @State private var toolbarRowWidth: CGFloat = 0
@@ -151,6 +153,15 @@ struct CanvasToolbar: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: showReveal)
+            .overlay(alignment: .bottomLeading) {
+                if let step = currentTutorStep, showMistake, let explanation = step.mistakeExplanation, !explanation.isEmpty {
+                    Color.clear.frame(height: 0)
+                        .overlay(alignment: .topLeading) {
+                            tutorPopoverCard(triggerMidX: mistakeMidX, title: "Mistake", text: explanation)
+                        }
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: showMistake)
             .zIndex(1)
 
             // Bottom separator
@@ -168,16 +179,19 @@ struct CanvasToolbar: View {
             .ignoresSafeArea(edges: .top)
         )
         .onChange(of: showHint) { _, _ in
-            showTutorPopover = showHint || showReveal
+            showTutorPopover = showHint || showReveal || showMistake
         }
         .onChange(of: showReveal) { _, _ in
-            showTutorPopover = showHint || showReveal
+            showTutorPopover = showHint || showReveal || showMistake
+        }
+        .onChange(of: showMistake) { _, _ in
+            showTutorPopover = showHint || showReveal || showMistake
         }
         .onChange(of: showTutorPopover) { _, newValue in
-            if !newValue { showHint = false; showReveal = false }
+            if !newValue { showHint = false; showReveal = false; showMistake = false }
         }
         .onChange(of: visibleQuestionIndex) { _, _ in
-            showHint = false; showReveal = false
+            showHint = false; showReveal = false; showMistake = false
         }
     }
 
@@ -251,7 +265,12 @@ struct CanvasToolbar: View {
                     answerKey: answerKey,
                     stepProgressData: stepProgressData,
                     currentStepIndex: currentStepIndex,
-                    totalStepCount: totalStepCount
+                    totalStepCount: totalStepCount,
+                    onMistakeTapped: {
+                        showMistake.toggle()
+                        if showMistake { showHint = false; showReveal = false }
+                    },
+                    mistakeIconMidX: $mistakeMidX
                 )
             } else {
                 // Document name / question label
@@ -433,7 +452,7 @@ struct CanvasToolbar: View {
             if tutorModeOn && isReconstructed && currentTutorStep != nil {
                 stepButton(icon: "lightbulb.fill", isActive: showHint) {
                     showHint.toggle()
-                    if showHint { showReveal = false }
+                    if showHint { showReveal = false; showMistake = false }
                 }
                 .background(GeometryReader { geo in
                     Color.clear
@@ -443,7 +462,7 @@ struct CanvasToolbar: View {
 
                 stepButton(icon: "eye.fill", isActive: showReveal) {
                     showReveal.toggle()
-                    if showReveal { showHint = false }
+                    if showReveal { showHint = false; showMistake = false }
                 }
                 .background(GeometryReader { geo in
                     Color.clear
