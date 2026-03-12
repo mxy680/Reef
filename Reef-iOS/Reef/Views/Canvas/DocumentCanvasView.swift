@@ -44,6 +44,7 @@ struct DocumentCanvasView: View {
     @State private var transcriptionService = TranscriptionService()
     @State private var feedbackService = TutorFeedbackService()
     @State private var strokeCounts: [String: Int] = [:]
+    @State private var scrollToPageIndex: Int? = nil
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -160,7 +161,11 @@ struct DocumentCanvasView: View {
                                 questionIndex: visibleQuestionIndex,
                                 partLabel: activePartLabel ?? "_"
                             )
-                        }
+                        },
+                        onNextQuestion: {
+                            skipToNextSubquestion()
+                        },
+                        isLastQuestion: isLastSubquestion
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -266,7 +271,9 @@ struct DocumentCanvasView: View {
                                 showPageMenu = false
                                 showTutorPopover = false
                             },
-                            debugRegions: []
+                            debugRegions: [],
+                            scrollToPageIndex: scrollToPageIndex,
+                            onScrollToPageComplete: { scrollToPageIndex = nil }
                         )
                         .id(pageVersion)
 
@@ -372,7 +379,6 @@ struct DocumentCanvasView: View {
             if isShowing { showToolSettings = false; showPageSettings = false }
         }
         .onChange(of: pageBasedQuestionIndex) { _, newIndex in
-            // When user scrolls to a different page-based question, reset writing-detected state
             activeQuestionIndex = nil
             setDefaultPartLabel(for: newIndex)
         }
@@ -433,6 +439,74 @@ struct DocumentCanvasView: View {
         }
         if activePartLabel != match.partLabel {
             activePartLabel = match.partLabel
+        }
+    }
+
+    // MARK: - Skip to Next Subquestion / Question
+
+    /// The ordered part labels for a given question index (e.g. ["a", "b", "c"]).
+    /// Returns empty if the question has no subquestion parts.
+    private func partLabels(for questionIndex: Int) -> [String] {
+        guard let regions = document.questionRegions,
+              questionIndex < regions.count,
+              let regionData = regions[questionIndex] else { return [] }
+        // Collect unique labels preserving order, skipping nil
+        var seen = Set<String>()
+        var labels: [String] = []
+        for region in regionData.regions {
+            if let label = region.label, !seen.contains(label) {
+                seen.insert(label)
+                labels.append(label)
+            }
+        }
+        return labels
+    }
+
+    /// Whether the Skip button should be hidden (on the very last subquestion of the last question).
+    private var isLastSubquestion: Bool {
+        let qi = visibleQuestionIndex
+        let totalQuestions = document.problemCount ?? 1
+        let isLastQ = qi >= totalQuestions - 1
+        guard isLastQ else { return false }
+        // On the last question — check if we're on the last part
+        let labels = partLabels(for: qi)
+        if labels.isEmpty { return true }
+        guard let current = activePartLabel else { return true }
+        return current == labels.last
+    }
+
+    private func skipToNextSubquestion() {
+        let qi = visibleQuestionIndex
+        let labels = partLabels(for: qi)
+
+        // If there are parts and we're not on the last one, advance within this question
+        if !labels.isEmpty, let current = activePartLabel, let idx = labels.firstIndex(of: current), idx + 1 < labels.count {
+            activePartLabel = labels[idx + 1]
+            scrollToPartRegion(questionIndex: qi, partLabel: labels[idx + 1])
+            return
+        }
+
+        // Otherwise, move to the next question
+        guard let questionPages = document.questionPages else { return }
+        let nextIndex = qi + 1
+        guard nextIndex < questionPages.count else { return }
+        let nextPageRange = questionPages[nextIndex]
+        guard let firstPage = nextPageRange.first else { return }
+        activeQuestionIndex = nextIndex
+        setDefaultPartLabel(for: nextIndex)
+        scrollToPageIndex = firstPage
+    }
+
+    /// Scroll to the page containing a specific part region.
+    private func scrollToPartRegion(questionIndex: Int, partLabel: String) {
+        guard let regions = document.questionRegions,
+              questionIndex < regions.count,
+              let regionData = regions[questionIndex],
+              let questionPages = document.questionPages,
+              questionIndex < questionPages.count else { return }
+        let startPage = questionPages[questionIndex].first ?? 0
+        if let region = regionData.regions.first(where: { $0.label == partLabel }) {
+            scrollToPageIndex = startPage + region.page
         }
     }
 
@@ -527,14 +601,10 @@ struct DocumentCanvasView: View {
     }
 
     /// Set the default active part label for the given question index.
+    /// Uses `partLabels` to skip nil-label regions (e.g. the main question area).
     private func setDefaultPartLabel(for questionIndex: Int) {
-        guard let regions = document.questionRegions,
-              questionIndex < regions.count,
-              let regionData = regions[questionIndex] else {
-            activePartLabel = nil
-            return
-        }
-        activePartLabel = regionData.regions.first?.label
+        let labels = partLabels(for: questionIndex)
+        activePartLabel = labels.first
     }
 
     // MARK: - Step Lookup

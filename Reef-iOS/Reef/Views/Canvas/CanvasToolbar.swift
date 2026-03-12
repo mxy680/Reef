@@ -44,6 +44,8 @@ struct CanvasToolbar: View {
     var currentStepIndex: Int = 0
     var totalStepCount: Int = 0
     var onAdvanceStep: () -> Void = {}
+    var onNextQuestion: () -> Void = {}
+    var isLastQuestion: Bool = false
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -78,6 +80,34 @@ struct CanvasToolbar: View {
             return "\(base) (\(label))"
         }
         return base
+    }
+
+    /// "Skip" button — 3D primary pill that jumps to the next question.
+    private var skipQuestionButton: some View {
+        let shadowOffset: CGFloat = 2
+        return Button(action: onNextQuestion) {
+            HStack(spacing: 3) {
+                Text("Skip")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                Image(systemName: "chevron.right.2")
+                    .font(.system(size: 9, weight: .bold))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                ZStack {
+                    Capsule()
+                        .fill(Color.black.opacity(0.35))
+                        .offset(x: shadowOffset, y: shadowOffset)
+                    Capsule()
+                        .fill(ReefColors.primary)
+                    Capsule()
+                        .stroke(Color.black.opacity(0.3), lineWidth: 1)
+                }
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
@@ -253,6 +283,7 @@ struct CanvasToolbar: View {
                     currentStepIndex: currentStepIndex,
                     totalStepCount: totalStepCount
                 )
+
             } else {
                 // Document name / question label
                 Spacer()
@@ -299,6 +330,7 @@ struct CanvasToolbar: View {
                                 .buttonStyle(.plain)
                                 .transition(.scale.combined(with: .opacity))
                             }
+
                         }
                         .animation(.easeInOut(duration: 0.2), value: currentTutorStep?.status)
 
@@ -307,6 +339,12 @@ struct CanvasToolbar: View {
                             .font(.system(size: 20, weight: .ultraLight))
                             .foregroundColor(.white.opacity(0.4))
                             .frame(width: 16)
+                    }
+
+                    // Skip question button — visible for all questions except the last
+                    if questionCount > 1 && !isLastQuestion {
+                        skipQuestionButton
+                            .padding(.trailing, 4)
                     }
 
                     HStack(spacing: 6) {
