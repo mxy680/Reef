@@ -547,10 +547,10 @@ struct DocumentCanvasView: View {
         guard let regions = document.questionRegions,
               questionIndex < regions.count,
               let regionData = regions[questionIndex] else {
-            activePartLabel = nil
+            activePartLabel = "a"
             return
         }
-        activePartLabel = regionData.regions.first?.label
+        activePartLabel = regionData.regions.first(where: { $0.label != nil })?.label ?? "a"
     }
 
     // MARK: - Step Lookup
