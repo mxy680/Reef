@@ -176,7 +176,7 @@ struct CanvasToolbar: View {
             .overlay(alignment: .bottomLeading) {
                 if showMistake {
                     let text = currentMistakeFeedback.isEmpty
-                        ? (currentTutorStep?.hint ?? "Check your work for this step.")
+                        ? "There's an error in your work for this step. Check your calculations and try again."
                         : currentMistakeFeedback
                     Color.clear.frame(height: 0)
                         .overlay(alignment: .topLeading) {
