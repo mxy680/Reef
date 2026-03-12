@@ -74,16 +74,19 @@ struct CanvasToolbar: View {
         currentTutorStep?.progress ?? 0
     }
 
+    /// Progress key for the current step: "questionIndex-partLabel-stepIndex"
+    private var currentStepKey: String {
+        "\(visibleQuestionIndex)-\(activePartLabel ?? "_")-\(currentStepIndex)"
+    }
+
     /// Whether the step at currentStepIndex is completed.
     private var isCurrentStepCompleted: Bool {
-        guard currentStepIndex < tutorSteps.count else { return false }
-        return tutorSteps[currentStepIndex].status == .completed
+        stepProgressData?[currentStepKey]?.status == .completed
     }
 
     /// Whether the step at currentStepIndex has a mistake.
     private var isCurrentStepMistake: Bool {
-        guard currentStepIndex < tutorSteps.count else { return false }
-        return tutorSteps[currentStepIndex].status == .mistake
+        stepProgressData?[currentStepKey]?.status == .mistake
     }
 
     /// Feedback text for the current step's mistake (from LLM).

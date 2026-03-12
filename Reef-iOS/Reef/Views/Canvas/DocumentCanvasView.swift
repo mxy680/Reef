@@ -291,15 +291,14 @@ struct DocumentCanvasView: View {
 
                     }
                     .overlay(alignment: .bottomTrailing) {
-                        if let partLabel = activePartLabel {
-                            let key = "\(visibleQuestionIndex)-\(partLabel)"
-                            TranscriptionDebugPanel(
-                                questionIndex: visibleQuestionIndex,
-                                partLabel: partLabel,
-                                latex: transcriptionService.transcriptions[key]
-                            )
-                            .padding(16)
-                        }
+                        let partLabel = activePartLabel ?? "_"
+                        let key = "\(visibleQuestionIndex)-\(partLabel)"
+                        TranscriptionDebugPanel(
+                            questionIndex: visibleQuestionIndex,
+                            partLabel: partLabel,
+                            latex: transcriptionService.transcriptions[key]
+                        )
+                        .padding(16)
                     }
                     .background(canvasBackground)
                 }
