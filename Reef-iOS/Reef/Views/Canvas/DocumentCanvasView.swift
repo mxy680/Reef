@@ -613,6 +613,10 @@ struct DocumentCanvasView: View {
         guard let pages = document.questionPages else { return }
         let nextQI = visibleQuestionIndex + 1
         if nextQI < pages.count, pages[nextQI].count >= 1 {
+            // Update toolbar state immediately (don't wait for scroll callback)
+            activeQuestionIndex = nextQI
+            setDefaultPartLabel(for: nextQI)
+
             // Scroll to first page of next question
             scrollToPageTarget = pages[nextQI][0]
             // Reset so repeated taps work (SwiftUI won't re-trigger if value stays the same)
