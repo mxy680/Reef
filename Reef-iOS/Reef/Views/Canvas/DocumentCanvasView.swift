@@ -45,6 +45,7 @@ struct DocumentCanvasView: View {
     @State private var feedbackService = TutorFeedbackService()
     @State private var strokeCounts: [String: Int] = [:]
     @State private var scrollToPageIndex: Int? = nil
+    @State private var skippedQuestions: Set<Int> = []
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -165,7 +166,8 @@ struct DocumentCanvasView: View {
                         onNextQuestion: {
                             scrollToNextQuestion()
                         },
-                        isLastQuestion: visibleQuestionIndex >= (document.problemCount ?? 1) - 1
+                        isLastQuestion: visibleQuestionIndex >= (document.problemCount ?? 1) - 1,
+                        skippedQuestions: skippedQuestions
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -447,10 +449,12 @@ struct DocumentCanvasView: View {
 
     private func scrollToNextQuestion() {
         guard let questionPages = document.questionPages else { return }
-        let nextIndex = visibleQuestionIndex + 1
+        let currentIndex = visibleQuestionIndex
+        let nextIndex = currentIndex + 1
         guard nextIndex < questionPages.count else { return }
         let nextPageRange = questionPages[nextIndex]
         guard let firstPage = nextPageRange.first else { return }
+        skippedQuestions.insert(currentIndex)
         scrollToPageIndex = firstPage
     }
 

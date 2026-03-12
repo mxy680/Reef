@@ -46,6 +46,7 @@ struct CanvasToolbar: View {
     var onAdvanceStep: () -> Void = {}
     var onNextQuestion: () -> Void = {}
     var isLastQuestion: Bool = false
+    var skippedQuestions: Set<Int> = []
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -82,18 +83,30 @@ struct CanvasToolbar: View {
         return base
     }
 
-    /// "Next Question" button — chevron.right.2 in a circular background.
-    private var nextQuestionButton: some View {
+    /// Whether the current question has been skipped.
+    private var isCurrentSkipped: Bool {
+        skippedQuestions.contains(visibleQuestionIndex)
+    }
+
+    /// "Skip" / "Skipped" button shown after the progress bar.
+    private var skipQuestionButton: some View {
         Button(action: onNextQuestion) {
-            Image(systemName: "chevron.right.2")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(isLastQuestion ? .white.opacity(0.3) : .white)
-                .frame(width: 26, height: 26)
-                .background(isLastQuestion ? Color.white.opacity(0.1) : Color.white.opacity(0.25))
-                .clipShape(Circle())
+            HStack(spacing: 3) {
+                Text(isCurrentSkipped ? "Skipped" : "Skip")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                if !isCurrentSkipped {
+                    Image(systemName: "chevron.right.2")
+                        .font(.system(size: 9, weight: .bold))
+                }
+            }
+            .foregroundColor(isCurrentSkipped ? .white.opacity(0.4) : .white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(isCurrentSkipped ? Color.white.opacity(0.08) : Color.white.opacity(0.2))
+            .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        .disabled(isLastQuestion)
+        .disabled(isLastQuestion || isCurrentSkipped)
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
@@ -270,21 +283,13 @@ struct CanvasToolbar: View {
                     totalStepCount: totalStepCount
                 )
 
-                if questionCount > 1 {
-                    nextQuestionButton
-                        .padding(.trailing, 4)
-                }
             } else {
                 // Document name / question label
                 Spacer()
                 if isReconstructed && questionCount > 1 {
-                    HStack(spacing: 8) {
-                        Text(questionLabel)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white)
-
-                        nextQuestionButton
-                    }
+                    Text(questionLabel)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
                 } else {
                     Text(documentName)
                         .font(.system(size: 13, weight: .medium))
@@ -323,6 +328,12 @@ struct CanvasToolbar: View {
                                 }
                                 .buttonStyle(.plain)
                                 .transition(.scale.combined(with: .opacity))
+                            }
+
+                            // Skip question button
+                            if questionCount > 1 && !isLastQuestion {
+                                skipQuestionButton
+                                    .transition(.scale.combined(with: .opacity))
                             }
                         }
                         .animation(.easeInOut(duration: 0.2), value: currentTutorStep?.status)
