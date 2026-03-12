@@ -17,6 +17,7 @@ enum StepStatus: String, Codable, Equatable {
 struct StepProgress: Codable, Equatable {
     var status: StepStatus
     var progress: Double
+    var feedback: String = ""
 }
 
 /// Row in the `tutor_progress` Supabase table.

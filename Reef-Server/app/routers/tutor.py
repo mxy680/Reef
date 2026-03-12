@@ -36,6 +36,7 @@ class EvaluateStepRequest(BaseModel):
 class EvaluateStepResponse(BaseModel):
     progress: float          # 0.0–1.0
     status: str              # "idle" | "working" | "mistake" | "completed"
+    feedback: str = ""       # LaTeX explanation of mistake (only when status="mistake")
 
 
 def _normalize_latex(text: str) -> str:
@@ -142,6 +143,7 @@ async def evaluate_step(
                 response = EvaluateStepResponse(
                     progress=min(response.progress, 0.95),
                     status="working",
+                    feedback="",
                 )
 
         return response

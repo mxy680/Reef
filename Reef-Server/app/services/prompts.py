@@ -233,6 +233,7 @@ Evaluate ONLY Step {current_step_num}. The student's work may contain work from 
 
 - progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly)
 - status: "idle" (no work related to this step), "working" (partial but on track), "mistake" (error in this step's work), "completed" (step done correctly)
+- feedback: When status is "mistake", provide a short LaTeX explanation of what went wrong. Use $...$ for inline math. Be specific — show the incorrect expression and explain the error. Keep it to 1-2 sentences. Leave empty for non-mistake statuses.
 
 Only mark "completed" if the student has written the specific mathematical expression from the expected work. Partial work toward the expression should be "working". If prior steps are completed, the student's work will contain their work too — don't penalize for that.
 """

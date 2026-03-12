@@ -32,9 +32,9 @@ VALID_BODY = {
 }
 
 
-def _make_llm_result(progress: float, status: str) -> LLMResult:
+def _make_llm_result(progress: float, status: str, feedback: str = "") -> LLMResult:
     """Build a fake LLMResult with the given evaluation fields."""
-    content = json.dumps({"progress": progress, "status": status})
+    content = json.dumps({"progress": progress, "status": status, "feedback": feedback})
     return LLMResult(content=content, input_tokens=10, output_tokens=5)
 
 

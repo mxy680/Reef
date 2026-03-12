@@ -15,6 +15,7 @@ struct TutorStepRow: View {
     var currentStepIndex: Int = 0
     var totalStepCount: Int = 0
     var onMistakeTapped: () -> Void = {}
+    @Binding var mistakeIconMidX: CGFloat
 
     private var steps: [TutorStep] {
         guard let answerKey else { return [] }
@@ -33,11 +34,21 @@ struct TutorStepRow: View {
                 // Q label + Step indicator
                 HStack(spacing: 6) {
                     statusIcon(for: currentStep!.status)
+                        .contentShape(Rectangle())
                         .onTapGesture {
                             if currentStep!.status == .mistake {
                                 onMistakeTapped()
                             }
                         }
+                        .background(GeometryReader { geo in
+                            Color.clear
+                                .onChange(of: currentStep?.status) { _, _ in
+                                    mistakeIconMidX = geo.frame(in: .global).midX
+                                }
+                                .onAppear {
+                                    mistakeIconMidX = geo.frame(in: .global).midX
+                                }
+                        })
 
                     Text({
                         let base = "Q\(questionIndex + 1)"
