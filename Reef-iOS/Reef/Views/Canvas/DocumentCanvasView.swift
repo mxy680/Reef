@@ -379,7 +379,13 @@ struct DocumentCanvasView: View {
             if isShowing { showToolSettings = false; showPageSettings = false }
         }
         .onChange(of: pageBasedQuestionIndex) { _, newIndex in
-            // When user scrolls to a different page-based question, reset writing-detected state
+            // When user scrolls to a different page-based question, reset writing-detected state.
+            // But if activeQuestionIndex already matches (e.g. from a programmatic skip), keep
+            // the part label that was set — don't overwrite it.
+            if activeQuestionIndex == newIndex {
+                activeQuestionIndex = nil
+                return
+            }
             activeQuestionIndex = nil
             setDefaultPartLabel(for: newIndex)
         }
