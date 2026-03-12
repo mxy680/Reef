@@ -4,9 +4,11 @@
 //
 //  Debounces transcription changes and evaluates student progress
 //  against the current tutor step via Gemini 3 Flash.
+//  Persists progress to Supabase `tutor_progress` table.
 //
 
 import Foundation
+@preconcurrency import Supabase
 
 @Observable
 @MainActor
@@ -17,9 +19,80 @@ final class TutorFeedbackService {
     /// Current step index per subquestion, keyed by "qi-partLabel"
     var currentStepIndices: [String: Int] = [:]
 
+    let documentId: String
+
     private var debounceTask: Task<Void, Never>?
+    private var saveTask: Task<Void, Never>?
     private var generation: Int = 0
     private var lastEvaluatedLatex: [String: String] = [:]
+    private var isLoaded = false
+
+    init(documentId: String) {
+        self.documentId = documentId
+    }
+
+    // MARK: - Persistence
+
+    /// Load saved progress from Supabase. Call once from the view's .task block.
+    func loadProgress() async {
+        do {
+            let userId = try await supabase.auth.session.user.id.uuidString.lowercased()
+            let record: TutorProgressRecord = try await supabase
+                .from("tutor_progress")
+                .select()
+                .eq("user_id", value: userId)
+                .eq("document_id", value: documentId)
+                .single()
+                .execute()
+                .value
+            stepProgress = record.stepProgress
+            currentStepIndices = record.currentStepIndices
+            print("[TutorFeedback] Loaded progress for \(documentId): \(stepProgress.count) steps, \(currentStepIndices.count) indices")
+        } catch {
+            // No existing row (PGRST116) or other error — start fresh
+            print("[TutorFeedback] No saved progress for \(documentId): \(error)")
+        }
+        isLoaded = true
+    }
+
+    /// Debounced save — call after any state mutation.
+    private func scheduleSave() {
+        guard isLoaded else { return }
+        saveTask?.cancel()
+        saveTask = Task {
+            try? await Task.sleep(for: .seconds(1.0))
+            guard !Task.isCancelled else { return }
+            await persistProgress()
+        }
+    }
+
+    /// Save immediately (e.g. on view disappear). Fire-and-forget.
+    func saveImmediately() {
+        guard isLoaded else { return }
+        saveTask?.cancel()
+        Task { await persistProgress() }
+    }
+
+    private func persistProgress() async {
+        do {
+            let userId = try await supabase.auth.session.user.id.uuidString.lowercased()
+            let record = TutorProgressRecord(
+                userId: userId,
+                documentId: documentId,
+                stepProgress: stepProgress,
+                currentStepIndices: currentStepIndices
+            )
+            try await supabase
+                .from("tutor_progress")
+                .upsert(record)
+                .execute()
+            print("[TutorFeedback] Saved progress for \(documentId)")
+        } catch {
+            print("[TutorFeedback] Failed to save progress: \(error)")
+        }
+    }
+
+    // MARK: - Evaluation
 
     func onTranscriptionChanged(
         questionIndex: Int,
@@ -43,6 +116,7 @@ final class TutorFeedbackService {
             stepProgress[progressKey] = StepProgress(status: .idle, progress: 0.0)
             lastEvaluatedLatex[progressKey] = latex
             debounceTask?.cancel()
+            scheduleSave()
             return
         }
 
@@ -118,6 +192,8 @@ final class TutorFeedbackService {
             if status == .completed {
                 currentStepIndices[subKey] = min(stepIndex + 1, steps.count - 1)
             }
+
+            scheduleSave()
         } catch {
             print("[TutorFeedback] Error: \(error)")
         }
@@ -128,6 +204,7 @@ final class TutorFeedbackService {
         let subKey = "\(questionIndex)-\(partLabel)"
         let current = currentStepIndices[subKey] ?? 0
         currentStepIndices[subKey] = min(current + 1, totalSteps - 1)
+        scheduleSave()
     }
 
     /// Reset a specific subquestion back to step 0, clearing all step progress.
@@ -140,6 +217,7 @@ final class TutorFeedbackService {
             stepProgress.removeValue(forKey: key)
         }
         lastEvaluatedLatex = lastEvaluatedLatex.filter { !$0.key.hasPrefix("\(subKey)-") }
+        scheduleSave()
     }
 
     /// Reset progress when switching questions/parts

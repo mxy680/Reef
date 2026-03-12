@@ -7,16 +7,31 @@
 
 import Foundation
 
-enum StepStatus: Equatable {
+enum StepStatus: String, Codable, Equatable {
     case idle       // Not yet started
     case working    // Actively being worked on
     case mistake    // Error detected
     case completed  // Correct / done
 }
 
-struct StepProgress: Equatable {
+struct StepProgress: Codable, Equatable {
     var status: StepStatus
     var progress: Double
+}
+
+/// Row in the `tutor_progress` Supabase table.
+struct TutorProgressRecord: Codable {
+    let userId: String
+    let documentId: String
+    var stepProgress: [String: StepProgress]
+    var currentStepIndices: [String: Int]
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case documentId = "document_id"
+        case stepProgress = "step_progress"
+        case currentStepIndices = "current_step_indices"
+    }
 }
 
 struct TutorStep {

@@ -42,8 +42,14 @@ struct DocumentCanvasView: View {
     /// Writing-detected question index (overrides page-based detection)
     @State private var activeQuestionIndex: Int?
     @State private var transcriptionService = TranscriptionService()
-    @State private var feedbackService = TutorFeedbackService()
+    @State private var feedbackService: TutorFeedbackService
     @State private var strokeCounts: [String: Int] = [:]
+
+    init(document: Document, onDismiss: @escaping () -> Void) {
+        self.document = document
+        self.onDismiss = onDismiss
+        _feedbackService = State(initialValue: TutorFeedbackService(documentId: document.id))
+    }
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -126,6 +132,7 @@ struct DocumentCanvasView: View {
                         visibleQuestionIndex: visibleQuestionIndex,
                         onClose: {
                             manager.saveAll()
+                            feedbackService.saveImmediately()
                             Task { await viewModel.saveIfNeeded() }
                             onDismiss()
                         },
@@ -357,6 +364,9 @@ struct DocumentCanvasView: View {
                 questionData = result.questions
                 setDefaultPartLabel(for: visibleQuestionIndex)
 
+                // Load saved tutor progress from Supabase
+                await feedbackService.loadProgress()
+
                 // Pre-cache all hint/answer LaTeX images in background
                 let allAnswers = result.answers
                 Task.detached(priority: .utility) {
@@ -415,8 +425,10 @@ struct DocumentCanvasView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             drawingManager?.saveAll()
+            feedbackService.saveImmediately()
         }
         .onDisappear {
+            feedbackService.saveImmediately()
             Task { await viewModel.saveIfNeeded() }
         }
     }
