@@ -340,35 +340,25 @@ struct CanvasToolbar: View {
                             // Retry button (always visible when there are steps)
                             if totalStepCount > 0 {
                                 Button(action: onResetProblem) {
-                                    HStack(spacing: 3) {
-                                        Image(systemName: "arrow.counterclockwise")
-                                            .font(.system(size: 10, weight: .bold))
-                                        Text("Retry")
-                                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                                    }
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .frame(height: 24)
-                                    .background(Color.white.opacity(0.25))
-                                    .clipShape(Capsule())
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 28, height: 24)
+                                        .background(Color.white.opacity(0.25))
+                                        .clipShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
                             }
 
-                            // Next question button
+                            // Next question button (always visible for multi-question docs)
                             if questionCount > 1 {
                                 Button(action: onNextQuestion) {
-                                    HStack(spacing: 3) {
-                                        Text("Next")
-                                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 10, weight: .bold))
-                                    }
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .frame(height: 24)
-                                    .background(Color.white.opacity(0.25))
-                                    .clipShape(Capsule())
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 28, height: 24)
+                                        .background(Color.white.opacity(0.25))
+                                        .clipShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
                             }
