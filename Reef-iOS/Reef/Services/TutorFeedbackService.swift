@@ -196,11 +196,6 @@ final class TutorFeedbackService {
 
             print("[TutorFeedback] \(progressKey): \(response.status) (\(Int(finalProgress * 100))%)")
 
-            // Auto-advance on completion (clamped to last step)
-            if status == .completed {
-                currentStepIndices[subKey] = min(stepIndex + 1, steps.count - 1)
-            }
-
             scheduleSave()
         } catch {
             print("[TutorFeedback] Error: \(error)")
