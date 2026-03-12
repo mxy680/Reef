@@ -45,7 +45,6 @@ struct DocumentCanvasView: View {
     @State private var feedbackService = TutorFeedbackService()
     @State private var strokeCounts: [String: Int] = [:]
     @State private var scrollToPageIndex: Int? = nil
-    @State private var skippedQuestions: Set<Int> = []
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -166,8 +165,7 @@ struct DocumentCanvasView: View {
                         onNextQuestion: {
                             scrollToNextQuestion()
                         },
-                        isLastQuestion: visibleQuestionIndex >= (document.problemCount ?? 1) - 1,
-                        skippedQuestions: skippedQuestions
+                        isLastQuestion: visibleQuestionIndex >= (document.problemCount ?? 1) - 1
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -449,12 +447,13 @@ struct DocumentCanvasView: View {
 
     private func scrollToNextQuestion() {
         guard let questionPages = document.questionPages else { return }
-        let currentIndex = visibleQuestionIndex
-        let nextIndex = currentIndex + 1
+        let nextIndex = visibleQuestionIndex + 1
         guard nextIndex < questionPages.count else { return }
         let nextPageRange = questionPages[nextIndex]
         guard let firstPage = nextPageRange.first else { return }
-        skippedQuestions.insert(currentIndex)
+        // Immediately update the question index so toolbar shows Q(n+1)
+        activeQuestionIndex = nextIndex
+        setDefaultPartLabel(for: nextIndex)
         scrollToPageIndex = firstPage
     }
 

@@ -46,7 +46,6 @@ struct CanvasToolbar: View {
     var onAdvanceStep: () -> Void = {}
     var onNextQuestion: () -> Void = {}
     var isLastQuestion: Bool = false
-    var skippedQuestions: Set<Int> = []
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -83,30 +82,23 @@ struct CanvasToolbar: View {
         return base
     }
 
-    /// Whether the current question has been skipped.
-    private var isCurrentSkipped: Bool {
-        skippedQuestions.contains(visibleQuestionIndex)
-    }
-
-    /// "Skip" / "Skipped" button shown after the progress bar.
+    /// "Skip" button — jumps to the next question.
     private var skipQuestionButton: some View {
         Button(action: onNextQuestion) {
             HStack(spacing: 3) {
-                Text(isCurrentSkipped ? "Skipped" : "Skip")
+                Text("Skip")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
-                if !isCurrentSkipped {
-                    Image(systemName: "chevron.right.2")
-                        .font(.system(size: 9, weight: .bold))
-                }
+                Image(systemName: "chevron.right.2")
+                    .font(.system(size: 9, weight: .bold))
             }
-            .foregroundColor(isCurrentSkipped ? .white.opacity(0.4) : .white)
+            .foregroundColor(.white)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(isCurrentSkipped ? Color.white.opacity(0.08) : Color.white.opacity(0.2))
+            .background(Color.white.opacity(0.2))
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        .disabled(isLastQuestion || isCurrentSkipped)
+        .disabled(isLastQuestion)
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
