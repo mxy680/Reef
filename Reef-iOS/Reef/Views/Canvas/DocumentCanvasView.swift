@@ -379,13 +379,6 @@ struct DocumentCanvasView: View {
             if isShowing { showToolSettings = false; showPageSettings = false }
         }
         .onChange(of: pageBasedQuestionIndex) { _, newIndex in
-            // When user scrolls to a different page-based question, reset writing-detected state.
-            // But if activeQuestionIndex already matches (e.g. from a programmatic skip), keep
-            // the part label that was set — don't overwrite it.
-            if activeQuestionIndex == newIndex {
-                activeQuestionIndex = nil
-                return
-            }
             activeQuestionIndex = nil
             setDefaultPartLabel(for: newIndex)
         }
@@ -489,7 +482,6 @@ struct DocumentCanvasView: View {
         // If there are parts and we're not on the last one, advance within this question
         if !labels.isEmpty, let current = activePartLabel, let idx = labels.firstIndex(of: current), idx + 1 < labels.count {
             activePartLabel = labels[idx + 1]
-            // Scroll to the region's page for the new part
             scrollToPartRegion(questionIndex: qi, partLabel: labels[idx + 1])
             return
         }
@@ -609,14 +601,10 @@ struct DocumentCanvasView: View {
     }
 
     /// Set the default active part label for the given question index.
+    /// Uses `partLabels` to skip nil-label regions (e.g. the main question area).
     private func setDefaultPartLabel(for questionIndex: Int) {
-        guard let regions = document.questionRegions,
-              questionIndex < regions.count,
-              let regionData = regions[questionIndex] else {
-            activePartLabel = nil
-            return
-        }
-        activePartLabel = regionData.regions.first?.label
+        let labels = partLabels(for: questionIndex)
+        activePartLabel = labels.first
     }
 
     // MARK: - Step Lookup
