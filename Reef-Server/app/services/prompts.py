@@ -234,7 +234,7 @@ Evaluate ONLY Step {current_step_num}. The student's work may contain work from 
 - progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly)
 - status: "idle" (no work related to this step), "working" (partial but on track), "mistake" (error in this step's work), "completed" (step done correctly)
 
-Be generous with partial credit. If prior steps are completed, the student's work will contain their work too — don't penalize for that.
+Only mark "completed" if the student has written the specific mathematical expression from the expected work. Partial work toward the expression should be "working". If prior steps are completed, the student's work will contain their work too — don't penalize for that.
 """
 
 ANSWER_KEY_PROMPT = """\

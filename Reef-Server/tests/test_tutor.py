@@ -154,6 +154,137 @@ class TestEvaluateStep:
         )
 
 
+class TestNormalizeLatex:
+    """Tests for _normalize_latex helper."""
+
+    def test_strips_dollar_signs(self):
+        from app.routers.tutor import _normalize_latex
+        assert _normalize_latex("$x = 4$") == "x=4"
+
+    def test_strips_display_delimiters(self):
+        from app.routers.tutor import _normalize_latex
+        assert _normalize_latex(r"\[x = 4\]") == "x=4"
+
+    def test_strips_left_right(self):
+        from app.routers.tutor import _normalize_latex
+        assert _normalize_latex(r"\left(\frac{a}{b}\right)") == r"(\frac{a}{b})"
+        # After full normalization (braces removed)
+        assert _normalize_latex(r"\left(\frac{a}{b}\right)") == "(\\fracab)"
+
+    def test_strips_text_command(self):
+        from app.routers.tutor import _normalize_latex
+        assert _normalize_latex(r"\text{kg}") == "kg"
+
+    def test_strips_whitespace_and_lowercases(self):
+        from app.routers.tutor import _normalize_latex
+        assert _normalize_latex("  X  =  4  ") == "x=4"
+
+
+class TestExtractKeyResult:
+    """Tests for _extract_key_result helper."""
+
+    def test_simple_equation(self):
+        from app.routers.tutor import _extract_key_result
+        assert _extract_key_result("x = 4").strip() == "4"
+
+    def test_chained_equals(self):
+        from app.routers.tutor import _extract_key_result
+        assert _extract_key_result("a = b = c").strip() == "c"
+
+    def test_multiline_takes_last(self):
+        from app.routers.tutor import _extract_key_result
+        result = _extract_key_result("2x = 8\nx = 4")
+        assert result.strip() == "4"
+
+    def test_no_equals(self):
+        from app.routers.tutor import _extract_key_result
+        assert _extract_key_result("\\frac{1}{2}") == "\\frac{1}{2}"
+
+
+class TestStudentWorkContainsExpected:
+    """Tests for _student_work_contains_expected helper."""
+
+    def test_matching_result(self):
+        from app.routers.tutor import _student_work_contains_expected
+        assert _student_work_contains_expected("$x = 4$", "x = 4") is True
+
+    def test_missing_result(self):
+        from app.routers.tutor import _student_work_contains_expected
+        # Use a longer expected result so the min-length guard doesn't skip
+        assert _student_work_contains_expected("$2x = 8$", r"x = \frac{-3}{2}") is False
+
+    def test_accumulated_work(self):
+        from app.routers.tutor import _student_work_contains_expected
+        # Student has work from prior steps plus the current result
+        student = "$2x + 4 = 10$ $2x = 6$ $x = 3$"
+        assert _student_work_contains_expected(student, "x = 3") is True
+
+    def test_short_expression_skips_check(self):
+        from app.routers.tutor import _student_work_contains_expected
+        # "x = 4" extracts "4" → 1 char → skip validation → always True
+        assert _student_work_contains_expected("anything", "x = 4") is True
+
+    def test_multiline_expected_work(self):
+        from app.routers.tutor import _student_work_contains_expected
+        expected = "2x = 8\nx = 4"
+        student = "$x = 4$"
+        assert _student_work_contains_expected(student, expected) is True
+
+
+class TestCompletionOverride:
+    """Tests that LLM 'completed' is overridden when student work is missing expected result."""
+
+    @patch("app.routers.tutor.asyncio.to_thread")
+    @patch("app.routers.tutor.LLMClient")
+    @patch("app.routers.tutor.settings")
+    def test_overrides_completed_when_result_missing(self, mock_settings, mock_llm_cls, mock_to_thread):
+        mock_settings.openrouter_api_key = "test-key"
+        mock_llm_cls.return_value = MagicMock()
+
+        async def _fake_to_thread(fn, **kwargs):
+            return _make_llm_result(progress=1.0, status="completed")
+
+        mock_to_thread.side_effect = _fake_to_thread
+
+        # Student hasn't written the expected result for step 1 (x = 3)
+        body = {
+            **VALID_BODY,
+            "student_work": "$2x = 6$",  # only step 0 work, not step 1
+            "current_step_index": 1,
+            "completed_step_indices": [0],
+        }
+        resp = client.post("/ai/evaluate-step", json=body)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "working"
+        assert data["progress"] <= 0.95
+
+    @patch("app.routers.tutor.asyncio.to_thread")
+    @patch("app.routers.tutor.LLMClient")
+    @patch("app.routers.tutor.settings")
+    def test_allows_completed_when_result_present(self, mock_settings, mock_llm_cls, mock_to_thread):
+        mock_settings.openrouter_api_key = "test-key"
+        mock_llm_cls.return_value = MagicMock()
+
+        async def _fake_to_thread(fn, **kwargs):
+            return _make_llm_result(progress=1.0, status="completed")
+
+        mock_to_thread.side_effect = _fake_to_thread
+
+        # Student has written the expected result for step 1
+        body = {
+            **VALID_BODY,
+            "student_work": "$2x = 6$ $x = 3$",
+            "current_step_index": 1,
+            "completed_step_indices": [0],
+        }
+        resp = client.post("/ai/evaluate-step", json=body)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "completed"
+        assert data["progress"] == 1.0
+
+
 # Clean up override after tests
 def teardown_module():
     app.dependency_overrides.pop(get_current_user, None)
