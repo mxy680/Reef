@@ -135,6 +135,23 @@ final class TutorFeedbackService {
         debounceTask?.cancel()
         // Don't clear stepProgress — keep history for revisited steps
     }
+
+    /// Save progress to disk for the given document.
+    func saveProgress(for documentId: String) {
+        guard !stepProgress.isEmpty else { return }
+        TutorProgressStorageService.save(
+            stepProgress: stepProgress,
+            currentStepIndices: currentStepIndices,
+            for: documentId
+        )
+    }
+
+    /// Load saved progress from disk.
+    func loadProgress(for documentId: String) {
+        guard let stored = TutorProgressStorageService.load(for: documentId) else { return }
+        stepProgress = stored.stepProgress
+        currentStepIndices = stored.currentStepIndices
+    }
 }
 
 // MARK: - API Models

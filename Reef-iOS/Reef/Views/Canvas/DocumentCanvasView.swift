@@ -126,6 +126,7 @@ struct DocumentCanvasView: View {
                         visibleQuestionIndex: visibleQuestionIndex,
                         onClose: {
                             manager.saveAll()
+                            feedbackService.saveProgress(for: document.id)
                             Task { await viewModel.saveIfNeeded() }
                             onDismiss()
                         },
@@ -345,6 +346,7 @@ struct DocumentCanvasView: View {
                 drawingManager = manager
             }
             if isReconstructed {
+                feedbackService.loadProgress(for: document.id)
                 let result = await AnswerKeyService.shared.fetchAnswerKeys(documentId: document.id)
                 answerKeys = result.answers
                 questionData = result.questions
@@ -408,8 +410,10 @@ struct DocumentCanvasView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             drawingManager?.saveAll()
+            feedbackService.saveProgress(for: document.id)
         }
         .onDisappear {
+            feedbackService.saveProgress(for: document.id)
             Task { await viewModel.saveIfNeeded() }
         }
     }

@@ -345,7 +345,7 @@ struct CanvasToolbar: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: showMistake)
-        .zIndex(1)
+        .zIndex(2)
     }
 
     // MARK: - Left Section (Undo / Redo)

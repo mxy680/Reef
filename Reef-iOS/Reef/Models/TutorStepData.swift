@@ -7,14 +7,14 @@
 
 import Foundation
 
-enum StepStatus: Equatable {
+enum StepStatus: String, Equatable, Codable {
     case idle       // Not yet started
     case working    // Actively being worked on
     case mistake    // Error detected
     case completed  // Correct / done
 }
 
-struct StepProgress: Equatable {
+struct StepProgress: Equatable, Codable {
     var status: StepStatus
     var progress: Double
     var mistakeExplanation: String? = nil
