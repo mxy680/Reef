@@ -44,6 +44,7 @@ struct CanvasToolbar: View {
     var currentStepIndex: Int = 0
     var totalStepCount: Int = 0
     var onAdvanceStep: () -> Void = {}
+    var onResetProblem: () -> Void = {}
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -284,6 +285,20 @@ struct CanvasToolbar: View {
                                     .font(.system(size: 9, weight: .bold, design: .rounded))
                                     .foregroundColor(.white.opacity(0.6))
                                     .baselineOffset(1.5)
+                            }
+
+                            // Reset problem button
+                            if currentStepIndex > 0 || currentTutorStep?.status == .completed {
+                                Button(action: onResetProblem) {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 24, height: 24)
+                                        .background(Color.white.opacity(0.25))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(.plain)
+                                .transition(.scale.combined(with: .opacity))
                             }
 
                             // Next step chevron — appears when current step is completed

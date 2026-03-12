@@ -130,6 +130,18 @@ final class TutorFeedbackService {
         currentStepIndices[subKey] = min(current + 1, totalSteps - 1)
     }
 
+    /// Reset a specific subquestion back to step 0, clearing all step progress.
+    func resetProblem(questionIndex: Int, partLabel: String) {
+        let subKey = "\(questionIndex)-\(partLabel)"
+        currentStepIndices[subKey] = 0
+        // Clear all step progress for this subquestion
+        let keysToRemove = stepProgress.keys.filter { $0.hasPrefix("\(subKey)-") }
+        for key in keysToRemove {
+            stepProgress.removeValue(forKey: key)
+        }
+        lastEvaluatedLatex = lastEvaluatedLatex.filter { !$0.key.hasPrefix("\(subKey)-") }
+    }
+
     /// Reset progress when switching questions/parts
     func reset() {
         debounceTask?.cancel()

@@ -161,6 +161,12 @@ struct DocumentCanvasView: View {
                                 partLabel: activePartLabel ?? "_",
                                 totalSteps: totalStepCountForToolbar
                             )
+                        },
+                        onResetProblem: {
+                            feedbackService.resetProblem(
+                                questionIndex: visibleQuestionIndex,
+                                partLabel: activePartLabel ?? "_"
+                            )
                         }
                     )
                     .zIndex(1)
