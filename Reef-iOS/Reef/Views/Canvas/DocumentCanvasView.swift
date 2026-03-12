@@ -163,9 +163,9 @@ struct DocumentCanvasView: View {
                             )
                         },
                         onNextQuestion: {
-                            scrollToNextQuestion()
+                            skipToNextSubquestion()
                         },
-                        isLastQuestion: visibleQuestionIndex >= (document.problemCount ?? 1) - 1
+                        isLastQuestion: isLastSubquestion
                     )
                     .zIndex(1)
                     .overlay(alignment: .bottomLeading) {
@@ -443,18 +443,73 @@ struct DocumentCanvasView: View {
         }
     }
 
-    // MARK: - Scroll To Next Question
+    // MARK: - Skip to Next Subquestion / Question
 
-    private func scrollToNextQuestion() {
+    /// The ordered part labels for a given question index (e.g. ["a", "b", "c"]).
+    /// Returns empty if the question has no subquestion parts.
+    private func partLabels(for questionIndex: Int) -> [String] {
+        guard let regions = document.questionRegions,
+              questionIndex < regions.count,
+              let regionData = regions[questionIndex] else { return [] }
+        // Collect unique labels preserving order, skipping nil
+        var seen = Set<String>()
+        var labels: [String] = []
+        for region in regionData.regions {
+            if let label = region.label, !seen.contains(label) {
+                seen.insert(label)
+                labels.append(label)
+            }
+        }
+        return labels
+    }
+
+    /// Whether the Skip button should be hidden (on the very last subquestion of the last question).
+    private var isLastSubquestion: Bool {
+        let qi = visibleQuestionIndex
+        let totalQuestions = document.problemCount ?? 1
+        let isLastQ = qi >= totalQuestions - 1
+        guard isLastQ else { return false }
+        // On the last question — check if we're on the last part
+        let labels = partLabels(for: qi)
+        if labels.isEmpty { return true }
+        guard let current = activePartLabel else { return true }
+        return current == labels.last
+    }
+
+    private func skipToNextSubquestion() {
+        let qi = visibleQuestionIndex
+        let labels = partLabels(for: qi)
+
+        // If there are parts and we're not on the last one, advance within this question
+        if !labels.isEmpty, let current = activePartLabel, let idx = labels.firstIndex(of: current), idx + 1 < labels.count {
+            activePartLabel = labels[idx + 1]
+            // Scroll to the region's page for the new part
+            scrollToPartRegion(questionIndex: qi, partLabel: labels[idx + 1])
+            return
+        }
+
+        // Otherwise, move to the next question
         guard let questionPages = document.questionPages else { return }
-        let nextIndex = visibleQuestionIndex + 1
+        let nextIndex = qi + 1
         guard nextIndex < questionPages.count else { return }
         let nextPageRange = questionPages[nextIndex]
         guard let firstPage = nextPageRange.first else { return }
-        // Immediately update the question index so toolbar shows Q(n+1)
         activeQuestionIndex = nextIndex
         setDefaultPartLabel(for: nextIndex)
         scrollToPageIndex = firstPage
+    }
+
+    /// Scroll to the page containing a specific part region.
+    private func scrollToPartRegion(questionIndex: Int, partLabel: String) {
+        guard let regions = document.questionRegions,
+              questionIndex < regions.count,
+              let regionData = regions[questionIndex],
+              let questionPages = document.questionPages,
+              questionIndex < questionPages.count else { return }
+        let startPage = questionPages[questionIndex].first ?? 0
+        if let region = regionData.regions.first(where: { $0.label == partLabel }) {
+            scrollToPageIndex = startPage + region.page
+        }
     }
 
     // MARK: - Debug Regions
