@@ -42,9 +42,15 @@ struct DocumentCanvasView: View {
     /// Writing-detected question index (overrides page-based detection)
     @State private var activeQuestionIndex: Int?
     @State private var transcriptionService = TranscriptionService()
-    @State private var feedbackService = TutorFeedbackService()
+    @State private var feedbackService: TutorFeedbackService
     @State private var strokeCounts: [String: Int] = [:]
     @State private var scrollToPageIndex: Int? = nil
+
+    init(document: Document, onDismiss: @escaping () -> Void) {
+        self.document = document
+        self.onDismiss = onDismiss
+        _feedbackService = State(initialValue: TutorFeedbackService(documentId: document.id))
+    }
 
     private var isReconstructed: Bool {
         document.questionPages != nil
@@ -69,7 +75,7 @@ struct DocumentCanvasView: View {
 
     /// Current step index for the active subquestion (from feedback service).
     private var currentStepIndexForToolbar: Int {
-        let subKey = "\(visibleQuestionIndex)-\(activePartLabel ?? "_")"
+        let subKey = "\(visibleQuestionIndex)-\(activePartLabel ?? "a")"
         return feedbackService.currentStepIndices[subKey] ?? 0
     }
 
@@ -77,7 +83,7 @@ struct DocumentCanvasView: View {
     private var totalStepCountForToolbar: Int {
         let qNum = visibleQuestionIndex + 1
         guard let answerKey = answerKeys[qNum] else { return 0 }
-        let partLabel = activePartLabel ?? "_"
+        let partLabel = activePartLabel ?? "a"
         return stepsForPart(answerKey: answerKey, partLabel: partLabel).count
     }
 
@@ -160,7 +166,14 @@ struct DocumentCanvasView: View {
                         onAdvanceStep: {
                             feedbackService.advanceStep(
                                 questionIndex: visibleQuestionIndex,
-                                partLabel: activePartLabel ?? "_"
+                                partLabel: activePartLabel ?? "a",
+                                totalSteps: totalStepCountForToolbar
+                            )
+                        },
+                        onResetProblem: {
+                            feedbackService.resetProblem(
+                                questionIndex: visibleQuestionIndex,
+                                partLabel: activePartLabel ?? "a"
                             )
                         },
                         onNextQuestion: {
@@ -285,15 +298,14 @@ struct DocumentCanvasView: View {
 
                     }
                     .overlay(alignment: .bottomTrailing) {
-                        if let partLabel = activePartLabel {
-                            let key = "\(visibleQuestionIndex)-\(partLabel)"
-                            TranscriptionDebugPanel(
-                                questionIndex: visibleQuestionIndex,
-                                partLabel: partLabel,
-                                latex: transcriptionService.transcriptions[key]
-                            )
-                            .padding(16)
-                        }
+                        let partLabel = activePartLabel ?? "a"
+                        let key = "\(visibleQuestionIndex)-\(partLabel)"
+                        TranscriptionDebugPanel(
+                            questionIndex: visibleQuestionIndex,
+                            partLabel: partLabel,
+                            latex: transcriptionService.transcriptions[key]
+                        )
+                        .padding(16)
                     }
                     .background(canvasBackground)
                 }
@@ -387,19 +399,13 @@ struct DocumentCanvasView: View {
         .onChange(of: transcriptionService.transcriptions) { _, newTranscriptions in
             guard tutorModeOn else { return }
             let qi = visibleQuestionIndex
-            // "_" is the sentinel for questions without subquestion parts
-            let partLabel = activePartLabel ?? "_"
+            let partLabel = activePartLabel ?? "a"
             let key = "\(qi)-\(partLabel)"
             guard let latex = newTranscriptions[key] else { return }
 
             // Get question text from questionData
             let qNum = qi + 1  // 1-based
-            let questionText: String
-            if partLabel == "_" {
-                questionText = questionData[qNum]?.text ?? ""
-            } else {
-                questionText = questionData[qNum]?.textForPart(partLabel) ?? ""
-            }
+            let questionText = questionData[qNum]?.textForPart(partLabel) ?? ""
 
             // Get steps for the current part
             guard let answerKey = answerKeys[qNum] else { return }
@@ -529,7 +535,7 @@ struct DocumentCanvasView: View {
                     page: startPage + region.page,
                     yStart: region.yStart,
                     yEnd: region.yEnd,
-                    label: "Q\(qi+1):\(region.label ?? "_")"
+                    label: "Q\(qi+1):\(region.label ?? "a")"
                 ))
             }
         }
@@ -554,8 +560,7 @@ struct DocumentCanvasView: View {
             return
         }
 
-        // Use "_" as default label for questions without subquestion parts
-        let partLabel = match.partLabel ?? "_"
+        let partLabel = match.partLabel ?? "a"
 
         let allStrokes = CanvasStrokeCollector.collectStrokes(
             questionIndex: match.questionIndex,
@@ -578,7 +583,7 @@ struct DocumentCanvasView: View {
 
     /// Re-transcribe after strokes are erased, using the current active question/part.
     private func handleStrokesErased(pageIndex: Int) {
-        let partLabel = activePartLabel ?? "_"
+        let partLabel = activePartLabel ?? "a"
         guard let regions = document.questionRegions,
               let questionPages = document.questionPages,
               let manager = drawingManager else { return }
@@ -608,13 +613,13 @@ struct DocumentCanvasView: View {
     /// Uses `partLabels` to skip nil-label regions (e.g. the main question area).
     private func setDefaultPartLabel(for questionIndex: Int) {
         let labels = partLabels(for: questionIndex)
-        activePartLabel = labels.first
+        activePartLabel = labels.first ?? "a"
     }
 
     // MARK: - Step Lookup
 
     private func stepsForPart(answerKey: QuestionAnswer, partLabel: String) -> [AnswerKeyStep] {
-        if partLabel == "_" || partLabel.isEmpty || answerKey.parts.isEmpty { return answerKey.steps }
+        if partLabel.isEmpty || answerKey.parts.isEmpty { return answerKey.steps }
         return findPartSteps(partLabel, in: answerKey.parts) ?? []
     }
 

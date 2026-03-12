@@ -46,7 +46,7 @@ struct TutorStepRow: View {
                         .foregroundColor(.white)
 
                     if totalStepCount > 0 {
-                        Text("Step \(currentStepIndex + 1)/\(totalStepCount)")
+                        Text("Step \(min(currentStepIndex + 1, totalStepCount))/\(totalStepCount)")
                             .font(.system(size: 10, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.6))
                     }

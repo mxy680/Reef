@@ -15,11 +15,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh \
     && mv tectonic /usr/local/bin/
 
-# Pre-warm tectonic cache (downloads TeX packages on first run)
-RUN printf '\\documentclass{article}\\begin{document}Hello\\end{document}\n' > /tmp/test.tex \
-    && tectonic /tmp/test.tex \
-    && rm /tmp/test.tex /tmp/test.pdf
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -27,6 +22,11 @@ COPY app/ app/
 
 RUN useradd --create-home reef
 USER reef
+
+# Pre-warm tectonic cache as reef user (downloads TeX packages on first run)
+RUN printf '\\documentclass{article}\\begin{document}Hello\\end{document}\n' > /tmp/test.tex \
+    && tectonic /tmp/test.tex \
+    && rm /tmp/test.tex /tmp/test.pdf
 
 EXPOSE 8000
 

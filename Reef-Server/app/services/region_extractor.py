@@ -69,7 +69,7 @@ def extract_question_regions(
         regions = []
         for page_idx, height in enumerate(page_heights):
             regions.append({
-                "label": None,
+                "label": "a",
                 "page": page_idx,
                 "y_start": 0.0,
                 "y_end": height,

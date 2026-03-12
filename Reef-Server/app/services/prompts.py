@@ -235,7 +235,7 @@ Evaluate ONLY Step {current_step_num}. The student's work may contain work from 
 - status: "idle" (no work related to this step), "working" (partial but on track), "mistake" (error in this step's work), "completed" (step done correctly)
 - mistake_explanation: When status is "mistake", provide a concise LaTeX explanation of what the student did wrong and what the correct approach is. Use $...$ for inline math. For example: "You wrote $3x + 2 = 8$ but the coefficient should be $4$, giving $4x + 2 = 8$." Set to null when status is not "mistake".
 
-Be generous with partial credit. If prior steps are completed, the student's work will contain their work too — don't penalize for that.
+Only mark "completed" if the student has written the specific mathematical expression from the expected work. Partial work toward the expression should be "working". If prior steps are completed, the student's work will contain their work too — don't penalize for that.
 """
 
 ANSWER_KEY_PROMPT = """\
@@ -272,8 +272,7 @@ Write like a chill, knowledgeable friend — someone who makes hard problems fee
 
 - Match `question_number` exactly from the input.
 - For each `parts` entry, match `label` exactly ('a', 'b', 'i', 'ii', etc.).
-- If the question has **no parts**: put steps and final_answer at the top level. Leave `parts` empty.
-- If the question has **parts**: put per-part steps in the `parts` array. Top-level `steps` and `final_answer` can be empty.
+- **Every question must have parts.** If the question has no labeled sub-questions, create a single part with label `"a"` containing all steps and the final answer. Top-level `steps` and `final_answer` should always be empty — all content goes in `parts`.
 - `final_answer` should be the bare answer only — no explanation, no restating the question (e.g. "$x = 5$", "$42$ cm$^2$", "True", "exothermic").
 - Use LaTeX for all math: $...$ inline, \\[...\\] display. No Unicode math symbols.
 - If the question references a figure you cannot see, state what information would be needed and solve symbolically.

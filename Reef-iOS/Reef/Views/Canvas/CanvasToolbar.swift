@@ -44,6 +44,7 @@ struct CanvasToolbar: View {
     var currentStepIndex: Int = 0
     var totalStepCount: Int = 0
     var onAdvanceStep: () -> Void = {}
+    var onResetProblem: () -> Void = {}
     var onNextQuestion: () -> Void = {}
     var isLastQuestion: Bool = false
 
@@ -75,13 +76,20 @@ struct CanvasToolbar: View {
         currentTutorStep?.progress ?? 0
     }
 
-    /// Formatted question label, e.g. "Q1" or "Q1 (a)"
+    /// Progress key for the current step: "questionIndex-partLabel-stepIndex"
+    private var currentStepKey: String {
+        "\(visibleQuestionIndex)-\(activePartLabel ?? "a")-\(currentStepIndex)"
+    }
+
+    /// Whether the step at currentStepIndex is completed.
+    private var isCurrentStepCompleted: Bool {
+        stepProgressData?[currentStepKey]?.status == .completed
+    }
+
+    /// Formatted question label, e.g. "Q1a" or "Q2b"
     private var questionLabel: String {
-        let base = "Q\(visibleQuestionIndex + 1)"
-        if let label = activePartLabel {
-            return "\(base) (\(label))"
-        }
-        return base
+        let label = activePartLabel ?? "a"
+        return "Q\(visibleQuestionIndex + 1)\(label)"
     }
 
     /// "Skip" button — 3D primary pill that jumps to the next question.
@@ -183,6 +191,7 @@ struct CanvasToolbar: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: showReveal)
+            .animation(.easeOut(duration: 0.2), value: showMistake)
             .zIndex(1)
 
             // Bottom separator
@@ -327,22 +336,33 @@ struct CanvasToolbar: View {
                                     .baselineOffset(1.5)
                             }
 
-                            // Next step chevron — appears when current step is completed
-                            if currentTutorStep?.status == .completed && currentStepIndex < totalStepCount - 1 {
-                                Button(action: onAdvanceStep) {
+                            // Retry button (always visible when there are steps)
+                            if totalStepCount > 0 {
+                                Button(action: onResetProblem) {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 28, height: 24)
+                                        .background(Color.white.opacity(0.25))
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            // Next question button (always visible for multi-question docs)
+                            if questionCount > 1 {
+                                Button(action: onNextQuestion) {
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12, weight: .bold))
                                         .foregroundColor(.white)
-                                        .frame(width: 24, height: 24)
+                                        .frame(width: 28, height: 24)
                                         .background(Color.white.opacity(0.25))
-                                        .clipShape(Circle())
+                                        .clipShape(Capsule())
                                 }
                                 .buttonStyle(.plain)
-                                .transition(.scale.combined(with: .opacity))
                             }
 
                         }
-                        .animation(.easeInOut(duration: 0.2), value: currentTutorStep?.status)
 
                         // Divider between progress and tutor toggle
                         Text("|")
