@@ -301,18 +301,37 @@ struct CanvasToolbar: View {
                                 .transition(.scale.combined(with: .opacity))
                             }
 
-                            // Next step chevron — appears when current step is completed
-                            if currentTutorStep?.status == .completed && currentStepIndex < totalStepCount - 1 {
-                                Button(action: onAdvanceStep) {
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .bold))
+                            if currentTutorStep?.status == .completed {
+                                if currentStepIndex < totalStepCount - 1 {
+                                    // Next step chevron
+                                    Button(action: onAdvanceStep) {
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .frame(width: 24, height: 24)
+                                            .background(Color.white.opacity(0.25))
+                                            .clipShape(Circle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .transition(.scale.combined(with: .opacity))
+                                } else {
+                                    // All steps done — show continue / done
+                                    Button(action: onAdvanceStep) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 10, weight: .black))
+                                            Text("Done")
+                                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        }
                                         .foregroundColor(.white)
-                                        .frame(width: 24, height: 24)
-                                        .background(Color.white.opacity(0.25))
-                                        .clipShape(Circle())
+                                        .padding(.horizontal, 8)
+                                        .frame(height: 24)
+                                        .background(Color(hex: 0x81C784))
+                                        .clipShape(Capsule())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .transition(.scale.combined(with: .opacity))
                                 }
-                                .buttonStyle(.plain)
-                                .transition(.scale.combined(with: .opacity))
                             }
                         }
                         .animation(.easeInOut(duration: 0.2), value: currentTutorStep?.status)
