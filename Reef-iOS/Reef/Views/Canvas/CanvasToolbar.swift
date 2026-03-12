@@ -46,6 +46,7 @@ struct CanvasToolbar: View {
     var onAdvanceStep: () -> Void = {}
     var onResetProblem: () -> Void = {}
     var onNextQuestion: () -> Void = {}
+    var isLastQuestion: Bool = false
 
     // Tutor popover state (owned here so overlay covers Row 2)
     @State private var showHint = false
@@ -53,7 +54,7 @@ struct CanvasToolbar: View {
     @State private var showMistake = false
     @State private var hintMidX: CGFloat = 0
     @State private var revealMidX: CGFloat = 0
-    @State private var mistakeIconMidX: CGFloat = 0
+    @State private var mistakeMidX: CGFloat = 0
     @State private var pulseOpacity: Double = 1.0
     @State private var toolbarRowMinX: CGFloat = 0
     @State private var toolbarRowWidth: CGFloat = 0
@@ -85,22 +86,38 @@ struct CanvasToolbar: View {
         stepProgressData?[currentStepKey]?.status == .completed
     }
 
-    /// Whether the step at currentStepIndex has a mistake.
-    private var isCurrentStepMistake: Bool {
-        stepProgressData?[currentStepKey]?.status == .mistake
-    }
-
-    /// Feedback text for the current step's mistake (from LLM).
-    private var currentMistakeFeedback: String {
-        let partLabel = activePartLabel ?? "a"
-        let key = "\(visibleQuestionIndex)-\(partLabel)-\(currentStepIndex)"
-        return stepProgressData?[key]?.feedback ?? ""
-    }
-
     /// Formatted question label, e.g. "Q1a" or "Q2b"
     private var questionLabel: String {
         let label = activePartLabel ?? "a"
         return "Q\(visibleQuestionIndex + 1)\(label)"
+    }
+
+    /// "Skip" button — 3D primary pill that jumps to the next question.
+    private var skipQuestionButton: some View {
+        let shadowOffset: CGFloat = 2
+        return Button(action: onNextQuestion) {
+            HStack(spacing: 3) {
+                Text("Skip")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                Image(systemName: "chevron.right.2")
+                    .font(.system(size: 9, weight: .bold))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                ZStack {
+                    Capsule()
+                        .fill(Color.black.opacity(0.35))
+                        .offset(x: shadowOffset, y: shadowOffset)
+                    Capsule()
+                        .fill(ReefColors.primary)
+                    Capsule()
+                        .stroke(Color.black.opacity(0.3), lineWidth: 1)
+                }
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     /// The single toolbar teal — everything derives from this via white/black opacity.
@@ -174,17 +191,6 @@ struct CanvasToolbar: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: showReveal)
-            .overlay(alignment: .bottomLeading) {
-                if showMistake {
-                    let text = currentMistakeFeedback.isEmpty
-                        ? "There's an error in your work for this step. Check your calculations and try again."
-                        : currentMistakeFeedback
-                    Color.clear.frame(height: 0)
-                        .overlay(alignment: .topLeading) {
-                            tutorPopoverCard(triggerMidX: mistakeIconMidX, title: "Mistake", text: text)
-                        }
-                }
-            }
             .animation(.easeOut(duration: 0.2), value: showMistake)
             .zIndex(1)
 
@@ -216,10 +222,6 @@ struct CanvasToolbar: View {
         }
         .onChange(of: visibleQuestionIndex) { _, _ in
             showHint = false; showReveal = false; showMistake = false
-        }
-        .onChange(of: isCurrentStepMistake) { _, isMistake in
-            // Auto-dismiss mistake popover when mistake is resolved
-            if !isMistake { showMistake = false }
         }
     }
 
@@ -295,12 +297,12 @@ struct CanvasToolbar: View {
                     currentStepIndex: currentStepIndex,
                     totalStepCount: totalStepCount,
                     onMistakeTapped: {
-                        showHint = false
-                        showReveal = false
                         showMistake.toggle()
+                        if showMistake { showHint = false; showReveal = false }
                     },
-                    mistakeIconMidX: $mistakeIconMidX
+                    mistakeIconMidX: $mistakeMidX
                 )
+
             } else {
                 // Document name / question label
                 Spacer()
@@ -359,6 +361,7 @@ struct CanvasToolbar: View {
                                 }
                                 .buttonStyle(.plain)
                             }
+
                         }
 
                         // Divider between progress and tutor toggle
@@ -366,6 +369,12 @@ struct CanvasToolbar: View {
                             .font(.system(size: 20, weight: .ultraLight))
                             .foregroundColor(.white.opacity(0.4))
                             .frame(width: 16)
+                    }
+
+                    // Skip question button — visible for all questions except the last
+                    if questionCount > 1 && !isLastQuestion {
+                        skipQuestionButton
+                            .padding(.trailing, 4)
                     }
 
                     HStack(spacing: 6) {
@@ -385,6 +394,16 @@ struct CanvasToolbar: View {
         .frame(maxWidth: .infinity)
         .frame(height: 40)
         .background(stripBg)
+        .overlay(alignment: .bottomLeading) {
+            if let step = currentTutorStep, showMistake, let explanation = step.mistakeExplanation, !explanation.isEmpty {
+                Color.clear.frame(height: 0)
+                    .overlay(alignment: .topLeading) {
+                        tutorPopoverCard(triggerMidX: mistakeMidX, title: "Mistake", text: explanation)
+                    }
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: showMistake)
+        .zIndex(2)
     }
 
     // MARK: - Left Section (Undo / Redo)

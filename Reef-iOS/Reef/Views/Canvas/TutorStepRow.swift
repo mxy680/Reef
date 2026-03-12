@@ -33,23 +33,7 @@ struct TutorStepRow: View {
 
                 // Q label + Step indicator
                 HStack(spacing: 6) {
-                    statusIcon(for: currentStep!.status)
-                        .padding(6)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if currentStep!.status == .mistake {
-                                onMistakeTapped()
-                            }
-                        }
-                        .background(GeometryReader { geo in
-                            Color.clear
-                                .onChange(of: currentStep?.status) { _, _ in
-                                    mistakeIconMidX = geo.frame(in: .global).midX
-                                }
-                                .onAppear {
-                                    mistakeIconMidX = geo.frame(in: .global).midX
-                                }
-                        })
+                    statusIcon(for: currentStep!.status, isTappable: currentStep!.status == .mistake)
 
                     Text({
                         let base = "Q\(questionIndex + 1)"
@@ -96,7 +80,7 @@ struct TutorStepRow: View {
     // MARK: - Status Icon
 
     @ViewBuilder
-    private func statusIcon(for status: StepStatus) -> some View {
+    private func statusIcon(for status: StepStatus, isTappable: Bool = false) -> some View {
         switch status {
         case .idle:
             Circle()
@@ -117,12 +101,20 @@ struct TutorStepRow: View {
                         .rotationEffect(.degrees(-90))
                 )
         case .mistake:
-            Image(systemName: "xmark")
-                .font(.system(size: 9, weight: .black))
-                .foregroundColor(.white)
-                .frame(width: 14, height: 14)
-                .background(Color(hex: 0xE57373))
-                .clipShape(Circle())
+            Button(action: onMistakeTapped) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundColor(.white)
+                    .frame(width: 14, height: 14)
+                    .background(Color(hex: 0xE57373))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .background(GeometryReader { geo in
+                Color.clear
+                    .onAppear { mistakeIconMidX = geo.frame(in: .global).midX }
+                    .onChange(of: geo.frame(in: .global).midX) { _, v in mistakeIconMidX = v }
+            })
         case .completed:
             Image(systemName: "checkmark")
                 .font(.system(size: 9, weight: .black))

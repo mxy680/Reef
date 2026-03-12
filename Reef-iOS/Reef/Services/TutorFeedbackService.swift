@@ -4,11 +4,10 @@
 //
 //  Debounces transcription changes and evaluates student progress
 //  against the current tutor step via Gemini 3 Flash.
-//  Persists progress to Supabase `tutor_progress` table.
+//  Persists progress locally via TutorProgressStorageService.
 //
 
 import Foundation
-@preconcurrency import Supabase
 
 @Observable
 @MainActor
@@ -25,7 +24,6 @@ final class TutorFeedbackService {
     private var saveTask: Task<Void, Never>?
     private var generation: Int = 0
     private var lastEvaluatedLatex: [String: String] = [:]
-    private var isLoaded = false
 
     init(documentId: String) {
         self.documentId = documentId
@@ -33,62 +31,13 @@ final class TutorFeedbackService {
 
     // MARK: - Persistence
 
-    /// Load saved progress from Supabase. Call once from the view's .task block.
-    func loadProgress() async {
-        do {
-            let userId = try await supabase.auth.session.user.id.uuidString.lowercased()
-            let record: TutorProgressRecord = try await supabase
-                .from("tutor_progress")
-                .select()
-                .eq("user_id", value: userId)
-                .eq("document_id", value: documentId)
-                .single()
-                .execute()
-                .value
-            stepProgress = record.stepProgress
-            currentStepIndices = record.currentStepIndices
-            print("[TutorFeedback] Loaded progress for \(documentId): \(stepProgress.count) steps, \(currentStepIndices.count) indices")
-        } catch {
-            // No existing row (PGRST116) or other error — start fresh
-            print("[TutorFeedback] No saved progress for \(documentId): \(error)")
-        }
-        isLoaded = true
-    }
-
     /// Debounced save — call after any state mutation.
     private func scheduleSave() {
-        guard isLoaded else { return }
         saveTask?.cancel()
         saveTask = Task {
             try? await Task.sleep(for: .seconds(1.0))
             guard !Task.isCancelled else { return }
-            await persistProgress()
-        }
-    }
-
-    /// Save immediately (e.g. on view disappear). Fire-and-forget.
-    func saveImmediately() {
-        guard isLoaded else { return }
-        saveTask?.cancel()
-        Task { await persistProgress() }
-    }
-
-    private func persistProgress() async {
-        do {
-            let userId = try await supabase.auth.session.user.id.uuidString.lowercased()
-            let record = TutorProgressRecord(
-                userId: userId,
-                documentId: documentId,
-                stepProgress: stepProgress,
-                currentStepIndices: currentStepIndices
-            )
-            try await supabase
-                .from("tutor_progress")
-                .upsert(record)
-                .execute()
-            print("[TutorFeedback] Saved progress for \(documentId)")
-        } catch {
-            print("[TutorFeedback] Failed to save progress: \(error)")
+            saveProgress(for: documentId)
         }
     }
 
@@ -202,18 +151,10 @@ final class TutorFeedbackService {
             default: .idle
             }
 
-            // On mistake, never let progress increase — lock to previous value or lower
-            let finalProgress: Double
-            if status == .mistake, let existing = stepProgress[progressKey] {
-                finalProgress = min(existing.progress, response.progress)
-            } else {
-                finalProgress = response.progress
-            }
-
-            stepProgress[progressKey] = StepProgress(status: status, progress: finalProgress, feedback: response.feedback ?? "")
+            stepProgress[progressKey] = StepProgress(status: status, progress: response.progress, mistakeExplanation: response.mistake_explanation)
             lastEvaluatedLatex[progressKey] = latex
 
-            print("[TutorFeedback] \(progressKey): \(response.status) (\(Int(finalProgress * 100))%)")
+            print("[TutorFeedback] \(progressKey): \(response.status) (\(Int(response.progress * 100))%)")
 
             scheduleSave()
         } catch {
@@ -247,6 +188,23 @@ final class TutorFeedbackService {
         debounceTask?.cancel()
         // Don't clear stepProgress — keep history for revisited steps
     }
+
+    /// Save progress to disk for the given document.
+    func saveProgress(for documentId: String) {
+        guard !stepProgress.isEmpty else { return }
+        TutorProgressStorageService.save(
+            stepProgress: stepProgress,
+            currentStepIndices: currentStepIndices,
+            for: documentId
+        )
+    }
+
+    /// Load saved progress from disk.
+    func loadProgress(for documentId: String) {
+        guard let stored = TutorProgressStorageService.load(for: documentId) else { return }
+        stepProgress = stored.stepProgress
+        currentStepIndices = stored.currentStepIndices
+    }
 }
 
 // MARK: - API Models
@@ -267,5 +225,5 @@ private struct EvaluateStepRequest: Encodable {
 private struct EvaluateStepResponse: Decodable {
     let progress: Double
     let status: String
-    let feedback: String?
+    let mistake_explanation: String?
 }

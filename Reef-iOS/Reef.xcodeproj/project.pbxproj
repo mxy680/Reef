@@ -76,6 +76,7 @@
 		7F1FCE775A5319A5A9B341A7 /* CourseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B4E463F8DF98D911D2B0E1 /* CourseDetailView.swift */; };
 		8081686831DE310C575DC5EA /* ReefTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */; };
 		80FEC5FE83B6D86AA15207B6 /* DrawingStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EAA1162AF20BABF039AA139 /* DrawingStorageService.swift */; };
+		D4A7B3C1E8F2059A6B1C4D7E /* TutorProgressStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B8C4D2E9A3160B7C2D5E8F /* TutorProgressStorageService.swift */; };
 		83C615293A2D56941E6E8F45 /* LibraryComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5567628FD84DD3F2A3EE9C0 /* LibraryComingSoonView.swift */; };
 		84C859546EF6E6C562DEADB5 /* DashboardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25A2B8DBF193DFD88F7735D /* DashboardCard.swift */; };
 		86C48AE599F618C06636F0BD /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 8A0AD6F5B9C938C549CBDA7E /* GoogleSignIn */; };
@@ -264,6 +265,7 @@
 		9D55C4708073EE84D310231F /* DashboardTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardTab.swift; sourceTree = "<group>"; };
 		9E68361F46DF0D0B0951ECE8 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		9EAA1162AF20BABF039AA139 /* DrawingStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingStorageService.swift; sourceTree = "<group>"; };
+		F5B8C4D2E9A3160B7C2D5E8F /* TutorProgressStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorProgressStorageService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718A1B2C3D4 /* CanvasStrokeCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasStrokeCollector.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1A2 /* DocumentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1A4 /* TutorsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorsViewModel.swift; sourceTree = "<group>"; };
@@ -540,6 +542,7 @@
 				BDA5038E8A3E9B2E3773B103 /* TierLimits.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* TranscriptionService.swift */,
 				BE0FA1D699FBA30B3DC68509 /* TutorFeedbackService.swift */,
+				F5B8C4D2E9A3160B7C2D5E8F /* TutorProgressStorageService.swift */,
 				BE55B35776EF18319E886CB3 /* TutorService.swift */,
 			);
 			path = Services;
@@ -921,6 +924,7 @@
 				A1B2C3D4E5F6A7B8C9D0E1A5 /* DottedBackground.swift in Sources */,
 				FF23804CFBA20B480E330475 /* DrawingManager.swift in Sources */,
 				80FEC5FE83B6D86AA15207B6 /* DrawingStorageService.swift in Sources */,
+				D4A7B3C1E8F2059A6B1C4D7E /* TutorProgressStorageService.swift in Sources */,
 				3DE926B269B45A3556BD54E3 /* EditCourseSheet.swift in Sources */,
 				E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */,
 				B84D0B422F015D7B55C29633 /* KaTeXView.swift in Sources */,
