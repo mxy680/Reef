@@ -109,7 +109,7 @@ final class TutorFeedbackService {
             default: .idle
             }
 
-            stepProgress[progressKey] = StepProgress(status: status, progress: response.progress)
+            stepProgress[progressKey] = StepProgress(status: status, progress: response.progress, mistakeExplanation: response.mistake_explanation)
             lastEvaluatedLatex[progressKey] = latex
 
             print("[TutorFeedback] \(progressKey): \(response.status) (\(Int(response.progress * 100))%)")
@@ -135,6 +135,23 @@ final class TutorFeedbackService {
         debounceTask?.cancel()
         // Don't clear stepProgress — keep history for revisited steps
     }
+
+    /// Save progress to disk for the given document.
+    func saveProgress(for documentId: String) {
+        guard !stepProgress.isEmpty else { return }
+        TutorProgressStorageService.save(
+            stepProgress: stepProgress,
+            currentStepIndices: currentStepIndices,
+            for: documentId
+        )
+    }
+
+    /// Load saved progress from disk.
+    func loadProgress(for documentId: String) {
+        guard let stored = TutorProgressStorageService.load(for: documentId) else { return }
+        stepProgress = stored.stepProgress
+        currentStepIndices = stored.currentStepIndices
+    }
 }
 
 // MARK: - API Models
@@ -155,4 +172,5 @@ private struct EvaluateStepRequest: Encodable {
 private struct EvaluateStepResponse: Decodable {
     let progress: Double
     let status: String
+    let mistake_explanation: String?
 }
