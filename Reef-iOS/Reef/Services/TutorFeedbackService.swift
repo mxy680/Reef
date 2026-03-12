@@ -104,15 +104,25 @@ final class TutorFeedbackService {
     ) {
         let subKey = "\(questionIndex)-\(partLabel)"
         let stepIdx = currentStepIndices[subKey] ?? 0
-        guard stepIdx < steps.count else { return }
+
+        print("[TutorFeedback] onTranscriptionChanged: subKey=\(subKey) stepIdx=\(stepIdx) steps.count=\(steps.count) latex=\(latex.prefix(60))")
+
+        guard stepIdx < steps.count else {
+            print("[TutorFeedback] SKIPPED: stepIdx(\(stepIdx)) >= steps.count(\(steps.count))")
+            return
+        }
 
         let progressKey = "\(subKey)-\(stepIdx)"
 
         // Skip if LaTeX hasn't changed since last evaluation
-        if lastEvaluatedLatex[progressKey] == latex { return }
+        if lastEvaluatedLatex[progressKey] == latex {
+            print("[TutorFeedback] SKIPPED: latex unchanged for \(progressKey)")
+            return
+        }
 
         // Handle empty latex — reset to idle without calling server
         if latex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            print("[TutorFeedback] Empty latex → idle for \(progressKey)")
             stepProgress[progressKey] = StepProgress(status: .idle, progress: 0.0)
             lastEvaluatedLatex[progressKey] = latex
             debounceTask?.cancel()
@@ -128,11 +138,17 @@ final class TutorFeedbackService {
         // n=0: 2.0s, n=5: 1.2s, n=10: 0.83s, n=20: 0.57s, n=30+: ~0.5s
         let delay = 0.5 + 1.5 * exp(-0.15 * Double(strokeCount))
 
+        print("[TutorFeedback] Scheduling eval gen=\(myGeneration) delay=\(String(format: "%.2f", delay))s for \(progressKey)")
+
         debounceTask?.cancel()
         debounceTask = Task {
             try? await Task.sleep(for: .seconds(delay))
-            guard !Task.isCancelled, generation == myGeneration else { return }
+            guard !Task.isCancelled, generation == myGeneration else {
+                print("[TutorFeedback] Debounce cancelled/stale gen=\(myGeneration) current=\(generation)")
+                return
+            }
 
+            print("[TutorFeedback] Calling evaluate for \(progressKey)")
             await evaluate(
                 subKey: subKey,
                 stepIndex: stepIdx,
@@ -152,6 +168,7 @@ final class TutorFeedbackService {
         questionText: String,
         steps: [AnswerKeyStep]
     ) async {
+        print("[TutorFeedback] evaluate() START for \(progressKey), questionText=\(questionText.prefix(40)), steps=\(steps.count)")
         // Mark as working while evaluating
         stepProgress[progressKey] = StepProgress(status: .working, progress: stepProgress[progressKey]?.progress ?? 0.0)
 
@@ -169,11 +186,13 @@ final class TutorFeedbackService {
                 current_step_index: stepIndex,
                 completed_step_indices: completedIndices
             )
+            print("[TutorFeedback] Sending POST /ai/evaluate-step body: step_index=\(stepIndex) student_work=\(latex.prefix(60))")
             let response: EvaluateStepResponse = try await ReefAPI.shared.request(
                 "POST",
                 path: "/ai/evaluate-step",
                 body: body
             )
+            print("[TutorFeedback] Server responded: status=\(response.status) progress=\(response.progress)")
 
             // Map string status to StepStatus enum
             let status: StepStatus = switch response.status {
