@@ -192,12 +192,6 @@ struct CanvasToolbar: View {
         .onChange(of: visibleQuestionIndex) { _, _ in
             showHint = false; showReveal = false
         }
-        .onChange(of: isCurrentStepMistake) { _, isMistake in
-            if isMistake {
-                showReveal = false
-                showHint = true
-            }
-        }
     }
 
     // MARK: - Tutor Popover
@@ -270,7 +264,11 @@ struct CanvasToolbar: View {
                     answerKey: answerKey,
                     stepProgressData: stepProgressData,
                     currentStepIndex: currentStepIndex,
-                    totalStepCount: totalStepCount
+                    totalStepCount: totalStepCount,
+                    onMistakeTapped: {
+                        showReveal = false
+                        showHint = true
+                    }
                 )
             } else {
                 // Document name / question label

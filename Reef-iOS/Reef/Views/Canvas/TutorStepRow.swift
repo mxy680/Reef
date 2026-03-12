@@ -14,6 +14,7 @@ struct TutorStepRow: View {
     var stepProgressData: [String: StepProgress]? = nil
     var currentStepIndex: Int = 0
     var totalStepCount: Int = 0
+    var onMistakeTapped: () -> Void = {}
 
     private var steps: [TutorStep] {
         guard let answerKey else { return [] }
@@ -32,6 +33,11 @@ struct TutorStepRow: View {
                 // Q label + Step indicator
                 HStack(spacing: 6) {
                     statusIcon(for: currentStep!.status)
+                        .onTapGesture {
+                            if currentStep!.status == .mistake {
+                                onMistakeTapped()
+                            }
+                        }
 
                     Text({
                         let base = "Q\(questionIndex + 1)"
