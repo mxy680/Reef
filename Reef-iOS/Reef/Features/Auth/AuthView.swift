@@ -3,7 +3,6 @@ import SwiftUI
 struct AuthView: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(ReefTheme.self) private var theme
-    @State private var isSignUp = false
     @State private var email = ""
 
     var body: some View {
@@ -21,10 +20,6 @@ struct AuthView: View {
 
                         authCard(colors)
                             .frame(maxWidth: 480)
-
-                        if isSignUp {
-                            valueProps(colors)
-                        }
 
                         Spacer(minLength: 60)
                     }
@@ -95,17 +90,17 @@ struct AuthView: View {
         .fadeUp(index: 3)
     }
 
-    // MARK: - Sign In / Sign Up Form
+    // MARK: - Sign In
 
     @ViewBuilder
     private func signInContent(_ colors: ReefThemeColors) -> some View {
-        Text(isSignUp ? "Get Started" : "Welcome Back")
+        Text("Welcome to Reef")
             .reefHeading()
             .multilineTextAlignment(.center)
             .padding(.bottom, 6)
             .fadeUp(index: 0)
 
-        Text(isSignUp ? "Create your free account" : "Sign in to continue learning")
+        Text("Sign in to start learning")
             .reefBody()
             .multilineTextAlignment(.center)
             .padding(.bottom, 28)
@@ -128,16 +123,13 @@ struct AuthView: View {
         .fadeUp(index: 4)
 
         ReefButton(
-            isSignUp ? "Create Account" : "Continue",
+            "Continue with Email",
             variant: .primary,
             disabled: email.isEmpty || auth.isLoading
         ) {
             auth.sendMagicLink(email: email)
         }
-        .padding(.bottom, 20)
         .fadeUp(index: 5)
-
-        toggleLink(colors)
 
         #if DEBUG
         ReefButton("Dev Login", variant: .link) {
@@ -169,25 +161,6 @@ struct AuthView: View {
         }
         .padding(.bottom, 20)
         .fadeUp(index: 2)
-    }
-
-    // MARK: - Toggle Link
-
-    @ViewBuilder
-    private func toggleLink(_ colors: ReefThemeColors) -> some View {
-        HStack(spacing: 4) {
-            Text(isSignUp ? "Already have an account?" : "Don't have an account?")
-                .reefLabel()
-                .foregroundStyle(colors.textSecondary)
-
-            ReefButton(isSignUp ? "Log in" : "Sign up", variant: .link) {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isSignUp.toggle()
-                    email = ""
-                }
-            }
-        }
-        .fadeUp(index: 6)
     }
 
     // MARK: - Value Props
