@@ -2,30 +2,9 @@ import SwiftUI
 
 // MARK: - Button Size
 
-enum ReefButtonSize {
+enum ReefButtonSize: Equatable {
     case regular    // 48pt height, full-width
     case compact    // Intrinsic height, horizontal padding
-
-    var height: CGFloat? {
-        switch self {
-        case .regular: 48
-        case .compact: nil
-        }
-    }
-
-    var horizontalPadding: CGFloat {
-        switch self {
-        case .regular: 0
-        case .compact: 14
-        }
-    }
-
-    var verticalPadding: CGFloat {
-        switch self {
-        case .regular: 0
-        case .compact: 8
-        }
-    }
 
     var cornerRadius: CGFloat {
         switch self {
@@ -59,23 +38,20 @@ enum ReefButtonSize {
 // MARK: - Button Variant
 
 enum ReefButtonVariant {
-    /// Teal filled button — primary CTA
+    /// Teal filled — primary CTA
     case primary
-    /// White/card filled button — secondary actions
+    /// White/card filled — secondary actions
     case secondary
-    /// Red filled button — destructive actions
+    /// Red filled — destructive actions
     case destructive
     /// No background, no border — text-only action
     case ghost
-    /// Inline colored text — navigation links
+    /// Inline colored text — navigation links, inline actions
     case link
 }
 
 // MARK: - 3D Neobrutalist Button Style
 
-/// Single unified button style that handles all variants and sizes.
-/// Primary/secondary/destructive get the 3D push-down effect.
-/// Ghost and link get a simple opacity feedback.
 struct ReefButtonStyle: ButtonStyle {
     @Environment(ReefTheme.self) private var theme
     let variant: ReefButtonVariant
@@ -101,16 +77,21 @@ struct ReefButtonStyle: ButtonStyle {
         }
     }
 
-    private var has3DEffect: Bool {
-        switch variant {
-        case .primary, .secondary, .destructive: true
-        case .ghost, .link: false
-        }
-    }
-
     // MARK: - Body
 
     func makeBody(configuration: Configuration) -> some View {
+        switch variant {
+        case .primary, .secondary, .destructive:
+            make3DBody(configuration: configuration)
+        case .ghost, .link:
+            makeFlatBody(configuration: configuration)
+        }
+    }
+
+    // MARK: - 3D Variant (primary / secondary / destructive)
+
+    @ViewBuilder
+    private func make3DBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         let colors = theme.colors
         let offset = size.shadowOffset
@@ -120,82 +101,53 @@ struct ReefButtonStyle: ButtonStyle {
             .font(.epilogue(size.fontSize, weight: .bold))
             .tracking(-0.04 * size.fontSize)
             .foregroundStyle(foregroundColor(colors))
-            // Sizing
-            .then { view in
-                if size == .regular {
-                    view
-                        .frame(maxWidth: .infinity)
-                        .frame(height: size.height ?? 48)
-                } else {
-                    view
-                        .padding(.horizontal, size.horizontalPadding)
-                        .padding(.vertical, size.verticalPadding)
-                }
-            }
+            .frame(maxWidth: size == .regular ? .infinity : nil)
+            .frame(height: size == .regular ? 48 : nil)
+            .padding(.horizontal, size == .compact ? 14 : 0)
+            .padding(.vertical, size == .compact ? 8 : 0)
             .background(backgroundColor(colors))
             .clipShape(RoundedRectangle(cornerRadius: radius))
-            // 3D effect (primary/secondary/destructive only)
-            .then { view in
-                if has3DEffect {
-                    view
-                        .overlay(
-                            RoundedRectangle(cornerRadius: radius)
-                                .stroke(colors.border, lineWidth: size.borderWidth)
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: radius)
-                                .fill(colors.shadow)
-                                .offset(
-                                    x: pressed ? 0 : offset,
-                                    y: pressed ? 0 : offset
-                                )
-                        )
-                        .offset(
-                            x: pressed ? offset : 0,
-                            y: pressed ? offset : 0
-                        )
-                        .compositingGroup()
-                        .animation(.spring(duration: 0.15, bounce: 0.15), value: pressed)
-                } else {
-                    view
-                        .opacity(pressed ? 0.6 : 1)
-                        .animation(.easeOut(duration: 0.1), value: pressed)
-                }
-            }
+            .overlay(
+                RoundedRectangle(cornerRadius: radius)
+                    .stroke(colors.border, lineWidth: size.borderWidth)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: radius)
+                    .fill(colors.shadow)
+                    .offset(
+                        x: pressed ? 0 : offset,
+                        y: pressed ? 0 : offset
+                    )
+            )
+            .offset(
+                x: pressed ? offset : 0,
+                y: pressed ? offset : 0
+            )
+            .compositingGroup()
+            .animation(.spring(duration: 0.15, bounce: 0.15), value: pressed)
             .hoverEffectDisabled()
     }
-}
 
-// MARK: - View.then() helper
+    // MARK: - Flat Variant (ghost / link)
 
-/// Allows inline conditional view transformations without type-erasure.
-extension View {
     @ViewBuilder
-    func then<V: View>(@ViewBuilder _ transform: (Self) -> V) -> some View {
-        transform(self)
+    private func makeFlatBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        let colors = theme.colors
+
+        configuration.label
+            .font(.epilogue(variant == .link ? 14 : size.fontSize, weight: .bold))
+            .tracking(-0.04 * (variant == .link ? 14 : size.fontSize))
+            .foregroundStyle(foregroundColor(colors))
+            .opacity(pressed ? 0.5 : 1)
+            .animation(.easeOut(duration: 0.1), value: pressed)
+            .hoverEffectDisabled()
     }
 }
 
 // MARK: - Button Convenience API
 
 extension Button {
-    /// Apply Reef neobrutalist button styling.
-    ///
-    ///     Button("Continue") { ... }
-    ///         .reefStyle(.primary)
-    ///
-    ///     Button("Google") { ... }
-    ///         .reefStyle(.secondary)
-    ///
-    ///     Button("Delete") { ... }
-    ///         .reefStyle(.destructive, size: .compact)
-    ///
-    ///     Button("Skip") { ... }
-    ///         .reefStyle(.ghost)
-    ///
-    ///     Button("Sign up") { ... }
-    ///         .reefStyle(.link)
-    ///
     func reefStyle(
         _ variant: ReefButtonVariant = .primary,
         size: ReefButtonSize = .regular
@@ -206,7 +158,6 @@ extension Button {
 
 // MARK: - 3D Push Modifier (for non-Button views)
 
-/// Adds a 3D neobrutalist push-down animation to any view.
 struct Reef3DPushModifier<S: Shape>: ViewModifier {
     let shape: S
     let shadowOffset: CGFloat
