@@ -100,7 +100,7 @@ struct AuthView: View {
             .padding(.bottom, 6)
             .fadeUp(index: 0)
 
-        Text("Your homework, decoded")
+        Text("Dive in. Stay afloat. Ace finals.")
             .reefBody()
             .multilineTextAlignment(.center)
             .padding(.bottom, 28)
