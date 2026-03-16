@@ -1,22 +1,41 @@
 import SwiftUI
 
+// MARK: - Text Field with 3D Shadow
+
 struct ReefTextField: View {
     @Environment(ReefTheme.self) private var theme
+
     let placeholder: String
     @Binding var text: String
-    var keyboard: UIKeyboardType = .emailAddress
+    var icon: String? = nil
+    var keyboard: UIKeyboardType = .default
     var capitalization: TextInputAutocapitalization = .never
+    var autocorrection: Bool = false
+    var onSubmit: (() -> Void)? = nil
 
     var body: some View {
         let colors = theme.colors
-        TextField(
-            placeholder,
-            text: $text,
-            prompt: Text(placeholder).foregroundStyle(colors.textMuted)
-        )
-        .font(.epilogue(16, weight: .medium))
-        .tracking(-0.04 * 16)
-        .foregroundStyle(colors.text)
+
+        HStack(spacing: 12) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(colors.textMuted)
+            }
+
+            TextField(
+                placeholder,
+                text: $text,
+                prompt: Text(placeholder).foregroundStyle(colors.textMuted)
+            )
+            .font(.epilogue(16, weight: .medium))
+            .tracking(-0.04 * 16)
+            .foregroundStyle(colors.text)
+            .textInputAutocapitalization(capitalization)
+            .autocorrectionDisabled(!autocorrection)
+            .keyboardType(keyboard)
+            .onSubmit { onSubmit?() }
+        }
         .frame(height: 48)
         .padding(.horizontal, 18)
         .background(colors.input)
@@ -30,8 +49,5 @@ struct ReefTextField: View {
                 .fill(colors.shadow)
                 .offset(x: 2, y: 2)
         )
-        .textInputAutocapitalization(capitalization)
-        .autocorrectionDisabled()
-        .keyboardType(keyboard)
     }
 }

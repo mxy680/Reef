@@ -36,11 +36,12 @@ targets:
       - path: Reef/Features
       - path: Reef/Assets.xcassets
       - path: Reef/Reef.entitlements
-    resources:
       - path: Reef/Resources/Fonts
         buildPhase: resources
+        type: folder
       - path: Reef/Resources/KaTeX
         buildPhase: resources
+        type: folder
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.studyreef.app

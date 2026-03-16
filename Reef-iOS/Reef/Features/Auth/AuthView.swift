@@ -87,12 +87,10 @@ struct AuthView: View {
             .padding(.bottom, 28)
             .fadeUp(index: 2)
 
-        Button {
+        Button("Back") {
             withAnimation(.easeInOut(duration: 0.3)) {
                 auth.magicLinkSent = false
             }
-        } label: {
-            Text("Back")
         }
         .reefStyle(.secondary)
         .fadeUp(index: 3)
@@ -102,49 +100,50 @@ struct AuthView: View {
 
     @ViewBuilder
     private func signInContent(_ colors: ReefThemeColors) -> some View {
-        // Title
         Text(isSignUp ? "Get Started" : "Welcome Back")
             .reefHeading()
             .multilineTextAlignment(.center)
             .padding(.bottom, 6)
             .fadeUp(index: 0)
 
-        // Subtitle
         Text(isSignUp ? "Create your free account" : "Sign in to continue learning")
             .reefBody()
             .multilineTextAlignment(.center)
             .padding(.bottom, 28)
             .fadeUp(index: 1)
 
-        // OAuth buttons
         oauthButtons(colors)
 
-        // Divider
         ReefDivider()
             .padding(.bottom, 20)
             .fadeUp(index: 3)
 
-        // Email field
-        ReefTextField(placeholder: "name@example.com", text: $email)
-            .padding(.bottom, 22)
-            .fadeUp(index: 4)
+        ReefTextField(
+            placeholder: "name@example.com",
+            text: $email,
+            icon: "envelope",
+            keyboard: .emailAddress,
+            onSubmit: { auth.sendMagicLink(email: email) }
+        )
+        .padding(.bottom, 22)
+        .fadeUp(index: 4)
 
-        // CTA button
-        Button {
+        Button(isSignUp ? "Create Account" : "Continue") {
             auth.sendMagicLink(email: email)
-        } label: {
-            Text(isSignUp ? "Create Account" : "Continue")
         }
         .reefStyle(.primary)
         .disabled(email.isEmpty || auth.isLoading)
         .padding(.bottom, 20)
         .fadeUp(index: 5)
 
-        // Toggle link
         toggleLink(colors)
 
         #if DEBUG
-        devLoginButton
+        Button("Dev Login") {
+            auth.devLogin()
+        }
+        .reefStyle(.link)
+        .padding(.top, 16)
         #endif
     }
 
@@ -188,19 +187,13 @@ struct AuthView: View {
                 .reefLabel()
                 .foregroundStyle(colors.textSecondary)
 
-            Text(isSignUp ? "Log in" : "Sign up")
-                .font(.epilogue(14, weight: .bold))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(ReefColors.primary)
-                .compositingGroup()
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        isSignUp.toggle()
-                        email = ""
-                    }
+            Button(isSignUp ? "Log in" : "Sign up") {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isSignUp.toggle()
+                    email = ""
                 }
-                .accessibilityAddTraits(.isButton)
+            }
+            .reefStyle(.link)
         }
         .fadeUp(index: 6)
     }
@@ -240,22 +233,6 @@ struct AuthView: View {
                 .scaleEffect(1.5)
         }
     }
-
-    // MARK: - Dev Login
-
-    #if DEBUG
-    private var devLoginButton: some View {
-        Button {
-            auth.devLogin()
-        } label: {
-            Text("Dev Login")
-                .font(.epilogue(12, weight: .semiBold))
-                .tracking(-0.04 * 12)
-                .foregroundStyle(ReefColors.primary)
-        }
-        .padding(.top, 16)
-    }
-    #endif
 }
 
 #Preview {

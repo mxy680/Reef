@@ -1,24 +1,94 @@
 import SwiftUI
 
+// MARK: - Button Size
+
+enum ReefButtonSize {
+    case regular    // 48pt height, full-width
+    case compact    // Intrinsic height, horizontal padding
+
+    var height: CGFloat? {
+        switch self {
+        case .regular: 48
+        case .compact: nil
+        }
+    }
+
+    var horizontalPadding: CGFloat {
+        switch self {
+        case .regular: 0
+        case .compact: 14
+        }
+    }
+
+    var verticalPadding: CGFloat {
+        switch self {
+        case .regular: 0
+        case .compact: 8
+        }
+    }
+
+    var cornerRadius: CGFloat {
+        switch self {
+        case .regular: 12
+        case .compact: 8
+        }
+    }
+
+    var borderWidth: CGFloat {
+        switch self {
+        case .regular: 2
+        case .compact: 1.5
+        }
+    }
+
+    var shadowOffset: CGFloat {
+        switch self {
+        case .regular: 4
+        case .compact: 3
+        }
+    }
+
+    var fontSize: CGFloat {
+        switch self {
+        case .regular: 16
+        case .compact: 12
+        }
+    }
+}
+
 // MARK: - Button Variant
 
 enum ReefButtonVariant {
+    /// Teal filled button — primary CTA
     case primary
+    /// White/card filled button — secondary actions
     case secondary
+    /// Red filled button — destructive actions
     case destructive
+    /// No background, no border — text-only action
+    case ghost
+    /// Inline colored text — navigation links
+    case link
 }
 
-// MARK: - Full-Width Button Style
+// MARK: - 3D Neobrutalist Button Style
 
+/// Single unified button style that handles all variants and sizes.
+/// Primary/secondary/destructive get the 3D push-down effect.
+/// Ghost and link get a simple opacity feedback.
 struct ReefButtonStyle: ButtonStyle {
     @Environment(ReefTheme.self) private var theme
     let variant: ReefButtonVariant
+    let size: ReefButtonSize
+
+    // MARK: - Color Resolution
 
     private func backgroundColor(_ colors: ReefThemeColors) -> Color {
         switch variant {
         case .primary: ReefColors.primary
         case .secondary: colors.card
         case .destructive: Color(hex: 0xC62828)
+        case .ghost, .link: .clear
         }
     }
 
@@ -26,117 +96,117 @@ struct ReefButtonStyle: ButtonStyle {
         switch variant {
         case .primary, .destructive: ReefColors.white
         case .secondary: colors.text
+        case .ghost: colors.text
+        case .link: ReefColors.primary
         }
     }
+
+    private var has3DEffect: Bool {
+        switch variant {
+        case .primary, .secondary, .destructive: true
+        case .ghost, .link: false
+        }
+    }
+
+    // MARK: - Body
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         let colors = theme.colors
+        let offset = size.shadowOffset
+        let radius = size.cornerRadius
+
         configuration.label
-            .reefButton()
+            .font(.epilogue(size.fontSize, weight: .bold))
+            .tracking(-0.04 * size.fontSize)
             .foregroundStyle(foregroundColor(colors))
-            .frame(maxWidth: .infinity)
-            .frame(height: 48)
+            // Sizing
+            .then { view in
+                if size == .regular {
+                    view
+                        .frame(maxWidth: .infinity)
+                        .frame(height: size.height ?? 48)
+                } else {
+                    view
+                        .padding(.horizontal, size.horizontalPadding)
+                        .padding(.vertical, size.verticalPadding)
+                }
+            }
             .background(backgroundColor(colors))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(colors.border, lineWidth: 2)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(colors.shadow)
-                    .offset(
-                        x: pressed ? 0 : 4,
-                        y: pressed ? 0 : 4
-                    )
-            )
-            .offset(
-                x: pressed ? 4 : 0,
-                y: pressed ? 4 : 0
-            )
-            .compositingGroup()
-            .animation(.spring(duration: 0.4, bounce: 0.2), value: pressed)
+            .clipShape(RoundedRectangle(cornerRadius: radius))
+            // 3D effect (primary/secondary/destructive only)
+            .then { view in
+                if has3DEffect {
+                    view
+                        .overlay(
+                            RoundedRectangle(cornerRadius: radius)
+                                .stroke(colors.border, lineWidth: size.borderWidth)
+                        )
+                        .background(
+                            RoundedRectangle(cornerRadius: radius)
+                                .fill(colors.shadow)
+                                .offset(
+                                    x: pressed ? 0 : offset,
+                                    y: pressed ? 0 : offset
+                                )
+                        )
+                        .offset(
+                            x: pressed ? offset : 0,
+                            y: pressed ? offset : 0
+                        )
+                        .compositingGroup()
+                        .animation(.spring(duration: 0.15, bounce: 0.15), value: pressed)
+                } else {
+                    view
+                        .opacity(pressed ? 0.6 : 1)
+                        .animation(.easeOut(duration: 0.1), value: pressed)
+                }
+            }
             .hoverEffectDisabled()
     }
 }
 
-// MARK: - Compact Button Style
+// MARK: - View.then() helper
 
-struct ReefCompactButtonStyle: ButtonStyle {
-    @Environment(ReefTheme.self) private var theme
-    let variant: ReefButtonVariant
-
-    private func backgroundColor(_ colors: ReefThemeColors) -> Color {
-        switch variant {
-        case .primary: ReefColors.primary
-        case .secondary: colors.card
-        case .destructive: Color(hex: 0xC62828)
-        }
-    }
-
-    private func foregroundColor(_ colors: ReefThemeColors) -> Color {
-        switch variant {
-        case .primary, .destructive: ReefColors.white
-        case .secondary: colors.text
-        }
-    }
-
-    func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed
-        let colors = theme.colors
-        configuration.label
-            .font(.epilogue(12, weight: .bold))
-            .tracking(-0.04 * 12)
-            .foregroundStyle(foregroundColor(colors))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(backgroundColor(colors))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(colors.border, lineWidth: 1.5)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(colors.shadow)
-                    .offset(
-                        x: pressed ? 0 : 3,
-                        y: pressed ? 0 : 3
-                    )
-            )
-            .offset(
-                x: pressed ? 3 : 0,
-                y: pressed ? 3 : 0
-            )
-            .compositingGroup()
-            .animation(.spring(duration: 0.2, bounce: 0.1), value: pressed)
-            .hoverEffectDisabled()
+/// Allows inline conditional view transformations without type-erasure.
+extension View {
+    @ViewBuilder
+    func then<V: View>(@ViewBuilder _ transform: (Self) -> V) -> some View {
+        transform(self)
     }
 }
 
-// MARK: - No Highlight Style
-
-struct NoHighlightButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-    }
-}
-
-// MARK: - Button Convenience
+// MARK: - Button Convenience API
 
 extension Button {
-    func reefStyle(_ variant: ReefButtonVariant = .primary) -> some View {
-        self.buttonStyle(ReefButtonStyle(variant: variant))
-    }
-
-    func reefCompactStyle(_ variant: ReefButtonVariant = .primary) -> some View {
-        self.buttonStyle(ReefCompactButtonStyle(variant: variant))
+    /// Apply Reef neobrutalist button styling.
+    ///
+    ///     Button("Continue") { ... }
+    ///         .reefStyle(.primary)
+    ///
+    ///     Button("Google") { ... }
+    ///         .reefStyle(.secondary)
+    ///
+    ///     Button("Delete") { ... }
+    ///         .reefStyle(.destructive, size: .compact)
+    ///
+    ///     Button("Skip") { ... }
+    ///         .reefStyle(.ghost)
+    ///
+    ///     Button("Sign up") { ... }
+    ///         .reefStyle(.link)
+    ///
+    func reefStyle(
+        _ variant: ReefButtonVariant = .primary,
+        size: ReefButtonSize = .regular
+    ) -> some View {
+        self.buttonStyle(ReefButtonStyle(variant: variant, size: size))
     }
 }
 
-// MARK: - 3D Push Modifier
+// MARK: - 3D Push Modifier (for non-Button views)
 
+/// Adds a 3D neobrutalist push-down animation to any view.
 struct Reef3DPushModifier<S: Shape>: ViewModifier {
     let shape: S
     let shadowOffset: CGFloat
@@ -162,7 +232,7 @@ struct Reef3DPushModifier<S: Shape>: ViewModifier {
                 y: isPressed ? shadowOffset : 0
             )
             .compositingGroup()
-            .animation(.spring(duration: 0.2, bounce: 0.1), value: isPressed)
+            .animation(.spring(duration: 0.15, bounce: 0.15), value: isPressed)
             .contentShape(Rectangle())
             .onTapGesture { action() }
             .simultaneousGesture(
@@ -228,66 +298,10 @@ extension View {
     }
 }
 
-// MARK: - Modal Button
+// MARK: - No Highlight Style
 
-struct ReefModalButton: View {
-    @Environment(ReefTheme.self) private var theme
-
-    let label: String
-    let variant: ReefButtonVariant
-    let isEnabled: Bool
-    let action: () -> Void
-
-    init(
-        _ label: String,
-        variant: ReefButtonVariant = .primary,
-        isEnabled: Bool = true,
-        action: @escaping () -> Void
-    ) {
-        self.label = label
-        self.variant = variant
-        self.isEnabled = isEnabled
-        self.action = action
-    }
-
-    private func backgroundColor(_ colors: ReefThemeColors) -> Color {
-        guard isEnabled else {
-            return theme.isDarkMode ? ReefColors.Dark.divider : ReefColors.gray100
-        }
-        switch variant {
-        case .primary: return ReefColors.primary
-        case .secondary: return theme.isDarkMode ? ReefColors.Dark.divider : ReefColors.gray100
-        case .destructive: return Color(hex: 0xC62828)
-        }
-    }
-
-    private func foregroundColor(_ colors: ReefThemeColors) -> Color {
-        guard isEnabled else {
-            return theme.isDarkMode ? ReefColors.Dark.textMuted : ReefColors.gray500
-        }
-        switch variant {
-        case .primary, .destructive: return ReefColors.white
-        case .secondary: return colors.text
-        }
-    }
-
-    var body: some View {
-        let colors = theme.colors
-        Text(label)
-            .font(.epilogue(14, weight: .bold))
-            .tracking(-0.04 * 14)
-            .foregroundStyle(foregroundColor(colors))
-            .padding(.horizontal, 24)
-            .padding(.vertical, 10)
-            .background(backgroundColor(colors))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .reef3DPush(
-                cornerRadius: 10,
-                borderColor: colors.border,
-                shadowColor: colors.shadow,
-                action: action
-            )
-            .allowsHitTesting(isEnabled)
-            .opacity(isEnabled ? 1 : 0.4)
+struct NoHighlightButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
     }
 }
