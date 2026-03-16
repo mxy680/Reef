@@ -82,6 +82,11 @@ struct ReefThemeColors {
     var input: Color { isDarkMode ? ReefColors.Dark.input : ReefColors.white }
     var inputBorder: Color { isDarkMode ? ReefColors.Dark.inputBorder : ReefColors.black }
     var divider: Color { isDarkMode ? ReefColors.Dark.divider : ReefColors.gray200 }
+    var textDisabled: Color { isDarkMode ? ReefColors.Dark.textDisabled : ReefColors.gray400 }
+    var subtle: Color { isDarkMode ? ReefColors.Dark.subtle : ReefColors.gray100 }
+    var cardElevated: Color { isDarkMode ? ReefColors.Dark.cardElevated : ReefColors.white }
+    var activeNavBg: Color { isDarkMode ? ReefColors.Dark.activeNavBg : ReefColors.accent }
+    var activeNavBorder: Color { isDarkMode ? ReefColors.Dark.activeNavBorder : ReefColors.black }
 }
 
 // MARK: - Color(hex:) Initializer

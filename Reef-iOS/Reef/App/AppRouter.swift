@@ -43,7 +43,7 @@ struct AppRouter: View {
                     .transition(.opacity)
 
             case .dashboard:
-                placeholderDashboard
+                DashboardView()
                     .transition(.opacity)
             }
         }
@@ -70,24 +70,7 @@ struct AppRouter: View {
         }
     }
 
-    // MARK: - Placeholders (will be replaced as features are built)
-
-    private var placeholderDashboard: some View {
-        ZStack {
-            theme.colors.background
-                .ignoresSafeArea()
-            VStack(spacing: 16) {
-                Text("Dashboard")
-                    .reefHeading()
-                Text("Signed in as \(auth.displayName)")
-                    .reefBody()
-                ReefButton("Sign Out", variant: .secondary) {
-                    Task { await auth.signOut() }
-                }
-                .frame(maxWidth: 200)
-            }
-        }
-    }
+    // MARK: - Placeholders
 
     private var placeholderOnboarding: some View {
         ZStack {

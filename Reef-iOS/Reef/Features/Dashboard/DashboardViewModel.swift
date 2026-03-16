@@ -1,0 +1,38 @@
+import SwiftUI
+
+@Observable
+@MainActor
+final class DashboardViewModel {
+    var selectedTab: DashboardTab? = .documents
+    var selectedCourseId: String?
+    var sidebarOpen = true
+
+    // Stub — courses will be wired to a repository later
+    var courses: [String] = []
+
+    var contentTitle: String {
+        if let tab = selectedTab {
+            return tab.label
+        }
+        if let courseId = selectedCourseId {
+            return courseId // Replace with course name lookup later
+        }
+        return "Dashboard"
+    }
+
+    func selectTab(_ tab: DashboardTab) {
+        selectedTab = tab
+        selectedCourseId = nil
+    }
+
+    func selectCourse(_ id: String) {
+        selectedCourseId = id
+        selectedTab = nil
+    }
+
+    func toggleSidebar() {
+        withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
+            sidebarOpen.toggle()
+        }
+    }
+}
