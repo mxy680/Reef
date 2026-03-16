@@ -6,7 +6,7 @@ struct ReefDivider: View {
     var body: some View {
         HStack(spacing: 16) {
             Rectangle()
-                .fill(ReefColors.primary)
+                .fill(theme.colors.divider)
                 .frame(height: 1)
 
             Text("OR")
@@ -16,7 +16,7 @@ struct ReefDivider: View {
                 .textCase(.uppercase)
 
             Rectangle()
-                .fill(ReefColors.primary)
+                .fill(theme.colors.divider)
                 .frame(height: 1)
         }
     }
