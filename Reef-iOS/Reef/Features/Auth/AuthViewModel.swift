@@ -13,6 +13,7 @@ final class AuthViewModel {
 
     var session: AuthSession?
     var profile: Profile?
+    var isBootstrapping = true
     var isLoading = false
     var errorMessage: String?
     var magicLinkSent = false
@@ -77,7 +78,22 @@ final class AuthViewModel {
     // MARK: - Bootstrap
 
     private func bootstrap() async {
-        // Listen for auth state changes — single source of truth
+        defer { isBootstrapping = false }
+
+        // 1. Try to restore saved session (primary path)
+        do {
+            session = try await authRepo.restoreSession()
+            await refreshProfile()
+        } catch {
+            #if DEBUG
+            devLogin()
+            return
+            #else
+            session = nil
+            #endif
+        }
+
+        // 2. Listen for ongoing auth changes (sign-in, sign-out, token refresh)
         authListenerTask = Task {
             for await authSession in authRepo.authStateChanges() {
                 self.session = authSession
@@ -87,21 +103,6 @@ final class AuthViewModel {
                     self.profile = nil
                 }
             }
-        }
-
-        // Fallback: if stream hasn't emitted yet, try explicit restore
-        do {
-            let restored = try await authRepo.restoreSession()
-            if self.session == nil {
-                self.session = restored
-                await refreshProfile()
-            }
-        } catch {
-            #if DEBUG
-            if self.session == nil { devLogin() }
-            #else
-            session = nil
-            #endif
         }
     }
 
