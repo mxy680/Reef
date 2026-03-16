@@ -44,10 +44,9 @@ struct AppRouter: View {
                     .reefHeading()
                 Text("Signed in as \(auth.displayName)")
                     .reefBody()
-                Button("Sign Out") {
+                ReefButton("Sign Out", variant: .secondary) {
                     Task { await auth.signOut() }
                 }
-                .reefStyle(.secondary)
                 .frame(maxWidth: 200)
             }
         }

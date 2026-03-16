@@ -87,12 +87,11 @@ struct AuthView: View {
             .padding(.bottom, 28)
             .fadeUp(index: 2)
 
-        Button("Back") {
+        ReefButton("Back", variant: .secondary) {
             withAnimation(.easeInOut(duration: 0.3)) {
                 auth.magicLinkSent = false
             }
         }
-        .reefStyle(.secondary)
         .fadeUp(index: 3)
     }
 
@@ -128,21 +127,22 @@ struct AuthView: View {
         .padding(.bottom, 22)
         .fadeUp(index: 4)
 
-        Button(isSignUp ? "Create Account" : "Continue") {
+        ReefButton(
+            isSignUp ? "Create Account" : "Continue",
+            variant: .primary,
+            disabled: email.isEmpty || auth.isLoading
+        ) {
             auth.sendMagicLink(email: email)
         }
-        .reefStyle(.primary)
-        .disabled(email.isEmpty || auth.isLoading)
         .padding(.bottom, 20)
         .fadeUp(index: 5)
 
         toggleLink(colors)
 
         #if DEBUG
-        Button("Dev Login") {
+        ReefButton("Dev Login", variant: .link) {
             auth.devLogin()
         }
-        .reefStyle(.link)
         .padding(.top, 16)
         #endif
     }
@@ -152,28 +152,21 @@ struct AuthView: View {
     @ViewBuilder
     private func oauthButtons(_ colors: ReefThemeColors) -> some View {
         HStack(spacing: 12) {
-            Button {
-                auth.signInWithGoogle()
-            } label: {
+            ReefButton(.secondary, action: { auth.signInWithGoogle() }) {
                 HStack(spacing: 10) {
                     GoogleIcon()
                     Text("Google")
                 }
             }
-            .reefStyle(.secondary)
 
-            Button {
-                auth.signInWithApple()
-            } label: {
+            ReefButton(.secondary, action: { auth.signInWithApple() }) {
                 HStack(spacing: 10) {
                     Image(systemName: "apple.logo")
                         .font(.system(size: 18, weight: .semibold))
                     Text("Apple")
                 }
             }
-            .reefStyle(.secondary)
         }
-        .disabled(auth.isLoading)
         .padding(.bottom, 20)
         .fadeUp(index: 2)
     }
@@ -187,13 +180,12 @@ struct AuthView: View {
                 .reefLabel()
                 .foregroundStyle(colors.textSecondary)
 
-            Button(isSignUp ? "Log in" : "Sign up") {
+            ReefButton(isSignUp ? "Log in" : "Sign up", variant: .link) {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isSignUp.toggle()
                     email = ""
                 }
             }
-            .reefStyle(.link)
         }
         .fadeUp(index: 6)
     }

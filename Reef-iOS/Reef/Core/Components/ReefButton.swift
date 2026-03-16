@@ -50,12 +50,41 @@ enum ReefButtonVariant {
     case link
 }
 
-// MARK: - 3D Neobrutalist Button Style
+// MARK: - ReefButton (3D variants: primary / secondary / destructive)
+//
+// Owns the full gesture lifecycle:
+//   press → push down → release → spring back → fire action
+//
+// This is a View, not a ButtonStyle, because ButtonStyle fires
+// the action immediately on tap with no way to delay it.
 
-struct ReefButtonStyle: ButtonStyle {
+struct ReefButton<Label: View>: View {
     @Environment(ReefTheme.self) private var theme
+
     let variant: ReefButtonVariant
     let size: ReefButtonSize
+    let isDisabled: Bool
+    let action: () -> Void
+    @ViewBuilder let label: () -> Label
+
+    @State private var isPressed = false
+
+    /// Time for the spring-back animation to settle before firing action.
+    private let springBackDelay: TimeInterval = 0.18
+
+    init(
+        _ variant: ReefButtonVariant = .primary,
+        size: ReefButtonSize = .regular,
+        disabled: Bool = false,
+        action: @escaping () -> Void,
+        @ViewBuilder label: @escaping () -> Label
+    ) {
+        self.variant = variant
+        self.size = size
+        self.isDisabled = disabled
+        self.action = action
+        self.label = label
+    }
 
     // MARK: - Color Resolution
 
@@ -79,25 +108,23 @@ struct ReefButtonStyle: ButtonStyle {
 
     // MARK: - Body
 
-    func makeBody(configuration: Configuration) -> some View {
+    var body: some View {
         switch variant {
         case .primary, .secondary, .destructive:
-            make3DBody(configuration: configuration)
+            body3D
         case .ghost, .link:
-            makeFlatBody(configuration: configuration)
+            bodyFlat
         }
     }
 
-    // MARK: - 3D Variant (primary / secondary / destructive)
+    // MARK: - 3D Body
 
-    @ViewBuilder
-    private func make3DBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed
+    private var body3D: some View {
         let colors = theme.colors
         let offset = size.shadowOffset
         let radius = size.cornerRadius
 
-        configuration.label
+        return label()
             .font(.epilogue(size.fontSize, weight: .bold))
             .tracking(-0.04 * size.fontSize)
             .foregroundStyle(foregroundColor(colors))
@@ -115,48 +142,86 @@ struct ReefButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: radius)
                     .fill(colors.shadow)
                     .offset(
-                        x: pressed ? 0 : offset,
-                        y: pressed ? 0 : offset
+                        x: isPressed ? 0 : offset,
+                        y: isPressed ? 0 : offset
                     )
             )
             .offset(
-                x: pressed ? offset : 0,
-                y: pressed ? offset : 0
+                x: isPressed ? offset : 0,
+                y: isPressed ? offset : 0
             )
             .compositingGroup()
-            .animation(.spring(duration: 0.15, bounce: 0.15), value: pressed)
+            .animation(.spring(duration: 0.15, bounce: 0.15), value: isPressed)
+            .opacity(isDisabled ? 0.5 : 1)
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !isDisabled else { return }
+                        isPressed = true
+                    }
+                    .onEnded { _ in
+                        guard !isDisabled else { return }
+                        isPressed = false
+                        // Wait for spring-back animation, then fire
+                        DispatchQueue.main.asyncAfter(deadline: .now() + springBackDelay) {
+                            action()
+                        }
+                    }
+            )
+            .allowsHitTesting(!isDisabled)
+            .accessibilityAddTraits(.isButton)
             .hoverEffectDisabled()
     }
 
-    // MARK: - Flat Variant (ghost / link)
+    // MARK: - Flat Body (ghost / link)
 
-    @ViewBuilder
-    private func makeFlatBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed
+    private var bodyFlat: some View {
         let colors = theme.colors
 
-        configuration.label
+        return label()
             .font(.epilogue(variant == .link ? 14 : size.fontSize, weight: .bold))
             .tracking(-0.04 * (variant == .link ? 14 : size.fontSize))
             .foregroundStyle(foregroundColor(colors))
-            .opacity(pressed ? 0.5 : 1)
-            .animation(.easeOut(duration: 0.1), value: pressed)
+            .opacity(isPressed ? 0.5 : (isDisabled ? 0.4 : 1))
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !isDisabled else { return }
+                        withAnimation(.easeOut(duration: 0.08)) { isPressed = true }
+                    }
+                    .onEnded { _ in
+                        guard !isDisabled else { return }
+                        withAnimation(.easeOut(duration: 0.08)) { isPressed = false }
+                        action()
+                    }
+            )
+            .allowsHitTesting(!isDisabled)
+            .accessibilityAddTraits(.isButton)
             .hoverEffectDisabled()
     }
 }
 
-// MARK: - Button Convenience API
+// MARK: - String Label Convenience
 
-extension Button {
-    func reefStyle(
-        _ variant: ReefButtonVariant = .primary,
-        size: ReefButtonSize = .regular
-    ) -> some View {
-        self.buttonStyle(ReefButtonStyle(variant: variant, size: size))
+extension ReefButton where Label == Text {
+    init(
+        _ title: String,
+        variant: ReefButtonVariant = .primary,
+        size: ReefButtonSize = .regular,
+        disabled: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.variant = variant
+        self.size = size
+        self.isDisabled = disabled
+        self.action = action
+        self.label = { Text(title) }
     }
 }
 
-// MARK: - 3D Push Modifier (for non-Button views)
+// MARK: - 3D Push Modifier (for non-Button views like cards)
 
 struct Reef3DPushModifier<S: Shape>: ViewModifier {
     let shape: S
@@ -167,6 +232,8 @@ struct Reef3DPushModifier<S: Shape>: ViewModifier {
     let action: () -> Void
 
     @State private var isPressed = false
+
+    private let springBackDelay: TimeInterval = 0.18
 
     func body(content: Content) -> some View {
         content
@@ -185,11 +252,15 @@ struct Reef3DPushModifier<S: Shape>: ViewModifier {
             .compositingGroup()
             .animation(.spring(duration: 0.15, bounce: 0.15), value: isPressed)
             .contentShape(Rectangle())
-            .onTapGesture { action() }
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in isPressed = true }
-                    .onEnded { _ in isPressed = false }
+                    .onEnded { _ in
+                        isPressed = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + springBackDelay) {
+                            action()
+                        }
+                    }
             )
             .accessibilityAddTraits(.isButton)
     }
@@ -249,7 +320,7 @@ extension View {
     }
 }
 
-// MARK: - No Highlight Style
+// MARK: - No Highlight Style (for SwiftUI Button when needed)
 
 struct NoHighlightButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
