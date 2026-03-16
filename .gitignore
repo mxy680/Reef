@@ -13,3 +13,4 @@ xcuserdata/
 *.xcuserstate
 Reef-Server/data/
 build/
+Secrets.xcconfig
