@@ -1,5 +1,6 @@
 import AuthenticationServices
 
+@MainActor
 final class AppleSignInCoordinator: NSObject, ASAuthorizationControllerDelegate {
     private let completion: (Result<ASAuthorization, Error>) -> Void
 

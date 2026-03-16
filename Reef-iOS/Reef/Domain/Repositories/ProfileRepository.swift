@@ -1,6 +1,6 @@
 import Foundation
 
 protocol ProfileRepository: Sendable {
-    func fetchProfile() async -> Profile?
-    func upsertProfile(fields: [String: Any]) async throws
+    func fetchProfile() async throws -> Profile?
+    func upsertProfile(_ update: ProfileUpdate) async throws
 }

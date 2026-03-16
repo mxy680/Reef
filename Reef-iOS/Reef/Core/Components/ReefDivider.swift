@@ -2,6 +2,11 @@ import SwiftUI
 
 struct ReefDivider: View {
     @Environment(ReefTheme.self) private var theme
+    let text: LocalizedStringKey
+
+    init(_ text: LocalizedStringKey = "OR") {
+        self.text = text
+    }
 
     var body: some View {
         HStack(spacing: 16) {
@@ -9,7 +14,7 @@ struct ReefDivider: View {
                 .fill(theme.colors.divider)
                 .frame(height: 1)
 
-            Text("OR")
+            Text(text)
                 .font(.epilogue(12, weight: .semiBold))
                 .tracking(0.08 * 12)
                 .foregroundStyle(theme.colors.textSecondary)

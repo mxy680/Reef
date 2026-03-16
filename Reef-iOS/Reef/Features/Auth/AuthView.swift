@@ -150,6 +150,7 @@ struct AuthView: View {
                     Text("Google")
                 }
             }
+            .accessibilityLabel("Sign in with Google")
 
             ReefButton(.secondary, action: { auth.signInWithApple() }) {
                 HStack(spacing: 10) {
@@ -158,33 +159,10 @@ struct AuthView: View {
                     Text("Apple")
                 }
             }
+            .accessibilityLabel("Sign in with Apple")
         }
         .padding(.bottom, 20)
         .fadeUp(index: 2)
-    }
-
-    // MARK: - Value Props
-
-    @ViewBuilder
-    private func valueProps(_ colors: ReefThemeColors) -> some View {
-        HStack(spacing: 24) {
-            ForEach(
-                ["Free during beta", "Works with any subject", "No credit card required"],
-                id: \.self
-            ) { text in
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(ReefColors.primary)
-
-                    Text(text)
-                        .reefCaption()
-                        .foregroundStyle(colors.textSecondary)
-                }
-            }
-        }
-        .padding(.top, 28)
-        .transition(.opacity)
     }
 
     // MARK: - Loading Overlay
@@ -200,12 +178,31 @@ struct AuthView: View {
     }
 }
 
+// MARK: - Preview Mocks
+
+#if DEBUG
+private struct MockAuthRepo: AuthRepository {
+    func authStateChanges() -> AsyncStream<AuthSession?> { .init { $0.finish() } }
+    func restoreSession() async throws -> AuthSession { throw CancellationError() }
+    func signInWithApple(idToken: String, nonce: String) async throws {}
+    func signInWithGoogle(idToken: String, accessToken: String) async throws {}
+    func sendMagicLink(email: String) async throws {}
+    func handleURL(_ url: URL) async throws {}
+    func signOut() async throws {}
+}
+
+private struct MockProfileRepo: ProfileRepository {
+    func fetchProfile() async throws -> Profile? { nil }
+    func upsertProfile(_ update: ProfileUpdate) async throws {}
+}
+#endif
+
 #Preview {
     AuthView()
         .environment(
             AuthViewModel(
-                authRepo: SupabaseAuthRepository(),
-                profileRepo: SupabaseProfileRepository()
+                authRepo: MockAuthRepo(),
+                profileRepo: MockProfileRepo()
             )
         )
         .environment(ReefTheme())

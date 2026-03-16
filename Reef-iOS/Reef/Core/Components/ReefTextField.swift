@@ -1,13 +1,12 @@
 import SwiftUI
 
-// MARK: - Text Field with 3D Shadow
-
 struct ReefTextField: View {
     @Environment(ReefTheme.self) private var theme
 
     let placeholder: String
     @Binding var text: String
     var icon: String? = nil
+    var isSecure: Bool = false
     var keyboard: UIKeyboardType = .default
     var capitalization: TextInputAutocapitalization = .never
     var autocorrection: Bool = false
@@ -23,18 +22,30 @@ struct ReefTextField: View {
                     .foregroundStyle(colors.textMuted)
             }
 
-            TextField(
-                placeholder,
-                text: $text,
-                prompt: Text(placeholder).foregroundStyle(colors.textMuted)
-            )
-            .font(.epilogue(16, weight: .medium))
-            .tracking(-0.04 * 16)
-            .foregroundStyle(colors.text)
-            .textInputAutocapitalization(capitalization)
-            .autocorrectionDisabled(!autocorrection)
-            .keyboardType(keyboard)
-            .onSubmit { onSubmit?() }
+            if isSecure {
+                SecureField(
+                    placeholder,
+                    text: $text,
+                    prompt: Text(placeholder).foregroundStyle(colors.textMuted)
+                )
+                .font(.epilogue(16, weight: .medium))
+                .tracking(-0.04 * 16)
+                .foregroundStyle(colors.text)
+                .onSubmit { onSubmit?() }
+            } else {
+                TextField(
+                    placeholder,
+                    text: $text,
+                    prompt: Text(placeholder).foregroundStyle(colors.textMuted)
+                )
+                .font(.epilogue(16, weight: .medium))
+                .tracking(-0.04 * 16)
+                .foregroundStyle(colors.text)
+                .textInputAutocapitalization(capitalization)
+                .autocorrectionDisabled(!autocorrection)
+                .keyboardType(keyboard)
+                .onSubmit { onSubmit?() }
+            }
         }
         .frame(height: 48)
         .padding(.horizontal, 18)

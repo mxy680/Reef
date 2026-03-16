@@ -60,6 +60,7 @@ final class AuthViewModel {
 
     private var coordinator: AppleSignInCoordinator?
     private var currentNonce: String?
+    private nonisolated(unsafe) var authListenerTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -69,29 +70,35 @@ final class AuthViewModel {
         Task { await bootstrap() }
     }
 
+    deinit {
+        authListenerTask?.cancel()
+    }
+
     // MARK: - Bootstrap
 
     private func bootstrap() async {
-        // Listen for auth state changes
-        Task {
+        // Listen for auth state changes — single source of truth
+        authListenerTask = Task {
             for await authSession in authRepo.authStateChanges() {
                 self.session = authSession
                 if authSession != nil {
                     await refreshProfile()
-                }
-                if authSession == nil {
+                } else {
                     self.profile = nil
                 }
             }
         }
 
-        // Attempt session restore
+        // Fallback: if stream hasn't emitted yet, try explicit restore
         do {
-            session = try await authRepo.restoreSession()
-            await refreshProfile()
+            let restored = try await authRepo.restoreSession()
+            if self.session == nil {
+                self.session = restored
+                await refreshProfile()
+            }
         } catch {
             #if DEBUG
-            devLogin()
+            if self.session == nil { devLogin() }
             #else
             session = nil
             #endif
@@ -101,11 +108,19 @@ final class AuthViewModel {
     // MARK: - Profile
 
     private func refreshProfile() async {
-        profile = await profileRepo.fetchProfile()
+        do {
+            profile = try await profileRepo.fetchProfile()
+        } catch {
+            // Profile fetch failure is non-fatal — don't block auth
+        }
     }
 
     func completeOnboarding() async {
-        profile = await profileRepo.fetchProfile()
+        do {
+            profile = try await profileRepo.fetchProfile()
+        } catch {
+            // Non-fatal
+        }
     }
 
     // MARK: - Apple Sign In
@@ -199,14 +214,23 @@ final class AuthViewModel {
     // MARK: - Magic Link
 
     func sendMagicLink(email: String) {
+        let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        guard trimmed.contains("@"), trimmed.contains("."),
+              trimmed.count >= 5, !trimmed.hasPrefix("@"), !trimmed.hasSuffix(".")
+        else {
+            errorMessage = "Please enter a valid email address."
+            return
+        }
+
         Task {
             isLoading = true
             errorMessage = nil
             defer { isLoading = false }
 
             do {
-                try await authRepo.sendMagicLink(email: email)
-                magicLinkEmail = email
+                try await authRepo.sendMagicLink(email: trimmed)
+                magicLinkEmail = trimmed
                 magicLinkSent = true
             } catch {
                 errorMessage = error.localizedDescription
@@ -233,7 +257,11 @@ final class AuthViewModel {
 
     func handleURL(_ url: URL) {
         Task {
-            try? await authRepo.handleURL(url)
+            do {
+                try await authRepo.handleURL(url)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
@@ -245,7 +273,7 @@ final class AuthViewModel {
         profile = Profile(
             id: "dev-user",
             displayName: "Dev User",
-            email: "markshteyn1@gmail.com",
+            email: "dev@example.com",
             subjects: [],
             onboardingCompleted: true
         )

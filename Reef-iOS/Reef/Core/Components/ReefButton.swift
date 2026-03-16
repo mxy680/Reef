@@ -164,7 +164,8 @@ struct ReefButton<Label: View>: View {
                         guard !isDisabled else { return }
                         isPressed = false
                         // Wait for spring-back animation, then fire
-                        DispatchQueue.main.asyncAfter(deadline: .now() + springBackDelay) {
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(springBackDelay))
                             action()
                         }
                     }
@@ -257,7 +258,8 @@ struct Reef3DPushModifier<S: Shape>: ViewModifier {
                     .onChanged { _ in isPressed = true }
                     .onEnded { _ in
                         isPressed = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + springBackDelay) {
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(springBackDelay))
                             action()
                         }
                     }

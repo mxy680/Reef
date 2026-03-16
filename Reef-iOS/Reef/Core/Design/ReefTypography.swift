@@ -18,17 +18,17 @@ enum EpilogueWeight: String {
 // MARK: - Semantic Text Styles
 
 extension View {
-    func reefHeading() -> some View {
+    func reefHeading(color: Color? = nil, uppercase: Bool = true) -> some View {
         self.font(.epilogue(32, weight: .black))
             .tracking(-0.04 * 32)
-            .textCase(.uppercase)
-            .foregroundStyle(ReefColors.black)
+            .textCase(uppercase ? .uppercase : nil)
+            .foregroundStyle(color ?? ReefColors.black)
     }
 
-    func reefBody() -> some View {
+    func reefBody(color: Color? = nil) -> some View {
         self.font(.epilogue(15, weight: .medium))
             .tracking(-0.04 * 15)
-            .foregroundStyle(ReefColors.gray600)
+            .foregroundStyle(color ?? ReefColors.gray600)
     }
 
     func reefButton() -> some View {
