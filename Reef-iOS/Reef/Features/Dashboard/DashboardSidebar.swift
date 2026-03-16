@@ -3,7 +3,7 @@ import SwiftUI
 struct DashboardSidebar: View {
     @Environment(ReefTheme.self) private var theme
     @Environment(AuthViewModel.self) private var auth
-    @Environment(\.layoutMetrics) private var metrics
+    @Environment(\.reefLayoutMetrics) private var metrics
     var viewModel: DashboardViewModel
 
     private var isOpen: Bool { viewModel.sidebarOpen }
@@ -127,6 +127,7 @@ struct DashboardSidebar: View {
             .compositingGroup()
             .contentShape(Rectangle())
             .onTapGesture { /* Stub */ }
+            .accessibilityLabel("Add a course")
             .accessibilityAddTraits(.isButton)
         }
     }
@@ -142,7 +143,6 @@ struct DashboardSidebar: View {
                 .renderingMode(.template)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 22, height: 22)
                 .frame(width: 24, height: 24)
 
             if isOpen {
@@ -163,7 +163,6 @@ struct DashboardSidebar: View {
                     .fill(colors.activeNavBg)
                 : nil
         )
-        .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
             isActive
                 ? RoundedRectangle(cornerRadius: 10)
@@ -178,7 +177,7 @@ struct DashboardSidebar: View {
                 : nil
         )
         .compositingGroup()
-        .contentShape(Rectangle())
+        .contentShape(RoundedRectangle(cornerRadius: 10))
         .onTapGesture { viewModel.selectTab(tab) }
         .accessibilityAddTraits(.isButton)
     }
@@ -215,6 +214,8 @@ struct DashboardSidebar: View {
                             .stroke(colors.border, lineWidth: 2)
                     )
             }
+            .onTapGesture { /* TODO: Navigate to upgrade/billing */ }
+            .accessibilityAddTraits(.isButton)
 
             // Settings
             footerRow {

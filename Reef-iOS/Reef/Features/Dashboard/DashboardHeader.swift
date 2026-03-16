@@ -3,12 +3,10 @@ import SwiftUI
 struct DashboardHeader: View {
     @Environment(ReefTheme.self) private var theme
     @Environment(AuthViewModel.self) private var auth
-    @Environment(\.layoutMetrics) private var metrics
+    @Environment(\.reefLayoutMetrics) private var metrics
     var viewModel: DashboardViewModel
 
-    @State private var showProfileMenu = false
-
-    private let gradeLabels: [String: String] = [
+    private static let gradeLabels: [String: String] = [
         "middle_school": "Middle School",
         "high_school": "High School",
         "college": "College",
@@ -40,12 +38,14 @@ struct DashboardHeader: View {
 
             // Action buttons
             HStack(spacing: 10) {
+                // TODO: Wire search and help actions — currently non-interactive
                 headerIcon("magnifyingglass")
                 headerIcon("questionmark.circle")
 
                 // Bell with notification dot
                 ZStack(alignment: .topTrailing) {
                     headerIcon("bell")
+                    // TODO: Conditionally show based on unread notification count
                     Circle()
                         .fill(Color(hex: 0xE74C3C))
                         .frame(width: 8, height: 8)
@@ -106,42 +106,18 @@ struct DashboardHeader: View {
                     borderColor: colors.border,
                     shadowColor: colors.shadow
                 ) {
-                    withAnimation(.spring(duration: 0.2)) {
-                        showProfileMenu.toggle()
-                    }
+                    viewModel.toggleProfileMenu()
                 }
             }
         }
         .frame(height: metrics.headerHeight)
         .padding(.horizontal, metrics.contentPadding)
         .dashboardCard()
-        .overlay(alignment: .topTrailing) {
-            if showProfileMenu {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring(duration: 0.2)) {
-                            showProfileMenu = false
-                        }
-                    }
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            if showProfileMenu {
-                profileDropdownMenu
-                    .offset(y: 68)
-                    .padding(.trailing, 12)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
-            }
-        }
-        .zIndex(showProfileMenu ? 10 : 0)
     }
 
-    // MARK: - Dropdown Menu
+    // MARK: - Profile Dropdown (rendered by DashboardView)
 
-    private var profileDropdownMenu: some View {
+    var profileDropdownMenu: some View {
         let colors = theme.colors
         return VStack(alignment: .leading, spacing: 0) {
             // User info
@@ -174,13 +150,14 @@ struct DashboardHeader: View {
 
             // Grade + Tier pill
             HStack(spacing: 8) {
-                if let grade = auth.profile?.grade, let label = gradeLabels[grade] {
+                if let grade = auth.profile?.grade, let label = Self.gradeLabels[grade] {
                     Text(label)
                         .font(.epilogue(12, weight: .semiBold))
                         .tracking(-0.02 * 12)
                         .foregroundStyle(colors.textSecondary)
                 }
 
+                // TODO: Replace with dynamic tier from user subscription state
                 Text("Shore · Free")
                     .font(.epilogue(11, weight: .bold))
                     .tracking(-0.02 * 11)
@@ -212,21 +189,21 @@ struct DashboardHeader: View {
             dropdownDivider
 
             profileMenuItem(icon: "person.crop.circle", label: "Edit Profile") {
-                showProfileMenu = false
+                viewModel.dismissProfileMenu()
                 viewModel.selectTab(.settings)
             }
             profileMenuItem(icon: "slider.horizontal.3", label: "Preferences") {
-                showProfileMenu = false
+                viewModel.dismissProfileMenu()
                 viewModel.selectTab(.settings)
             }
             profileMenuItem(icon: "questionmark.circle", label: "Help & Support") {
-                showProfileMenu = false
+                viewModel.dismissProfileMenu()
             }
 
             dropdownDivider
 
             profileMenuItem(icon: "rectangle.portrait.and.arrow.right", label: "Log Out", isDestructive: true) {
-                showProfileMenu = false
+                viewModel.dismissProfileMenu()
                 Task { await auth.signOut() }
             }
         }
@@ -287,9 +264,5 @@ struct DashboardHeader: View {
             .font(.system(size: 18))
             .foregroundStyle(theme.colors.textSecondary)
             .frame(width: 32, height: 32)
-            .compositingGroup()
-            .contentShape(Rectangle())
-            .onTapGesture {}
-            .accessibilityAddTraits(.isButton)
     }
 }

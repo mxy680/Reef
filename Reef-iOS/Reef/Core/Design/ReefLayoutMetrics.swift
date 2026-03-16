@@ -59,7 +59,7 @@ private struct ReefLayoutMetricsKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    var layoutMetrics: ReefLayoutMetrics {
+    var reefLayoutMetrics: ReefLayoutMetrics {
         get { self[ReefLayoutMetricsKey.self] }
         set { self[ReefLayoutMetricsKey.self] = newValue }
     }

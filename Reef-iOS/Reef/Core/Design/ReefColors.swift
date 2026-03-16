@@ -72,6 +72,7 @@ struct ReefThemeColors {
     let isDarkMode: Bool
 
     var surface: Color { isDarkMode ? ReefColors.Dark.surface : ReefColors.surface }
+    /// Page background (peach in light mode). For card backgrounds, use `card` (white in light mode).
     var background: Color { isDarkMode ? ReefColors.Dark.background : ReefColors.surface }
     var card: Color { isDarkMode ? ReefColors.Dark.card : ReefColors.white }
     var text: Color { isDarkMode ? ReefColors.Dark.text : ReefColors.black }

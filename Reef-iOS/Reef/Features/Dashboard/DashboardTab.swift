@@ -1,5 +1,7 @@
 import SwiftUI
 
+// NOTE: A legacy duplicate exists at Views/Dashboard/DashboardTab.swift (not in build target).
+// Delete that file once all old Views/ code is removed.
 enum DashboardTab: String, CaseIterable, Identifiable {
     case documents
     case analytics

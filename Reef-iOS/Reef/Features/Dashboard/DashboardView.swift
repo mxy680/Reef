@@ -3,12 +3,11 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(ReefTheme.self) private var theme
     @State private var viewModel = DashboardViewModel()
+    @State private var headerRef = DashboardHeader(viewModel: DashboardViewModel())
 
-    private var metrics: ReefLayoutMetrics {
-        ReefLayoutMetrics(
-            screenHeight: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        )
-    }
+    private let metrics = ReefLayoutMetrics(
+        screenHeight: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+    )
 
     var body: some View {
         ZStack {
@@ -28,9 +27,29 @@ struct DashboardView: View {
                 }
             }
             .padding(.horizontal, 12)
+
+            // Profile dropdown overlay (root ZStack per CLAUDE.md)
+            if viewModel.showProfileMenu {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture { viewModel.dismissProfileMenu() }
+
+                VStack {
+                    HStack {
+                        Spacer()
+                        DashboardHeader(viewModel: viewModel)
+                            .profileDropdownMenu
+                            .padding(.top, metrics.headerHeight + 24)
+                            .padding(.trailing, 24)
+                    }
+                    Spacer()
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
+            }
         }
-        .environment(\.layoutMetrics, metrics)
+        .environment(\.reefLayoutMetrics, metrics)
         .animation(.spring(duration: 0.35, bounce: 0.15), value: viewModel.sidebarOpen)
+        .animation(.spring(duration: 0.2), value: viewModel.showProfileMenu)
     }
 
     // MARK: - Content Area
@@ -40,9 +59,8 @@ struct DashboardView: View {
         if let tab = viewModel.selectedTab {
             tabPlaceholder(tab.label)
         } else if viewModel.selectedCourseId != nil {
+            // selectedTab is always non-nil in current implementation
             tabPlaceholder(viewModel.contentTitle)
-        } else {
-            tabPlaceholder("Dashboard")
         }
     }
 
