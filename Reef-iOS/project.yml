@@ -29,7 +29,13 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: Reef
+      - path: Reef/App
+      - path: Reef/Core
+      - path: Reef/Domain
+      - path: Reef/Data
+      - path: Reef/Features
+      - path: Reef/Assets.xcassets
+      - path: Reef/Reef.entitlements
     resources:
       - path: Reef/Resources/Fonts
         buildPhase: resources
