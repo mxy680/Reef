@@ -119,6 +119,7 @@ struct AuthView: View {
             keyboard: .emailAddress,
             onSubmit: { auth.sendMagicLink(email: email) }
         )
+        .accessibilityIdentifier("auth.emailField")
         .padding(.bottom, 22)
         .fadeUp(index: 4)
 
@@ -129,12 +130,14 @@ struct AuthView: View {
         ) {
             auth.sendMagicLink(email: email)
         }
+        .accessibilityIdentifier("auth.continueButton")
         .fadeUp(index: 5)
 
         #if DEBUG
         ReefButton("Dev Login", variant: .link) {
             auth.devLogin()
         }
+        .accessibilityIdentifier("auth.devLoginButton")
         .padding(.top, 16)
         #endif
     }

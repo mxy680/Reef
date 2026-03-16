@@ -179,6 +179,7 @@ struct DashboardSidebar: View {
         .compositingGroup()
         .contentShape(RoundedRectangle(cornerRadius: 10))
         .onTapGesture { viewModel.selectTab(tab) }
+        .accessibilityIdentifier("sidebar.tab.\(tab.rawValue)")
         .accessibilityAddTraits(.isButton)
     }
 

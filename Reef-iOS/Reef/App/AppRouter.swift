@@ -33,18 +33,22 @@ struct AppRouter: View {
             case .loading:
                 splashView
                     .transition(.opacity)
+                    .accessibilityIdentifier("screen.loading")
 
             case .auth:
                 AuthView()
                     .transition(.opacity)
+                    .accessibilityIdentifier("screen.auth")
 
             case .onboarding:
                 placeholderOnboarding
                     .transition(.opacity)
+                    .accessibilityIdentifier("screen.onboarding")
 
             case .dashboard:
                 DashboardView()
                     .transition(.opacity)
+                    .accessibilityIdentifier("screen.dashboard")
             }
         }
         .animation(.easeInOut(duration: 0.35), value: currentScreen)

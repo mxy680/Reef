@@ -80,6 +80,14 @@ final class AuthViewModel {
     private func bootstrap() async {
         defer { isBootstrapping = false }
 
+        #if DEBUG
+        // UI tests: skip network calls, show auth screen immediately
+        if ProcessInfo.processInfo.arguments.contains("--uitesting") {
+            session = nil
+            return
+        }
+        #endif
+
         // 1. Try to restore saved session (primary path)
         do {
             session = try await authRepo.restoreSession()
