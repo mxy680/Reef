@@ -48,7 +48,7 @@ struct SettingsAboutTab: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .padding(metrics.cardPadding)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dashboardCard()
     }
 

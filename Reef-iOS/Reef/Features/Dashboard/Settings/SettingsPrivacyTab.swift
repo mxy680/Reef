@@ -42,7 +42,7 @@ struct SettingsPrivacyTab: View {
                     .padding(metrics.cardPadding)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dashboardCard()
     }
 

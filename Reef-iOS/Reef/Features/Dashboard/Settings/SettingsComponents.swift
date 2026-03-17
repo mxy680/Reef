@@ -420,7 +420,7 @@ struct SubjectPill: View {
             .foregroundStyle(isSelected ? ReefColors.white : colors.text)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(isSelected ? ReefColors.primary : colors.subtle)
+            .background(isSelected ? ReefColors.primary : colors.card)
             .clipShape(Capsule())
             .reef3DPushCapsule(
                 shadowOffset: 2,

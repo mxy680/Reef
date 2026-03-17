@@ -50,7 +50,7 @@ struct SettingsProfileTab: View {
                     .padding(metrics.cardPadding)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(colors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
