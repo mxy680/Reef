@@ -7,6 +7,7 @@ final class DashboardViewModel {
     var selectedCourseId: String?
     var sidebarOpen = true
     var showProfileMenu = false
+    var showNotifications = false
 
     // Stub — courses will be wired to a repository later
     var courses: [String] = []
