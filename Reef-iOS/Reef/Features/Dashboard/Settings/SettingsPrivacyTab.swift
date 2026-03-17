@@ -8,8 +8,12 @@ struct SettingsPrivacyTab: View {
 
     @State private var analyticsEnabled = true
     @State private var crashReporting = true
+    @State private var performanceMonitoring = true
+    @State private var sessionRecording = false
     @State private var personalisedContent = false
     @State private var shareWithResearchers = false
+    @State private var profileVisibility = true
+    @State private var progressBenchmarking = false
 
     var body: some View {
         let colors = theme.colors
@@ -63,6 +67,18 @@ struct SettingsPrivacyTab: View {
                 subtitle: "Automatically send crash reports to our team",
                 isOn: $crashReporting
             )
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Performance Monitoring",
+                subtitle: "Track app performance to identify slow screens",
+                isOn: $performanceMonitoring
+            )
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Session Recording",
+                subtitle: "Record anonymised sessions to improve UX",
+                isOn: $sessionRecording
+            )
         }
     }
 
@@ -83,6 +99,18 @@ struct SettingsPrivacyTab: View {
                 subtitle: "Share anonymised data with education researchers",
                 isOn: $shareWithResearchers
             )
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Profile Visibility",
+                subtitle: "Let tutors see your grade and selected subjects",
+                isOn: $profileVisibility
+            )
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Progress Benchmarking",
+                subtitle: "Compare your progress anonymously with peers",
+                isOn: $progressBenchmarking
+            )
         }
     }
 
@@ -92,9 +120,11 @@ struct SettingsPrivacyTab: View {
         VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Your Data")
                 .padding(.bottom, 14)
-            SettingsLinkRow(icon: "arrow.down.circle", label: "Download My Data") {
-                // TODO: trigger data export
-            }
+            SettingsLinkRow(icon: "arrow.down.circle", label: "Download My Data") {}
+            SettingsDivider()
+            SettingsLinkRow(icon: "arrow.triangle.2.circlepath", label: "Sync Now") {}
+            SettingsDivider()
+            SettingsLinkRow(icon: "internaldrive", label: "Clear Cache") {}
             SettingsDivider()
             HStack(spacing: 12) {
                 Image(systemName: "trash")
@@ -114,9 +144,7 @@ struct SettingsPrivacyTab: View {
                     .foregroundStyle(colors.textDisabled)
             }
             .contentShape(Rectangle())
-            .onTapGesture {
-                // TODO: confirm delete study data
-            }
+            .onTapGesture {}
             .accessibilityAddTraits(.isButton)
         }
     }

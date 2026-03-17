@@ -202,7 +202,52 @@ struct SettingsAccountTab: View {
                 }
                 Spacer()
             }
+
+            SettingsDivider()
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Last Sign In")
+                        .font(.epilogue(14, weight: .semiBold))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(colors.text)
+                    Text(lastSignInLabel)
+                        .font(.epilogue(12, weight: .medium))
+                        .tracking(-0.04 * 12)
+                        .foregroundStyle(colors.textMuted)
+                }
+                Spacer()
+                Image(systemName: "clock")
+                    .font(.system(size: 15))
+                    .foregroundStyle(colors.textSecondary)
+            }
+
+            SettingsDivider()
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Active Sessions")
+                        .font(.epilogue(14, weight: .semiBold))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(colors.text)
+                    Text("1 device — this iPad")
+                        .font(.epilogue(12, weight: .medium))
+                        .tracking(-0.04 * 12)
+                        .foregroundStyle(colors.textMuted)
+                }
+                Spacer()
+                Image(systemName: "ipad.landscape")
+                    .font(.system(size: 15))
+                    .foregroundStyle(colors.textSecondary)
+            }
         }
+    }
+
+    private var lastSignInLabel: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: Date())
     }
 
     private var signInMethodLabel: String {
@@ -317,8 +362,29 @@ struct SettingsAccountTab: View {
                 .padding(.bottom, 14)
             signOutRow(colors)
             SettingsDivider()
+            revokeSessionsRow(colors)
+            SettingsDivider()
             deleteAccountRow(colors)
         }
+    }
+
+    private func revokeSessionsRow(_ colors: ReefThemeColors) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lock.rotation")
+                .font(.system(size: 15))
+                .foregroundStyle(colors.textSecondary)
+                .frame(width: 22)
+
+            Text("Revoke All Sessions")
+                .font(.epilogue(14, weight: .semiBold))
+                .tracking(-0.04 * 14)
+                .foregroundStyle(colors.text)
+
+            Spacer()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { onToast("All other sessions revoked.") }
+        .accessibilityAddTraits(.isButton)
     }
 
     private func signOutRow(_ colors: ReefThemeColors) -> some View {
