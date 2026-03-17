@@ -205,6 +205,8 @@ struct DashboardSidebar: View {
                     .font(.epilogue(10, weight: .black))
                     .tracking(0.02 * 10)
                     .textCase(.uppercase)
+                    .lineLimit(1)
+                    .fixedSize()
                     .foregroundStyle(colors.text)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -215,7 +217,11 @@ struct DashboardSidebar: View {
                             .stroke(colors.border, lineWidth: 2)
                     )
             }
-            .onTapGesture { /* TODO: Navigate to upgrade/billing */ }
+            .onTapGesture {
+                if let url = URL(string: "https://stripe.com") {
+                    UIApplication.shared.open(url)
+                }
+            }
             .accessibilityLabel("Upgrade plan")
             .accessibilityAddTraits(.isButton)
 
