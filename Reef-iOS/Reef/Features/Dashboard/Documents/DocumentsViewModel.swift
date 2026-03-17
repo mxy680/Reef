@@ -109,8 +109,10 @@ final class DocumentsViewModel {
             } else {
                 showToast("Document uploaded")
             }
+        } catch let uploadError as DocumentUploadError {
+            showToast(uploadError.localizedDescription)
         } catch {
-            showToast("Upload failed — please try again")
+            showToast("Upload failed: \(error.localizedDescription)")
         }
     }
 
