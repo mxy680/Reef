@@ -105,6 +105,25 @@ struct DashboardHeader: View {
         .frame(height: metrics.headerHeight)
         .padding(.horizontal, metrics.contentPadding)
         .dashboardCard()
+        .overlay(alignment: .topTrailing) {
+            if viewModel.showProfileMenu {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+                    .onTapGesture { viewModel.dismissProfileMenu() }
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if viewModel.showProfileMenu {
+                ProfileDropdownMenu(viewModel: viewModel)
+                    .offset(y: 68)
+                    .padding(.trailing, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
+            }
+        }
+        .zIndex(viewModel.showProfileMenu ? 10 : 0)
+        .animation(.spring(duration: 0.2), value: viewModel.showProfileMenu)
     }
 
     // MARK: - Helpers

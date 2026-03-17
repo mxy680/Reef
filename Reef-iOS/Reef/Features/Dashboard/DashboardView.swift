@@ -26,28 +26,9 @@ struct DashboardView: View {
                 }
             }
             .padding(.horizontal, 12)
-
-            // Profile dropdown overlay (root ZStack per CLAUDE.md)
-            if viewModel.showProfileMenu {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .onTapGesture { viewModel.dismissProfileMenu() }
-
-                VStack {
-                    HStack {
-                        Spacer()
-                        ProfileDropdownMenu(viewModel: viewModel)
-                            .padding(.top, metrics.headerHeight + 24)
-                            .padding(.trailing, 24)
-                    }
-                    Spacer()
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
-            }
         }
         .environment(\.reefLayoutMetrics, metrics)
         .animation(.spring(duration: 0.35, bounce: 0.15), value: viewModel.sidebarOpen)
-        .animation(.spring(duration: 0.2), value: viewModel.showProfileMenu)
     }
 
     // MARK: - Content Area
