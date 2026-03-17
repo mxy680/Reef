@@ -128,8 +128,7 @@ struct DocumentsContentView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: rowSpacing) {
 
-                    // Upload placeholder card — 3D with dashed border
-                    let uploadBorder = theme.isDarkMode ? ReefColors.Dark.shadow : ReefColors.gray500
+                    // Upload placeholder card — dashed border, no 3D
                     VStack(spacing: 8) {
                         Image(systemName: "arrow.up.doc")
                             .font(.system(size: 16, weight: .semibold))
@@ -140,17 +139,10 @@ struct DocumentsContentView: View {
                     .foregroundStyle(colors.textMuted)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .frame(height: cardHeight)
-                    .background(colors.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
                             .foregroundStyle(colors.textDisabled)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(uploadBorder)
-                            .offset(x: 3, y: 3)
                     )
                     .compositingGroup()
                     .contentShape(Rectangle())
