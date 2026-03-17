@@ -130,6 +130,8 @@ struct DashboardView: View {
             switch tab {
             case .documents:
                 DocumentsContentView(viewModel: documentsVM)
+            case .analytics:
+                AnalyticsView()
             default:
                 tabPlaceholder(tab.label)
             }
