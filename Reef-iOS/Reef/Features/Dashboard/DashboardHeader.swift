@@ -112,6 +112,7 @@ struct DashboardHeader: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .ignoresSafeArea()
                     .onTapGesture { viewModel.dismissProfileMenu() }
+                    .transition(.opacity)
             }
         }
         .overlay(alignment: .topTrailing) {
@@ -119,11 +120,14 @@ struct DashboardHeader: View {
                 ProfileDropdownMenu(viewModel: viewModel)
                     .offset(y: 68)
                     .padding(.trailing, 12)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
+                        removal: .opacity
+                    ))
             }
         }
-        .zIndex(viewModel.showProfileMenu ? 10 : 0)
-        .animation(.spring(duration: 0.2), value: viewModel.showProfileMenu)
+        .zIndex(10)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.showProfileMenu)
     }
 
     // MARK: - Helpers

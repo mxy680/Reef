@@ -38,14 +38,10 @@ final class DashboardViewModel {
     }
 
     func toggleProfileMenu() {
-        withAnimation(.spring(duration: 0.2)) {
-            showProfileMenu.toggle()
-        }
+        showProfileMenu.toggle()
     }
 
     func dismissProfileMenu() {
-        withAnimation(.spring(duration: 0.2)) {
-            showProfileMenu = false
-        }
+        showProfileMenu = false
     }
 }
