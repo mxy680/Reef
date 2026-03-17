@@ -36,7 +36,7 @@ struct DashboardView: View {
     // MARK: - Dropdown Overlays
 
     private var anyDropdownOpen: Bool {
-        viewModel.showProfileMenu || viewModel.showNotifications
+        viewModel.showProfileMenu || viewModel.showNotifications || viewModel.showSearch || viewModel.showHelp
     }
 
     @ViewBuilder
@@ -48,6 +48,8 @@ struct DashboardView: View {
                 .onTapGesture {
                     viewModel.showProfileMenu = false
                     viewModel.showNotifications = false
+                    viewModel.showSearch = false
+                    viewModel.showHelp = false
                 }
                 .transition(.opacity)
         }

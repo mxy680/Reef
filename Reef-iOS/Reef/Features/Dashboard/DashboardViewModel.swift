@@ -8,6 +8,8 @@ final class DashboardViewModel {
     var sidebarOpen = true
     var showProfileMenu = false
     var showNotifications = false
+    var showSearch = false
+    var showHelp = false
 
     // Stub — courses will be wired to a repository later
     var courses: [String] = []

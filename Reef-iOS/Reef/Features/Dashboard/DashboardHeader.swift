@@ -30,11 +30,19 @@ struct DashboardHeader: View {
 
             // Action buttons
             HStack(spacing: 10) {
-                // TODO: Wire search and help actions
+                // Search
                 headerIcon("magnifyingglass")
-                headerIcon("questionmark.circle")
+                    .onTapGesture { viewModel.showSearch.toggle() }
+                    .accessibilityLabel("Search")
+                    .accessibilityAddTraits(.isButton)
 
-                // Notifications bell
+                // Help
+                headerIcon("questionmark.circle")
+                    .onTapGesture { viewModel.showHelp.toggle() }
+                    .accessibilityLabel("Help")
+                    .accessibilityAddTraits(.isButton)
+
+                // Notifications
                 headerIcon("bell")
                     .onTapGesture { viewModel.showNotifications.toggle() }
                     .accessibilityLabel("Notifications")
@@ -103,16 +111,31 @@ struct DashboardHeader: View {
         .frame(height: metrics.headerHeight)
         .padding(.horizontal, metrics.contentPadding)
         .dashboardCard()
+        // Search dropdown
+        .overlay(alignment: .topTrailing) {
+            if viewModel.showSearch {
+                comingSoonDropdown(icon: "magnifyingglass", text: "Search coming soon")
+                    .offset(y: metrics.dropdownYOffset)
+                    .padding(.trailing, metrics.notificationDropdownTrailing + 80)
+                    .transition(dropdownTransition)
+            }
+        }
+        // Help dropdown
+        .overlay(alignment: .topTrailing) {
+            if viewModel.showHelp {
+                comingSoonDropdown(icon: "lifepreserver", text: "Help & support coming soon")
+                    .offset(y: metrics.dropdownYOffset)
+                    .padding(.trailing, metrics.notificationDropdownTrailing + 40)
+                    .transition(dropdownTransition)
+            }
+        }
         // Notification dropdown
         .overlay(alignment: .topTrailing) {
             if viewModel.showNotifications {
-                notificationsDropdown(colors)
+                comingSoonDropdown(icon: "bell.slash", text: "No new notifications")
                     .offset(y: metrics.dropdownYOffset)
                     .padding(.trailing, metrics.notificationDropdownTrailing)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
-                        removal: .opacity
-                    ))
+                    .transition(dropdownTransition)
             }
         }
         // Profile dropdown
@@ -121,34 +144,39 @@ struct DashboardHeader: View {
                 ProfileDropdownMenu(viewModel: viewModel)
                     .offset(y: metrics.dropdownYOffset)
                     .padding(.trailing, metrics.dashboardHPadding)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
-                        removal: .opacity
-                    ))
+                    .transition(dropdownTransition)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.showProfileMenu)
         .animation(.easeInOut(duration: 0.2), value: viewModel.showNotifications)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.showSearch)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.showHelp)
     }
 
-    // MARK: - Notifications Dropdown
+    // MARK: - Helpers
 
-    private func notificationsDropdown(_ colors: ReefThemeColors) -> some View {
+    private var dropdownTransition: AnyTransition {
+        .asymmetric(
+            insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
+            removal: .opacity
+        )
+    }
+
+    private func comingSoonDropdown(icon: String, text: String) -> some View {
+        let colors = theme.colors
         let dark = theme.isDarkMode
-        return VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Image(systemName: "bell.slash")
-                    .font(.system(size: 16))
-                    .foregroundStyle(colors.textMuted)
+        return HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(colors.textMuted)
 
-                Text("No new notifications")
-                    .font(.epilogue(13, weight: .semiBold))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(colors.textSecondary)
-            }
-            .padding(.horizontal, metrics.dropdownItemHPadding)
-            .padding(.vertical, metrics.dropdownItemVPadding)
+            Text(text)
+                .font(.epilogue(13, weight: .semiBold))
+                .tracking(-0.04 * 13)
+                .foregroundStyle(colors.textSecondary)
         }
+        .padding(.horizontal, metrics.dropdownItemHPadding)
+        .padding(.vertical, metrics.dropdownItemVPadding)
         .background(colors.cardElevated)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
@@ -161,8 +189,6 @@ struct DashboardHeader: View {
                 .offset(x: 3, y: 3)
         )
     }
-
-    // MARK: - Helpers
 
     private func headerIcon(_ icon: String) -> some View {
         Image(systemName: icon)
