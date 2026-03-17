@@ -79,18 +79,7 @@ struct SettingsAccountTab: View {
                             .tracking(-0.04 * 18)
                             .foregroundStyle(colors.text)
 
-                        Text("FREE BETA")
-                            .font(.epilogue(10, weight: .black))
-                            .tracking(0.02 * 10)
-                            .foregroundStyle(colors.text)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(colors.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(colors.border, lineWidth: 1.5)
-                            )
+                        ReefBadge(text: "Free Beta")
                     }
 
                     Text("Access all features during the beta period")

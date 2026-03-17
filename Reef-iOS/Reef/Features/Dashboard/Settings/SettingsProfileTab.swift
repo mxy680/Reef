@@ -353,7 +353,6 @@ struct SettingsProfileTab: View {
         do {
             try await profileRepo.upsertProfile(update)
             await auth.completeOnboarding()
-            onToast("Saved")
         } catch {
             onToast("Failed to save")
         }

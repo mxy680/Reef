@@ -201,21 +201,7 @@ struct DashboardSidebar: View {
             } label: {
                 Text("Upgrade")
             } trailing: {
-                Text("FREE BETA")
-                    .font(.epilogue(10, weight: .black))
-                    .tracking(0.02 * 10)
-                    .textCase(.uppercase)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .foregroundStyle(colors.text)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(colors.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(colors.border, lineWidth: 2)
-                    )
+                ReefBadge(text: "Free Beta")
             }
             .onTapGesture {
                 if let url = URL(string: "https://stripe.com") {

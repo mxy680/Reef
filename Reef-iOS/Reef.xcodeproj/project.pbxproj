@@ -54,6 +54,7 @@
 		B1342C3D4467A24E496A2705 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */; };
 		B810EB60F5595D898E981F20 /* NotificationDropdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4689C58CCB86B7C32D03AA /* NotificationDropdownTests.swift */; };
 		BA0D8850AA60F67BD31A9008 /* DocumentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A80790E56F45AD11C42C6AE /* DocumentsViewModel.swift */; };
+		BA13FB6B1A663195074470FE /* ReefBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC89D92C9819BFC2E70F4BD /* ReefBadge.swift */; };
 		BD86A46358438D7E29C4251F /* SettingsProfileTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540FA017DB5B558F980C778C /* SettingsProfileTab.swift */; };
 		BDEF8CB0B1BDF475A9B404C0 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67343B23E7351C02A36771E0 /* Document.swift */; };
 		BE34AD54F16F85B938302FE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F68AC1C3432E326DB646676 /* Assets.xcassets */; };
@@ -123,6 +124,7 @@
 		6B1625043D9BE3B466B4EF85 /* DeleteConfirmPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteConfirmPopup.swift; sourceTree = "<group>"; };
 		7986E18245D3EB0F3C303539 /* CourseDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseDTO.swift; sourceTree = "<group>"; };
 		7CEA0E601A77E71794D928EC /* ReefAnimations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefAnimations.swift; sourceTree = "<group>"; };
+		7EC89D92C9819BFC2E70F4BD /* ReefBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefBadge.swift; sourceTree = "<group>"; };
 		82315CD65E53D1BAD137A91C /* ReefColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefColors.swift; sourceTree = "<group>"; };
 		8342C69F3700A9310BE6514E /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
 		837EF10AE734D9E16B28F190 /* ProfileUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUpdate.swift; sourceTree = "<group>"; };
@@ -161,7 +163,7 @@
 		F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
 		F962193EFD8BFBB8449D0469 /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
 		FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefLayoutMetrics.swift; sourceTree = "<group>"; };
-		"TEMP_EF0F8094-7E87-4204-B227-FD5E5941CF2E" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		"TEMP_28280C8B-1A21-43CF-BFA6-191DAB0D6F7F" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -337,6 +339,7 @@
 				21872AA207AEEC6F2397B9F4 /* DottedBackground.swift */,
 				3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */,
 				3205E3BD9FC3234A4F37231A /* PopupShellModifier.swift */,
+				7EC89D92C9819BFC2E70F4BD /* ReefBadge.swift */,
 				4E7B4C0ECBC8C19B3047E375 /* ReefButton.swift */,
 				982248BAE2D4A7F5BE47B8D8 /* ReefCard.swift */,
 				E03E18AE30F94DABABC0A0BF /* ReefDivider.swift */,
@@ -431,10 +434,10 @@
 			path = Domain;
 			sourceTree = "<group>";
 		};
-		"TEMP_171FC487-FC54-496F-8F36-2048ADD9D195" /* Reef-iOS */ = {
+		"TEMP_D78497C8-11F2-4B06-A9E6-F3652F71A867" /* Reef-iOS */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_EF0F8094-7E87-4204-B227-FD5E5941CF2E" /* Secrets.xcconfig */,
+				"TEMP_28280C8B-1A21-43CF-BFA6-191DAB0D6F7F" /* Secrets.xcconfig */,
 			);
 			path = "Reef-iOS";
 			sourceTree = "<group>";
@@ -581,6 +584,7 @@
 				0A483380FF6AC22B6869D458 /* ProfileUpdate.swift in Sources */,
 				232480B1789C9A7D63D7328C /* ReefAnimations.swift in Sources */,
 				90B58BB88071D49268A953F9 /* ReefApp.swift in Sources */,
+				BA13FB6B1A663195074470FE /* ReefBadge.swift in Sources */,
 				D03FA7FFE2014624EFF77984 /* ReefButton.swift in Sources */,
 				F2568A6213CDA2E61E2CCE92 /* ReefCard.swift in Sources */,
 				0D287237BD753E19E0F355B0 /* ReefColors.swift in Sources */,
@@ -649,7 +653,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_EF0F8094-7E87-4204-B227-FD5E5941CF2E" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_28280C8B-1A21-43CF-BFA6-191DAB0D6F7F" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -715,7 +719,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_EF0F8094-7E87-4204-B227-FD5E5941CF2E" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_28280C8B-1A21-43CF-BFA6-191DAB0D6F7F" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
