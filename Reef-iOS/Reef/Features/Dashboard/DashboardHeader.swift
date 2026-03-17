@@ -90,12 +90,18 @@ struct DashboardHeader: View {
                 ZStack {
                     Circle()
                         .fill(ReefColors.accent)
-                        .overlay(Circle().stroke(colors.border, lineWidth: 2))
                     Text(auth.userInitials)
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
                 }
                 .frame(width: 32, height: 32)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(colors.border, lineWidth: 2))
+                .background(
+                    Circle()
+                        .fill(colors.shadow)
+                        .offset(x: 2, y: 2)
+                )
                 .accessibilityLabel("Profile menu")
                 .accessibilityAddTraits(.isButton)
                 .reefDropdown(
