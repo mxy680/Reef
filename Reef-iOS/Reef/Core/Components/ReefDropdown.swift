@@ -2,19 +2,16 @@ import SwiftUI
 
 /// Reusable dropdown overlay that attaches to a trigger view.
 ///
-/// Usage:
-/// ```
-/// ReefDropdown(isPresented: $showMenu, alignment: .topTrailing, offset: CGSize(width: 0, height: 48)) {
-///     VStack { ... }
-/// }
-/// ```
+/// The trigger view becomes tappable — tap opens the dropdown,
+/// tap anywhere else dismisses it.
 ///
-/// Features:
-/// - Neobrutalist card styling (gray500 border, 3pt shadow)
-/// - Full-screen clear dismiss backdrop
-/// - Smooth open/close animation (scale+opacity in, opacity out)
-/// - zIndex elevation so dropdown renders above sibling views
-/// - Configurable alignment and offset from trigger
+/// Usage:
+/// ```swift
+/// headerIcon("bell")
+///     .reefDropdown(isPresented: $show) {
+///         Text("Dropdown content")
+///     }
+/// ```
 struct ReefDropdown<DropdownContent: View>: ViewModifier {
     @Environment(ReefTheme.self) private var theme
     @Binding var isPresented: Bool
@@ -25,6 +22,12 @@ struct ReefDropdown<DropdownContent: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            // Tap trigger to toggle
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isPresented.toggle()
+            }
+            // Dismiss backdrop (only when open)
             .overlay(alignment: alignment) {
                 if isPresented {
                     Color.clear
@@ -35,6 +38,7 @@ struct ReefDropdown<DropdownContent: View>: ViewModifier {
                         .transition(.opacity)
                 }
             }
+            // Dropdown content
             .overlay(alignment: alignment) {
                 if isPresented {
                     dropdownCard
@@ -45,7 +49,7 @@ struct ReefDropdown<DropdownContent: View>: ViewModifier {
                         ))
                 }
             }
-            .zIndex(isPresented ? 10 : 0)
+            .zIndex(isPresented ? 100 : 0)
             .animation(.easeInOut(duration: 0.2), value: isPresented)
     }
 
@@ -67,7 +71,6 @@ struct ReefDropdown<DropdownContent: View>: ViewModifier {
             .frame(minWidth: minWidth, alignment: alignment == .topTrailing ? .trailing : .leading)
     }
 
-    /// Map alignment to UnitPoint for scale anchor.
     private var unitPoint: UnitPoint {
         switch alignment {
         case .topTrailing: .topTrailing
@@ -80,7 +83,7 @@ struct ReefDropdown<DropdownContent: View>: ViewModifier {
 }
 
 extension View {
-    /// Attach a dropdown overlay to this view.
+    /// Attach a dropdown to this view. Tap the view to open, tap outside to dismiss.
     func reefDropdown<DropdownContent: View>(
         isPresented: Binding<Bool>,
         alignment: Alignment = .topTrailing,

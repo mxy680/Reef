@@ -37,7 +37,6 @@ struct DashboardHeader: View {
 
                 // Notifications
                 headerIcon("bell")
-                    .onTapGesture { viewModel.showNotifications.toggle() }
                     .accessibilityLabel("Notifications")
                     .accessibilityAddTraits(.isButton)
                     .reefDropdown(
@@ -91,18 +90,14 @@ struct DashboardHeader: View {
                 ZStack {
                     Circle()
                         .fill(ReefColors.accent)
+                        .overlay(Circle().stroke(colors.border, lineWidth: 2))
                     Text(auth.userInitials)
                         .font(.epilogue(12, weight: .bold))
                         .foregroundStyle(ReefColors.black)
                 }
                 .frame(width: 32, height: 32)
-                .clipShape(Circle())
-                .reef3DPushCircle(
-                    borderColor: colors.border,
-                    shadowColor: colors.shadow
-                ) {
-                    viewModel.toggleProfileMenu()
-                }
+                .accessibilityLabel("Profile menu")
+                .accessibilityAddTraits(.isButton)
                 .reefDropdown(
                     isPresented: $vm.showProfileMenu,
                     offset: CGSize(width: 0, height: 44),
