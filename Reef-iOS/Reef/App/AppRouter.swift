@@ -15,10 +15,6 @@ struct AppRouter: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(ReefTheme.self) private var theme
 
-    private let metrics = ReefLayoutMetrics(
-        screenHeight: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-    )
-
     private var currentScreen: AppScreen {
         if auth.isBootstrapping {
             return .loading
@@ -32,30 +28,34 @@ struct AppRouter: View {
     }
 
     var body: some View {
-        ZStack {
-            switch currentScreen {
-            case .loading:
-                splashView
-                    .transition(.opacity)
-                    .accessibilityIdentifier("screen.loading")
+        GeometryReader { proxy in
+            let shortSide = min(proxy.size.width, proxy.size.height)
+            ZStack {
+                switch currentScreen {
+                case .loading:
+                    splashView
+                        .transition(.opacity)
+                        .accessibilityIdentifier("screen.loading")
 
-            case .auth:
-                AuthView()
-                    .transition(.opacity)
-                    .accessibilityIdentifier("screen.auth")
+                case .auth:
+                    AuthView()
+                        .transition(.opacity)
+                        .accessibilityIdentifier("screen.auth")
 
-            case .onboarding:
-                placeholderOnboarding
-                    .transition(.opacity)
-                    .accessibilityIdentifier("screen.onboarding")
+                case .onboarding:
+                    placeholderOnboarding
+                        .transition(.opacity)
+                        .accessibilityIdentifier("screen.onboarding")
 
-            case .dashboard:
-                DashboardView()
-                    .transition(.opacity)
-                    .accessibilityIdentifier("screen.dashboard")
+                case .dashboard:
+                    DashboardView()
+                        .transition(.opacity)
+                        .accessibilityIdentifier("screen.dashboard")
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .environment(\.reefLayoutMetrics, ReefLayoutMetrics(screenHeight: shortSide))
         }
-        .environment(\.reefLayoutMetrics, metrics)
         .animation(.easeInOut(duration: 0.35), value: currentScreen)
         .hoverEffectDisabled()
     }

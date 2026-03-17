@@ -216,6 +216,7 @@ struct DashboardSidebar: View {
                     )
             }
             .onTapGesture { /* TODO: Navigate to upgrade/billing */ }
+            .accessibilityLabel("Upgrade plan")
             .accessibilityAddTraits(.isButton)
 
             // Settings
@@ -236,6 +237,7 @@ struct DashboardSidebar: View {
                     .foregroundStyle(colors.textDisabled)
             }
             .onTapGesture { viewModel.selectTab(.settings) }
+            .accessibilityLabel("Settings")
             .accessibilityAddTraits(.isButton)
 
             // User
@@ -257,6 +259,7 @@ struct DashboardSidebar: View {
                     .foregroundStyle(colors.textDisabled)
             }
             .onTapGesture { viewModel.selectTab(.settings) }
+            .accessibilityLabel("User profile")
             .accessibilityAddTraits(.isButton)
         }
         .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : metrics.sidebarItemHPaddingCollapsed)

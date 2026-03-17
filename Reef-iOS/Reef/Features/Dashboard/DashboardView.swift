@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(ReefTheme.self) private var theme
+    @Environment(AuthViewModel.self) private var auth
     @Environment(\.reefLayoutMetrics) private var metrics
     @State private var viewModel = DashboardViewModel()
 
@@ -31,6 +32,17 @@ struct DashboardView: View {
             dropdownOverlays
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: viewModel.sidebarOpen)
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { auth.errorMessage != nil },
+                set: { if !$0 { auth.errorMessage = nil } }
+            )
+        ) {
+            Button("OK") { auth.errorMessage = nil }
+        } message: {
+            Text(auth.errorMessage ?? "")
+        }
     }
 
     // MARK: - Dropdown Overlays
@@ -63,6 +75,9 @@ struct DashboardView: View {
             tabPlaceholder(tab.label)
         } else if viewModel.selectedCourseId != nil {
             tabPlaceholder(viewModel.contentTitle)
+        } else {
+            // Fallback — should not happen (selectedTab defaults to .documents)
+            tabPlaceholder("Dashboard")
         }
     }
 

@@ -40,10 +40,6 @@ final class DashboardViewModel {
         }
     }
 
-    func toggleProfileMenu() {
-        showProfileMenu.toggle()
-    }
-
     func dismissProfileMenu() {
         showProfileMenu = false
     }

@@ -10,6 +10,7 @@ enum ReefColors {
     static let white = Color.white
     static let black = Color.black
     static let error = Color(hex: 0xD32F2F)
+    static let destructive = Color(hex: 0xC62828)
 
     // MARK: - Grays
 

@@ -142,13 +142,13 @@ struct ProfileDropdownMenu: View {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 14))
-                    .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : colors.textSecondary)
+                    .foregroundStyle(isDestructive ? ReefColors.destructive : colors.textSecondary)
                     .frame(width: 18)
 
                 Text(label)
                     .font(.epilogue(13, weight: .semiBold))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : colors.text)
+                    .foregroundStyle(isDestructive ? ReefColors.destructive : colors.text)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, metrics.dropdownItemHPadding)

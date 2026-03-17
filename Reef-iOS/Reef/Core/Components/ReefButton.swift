@@ -93,7 +93,7 @@ struct ReefButton<Label: View>: View {
         switch variant {
         case .primary: ReefColors.primary
         case .secondary: colors.card
-        case .destructive: Color(hex: 0xC62828)
+        case .destructive: ReefColors.destructive
         case .ghost, .link: .clear
         }
     }
