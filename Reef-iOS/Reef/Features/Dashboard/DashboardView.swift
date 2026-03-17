@@ -132,6 +132,24 @@ struct DashboardView: View {
                 DocumentsContentView(viewModel: documentsVM)
             case .analytics:
                 AnalyticsView()
+            case .myReef:
+                ComingSoonView(
+                    icon: "water.waves",
+                    title: "Your reef is growing",
+                    subtitle: "Track your marine species collection as you master new topics."
+                )
+            case .tutors:
+                ComingSoonView(
+                    icon: "bubble.left.and.text.bubble.right",
+                    title: "Your crew is assembling",
+                    subtitle: "AI tutors that guide you through every problem, coming soon."
+                )
+            case .library:
+                ComingSoonView(
+                    icon: "books.vertical",
+                    title: "Deep waters ahead",
+                    subtitle: "A shared library of study materials from your courses."
+                )
             default:
                 tabPlaceholder(tab.label)
             }
