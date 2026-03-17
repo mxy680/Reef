@@ -330,3 +330,63 @@ struct NoHighlightButtonStyle: ButtonStyle {
         configuration.label
     }
 }
+
+// MARK: - Modal Button
+
+/// Compact 3D button for popups and modal sheets. Handles font, padding,
+/// colors, 3D push animation, and disabled state.
+struct ReefModalButton: View {
+    @Environment(ReefTheme.self) private var theme
+
+    let label: String
+    let variant: ReefButtonVariant
+    let isEnabled: Bool
+    let action: () -> Void
+
+    init(_ label: String, variant: ReefButtonVariant = .primary, isEnabled: Bool = true, action: @escaping () -> Void) {
+        self.label = label
+        self.variant = variant
+        self.isEnabled = isEnabled
+        self.action = action
+    }
+
+    private func backgroundColor(_ colors: ReefThemeColors) -> Color {
+        guard isEnabled else { return colors.subtle }
+        switch variant {
+        case .primary: return ReefColors.primary
+        case .secondary: return colors.subtle
+        case .destructive: return ReefColors.destructive
+        case .ghost, .link: return .clear
+        }
+    }
+
+    private func foregroundColor(_ colors: ReefThemeColors) -> Color {
+        guard isEnabled else { return colors.textMuted }
+        switch variant {
+        case .primary, .destructive: return ReefColors.white
+        case .secondary: return colors.text
+        case .ghost: return colors.text
+        case .link: return ReefColors.primary
+        }
+    }
+
+    var body: some View {
+        let colors = theme.colors
+        Text(label)
+            .font(.epilogue(14, weight: .bold))
+            .tracking(-0.04 * 14)
+            .foregroundStyle(foregroundColor(colors))
+            .padding(.horizontal, 24)
+            .padding(.vertical, 10)
+            .background(backgroundColor(colors))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .reef3DPush(
+                cornerRadius: 10,
+                borderColor: colors.border,
+                shadowColor: colors.shadow,
+                action: action
+            )
+            .allowsHitTesting(isEnabled)
+            .opacity(isEnabled ? 1 : 0.4)
+    }
+}

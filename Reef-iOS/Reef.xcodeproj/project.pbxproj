@@ -3,350 +3,143 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		01CC14A930ACB8EA39CC0267 /* KaTeX_SansSerif-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 33CC414113A2092E92CDD5CC /* KaTeX_SansSerif-Italic.ttf */; };
-		080C05AE475D134C85184ADD /* DashboardSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B37BB11E1BD7F39B65686E /* DashboardSidebar.swift */; };
-		0C22B6FFEF808AD650A85031 /* KaTeX_Main-Italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 888AE1CFE4E51E2BE3273D8E /* KaTeX_Main-Italic.woff */; };
-		0D57C6630526C57BD3344830 /* DocumentSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4413DEE7A1FFB5DD1383145 /* DocumentSkeletonView.swift */; };
-		0F843D2216CDAF4A894C36A2 /* KaTeX_Math-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A5D9A0F5E6BADE345381B184 /* KaTeX_Math-BoldItalic.ttf */; };
-		0F855BD915F52566D4F589B5 /* DocumentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174AF4CC7C1EA4B8D4C88E52 /* DocumentService.swift */; };
-		159FE31668B8992B32E4C322 /* KaTeX_Typewriter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FD4BE6F06A3FF2CFCF388C60 /* KaTeX_Typewriter-Regular.ttf */; };
-		15A7F7327D87C4A7010DD0EE /* MyReefComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B0F2EF5A865F74D7E7DD1D /* MyReefComingSoonView.swift */; };
-		18470D214CF1DF392B1E43CD /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D02F378056B2BB49C4E152 /* AnalyticsView.swift */; };
-		1B7DC7404AC46691E8FE909C /* TierLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA5038E8A3E9B2E3773B103 /* TierLimits.swift */; };
-		1C1C0847C2B712AF90229BE2 /* Tutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3CB769E3ED3BE1C744F53D /* Tutor.swift */; };
-		1D0F8C36565814C7658038AA /* DetailsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87A842EDF6A095888CFDDD9 /* DetailsSheet.swift */; };
-		1FBA7EB2291C6B1151263AE1 /* KaTeX_Caligraphic-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = CDEAAE9F56404327D00057F7 /* KaTeX_Caligraphic-Regular.woff */; };
-		20617A406EC1A2D7D549E1B8 /* DashboardTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D55C4708073EE84D310231F /* DashboardTab.swift */; };
-		221F7DD49B333E3A1A771A22 /* KaTeX_AMS-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = D43CC1336427B5BE797E6184 /* KaTeX_AMS-Regular.woff2 */; };
-		2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC4262B97357102BF9818098 /* ReefApp.swift */; };
-		25C7C27ED41BCF00C314822B /* KaTeX_Size3-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = E735E989B6ACB19730C47B43 /* KaTeX_Size3-Regular.woff */; };
-		2669D335E6347312BE71B4A3 /* TutorDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17EC25D93DC07C6A4EE3C6BB /* TutorDetailSheet.swift */; };
-		281DF2F73F5FD8AFB1DE7781 /* LayoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EEB1F4ACFC66F718ED11A8E /* LayoutMetrics.swift */; };
-		29ABBCFE358D2F989FAADF8D /* DocumentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63F7484F21DD97CE355847A /* DocumentThumbnailView.swift */; };
-		29FE99041BD85DA967788BB5 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = 018AA0C6595861D1E872AB8D /* Course.swift */; };
-		33275A6AA18320E886DC0E10 /* KaTeX_Size4-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CAF6D70AF337D510D50366CA /* KaTeX_Size4-Regular.ttf */; };
-		33FEDA7F8481CB0C7C82E18D /* SelectCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD7E54973DA4B2B73BE5D17 /* SelectCourseSheet.swift */; };
-		36DF1A11392326E2FF3E910E /* TutorFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0FA1D699FBA30B3DC68509 /* TutorFeedbackService.swift */; };
-		39475374E98EAF79FC807CB6 /* KaTeX_Main-Italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = E75E5A2538455EC605A155FC /* KaTeX_Main-Italic.woff2 */; };
-		39F5B0F07CB08E94B94A2D34 /* RenameSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 490FEAC3017FC71010B4D5AE /* RenameSheet.swift */; };
-		3DE926B269B45A3556BD54E3 /* EditCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62716989A979C764BB97646 /* EditCourseSheet.swift */; };
-		41F537B04B4BEA4B872EECBF /* KaTeX_Fraktur-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8665E08A557D897BBDD15C83 /* KaTeX_Fraktur-Regular.ttf */; };
-		453032E39AC7C71A177C7358 /* KaTeX_Main-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CD463BDE11C0B408F1C84351 /* KaTeX_Main-Italic.ttf */; };
-		456BAE5DFFB0BE879E6960F9 /* KaTeX_Fraktur-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 500BBED6CA4CE86B2654D6E2 /* KaTeX_Fraktur-Regular.woff2 */; };
-		45E8D4405C09C550583717AF /* KaTeX_Size3-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = CC776DD913DC9650207319E3 /* KaTeX_Size3-Regular.woff2 */; };
-		4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */; };
-		4B77DE746EC133DCDE98D407 /* ReefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC10B33BD05613452B10A19 /* ReefCard.swift */; };
-		4F547BED6D32CB461A422064 /* KaTeX_Script-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = B9312FE6FF2D0F845A0CC30A /* KaTeX_Script-Regular.woff2 */; };
-		5324B3303CAB2D0612C06D62 /* CourseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18130ED25D586583B5AA4AD /* CourseService.swift */; };
-		53A8FAA539972BE884E9A543 /* Epilogue-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */; };
-		54FC3EDC51D987C68956D963 /* DashboardHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB68DDA7D4AC1F96F7D205F3 /* DashboardHeader.swift */; };
-		56C0A2469AF443A5054C00B8 /* DeleteCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B173B8CEC50D522DFF321B58 /* DeleteCourseSheet.swift */; };
-		56EC288541FB61CA6B9FF6CF /* KaTeX_Main-BoldItalic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 993DEC1F1CB5848741038170 /* KaTeX_Main-BoldItalic.woff */; };
+		028D2AA91435370D8B584B53 /* ReefTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF7ECE3CE5AFD4A1E43FEA24 /* ReefTextField.swift */; };
+		043B2A8FF6EFC7DAB05AE012 /* DashboardCardModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ED4E8C569BD35F02677D82C /* DashboardCardModifier.swift */; };
+		0806D6C4FC3112C6AA6B8EFE /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DF6E9442D61855C2F2DC6C /* DashboardView.swift */; };
+		0A483380FF6AC22B6869D458 /* ProfileUpdate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837EF10AE734D9E16B28F190 /* ProfileUpdate.swift */; };
+		0C4D21737CC83E59DB26C24F /* SupabaseProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A965EEABECDE87D79AF04DC7 /* SupabaseProfileRepository.swift */; };
+		0D287237BD753E19E0F355B0 /* ReefColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82315CD65E53D1BAD137A91C /* ReefColors.swift */; };
+		17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */; };
+		1BAD8BD9673755ECB28CD6EC /* ProfileDropdownMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */; };
+		232480B1789C9A7D63D7328C /* ReefAnimations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CEA0E601A77E71794D928EC /* ReefAnimations.swift */; };
+		28A397776DD5B1EF7FE50E20 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B027C742233E2E12B4D878 /* AuthView.swift */; };
+		38D8F1790EA122FFF3657ACE /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC62F2B8191E199AABE2EE03 /* AuthRepository.swift */; };
+		3B30B4E60D151D06EA7F80B6 /* ReefTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9EC70DF58FA661881CDFA4 /* ReefTypography.swift */; };
 		5764F13B61C5FBD9B17D28DD /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = ECE996E3DB8403B5ED787530 /* Supabase */; };
-		57CD582776EA08214742D2D3 /* KaTeX_Main-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = FFFDB32E3006FE917764969C /* KaTeX_Main-Regular.woff */; };
-		5B129C1A00B91F4E7EC5CDED /* KaTeX_Main-Bold.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = E2733E9A7F76C88B7CC65348 /* KaTeX_Main-Bold.woff2 */; };
-		5D2AD13513DF7173DB05E905 /* StepName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 963DF30D2DD7054522E3DE8E /* StepName.swift */; };
-		60FF1FC181764E472395B5DB /* KaTeX_Typewriter-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = DFB5CF3EA26583CF0907B685 /* KaTeX_Typewriter-Regular.woff2 */; };
-		611EB261C6B4D00B6ADA902E /* Epilogue-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */; };
-		6295A3C9FDC893FC75EE0877 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 946EB5E1AE88AA9017728274 /* ThemeManager.swift */; };
-		6321395CC375B96BE14FEF4D /* KaTeX_SansSerif-Bold.woff in Resources */ = {isa = PBXBuildFile; fileRef = 1F422E13D2F9A64E446E9BE2 /* KaTeX_SansSerif-Bold.woff */; };
-		6894FA3B9E450368F6ACFFEC /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = 265263583EBF3C1E1930E940 /* Document.swift */; };
-		689EDB34F09D6D2BB8CED1D2 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A601472A53F2EEA6CDC28FBB /* Supabase.swift */; };
-		6A68E670991838416E302397 /* KaTeX_Size1-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = 38DBC03D6F697DC001368372 /* KaTeX_Size1-Regular.woff */; };
-		6B2C5AE2684931067E4898B0 /* KaTeX_SansSerif-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 36A17CC8CB68FD8ED5DE0903 /* KaTeX_SansSerif-Regular.ttf */; };
-		6B986E6CA4D4D03BD8848C09 /* KaTeX_Main-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 935463EBF9D2F8D7981F1AA9 /* KaTeX_Main-BoldItalic.ttf */; };
-		6C5820677CE6E189EEE05AD8 /* KaTeX_SansSerif-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = 2857AC6B1B6E3F58A2FE4E33 /* KaTeX_SansSerif-Regular.woff */; };
-		6F39CDB31D9F61B104344DB6 /* DocumentEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B799BEAE73E04DF7F372AC53 /* DocumentEmptyStateView.swift */; };
-		702C66C6E92EA049C9C1C999 /* KaTeX_Main-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 17894B977E7BC8333C0B73AE /* KaTeX_Main-Regular.ttf */; };
-		708B204F36D2C063D47052B4 /* KaTeX_SansSerif-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = ADA9FF42EAF0B13F54B936C3 /* KaTeX_SansSerif-Regular.woff2 */; };
-		72835E8BD29F835F3802ACEC /* RenderedLatexImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721C442D7E3B1EBB5062AF68 /* RenderedLatexImage.swift */; };
-		72A55DBAD20C9BB77D65A80C /* DeleteConfirmSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D1E5B7436B84153535000D /* DeleteConfirmSheet.swift */; };
-		72D09602B96DA1E7231038C2 /* ReefAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AF78B49877EF66B1BF1F451 /* ReefAPI.swift */; };
-		74F79F84A1DBEDAEB49DB981 /* KaTeX_Caligraphic-Bold.woff in Resources */ = {isa = PBXBuildFile; fileRef = ED1CDA6777FDA32F059C0326 /* KaTeX_Caligraphic-Bold.woff */; };
-		763BE48D3230106445268070 /* TutorsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F905AA243B35B0F2634361D /* TutorsContentView.swift */; };
-		7BADDA2E8CA22AF74D7667FF /* KaTeX_Fraktur-Bold.woff in Resources */ = {isa = PBXBuildFile; fileRef = F03A53E5704D1119049B880A /* KaTeX_Fraktur-Bold.woff */; };
-		7CEDC9E329E1A97890E754CF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EE0F7965A070BD244FA35D /* SettingsView.swift */; };
-		7EBF041F6AD776F21B069537 /* StepGrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F79C443F16555121292BFA /* StepGrade.swift */; };
-		7EC5489F9FE7F834398E2A05 /* KaTeX_Size4-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = F09A804CA98BFF9DCDFAB099 /* KaTeX_Size4-Regular.woff2 */; };
-		7EFDAB67C30E9364298E8F05 /* KaTeX_AMS-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0C47E57F3D237B27B30CD019 /* KaTeX_AMS-Regular.ttf */; };
-		7F1FCE775A5319A5A9B341A7 /* CourseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B4E463F8DF98D911D2B0E1 /* CourseDetailView.swift */; };
-		8081686831DE310C575DC5EA /* ReefTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */; };
-		80FEC5FE83B6D86AA15207B6 /* DrawingStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EAA1162AF20BABF039AA139 /* DrawingStorageService.swift */; };
-		D4A7B3C1E8F2059A6B1C4D7E /* TutorProgressStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B8C4D2E9A3160B7C2D5E8F /* TutorProgressStorageService.swift */; };
-		83C615293A2D56941E6E8F45 /* LibraryComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5567628FD84DD3F2A3EE9C0 /* LibraryComingSoonView.swift */; };
-		84C859546EF6E6C562DEADB5 /* DashboardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25A2B8DBF193DFD88F7735D /* DashboardCard.swift */; };
+		5969F8911F96686594A54AB5 /* AuthFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CDCFE49DE81342DD005D2CB /* AuthFlowTests.swift */; };
+		59E51EB69B9786DCF5E3201F /* KaTeX in Resources */ = {isa = PBXBuildFile; fileRef = 1FBAAC77F6282CB6C717830B /* KaTeX */; };
+		662978BA8DCB0ACB38E3AF1A /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F59C552181409C88B428D62E /* SupabaseConfig.swift */; };
+		681E95C14DCD1F7E4AB35359 /* ProfileDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37FCABDB72CEC9F68DABAD5 /* ProfileDTO.swift */; };
+		6C5700CB44FD42221F3CD012 /* ReefDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03E18AE30F94DABABC0A0BF /* ReefDivider.swift */; };
+		6C646D8535CDF848CF5584FE /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F643CA708229A01CC148AD /* DashboardViewModel.swift */; };
+		6C675E5E89D57179BFB187A9 /* SupabaseAuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F41D639645507DBBDB28D2A /* SupabaseAuthRepository.swift */; };
+		787E897ECB403C48F3AEF26B /* ReefLayoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */; };
 		86C48AE599F618C06636F0BD /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 8A0AD6F5B9C938C549CBDA7E /* GoogleSignIn */; };
-		86EC51544647FC884C1827BD /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EFB80C39A971E1BDC73605 /* Profile.swift */; };
-		88DC4ED9E7BCA10C586AFE64 /* KaTeX_Size2-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = 18B312CF48BB412348B92150 /* KaTeX_Size2-Regular.woff */; };
-		8963BD8E421568B29CEA3A19 /* KaTeX_SansSerif-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9027668E5BCEEF422E249EF8 /* KaTeX_SansSerif-Bold.ttf */; };
-		8AEFE80127997D5D0834F33D /* TutorCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6AC3AD434623B044419F756 /* TutorCardView.swift */; };
-		8BB1643438A6EE9811E895A9 /* AnswerKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C918E2542AA4C42E78CD51A /* AnswerKey.swift */; };
-		8C6C9B1F97D5F40E14CDD8F7 /* KaTeX_Caligraphic-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 087FB9B79A7996B3A12C45D4 /* KaTeX_Caligraphic-Bold.ttf */; };
-		8D9C20ED95E13C63AF47D183 /* DocumentCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88CBAB5E82734D68035A3F5B /* DocumentCanvasView.swift */; };
-		9223495A7D2DEDCA6FE9A351 /* ReefButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B67D53D01AE43D3B31BDEE /* ReefButton.swift */; };
-		92722784C33A0E7DAA072BDA /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A242632736FB9BEE170074 /* Typography.swift */; };
-		9657E5881EF0C5562B13ACEF /* PopupShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9076E1BD2DE18B50317AE5 /* PopupShell.swift */; };
-		9787D96FD49B9BF7FF5AC6AE /* TutorSpotlightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE24D45EA867265C71FFD78 /* TutorSpotlightView.swift */; };
-		98E9547119361714B8EE388A /* ReefDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F2272F12753F94D68D47474 /* ReefDivider.swift */; };
-		9ADE99D97C893E843E7D677D /* PageNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88ED32B183BA25990245CDA4 /* PageNavigationBar.swift */; };
-		A1B2C3D4E5F6A7B8C9D0E1A1 /* DocumentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1A2 /* DocumentsViewModel.swift */; };
-		A1B2C3D4E5F6A7B8C9D0E1A3 /* TutorsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1A4 /* TutorsViewModel.swift */; };
-		A1B2C3D4E5F6A7B8C9D0E1A5 /* DottedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1A6 /* DottedBackground.swift */; };
-		A25948F8B9DE842DED9CE349 /* TutorStepData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E70E19FB02A673E57447BD /* TutorStepData.swift */; };
-		A371C46423DF8A87C7CB0F3B /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 585B9AFB26D4C25AB8FFF803 /* Colors.swift */; };
-		A4F3E2D1C0B9A8F7E6D5C4B3 /* TranscriptionDebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C4D5E6F7A8B9C0D1E2F3A4 /* TranscriptionDebugPanel.swift */; };
-		A6764C8788895251DF6B1CF4 /* KaTeX_SansSerif-Bold.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 62609C1F14871136AE0C0DD0 /* KaTeX_SansSerif-Bold.woff2 */; };
-		A98C0FAA44B3A5792D65123D /* KaTeX_Size1-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 958A5B833F9D040854E7178D /* KaTeX_Size1-Regular.woff2 */; };
-		AA10B1C2D3E4F50617A10B1C /* PageMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB20C2D3E4F50718B20C2D3E /* PageMenuView.swift */; };
-		AA11B2C3D4E5F60718A11B2C /* SettingsAboutTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB21C3D4E5F60829B21C3D4E /* SettingsAboutTab.swift */; };
-		AA12B3C4D5E6F70819A12B3C /* SettingsAccountTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22C4D5E6F7093AB22C4D5E /* SettingsAccountTab.swift */; };
-		AA13B4C5D6E7F8091AA13B4C /* SettingsPreferencesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB23C5D6E7F80A4BB23C5D6E /* SettingsPreferencesTab.swift */; };
-		AA14B5C6D7E8F90A1BA14B5C /* SettingsPrivacyTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB24C6D7E8F90B5CB24C6D7E /* SettingsPrivacyTab.swift */; };
-		AA15B6C7D8E9FA0B1CA15B6C /* SettingsProfileTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB25C7D8E9FA0C6DB25C7D8E /* SettingsProfileTab.swift */; };
-		AA16B7C8D9EAFB0C1DA16B7C /* ShimmerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB26C8D9EAFB0D7EB26C8D9E /* ShimmerOverlay.swift */; };
-		AA17B8C9DAEBFC0D1EA17B8C /* ToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB27C9DAEBFC0E8FB27C9DAE /* ToolbarButton.swift */; };
-		AA18B9CADBECED0E1FA18B9C /* TutorStepRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB28CADBECED0FA0B28CADBE /* TutorStepRow.swift */; };
-		AA19BACBECDFDE0F20A19BAC /* TutorToggleStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB29CBECDFDE10B1B29CBECD /* TutorToggleStyle.swift */; };
-		AC9D207058D1875A05C37B0D /* KaTeX_Math-Italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 4F62A6F30725614E2C6A87EF /* KaTeX_Math-Italic.woff */; };
-		AD35B3EEA62C8A9D31D3B6FD /* DocumentUploadSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF67386E8D3217F6F93CE39 /* DocumentUploadSheet.swift */; };
-		AE1BE3E7815DBBE172F92BE7 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AE29018C76FB59A77FAF4E /* OnboardingComponents.swift */; };
-		AF452FB7E63CD934E69440A2 /* KaTeX_Main-Bold.woff in Resources */ = {isa = PBXBuildFile; fileRef = 5B5F9EB6C97BCAA6A6D34B51 /* KaTeX_Main-Bold.woff */; };
-		AFA7110C64EDCAED5FEDA07D /* DocumentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D457DD4A19BE44FB1B756A /* DocumentCardView.swift */; };
-		AFE21CBDA00CF0D00EFA7302 /* KaTeX_Math-BoldItalic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = E464383A4FCD22BA4434F8F2 /* KaTeX_Math-BoldItalic.woff2 */; };
+		876927BA65FC6E72AB15DA7C /* ProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8342C69F3700A9310BE6514E /* ProfileRepository.swift */; };
+		90B58BB88071D49268A953F9 /* ReefApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20B9D25AC3198EC21D837140 /* ReefApp.swift */; };
+		924AD60F9C29C7A8AF240E2E /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2589F18A50DC9C05FCF0FC6C /* AuthViewModel.swift */; };
 		B1342C3D4467A24E496A2705 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */; };
-		B139C22ACB1BB96D3F97B84C /* StepReferral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D407F41F28AA8AA274C819A /* StepReferral.swift */; };
-		B20F8DBFFDB85B8CA0FD64AE /* MathText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CF1DC5A19F3D38044E085D /* MathText.swift */; };
-		B2489E124F224ADCD32F169F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80D5714E68166CC2E06EB305 /* OnboardingView.swift */; };
-		B2C3D4E5F6071829B2C3D4E5 /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F60718A2B3C3D4E5F6 /* SettingsComponents.swift */; };
-		B65D624B724859D9471102EA /* KaTeX_Math-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 08534F1F3D82B0995A3E7B0D /* KaTeX_Math-Italic.ttf */; };
-		B705DCF45385804B7BC42239 /* KaTeX_Math-Italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 550FE843683F85C6358992D3 /* KaTeX_Math-Italic.woff2 */; };
-		B84D0B422F015D7B55C29633 /* KaTeXView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE20C8DD07638C273E20790 /* KaTeXView.swift */; };
-		BBD6C30D1F07B0C355D94D3B /* auto-render.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 05301F8907BB1E2A7D8292CB /* auto-render.min.js */; };
+		B810EB60F5595D898E981F20 /* NotificationDropdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4689C58CCB86B7C32D03AA /* NotificationDropdownTests.swift */; };
 		BE34AD54F16F85B938302FE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F68AC1C3432E326DB646676 /* Assets.xcassets */; };
-		BE5EC7F6DF773D786C967EF1 /* KaTeX_Main-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = AEDA169B7DE15D9CD89F0A1E /* KaTeX_Main-Regular.woff2 */; };
-		BFEC612BA600837B55341B71 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7601EE91C6C7F4218ED01B97 /* ContentView.swift */; };
-		C148BAF2B1E279E448146C61 /* KaTeX_Script-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = 13591B9E5692B67225B502BC /* KaTeX_Script-Regular.woff */; };
-		C2150B06B38B8641CA4E2D47 /* KaTeX_SansSerif-Italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 4C8784AA64607D6A3867341A /* KaTeX_SansSerif-Italic.woff2 */; };
-		C62A674D6470462942403D28 /* KaTeX_Fraktur-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = 95DC1AB8CC8C1CEF9404602B /* KaTeX_Fraktur-Regular.woff */; };
-		C73F7CAA0092AD171CE797E9 /* KaTeX_Size2-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = F6345F889BC878065D38365E /* KaTeX_Size2-Regular.woff2 */; };
-		C87EBF1700621A4D0FE49148 /* KaTeX_AMS-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = B41818287834AE71FD8DB654 /* KaTeX_AMS-Regular.woff */; };
-		C9CDABAE3304168EA85DFBE4 /* AnswerKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E85C98C5DBBAF2F143B692F /* AnswerKeyService.swift */; };
-		CA26FFB95149036020EDEE31 /* KaTeX_Caligraphic-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F21F5953857FD0C0AD8D0682 /* KaTeX_Caligraphic-Regular.ttf */; };
-		CCFCDE5E66312E153CC89254 /* ToolSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 794017E5A2D0BE991846891C /* ToolSettingsPopover.swift */; };
-		D00BB61111C21DBF38290BDE /* KaTeX_Size3-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CA5ADCE872B43A586C197DC5 /* KaTeX_Size3-Regular.ttf */; };
-		D06620F7F5C3827C9883A36D /* KaTeX_Main-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B4E6E07382CB25D2F7E1C49F /* KaTeX_Main-Bold.ttf */; };
-		D07E9FEAC5D7A2AD66303B45 /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206F870E71C6B2391213AE78 /* AppleSignInCoordinator.swift */; };
-		D127D837D809C7679D5F1098 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E68361F46DF0D0B0951ECE8 /* AuthView.swift */; };
-		D18DEB7B7D807936FC46E0EF /* KaTeX_Size1-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 852A98034ED074EEDFCC8BE1 /* KaTeX_Size1-Regular.ttf */; };
-		D29EC142A3431E5CA3D29869 /* Epilogue-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 60BB4D786D5BD94C884A3D33 /* Epilogue-SemiBold.ttf */; };
-		D591F0024ABBC443D1EA56B9 /* PopoverCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FF7B00BD91B32C4F2D976F /* PopoverCard.swift */; };
-		D5C0B7BA06CC6917331DE308 /* TutorQuizSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F9DA4A989C748B41386B54 /* TutorQuizSheet.swift */; };
-		D76683C3BC8B3E2C1170517A /* Epilogue-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */; };
-		D90D66552E64DEAC25C27A6B /* CanvasViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1DB9597A94021843C8228F /* CanvasViewModel.swift */; };
-		DA76E99FB2AF561DDF93E324 /* CanvasDrawingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD4D552F83298FB7A1D5F74 /* CanvasDrawingToolbar.swift */; };
-		DC6C1FA358CE712744C9C583 /* KaTeX_Typewriter-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = 43A46BEA40192D4E1199A48C /* KaTeX_Typewriter-Regular.woff */; };
-		DCE5B77A2B3367736C27C754 /* PageSettingsPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1125CF6B3EDE0C4E79A31594 /* PageSettingsPopup.swift */; };
-		DD9936044F3D100E151E5FF6 /* MoveToCourseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EB21ECE7AEA4945CFA6DFA /* MoveToCourseSheet.swift */; };
-		DF43FEED757541782EF36741 /* KaTeX_Fraktur-Bold.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = AFAD8D70AC2C54A40256E837 /* KaTeX_Fraktur-Bold.woff2 */; };
-		DF4791ADB383CB19C8C4EDB5 /* StepSubjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4934C859F8B38BE69CFCD55 /* StepSubjects.swift */; };
-		E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */; };
-		E1E40A2386C4DB72193A84AE /* KaTeX_Main-BoldItalic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = F8424215B46D42ECDE986ACC /* KaTeX_Main-BoldItalic.woff2 */; };
-		E1FE5B8F8C72B65D35C1A690 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 621895831183A84BD5E2F54B /* DashboardView.swift */; };
-		E25E820CE38D9892CCDC1D8F /* RulerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 549A1E93C7578CEBBBCF27BD /* RulerOverlayView.swift */; };
-		E4D4827DC891D31BE63C32CB /* KaTeX_Caligraphic-Bold.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 4FA4D66B7A1CB94022D2C037 /* KaTeX_Caligraphic-Bold.woff2 */; };
-		E6492D1B81A4EAC6C79707C0 /* katex.min.css in Resources */ = {isa = PBXBuildFile; fileRef = 705AA155E4D80F612A997ADD /* katex.min.css */; };
-		E75F50D47E36D9741DA87DAA /* KaTeX_SansSerif-Italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 289FC4D070EBEFDBC6362449 /* KaTeX_SansSerif-Italic.woff */; };
-		EAA1CCE17889D8DE9FC87857 /* KaTeX_Fraktur-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7126F5D666EA789D306482F5 /* KaTeX_Fraktur-Bold.ttf */; };
-		ECBE21AA8842360C1CEB1322 /* KaTeX_Size2-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FBC116C2E3C45C5D3EA2AEFB /* KaTeX_Size2-Regular.ttf */; };
-		EEE6888BA6B0E77018D4F67F /* CanvasPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBAC810D46731DEC9B1AC08 /* CanvasPageView.swift */; };
-		F09115CEAAE583F111ABF4F7 /* TutorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE55B35776EF18319E886CB3 /* TutorService.swift */; };
-		F1A2B3C4D5E6F70819A2B3C4 /* CanvasStrokeCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A1B2C3D4 /* CanvasStrokeCollector.swift */; };
-		F2E1D0C9B8A7F6E5D4C3B2A1 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* TranscriptionService.swift */; };
-		F4D84562FC9D34E4580085F7 /* KaTeX_Math-BoldItalic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 9BA936E9E98148AA31E813D6 /* KaTeX_Math-BoldItalic.woff */; };
-		F9425CBAF52188A136ADFCEF /* DocumentsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89828EF647D60F501B07B68 /* DocumentsContentView.swift */; };
-		FB57E140D6D0BAE35FF502DB /* KaTeX_Script-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6F848213A4E4864DCEB85FAE /* KaTeX_Script-Regular.ttf */; };
-		FD1216E47E54F9484BF8D292 /* KaTeX_Size4-Regular.woff in Resources */ = {isa = PBXBuildFile; fileRef = D3D413A889F4730A4E5BFED8 /* KaTeX_Size4-Regular.woff */; };
-		FD40162D4542094829B3C5A3 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A58933EF653E5137FE20BA0 /* CanvasToolbar.swift */; };
-		FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */; };
-		FF23804CFBA20B480E330475 /* DrawingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F0B3A227B5416D3B69C43D4 /* DrawingManager.swift */; };
-		FF2DD9A4B1F8143249411273 /* katex.min.js in Resources */ = {isa = PBXBuildFile; fileRef = AFCB1D742B3A8666259D63FC /* katex.min.js */; };
-		FFC16F14DD732721A8B100F8 /* KaTeX_Caligraphic-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 744448FA1EE0E3361DD1FF28 /* KaTeX_Caligraphic-Regular.woff2 */; };
+		CDE7FCB4A7A95CA3F7018D5D /* DashboardTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313CACE22D5819885170769 /* DashboardTab.swift */; };
+		CE1CEFE6CF36DA785BB586EA /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADCC5EDF667251F329B6F2A /* Profile.swift */; };
+		D03FA7FFE2014624EFF77984 /* ReefButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E7B4C0ECBC8C19B3047E375 /* ReefButton.swift */; };
+		D607BA3609664BB25C5BBCC6 /* DashboardNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA931CB0705B21CA88CF4BE6 /* DashboardNavigationTests.swift */; };
+		E0121FA37C4E016A0BEE7233 /* DottedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21872AA207AEEC6F2397B9F4 /* DottedBackground.swift */; };
+		E1A5CA31A4B76C02FE2353A6 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 8EDF913D03056A3B1DFF5DD0 /* Fonts */; };
+		EC58CCE1237EC4F39BA5A4E8 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F363767C6C99DEC96663F36 /* AppRouter.swift */; };
+		F2568A6213CDA2E61E2CCE92 /* ReefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982248BAE2D4A7F5BE47B8D8 /* ReefCard.swift */; };
+		F318C137C0FE80E01717FD90 /* ReefTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BCE4900CD1562F72FAC77A /* ReefTheme.swift */; };
+		F485DD27CAB43B9B7FB32B36 /* ReefUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B48811F63C33857241E52D /* ReefUITestCase.swift */; };
+		F5DD1BC1EFC10CD8E368CC81 /* DashboardHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */; };
+		F979B442814B7471F31DCA1B /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B14B10AB75BC4F714166B0 /* AppleSignInCoordinator.swift */; };
+		FDD5BDA76B374BE31525ABF1 /* DashboardSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4742404ABF6C1505BEE9BA09 /* DashboardSidebar.swift */; };
+		44188DD0014C47A581DB1B6D /* PopupShellModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58655288488F41FD989EC3B9 /* PopupShellModifier.swift */; };
+		623D5392ACFF4B9999221111 /* ShimmerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547DD5B0ADB34F40B016D8B7 /* ShimmerOverlay.swift */; };
+		3192C04CF75348FA8AF0C81F /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3880ECDE76F419D978A5042 /* Document.swift */; };
+		C688F28753D940059BA5B2C3 /* TierLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E0831983934C06A2739A7B /* TierLimits.swift */; };
+		C56275B688614DE2A9CC716F /* DocumentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99647E8FDDF047FDBAD4008B /* DocumentRepository.swift */; };
+		8F8FFB7912284D46BF98CA47 /* DocumentDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBDD31CCBE594F70A74114E8 /* DocumentDTO.swift */; };
+		6EB6D1308C0F415A97DA12CE /* SupabaseDocumentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89DD5BAF120543A9940EFABE /* SupabaseDocumentRepository.swift */; };
+		4F859D1FAAA540F099827193 /* DocumentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86E230C411443FF8F7AC203 /* DocumentsViewModel.swift */; };
+		03093FB2FC394A6BB1209751 /* DocumentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72F75860EB0049DFAE6C0C64 /* DocumentThumbnailView.swift */; };
+		3DC45AC6B2B549CEB6132CA0 /* DocumentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 915ADDB63CD64C688538AC21 /* DocumentCardView.swift */; };
+		EF851A5C6DBC4B5A85CEDBF8 /* DocumentSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B192BC2988724E77A82D7C08 /* DocumentSkeletonView.swift */; };
+		5AE5130FEAEB4204AC6D2349 /* DocumentEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDC3CF57A8A4839A0DD95BA /* DocumentEmptyStateView.swift */; };
+		97579D2A1B1040DC967DF690 /* DocumentsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E380585003E4A2B8DD22825 /* DocumentsContentView.swift */; };
+		A7A8C38BF1D84F0BAE5D6C40 /* DocumentUploadPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC75104EFB3348558A456BD4 /* DocumentUploadPopup.swift */; };
+		46544C9193FF40ADA3704F23 /* DeleteConfirmPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C5F62C685B4CB89DE33A6B /* DeleteConfirmPopup.swift */; };
+		C6B6DFA005394D6393D0C012 /* RenamePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D4B981344944BF88ABBF06 /* RenamePopup.swift */; };
+		383BF86061194A9BB5E3B3A2 /* DetailsPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B0FA6D51F34D68BAEE737E /* DetailsPopup.swift */; };
+		4630F4085B3E4B678D9E5F58 /* MoveToCoursePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0500A457ABF4A178509E484 /* MoveToCoursePopup.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		C00069AAB404CA35B434447D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B117C27BD747E2170882ECBA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D7F066D58D043CAD0E116B49;
+			remoteInfo = Reef;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-		018AA0C6595861D1E872AB8D /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
-		03EFB80C39A971E1BDC73605 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
-		05301F8907BB1E2A7D8292CB /* auto-render.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "auto-render.min.js"; sourceTree = "<group>"; };
-		08534F1F3D82B0995A3E7B0D /* KaTeX_Math-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Math-Italic.ttf"; sourceTree = "<group>"; };
-		087FB9B79A7996B3A12C45D4 /* KaTeX_Caligraphic-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Caligraphic-Bold.ttf"; sourceTree = "<group>"; };
-		0C47E57F3D237B27B30CD019 /* KaTeX_AMS-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_AMS-Regular.ttf"; sourceTree = "<group>"; };
-		0C9076E1BD2DE18B50317AE5 /* PopupShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupShell.swift; sourceTree = "<group>"; };
-		0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleIcon.swift; sourceTree = "<group>"; };
-		0F1DB9597A94021843C8228F /* CanvasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewModel.swift; sourceTree = "<group>"; };
-		0F2272F12753F94D68D47474 /* ReefDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefDivider.swift; sourceTree = "<group>"; };
-		1125CF6B3EDE0C4E79A31594 /* PageSettingsPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSettingsPopup.swift; sourceTree = "<group>"; };
-		12B67D53D01AE43D3B31BDEE /* ReefButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefButton.swift; sourceTree = "<group>"; };
-		13591B9E5692B67225B502BC /* KaTeX_Script-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Script-Regular.woff"; sourceTree = "<group>"; };
-		174AF4CC7C1EA4B8D4C88E52 /* DocumentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentService.swift; sourceTree = "<group>"; };
-		17894B977E7BC8333C0B73AE /* KaTeX_Main-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Regular.ttf"; sourceTree = "<group>"; };
-		17EC25D93DC07C6A4EE3C6BB /* TutorDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorDetailSheet.swift; sourceTree = "<group>"; };
-		18B312CF48BB412348B92150 /* KaTeX_Size2-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size2-Regular.woff"; sourceTree = "<group>"; };
-		1CC10B33BD05613452B10A19 /* ReefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefCard.swift; sourceTree = "<group>"; };
-		1F422E13D2F9A64E446E9BE2 /* KaTeX_SansSerif-Bold.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Bold.woff"; sourceTree = "<group>"; };
-		206F870E71C6B2391213AE78 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
-		265263583EBF3C1E1930E940 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
-		2857AC6B1B6E3F58A2FE4E33 /* KaTeX_SansSerif-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Regular.woff"; sourceTree = "<group>"; };
-		289FC4D070EBEFDBC6362449 /* KaTeX_SansSerif-Italic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Italic.woff"; sourceTree = "<group>"; };
-		2A58933EF653E5137FE20BA0 /* CanvasToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbar.swift; sourceTree = "<group>"; };
-		2C918E2542AA4C42E78CD51A /* AnswerKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerKey.swift; sourceTree = "<group>"; };
+		00BCE4900CD1562F72FAC77A /* ReefTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTheme.swift; sourceTree = "<group>"; };
+		0D32EA1898AEB34154A55CD5 /* ReefUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ReefUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CDCFE49DE81342DD005D2CB /* AuthFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowTests.swift; sourceTree = "<group>"; };
+		1F41D639645507DBBDB28D2A /* SupabaseAuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthRepository.swift; sourceTree = "<group>"; };
+		1FBAAC77F6282CB6C717830B /* KaTeX */ = {isa = PBXFileReference; lastKnownFileType = folder; name = KaTeX; path = Reef/Resources/KaTeX; sourceTree = SOURCE_ROOT; };
+		20B9D25AC3198EC21D837140 /* ReefApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefApp.swift; sourceTree = "<group>"; };
+		21872AA207AEEC6F2397B9F4 /* DottedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DottedBackground.swift; sourceTree = "<group>"; };
+		2589F18A50DC9C05FCF0FC6C /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		29B48811F63C33857241E52D /* ReefUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefUITestCase.swift; sourceTree = "<group>"; };
+		2ED4E8C569BD35F02677D82C /* DashboardCardModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCardModifier.swift; sourceTree = "<group>"; };
 		2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
-		2FEBC9D0D9B06F74E3F564A1 /* Reef.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Reef.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		33CC414113A2092E92CDD5CC /* KaTeX_SansSerif-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Italic.ttf"; sourceTree = "<group>"; };
-		36A17CC8CB68FD8ED5DE0903 /* KaTeX_SansSerif-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Regular.ttf"; sourceTree = "<group>"; };
-		37B37BB11E1BD7F39B65686E /* DashboardSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSidebar.swift; sourceTree = "<group>"; };
-		38DBC03D6F697DC001368372 /* KaTeX_Size1-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size1-Regular.woff"; sourceTree = "<group>"; };
-		3BE24D45EA867265C71FFD78 /* TutorSpotlightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorSpotlightView.swift; sourceTree = "<group>"; };
+		2FEBC9D0D9B06F74E3F564A1 /* Reef.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Reef.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDropdownMenu.swift; sourceTree = "<group>"; };
+		3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleIcon.swift; sourceTree = "<group>"; };
 		3F68AC1C3432E326DB646676 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Black.ttf"; sourceTree = "<group>"; };
-		43A46BEA40192D4E1199A48C /* KaTeX_Typewriter-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Typewriter-Regular.woff"; sourceTree = "<group>"; };
-		47EE0F7965A070BD244FA35D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		490FEAC3017FC71010B4D5AE /* RenameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameSheet.swift; sourceTree = "<group>"; };
-		4C8784AA64607D6A3867341A /* KaTeX_SansSerif-Italic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Italic.woff2"; sourceTree = "<group>"; };
-		4EEB1F4ACFC66F718ED11A8E /* LayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutMetrics.swift; sourceTree = "<group>"; };
-		4F62A6F30725614E2C6A87EF /* KaTeX_Math-Italic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Math-Italic.woff"; sourceTree = "<group>"; };
-		4FA4D66B7A1CB94022D2C037 /* KaTeX_Caligraphic-Bold.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Caligraphic-Bold.woff2"; sourceTree = "<group>"; };
-		500BBED6CA4CE86B2654D6E2 /* KaTeX_Fraktur-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Fraktur-Regular.woff2"; sourceTree = "<group>"; };
-		549A1E93C7578CEBBBCF27BD /* RulerOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulerOverlayView.swift; sourceTree = "<group>"; };
-		550FE843683F85C6358992D3 /* KaTeX_Math-Italic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Math-Italic.woff2"; sourceTree = "<group>"; };
-		585B9AFB26D4C25AB8FFF803 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
-		5B5F9EB6C97BCAA6A6D34B51 /* KaTeX_Main-Bold.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Bold.woff"; sourceTree = "<group>"; };
-		5F0B3A227B5416D3B69C43D4 /* DrawingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingManager.swift; sourceTree = "<group>"; };
-		60B4E463F8DF98D911D2B0E1 /* CourseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseDetailView.swift; sourceTree = "<group>"; };
-		60BB4D786D5BD94C884A3D33 /* Epilogue-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-SemiBold.ttf"; sourceTree = "<group>"; };
-		621895831183A84BD5E2F54B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
-		62609C1F14871136AE0C0DD0 /* KaTeX_SansSerif-Bold.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Bold.woff2"; sourceTree = "<group>"; };
-		6DBAC810D46731DEC9B1AC08 /* CanvasPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPageView.swift; sourceTree = "<group>"; };
-		6F848213A4E4864DCEB85FAE /* KaTeX_Script-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Script-Regular.ttf"; sourceTree = "<group>"; };
-		705AA155E4D80F612A997ADD /* katex.min.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = katex.min.css; sourceTree = "<group>"; };
-		7126F5D666EA789D306482F5 /* KaTeX_Fraktur-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Fraktur-Bold.ttf"; sourceTree = "<group>"; };
-		721C442D7E3B1EBB5062AF68 /* RenderedLatexImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderedLatexImage.swift; sourceTree = "<group>"; };
-		744448FA1EE0E3361DD1FF28 /* KaTeX_Caligraphic-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Caligraphic-Regular.woff2"; sourceTree = "<group>"; };
-		7601EE91C6C7F4218ED01B97 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		76F79C443F16555121292BFA /* StepGrade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepGrade.swift; sourceTree = "<group>"; };
-		794017E5A2D0BE991846891C /* ToolSettingsPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolSettingsPopover.swift; sourceTree = "<group>"; };
-		7E85C98C5DBBAF2F143B692F /* AnswerKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerKeyService.swift; sourceTree = "<group>"; };
-		80D5714E68166CC2E06EB305 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-		83CF1DC5A19F3D38044E085D /* MathText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathText.swift; sourceTree = "<group>"; };
-		852A98034ED074EEDFCC8BE1 /* KaTeX_Size1-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size1-Regular.ttf"; sourceTree = "<group>"; };
-		8665E08A557D897BBDD15C83 /* KaTeX_Fraktur-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Fraktur-Regular.ttf"; sourceTree = "<group>"; };
-		888AE1CFE4E51E2BE3273D8E /* KaTeX_Main-Italic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Italic.woff"; sourceTree = "<group>"; };
-		88CBAB5E82734D68035A3F5B /* DocumentCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCanvasView.swift; sourceTree = "<group>"; };
-		88ED32B183BA25990245CDA4 /* PageNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageNavigationBar.swift; sourceTree = "<group>"; };
-		89D457DD4A19BE44FB1B756A /* DocumentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCardView.swift; sourceTree = "<group>"; };
-		8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Bold.ttf"; sourceTree = "<group>"; };
-		8AF78B49877EF66B1BF1F451 /* ReefAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefAPI.swift; sourceTree = "<group>"; };
-		8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Epilogue-Medium.ttf"; sourceTree = "<group>"; };
-		8F905AA243B35B0F2634361D /* TutorsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorsContentView.swift; sourceTree = "<group>"; };
-		8FD4D552F83298FB7A1D5F74 /* CanvasDrawingToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDrawingToolbar.swift; sourceTree = "<group>"; };
-		9027668E5BCEEF422E249EF8 /* KaTeX_SansSerif-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Bold.ttf"; sourceTree = "<group>"; };
-		935463EBF9D2F8D7981F1AA9 /* KaTeX_Main-BoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-BoldItalic.ttf"; sourceTree = "<group>"; };
-		946EB5E1AE88AA9017728274 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
-		958A5B833F9D040854E7178D /* KaTeX_Size1-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size1-Regular.woff2"; sourceTree = "<group>"; };
-		95B0F2EF5A865F74D7E7DD1D /* MyReefComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyReefComingSoonView.swift; sourceTree = "<group>"; };
-		95DC1AB8CC8C1CEF9404602B /* KaTeX_Fraktur-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Fraktur-Regular.woff"; sourceTree = "<group>"; };
-		963DF30D2DD7054522E3DE8E /* StepName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepName.swift; sourceTree = "<group>"; };
-		993DEC1F1CB5848741038170 /* KaTeX_Main-BoldItalic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-BoldItalic.woff"; sourceTree = "<group>"; };
-		9BA936E9E98148AA31E813D6 /* KaTeX_Math-BoldItalic.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Math-BoldItalic.woff"; sourceTree = "<group>"; };
-		9D407F41F28AA8AA274C819A /* StepReferral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepReferral.swift; sourceTree = "<group>"; };
-		9D55C4708073EE84D310231F /* DashboardTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardTab.swift; sourceTree = "<group>"; };
-		9E68361F46DF0D0B0951ECE8 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
-		9EAA1162AF20BABF039AA139 /* DrawingStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingStorageService.swift; sourceTree = "<group>"; };
-		F5B8C4D2E9A3160B7C2D5E8F /* TutorProgressStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorProgressStorageService.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718A1B2C3D4 /* CanvasStrokeCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasStrokeCollector.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1A2 /* DocumentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsViewModel.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1A4 /* TutorsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorsViewModel.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1A6 /* DottedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DottedBackground.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F2 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
-		A25A2B8DBF193DFD88F7735D /* DashboardCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCard.swift; sourceTree = "<group>"; };
-		A5567628FD84DD3F2A3EE9C0 /* LibraryComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryComingSoonView.swift; sourceTree = "<group>"; };
-		A5D9A0F5E6BADE345381B184 /* KaTeX_Math-BoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Math-BoldItalic.ttf"; sourceTree = "<group>"; };
-		A601472A53F2EEA6CDC28FBB /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
-		A63F7484F21DD97CE355847A /* DocumentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentThumbnailView.swift; sourceTree = "<group>"; };
-		A87A842EDF6A095888CFDDD9 /* DetailsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailsSheet.swift; sourceTree = "<group>"; };
-		AAE20C8DD07638C273E20790 /* KaTeXView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaTeXView.swift; sourceTree = "<group>"; };
-		AC4262B97357102BF9818098 /* ReefApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefApp.swift; sourceTree = "<group>"; };
-		ADA9FF42EAF0B13F54B936C3 /* KaTeX_SansSerif-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_SansSerif-Regular.woff2"; sourceTree = "<group>"; };
-		AEDA169B7DE15D9CD89F0A1E /* KaTeX_Main-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Regular.woff2"; sourceTree = "<group>"; };
-		AFAD8D70AC2C54A40256E837 /* KaTeX_Fraktur-Bold.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Fraktur-Bold.woff2"; sourceTree = "<group>"; };
-		AFCB1D742B3A8666259D63FC /* katex.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = katex.min.js; sourceTree = "<group>"; };
-		B173B8CEC50D522DFF321B58 /* DeleteCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteCourseSheet.swift; sourceTree = "<group>"; };
+		4742404ABF6C1505BEE9BA09 /* DashboardSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSidebar.swift; sourceTree = "<group>"; };
+		4E7B4C0ECBC8C19B3047E375 /* ReefButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefButton.swift; sourceTree = "<group>"; };
+		7CEA0E601A77E71794D928EC /* ReefAnimations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefAnimations.swift; sourceTree = "<group>"; };
+		82315CD65E53D1BAD137A91C /* ReefColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefColors.swift; sourceTree = "<group>"; };
+		8342C69F3700A9310BE6514E /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
+		837EF10AE734D9E16B28F190 /* ProfileUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUpdate.swift; sourceTree = "<group>"; };
+		8EDF913D03056A3B1DFF5DD0 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = Reef/Resources/Fonts; sourceTree = SOURCE_ROOT; };
+		8F363767C6C99DEC96663F36 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
+		982248BAE2D4A7F5BE47B8D8 /* ReefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefCard.swift; sourceTree = "<group>"; };
+		9D9EC70DF58FA661881CDFA4 /* ReefTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTypography.swift; sourceTree = "<group>"; };
+		A2B027C742233E2E12B4D878 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		A37FCABDB72CEC9F68DABAD5 /* ProfileDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDTO.swift; sourceTree = "<group>"; };
+		A965EEABECDE87D79AF04DC7 /* SupabaseProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseProfileRepository.swift; sourceTree = "<group>"; };
+		AA931CB0705B21CA88CF4BE6 /* DashboardNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardNavigationTests.swift; sourceTree = "<group>"; };
+		AADCC5EDF667251F329B6F2A /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		AC62F2B8191E199AABE2EE03 /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
 		B1C1085150D25A8BA7D81D2B /* Reef.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Reef.entitlements; sourceTree = "<group>"; };
-		B2D02F378056B2BB49C4E152 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
-		B3C4D5E6F7A8B9C0D1E2F3A4 /* TranscriptionDebugPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionDebugPanel.swift; sourceTree = "<group>"; };
-		B41818287834AE71FD8DB654 /* KaTeX_AMS-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_AMS-Regular.woff"; sourceTree = "<group>"; };
-		B4E6E07382CB25D2F7E1C49F /* KaTeX_Main-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Bold.ttf"; sourceTree = "<group>"; };
-		B5D1E5B7436B84153535000D /* DeleteConfirmSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteConfirmSheet.swift; sourceTree = "<group>"; };
-		B6FF7B00BD91B32C4F2D976F /* PopoverCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverCard.swift; sourceTree = "<group>"; };
-		B799BEAE73E04DF7F372AC53 /* DocumentEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmptyStateView.swift; sourceTree = "<group>"; };
-		B9312FE6FF2D0F845A0CC30A /* KaTeX_Script-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Script-Regular.woff2"; sourceTree = "<group>"; };
-		BB20C2D3E4F50718B20C2D3E /* PageMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageMenuView.swift; sourceTree = "<group>"; };
-		BB21C3D4E5F60829B21C3D4E /* SettingsAboutTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAboutTab.swift; sourceTree = "<group>"; };
-		BB22C4D5E6F7093AB22C4D5E /* SettingsAccountTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAccountTab.swift; sourceTree = "<group>"; };
-		BB23C5D6E7F80A4BB23C5D6E /* SettingsPreferencesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPreferencesTab.swift; sourceTree = "<group>"; };
-		BB24C6D7E8F90B5CB24C6D7E /* SettingsPrivacyTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPrivacyTab.swift; sourceTree = "<group>"; };
-		BB25C7D8E9FA0C6DB25C7D8E /* SettingsProfileTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsProfileTab.swift; sourceTree = "<group>"; };
-		BB26C8D9EAFB0D7EB26C8D9E /* ShimmerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShimmerOverlay.swift; sourceTree = "<group>"; };
-		BB27C9DAEBFC0E8FB27C9DAE /* ToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarButton.swift; sourceTree = "<group>"; };
-		BB28CADBECED0FA0B28CADBE /* TutorStepRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorStepRow.swift; sourceTree = "<group>"; };
-		BB29CBECDFDE10B1B29CBECD /* TutorToggleStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorToggleStyle.swift; sourceTree = "<group>"; };
-		BDA5038E8A3E9B2E3773B103 /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
-		BE0FA1D699FBA30B3DC68509 /* TutorFeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorFeedbackService.swift; sourceTree = "<group>"; };
-		BE55B35776EF18319E886CB3 /* TutorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorService.swift; sourceTree = "<group>"; };
-		C3D4E5F60718A2B3C3D4E5F6 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
-		C4413DEE7A1FFB5DD1383145 /* DocumentSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSkeletonView.swift; sourceTree = "<group>"; };
-		C4934C859F8B38BE69CFCD55 /* StepSubjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepSubjects.swift; sourceTree = "<group>"; };
-		C62716989A979C764BB97646 /* EditCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCourseSheet.swift; sourceTree = "<group>"; };
-		C6AC3AD434623B044419F756 /* TutorCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorCardView.swift; sourceTree = "<group>"; };
-		CA5ADCE872B43A586C197DC5 /* KaTeX_Size3-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size3-Regular.ttf"; sourceTree = "<group>"; };
-		CAF6D70AF337D510D50366CA /* KaTeX_Size4-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size4-Regular.ttf"; sourceTree = "<group>"; };
-		CB3CB769E3ED3BE1C744F53D /* Tutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tutor.swift; sourceTree = "<group>"; };
-		CB68DDA7D4AC1F96F7D205F3 /* DashboardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
-		CBD7E54973DA4B2B73BE5D17 /* SelectCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectCourseSheet.swift; sourceTree = "<group>"; };
-		CC776DD913DC9650207319E3 /* KaTeX_Size3-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size3-Regular.woff2"; sourceTree = "<group>"; };
-		CD463BDE11C0B408F1C84351 /* KaTeX_Main-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Italic.ttf"; sourceTree = "<group>"; };
-		CDEAAE9F56404327D00057F7 /* KaTeX_Caligraphic-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Caligraphic-Regular.woff"; sourceTree = "<group>"; };
-		D3D413A889F4730A4E5BFED8 /* KaTeX_Size4-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size4-Regular.woff"; sourceTree = "<group>"; };
-		D43CC1336427B5BE797E6184 /* KaTeX_AMS-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_AMS-Regular.woff2"; sourceTree = "<group>"; };
-		D8E70E19FB02A673E57447BD /* TutorStepData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorStepData.swift; sourceTree = "<group>"; };
-		DFB5CF3EA26583CF0907B685 /* KaTeX_Typewriter-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Typewriter-Regular.woff2"; sourceTree = "<group>"; };
-		E18130ED25D586583B5AA4AD /* CourseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseService.swift; sourceTree = "<group>"; };
-		E2733E9A7F76C88B7CC65348 /* KaTeX_Main-Bold.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Bold.woff2"; sourceTree = "<group>"; };
-		E2A242632736FB9BEE170074 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
-		E2AE29018C76FB59A77FAF4E /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
-		E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggedInView.swift; sourceTree = "<group>"; };
-		E3F9DA4A989C748B41386B54 /* TutorQuizSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorQuizSheet.swift; sourceTree = "<group>"; };
-		E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
-		E464383A4FCD22BA4434F8F2 /* KaTeX_Math-BoldItalic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Math-BoldItalic.woff2"; sourceTree = "<group>"; };
-		E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
-		E735E989B6ACB19730C47B43 /* KaTeX_Size3-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size3-Regular.woff"; sourceTree = "<group>"; };
-		E75E5A2538455EC605A155FC /* KaTeX_Main-Italic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Italic.woff2"; sourceTree = "<group>"; };
-		EAF67386E8D3217F6F93CE39 /* DocumentUploadSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadSheet.swift; sourceTree = "<group>"; };
-		ED1CDA6777FDA32F059C0326 /* KaTeX_Caligraphic-Bold.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Caligraphic-Bold.woff"; sourceTree = "<group>"; };
-		F03A53E5704D1119049B880A /* KaTeX_Fraktur-Bold.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Fraktur-Bold.woff"; sourceTree = "<group>"; };
-		F09A804CA98BFF9DCDFAB099 /* KaTeX_Size4-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size4-Regular.woff2"; sourceTree = "<group>"; };
-		F0EB21ECE7AEA4945CFA6DFA /* MoveToCourseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCourseSheet.swift; sourceTree = "<group>"; };
-		F21F5953857FD0C0AD8D0682 /* KaTeX_Caligraphic-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Caligraphic-Regular.ttf"; sourceTree = "<group>"; };
-		F6345F889BC878065D38365E /* KaTeX_Size2-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size2-Regular.woff2"; sourceTree = "<group>"; };
-		F8424215B46D42ECDE986ACC /* KaTeX_Main-BoldItalic.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-BoldItalic.woff2"; sourceTree = "<group>"; };
-		F89828EF647D60F501B07B68 /* DocumentsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsContentView.swift; sourceTree = "<group>"; };
-		FBC116C2E3C45C5D3EA2AEFB /* KaTeX_Size2-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Size2-Regular.ttf"; sourceTree = "<group>"; };
-		FD4BE6F06A3FF2CFCF388C60 /* KaTeX_Typewriter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Typewriter-Regular.ttf"; sourceTree = "<group>"; };
-		FFFDB32E3006FE917764969C /* KaTeX_Main-Regular.woff */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KaTeX_Main-Regular.woff"; sourceTree = "<group>"; };
-		TEMP_3DBCA2CE-1903-4E69-9A18-E3778CE6BC93 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		B313CACE22D5819885170769 /* DashboardTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardTab.swift; sourceTree = "<group>"; };
+		B3B14B10AB75BC4F714166B0 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
+		BF7ECE3CE5AFD4A1E43FEA24 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
+		DC4689C58CCB86B7C32D03AA /* NotificationDropdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDropdownTests.swift; sourceTree = "<group>"; };
+		E03E18AE30F94DABABC0A0BF /* ReefDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefDivider.swift; sourceTree = "<group>"; };
+		E1DF6E9442D61855C2F2DC6C /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		E5F643CA708229A01CC148AD /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
+		F59C552181409C88B428D62E /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
+		F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
+		FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefLayoutMetrics.swift; sourceTree = "<group>"; };
+		"TEMP_1090B976-C595-468C-9960-1E9BBDB8BA46" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		58655288488F41FD989EC3B9 /* PopupShellModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupShellModifier.swift; sourceTree = "<group>"; };
+		547DD5B0ADB34F40B016D8B7 /* ShimmerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShimmerOverlay.swift; sourceTree = "<group>"; };
+		A3880ECDE76F419D978A5042 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
+		70E0831983934C06A2739A7B /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
+		99647E8FDDF047FDBAD4008B /* DocumentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentRepository.swift; sourceTree = "<group>"; };
+		FBDD31CCBE594F70A74114E8 /* DocumentDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentDTO.swift; sourceTree = "<group>"; };
+		89DD5BAF120543A9940EFABE /* SupabaseDocumentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseDocumentRepository.swift; sourceTree = "<group>"; };
+		A86E230C411443FF8F7AC203 /* DocumentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsViewModel.swift; sourceTree = "<group>"; };
+		72F75860EB0049DFAE6C0C64 /* DocumentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentThumbnailView.swift; sourceTree = "<group>"; };
+		915ADDB63CD64C688538AC21 /* DocumentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCardView.swift; sourceTree = "<group>"; };
+		B192BC2988724E77A82D7C08 /* DocumentSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSkeletonView.swift; sourceTree = "<group>"; };
+		1DDC3CF57A8A4839A0DD95BA /* DocumentEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmptyStateView.swift; sourceTree = "<group>"; };
+		2E380585003E4A2B8DD22825 /* DocumentsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsContentView.swift; sourceTree = "<group>"; };
+		AC75104EFB3348558A456BD4 /* DocumentUploadPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadPopup.swift; sourceTree = "<group>"; };
+		E7C5F62C685B4CB89DE33A6B /* DeleteConfirmPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteConfirmPopup.swift; sourceTree = "<group>"; };
+		96D4B981344944BF88ABBF06 /* RenamePopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenamePopup.swift; sourceTree = "<group>"; };
+		28B0FA6D51F34D68BAEE737E /* DetailsPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailsPopup.swift; sourceTree = "<group>"; };
+		D0500A457ABF4A178509E484 /* MoveToCoursePopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCoursePopup.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -363,215 +156,53 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		019D0ADC68C9D9ECF96D19C5 /* Design */ = {
-			isa = PBXGroup;
-			children = (
-				585B9AFB26D4C25AB8FFF803 /* Colors.swift */,
-				4EEB1F4ACFC66F718ED11A8E /* LayoutMetrics.swift */,
-				946EB5E1AE88AA9017728274 /* ThemeManager.swift */,
-				E2A242632736FB9BEE170074 /* Typography.swift */,
-				37CB64D67A4227D8D98F7032 /* Components */,
-			);
-			path = Design;
-			sourceTree = "<group>";
-		};
-		0D925FAB52008A0075E1FC07 /* fonts */ = {
-			isa = PBXGroup;
-			children = (
-				0C47E57F3D237B27B30CD019 /* KaTeX_AMS-Regular.ttf */,
-				B41818287834AE71FD8DB654 /* KaTeX_AMS-Regular.woff */,
-				D43CC1336427B5BE797E6184 /* KaTeX_AMS-Regular.woff2 */,
-				087FB9B79A7996B3A12C45D4 /* KaTeX_Caligraphic-Bold.ttf */,
-				ED1CDA6777FDA32F059C0326 /* KaTeX_Caligraphic-Bold.woff */,
-				4FA4D66B7A1CB94022D2C037 /* KaTeX_Caligraphic-Bold.woff2 */,
-				F21F5953857FD0C0AD8D0682 /* KaTeX_Caligraphic-Regular.ttf */,
-				CDEAAE9F56404327D00057F7 /* KaTeX_Caligraphic-Regular.woff */,
-				744448FA1EE0E3361DD1FF28 /* KaTeX_Caligraphic-Regular.woff2 */,
-				7126F5D666EA789D306482F5 /* KaTeX_Fraktur-Bold.ttf */,
-				F03A53E5704D1119049B880A /* KaTeX_Fraktur-Bold.woff */,
-				AFAD8D70AC2C54A40256E837 /* KaTeX_Fraktur-Bold.woff2 */,
-				8665E08A557D897BBDD15C83 /* KaTeX_Fraktur-Regular.ttf */,
-				95DC1AB8CC8C1CEF9404602B /* KaTeX_Fraktur-Regular.woff */,
-				500BBED6CA4CE86B2654D6E2 /* KaTeX_Fraktur-Regular.woff2 */,
-				B4E6E07382CB25D2F7E1C49F /* KaTeX_Main-Bold.ttf */,
-				5B5F9EB6C97BCAA6A6D34B51 /* KaTeX_Main-Bold.woff */,
-				E2733E9A7F76C88B7CC65348 /* KaTeX_Main-Bold.woff2 */,
-				935463EBF9D2F8D7981F1AA9 /* KaTeX_Main-BoldItalic.ttf */,
-				993DEC1F1CB5848741038170 /* KaTeX_Main-BoldItalic.woff */,
-				F8424215B46D42ECDE986ACC /* KaTeX_Main-BoldItalic.woff2 */,
-				CD463BDE11C0B408F1C84351 /* KaTeX_Main-Italic.ttf */,
-				888AE1CFE4E51E2BE3273D8E /* KaTeX_Main-Italic.woff */,
-				E75E5A2538455EC605A155FC /* KaTeX_Main-Italic.woff2 */,
-				17894B977E7BC8333C0B73AE /* KaTeX_Main-Regular.ttf */,
-				FFFDB32E3006FE917764969C /* KaTeX_Main-Regular.woff */,
-				AEDA169B7DE15D9CD89F0A1E /* KaTeX_Main-Regular.woff2 */,
-				A5D9A0F5E6BADE345381B184 /* KaTeX_Math-BoldItalic.ttf */,
-				9BA936E9E98148AA31E813D6 /* KaTeX_Math-BoldItalic.woff */,
-				E464383A4FCD22BA4434F8F2 /* KaTeX_Math-BoldItalic.woff2 */,
-				08534F1F3D82B0995A3E7B0D /* KaTeX_Math-Italic.ttf */,
-				4F62A6F30725614E2C6A87EF /* KaTeX_Math-Italic.woff */,
-				550FE843683F85C6358992D3 /* KaTeX_Math-Italic.woff2 */,
-				9027668E5BCEEF422E249EF8 /* KaTeX_SansSerif-Bold.ttf */,
-				1F422E13D2F9A64E446E9BE2 /* KaTeX_SansSerif-Bold.woff */,
-				62609C1F14871136AE0C0DD0 /* KaTeX_SansSerif-Bold.woff2 */,
-				33CC414113A2092E92CDD5CC /* KaTeX_SansSerif-Italic.ttf */,
-				289FC4D070EBEFDBC6362449 /* KaTeX_SansSerif-Italic.woff */,
-				4C8784AA64607D6A3867341A /* KaTeX_SansSerif-Italic.woff2 */,
-				36A17CC8CB68FD8ED5DE0903 /* KaTeX_SansSerif-Regular.ttf */,
-				2857AC6B1B6E3F58A2FE4E33 /* KaTeX_SansSerif-Regular.woff */,
-				ADA9FF42EAF0B13F54B936C3 /* KaTeX_SansSerif-Regular.woff2 */,
-				6F848213A4E4864DCEB85FAE /* KaTeX_Script-Regular.ttf */,
-				13591B9E5692B67225B502BC /* KaTeX_Script-Regular.woff */,
-				B9312FE6FF2D0F845A0CC30A /* KaTeX_Script-Regular.woff2 */,
-				852A98034ED074EEDFCC8BE1 /* KaTeX_Size1-Regular.ttf */,
-				38DBC03D6F697DC001368372 /* KaTeX_Size1-Regular.woff */,
-				958A5B833F9D040854E7178D /* KaTeX_Size1-Regular.woff2 */,
-				FBC116C2E3C45C5D3EA2AEFB /* KaTeX_Size2-Regular.ttf */,
-				18B312CF48BB412348B92150 /* KaTeX_Size2-Regular.woff */,
-				F6345F889BC878065D38365E /* KaTeX_Size2-Regular.woff2 */,
-				CA5ADCE872B43A586C197DC5 /* KaTeX_Size3-Regular.ttf */,
-				E735E989B6ACB19730C47B43 /* KaTeX_Size3-Regular.woff */,
-				CC776DD913DC9650207319E3 /* KaTeX_Size3-Regular.woff2 */,
-				CAF6D70AF337D510D50366CA /* KaTeX_Size4-Regular.ttf */,
-				D3D413A889F4730A4E5BFED8 /* KaTeX_Size4-Regular.woff */,
-				F09A804CA98BFF9DCDFAB099 /* KaTeX_Size4-Regular.woff2 */,
-				FD4BE6F06A3FF2CFCF388C60 /* KaTeX_Typewriter-Regular.ttf */,
-				43A46BEA40192D4E1199A48C /* KaTeX_Typewriter-Regular.woff */,
-				DFB5CF3EA26583CF0907B685 /* KaTeX_Typewriter-Regular.woff2 */,
-			);
-			path = fonts;
-			sourceTree = "<group>";
-		};
-		0DE2D8E5A31F98BEC3437368 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				2C918E2542AA4C42E78CD51A /* AnswerKey.swift */,
-				018AA0C6595861D1E872AB8D /* Course.swift */,
-				265263583EBF3C1E1930E940 /* Document.swift */,
-				03EFB80C39A971E1BDC73605 /* Profile.swift */,
-				CB3CB769E3ED3BE1C744F53D /* Tutor.swift */,
-				D8E70E19FB02A673E57447BD /* TutorStepData.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
 		18C69EFE0AF9128BD3588C6A /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				2FEBC9D0D9B06F74E3F564A1 /* Reef.app */,
+				0D32EA1898AEB34154A55CD5 /* ReefUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		21E695D7F4A0DD084ACEC71D /* Canvas */ = {
+		1DB8238BC355EF00CBF2412B /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				8FD4D552F83298FB7A1D5F74 /* CanvasDrawingToolbar.swift */,
-				6DBAC810D46731DEC9B1AC08 /* CanvasPageView.swift */,
-				A1B2C3D4E5F60718A1B2C3D4 /* CanvasStrokeCollector.swift */,
-				2A58933EF653E5137FE20BA0 /* CanvasToolbar.swift */,
-				BB20C2D3E4F50718B20C2D3E /* PageMenuView.swift */,
-				BB27C9DAEBFC0E8FB27C9DAE /* ToolbarButton.swift */,
-				BB28CADBECED0FA0B28CADBE /* TutorStepRow.swift */,
-				BB29CBECDFDE10B1B29CBECD /* TutorToggleStyle.swift */,
-				0F1DB9597A94021843C8228F /* CanvasViewModel.swift */,
-				88CBAB5E82734D68035A3F5B /* DocumentCanvasView.swift */,
-				5F0B3A227B5416D3B69C43D4 /* DrawingManager.swift */,
-				88ED32B183BA25990245CDA4 /* PageNavigationBar.swift */,
-				1125CF6B3EDE0C4E79A31594 /* PageSettingsPopup.swift */,
-				549A1E93C7578CEBBBCF27BD /* RulerOverlayView.swift */,
-				794017E5A2D0BE991846891C /* ToolSettingsPopover.swift */,
-				B3C4D5E6F7A8B9C0D1E2F3A4 /* TranscriptionDebugPanel.swift */,
+				90756ECD6130EE285E1059D7 /* Components */,
+				966CCF4ECDF517E5706A9CC3 /* Design */,
 			);
-			path = Canvas;
+			path = Core;
 			sourceTree = "<group>";
 		};
-		30632B30B15AC95E949447F5 /* Config */ = {
+		29712C8D6E09C4318C2196FE /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				A601472A53F2EEA6CDC28FBB /* Supabase.swift */,
+				B3B14B10AB75BC4F714166B0 /* AppleSignInCoordinator.swift */,
+				A2B027C742233E2E12B4D878 /* AuthView.swift */,
+				2589F18A50DC9C05FCF0FC6C /* AuthViewModel.swift */,
 			);
-			path = Config;
+			path = Auth;
 			sourceTree = "<group>";
 		};
-		37CB64D67A4227D8D98F7032 /* Components */ = {
+		3E991CE445F9BC6C1CFC930F /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				A25A2B8DBF193DFD88F7735D /* DashboardCard.swift */,
-				A1B2C3D4E5F6A7B8C9D0E1A6 /* DottedBackground.swift */,
-				AAE20C8DD07638C273E20790 /* KaTeXView.swift */,
-				83CF1DC5A19F3D38044E085D /* MathText.swift */,
-				E2AE29018C76FB59A77FAF4E /* OnboardingComponents.swift */,
-				B6FF7B00BD91B32C4F2D976F /* PopoverCard.swift */,
-				0C9076E1BD2DE18B50317AE5 /* PopupShell.swift */,
-				BB26C8D9EAFB0D7EB26C8D9E /* ShimmerOverlay.swift */,
-				12B67D53D01AE43D3B31BDEE /* ReefButton.swift */,
-				1CC10B33BD05613452B10A19 /* ReefCard.swift */,
-				0F2272F12753F94D68D47474 /* ReefDivider.swift */,
-				E4C016527AF48EC79C9CCF54 /* ReefTextField.swift */,
-				721C442D7E3B1EBB5062AF68 /* RenderedLatexImage.swift */,
+				667F22B84B7D0B4842B92E03 /* Supabase */,
 			);
-			path = Components;
+			path = Data;
 			sourceTree = "<group>";
 		};
-		3D27759BB73F2CF317237F01 /* Courses */ = {
+		3FA23934E46F9E846ADFC9A5 /* Dashboard */ = {
 			isa = PBXGroup;
 			children = (
-				60B4E463F8DF98D911D2B0E1 /* CourseDetailView.swift */,
-				DF35A28BADA8E4BF818D5F97 /* Modals */,
+				F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */,
+				4742404ABF6C1505BEE9BA09 /* DashboardSidebar.swift */,
+				B313CACE22D5819885170769 /* DashboardTab.swift */,
+				E1DF6E9442D61855C2F2DC6C /* DashboardView.swift */,
+				E5F643CA708229A01CC148AD /* DashboardViewModel.swift */,
+				3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */,
 			);
-			path = Courses;
-			sourceTree = "<group>";
-		};
-		3F4D9C0D2F608C89004586ED /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				TEMP_3DBCA2CE-1903-4E69-9A18-E3778CE6BC93 /* Secrets.xcconfig */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
-		3FDBAB5B87D256DDE2E73928 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				7E85C98C5DBBAF2F143B692F /* AnswerKeyService.swift */,
-				E18130ED25D586583B5AA4AD /* CourseService.swift */,
-				174AF4CC7C1EA4B8D4C88E52 /* DocumentService.swift */,
-				9EAA1162AF20BABF039AA139 /* DrawingStorageService.swift */,
-				8AF78B49877EF66B1BF1F451 /* ReefAPI.swift */,
-				BDA5038E8A3E9B2E3773B103 /* TierLimits.swift */,
-				A1B2C3D4E5F6A7B8C9D0E1F2 /* TranscriptionService.swift */,
-				BE0FA1D699FBA30B3DC68509 /* TutorFeedbackService.swift */,
-				F5B8C4D2E9A3160B7C2D5E8F /* TutorProgressStorageService.swift */,
-				BE55B35776EF18319E886CB3 /* TutorService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		4E03B2ADCB5A902801BD214F /* Settings */ = {
-			isa = PBXGroup;
-			children = (
-				47EE0F7965A070BD244FA35D /* SettingsView.swift */,
-				C3D4E5F60718A2B3C3D4E5F6 /* SettingsComponents.swift */,
-				BB21C3D4E5F60829B21C3D4E /* SettingsAboutTab.swift */,
-				BB22C4D5E6F7093AB22C4D5E /* SettingsAccountTab.swift */,
-				BB23C5D6E7F80A4BB23C5D6E /* SettingsPreferencesTab.swift */,
-				BB24C6D7E8F90B5CB24C6D7E /* SettingsPrivacyTab.swift */,
-				BB25C7D8E9FA0C6DB25C7D8E /* SettingsProfileTab.swift */,
-			);
-			path = Settings;
-			sourceTree = "<group>";
-		};
-		5A0E5869A02E713A77AAFD78 /* Onboarding */ = {
-			isa = PBXGroup;
-			children = (
-				80D5714E68166CC2E06EB305 /* OnboardingView.swift */,
-				76F79C443F16555121292BFA /* StepGrade.swift */,
-				963DF30D2DD7054522E3DE8E /* StepName.swift */,
-				9D407F41F28AA8AA274C819A /* StepReferral.swift */,
-				C4934C859F8B38BE69CFCD55 /* StepSubjects.swift */,
-			);
-			path = Onboarding;
+			path = Dashboard;
 			sourceTree = "<group>";
 		};
 		624D905650AFCFF61C8BAAD8 /* Frameworks */ = {
@@ -582,165 +213,199 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		667F22B84B7D0B4842B92E03 /* Supabase */ = {
+			isa = PBXGroup;
+			children = (
+				1F41D639645507DBBDB28D2A /* SupabaseAuthRepository.swift */,
+				F59C552181409C88B428D62E /* SupabaseConfig.swift */,
+				A965EEABECDE87D79AF04DC7 /* SupabaseProfileRepository.swift */,
+				AB18D437B5275E194EC90DD7 /* DTOs */,
+			);
+			path = Supabase;
+			sourceTree = "<group>";
+		};
 		7262DF6D88DE3E4B21390AF9 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				A36EF218BD5F85D4067BBC07 /* Fonts */,
-				7A33B342381DDDBFFE7E234B /* KaTeX */,
+				8EDF913D03056A3B1DFF5DD0 /* Fonts */,
+				1FBAAC77F6282CB6C717830B /* KaTeX */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		7A33B342381DDDBFFE7E234B /* KaTeX */ = {
+		72832E52E4FC829986F11D3E /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
-				05301F8907BB1E2A7D8292CB /* auto-render.min.js */,
-				705AA155E4D80F612A997ADD /* katex.min.css */,
-				AFCB1D742B3A8666259D63FC /* katex.min.js */,
-				0D925FAB52008A0075E1FC07 /* fonts */,
+				AC62F2B8191E199AABE2EE03 /* AuthRepository.swift */,
+				8342C69F3700A9310BE6514E /* ProfileRepository.swift */,
 			);
-			path = KaTeX;
+			path = Repositories;
 			sourceTree = "<group>";
 		};
-		9E035EEBB3BF12522CAEA34E /* Documents */ = {
+		74EEC224325276367AE02EE1 /* Entities */ = {
 			isa = PBXGroup;
 			children = (
-				89D457DD4A19BE44FB1B756A /* DocumentCardView.swift */,
-				B799BEAE73E04DF7F372AC53 /* DocumentEmptyStateView.swift */,
-				F89828EF647D60F501B07B68 /* DocumentsContentView.swift */,
-				A1B2C3D4E5F6A7B8C9D0E1A2 /* DocumentsViewModel.swift */,
-				C4413DEE7A1FFB5DD1383145 /* DocumentSkeletonView.swift */,
-				A63F7484F21DD97CE355847A /* DocumentThumbnailView.swift */,
-				BE9E663DCC74413A36D778CD /* Modals */,
+				AADCC5EDF667251F329B6F2A /* Profile.swift */,
+				837EF10AE734D9E16B28F190 /* ProfileUpdate.swift */,
 			);
-			path = Documents;
+			path = Entities;
 			sourceTree = "<group>";
 		};
-		A36EF218BD5F85D4067BBC07 /* Fonts */ = {
+		90756ECD6130EE285E1059D7 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				41332C9FDF05A89BF7374377 /* Epilogue-Black.ttf */,
-				8A80C54AF55E8CD3E92177F8 /* Epilogue-Bold.ttf */,
-				8E65BD7C9A0E5ED2143C27E1 /* Epilogue-Medium.ttf */,
-				60BB4D786D5BD94C884A3D33 /* Epilogue-SemiBold.ttf */,
+				2ED4E8C569BD35F02677D82C /* DashboardCardModifier.swift */,
+			58655288488F41FD989EC3B9 /* PopupShellModifier.swift */,
+			547DD5B0ADB34F40B016D8B7 /* ShimmerOverlay.swift */,
+				21872AA207AEEC6F2397B9F4 /* DottedBackground.swift */,
+				3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */,
+				4E7B4C0ECBC8C19B3047E375 /* ReefButton.swift */,
+				982248BAE2D4A7F5BE47B8D8 /* ReefCard.swift */,
+				E03E18AE30F94DABABC0A0BF /* ReefDivider.swift */,
+				BF7ECE3CE5AFD4A1E43FEA24 /* ReefTextField.swift */,
 			);
-			path = Fonts;
+			path = Components;
 			sourceTree = "<group>";
 		};
-		B2628B720F773968DD180F5C /* Tutors */ = {
+		966CCF4ECDF517E5706A9CC3 /* Design */ = {
 			isa = PBXGroup;
 			children = (
-				C6AC3AD434623B044419F756 /* TutorCardView.swift */,
-				17EC25D93DC07C6A4EE3C6BB /* TutorDetailSheet.swift */,
-				E3F9DA4A989C748B41386B54 /* TutorQuizSheet.swift */,
-				8F905AA243B35B0F2634361D /* TutorsContentView.swift */,
-				A1B2C3D4E5F6A7B8C9D0E1A4 /* TutorsViewModel.swift */,
-				3BE24D45EA867265C71FFD78 /* TutorSpotlightView.swift */,
+				7CEA0E601A77E71794D928EC /* ReefAnimations.swift */,
+				82315CD65E53D1BAD137A91C /* ReefColors.swift */,
+				FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */,
+				00BCE4900CD1562F72FAC77A /* ReefTheme.swift */,
+				9D9EC70DF58FA661881CDFA4 /* ReefTypography.swift */,
 			);
-			path = Tutors;
+			path = Design;
 			sourceTree = "<group>";
 		};
-		BD5A6C548E05A85AFF4FF6E4 /* Views */ = {
+		AB18D437B5275E194EC90DD7 /* DTOs */ = {
 			isa = PBXGroup;
 			children = (
-				E2EAD31CE2B2C164DC94837A /* LoggedInView.swift */,
-				D38D8310566A59D632087B38 /* Auth */,
-				21E695D7F4A0DD084ACEC71D /* Canvas */,
-				F53E2133A2AEE9F4E82311F3 /* Dashboard */,
-				5A0E5869A02E713A77AAFD78 /* Onboarding */,
+				A37FCABDB72CEC9F68DABAD5 /* ProfileDTO.swift */,
 			);
-			path = Views;
+			path = DTOs;
 			sourceTree = "<group>";
 		};
-		BE9E663DCC74413A36D778CD /* Modals */ = {
+		AFAF5259D164A3BD4DD14285 /* ReefUITests */ = {
 			isa = PBXGroup;
 			children = (
-				B5D1E5B7436B84153535000D /* DeleteConfirmSheet.swift */,
-				A87A842EDF6A095888CFDDD9 /* DetailsSheet.swift */,
-				EAF67386E8D3217F6F93CE39 /* DocumentUploadSheet.swift */,
-				F0EB21ECE7AEA4945CFA6DFA /* MoveToCourseSheet.swift */,
-				490FEAC3017FC71010B4D5AE /* RenameSheet.swift */,
-				CBD7E54973DA4B2B73BE5D17 /* SelectCourseSheet.swift */,
+				1CDCFE49DE81342DD005D2CB /* AuthFlowTests.swift */,
+				AA931CB0705B21CA88CF4BE6 /* DashboardNavigationTests.swift */,
+				DC4689C58CCB86B7C32D03AA /* NotificationDropdownTests.swift */,
+				29B48811F63C33857241E52D /* ReefUITestCase.swift */,
 			);
-			path = Modals;
+			path = ReefUITests;
 			sourceTree = "<group>";
 		};
 		CD282D01C21A1CB2BA694890 /* Reef */ = {
 			isa = PBXGroup;
 			children = (
 				3F68AC1C3432E326DB646676 /* Assets.xcassets */,
-				7601EE91C6C7F4218ED01B97 /* ContentView.swift */,
 				B1C1085150D25A8BA7D81D2B /* Reef.entitlements */,
-				AC4262B97357102BF9818098 /* ReefApp.swift */,
-				DE1BD128EA2A0639C86D1413 /* Auth */,
-				30632B30B15AC95E949447F5 /* Config */,
-				019D0ADC68C9D9ECF96D19C5 /* Design */,
-				0DE2D8E5A31F98BEC3437368 /* Models */,
+				DB00E746738371A9078E166C /* App */,
+				1DB8238BC355EF00CBF2412B /* Core */,
+				3E991CE445F9BC6C1CFC930F /* Data */,
+				FB8A2B56D9D688AA9F5531C3 /* Domain */,
+				EC0B5D8375CA32EAFD2508A9 /* Features */,
 				7262DF6D88DE3E4B21390AF9 /* Resources */,
-				3FDBAB5B87D256DDE2E73928 /* Services */,
-				BD5A6C548E05A85AFF4FF6E4 /* Views */,
 			);
 			path = Reef;
 			sourceTree = "<group>";
 		};
-		D38D8310566A59D632087B38 /* Auth */ = {
+		DB00E746738371A9078E166C /* App */ = {
 			isa = PBXGroup;
 			children = (
-				9E68361F46DF0D0B0951ECE8 /* AuthView.swift */,
-				0DF8BD8B535EA42A563DFBC5 /* GoogleIcon.swift */,
+				8F363767C6C99DEC96663F36 /* AppRouter.swift */,
+				20B9D25AC3198EC21D837140 /* ReefApp.swift */,
 			);
-			path = Auth;
+			path = App;
 			sourceTree = "<group>";
 		};
-		DE1BD128EA2A0639C86D1413 /* Auth */ = {
+		EC0B5D8375CA32EAFD2508A9 /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				206F870E71C6B2391213AE78 /* AppleSignInCoordinator.swift */,
-				E41A4CDF554B8BCBFB8FAFFD /* AuthManager.swift */,
+				29712C8D6E09C4318C2196FE /* Auth */,
+				3FA23934E46F9E846ADFC9A5 /* Dashboard */,
 			);
-			path = Auth;
-			sourceTree = "<group>";
-		};
-		DF35A28BADA8E4BF818D5F97 /* Modals */ = {
-			isa = PBXGroup;
-			children = (
-				B173B8CEC50D522DFF321B58 /* DeleteCourseSheet.swift */,
-				C62716989A979C764BB97646 /* EditCourseSheet.swift */,
-			);
-			path = Modals;
+			path = Features;
 			sourceTree = "<group>";
 		};
 		F0F46F2D121C884BE5CD2C5E = {
 			isa = PBXGroup;
 			children = (
 				CD282D01C21A1CB2BA694890 /* Reef */,
+				AFAF5259D164A3BD4DD14285 /* ReefUITests */,
 				624D905650AFCFF61C8BAAD8 /* Frameworks */,
 				18C69EFE0AF9128BD3588C6A /* Products */,
-				3F4D9C0D2F608C89004586ED /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
-		F53E2133A2AEE9F4E82311F3 /* Dashboard */ = {
+		FB8A2B56D9D688AA9F5531C3 /* Domain */ = {
 			isa = PBXGroup;
 			children = (
-				B2D02F378056B2BB49C4E152 /* AnalyticsView.swift */,
-				CB68DDA7D4AC1F96F7D205F3 /* DashboardHeader.swift */,
-				37B37BB11E1BD7F39B65686E /* DashboardSidebar.swift */,
-				9D55C4708073EE84D310231F /* DashboardTab.swift */,
-				621895831183A84BD5E2F54B /* DashboardView.swift */,
-				A5567628FD84DD3F2A3EE9C0 /* LibraryComingSoonView.swift */,
-				95B0F2EF5A865F74D7E7DD1D /* MyReefComingSoonView.swift */,
-				3D27759BB73F2CF317237F01 /* Courses */,
-				9E035EEBB3BF12522CAEA34E /* Documents */,
-				4E03B2ADCB5A902801BD214F /* Settings */,
-				B2628B720F773968DD180F5C /* Tutors */,
+				74EEC224325276367AE02EE1 /* Entities */,
+				72832E52E4FC829986F11D3E /* Repositories */,
 			);
-			path = Dashboard;
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		"TEMP_E5E3D7B3-0C7F-40B5-9C25-1DB467AF7074" /* Reef-iOS */ = {
+			isa = PBXGroup;
+			children = (
+				"TEMP_1090B976-C595-468C-9960-1E9BBDB8BA46" /* Secrets.xcconfig */,
+			);
+			path = "Reef-iOS";
+			sourceTree = "<group>";
+		};
+
+		C696D906ABF64A73A3E1D8C8 /* Modals */ = {
+			isa = PBXGroup;
+			children = (
+				AC75104EFB3348558A456BD4 /* DocumentUploadPopup.swift */,
+				E7C5F62C685B4CB89DE33A6B /* DeleteConfirmPopup.swift */,
+				96D4B981344944BF88ABBF06 /* RenamePopup.swift */,
+				28B0FA6D51F34D68BAEE737E /* DetailsPopup.swift */,
+				D0500A457ABF4A178509E484 /* MoveToCoursePopup.swift */,
+			);
+			path = Modals;
+			sourceTree = "<group>";
+		};
+		A1C04DA9FDA143C39E5373D3 /* Documents */ = {
+			isa = PBXGroup;
+			children = (
+				A86E230C411443FF8F7AC203 /* DocumentsViewModel.swift */,
+				72F75860EB0049DFAE6C0C64 /* DocumentThumbnailView.swift */,
+				915ADDB63CD64C688538AC21 /* DocumentCardView.swift */,
+				B192BC2988724E77A82D7C08 /* DocumentSkeletonView.swift */,
+				1DDC3CF57A8A4839A0DD95BA /* DocumentEmptyStateView.swift */,
+				2E380585003E4A2B8DD22825 /* DocumentsContentView.swift */,
+				C696D906ABF64A73A3E1D8C8 /* Modals */,
+			);
+			path = Documents;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		193248CCE164F02D94596013 /* ReefUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D9724D4A07AE42B22AAA2C74 /* Build configuration list for PBXNativeTarget "ReefUITests" */;
+			buildPhases = (
+				8D6AE56C164A283763D3D4CE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				62BA81A72A92A8CA678B3571 /* PBXTargetDependency */,
+			);
+			name = ReefUITests;
+			packageProductDependencies = (
+			);
+			productName = ReefUITests;
+			productReference = 0D32EA1898AEB34154A55CD5 /* ReefUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		D7F066D58D043CAD0E116B49 /* Reef */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5F6D2A2F7961245FFCA5DBCF /* Build configuration list for PBXNativeTarget "Reef" */;
@@ -770,6 +435,17 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					193248CCE164F02D94596013 = {
+						DevelopmentTeam = SMJLWBZ8X6;
+						ProvisioningStyle = Automatic;
+						TestTargetID = D7F066D58D043CAD0E116B49;
+					};
+					D7F066D58D043CAD0E116B49 = {
+						DevelopmentTeam = SMJLWBZ8X6;
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = 1D01D14121A81775924CE721 /* Build configuration list for PBXProject "Reef" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -785,11 +461,12 @@
 				243B9C3E9988E1B00BEF7698 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				7DDE570BD922A527B8FF276B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
-			productRefGroup = 18C69EFE0AF9128BD3588C6A /* Products */;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				D7F066D58D043CAD0E116B49 /* Reef */,
+				193248CCE164F02D94596013 /* ReefUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -800,73 +477,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				BE34AD54F16F85B938302FE7 /* Assets.xcassets in Resources */,
-				611EB261C6B4D00B6ADA902E /* Epilogue-Black.ttf in Resources */,
-				D76683C3BC8B3E2C1170517A /* Epilogue-Bold.ttf in Resources */,
-				53A8FAA539972BE884E9A543 /* Epilogue-Medium.ttf in Resources */,
-				D29EC142A3431E5CA3D29869 /* Epilogue-SemiBold.ttf in Resources */,
-				7EFDAB67C30E9364298E8F05 /* KaTeX_AMS-Regular.ttf in Resources */,
-				C87EBF1700621A4D0FE49148 /* KaTeX_AMS-Regular.woff in Resources */,
-				221F7DD49B333E3A1A771A22 /* KaTeX_AMS-Regular.woff2 in Resources */,
-				8C6C9B1F97D5F40E14CDD8F7 /* KaTeX_Caligraphic-Bold.ttf in Resources */,
-				74F79F84A1DBEDAEB49DB981 /* KaTeX_Caligraphic-Bold.woff in Resources */,
-				E4D4827DC891D31BE63C32CB /* KaTeX_Caligraphic-Bold.woff2 in Resources */,
-				CA26FFB95149036020EDEE31 /* KaTeX_Caligraphic-Regular.ttf in Resources */,
-				1FBA7EB2291C6B1151263AE1 /* KaTeX_Caligraphic-Regular.woff in Resources */,
-				FFC16F14DD732721A8B100F8 /* KaTeX_Caligraphic-Regular.woff2 in Resources */,
-				EAA1CCE17889D8DE9FC87857 /* KaTeX_Fraktur-Bold.ttf in Resources */,
-				7BADDA2E8CA22AF74D7667FF /* KaTeX_Fraktur-Bold.woff in Resources */,
-				DF43FEED757541782EF36741 /* KaTeX_Fraktur-Bold.woff2 in Resources */,
-				41F537B04B4BEA4B872EECBF /* KaTeX_Fraktur-Regular.ttf in Resources */,
-				C62A674D6470462942403D28 /* KaTeX_Fraktur-Regular.woff in Resources */,
-				456BAE5DFFB0BE879E6960F9 /* KaTeX_Fraktur-Regular.woff2 in Resources */,
-				D06620F7F5C3827C9883A36D /* KaTeX_Main-Bold.ttf in Resources */,
-				AF452FB7E63CD934E69440A2 /* KaTeX_Main-Bold.woff in Resources */,
-				5B129C1A00B91F4E7EC5CDED /* KaTeX_Main-Bold.woff2 in Resources */,
-				6B986E6CA4D4D03BD8848C09 /* KaTeX_Main-BoldItalic.ttf in Resources */,
-				56EC288541FB61CA6B9FF6CF /* KaTeX_Main-BoldItalic.woff in Resources */,
-				E1E40A2386C4DB72193A84AE /* KaTeX_Main-BoldItalic.woff2 in Resources */,
-				453032E39AC7C71A177C7358 /* KaTeX_Main-Italic.ttf in Resources */,
-				0C22B6FFEF808AD650A85031 /* KaTeX_Main-Italic.woff in Resources */,
-				39475374E98EAF79FC807CB6 /* KaTeX_Main-Italic.woff2 in Resources */,
-				702C66C6E92EA049C9C1C999 /* KaTeX_Main-Regular.ttf in Resources */,
-				57CD582776EA08214742D2D3 /* KaTeX_Main-Regular.woff in Resources */,
-				BE5EC7F6DF773D786C967EF1 /* KaTeX_Main-Regular.woff2 in Resources */,
-				0F843D2216CDAF4A894C36A2 /* KaTeX_Math-BoldItalic.ttf in Resources */,
-				F4D84562FC9D34E4580085F7 /* KaTeX_Math-BoldItalic.woff in Resources */,
-				AFE21CBDA00CF0D00EFA7302 /* KaTeX_Math-BoldItalic.woff2 in Resources */,
-				B65D624B724859D9471102EA /* KaTeX_Math-Italic.ttf in Resources */,
-				AC9D207058D1875A05C37B0D /* KaTeX_Math-Italic.woff in Resources */,
-				B705DCF45385804B7BC42239 /* KaTeX_Math-Italic.woff2 in Resources */,
-				8963BD8E421568B29CEA3A19 /* KaTeX_SansSerif-Bold.ttf in Resources */,
-				6321395CC375B96BE14FEF4D /* KaTeX_SansSerif-Bold.woff in Resources */,
-				A6764C8788895251DF6B1CF4 /* KaTeX_SansSerif-Bold.woff2 in Resources */,
-				01CC14A930ACB8EA39CC0267 /* KaTeX_SansSerif-Italic.ttf in Resources */,
-				E75F50D47E36D9741DA87DAA /* KaTeX_SansSerif-Italic.woff in Resources */,
-				C2150B06B38B8641CA4E2D47 /* KaTeX_SansSerif-Italic.woff2 in Resources */,
-				6B2C5AE2684931067E4898B0 /* KaTeX_SansSerif-Regular.ttf in Resources */,
-				6C5820677CE6E189EEE05AD8 /* KaTeX_SansSerif-Regular.woff in Resources */,
-				708B204F36D2C063D47052B4 /* KaTeX_SansSerif-Regular.woff2 in Resources */,
-				FB57E140D6D0BAE35FF502DB /* KaTeX_Script-Regular.ttf in Resources */,
-				C148BAF2B1E279E448146C61 /* KaTeX_Script-Regular.woff in Resources */,
-				4F547BED6D32CB461A422064 /* KaTeX_Script-Regular.woff2 in Resources */,
-				D18DEB7B7D807936FC46E0EF /* KaTeX_Size1-Regular.ttf in Resources */,
-				6A68E670991838416E302397 /* KaTeX_Size1-Regular.woff in Resources */,
-				A98C0FAA44B3A5792D65123D /* KaTeX_Size1-Regular.woff2 in Resources */,
-				ECBE21AA8842360C1CEB1322 /* KaTeX_Size2-Regular.ttf in Resources */,
-				88DC4ED9E7BCA10C586AFE64 /* KaTeX_Size2-Regular.woff in Resources */,
-				C73F7CAA0092AD171CE797E9 /* KaTeX_Size2-Regular.woff2 in Resources */,
-				D00BB61111C21DBF38290BDE /* KaTeX_Size3-Regular.ttf in Resources */,
-				25C7C27ED41BCF00C314822B /* KaTeX_Size3-Regular.woff in Resources */,
-				45E8D4405C09C550583717AF /* KaTeX_Size3-Regular.woff2 in Resources */,
-				33275A6AA18320E886DC0E10 /* KaTeX_Size4-Regular.ttf in Resources */,
-				FD1216E47E54F9484BF8D292 /* KaTeX_Size4-Regular.woff in Resources */,
-				7EC5489F9FE7F834398E2A05 /* KaTeX_Size4-Regular.woff2 in Resources */,
-				159FE31668B8992B32E4C322 /* KaTeX_Typewriter-Regular.ttf in Resources */,
-				DC6C1FA358CE712744C9C583 /* KaTeX_Typewriter-Regular.woff in Resources */,
-				60FF1FC181764E472395B5DB /* KaTeX_Typewriter-Regular.woff2 in Resources */,
-				BBD6C30D1F07B0C355D94D3B /* auto-render.min.js in Resources */,
-				E6492D1B81A4EAC6C79707C0 /* katex.min.css in Resources */,
-				FF2DD9A4B1F8143249411273 /* katex.min.js in Resources */,
+				E1A5CA31A4B76C02FE2353A6 /* Fonts in Resources */,
+				59E51EB69B9786DCF5E3201F /* KaTeX in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -877,107 +489,78 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				18470D214CF1DF392B1E43CD /* AnalyticsView.swift in Sources */,
-				8BB1643438A6EE9811E895A9 /* AnswerKey.swift in Sources */,
-				C9CDABAE3304168EA85DFBE4 /* AnswerKeyService.swift in Sources */,
-				D07E9FEAC5D7A2AD66303B45 /* AppleSignInCoordinator.swift in Sources */,
-				FD60877CF5857B3959806C09 /* AuthManager.swift in Sources */,
-				D127D837D809C7679D5F1098 /* AuthView.swift in Sources */,
-				DA76E99FB2AF561DDF93E324 /* CanvasDrawingToolbar.swift in Sources */,
-				EEE6888BA6B0E77018D4F67F /* CanvasPageView.swift in Sources */,
-				F1A2B3C4D5E6F70819A2B3C4 /* CanvasStrokeCollector.swift in Sources */,
-				FD40162D4542094829B3C5A3 /* CanvasToolbar.swift in Sources */,
-				AA10B1C2D3E4F50617A10B1C /* PageMenuView.swift in Sources */,
-				AA11B2C3D4E5F60718A11B2C /* SettingsAboutTab.swift in Sources */,
-				AA12B3C4D5E6F70819A12B3C /* SettingsAccountTab.swift in Sources */,
-				AA13B4C5D6E7F8091AA13B4C /* SettingsPreferencesTab.swift in Sources */,
-				AA14B5C6D7E8F90A1BA14B5C /* SettingsPrivacyTab.swift in Sources */,
-				AA15B6C7D8E9FA0B1CA15B6C /* SettingsProfileTab.swift in Sources */,
-				AA16B7C8D9EAFB0C1DA16B7C /* ShimmerOverlay.swift in Sources */,
-				AA17B8C9DAEBFC0D1EA17B8C /* ToolbarButton.swift in Sources */,
-				AA18B9CADBECED0E1FA18B9C /* TutorStepRow.swift in Sources */,
-				AA19BACBECDFDE0F20A19BAC /* TutorToggleStyle.swift in Sources */,
-				D90D66552E64DEAC25C27A6B /* CanvasViewModel.swift in Sources */,
-				A371C46423DF8A87C7CB0F3B /* Colors.swift in Sources */,
-				BFEC612BA600837B55341B71 /* ContentView.swift in Sources */,
-				29FE99041BD85DA967788BB5 /* Course.swift in Sources */,
-				7F1FCE775A5319A5A9B341A7 /* CourseDetailView.swift in Sources */,
-				5324B3303CAB2D0612C06D62 /* CourseService.swift in Sources */,
-				84C859546EF6E6C562DEADB5 /* DashboardCard.swift in Sources */,
-				54FC3EDC51D987C68956D963 /* DashboardHeader.swift in Sources */,
-				080C05AE475D134C85184ADD /* DashboardSidebar.swift in Sources */,
-				20617A406EC1A2D7D549E1B8 /* DashboardTab.swift in Sources */,
-				E1FE5B8F8C72B65D35C1A690 /* DashboardView.swift in Sources */,
-				72A55DBAD20C9BB77D65A80C /* DeleteConfirmSheet.swift in Sources */,
-				56C0A2469AF443A5054C00B8 /* DeleteCourseSheet.swift in Sources */,
-				1D0F8C36565814C7658038AA /* DetailsSheet.swift in Sources */,
-				6894FA3B9E450368F6ACFFEC /* Document.swift in Sources */,
-				8D9C20ED95E13C63AF47D183 /* DocumentCanvasView.swift in Sources */,
-				AFA7110C64EDCAED5FEDA07D /* DocumentCardView.swift in Sources */,
-				6F39CDB31D9F61B104344DB6 /* DocumentEmptyStateView.swift in Sources */,
-				0F855BD915F52566D4F589B5 /* DocumentService.swift in Sources */,
-				0D57C6630526C57BD3344830 /* DocumentSkeletonView.swift in Sources */,
-				29ABBCFE358D2F989FAADF8D /* DocumentThumbnailView.swift in Sources */,
-				AD35B3EEA62C8A9D31D3B6FD /* DocumentUploadSheet.swift in Sources */,
-				F9425CBAF52188A136ADFCEF /* DocumentsContentView.swift in Sources */,
-				A1B2C3D4E5F6A7B8C9D0E1A1 /* DocumentsViewModel.swift in Sources */,
-				A1B2C3D4E5F6A7B8C9D0E1A5 /* DottedBackground.swift in Sources */,
-				FF23804CFBA20B480E330475 /* DrawingManager.swift in Sources */,
-				80FEC5FE83B6D86AA15207B6 /* DrawingStorageService.swift in Sources */,
-				D4A7B3C1E8F2059A6B1C4D7E /* TutorProgressStorageService.swift in Sources */,
-				3DE926B269B45A3556BD54E3 /* EditCourseSheet.swift in Sources */,
-				E138484BC8F681E63E77244C /* GoogleIcon.swift in Sources */,
-				B84D0B422F015D7B55C29633 /* KaTeXView.swift in Sources */,
-				281DF2F73F5FD8AFB1DE7781 /* LayoutMetrics.swift in Sources */,
-				83C615293A2D56941E6E8F45 /* LibraryComingSoonView.swift in Sources */,
-				4A17069553C0BDE0AF71D36B /* LoggedInView.swift in Sources */,
-				B20F8DBFFDB85B8CA0FD64AE /* MathText.swift in Sources */,
-				DD9936044F3D100E151E5FF6 /* MoveToCourseSheet.swift in Sources */,
-				15A7F7327D87C4A7010DD0EE /* MyReefComingSoonView.swift in Sources */,
-				AE1BE3E7815DBBE172F92BE7 /* OnboardingComponents.swift in Sources */,
-				B2489E124F224ADCD32F169F /* OnboardingView.swift in Sources */,
-				9ADE99D97C893E843E7D677D /* PageNavigationBar.swift in Sources */,
-				DCE5B77A2B3367736C27C754 /* PageSettingsPopup.swift in Sources */,
-				D591F0024ABBC443D1EA56B9 /* PopoverCard.swift in Sources */,
-				9657E5881EF0C5562B13ACEF /* PopupShell.swift in Sources */,
-				86EC51544647FC884C1827BD /* Profile.swift in Sources */,
-				72D09602B96DA1E7231038C2 /* ReefAPI.swift in Sources */,
-				2392BBC7AE73020CFF834AF0 /* ReefApp.swift in Sources */,
-				9223495A7D2DEDCA6FE9A351 /* ReefButton.swift in Sources */,
-				4B77DE746EC133DCDE98D407 /* ReefCard.swift in Sources */,
-				98E9547119361714B8EE388A /* ReefDivider.swift in Sources */,
-				8081686831DE310C575DC5EA /* ReefTextField.swift in Sources */,
-				39F5B0F07CB08E94B94A2D34 /* RenameSheet.swift in Sources */,
-				E25E820CE38D9892CCDC1D8F /* RulerOverlayView.swift in Sources */,
-				33FEDA7F8481CB0C7C82E18D /* SelectCourseSheet.swift in Sources */,
-				7CEDC9E329E1A97890E754CF /* SettingsView.swift in Sources */,
-				B2C3D4E5F6071829B2C3D4E5 /* SettingsComponents.swift in Sources */,
-				7EBF041F6AD776F21B069537 /* StepGrade.swift in Sources */,
-				5D2AD13513DF7173DB05E905 /* StepName.swift in Sources */,
-				B139C22ACB1BB96D3F97B84C /* StepReferral.swift in Sources */,
-				DF4791ADB383CB19C8C4EDB5 /* StepSubjects.swift in Sources */,
-				689EDB34F09D6D2BB8CED1D2 /* Supabase.swift in Sources */,
-				6295A3C9FDC893FC75EE0877 /* ThemeManager.swift in Sources */,
-				1B7DC7404AC46691E8FE909C /* TierLimits.swift in Sources */,
-				CCFCDE5E66312E153CC89254 /* ToolSettingsPopover.swift in Sources */,
-				1C1C0847C2B712AF90229BE2 /* Tutor.swift in Sources */,
-				8AEFE80127997D5D0834F33D /* TutorCardView.swift in Sources */,
-				2669D335E6347312BE71B4A3 /* TutorDetailSheet.swift in Sources */,
-				D5C0B7BA06CC6917331DE308 /* TutorQuizSheet.swift in Sources */,
-				A4F3E2D1C0B9A8F7E6D5C4B3 /* TranscriptionDebugPanel.swift in Sources */,
-				F2E1D0C9B8A7F6E5D4C3B2A1 /* TranscriptionService.swift in Sources */,
-				36DF1A11392326E2FF3E910E /* TutorFeedbackService.swift in Sources */,
-				F09115CEAAE583F111ABF4F7 /* TutorService.swift in Sources */,
-				9787D96FD49B9BF7FF5AC6AE /* TutorSpotlightView.swift in Sources */,
-				A25948F8B9DE842DED9CE349 /* TutorStepData.swift in Sources */,
-				763BE48D3230106445268070 /* TutorsContentView.swift in Sources */,
-				A1B2C3D4E5F6A7B8C9D0E1A3 /* TutorsViewModel.swift in Sources */,
-				92722784C33A0E7DAA072BDA /* Typography.swift in Sources */,
-				72835E8BD29F835F3802ACEC /* RenderedLatexImage.swift in Sources */,
+				EC58CCE1237EC4F39BA5A4E8 /* AppRouter.swift in Sources */,
+				F979B442814B7471F31DCA1B /* AppleSignInCoordinator.swift in Sources */,
+				38D8F1790EA122FFF3657ACE /* AuthRepository.swift in Sources */,
+				28A397776DD5B1EF7FE50E20 /* AuthView.swift in Sources */,
+				924AD60F9C29C7A8AF240E2E /* AuthViewModel.swift in Sources */,
+				043B2A8FF6EFC7DAB05AE012 /* DashboardCardModifier.swift in Sources */,
+				F5DD1BC1EFC10CD8E368CC81 /* DashboardHeader.swift in Sources */,
+				FDD5BDA76B374BE31525ABF1 /* DashboardSidebar.swift in Sources */,
+				CDE7FCB4A7A95CA3F7018D5D /* DashboardTab.swift in Sources */,
+				0806D6C4FC3112C6AA6B8EFE /* DashboardView.swift in Sources */,
+				6C646D8535CDF848CF5584FE /* DashboardViewModel.swift in Sources */,
+				E0121FA37C4E016A0BEE7233 /* DottedBackground.swift in Sources */,
+				17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */,
+				CE1CEFE6CF36DA785BB586EA /* Profile.swift in Sources */,
+				681E95C14DCD1F7E4AB35359 /* ProfileDTO.swift in Sources */,
+				1BAD8BD9673755ECB28CD6EC /* ProfileDropdownMenu.swift in Sources */,
+				876927BA65FC6E72AB15DA7C /* ProfileRepository.swift in Sources */,
+				0A483380FF6AC22B6869D458 /* ProfileUpdate.swift in Sources */,
+				232480B1789C9A7D63D7328C /* ReefAnimations.swift in Sources */,
+				90B58BB88071D49268A953F9 /* ReefApp.swift in Sources */,
+				D03FA7FFE2014624EFF77984 /* ReefButton.swift in Sources */,
+				F2568A6213CDA2E61E2CCE92 /* ReefCard.swift in Sources */,
+				0D287237BD753E19E0F355B0 /* ReefColors.swift in Sources */,
+				6C5700CB44FD42221F3CD012 /* ReefDivider.swift in Sources */,
+				787E897ECB403C48F3AEF26B /* ReefLayoutMetrics.swift in Sources */,
+				028D2AA91435370D8B584B53 /* ReefTextField.swift in Sources */,
+				F318C137C0FE80E01717FD90 /* ReefTheme.swift in Sources */,
+				3B30B4E60D151D06EA7F80B6 /* ReefTypography.swift in Sources */,
+				6C675E5E89D57179BFB187A9 /* SupabaseAuthRepository.swift in Sources */,
+				662978BA8DCB0ACB38E3AF1A /* SupabaseConfig.swift in Sources */,
+				0C4D21737CC83E59DB26C24F /* SupabaseProfileRepository.swift in Sources */,
+				44188DD0014C47A581DB1B6D /* PopupShellModifier.swift in Sources */,
+				623D5392ACFF4B9999221111 /* ShimmerOverlay.swift in Sources */,
+				3192C04CF75348FA8AF0C81F /* Document.swift in Sources */,
+				C688F28753D940059BA5B2C3 /* TierLimits.swift in Sources */,
+				C56275B688614DE2A9CC716F /* DocumentRepository.swift in Sources */,
+				8F8FFB7912284D46BF98CA47 /* DocumentDTO.swift in Sources */,
+				6EB6D1308C0F415A97DA12CE /* SupabaseDocumentRepository.swift in Sources */,
+				4F859D1FAAA540F099827193 /* DocumentsViewModel.swift in Sources */,
+				03093FB2FC394A6BB1209751 /* DocumentThumbnailView.swift in Sources */,
+				3DC45AC6B2B549CEB6132CA0 /* DocumentCardView.swift in Sources */,
+				EF851A5C6DBC4B5A85CEDBF8 /* DocumentSkeletonView.swift in Sources */,
+				5AE5130FEAEB4204AC6D2349 /* DocumentEmptyStateView.swift in Sources */,
+				97579D2A1B1040DC967DF690 /* DocumentsContentView.swift in Sources */,
+				A7A8C38BF1D84F0BAE5D6C40 /* DocumentUploadPopup.swift in Sources */,
+				46544C9193FF40ADA3704F23 /* DeleteConfirmPopup.swift in Sources */,
+				C6B6DFA005394D6393D0C012 /* RenamePopup.swift in Sources */,
+				383BF86061194A9BB5E3B3A2 /* DetailsPopup.swift in Sources */,
+				4630F4085B3E4B678D9E5F58 /* MoveToCoursePopup.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8D6AE56C164A283763D3D4CE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5969F8911F96686594A54AB5 /* AuthFlowTests.swift in Sources */,
+				D607BA3609664BB25C5BBCC6 /* DashboardNavigationTests.swift in Sources */,
+				B810EB60F5595D898E981F20 /* NotificationDropdownTests.swift in Sources */,
+				F485DD27CAB43B9B7FB32B36 /* ReefUITestCase.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		62BA81A72A92A8CA678B3571 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D7F066D58D043CAD0E116B49 /* Reef */;
+			targetProxy = C00069AAB404CA35B434447D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		180C600DF9244D6A15808B6C /* Debug */ = {
@@ -985,7 +568,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Reef/Reef.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = SMJLWBZ8X6;
 				INFOPLIST_FILE = Info.plist;
@@ -994,7 +577,6 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.studyreef.app;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
 			};
@@ -1002,7 +584,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = TEMP_3DBCA2CE-1903-4E69-9A18-E3778CE6BC93 /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_1090B976-C595-468C-9960-1E9BBDB8BA46" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1068,7 +650,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = TEMP_3DBCA2CE-1903-4E69-9A18-E3778CE6BC93 /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_1090B976-C595-468C-9960-1E9BBDB8BA46" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1125,12 +707,32 @@
 			};
 			name = Release;
 		};
+		377275254DD2C6CE4D49F305 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SMJLWBZ8X6;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.studyreef.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+				TEST_TARGET_NAME = Reef;
+			};
+			name = Debug;
+		};
 		96F61E45FADBC445A5F8115B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Reef/Reef.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = SMJLWBZ8X6;
 				INFOPLIST_FILE = Info.plist;
@@ -1139,9 +741,28 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.studyreef.app;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+		B349439E37AAC6C075C7E54E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SMJLWBZ8X6;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.studyreef.app.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+				TEST_TARGET_NAME = Reef;
 			};
 			name = Release;
 		};
@@ -1162,6 +783,15 @@
 			buildConfigurations = (
 				180C600DF9244D6A15808B6C /* Debug */,
 				96F61E45FADBC445A5F8115B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D9724D4A07AE42B22AAA2C74 /* Build configuration list for PBXNativeTarget "ReefUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				377275254DD2C6CE4D49F305 /* Debug */,
+				B349439E37AAC6C075C7E54E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -5,6 +5,7 @@ struct DashboardView: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(\.reefLayoutMetrics) private var metrics
     @State private var viewModel = DashboardViewModel()
+    @State private var documentsVM = DocumentsViewModel()
 
     var body: some View {
         ZStack {
@@ -35,6 +36,73 @@ struct DashboardView: View {
                 }
             }
             .padding(.horizontal, metrics.dashboardHPadding)
+
+            // MARK: - Document Modal Overlays
+
+            if documentsVM.deleteTarget != nil || documentsVM.renameTarget != nil
+                || documentsVM.detailsTarget != nil || documentsVM.moveToCourseTarget != nil
+                || documentsVM.pendingUploadURL != nil {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            documentsVM.deleteTarget = nil
+                            documentsVM.renameTarget = nil
+                            documentsVM.detailsTarget = nil
+                            documentsVM.moveToCourseTarget = nil
+                            documentsVM.pendingUploadURL = nil
+                        }
+                    }
+            }
+
+            if let doc = documentsVM.deleteTarget {
+                DeleteConfirmPopup(document: doc) {
+                    Task { await documentsVM.deleteDocument() }
+                } onClose: {
+                    withAnimation(.spring(duration: 0.2)) { documentsVM.deleteTarget = nil }
+                }
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .animation(.spring(duration: 0.2), value: documentsVM.deleteTarget != nil)
+            }
+
+            if let doc = documentsVM.renameTarget {
+                RenamePopup(document: doc) { newFilename in
+                    Task { await documentsVM.renameDocument(newFilename: newFilename) }
+                } onClose: {
+                    withAnimation(.spring(duration: 0.2)) { documentsVM.renameTarget = nil }
+                }
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .animation(.spring(duration: 0.2), value: documentsVM.renameTarget != nil)
+            }
+
+            if let doc = documentsVM.detailsTarget {
+                DetailsPopup(document: doc) {
+                    withAnimation(.spring(duration: 0.2)) { documentsVM.detailsTarget = nil }
+                }
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .animation(.spring(duration: 0.2), value: documentsVM.detailsTarget != nil)
+            }
+
+            if let doc = documentsVM.moveToCourseTarget {
+                MoveToCoursePopup(document: doc) { courseId in
+                    Task { await documentsVM.moveDocumentToCourse(courseId: courseId) }
+                } onClose: {
+                    withAnimation(.spring(duration: 0.2)) { documentsVM.moveToCourseTarget = nil }
+                }
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .animation(.spring(duration: 0.2), value: documentsVM.moveToCourseTarget != nil)
+            }
+
+            if let url = documentsVM.pendingUploadURL {
+                DocumentUploadPopup(filename: url.lastPathComponent) { courseId, reconstruct in
+                    documentsVM.performUploadWithOptions(courseId: courseId, reconstruct: reconstruct)
+                    withAnimation(.spring(duration: 0.2)) { }
+                } onClose: {
+                    withAnimation(.spring(duration: 0.2)) { documentsVM.pendingUploadURL = nil }
+                }
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .animation(.spring(duration: 0.2), value: documentsVM.pendingUploadURL != nil)
+            }
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: viewModel.sidebarOpen)
         .alert(
@@ -59,7 +127,12 @@ struct DashboardView: View {
     @ViewBuilder
     private var contentArea: some View {
         if let tab = viewModel.selectedTab {
-            tabPlaceholder(tab.label)
+            switch tab {
+            case .documents:
+                DocumentsContentView(viewModel: documentsVM)
+            default:
+                tabPlaceholder(tab.label)
+            }
         } else if viewModel.selectedCourseId != nil {
             tabPlaceholder(viewModel.contentTitle)
         } else {
