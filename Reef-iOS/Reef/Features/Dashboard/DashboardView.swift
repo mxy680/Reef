@@ -3,7 +3,6 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(ReefTheme.self) private var theme
     @State private var viewModel = DashboardViewModel()
-    @State private var headerRef = DashboardHeader(viewModel: DashboardViewModel())
 
     private let metrics = ReefLayoutMetrics(
         screenHeight: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
@@ -37,8 +36,7 @@ struct DashboardView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        DashboardHeader(viewModel: viewModel)
-                            .profileDropdownMenu
+                        ProfileDropdownMenu(viewModel: viewModel)
                             .padding(.top, metrics.headerHeight + 24)
                             .padding(.trailing, 24)
                     }
