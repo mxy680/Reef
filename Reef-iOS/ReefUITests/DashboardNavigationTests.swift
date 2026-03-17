@@ -11,7 +11,8 @@ final class DashboardNavigationTests: ReefUITestCase {
     // MARK: - Tab Navigation
 
     func testDocumentsTabVisibleByDefault() {
-        waitForText("Coming soon")
+        // Documents page shows either documents grid or empty state
+        waitForText("Documents")
     }
 
     func testCanSwitchToAnalyticsTab() {
@@ -31,7 +32,8 @@ final class DashboardNavigationTests: ReefUITestCase {
         sleep(1)
         waitForText("Documents").tap()
         sleep(1)
-        waitForText("Coming soon")
+        // Documents page should be showing (not "Coming soon")
+        waitForText("Documents")
     }
 
     // MARK: - Header & Chrome

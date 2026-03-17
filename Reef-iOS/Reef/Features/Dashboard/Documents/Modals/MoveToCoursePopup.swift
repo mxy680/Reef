@@ -141,12 +141,13 @@ struct MoveToCoursePopup: View {
         .task {
             selectedCourseId = document.courseId
             do {
-                courses = try await supabase
+                let dtos: [CourseDTO] = try await supabase
                     .from("courses")
                     .select()
                     .order("created_at")
                     .execute()
                     .value
+                courses = dtos.map { $0.toDomain() }
             } catch {
                 // Silently fail — shows "no courses" state
             }
