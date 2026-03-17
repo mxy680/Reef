@@ -9,15 +9,23 @@ struct SettingsPreferencesTab: View {
     // Appearance
     @State private var selectedThemeColor: Color = ReefColors.primary
 
+    // Appearance
+    @State private var compactMode = false
+    @State private var textScale = "Standard"
+
     // Notifications
     @State private var studyReminders = true
     @State private var weeklyDigest = true
     @State private var newFeatures = false
+    @State private var achievementAlerts = true
+    @State private var reminderTime = "Evening"
 
     // Study Preferences
     @State private var difficultyLevel = "Medium"
     @State private var questionCount = 10
     @State private var timerEnabled = true
+    @State private var autoAdvance = false
+    @State private var shuffleQuestions = true
 
     var body: some View {
         let colors = theme.colors
@@ -55,6 +63,30 @@ struct SettingsPreferencesTab: View {
             darkModeRow
             SettingsDivider()
             themeColorRow(colors)
+            SettingsDivider()
+            textScaleRow(colors)
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Compact Mode",
+                subtitle: "Reduce spacing for more content on screen",
+                isOn: $compactMode
+            )
+        }
+    }
+
+    private func textScaleRow(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Text Size")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.text)
+                Spacer()
+            }
+            SettingsSegmentedControl(
+                options: ["Small", "Standard", "Large"],
+                selection: $textScale
+            )
         }
     }
 
@@ -111,6 +143,14 @@ struct SettingsPreferencesTab: View {
                 isOn: $studyReminders
             )
             SettingsDivider()
+            reminderTimeRow(colors)
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Achievement Alerts",
+                subtitle: "Celebrate streaks and milestones",
+                isOn: $achievementAlerts
+            )
+            SettingsDivider()
             SettingsToggleRow(
                 label: "Weekly Digest",
                 subtitle: "A summary of your progress each week",
@@ -121,6 +161,22 @@ struct SettingsPreferencesTab: View {
                 label: "New Features",
                 subtitle: "Hear about updates and improvements",
                 isOn: $newFeatures
+            )
+        }
+    }
+
+    private func reminderTimeRow(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Reminder Time")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.text)
+                Spacer()
+            }
+            SettingsSegmentedControl(
+                options: ["Morning", "Afternoon", "Evening"],
+                selection: $reminderTime
             )
         }
     }
@@ -136,6 +192,18 @@ struct SettingsPreferencesTab: View {
             questionCountRow(colors)
             SettingsDivider()
             timerRow
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Auto-Advance",
+                subtitle: "Move to next question automatically after answering",
+                isOn: $autoAdvance
+            )
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Shuffle Questions",
+                subtitle: "Randomise question order each session",
+                isOn: $shuffleQuestions
+            )
         }
     }
 

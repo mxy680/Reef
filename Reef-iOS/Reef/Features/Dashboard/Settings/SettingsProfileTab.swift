@@ -13,7 +13,14 @@ struct SettingsProfileTab: View {
     @State private var displayName: String = ""
     @State private var selectedGrade: String = ""
     @State private var selectedSubjects: Set<String> = []
+    @State private var avatarColorIndex: Int = 0
+    @State private var dailyGoalMinutes: Int = 30
     @State private var saveTask: Task<Void, Never>?
+
+    private let avatarColors: [Color] = [
+        Color(hex: 0xFCEBD5), Color(hex: 0xD5EBF0), Color(hex: 0xD5F0E0),
+        Color(hex: 0xF0D5E8), Color(hex: 0xE8E8D5), Color(hex: 0xD5D5F0),
+    ]
 
     init(
         profileRepo: ProfileRepository = SupabaseProfileRepository(),
@@ -166,6 +173,67 @@ struct SettingsProfileTab: View {
             nameField(colors)
             SettingsDivider()
             emailField(colors)
+            SettingsDivider()
+            avatarColorRow(colors)
+            SettingsDivider()
+            dailyGoalRow(colors)
+            SettingsDivider()
+            memberIdRow(colors)
+        }
+    }
+
+    private func avatarColorRow(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SettingsFieldLabel(title: "Avatar Color")
+            HStack(spacing: 10) {
+                ForEach(avatarColors.indices, id: \.self) { idx in
+                    let isSelected = avatarColorIndex == idx
+                    ZStack {
+                        Circle()
+                            .fill(avatarColors[idx])
+                            .frame(width: 32, height: 32)
+                            .overlay(Circle().stroke(isSelected ? ReefColors.primary : colors.border, lineWidth: isSelected ? 2.5 : 1.5))
+                        if isSelected {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(ReefColors.primary)
+                        }
+                    }
+                    .contentShape(Circle())
+                    .onTapGesture { avatarColorIndex = idx }
+                    .animation(.easeInOut(duration: 0.15), value: isSelected)
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private func dailyGoalRow(_ colors: ReefThemeColors) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Daily Study Goal")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.text)
+                Text("\(dailyGoalMinutes) min per day")
+                    .font(.epilogue(12, weight: .medium))
+                    .tracking(-0.04 * 12)
+                    .foregroundStyle(colors.textMuted)
+            }
+            Spacer()
+            SettingsStepper(value: $dailyGoalMinutes, in: 15...180, step: 15)
+        }
+    }
+
+    private func memberIdRow(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SettingsFieldLabel(title: "Member ID")
+            Text(auth.profile?.id ?? auth.session?.userId ?? "—")
+                .font(.system(.caption, design: .monospaced).weight(.medium))
+                .foregroundStyle(colors.textMuted)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
