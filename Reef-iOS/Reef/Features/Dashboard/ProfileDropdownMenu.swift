@@ -105,6 +105,19 @@ struct ProfileDropdownMenu: View {
                 Task { await auth.signOut() }
             }
         }
+        .background(colors.cardElevated)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(theme.isDarkMode ? ReefColors.Dark.border : ReefColors.gray500, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(theme.isDarkMode ? ReefColors.Dark.shadow : ReefColors.gray500)
+                .offset(x: 3, y: 3)
+        )
+        .fixedSize(horizontal: true, vertical: true)
+        .frame(minWidth: 220, alignment: .trailing)
     }
 
     // MARK: - Helpers
