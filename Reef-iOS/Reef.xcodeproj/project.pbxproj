@@ -66,6 +66,13 @@
 		C6B6DFA005394D6393D0C012 /* RenamePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D4B981344944BF88ABBF06 /* RenamePopup.swift */; };
 		383BF86061194A9BB5E3B3A2 /* DetailsPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B0FA6D51F34D68BAEE737E /* DetailsPopup.swift */; };
 		4630F4085B3E4B678D9E5F58 /* MoveToCoursePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0500A457ABF4A178509E484 /* MoveToCoursePopup.swift */; };
+		26219FC9D5374E29BE6C4C66 /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6F8233D5B04BA488975E08 /* SettingsComponents.swift */; };
+		D84E7186C7FB4B2EA606DD5B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DD346521824B1EBD440BEA /* SettingsView.swift */; };
+		230F95E9A4874439A36428B8 /* SettingsProfileTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5620795F93D4A9A9CC60A0A /* SettingsProfileTab.swift */; };
+		02CDCCA46D0E442DAE3790F7 /* SettingsPreferencesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397A5E01F11140F1BE3CCF1A /* SettingsPreferencesTab.swift */; };
+		C1CA1E70C69A4A43B4EFE8CF /* SettingsPrivacyTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A46F50072E4DCF9837366E /* SettingsPrivacyTab.swift */; };
+		7753F8ACA11143D39C129D24 /* SettingsAccountTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407588E264494B1FAAEA6AF6 /* SettingsAccountTab.swift */; };
+		BE22B221EE8D404599E15321 /* SettingsAboutTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 088385C4C3554E7681686A92 /* SettingsAboutTab.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -140,6 +147,13 @@
 		96D4B981344944BF88ABBF06 /* RenamePopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenamePopup.swift; sourceTree = "<group>"; };
 		28B0FA6D51F34D68BAEE737E /* DetailsPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailsPopup.swift; sourceTree = "<group>"; };
 		D0500A457ABF4A178509E484 /* MoveToCoursePopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCoursePopup.swift; sourceTree = "<group>"; };
+		7D6F8233D5B04BA488975E08 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
+		E1DD346521824B1EBD440BEA /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B5620795F93D4A9A9CC60A0A /* SettingsProfileTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsProfileTab.swift; sourceTree = "<group>"; };
+		397A5E01F11140F1BE3CCF1A /* SettingsPreferencesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPreferencesTab.swift; sourceTree = "<group>"; };
+		50A46F50072E4DCF9837366E /* SettingsPrivacyTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPrivacyTab.swift; sourceTree = "<group>"; };
+		407588E264494B1FAAEA6AF6 /* SettingsAccountTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAccountTab.swift; sourceTree = "<group>"; };
+		088385C4C3554E7681686A92 /* SettingsAboutTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAboutTab.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -201,6 +215,7 @@
 				E1DF6E9442D61855C2F2DC6C /* DashboardView.swift */,
 				E5F643CA708229A01CC148AD /* DashboardViewModel.swift */,
 				3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */,
+				846A4F40463840C9AB9046A8 /* Settings */,
 			);
 			path = Dashboard;
 			sourceTree = "<group>";
@@ -371,6 +386,20 @@
 			path = Modals;
 			sourceTree = "<group>";
 		};
+		846A4F40463840C9AB9046A8 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				7D6F8233D5B04BA488975E08 /* SettingsComponents.swift */,
+				E1DD346521824B1EBD440BEA /* SettingsView.swift */,
+				B5620795F93D4A9A9CC60A0A /* SettingsProfileTab.swift */,
+				397A5E01F11140F1BE3CCF1A /* SettingsPreferencesTab.swift */,
+				50A46F50072E4DCF9837366E /* SettingsPrivacyTab.swift */,
+				407588E264494B1FAAEA6AF6 /* SettingsAccountTab.swift */,
+				088385C4C3554E7681686A92 /* SettingsAboutTab.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
 		A1C04DA9FDA143C39E5373D3 /* Documents */ = {
 			isa = PBXGroup;
 			children = (
@@ -538,6 +567,13 @@
 				C6B6DFA005394D6393D0C012 /* RenamePopup.swift in Sources */,
 				383BF86061194A9BB5E3B3A2 /* DetailsPopup.swift in Sources */,
 				4630F4085B3E4B678D9E5F58 /* MoveToCoursePopup.swift in Sources */,
+				26219FC9D5374E29BE6C4C66 /* SettingsComponents.swift in Sources */,
+				D84E7186C7FB4B2EA606DD5B /* SettingsView.swift in Sources */,
+				230F95E9A4874439A36428B8 /* SettingsProfileTab.swift in Sources */,
+				02CDCCA46D0E442DAE3790F7 /* SettingsPreferencesTab.swift in Sources */,
+				C1CA1E70C69A4A43B4EFE8CF /* SettingsPrivacyTab.swift in Sources */,
+				7753F8ACA11143D39C129D24 /* SettingsAccountTab.swift in Sources */,
+				BE22B221EE8D404599E15321 /* SettingsAboutTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

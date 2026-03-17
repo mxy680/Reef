@@ -150,6 +150,8 @@ struct DashboardView: View {
                     title: "Deep waters ahead",
                     subtitle: "A shared library of study materials from your courses."
                 )
+            case .settings:
+                SettingsView()
             default:
                 tabPlaceholder(tab.label)
             }
