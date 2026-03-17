@@ -27,6 +27,8 @@ struct ReefBadge: View {
             .font(.epilogue(10, weight: .black))
             .tracking(0.02 * 10)
             .foregroundStyle(fg)
+            .lineLimit(1)
+            .fixedSize()
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(bg)
