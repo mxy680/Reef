@@ -298,7 +298,7 @@ struct SettingsPill: View {
             .foregroundStyle(isSelected ? ReefColors.white : colors.text)
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
-            .background(isSelected ? ReefColors.primary : colors.card)
+            .background(isSelected ? ReefColors.primary : colors.surface)
             .clipShape(Capsule())
             .reef3DPushCapsule(
                 shadowOffset: 3,
@@ -420,7 +420,7 @@ struct SubjectPill: View {
             .foregroundStyle(isSelected ? ReefColors.white : colors.text)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(isSelected ? ReefColors.primary : colors.card)
+            .background(isSelected ? ReefColors.primary : colors.surface)
             .clipShape(Capsule())
             .reef3DPushCapsule(
                 shadowOffset: 2,

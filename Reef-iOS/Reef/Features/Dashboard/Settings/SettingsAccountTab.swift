@@ -79,7 +79,7 @@ struct SettingsAccountTab: View {
                             .tracking(-0.04 * 18)
                             .foregroundStyle(colors.text)
 
-                        ReefBadge(text: "Free Beta")
+                        ReefBadge(text: "Free Beta", variant: .secondary)
                     }
 
                     Text("Access all features during the beta period")

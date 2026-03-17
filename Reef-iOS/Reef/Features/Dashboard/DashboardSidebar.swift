@@ -201,7 +201,7 @@ struct DashboardSidebar: View {
             } label: {
                 Text("Upgrade")
             } trailing: {
-                ReefBadge(text: "Free Beta")
+                ReefBadge(text: "Free Beta", variant: .secondary)
             }
             .onTapGesture {
                 if let url = URL(string: "https://stripe.com") {
