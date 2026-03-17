@@ -13,7 +13,7 @@ struct SettingsProfileTab: View {
     @State private var displayName: String = ""
     @State private var selectedGrade: String = ""
     @State private var selectedSubjects: Set<String> = []
-    @State private var isSaving = false
+    @State private var saveTask: Task<Void, Never>?
 
     init(
         profileRepo: ProfileRepository = SupabaseProfileRepository(),
@@ -25,54 +25,81 @@ struct SettingsProfileTab: View {
 
     var body: some View {
         let colors = theme.colors
-        VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
-            profileHeaderSection(colors)
+        // Single bento card: all cells share one outer border
+        VStack(spacing: 0) {
+            // Row 1: Profile header (full width)
+            profileHeaderRow(colors)
+                .padding(metrics.cardPadding)
 
-            HStack(alignment: .top, spacing: metrics.sectionSpacing) {
-                personalInfoSection(colors)
-                    .frame(maxWidth: .infinity)
-                educationSection(colors)
-                    .frame(maxWidth: .infinity)
+            Rectangle()
+                .fill(colors.divider)
+                .frame(height: 1)
+
+            // Row 2: Personal Info | Education
+            HStack(alignment: .top, spacing: 0) {
+                personalInfoContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+
+                Rectangle()
+                    .fill(colors.divider)
+                    .frame(width: 1)
+
+                educationContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
             }
-
-            saveRow(colors)
         }
+        .frame(maxWidth: .infinity)
+        .background(colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(theme.isDarkMode ? ReefColors.Dark.border : ReefColors.gray500, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(theme.isDarkMode ? ReefColors.Dark.shadow : ReefColors.gray500)
+                .offset(x: 3, y: 3)
+        )
+        .compositingGroup()
         .onAppear { loadFromProfile() }
+        .onChange(of: displayName) { scheduleSave() }
+        .onChange(of: selectedGrade) { scheduleSave() }
+        .onChange(of: selectedSubjects) { scheduleSave() }
     }
 
-    // MARK: - Profile Header
+    // MARK: - Profile Header Row
 
-    private func profileHeaderSection(_ colors: ReefThemeColors) -> some View {
-        SettingsCard {
-            HStack(spacing: 20) {
-                profileRing(colors)
+    private func profileHeaderRow(_ colors: ReefThemeColors) -> some View {
+        HStack(spacing: 20) {
+            profileRing(colors)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(auth.displayName)
-                        .font(.epilogue(18, weight: .black))
-                        .tracking(-0.04 * 18)
-                        .foregroundStyle(colors.text)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(auth.displayName)
+                    .font(.epilogue(18, weight: .black))
+                    .tracking(-0.04 * 18)
+                    .foregroundStyle(colors.text)
 
-                    if let email = auth.profile?.email ?? auth.session?.email {
-                        Text(email)
-                            .font(.epilogue(13, weight: .medium))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(colors.textSecondary)
-                    }
-
-                    if let createdAt = auth.profile?.createdAt {
-                        Text("Member since \(formattedDate(createdAt))")
-                            .font(.epilogue(12, weight: .medium))
-                            .tracking(-0.04 * 12)
-                            .foregroundStyle(colors.textMuted)
-                            .padding(.top, 2)
-                    }
+                if let email = auth.profile?.email ?? auth.session?.email {
+                    Text(email)
+                        .font(.epilogue(13, weight: .medium))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(colors.textSecondary)
                 }
 
-                Spacer()
-
-                completionRing(colors)
+                if let createdAt = auth.profile?.createdAt {
+                    Text("Member since \(formattedDate(createdAt))")
+                        .font(.epilogue(12, weight: .medium))
+                        .tracking(-0.04 * 12)
+                        .foregroundStyle(colors.textMuted)
+                        .padding(.top, 2)
+                }
             }
+
+            Spacer()
+
+            completionRing(colors)
         }
     }
 
@@ -130,17 +157,15 @@ struct SettingsProfileTab: View {
         return score / total
     }
 
-    // MARK: - Personal Info
+    // MARK: - Personal Info Cell
 
-    private func personalInfoSection(_ colors: ReefThemeColors) -> some View {
-        SettingsCard {
-            VStack(alignment: .leading, spacing: 0) {
-                SettingsSectionHeader(title: "Personal Info")
-                    .padding(.bottom, 14)
-                nameField(colors)
-                SettingsDivider()
-                emailField(colors)
-            }
+    private func personalInfoContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SettingsSectionHeader(title: "Personal Info")
+                .padding(.bottom, 14)
+            nameField(colors)
+            SettingsDivider()
+            emailField(colors)
         }
     }
 
@@ -178,16 +203,14 @@ struct SettingsProfileTab: View {
         }
     }
 
-    // MARK: - Education
+    // MARK: - Education Cell
 
-    private func educationSection(_ colors: ReefThemeColors) -> some View {
-        SettingsCard {
-            VStack(alignment: .leading, spacing: 16) {
-                SettingsSectionHeader(title: "Education")
-                gradeSelector(colors)
-                SettingsDivider()
-                subjectSelector(colors)
-            }
+    private func educationContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SettingsSectionHeader(title: "Education")
+            gradeSelector(colors)
+            SettingsDivider()
+            subjectSelector(colors)
         }
     }
 
@@ -235,17 +258,6 @@ struct SettingsProfileTab: View {
         }
     }
 
-    // MARK: - Save
-
-    private func saveRow(_ colors: ReefThemeColors) -> some View {
-        HStack {
-            Spacer()
-            ReefButton("Save Changes", variant: .primary, size: .compact, disabled: isSaving) {
-                Task { await saveProfile() }
-            }
-        }
-    }
-
     // MARK: - Data
 
     private func loadFromProfile() {
@@ -255,9 +267,16 @@ struct SettingsProfileTab: View {
         selectedSubjects = Set(profile.subjects)
     }
 
+    private func scheduleSave() {
+        saveTask?.cancel()
+        saveTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.0))
+            guard !Task.isCancelled else { return }
+            await saveProfile()
+        }
+    }
+
     private func saveProfile() async {
-        isSaving = true
-        defer { isSaving = false }
         let update = ProfileUpdate(
             displayName: displayName.isEmpty ? nil : displayName,
             grade: selectedGrade.isEmpty ? nil : selectedGrade,
@@ -266,9 +285,9 @@ struct SettingsProfileTab: View {
         do {
             try await profileRepo.upsertProfile(update)
             await auth.completeOnboarding()
-            onToast("Profile saved")
+            onToast("Saved")
         } catch {
-            onToast("Failed to save profile")
+            onToast("Failed to save")
         }
     }
 

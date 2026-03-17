@@ -345,33 +345,18 @@ struct SettingsLinkRow: View {
 // MARK: - SettingsTabButton
 
 struct SettingsTabButton: View {
-    @Environment(ReefTheme.self) private var theme
     let tab: SettingsTab
     let isActive: Bool
     let action: () -> Void
 
     var body: some View {
-        let colors = theme.colors
-        HStack(spacing: 8) {
-            Image(systemName: tab.icon)
-                .font(.system(size: 13, weight: .semibold))
-
-            Text(tab.label)
-                .font(.epilogue(13, weight: .bold))
-                .tracking(-0.04 * 13)
+        ReefButton(isActive ? .primary : .secondary, size: .compact, action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(tab.label)
+            }
         }
-        .foregroundStyle(isActive ? ReefColors.white : ReefColors.primary)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 9)
-        .background(isActive ? ReefColors.primary : colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .reef3DPush(
-            cornerRadius: 10,
-            shadowOffset: 3,
-            borderColor: ReefColors.primary,
-            shadowColor: colors.shadow,
-            action: action
-        )
     }
 }
 
