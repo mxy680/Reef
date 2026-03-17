@@ -44,32 +44,30 @@ struct SupabaseDocumentRepository: DocumentRepository {
     func uploadDocument(fileURL: URL, courseId: String?, reconstruct: Bool) async throws -> Document {
         let userId = try await getUserId()
 
-        // Validate PDF
         guard fileURL.pathExtension.lowercased() == "pdf" else {
             throw DocumentUploadError.notPDF
         }
 
         let fileData = try Data(contentsOf: fileURL)
 
-        // Check file size
         let limits = TierLimits.current()
         let maxBytes = limits.maxFileSizeMB * 1024 * 1024
         if fileData.count > maxBytes {
             throw DocumentUploadError.fileTooLarge(limits.maxFileSizeMB)
         }
 
-        // Check document count
-        let existingDtos: [DocumentDTO] = try await supabase
+        // Count check — select only id column for efficiency
+        struct IdOnly: Decodable { let id: String }
+        let existing: [IdOnly] = try await supabase
             .from("documents")
-            .select()
+            .select("id")
             .eq("user_id", value: userId)
             .execute()
             .value
-        if existingDtos.count >= limits.maxDocuments {
+        if existing.count >= limits.maxDocuments {
             throw DocumentUploadError.limitReached
         }
 
-        // Insert DB row
         struct InsertPayload: Encodable {
             let user_id: String
             let filename: String
@@ -92,28 +90,22 @@ struct SupabaseDocumentRepository: DocumentRepository {
 
         let newDoc = dto.toDomain()
 
-        // Upload PDF to storage
         let storagePath = "\(userId)/\(newDoc.id)/original.pdf"
         do {
             try await supabase.storage
                 .from("documents")
                 .upload(storagePath, data: fileData, options: .init(contentType: "application/pdf"))
         } catch {
-            // Clean up DB row on storage failure
             _ = try? await supabase.from("documents").delete().eq("id", value: newDoc.id).execute()
             throw error
         }
 
-        // Generate and upload thumbnail
         if let thumbnailData = generateThumbnail(from: fileURL) {
             let thumbPath = "\(userId)/\(newDoc.id)/thumbnail.png"
             _ = try? await supabase.storage
                 .from("documents")
                 .upload(thumbPath, data: thumbnailData, options: .init(contentType: "image/png"))
         }
-
-        // TODO: Trigger reconstruction via ReefAPI when it's ported to clean architecture
-        // For now, documents upload as "completed" without reconstruction
 
         return newDoc
     }
@@ -123,18 +115,16 @@ struct SupabaseDocumentRepository: DocumentRepository {
     func deleteDocument(_ id: String) async throws {
         let userId = try await getUserId()
 
-        // TODO: Cancel reconstruction via ReefAPI when ported
-
-        // Delete storage files
-        let prefix = "\(userId)/\(id)"
-        let files = try await supabase.storage.from("documents").list(path: prefix)
-        if !files.isEmpty {
-            let paths = files.map { "\(prefix)/\($0.name)" }
-            try await supabase.storage.from("documents").remove(paths: paths)
-        }
-
-        // Delete DB row
+        // Delete DB row first — user-visible record gone immediately
         try await supabase.from("documents").delete().eq("id", value: id).execute()
+
+        // Best-effort storage cleanup after DB delete
+        let prefix = "\(userId)/\(id)"
+        if let files = try? await supabase.storage.from("documents").list(path: prefix),
+           !files.isEmpty {
+            let paths = files.map { "\(prefix)/\($0.name)" }
+            _ = try? await supabase.storage.from("documents").remove(paths: paths)
+        }
     }
 
     // MARK: - Rename
@@ -152,7 +142,6 @@ struct SupabaseDocumentRepository: DocumentRepository {
     func duplicateDocument(_ id: String) async throws -> Document {
         let userId = try await getUserId()
 
-        // Fetch original
         let originalDto: DocumentDTO = try await supabase
             .from("documents")
             .select()
@@ -162,7 +151,6 @@ struct SupabaseDocumentRepository: DocumentRepository {
             .value
         let original = originalDto.toDomain()
 
-        // Insert copy
         struct InsertPayload: Encodable {
             let user_id: String
             let filename: String
@@ -189,15 +177,20 @@ struct SupabaseDocumentRepository: DocumentRepository {
 
         let copyDoc = copyDto.toDomain()
 
-        // Copy storage files
+        // Copy storage files — log failures but don't throw
         let srcPrefix = "\(userId)/\(id)"
         let dstPrefix = "\(userId)/\(copyDoc.id)"
-        let files = try await supabase.storage.from("documents").list(path: srcPrefix)
-        for file in files {
-            _ = try? await supabase.storage.from("documents").copy(
-                from: "\(srcPrefix)/\(file.name)",
-                to: "\(dstPrefix)/\(file.name)"
-            )
+        if let files = try? await supabase.storage.from("documents").list(path: srcPrefix) {
+            for file in files {
+                do {
+                    try await supabase.storage.from("documents").copy(
+                        from: "\(srcPrefix)/\(file.name)",
+                        to: "\(dstPrefix)/\(file.name)"
+                    )
+                } catch {
+                    print("[DocumentRepo] Failed to copy \(file.name) for duplicate: \(error)")
+                }
+            }
         }
 
         return copyDoc
@@ -220,8 +213,6 @@ struct SupabaseDocumentRepository: DocumentRepository {
             .update(["status": "processing", "error_message": AnyJSON.null])
             .eq("id", value: id)
             .execute()
-
-        // TODO: Trigger reconstruction via ReefAPI when ported
     }
 
     // MARK: - URLs
@@ -233,19 +224,28 @@ struct SupabaseDocumentRepository: DocumentRepository {
     }
 
     func getShareURL(_ id: String) async throws -> URL {
+        // Currently identical to download URL — will diverge when sharing features are built
         try await getDownloadURL(id)
     }
 
+    // HIGH-2 fix: concurrent thumbnail URL fetching
     func getThumbnailURLs(_ ids: [String]) async throws -> [String: URL] {
         let userId = try await getUserId()
-        var result: [String: URL] = [:]
-        for id in ids {
-            let path = "\(userId)/\(id)/thumbnail.png"
-            if let url = try? await supabase.storage.from("documents").createSignedURL(path: path, expiresIn: 3600) {
-                result[id] = url
+        return await withTaskGroup(of: (String, URL?).self) { group in
+            for id in ids {
+                group.addTask {
+                    let path = "\(userId)/\(id)/thumbnail.png"
+                    let url = try? await supabase.storage.from("documents")
+                        .createSignedURL(path: path, expiresIn: 3600)
+                    return (id, url)
+                }
             }
+            var result: [String: URL] = [:]
+            for await (id, url) in group {
+                if let url { result[id] = url }
+            }
+            return result
         }
-        return result
     }
 
     // MARK: - Thumbnail Generation
@@ -262,10 +262,8 @@ struct SupabaseDocumentRepository: DocumentRepository {
         let image = renderer.image { ctx in
             UIColor.white.setFill()
             ctx.fill(CGRect(origin: .zero, size: size))
-
             ctx.cgContext.translateBy(x: 0, y: size.height)
             ctx.cgContext.scaleBy(x: scale, y: -scale)
-
             page.draw(with: .mediaBox, to: ctx.cgContext)
         }
 

@@ -20,6 +20,9 @@ struct DocumentsContentView: View {
             if viewModel.isLoading {
                 DocumentSkeletonView()
                 Spacer()
+            } else if let error = viewModel.loadError {
+                errorStateView(error)
+                Spacer()
             } else if viewModel.documents.isEmpty {
                 DocumentEmptyStateView { viewModel.showFilePicker = true }
                 Spacer()
@@ -115,18 +118,15 @@ struct DocumentsContentView: View {
 
     // MARK: - Grid
 
-    private let rowSpacing: CGFloat = 24
-    private let shadowPad: CGFloat = 4
-    private let gridPadH: CGFloat = 16
-    private let gridPadV: CGFloat = 12
+    private let shadowPad: CGFloat = 4 // decorative, fixed
 
     private var documentGrid: some View {
         let colors = theme.colors
         return GeometryReader { geo in
-            let cardHeight = (geo.size.height - rowSpacing - shadowPad - gridPadV * 2) / 2
+            let cardHeight = (geo.size.height - metrics.gridRowSpacing - shadowPad - metrics.gridPadV * 2) / 2
 
             ScrollView {
-                LazyVGrid(columns: columns, spacing: rowSpacing) {
+                LazyVGrid(columns: columns, spacing: metrics.gridRowSpacing) {
 
                     // Upload placeholder card — dashed border, no 3D
                     VStack(spacing: 8) {
@@ -165,8 +165,8 @@ struct DocumentsContentView: View {
                     }
                 }
                 .padding([.trailing, .bottom], shadowPad)
-                .padding(.horizontal, gridPadH)
-                .padding(.vertical, gridPadV)
+                .padding(.horizontal, metrics.gridPadH)
+                .padding(.vertical, metrics.gridPadV)
             }
         }
     }
@@ -199,6 +199,26 @@ struct DocumentsContentView: View {
     }
 
     // MARK: - Toast
+
+    private func errorStateView(_ message: String) -> some View {
+        let colors = theme.colors
+        return VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(colors.textDisabled)
+            Text(message)
+                .font(.epilogue(14, weight: .medium))
+                .tracking(-0.04 * 14)
+                .foregroundStyle(colors.textSecondary)
+                .multilineTextAlignment(.center)
+            ReefButton("Retry", variant: .secondary, size: .compact) {
+                Task { await viewModel.fetchDocuments() }
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
     private func toastView(message: String) -> some View {
         Text(message)

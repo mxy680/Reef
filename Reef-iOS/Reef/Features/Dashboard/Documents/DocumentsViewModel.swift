@@ -6,6 +6,7 @@ final class DocumentsViewModel {
     var documents: [Document] = []
     var thumbnailURLs: [String: URL] = [:]
     var isLoading = true
+    var loadError: String?
     var toastMessage: String?
 
     var deleteTarget: Document?
@@ -17,7 +18,7 @@ final class DocumentsViewModel {
     var pendingUploadURL: URL?
     var maxDocuments: Int? = nil
 
-    private var pollTimer: Timer?
+    private var pollTask: Task<Void, Never>?
     private let repo: DocumentRepository
 
     init(repo: DocumentRepository = SupabaseDocumentRepository()) {
@@ -44,26 +45,31 @@ final class DocumentsViewModel {
         do {
             let data = try await repo.listDocuments()
             documents = data
+            loadError = nil
 
             if !data.isEmpty {
                 let urls = try await repo.getThumbnailURLs(data.map(\.id))
                 thumbnailURLs.merge(urls) { _, new in new }
             }
         } catch {
-            // Non-fatal — show empty state
+            if documents.isEmpty {
+                loadError = "Failed to load documents. Tap to retry."
+            }
         }
         isLoading = false
         startPollingIfNeeded()
     }
 
-    // MARK: - Polling
+    // MARK: - Polling (structured concurrency)
 
     private func startPollingIfNeeded() {
         let hasProcessing = documents.contains { $0.status == .processing }
-        if hasProcessing && pollTimer == nil {
-            pollTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    await self?.fetchDocuments()
+        if hasProcessing && pollTask == nil {
+            pollTask = Task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(3))
+                    guard !Task.isCancelled else { break }
+                    await fetchDocuments()
                 }
             }
         } else if !hasProcessing {
@@ -72,8 +78,8 @@ final class DocumentsViewModel {
     }
 
     private func stopPolling() {
-        pollTimer?.invalidate()
-        pollTimer = nil
+        pollTask?.cancel()
+        pollTask = nil
     }
 
     // MARK: - Upload
@@ -116,15 +122,16 @@ final class DocumentsViewModel {
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Actions (local updates where possible)
 
     func deleteDocument() async {
         guard let doc = deleteTarget else { return }
         do {
             try await repo.deleteDocument(doc.id)
+            documents.removeAll { $0.id == doc.id }
+            thumbnailURLs.removeValue(forKey: doc.id)
             showToast("Document deleted")
             deleteTarget = nil
-            await fetchDocuments()
         } catch {
             showToast("Something went wrong")
         }
@@ -134,9 +141,18 @@ final class DocumentsViewModel {
         guard let doc = renameTarget else { return }
         do {
             try await repo.renameDocument(doc.id, filename: newFilename)
+            if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
+                documents[idx] = Document(
+                    id: doc.id, userId: doc.userId, filename: newFilename,
+                    status: doc.status, pageCount: doc.pageCount,
+                    problemCount: doc.problemCount, questionPages: doc.questionPages,
+                    questionRegions: doc.questionRegions, errorMessage: doc.errorMessage,
+                    statusMessage: doc.statusMessage, costCents: doc.costCents,
+                    courseId: doc.courseId, createdAt: doc.createdAt
+                )
+            }
             showToast("Document renamed")
             renameTarget = nil
-            await fetchDocuments()
         } catch {
             showToast("Something went wrong")
         }
@@ -155,11 +171,11 @@ final class DocumentsViewModel {
     func duplicateDocument(_ doc: Document) async {
         do {
             let newDoc = try await repo.duplicateDocument(doc.id)
-            showToast("Document duplicated")
+            documents.insert(newDoc, at: 0)
             if let existingThumb = thumbnailURLs[doc.id] {
                 thumbnailURLs[newDoc.id] = existingThumb
             }
-            await fetchDocuments()
+            showToast("Document duplicated")
         } catch {
             showToast("Something went wrong")
         }
@@ -169,9 +185,18 @@ final class DocumentsViewModel {
         guard let doc = moveToCourseTarget else { return }
         do {
             try await repo.moveDocumentToCourse(doc.id, courseId: courseId)
+            if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
+                documents[idx] = Document(
+                    id: doc.id, userId: doc.userId, filename: doc.filename,
+                    status: doc.status, pageCount: doc.pageCount,
+                    problemCount: doc.problemCount, questionPages: doc.questionPages,
+                    questionRegions: doc.questionRegions, errorMessage: doc.errorMessage,
+                    statusMessage: doc.statusMessage, costCents: doc.costCents,
+                    courseId: courseId, createdAt: doc.createdAt
+                )
+            }
             showToast(courseId != nil ? "Moved to course" : "Removed from course")
             moveToCourseTarget = nil
-            await fetchDocuments()
         } catch {
             showToast("Something went wrong")
         }
@@ -181,7 +206,7 @@ final class DocumentsViewModel {
         do {
             try await repo.retryDocument(doc.id)
             if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
-                let updated = Document(
+                documents[idx] = Document(
                     id: doc.id, userId: doc.userId, filename: doc.filename,
                     status: .processing, pageCount: doc.pageCount,
                     problemCount: doc.problemCount, questionPages: doc.questionPages,
@@ -189,7 +214,6 @@ final class DocumentsViewModel {
                     errorMessage: nil, statusMessage: nil, costCents: nil,
                     courseId: doc.courseId, createdAt: doc.createdAt
                 )
-                documents[idx] = updated
             }
             showToast("Retrying document processing...")
             startPollingIfNeeded()

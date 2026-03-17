@@ -63,11 +63,15 @@ struct DocumentDTO: Codable {
     }
 
     func toDomain() -> Document {
-        Document(
+        let docStatus = DocumentStatus(rawValue: status) ?? {
+            print("[DocumentDTO] Unknown status '\(status)' for document \(id), defaulting to .processing")
+            return .processing
+        }()
+        return Document(
             id: id,
             userId: userId,
             filename: filename,
-            status: DocumentStatus(rawValue: status) ?? .processing,
+            status: docStatus,
             pageCount: pageCount,
             problemCount: problemCount,
             questionPages: questionPages,

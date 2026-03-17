@@ -63,6 +63,9 @@ struct ReefLayoutMetrics {
 
     var gridColumnMin: CGFloat { lerp(170, 200) }
     var gridColumnMax: CGFloat { lerp(210, 250) }
+    var gridRowSpacing: CGFloat { lerp(20, 28) }
+    var gridPadH: CGFloat { lerp(12, 20) }
+    var gridPadV: CGFloat { lerp(10, 16) }
 
     // MARK: - Tutor Cards
 

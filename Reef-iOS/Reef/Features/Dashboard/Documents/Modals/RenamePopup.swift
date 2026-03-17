@@ -66,6 +66,7 @@ struct RenamePopup: View {
     private func submitIfValid() {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        onConfirm(trimmed + ".pdf")
+        let withExt = trimmed.lowercased().hasSuffix(".pdf") ? trimmed : trimmed + ".pdf"
+        onConfirm(withExt)
     }
 }
