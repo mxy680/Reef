@@ -27,8 +27,14 @@ struct SettingsProfileTab: View {
         let colors = theme.colors
         VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
             profileHeaderSection(colors)
-            personalInfoSection(colors)
-            educationSection(colors)
+
+            HStack(alignment: .top, spacing: metrics.sectionSpacing) {
+                personalInfoSection(colors)
+                    .frame(maxWidth: .infinity)
+                educationSection(colors)
+                    .frame(maxWidth: .infinity)
+            }
+
             saveRow(colors)
         }
         .onAppear { loadFromProfile() }
@@ -127,15 +133,13 @@ struct SettingsProfileTab: View {
     // MARK: - Personal Info
 
     private func personalInfoSection(_ colors: ReefThemeColors) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SettingsSectionHeader(title: "Personal Info")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    nameField(colors)
-                    SettingsDivider()
-                    emailField(colors)
-                }
+        SettingsCard {
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsSectionHeader(title: "Personal Info")
+                    .padding(.bottom, 14)
+                nameField(colors)
+                SettingsDivider()
+                emailField(colors)
             }
         }
     }
@@ -177,15 +181,12 @@ struct SettingsProfileTab: View {
     // MARK: - Education
 
     private func educationSection(_ colors: ReefThemeColors) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SettingsSectionHeader(title: "Education")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    gradeSelector(colors)
-                    SettingsDivider()
-                    subjectSelector(colors)
-                }
+        SettingsCard {
+            VStack(alignment: .leading, spacing: 16) {
+                SettingsSectionHeader(title: "Education")
+                gradeSelector(colors)
+                SettingsDivider()
+                subjectSelector(colors)
             }
         }
     }

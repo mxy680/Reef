@@ -360,7 +360,7 @@ struct SettingsTabButton: View {
                 .font(.epilogue(13, weight: .bold))
                 .tracking(-0.04 * 13)
         }
-        .foregroundStyle(isActive ? ReefColors.white : colors.text)
+        .foregroundStyle(isActive ? ReefColors.white : ReefColors.primary)
         .padding(.horizontal, 16)
         .padding(.vertical, 9)
         .background(isActive ? ReefColors.primary : colors.card)
@@ -368,7 +368,7 @@ struct SettingsTabButton: View {
         .reef3DPush(
             cornerRadius: 10,
             shadowOffset: 3,
-            borderColor: isActive ? ReefColors.primary : colors.border,
+            borderColor: ReefColors.primary,
             shadowColor: colors.shadow,
             action: action
         )

@@ -18,6 +18,8 @@ struct SettingsView: View {
             tabContent
         }
         .padding(4)
+        .padding(.trailing, 4)
+        .padding(.bottom, 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(metrics.contentPadding)
         .dashboardCard()
@@ -95,6 +97,7 @@ struct SettingsView: View {
                 }
             }
             .padding(.bottom, metrics.sectionSpacing)
+            .padding([.trailing, .bottom], 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .opacity(appeared ? 1 : 0)
