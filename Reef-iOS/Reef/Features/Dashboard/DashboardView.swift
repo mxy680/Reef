@@ -19,6 +19,7 @@ struct DashboardView: View {
                 VStack(spacing: 0) {
                     DashboardHeader(viewModel: viewModel)
                         .padding(.horizontal, 12)
+                        .zIndex(10)
 
                     contentArea
                         .padding(.horizontal, 12)
