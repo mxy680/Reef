@@ -21,15 +21,20 @@ struct DashboardView: View {
                         contentArea
                             .padding(.horizontal, metrics.dashboardHPadding)
                     }
+                    // Dismiss backdrop covers content + sidebar but NOT header
+                    .overlay {
+                        if anyDropdownOpen {
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture { viewModel.dismissAllDropdowns() }
+                        }
+                    }
 
                     DashboardHeader(viewModel: viewModel)
                         .padding(.horizontal, metrics.dashboardHPadding)
                 }
             }
             .padding(.horizontal, metrics.dashboardHPadding)
-
-            // Dropdown overlays — root ZStack, always above content
-            dropdownOverlays
         }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: viewModel.sidebarOpen)
         .alert(
@@ -45,23 +50,8 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Dropdown Overlays
-
     private var anyDropdownOpen: Bool {
         viewModel.showProfileMenu || viewModel.showNotifications || viewModel.showSearch || viewModel.showHelp
-    }
-
-    @ViewBuilder
-    private var dropdownOverlays: some View {
-        if anyDropdownOpen {
-            Color.clear
-                .contentShape(Rectangle())
-                .ignoresSafeArea()
-                .onTapGesture {
-                    viewModel.dismissAllDropdowns()
-                }
-                .transition(.opacity)
-        }
     }
 
     // MARK: - Content Area
