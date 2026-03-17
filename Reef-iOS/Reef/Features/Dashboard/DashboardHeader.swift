@@ -7,7 +7,6 @@ struct DashboardHeader: View {
     var viewModel: DashboardViewModel
 
     var body: some View {
-        @Bindable var vm = viewModel
         let colors = theme.colors
         HStack {
             // Breadcrumbs
@@ -35,24 +34,17 @@ struct DashboardHeader: View {
                 headerIcon("magnifyingglass")
                 headerIcon("questionmark.circle")
 
-                // Notifications
+                // Notifications bell
                 headerIcon("bell")
+                    .onTapGesture { viewModel.showNotifications.toggle() }
                     .accessibilityLabel("Notifications")
                     .accessibilityAddTraits(.isButton)
-                    .reefDropdown(
-                        isPresented: $vm.showNotifications,
-                        offset: CGSize(width: 0, height: 44),
-                        minWidth: 240
-                    ) {
-                        notificationsContent(colors)
-                    }
 
                 // Dark mode toggle
                 Image(systemName: theme.isDarkMode ? "sun.max.fill" : "moon.fill")
                     .font(.system(size: 16))
                     .foregroundStyle(colors.textSecondary)
                     .frame(width: 32, height: 32)
-                    .compositingGroup()
                     .contentShape(Rectangle())
                     .onTapGesture {
                         withAnimation(.spring(duration: 0.3)) {
@@ -102,40 +94,15 @@ struct DashboardHeader: View {
                         .fill(colors.shadow)
                         .offset(x: 2, y: 2)
                 )
+                .contentShape(Circle())
+                .onTapGesture { viewModel.showProfileMenu.toggle() }
                 .accessibilityLabel("Profile menu")
                 .accessibilityAddTraits(.isButton)
-                .reefDropdown(
-                    isPresented: $vm.showProfileMenu,
-                    offset: CGSize(width: 0, height: 44),
-                    minWidth: 220
-                ) {
-                    ProfileDropdownMenu(viewModel: viewModel)
-                }
             }
         }
         .frame(height: metrics.headerHeight)
         .padding(.horizontal, metrics.contentPadding)
         .dashboardCard()
-    }
-
-    // MARK: - Notifications Content
-
-    @ViewBuilder
-    private func notificationsContent(_ colors: ReefThemeColors) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Image(systemName: "bell.slash")
-                    .font(.system(size: 16))
-                    .foregroundStyle(colors.textMuted)
-
-                Text("No new notifications")
-                    .font(.epilogue(13, weight: .semiBold))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(colors.textSecondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-        }
     }
 
     // MARK: - Helpers
