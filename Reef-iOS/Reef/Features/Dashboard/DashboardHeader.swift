@@ -144,5 +144,6 @@ struct DashboardHeader: View {
             .font(.system(size: 18))
             .foregroundStyle(theme.colors.textSecondary)
             .frame(width: 32, height: 32)
+            .contentShape(Rectangle())
     }
 }
