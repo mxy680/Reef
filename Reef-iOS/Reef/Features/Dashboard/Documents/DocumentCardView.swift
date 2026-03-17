@@ -24,8 +24,9 @@ struct DocumentCardView: View {
     @Environment(ReefTheme.self) private var theme
 
     private var borderColor: Color {
-        let colors = theme.colors
-        return document.status == .failed ? Color(hex: 0xE57373) : colors.shadow
+        document.status == .failed
+            ? Color(hex: 0xE57373)
+            : (theme.isDarkMode ? ReefColors.Dark.shadow : ReefColors.gray500)
     }
 
     var body: some View {
