@@ -34,16 +34,8 @@ struct DashboardHeader: View {
                 headerIcon("magnifyingglass")
                 headerIcon("questionmark.circle")
 
-                // Bell with notification dot
-                ZStack(alignment: .topTrailing) {
-                    headerIcon("bell")
-                    // TODO: Conditionally show based on unread notification count
-                    Circle()
-                        .fill(Color(hex: 0xE74C3C))
-                        .frame(width: 8, height: 8)
-                        .overlay(Circle().stroke(colors.card, lineWidth: 1.5))
-                        .offset(x: 2, y: 2)
-                }
+                headerIcon("bell")
+                    .accessibilityLabel("No new notifications")
 
                 // Dark mode toggle
                 Image(systemName: theme.isDarkMode ? "sun.max.fill" : "moon.fill")
