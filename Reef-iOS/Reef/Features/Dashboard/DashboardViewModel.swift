@@ -40,7 +40,32 @@ final class DashboardViewModel {
         }
     }
 
-    func dismissProfileMenu() {
+    func dismissAllDropdowns() {
         showProfileMenu = false
+        showNotifications = false
+        showSearch = false
+        showHelp = false
+    }
+
+    enum Dropdown {
+        case search, help, notifications, profile
+    }
+
+    /// Close all other dropdowns, then toggle the target one.
+    func toggleDropdown(_ dropdown: Dropdown) {
+        let wasOpen: Bool
+        switch dropdown {
+        case .search: wasOpen = showSearch
+        case .help: wasOpen = showHelp
+        case .notifications: wasOpen = showNotifications
+        case .profile: wasOpen = showProfileMenu
+        }
+        dismissAllDropdowns()
+        switch dropdown {
+        case .search: showSearch = !wasOpen
+        case .help: showHelp = !wasOpen
+        case .notifications: showNotifications = !wasOpen
+        case .profile: showProfileMenu = !wasOpen
+        }
     }
 }

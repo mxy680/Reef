@@ -88,21 +88,21 @@ struct ProfileDropdownMenu: View {
             dividerLine
 
             menuItem(icon: "person.crop.circle", label: "Edit Profile") {
-                viewModel.dismissProfileMenu()
+                viewModel.dismissAllDropdowns()
                 viewModel.selectTab(.settings)
             }
             menuItem(icon: "slider.horizontal.3", label: "Preferences") {
-                viewModel.dismissProfileMenu()
+                viewModel.dismissAllDropdowns()
                 viewModel.selectTab(.settings)
             }
             menuItem(icon: "questionmark.circle", label: "Help & Support") {
-                viewModel.dismissProfileMenu()
+                viewModel.dismissAllDropdowns()
             }
 
             dividerLine
 
             menuItem(icon: "rectangle.portrait.and.arrow.right", label: "Log Out", isDestructive: true) {
-                viewModel.dismissProfileMenu()
+                viewModel.dismissAllDropdowns()
                 Task { await auth.signOut() }
             }
         }

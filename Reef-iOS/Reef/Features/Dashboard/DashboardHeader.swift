@@ -32,19 +32,19 @@ struct DashboardHeader: View {
             HStack(spacing: 10) {
                 // Search
                 headerIcon("magnifyingglass")
-                    .onTapGesture { viewModel.showSearch.toggle() }
+                    .onTapGesture { viewModel.toggleDropdown(.search) }
                     .accessibilityLabel("Search")
                     .accessibilityAddTraits(.isButton)
 
                 // Help
                 headerIcon("questionmark.circle")
-                    .onTapGesture { viewModel.showHelp.toggle() }
+                    .onTapGesture { viewModel.toggleDropdown(.help) }
                     .accessibilityLabel("Help")
                     .accessibilityAddTraits(.isButton)
 
                 // Notifications
                 headerIcon("bell")
-                    .onTapGesture { viewModel.showNotifications.toggle() }
+                    .onTapGesture { viewModel.toggleDropdown(.notifications) }
                     .accessibilityLabel("Notifications")
                     .accessibilityAddTraits(.isButton)
 
@@ -103,7 +103,7 @@ struct DashboardHeader: View {
                         .offset(x: 2, y: 2)
                 )
                 .contentShape(Circle())
-                .onTapGesture { viewModel.showProfileMenu.toggle() }
+                .onTapGesture { viewModel.toggleDropdown(.profile) }
                 .accessibilityLabel("Profile menu")
                 .accessibilityAddTraits(.isButton)
             }

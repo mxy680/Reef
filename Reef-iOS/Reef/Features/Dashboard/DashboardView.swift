@@ -58,10 +58,7 @@ struct DashboardView: View {
                 .contentShape(Rectangle())
                 .ignoresSafeArea()
                 .onTapGesture {
-                    viewModel.showProfileMenu = false
-                    viewModel.showNotifications = false
-                    viewModel.showSearch = false
-                    viewModel.showHelp = false
+                    viewModel.dismissAllDropdowns()
                 }
                 .transition(.opacity)
         }
