@@ -18,11 +18,46 @@ struct ReefLayoutMetrics {
     var sidebarCollapsedWidth: CGFloat { lerp(60, 72) }
     var headerHeight: CGFloat { lerp(56, 72) }
 
-    // MARK: - Content Padding
+    // MARK: - Dashboard Layout
 
     var contentPadding: CGFloat { lerp(24, 36) }
     var cardPadding: CGFloat { lerp(20, 28) }
     var sectionSpacing: CGFloat { lerp(14, 20) }
+    var dashboardHPadding: CGFloat { lerp(10, 16) }
+    var headerGap: CGFloat { lerp(12, 20) }
+
+    // MARK: - Dropdowns
+
+    var dropdownYOffset: CGFloat { lerp(58, 76) }
+    var notificationDropdownTrailing: CGFloat { lerp(150, 200) }
+    var dropdownItemHPadding: CGFloat { lerp(14, 20) }
+    var dropdownItemVPadding: CGFloat { lerp(12, 18) }
+    var profileDropdownMinWidth: CGFloat { lerp(200, 260) }
+
+    // MARK: - Sidebar
+
+    var sidebarHPadding: CGFloat { lerp(16, 24) }
+    var sidebarItemHPadding: CGFloat { lerp(12, 18) }
+    var sidebarItemHPaddingCollapsed: CGFloat { lerp(8, 12) }
+    var sidebarNavTopPadding: CGFloat { lerp(10, 16) }
+    var sidebarFooterBottomPadding: CGFloat { lerp(12, 20) }
+
+    // MARK: - Auth
+
+    var authVerticalSpacer: CGFloat { lerp(40, 80) }
+    var authCardMaxWidth: CGFloat { lerp(420, 520) }
+    var authHPadding: CGFloat { lerp(20, 32) }
+    var authElementSpacing: CGFloat { lerp(16, 24) }
+    var authSectionSpacing: CGFloat { lerp(24, 36) }
+    var authFieldSpacing: CGFloat { lerp(18, 28) }
+
+    // MARK: - Components
+
+    var reefCardHPadding: CGFloat { lerp(28, 44) }
+    var reefCardVPadding: CGFloat { lerp(32, 48) }
+    var buttonHeight: CGFloat { lerp(44, 52) }
+    var inputHeight: CGFloat { lerp(44, 52) }
+    var inputHPadding: CGFloat { lerp(14, 22) }
 
     // MARK: - Grid
 

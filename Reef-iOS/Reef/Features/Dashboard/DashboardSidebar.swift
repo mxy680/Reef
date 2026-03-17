@@ -50,7 +50,7 @@ struct DashboardSidebar: View {
                 .accessibilityAddTraits(.isButton)
         }
         .frame(height: metrics.headerHeight)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, metrics.sidebarHPadding)
     }
 
     // MARK: - Navigation
@@ -73,8 +73,8 @@ struct DashboardSidebar: View {
 
                 coursesSection
             }
-            .padding(.horizontal, isOpen ? 14 : 10)
-            .padding(.top, 12)
+            .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : metrics.sidebarItemHPaddingCollapsed)
+            .padding(.top, metrics.sidebarNavTopPadding)
             .padding(.trailing, 3) // Room for 3D shadow offset
         }
     }
@@ -105,7 +105,7 @@ struct DashboardSidebar: View {
                     .accessibilityAddTraits(.isButton)
             }
             .padding(.vertical, 4)
-            .padding(.horizontal, isOpen ? 14 : 0)
+            .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : 0)
             .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
 
             // Empty state
@@ -122,7 +122,7 @@ struct DashboardSidebar: View {
             }
             .foregroundStyle(colors.textDisabled)
             .padding(.vertical, 8)
-            .padding(.horizontal, isOpen ? 14 : 0)
+            .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : 0)
             .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
             .compositingGroup()
             .contentShape(Rectangle())
@@ -155,7 +155,7 @@ struct DashboardSidebar: View {
         }
         .foregroundStyle(isActive ? colors.text : colors.textSecondary)
         .padding(.vertical, 8)
-        .padding(.horizontal, isOpen ? 14 : 0)
+        .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : 0)
         .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
         .background(
             isActive
@@ -259,8 +259,8 @@ struct DashboardSidebar: View {
             .onTapGesture { viewModel.selectTab(.settings) }
             .accessibilityAddTraits(.isButton)
         }
-        .padding(.horizontal, isOpen ? 14 : 10)
-        .padding(.bottom, 16)
+        .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : metrics.sidebarItemHPaddingCollapsed)
+        .padding(.bottom, metrics.sidebarFooterBottomPadding)
     }
 
     // MARK: - Helpers
@@ -277,7 +277,7 @@ struct DashboardSidebar: View {
             }
         }
         .padding(.vertical, 4)
-        .padding(.horizontal, isOpen ? 14 : 0)
+        .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : 0)
         .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
     }
 

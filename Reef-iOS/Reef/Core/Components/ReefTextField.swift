@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ReefTextField: View {
     @Environment(ReefTheme.self) private var theme
+    @Environment(\.reefLayoutMetrics) private var metrics
 
     let placeholder: String
     @Binding var text: String
@@ -47,8 +48,8 @@ struct ReefTextField: View {
                 .onSubmit { onSubmit?() }
             }
         }
-        .frame(height: 48)
-        .padding(.horizontal, 18)
+        .frame(height: metrics.inputHeight)
+        .padding(.horizontal, metrics.inputHPadding)
         .background(colors.input)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(

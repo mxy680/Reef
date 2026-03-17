@@ -3,6 +3,7 @@ import SwiftUI
 struct AuthView: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(ReefTheme.self) private var theme
+    @Environment(\.reefLayoutMetrics) private var metrics
     @State private var email = ""
 
     var body: some View {
@@ -16,15 +17,15 @@ struct AuthView: View {
             GeometryReader { geo in
                 ScrollView {
                     VStack(spacing: 0) {
-                        Spacer(minLength: 60)
+                        Spacer(minLength: metrics.authVerticalSpacer)
 
                         authCard(colors)
-                            .frame(maxWidth: 480)
+                            .frame(maxWidth: metrics.authCardMaxWidth)
 
-                        Spacer(minLength: 60)
+                        Spacer(minLength: metrics.authVerticalSpacer)
                     }
                     .frame(maxWidth: .infinity, minHeight: geo.size.height)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, metrics.authHPadding)
                 }
             }
 
@@ -67,7 +68,7 @@ struct AuthView: View {
         Image(systemName: "envelope.badge")
             .font(.system(size: 48))
             .foregroundStyle(ReefColors.primary)
-            .padding(.bottom, 20)
+            .padding(.bottom, metrics.authElementSpacing)
             .fadeUp(index: 0)
 
         Text("Check Your Email")
@@ -79,7 +80,7 @@ struct AuthView: View {
         Text("We sent a magic link to \(auth.magicLinkEmail)")
             .reefBody()
             .multilineTextAlignment(.center)
-            .padding(.bottom, 28)
+            .padding(.bottom, metrics.authSectionSpacing)
             .fadeUp(index: 2)
 
         ReefButton("Back", variant: .secondary) {
@@ -103,13 +104,13 @@ struct AuthView: View {
         Text("Dive in. Stay afloat. Ace finals.")
             .reefBody()
             .multilineTextAlignment(.center)
-            .padding(.bottom, 28)
+            .padding(.bottom, metrics.authSectionSpacing)
             .fadeUp(index: 1)
 
         oauthButtons(colors)
 
         ReefDivider()
-            .padding(.bottom, 20)
+            .padding(.bottom, metrics.authElementSpacing)
             .fadeUp(index: 3)
 
         ReefTextField(
@@ -120,7 +121,7 @@ struct AuthView: View {
             onSubmit: { auth.sendMagicLink(email: email) }
         )
         .accessibilityIdentifier("auth.emailField")
-        .padding(.bottom, 22)
+        .padding(.bottom, metrics.authFieldSpacing)
         .fadeUp(index: 4)
 
         ReefButton(
@@ -164,7 +165,7 @@ struct AuthView: View {
             }
             .accessibilityLabel("Sign in with Apple")
         }
-        .padding(.bottom, 20)
+        .padding(.bottom, metrics.authElementSpacing)
         .fadeUp(index: 2)
     }
 

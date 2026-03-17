@@ -7,7 +7,6 @@ struct DashboardHeader: View {
     var viewModel: DashboardViewModel
 
     var body: some View {
-        @Bindable var vm = viewModel
         let colors = theme.colors
         HStack {
             // Breadcrumbs
@@ -104,37 +103,24 @@ struct DashboardHeader: View {
         .frame(height: metrics.headerHeight)
         .padding(.horizontal, metrics.contentPadding)
         .dashboardCard()
-        // Dismiss backdrop
-        .overlay {
-            if anyDropdownOpen {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        viewModel.showNotifications = false
-                        viewModel.showProfileMenu = false
-                    }
-                    .transition(.opacity)
-            }
-        }
-        // Dropdown overlays
+        // Notification dropdown
         .overlay(alignment: .topTrailing) {
             if viewModel.showNotifications {
                 notificationsDropdown(colors)
-                    .offset(y: 68)
-                    .padding(.trailing, 180)
+                    .offset(y: metrics.dropdownYOffset)
+                    .padding(.trailing, metrics.notificationDropdownTrailing)
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
                         removal: .opacity
                     ))
             }
         }
+        // Profile dropdown
         .overlay(alignment: .topTrailing) {
             if viewModel.showProfileMenu {
                 ProfileDropdownMenu(viewModel: viewModel)
-                    .offset(y: 68)
-                    .padding(.trailing, 12)
+                    .offset(y: metrics.dropdownYOffset)
+                    .padding(.trailing, metrics.dashboardHPadding)
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
                         removal: .opacity
@@ -143,10 +129,6 @@ struct DashboardHeader: View {
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.showProfileMenu)
         .animation(.easeInOut(duration: 0.2), value: viewModel.showNotifications)
-    }
-
-    private var anyDropdownOpen: Bool {
-        viewModel.showProfileMenu || viewModel.showNotifications
     }
 
     // MARK: - Notifications Dropdown
@@ -164,8 +146,8 @@ struct DashboardHeader: View {
                     .tracking(-0.04 * 13)
                     .foregroundStyle(colors.textSecondary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, metrics.dropdownItemHPadding)
+            .padding(.vertical, metrics.dropdownItemVPadding)
         }
         .background(colors.cardElevated)
         .clipShape(RoundedRectangle(cornerRadius: 10))

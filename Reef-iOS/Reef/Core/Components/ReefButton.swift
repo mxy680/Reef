@@ -60,6 +60,7 @@ enum ReefButtonVariant {
 
 struct ReefButton<Label: View>: View {
     @Environment(ReefTheme.self) private var theme
+    @Environment(\.reefLayoutMetrics) private var metrics
 
     let variant: ReefButtonVariant
     let size: ReefButtonSize
@@ -129,7 +130,7 @@ struct ReefButton<Label: View>: View {
             .tracking(-0.04 * size.fontSize)
             .foregroundStyle(foregroundColor(colors))
             .frame(maxWidth: size == .regular ? .infinity : nil)
-            .frame(height: size == .regular ? 48 : nil)
+            .frame(height: size == .regular ? metrics.buttonHeight : nil)
             .padding(.horizontal, size == .compact ? 14 : 0)
             .padding(.vertical, size == .compact ? 8 : 0)
             .background(backgroundColor(colors))

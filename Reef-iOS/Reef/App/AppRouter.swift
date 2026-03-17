@@ -15,6 +15,10 @@ struct AppRouter: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(ReefTheme.self) private var theme
 
+    private let metrics = ReefLayoutMetrics(
+        screenHeight: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+    )
+
     private var currentScreen: AppScreen {
         if auth.isBootstrapping {
             return .loading
@@ -51,6 +55,7 @@ struct AppRouter: View {
                     .accessibilityIdentifier("screen.dashboard")
             }
         }
+        .environment(\.reefLayoutMetrics, metrics)
         .animation(.easeInOut(duration: 0.35), value: currentScreen)
         .hoverEffectDisabled()
     }

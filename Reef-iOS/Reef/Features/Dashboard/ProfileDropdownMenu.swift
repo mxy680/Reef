@@ -5,6 +5,7 @@ import SwiftUI
 struct ProfileDropdownMenu: View {
     @Environment(ReefTheme.self) private var theme
     @Environment(AuthViewModel.self) private var auth
+    @Environment(\.reefLayoutMetrics) private var metrics
     var viewModel: DashboardViewModel
 
     private static let gradeLabels: [String: String] = [
@@ -43,7 +44,7 @@ struct ProfileDropdownMenu: View {
                         .lineLimit(1)
                 }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, metrics.dropdownItemHPadding)
             .padding(.vertical, 10)
 
             // Grade + Tier pill
@@ -65,7 +66,7 @@ struct ProfileDropdownMenu: View {
                     .background(ReefColors.accent.opacity(0.12))
                     .clipShape(Capsule())
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, metrics.dropdownItemHPadding)
             .padding(.bottom, 8)
 
             // Streak
@@ -81,7 +82,7 @@ struct ProfileDropdownMenu: View {
                     .tracking(-0.02 * 12)
                     .foregroundStyle(colors.textSecondary)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, metrics.dropdownItemHPadding)
             .padding(.bottom, 6)
 
             dividerLine
@@ -117,7 +118,7 @@ struct ProfileDropdownMenu: View {
                 .offset(x: 3, y: 3)
         )
         .fixedSize(horizontal: true, vertical: true)
-        .frame(minWidth: 220, alignment: .trailing)
+        .frame(minWidth: metrics.profileDropdownMinWidth, alignment: .trailing)
     }
 
     // MARK: - Helpers
@@ -126,7 +127,7 @@ struct ProfileDropdownMenu: View {
         Rectangle()
             .fill(theme.colors.divider)
             .frame(height: 1)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, metrics.dropdownItemHPadding)
             .padding(.vertical, 2)
     }
 
@@ -150,7 +151,7 @@ struct ProfileDropdownMenu: View {
                     .foregroundStyle(isDestructive ? Color(hex: 0xC62828) : colors.text)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, metrics.dropdownItemHPadding)
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }

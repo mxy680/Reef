@@ -2,11 +2,8 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(ReefTheme.self) private var theme
+    @Environment(\.reefLayoutMetrics) private var metrics
     @State private var viewModel = DashboardViewModel()
-
-    private let metrics = ReefLayoutMetrics(
-        screenHeight: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-    )
 
     var body: some View {
         ZStack {
@@ -17,25 +14,43 @@ struct DashboardView: View {
                 DashboardSidebar(viewModel: viewModel)
 
                 ZStack(alignment: .top) {
-                    // Content below
                     VStack(spacing: 0) {
-                        // Spacer matching header height so content sits below
-                        Color.clear.frame(height: metrics.headerHeight + 16)
+                        Color.clear.frame(height: metrics.headerHeight + metrics.headerGap)
 
                         contentArea
-                            .padding(.horizontal, 12)
-                            .padding(.top, 0)
+                            .padding(.horizontal, metrics.dashboardHPadding)
                     }
 
-                    // Header on top (with dropdown overlays)
                     DashboardHeader(viewModel: viewModel)
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, metrics.dashboardHPadding)
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, metrics.dashboardHPadding)
+
+            // Dropdown overlays — root ZStack, always above content
+            dropdownOverlays
         }
-        .environment(\.reefLayoutMetrics, metrics)
         .animation(.spring(duration: 0.35, bounce: 0.15), value: viewModel.sidebarOpen)
+    }
+
+    // MARK: - Dropdown Overlays
+
+    private var anyDropdownOpen: Bool {
+        viewModel.showProfileMenu || viewModel.showNotifications
+    }
+
+    @ViewBuilder
+    private var dropdownOverlays: some View {
+        if anyDropdownOpen {
+            Color.clear
+                .contentShape(Rectangle())
+                .ignoresSafeArea()
+                .onTapGesture {
+                    viewModel.showProfileMenu = false
+                    viewModel.showNotifications = false
+                }
+                .transition(.opacity)
+        }
     }
 
     // MARK: - Content Area
@@ -51,7 +66,7 @@ struct DashboardView: View {
 
     private func tabPlaceholder(_ title: String) -> some View {
         let colors = theme.colors
-        return VStack(alignment: .leading, spacing: 16) {
+        return VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
             Text(title)
                 .font(.epilogue(28, weight: .black))
                 .tracking(-0.04 * 28)
@@ -65,7 +80,7 @@ struct DashboardView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(32)
+        .padding(metrics.contentPadding)
         .dashboardCard()
     }
 }
