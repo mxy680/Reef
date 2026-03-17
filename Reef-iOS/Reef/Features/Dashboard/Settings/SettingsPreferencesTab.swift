@@ -20,26 +20,41 @@ struct SettingsPreferencesTab: View {
     @State private var timerEnabled = true
 
     var body: some View {
-        VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
-            appearanceSection
-            notificationsSection
-            studyPreferencesSection
+        let colors = theme.colors
+        VStack(spacing: 0) {
+            // Row 1: Appearance (full width)
+            appearanceContent(colors)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(metrics.cardPadding)
+
+            Rectangle().fill(colors.divider).frame(height: 1)
+
+            // Row 2: Notifications | Study Preferences
+            HStack(alignment: .top, spacing: 0) {
+                notificationsContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+
+                Rectangle().fill(colors.divider).frame(width: 1)
+
+                studyPreferencesContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+            }
         }
+        .frame(maxWidth: .infinity)
+        .dashboardCard()
     }
 
-    // MARK: - Appearance
+    // MARK: - Appearance Cell
 
-    private var appearanceSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func appearanceContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Appearance")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    darkModeRow
-                    SettingsDivider()
-                    themeColorRow
-                }
-            }
+                .padding(.bottom, 14)
+            darkModeRow
+            SettingsDivider()
+            themeColorRow(colors)
         }
     }
 
@@ -53,9 +68,8 @@ struct SettingsPreferencesTab: View {
         )
     }
 
-    private var themeColorRow: some View {
-        let colors = theme.colors
-        return VStack(alignment: .leading, spacing: 10) {
+    private func themeColorRow(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
             SettingsFieldLabel(title: "Accent Color")
             HStack(spacing: 12) {
                 ForEach(Array(settingsThemeColors.enumerated()), id: \.offset) { _, color in
@@ -85,61 +99,48 @@ struct SettingsPreferencesTab: View {
         }
     }
 
-    // MARK: - Notifications
+    // MARK: - Notifications Cell
 
-    private var notificationsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func notificationsContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Notifications")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsToggleRow(
-                        label: "Study Reminders",
-                        subtitle: "Daily nudges to keep your streak alive",
-                        isOn: $studyReminders
-                    )
-
-                    SettingsDivider()
-
-                    SettingsToggleRow(
-                        label: "Weekly Digest",
-                        subtitle: "A summary of your progress each week",
-                        isOn: $weeklyDigest
-                    )
-
-                    SettingsDivider()
-
-                    SettingsToggleRow(
-                        label: "New Features",
-                        subtitle: "Hear about updates and improvements",
-                        isOn: $newFeatures
-                    )
-                }
-            }
+                .padding(.bottom, 14)
+            SettingsToggleRow(
+                label: "Study Reminders",
+                subtitle: "Daily nudges to keep your streak alive",
+                isOn: $studyReminders
+            )
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "Weekly Digest",
+                subtitle: "A summary of your progress each week",
+                isOn: $weeklyDigest
+            )
+            SettingsDivider()
+            SettingsToggleRow(
+                label: "New Features",
+                subtitle: "Hear about updates and improvements",
+                isOn: $newFeatures
+            )
         }
     }
 
-    // MARK: - Study Preferences
+    // MARK: - Study Preferences Cell
 
-    private var studyPreferencesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func studyPreferencesContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Study Preferences")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    difficultyRow
-                    SettingsDivider()
-                    questionCountRow
-                    SettingsDivider()
-                    timerRow
-                }
-            }
+                .padding(.bottom, 14)
+            difficultyRow(colors)
+            SettingsDivider()
+            questionCountRow(colors)
+            SettingsDivider()
+            timerRow
         }
     }
 
-    private var difficultyRow: some View {
-        let colors = theme.colors
-        return VStack(alignment: .leading, spacing: 10) {
+    private func difficultyRow(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Difficulty Level")
                     .font(.epilogue(14, weight: .semiBold))
@@ -154,9 +155,8 @@ struct SettingsPreferencesTab: View {
         }
     }
 
-    private var questionCountRow: some View {
-        let colors = theme.colors
-        return HStack {
+    private func questionCountRow(_ colors: ReefThemeColors) -> some View {
+        HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Questions per Session")
                     .font(.epilogue(14, weight: .semiBold))

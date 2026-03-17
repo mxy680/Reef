@@ -11,44 +11,80 @@ struct SettingsAboutTab: View {
     private let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
 
     var body: some View {
-        VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
-            appInfoSection
-            whatsNewSection
-            supportSection
-            socialSection
-            legalSection
+        let colors = theme.colors
+        VStack(spacing: 0) {
+            // Row 1: App Info | What's New
+            HStack(alignment: .top, spacing: 0) {
+                appInfoContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+
+                Rectangle().fill(colors.divider).frame(width: 1)
+
+                whatsNewContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+            }
+
+            Rectangle().fill(colors.divider).frame(height: 1)
+
+            // Row 2: Support | Community
+            HStack(alignment: .top, spacing: 0) {
+                supportContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+
+                Rectangle().fill(colors.divider).frame(width: 1)
+
+                communityContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+            }
+
+            Rectangle().fill(colors.divider).frame(height: 1)
+
+            // Row 3: Legal (full width)
+            legalContent(colors)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(metrics.cardPadding)
         }
+        .frame(maxWidth: .infinity)
+        .dashboardCard()
     }
 
-    // MARK: - App Info
+    // MARK: - App Info Cell
 
-    private var appInfoSection: some View {
-        SettingsCard {
+    private func appInfoContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SettingsSectionHeader(title: "App Info")
+                .padding(.bottom, 14)
             HStack(spacing: 16) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(ReefColors.primary.opacity(0.15))
                         .frame(width: 64, height: 64)
-                    Image("ReefLogo")
+                    Image(systemName: "fish.fill")
                         .resizable()
-                        .frame(width: 40, height: 40)
+                        .scaledToFit()
+                        .frame(width: 36, height: 36)
+                        .foregroundStyle(ReefColors.primary)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Reef")
                         .font(.epilogue(20, weight: .black))
                         .tracking(-0.04 * 20)
-                        .foregroundStyle(theme.colors.text)
+                        .foregroundStyle(colors.text)
 
                     Text("Version \(appVersion) (\(buildNumber))")
                         .font(.epilogue(13, weight: .medium))
                         .tracking(-0.04 * 13)
-                        .foregroundStyle(theme.colors.textSecondary)
+                        .foregroundStyle(colors.textSecondary)
 
                     Text("Study smarter, not harder")
                         .font(.epilogue(12, weight: .medium))
                         .tracking(-0.04 * 12)
-                        .foregroundStyle(theme.colors.textMuted)
+                        .foregroundStyle(colors.textMuted)
                         .padding(.top, 2)
                 }
 
@@ -57,37 +93,34 @@ struct SettingsAboutTab: View {
         }
     }
 
-    // MARK: - What's New
+    // MARK: - What's New Cell
 
-    private var whatsNewSection: some View {
-        let colors = theme.colors
-        return VStack(alignment: .leading, spacing: 12) {
+    private func whatsNewContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "What's New")
+                .padding(.bottom, 14)
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(changelogEntries) { entry in
+                    HStack(alignment: .top, spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(entry.color.opacity(0.15))
+                                .frame(width: 32, height: 32)
+                            Image(systemName: entry.icon)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(entry.color)
+                        }
 
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(changelogEntries) { entry in
-                        HStack(alignment: .top, spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(entry.color.opacity(0.15))
-                                    .frame(width: 32, height: 32)
-                                Image(systemName: entry.icon)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(entry.color)
-                            }
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(entry.title)
-                                    .font(.epilogue(13, weight: .bold))
-                                    .tracking(-0.04 * 13)
-                                    .foregroundStyle(colors.text)
-                                Text(entry.description)
-                                    .font(.epilogue(12, weight: .medium))
-                                    .tracking(-0.04 * 12)
-                                    .foregroundStyle(colors.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.title)
+                                .font(.epilogue(13, weight: .bold))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(colors.text)
+                            Text(entry.description)
+                                .font(.epilogue(12, weight: .medium))
+                                .tracking(-0.04 * 12)
+                                .foregroundStyle(colors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
@@ -95,93 +128,68 @@ struct SettingsAboutTab: View {
         }
     }
 
-    // MARK: - Support
+    // MARK: - Support Cell
 
-    private var supportSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func supportContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Support")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsLinkRow(icon: "envelope", label: "Contact Support") {
-                        open("mailto:support@studyreef.com")
-                    }
-
-                    SettingsDivider()
-
-                    SettingsLinkRow(icon: "questionmark.circle", label: "Help Centre") {
-                        open("https://studyreef.com/help")
-                    }
-
-                    SettingsDivider()
-
-                    SettingsLinkRow(icon: "ant.circle", label: "Report a Bug") {
-                        open("mailto:bugs@studyreef.com")
-                    }
-                }
+                .padding(.bottom, 14)
+            SettingsLinkRow(icon: "envelope", label: "Contact Support") {
+                open("mailto:support@studyreef.com")
+            }
+            SettingsDivider()
+            SettingsLinkRow(icon: "questionmark.circle", label: "Help Centre") {
+                open("https://studyreef.com/help")
+            }
+            SettingsDivider()
+            SettingsLinkRow(icon: "ant.circle", label: "Report a Bug") {
+                open("mailto:bugs@studyreef.com")
             }
         }
     }
 
-    // MARK: - Social
+    // MARK: - Community Cell
 
-    private var socialSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func communityContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Community")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsLinkRow(icon: "at", label: "Twitter / X") {
-                        open("https://x.com/studyreef")
-                    }
-
-                    SettingsDivider()
-
-                    SettingsLinkRow(icon: "bubble.left.and.bubble.right", label: "Discord Server") {
-                        open("https://discord.gg/studyreef")
-                    }
-
-                    SettingsDivider()
-
-                    SettingsLinkRow(icon: "star", label: "Rate on App Store") {
-                        open("itms-apps://itunes.apple.com/app/id000000000?action=write-review")
-                    }
-                }
+                .padding(.bottom, 14)
+            SettingsLinkRow(icon: "at", label: "Twitter / X") {
+                open("https://x.com/studyreef")
+            }
+            SettingsDivider()
+            SettingsLinkRow(icon: "bubble.left.and.bubble.right", label: "Discord Server") {
+                open("https://discord.gg/studyreef")
+            }
+            SettingsDivider()
+            SettingsLinkRow(icon: "star", label: "Rate on App Store") {
+                open("itms-apps://itunes.apple.com/app/id000000000?action=write-review")
             }
         }
     }
 
-    // MARK: - Legal
+    // MARK: - Legal Cell
 
-    private var legalSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func legalContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Legal")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsLinkRow(icon: "doc.text", label: "Terms of Service") {
-                        open("https://studyreef.com/terms")
-                    }
-
-                    SettingsDivider()
-
-                    SettingsLinkRow(icon: "lock.doc", label: "Privacy Policy") {
-                        open("https://studyreef.com/privacy")
-                    }
-
-                    SettingsDivider()
-
-                    let colors = theme.colors
-                    HStack {
-                        Text("© 2025 Reef. All rights reserved.")
-                            .font(.epilogue(11, weight: .medium))
-                            .tracking(-0.04 * 11)
-                            .foregroundStyle(colors.textDisabled)
-                        Spacer()
-                    }
-                    .padding(.top, 4)
-                }
+                .padding(.bottom, 14)
+            SettingsLinkRow(icon: "doc.text", label: "Terms of Service") {
+                open("https://studyreef.com/terms")
             }
+            SettingsDivider()
+            SettingsLinkRow(icon: "lock.doc", label: "Privacy Policy") {
+                open("https://studyreef.com/privacy")
+            }
+            SettingsDivider()
+            HStack {
+                Text("© 2025 Reef. All rights reserved.")
+                    .font(.epilogue(11, weight: .medium))
+                    .tracking(-0.04 * 11)
+                    .foregroundStyle(colors.textDisabled)
+                Spacer()
+            }
+            .padding(.top, 4)
         }
     }
 

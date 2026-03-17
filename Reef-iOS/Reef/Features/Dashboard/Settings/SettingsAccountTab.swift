@@ -16,12 +16,37 @@ struct SettingsAccountTab: View {
     private var limits: TierLimits { TierLimits.forTier(currentTier) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
-            planSection
-            securitySection
-            comparePlansSection
-            dangerZone
+        let colors = theme.colors
+        VStack(spacing: 0) {
+            // Row 1: Current Plan | Security
+            HStack(alignment: .top, spacing: 0) {
+                planContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+
+                Rectangle().fill(colors.divider).frame(width: 1)
+
+                securityContent(colors)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(metrics.cardPadding)
+            }
+
+            Rectangle().fill(colors.divider).frame(height: 1)
+
+            // Row 2: Compare Plans (full width)
+            comparePlansContent(colors)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(metrics.cardPadding)
+
+            Rectangle().fill(colors.divider).frame(height: 1)
+
+            // Row 3: Danger Zone (full width)
+            dangerZoneContent(colors)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(metrics.cardPadding)
         }
+        .frame(maxWidth: .infinity)
+        .dashboardCard()
         .alert("Sign Out", isPresented: $showSignOutConfirm) {
             Button("Sign Out", role: .destructive) {
                 Task { await auth.signOut() }
@@ -40,71 +65,66 @@ struct SettingsAccountTab: View {
         }
     }
 
-    // MARK: - Plan Section
+    // MARK: - Current Plan Cell
 
-    private var planSection: some View {
-        let colors = theme.colors
-        return VStack(alignment: .leading, spacing: 12) {
+    private func planContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
             SettingsSectionHeader(title: "Current Plan")
+                .padding(.bottom, -2)
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(currentTier.rawValue.capitalized)
+                            .font(.epilogue(18, weight: .black))
+                            .tracking(-0.04 * 18)
+                            .foregroundStyle(colors.text)
 
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 8) {
-                                Text(currentTier.rawValue.capitalized)
-                                    .font(.epilogue(18, weight: .black))
-                                    .tracking(-0.04 * 18)
-                                    .foregroundStyle(colors.text)
-
-                                Text("FREE BETA")
-                                    .font(.epilogue(10, weight: .black))
-                                    .tracking(0.02 * 10)
-                                    .foregroundStyle(colors.text)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(colors.surface)
-                                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .stroke(colors.border, lineWidth: 1.5)
-                                    )
-                            }
-
-                            Text("Access all features during the beta period")
-                                .font(.epilogue(12, weight: .medium))
-                                .tracking(-0.04 * 12)
-                                .foregroundStyle(colors.textMuted)
-                        }
-
-                        Spacer()
+                        Text("FREE BETA")
+                            .font(.epilogue(10, weight: .black))
+                            .tracking(0.02 * 10)
+                            .foregroundStyle(colors.text)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(colors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(colors.border, lineWidth: 1.5)
+                            )
                     }
 
-                    usageBar(
-                        label: "Documents",
-                        used: 2,
-                        max: limits.maxDocuments,
-                        color: ReefColors.primary,
-                        colors: colors
-                    )
-
-                    usageBar(
-                        label: "Courses",
-                        used: 1,
-                        max: limits.maxCourses,
-                        color: ReefColors.accent,
-                        colors: colors
-                    )
-
-                    usageBar(
-                        label: "File Size Limit",
-                        used: 12,
-                        max: limits.maxFileSizeMB,
-                        color: Color(hex: 0x81B29A),
-                        colors: colors
-                    )
+                    Text("Access all features during the beta period")
+                        .font(.epilogue(12, weight: .medium))
+                        .tracking(-0.04 * 12)
+                        .foregroundStyle(colors.textMuted)
                 }
+
+                Spacer()
             }
+
+            usageBar(
+                label: "Documents",
+                used: 2,
+                max: limits.maxDocuments,
+                color: ReefColors.primary,
+                colors: colors
+            )
+
+            usageBar(
+                label: "Courses",
+                used: 1,
+                max: limits.maxCourses,
+                color: ReefColors.accent,
+                colors: colors
+            )
+
+            usageBar(
+                label: "File Size Limit",
+                used: 12,
+                max: limits.maxFileSizeMB,
+                color: Color(hex: 0x81B29A),
+                colors: colors
+            )
         }
     }
 
@@ -142,50 +162,45 @@ struct SettingsAccountTab: View {
         }
     }
 
-    // MARK: - Security Section
+    // MARK: - Security Cell
 
-    private var securitySection: some View {
-        let colors = theme.colors
-        return VStack(alignment: .leading, spacing: 12) {
+    private func securityContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Security")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Sign-in Method")
-                                .font(.epilogue(14, weight: .semiBold))
-                                .tracking(-0.04 * 14)
-                                .foregroundStyle(colors.text)
-                            Text(signInMethodLabel)
-                                .font(.epilogue(12, weight: .medium))
-                                .tracking(-0.04 * 12)
-                                .foregroundStyle(colors.textMuted)
-                        }
-                        Spacer()
-                        Image(systemName: signInMethodIcon)
-                            .font(.system(size: 20))
-                            .foregroundStyle(colors.textSecondary)
-                    }
-
-                    SettingsDivider()
-
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("User ID")
-                                .font(.epilogue(14, weight: .semiBold))
-                                .tracking(-0.04 * 14)
-                                .foregroundStyle(colors.text)
-
-                            Text(auth.profile?.id ?? auth.session?.userId ?? "—")
-                                .font(.system(.caption, design: .monospaced).weight(.medium))
-                                .foregroundStyle(colors.textMuted)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                        Spacer()
-                    }
+                .padding(.bottom, 14)
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sign-in Method")
+                        .font(.epilogue(14, weight: .semiBold))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(colors.text)
+                    Text(signInMethodLabel)
+                        .font(.epilogue(12, weight: .medium))
+                        .tracking(-0.04 * 12)
+                        .foregroundStyle(colors.textMuted)
                 }
+                Spacer()
+                Image(systemName: signInMethodIcon)
+                    .font(.system(size: 20))
+                    .foregroundStyle(colors.textSecondary)
+            }
+
+            SettingsDivider()
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("User ID")
+                        .font(.epilogue(14, weight: .semiBold))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(colors.text)
+
+                    Text(auth.profile?.id ?? auth.session?.userId ?? "—")
+                        .font(.system(.caption, design: .monospaced).weight(.medium))
+                        .foregroundStyle(colors.textMuted)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Spacer()
             }
         }
     }
@@ -200,12 +215,11 @@ struct SettingsAccountTab: View {
         "envelope.badge.shield.half.filled"
     }
 
-    // MARK: - Compare Plans
+    // MARK: - Compare Plans Cell
 
-    private var comparePlansSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func comparePlansContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
             SettingsSectionHeader(title: "Compare Plans")
-
             HStack(alignment: .top, spacing: 12) {
                 planCard(
                     tier: .shore,
@@ -295,25 +309,20 @@ struct SettingsAccountTab: View {
         .compositingGroup()
     }
 
-    // MARK: - Danger Zone
+    // MARK: - Danger Zone Cell
 
-    private var dangerZone: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func dangerZoneContent(_ colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionHeader(title: "Danger Zone")
-
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    signOutRow
-                    SettingsDivider()
-                    deleteAccountRow
-                }
-            }
+                .padding(.bottom, 14)
+            signOutRow(colors)
+            SettingsDivider()
+            deleteAccountRow(colors)
         }
     }
 
-    private var signOutRow: some View {
-        let colors = theme.colors
-        return HStack(spacing: 12) {
+    private func signOutRow(_ colors: ReefThemeColors) -> some View {
+        HStack(spacing: 12) {
             Image(systemName: "rectangle.portrait.and.arrow.right")
                 .font(.system(size: 15))
                 .foregroundStyle(colors.textSecondary)
@@ -331,9 +340,8 @@ struct SettingsAccountTab: View {
         .accessibilityAddTraits(.isButton)
     }
 
-    private var deleteAccountRow: some View {
-        let colors = theme.colors
-        return HStack(spacing: 12) {
+    private func deleteAccountRow(_ colors: ReefThemeColors) -> some View {
+        HStack(spacing: 12) {
             Image(systemName: "person.crop.circle.badge.minus")
                 .font(.system(size: 15))
                 .foregroundStyle(ReefColors.destructive)
