@@ -22,7 +22,7 @@ enum DocumentUploadError: LocalizedError {
 struct SupabaseDocumentRepository: DocumentRepository {
 
     private func getUserId() async throws -> String {
-        try await supabase.auth.session.user.id.uuidString
+        try await supabase.auth.session.user.id.uuidString.lowercased()
     }
 
     // MARK: - List
