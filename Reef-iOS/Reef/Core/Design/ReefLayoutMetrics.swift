@@ -58,6 +58,7 @@ struct ReefLayoutMetrics {
     var buttonHeight: CGFloat { lerp(44, 52) }
     var inputHeight: CGFloat { lerp(44, 52) }
     var inputHPadding: CGFloat { lerp(14, 22) }
+    var comingSoonMaxWidth: CGFloat { lerp(280, 360) }
 
     // MARK: - Grid
 
