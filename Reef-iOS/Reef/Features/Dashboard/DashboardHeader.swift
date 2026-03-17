@@ -7,6 +7,7 @@ struct DashboardHeader: View {
     var viewModel: DashboardViewModel
 
     var body: some View {
+        @Bindable var vm = viewModel
         let colors = theme.colors
         HStack {
             // Breadcrumbs
@@ -103,6 +104,80 @@ struct DashboardHeader: View {
         .frame(height: metrics.headerHeight)
         .padding(.horizontal, metrics.contentPadding)
         .dashboardCard()
+        // Dismiss backdrop
+        .overlay {
+            if anyDropdownOpen {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        viewModel.showNotifications = false
+                        viewModel.showProfileMenu = false
+                    }
+                    .transition(.opacity)
+            }
+        }
+        // Dropdown overlays
+        .overlay(alignment: .topTrailing) {
+            if viewModel.showNotifications {
+                notificationsDropdown(colors)
+                    .offset(y: 68)
+                    .padding(.trailing, 180)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
+                        removal: .opacity
+                    ))
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if viewModel.showProfileMenu {
+                ProfileDropdownMenu(viewModel: viewModel)
+                    .offset(y: 68)
+                    .padding(.trailing, 12)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)),
+                        removal: .opacity
+                    ))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.showProfileMenu)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.showNotifications)
+    }
+
+    private var anyDropdownOpen: Bool {
+        viewModel.showProfileMenu || viewModel.showNotifications
+    }
+
+    // MARK: - Notifications Dropdown
+
+    private func notificationsDropdown(_ colors: ReefThemeColors) -> some View {
+        let dark = theme.isDarkMode
+        return VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: "bell.slash")
+                    .font(.system(size: 16))
+                    .foregroundStyle(colors.textMuted)
+
+                Text("No new notifications")
+                    .font(.epilogue(13, weight: .semiBold))
+                    .tracking(-0.04 * 13)
+                    .foregroundStyle(colors.textSecondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+        }
+        .background(colors.cardElevated)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(dark ? ReefColors.Dark.border : ReefColors.gray500, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(dark ? ReefColors.Dark.shadow : ReefColors.gray500)
+                .offset(x: 3, y: 3)
+        )
     }
 
     // MARK: - Helpers
