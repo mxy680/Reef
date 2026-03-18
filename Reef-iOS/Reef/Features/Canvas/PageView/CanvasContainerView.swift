@@ -374,7 +374,7 @@ final class CanvasContainerView: UIView {
         guard let contentWidth = pageImageViews.first?.superview?.bounds.width,
               contentWidth > 0 else { return }
 
-        let horizontalPadding: CGFloat = 40
+        let horizontalPadding: CGFloat = 80
         let availableWidth = viewportSize.width - horizontalPadding
         let zoomToFitWidth = availableWidth / contentWidth
         let targetZoom = min(max(zoomToFitWidth, scrollView.minimumZoomScale), scrollView.maximumZoomScale)
@@ -393,7 +393,7 @@ final class CanvasContainerView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        let minTopPadding: CGFloat = 20
+        let minTopPadding: CGFloat = 40
         let offsetX = max((scrollView.bounds.width - scrollView.contentSize.width) / 2, 0)
         let offsetY = max((scrollView.bounds.height - scrollView.contentSize.height) / 2, minTopPadding)
         scrollView.contentInset = UIEdgeInsets(
