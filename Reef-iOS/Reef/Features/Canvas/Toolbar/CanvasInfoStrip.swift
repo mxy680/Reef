@@ -25,6 +25,19 @@ struct CanvasInfoStrip: View {
             .padding(.leading, 6)
 
             Spacer()
+
+            // Tutor mode toggle
+            HStack(spacing: 8) {
+                Image(viewModel.tutorModeOn ? "canvas.tutor_on" : "canvas.tutor_off")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(.white)
+
+                ReefToggle(isOn: $viewModel.tutorModeOn)
+            }
+            .padding(.trailing, 10)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)
