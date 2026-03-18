@@ -57,6 +57,9 @@ struct CanvasView: View {
                     overlayOpacity: viewModel.overlaySettings.opacity,
                     onCanvasTouchBegan: {
                         viewModel.dismissAllPopovers()
+                    },
+                    onZoomChanged: { scale in
+                        viewModel.zoomScale = scale
                     }
                 )
                 .ignoresSafeArea(edges: .bottom)

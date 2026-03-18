@@ -35,7 +35,16 @@ final class CanvasViewModel {
     // MARK: - Page State
 
     var currentPageIndex: Int = 0
+    var zoomScale: CGFloat = 1.0
     var overlaySettings: CanvasOverlaySettings = CanvasOverlaySettings()
+
+    var pageCount: Int {
+        pdfDocument.pageCount
+    }
+
+    var zoomPercentage: Int {
+        Int(zoomScale * 100)
+    }
 
     // MARK: - UI State
 

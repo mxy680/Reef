@@ -26,6 +26,7 @@ final class CanvasContainerView: UIView {
 
     /// Callback when pencil touches down on canvas (dismiss popovers)
     var onCanvasTouchBegan: (() -> Void)?
+    var onZoomChanged: ((CGFloat) -> Void)?
 
     /// Drawing state manager
     weak var drawingManager: CanvasDrawingManager?
@@ -411,6 +412,7 @@ extension CanvasContainerView: UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         setNeedsLayout()
+        onZoomChanged?(scrollView.zoomScale)
     }
 }
 

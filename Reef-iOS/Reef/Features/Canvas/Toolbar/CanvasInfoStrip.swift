@@ -26,26 +26,65 @@ struct CanvasInfoStrip: View {
             .buttonStyle(.plain)
             .padding(.leading, 6)
 
-            // Center: doc name · pages · problems
-            Spacer(minLength: 8)
+            divider
 
-            HStack(spacing: 0) {
+            // Page indicator pill
+            Text("Page \(viewModel.currentPageIndex + 1) / \(viewModel.pageCount)")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.15))
+                .clipShape(Capsule())
+
+            divider
+
+            // Doc icon + name + stats
+            HStack(spacing: 6) {
+                Image(systemName: "doc.text.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.5))
+
                 Text(doc.displayName)
                     .font(.epilogue(13, weight: .bold))
                     .tracking(-0.04 * 13)
                     .foregroundColor(.white)
                     .lineLimit(1)
 
-                dotSeparator
+                Text("·")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white.opacity(0.3))
 
                 Text(doc.statusLabel)
                     .font(.epilogue(12, weight: .medium))
                     .tracking(-0.04 * 12)
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.white.opacity(0.55))
                     .lineLimit(1)
             }
 
             Spacer(minLength: 8)
+
+            // Zoom level
+            Text("\(viewModel.zoomPercentage)%")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundColor(.white.opacity(0.55))
+                .frame(minWidth: 36)
+
+            divider
+
+            // Dark mode toggle
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    viewModel.isDarkMode.toggle()
+                }
+            } label: {
+                Image(systemName: viewModel.isDarkMode ? "sun.max.fill" : "moon.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 30, height: 30)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
             // Tutor mode toggle
             HStack(spacing: 8) {
@@ -70,9 +109,10 @@ struct CanvasInfoStrip: View {
         )
     }
 
-    private var dotSeparator: some View {
-        Text("  ·  ")
-            .font(.system(size: 12, weight: .bold))
-            .foregroundColor(.white.opacity(0.35))
+    private var divider: some View {
+        Text("|")
+            .font(.system(size: 18, weight: .ultraLight))
+            .foregroundColor(.white.opacity(0.3))
+            .frame(width: 16)
     }
 }
