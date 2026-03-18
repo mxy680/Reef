@@ -7,4 +7,5 @@ struct ProfileUpdate: Sendable {
     var subjects: [String]?
     var referralSource: String?
     var onboardingCompleted: Bool?
+    var settings: UserSettings?
 }

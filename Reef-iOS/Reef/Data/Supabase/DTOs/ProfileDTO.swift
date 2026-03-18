@@ -10,6 +10,7 @@ struct ProfileDTO: Codable {
     var subjects: [String]
     var onboardingCompleted: Bool
     var referralSource: String?
+    var settings: UserSettings?
     var createdAt: String?
     var updatedAt: String?
 
@@ -21,6 +22,7 @@ struct ProfileDTO: Codable {
         case subjects
         case onboardingCompleted = "onboarding_completed"
         case referralSource = "referral_source"
+        case settings
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -34,6 +36,7 @@ struct ProfileDTO: Codable {
             subjects: subjects,
             onboardingCompleted: onboardingCompleted,
             referralSource: referralSource,
+            settings: settings ?? UserSettings(),
             createdAt: createdAt,
             updatedAt: updatedAt
         )

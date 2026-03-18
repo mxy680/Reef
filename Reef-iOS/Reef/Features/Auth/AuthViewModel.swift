@@ -284,7 +284,8 @@ final class AuthViewModel {
             displayName: "Dev User",
             email: "dev@example.com",
             subjects: [],
-            onboardingCompleted: true
+            onboardingCompleted: true,
+            settings: UserSettings()
         )
     }
     #endif

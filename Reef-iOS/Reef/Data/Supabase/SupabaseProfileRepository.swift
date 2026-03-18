@@ -30,10 +30,47 @@ struct SupabaseProfileRepository: ProfileRepository {
         if let v = update.subjects { payload["subjects"] = .array(v.map { .string($0) }) }
         if let v = update.referralSource { payload["referral_source"] = .string(v) }
         if let v = update.onboardingCompleted { payload["onboarding_completed"] = .bool(v) }
+        if let settings = update.settings {
+            payload["settings"] = try encodeToAnyJSON(settings)
+        }
 
         try await supabase
             .from("profiles")
             .upsert(payload)
             .execute()
+    }
+
+    // MARK: - Helpers
+
+    private func encodeToAnyJSON<T: Encodable>(_ value: T) throws -> AnyJSON {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        let data = try encoder.encode(value)
+        let object = try JSONSerialization.jsonObject(with: data)
+        return anyJSONFromObject(object)
+    }
+
+    private func anyJSONFromObject(_ object: Any) -> AnyJSON {
+        switch object {
+        case let dict as [String: Any]:
+            return .object(dict.mapValues { anyJSONFromObject($0) })
+        case let array as [Any]:
+            return .array(array.map { anyJSONFromObject($0) })
+        case let string as String:
+            return .string(string)
+        case let number as NSNumber:
+            // NSNumber wraps both Bool and numeric types
+            if CFBooleanGetTypeID() == CFGetTypeID(number) {
+                return .bool(number.boolValue)
+            }
+            if number.doubleValue == Double(number.intValue) {
+                return .integer(number.intValue)
+            }
+            return .double(number.doubleValue)
+        case is NSNull:
+            return .null
+        default:
+            return .null
+        }
     }
 }
