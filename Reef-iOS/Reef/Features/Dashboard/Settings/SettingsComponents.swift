@@ -37,6 +37,11 @@ let settingsAllSubjects = [
     "History", "Literature", "Computer Science", "Economics", "Psychology", "Philosophy"
 ]
 
+let settingsAvatarColors: [Color] = [
+    Color(hex: 0xFCEBD5), Color(hex: 0xD5EBF0), Color(hex: 0xD5F0E0),
+    Color(hex: 0xF0D5E8), Color(hex: 0xE8E8D5), Color(hex: 0xD5D5F0),
+]
+
 let settingsThemeColors: [Color] = [
     ReefColors.primary,
     Color(hex: 0xE07A5F),

@@ -11,7 +11,7 @@ struct SettingsPreferencesTab: View {
     let onToast: (String) -> Void
 
     // Appearance (dark mode is owned by ReefTheme, not persisted here)
-    @State private var selectedThemeColor: Color = ReefColors.primary
+    @State private var selectedThemeColorIndex: Int = 0
     @State private var compactMode = false
     @State private var textScale = "Standard"
 
@@ -67,6 +67,7 @@ struct SettingsPreferencesTab: View {
         .dashboardCard()
         .onAppear { loadSettings() }
         .onDisappear { saveTask?.cancel() }
+        .onChange(of: selectedThemeColorIndex) { scheduleSave() }
         .onChange(of: compactMode) { scheduleSave() }
         .onChange(of: textScale) { scheduleSave() }
         .onChange(of: studyReminders) { scheduleSave() }
@@ -85,6 +86,7 @@ struct SettingsPreferencesTab: View {
 
     private var currentSettings: UserSettings {
         var s = auth.profile?.settings ?? UserSettings()
+        s.themeColorIndex = selectedThemeColorIndex
         s.compactMode = compactMode
         s.textScale = textScale
         s.studyReminders = studyReminders
@@ -102,7 +104,8 @@ struct SettingsPreferencesTab: View {
 
     private var hasUnsavedChanges: Bool {
         let s = loadedSettings
-        return compactMode != s.compactMode ||
+        return selectedThemeColorIndex != s.themeColorIndex ||
+            compactMode != s.compactMode ||
             textScale != s.textScale ||
             studyReminders != s.studyReminders ||
             weeklyDigest != s.weeklyDigest ||
@@ -118,6 +121,7 @@ struct SettingsPreferencesTab: View {
 
     private func loadSettings() {
         let s = auth.profile?.settings ?? UserSettings()
+        selectedThemeColorIndex = s.themeColorIndex
         compactMode = s.compactMode
         textScale = s.textScale
         studyReminders = s.studyReminders
@@ -205,10 +209,10 @@ struct SettingsPreferencesTab: View {
         VStack(alignment: .leading, spacing: 10) {
             SettingsFieldLabel(title: "Accent Color")
             HStack(spacing: 12) {
-                ForEach(Array(settingsThemeColors.enumerated()), id: \.offset) { _, color in
-                    let isSelected = selectedThemeColor == color
+                ForEach(settingsThemeColors.indices, id: \.self) { idx in
+                    let isSelected = selectedThemeColorIndex == idx
                     Circle()
-                        .fill(color)
+                        .fill(settingsThemeColors[idx])
                         .frame(width: 30, height: 30)
                         .overlay(
                             Circle().stroke(
@@ -224,7 +228,7 @@ struct SettingsPreferencesTab: View {
                                 : nil
                         )
                         .contentShape(Circle())
-                        .onTapGesture { selectedThemeColor = color }
+                        .onTapGesture { selectedThemeColorIndex = idx }
                         .animation(.easeInOut(duration: 0.15), value: isSelected)
                 }
                 Spacer()

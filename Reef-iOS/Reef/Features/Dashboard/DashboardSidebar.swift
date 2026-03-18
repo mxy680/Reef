@@ -8,6 +8,13 @@ struct DashboardSidebar: View {
 
     private var isOpen: Bool { viewModel.sidebarOpen }
 
+    private var avatarColor: Color {
+        let idx = auth.profile?.settings.avatarColorIndex ?? 0
+        return settingsAvatarColors.indices.contains(idx)
+            ? settingsAvatarColors[idx]
+            : theme.colors.surface
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -234,7 +241,7 @@ struct DashboardSidebar: View {
 
             // User
             footerRow {
-                circleIcon(fill: colors.surface) {
+                circleIcon(fill: avatarColor) {
                     Text(auth.userInitials)
                         .font(.epilogue(12, weight: .black))
                         .foregroundStyle(colors.text)

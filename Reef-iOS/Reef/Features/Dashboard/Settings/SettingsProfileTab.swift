@@ -24,10 +24,7 @@ struct SettingsProfileTab: View {
     @State private var loadedAvatarColorIndex: Int = 0
     @State private var loadedDailyGoalMinutes: Int = 30
 
-    private let avatarColors: [Color] = [
-        Color(hex: 0xFCEBD5), Color(hex: 0xD5EBF0), Color(hex: 0xD5F0E0),
-        Color(hex: 0xF0D5E8), Color(hex: 0xE8E8D5), Color(hex: 0xD5D5F0),
-    ]
+    private let avatarColors = settingsAvatarColors
 
     init(
         profileRepo: ProfileRepository = SupabaseProfileRepository(),

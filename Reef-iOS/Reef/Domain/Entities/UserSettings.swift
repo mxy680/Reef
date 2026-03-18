@@ -14,6 +14,7 @@ struct UserSettings: Codable, Sendable, Equatable {
 
     // MARK: - Appearance
 
+    var themeColorIndex: Int = 0
     var compactMode: Bool = false
     var textScale: String = "Standard"
 
@@ -52,6 +53,7 @@ struct UserSettings: Codable, Sendable, Equatable {
     enum CodingKeys: String, CodingKey {
         case avatarColorIndex = "avatar_color_index"
         case dailyGoalMinutes = "daily_goal_minutes"
+        case themeColorIndex = "theme_color_index"
         case compactMode = "compact_mode"
         case textScale = "text_scale"
         case studyReminders = "study_reminders"
@@ -82,6 +84,7 @@ struct UserSettings: Codable, Sendable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         avatarColorIndex = try c.decodeIfPresent(Int.self, forKey: .avatarColorIndex) ?? 0
         dailyGoalMinutes = try c.decodeIfPresent(Int.self, forKey: .dailyGoalMinutes) ?? 30
+        themeColorIndex = try c.decodeIfPresent(Int.self, forKey: .themeColorIndex) ?? 0
         compactMode = try c.decodeIfPresent(Bool.self, forKey: .compactMode) ?? false
         textScale = try c.decodeIfPresent(String.self, forKey: .textScale) ?? "Standard"
         studyReminders = try c.decodeIfPresent(Bool.self, forKey: .studyReminders) ?? true
