@@ -45,6 +45,25 @@ final class CanvasViewModel {
 
     // MARK: - Battery
 
+    // MARK: - Study Timer
+
+    var studySeconds: Int = 0
+    private let sessionStart = Date()
+
+    var studyTimerLabel: String {
+        let h = studySeconds / 3600
+        let m = (studySeconds % 3600) / 60
+        let s = studySeconds % 60
+        if h > 0 {
+            return String(format: "%d:%02d:%02d", h, m, s)
+        }
+        return String(format: "%d:%02d", m, s)
+    }
+
+    func tickStudyTimer() {
+        studySeconds = Int(Date().timeIntervalSince(sessionStart))
+    }
+
     var batteryLevel: Float = 1.0
 
     var batteryPercentage: Int {

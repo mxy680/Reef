@@ -97,6 +97,9 @@ struct CanvasView: View {
         .animation(.easeInOut(duration: 0.2), value: viewModel.showRuler)
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
         .onAppear { viewModel.startBatteryMonitoring() }
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            viewModel.tickStudyTimer()
+        }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
             viewModel.updateBatteryLevel()
         }

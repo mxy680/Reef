@@ -54,35 +54,44 @@ struct CanvasInfoStrip: View {
 
             Spacer(minLength: 8)
 
-            // Battery
-            HStack(spacing: 4) {
-                Image(viewModel.batteryIconName)
-                    .renderingMode(.template)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 18, height: 18)
-                    .foregroundColor(.white.opacity(0.55))
+            // Time + battery + dark mode
+            HStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.45))
 
-                Text("\(viewModel.batteryPercentage)%")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.55))
-            }
-
-            divider
-
-            // Dark mode toggle
-            Button {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    viewModel.isDarkMode.toggle()
+                    Text(viewModel.studyTimerLabel)
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.55))
                 }
-            } label: {
-                Image(systemName: viewModel.isDarkMode ? "sun.max.fill" : "moon.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.8))
-                    .frame(width: 30, height: 30)
-                    .contentShape(Rectangle())
+
+                HStack(spacing: 3) {
+                    Image(viewModel.batteryIconName)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 18, height: 18)
+                        .foregroundColor(.white.opacity(0.55))
+
+                    Text("\(viewModel.batteryPercentage)%")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.55))
+                }
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        viewModel.isDarkMode.toggle()
+                    }
+                } label: {
+                    Image(systemName: viewModel.isDarkMode ? "sun.max.fill" : "moon.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.8))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             divider
 
