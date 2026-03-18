@@ -8,12 +8,23 @@ struct SettingsAccountTab: View {
     @Environment(\.reefLayoutMetrics) private var metrics
 
     let onToast: (String) -> Void
+    private let usageRepo: UsageStatsRepository
 
     @State private var showSignOutConfirm = false
     @State private var showDeleteConfirm = false
+    @State private var documentCount: Int = 0
+    @State private var courseCount: Int = 0
 
     private let currentTier: Tier = .shore
     private var limits: TierLimits { TierLimits.forTier(currentTier) }
+
+    init(
+        usageRepo: UsageStatsRepository = SupabaseUsageStatsRepository(),
+        onToast: @escaping (String) -> Void
+    ) {
+        self.usageRepo = usageRepo
+        self.onToast = onToast
+    }
 
     var body: some View {
         let colors = theme.colors
@@ -47,6 +58,7 @@ struct SettingsAccountTab: View {
         }
         .frame(maxWidth: .infinity)
         .dashboardCard()
+        .task { await loadUsageStats() }
         .alert("Sign Out", isPresented: $showSignOutConfirm) {
             Button("Sign Out", role: .destructive) {
                 Task { await auth.signOut() }
@@ -93,7 +105,7 @@ struct SettingsAccountTab: View {
 
             usageBar(
                 label: "Documents",
-                used: 2,
+                used: documentCount,
                 max: limits.maxDocuments,
                 color: ReefColors.primary,
                 colors: colors
@@ -101,7 +113,7 @@ struct SettingsAccountTab: View {
 
             usageBar(
                 label: "Courses",
-                used: 1,
+                used: courseCount,
                 max: limits.maxCourses,
                 color: ReefColors.accent,
                 colors: colors
@@ -416,5 +428,17 @@ struct SettingsAccountTab: View {
         .contentShape(Rectangle())
         .onTapGesture { showDeleteConfirm = true }
         .accessibilityAddTraits(.isButton)
+    }
+
+    // MARK: - Data
+
+    private func loadUsageStats() async {
+        do {
+            let stats = try await usageRepo.fetchUsageStats()
+            documentCount = stats.documentCount
+            courseCount = stats.courseCount
+        } catch {
+            // Non-fatal — hardcoded defaults (0) are fine
+        }
     }
 }

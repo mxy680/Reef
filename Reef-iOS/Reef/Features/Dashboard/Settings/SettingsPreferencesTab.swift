@@ -4,12 +4,14 @@ import SwiftUI
 
 struct SettingsPreferencesTab: View {
     @Environment(ReefTheme.self) private var theme
+    @Environment(AuthViewModel.self) private var auth
     @Environment(\.reefLayoutMetrics) private var metrics
 
-    // Appearance
-    @State private var selectedThemeColor: Color = ReefColors.primary
+    private let profileRepo: ProfileRepository
+    let onToast: (String) -> Void
 
-    // Appearance
+    // Appearance (dark mode is owned by ReefTheme, not persisted here)
+    @State private var selectedThemeColor: Color = ReefColors.primary
     @State private var compactMode = false
     @State private var textScale = "Standard"
 
@@ -26,6 +28,17 @@ struct SettingsPreferencesTab: View {
     @State private var timerEnabled = true
     @State private var autoAdvance = false
     @State private var shuffleQuestions = true
+
+    @State private var saveTask: Task<Void, Never>?
+    @State private var loadedSettings: UserSettings = UserSettings()
+
+    init(
+        profileRepo: ProfileRepository = SupabaseProfileRepository(),
+        onToast: @escaping (String) -> Void
+    ) {
+        self.profileRepo = profileRepo
+        self.onToast = onToast
+    }
 
     var body: some View {
         let colors = theme.colors
@@ -52,6 +65,94 @@ struct SettingsPreferencesTab: View {
         }
         .frame(maxWidth: .infinity)
         .dashboardCard()
+        .onAppear { loadSettings() }
+        .onDisappear { saveTask?.cancel() }
+        .onChange(of: compactMode) { scheduleSave() }
+        .onChange(of: textScale) { scheduleSave() }
+        .onChange(of: studyReminders) { scheduleSave() }
+        .onChange(of: weeklyDigest) { scheduleSave() }
+        .onChange(of: newFeatures) { scheduleSave() }
+        .onChange(of: achievementAlerts) { scheduleSave() }
+        .onChange(of: reminderTime) { scheduleSave() }
+        .onChange(of: difficultyLevel) { scheduleSave() }
+        .onChange(of: questionCount) { scheduleSave() }
+        .onChange(of: timerEnabled) { scheduleSave() }
+        .onChange(of: autoAdvance) { scheduleSave() }
+        .onChange(of: shuffleQuestions) { scheduleSave() }
+    }
+
+    // MARK: - Data
+
+    private var currentSettings: UserSettings {
+        var s = auth.profile?.settings ?? UserSettings()
+        s.compactMode = compactMode
+        s.textScale = textScale
+        s.studyReminders = studyReminders
+        s.weeklyDigest = weeklyDigest
+        s.newFeatures = newFeatures
+        s.achievementAlerts = achievementAlerts
+        s.reminderTime = reminderTime
+        s.difficultyLevel = difficultyLevel
+        s.questionCount = questionCount
+        s.timerEnabled = timerEnabled
+        s.autoAdvance = autoAdvance
+        s.shuffleQuestions = shuffleQuestions
+        return s
+    }
+
+    private var hasUnsavedChanges: Bool {
+        let s = loadedSettings
+        return compactMode != s.compactMode ||
+            textScale != s.textScale ||
+            studyReminders != s.studyReminders ||
+            weeklyDigest != s.weeklyDigest ||
+            newFeatures != s.newFeatures ||
+            achievementAlerts != s.achievementAlerts ||
+            reminderTime != s.reminderTime ||
+            difficultyLevel != s.difficultyLevel ||
+            questionCount != s.questionCount ||
+            timerEnabled != s.timerEnabled ||
+            autoAdvance != s.autoAdvance ||
+            shuffleQuestions != s.shuffleQuestions
+    }
+
+    private func loadSettings() {
+        let s = auth.profile?.settings ?? UserSettings()
+        compactMode = s.compactMode
+        textScale = s.textScale
+        studyReminders = s.studyReminders
+        weeklyDigest = s.weeklyDigest
+        newFeatures = s.newFeatures
+        achievementAlerts = s.achievementAlerts
+        reminderTime = s.reminderTime
+        difficultyLevel = s.difficultyLevel
+        questionCount = s.questionCount
+        timerEnabled = s.timerEnabled
+        autoAdvance = s.autoAdvance
+        shuffleQuestions = s.shuffleQuestions
+        loadedSettings = s
+    }
+
+    private func scheduleSave() {
+        guard hasUnsavedChanges else { return }
+        saveTask?.cancel()
+        saveTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.0))
+            guard !Task.isCancelled else { return }
+            await saveSettings()
+        }
+    }
+
+    private func saveSettings() async {
+        let settings = currentSettings
+        let update = ProfileUpdate(settings: settings)
+        do {
+            try await profileRepo.upsertProfile(update)
+            await auth.completeOnboarding()
+            loadedSettings = settings
+        } catch {
+            onToast("Failed to save")
+        }
     }
 
     // MARK: - Appearance Cell

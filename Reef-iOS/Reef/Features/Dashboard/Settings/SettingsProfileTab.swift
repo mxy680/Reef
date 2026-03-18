@@ -21,6 +21,8 @@ struct SettingsProfileTab: View {
     @State private var loadedDisplayName: String = ""
     @State private var loadedGrade: String = ""
     @State private var loadedSubjects: Set<String> = []
+    @State private var loadedAvatarColorIndex: Int = 0
+    @State private var loadedDailyGoalMinutes: Int = 30
 
     private let avatarColors: [Color] = [
         Color(hex: 0xFCEBD5), Color(hex: 0xD5EBF0), Color(hex: 0xD5F0E0),
@@ -80,6 +82,8 @@ struct SettingsProfileTab: View {
         .onChange(of: displayName) { scheduleSave() }
         .onChange(of: selectedGrade) { scheduleSave() }
         .onChange(of: selectedSubjects) { scheduleSave() }
+        .onChange(of: avatarColorIndex) { scheduleSave() }
+        .onChange(of: dailyGoalMinutes) { scheduleSave() }
     }
 
     // MARK: - Profile Header Row
@@ -342,16 +346,22 @@ struct SettingsProfileTab: View {
         displayName = profile.displayName ?? ""
         selectedGrade = profile.grade ?? ""
         selectedSubjects = Set(profile.subjects)
+        avatarColorIndex = profile.settings.avatarColorIndex
+        dailyGoalMinutes = profile.settings.dailyGoalMinutes
         // Capture snapshots so onChange can detect real user changes vs initial load
         loadedDisplayName = displayName
         loadedGrade = selectedGrade
         loadedSubjects = selectedSubjects
+        loadedAvatarColorIndex = avatarColorIndex
+        loadedDailyGoalMinutes = dailyGoalMinutes
     }
 
     private var hasUnsavedChanges: Bool {
         displayName != loadedDisplayName ||
         selectedGrade != loadedGrade ||
-        selectedSubjects != loadedSubjects
+        selectedSubjects != loadedSubjects ||
+        avatarColorIndex != loadedAvatarColorIndex ||
+        dailyGoalMinutes != loadedDailyGoalMinutes
     }
 
     private func scheduleSave() {
@@ -365,10 +375,15 @@ struct SettingsProfileTab: View {
     }
 
     private func saveProfile() async {
+        var settings = auth.profile?.settings ?? UserSettings()
+        settings.avatarColorIndex = avatarColorIndex
+        settings.dailyGoalMinutes = dailyGoalMinutes
+
         let update = ProfileUpdate(
             displayName: displayName.isEmpty ? nil : displayName,
             grade: selectedGrade.isEmpty ? nil : selectedGrade,
-            subjects: Array(selectedSubjects)
+            subjects: Array(selectedSubjects),
+            settings: settings
         )
         do {
             try await profileRepo.upsertProfile(update)
@@ -377,6 +392,8 @@ struct SettingsProfileTab: View {
             loadedDisplayName = displayName
             loadedGrade = selectedGrade
             loadedSubjects = selectedSubjects
+            loadedAvatarColorIndex = avatarColorIndex
+            loadedDailyGoalMinutes = dailyGoalMinutes
         } catch {
             onToast("Failed to save")
         }

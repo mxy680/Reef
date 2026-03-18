@@ -4,7 +4,11 @@ import SwiftUI
 
 struct SettingsPrivacyTab: View {
     @Environment(ReefTheme.self) private var theme
+    @Environment(AuthViewModel.self) private var auth
     @Environment(\.reefLayoutMetrics) private var metrics
+
+    private let profileRepo: ProfileRepository
+    let onToast: (String) -> Void
 
     @State private var analyticsEnabled = true
     @State private var crashReporting = true
@@ -14,6 +18,17 @@ struct SettingsPrivacyTab: View {
     @State private var shareWithResearchers = false
     @State private var profileVisibility = true
     @State private var progressBenchmarking = false
+
+    @State private var saveTask: Task<Void, Never>?
+    @State private var loadedSettings: UserSettings = UserSettings()
+
+    init(
+        profileRepo: ProfileRepository = SupabaseProfileRepository(),
+        onToast: @escaping (String) -> Void
+    ) {
+        self.profileRepo = profileRepo
+        self.onToast = onToast
+    }
 
     var body: some View {
         let colors = theme.colors
@@ -48,6 +63,78 @@ struct SettingsPrivacyTab: View {
         }
         .frame(maxWidth: .infinity)
         .dashboardCard()
+        .onAppear { loadSettings() }
+        .onDisappear { saveTask?.cancel() }
+        .onChange(of: analyticsEnabled) { scheduleSave() }
+        .onChange(of: crashReporting) { scheduleSave() }
+        .onChange(of: performanceMonitoring) { scheduleSave() }
+        .onChange(of: sessionRecording) { scheduleSave() }
+        .onChange(of: personalisedContent) { scheduleSave() }
+        .onChange(of: shareWithResearchers) { scheduleSave() }
+        .onChange(of: profileVisibility) { scheduleSave() }
+        .onChange(of: progressBenchmarking) { scheduleSave() }
+    }
+
+    // MARK: - Data
+
+    private var currentSettings: UserSettings {
+        var s = auth.profile?.settings ?? UserSettings()
+        s.analyticsEnabled = analyticsEnabled
+        s.crashReporting = crashReporting
+        s.performanceMonitoring = performanceMonitoring
+        s.sessionRecording = sessionRecording
+        s.personalisedContent = personalisedContent
+        s.shareWithResearchers = shareWithResearchers
+        s.profileVisibility = profileVisibility
+        s.progressBenchmarking = progressBenchmarking
+        return s
+    }
+
+    private var hasUnsavedChanges: Bool {
+        let s = loadedSettings
+        return analyticsEnabled != s.analyticsEnabled ||
+            crashReporting != s.crashReporting ||
+            performanceMonitoring != s.performanceMonitoring ||
+            sessionRecording != s.sessionRecording ||
+            personalisedContent != s.personalisedContent ||
+            shareWithResearchers != s.shareWithResearchers ||
+            profileVisibility != s.profileVisibility ||
+            progressBenchmarking != s.progressBenchmarking
+    }
+
+    private func loadSettings() {
+        let s = auth.profile?.settings ?? UserSettings()
+        analyticsEnabled = s.analyticsEnabled
+        crashReporting = s.crashReporting
+        performanceMonitoring = s.performanceMonitoring
+        sessionRecording = s.sessionRecording
+        personalisedContent = s.personalisedContent
+        shareWithResearchers = s.shareWithResearchers
+        profileVisibility = s.profileVisibility
+        progressBenchmarking = s.progressBenchmarking
+        loadedSettings = s
+    }
+
+    private func scheduleSave() {
+        guard hasUnsavedChanges else { return }
+        saveTask?.cancel()
+        saveTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.0))
+            guard !Task.isCancelled else { return }
+            await saveSettings()
+        }
+    }
+
+    private func saveSettings() async {
+        let settings = currentSettings
+        let update = ProfileUpdate(settings: settings)
+        do {
+            try await profileRepo.upsertProfile(update)
+            await auth.completeOnboarding()
+            loadedSettings = settings
+        } catch {
+            onToast("Failed to save")
+        }
     }
 
     // MARK: - Analytics Cell

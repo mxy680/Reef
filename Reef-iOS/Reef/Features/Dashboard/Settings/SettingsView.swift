@@ -87,9 +87,9 @@ struct SettingsView: View {
                 case .profile:
                     SettingsProfileTab(onToast: showToast)
                 case .preferences:
-                    SettingsPreferencesTab()
+                    SettingsPreferencesTab(onToast: showToast)
                 case .privacy:
-                    SettingsPrivacyTab()
+                    SettingsPrivacyTab(onToast: showToast)
                 case .about:
                     SettingsAboutTab()
                 case .account:
