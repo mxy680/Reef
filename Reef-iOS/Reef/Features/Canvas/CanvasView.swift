@@ -93,7 +93,8 @@ struct CanvasView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
-        .ignoresSafeArea(edges: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
         .animation(.easeInOut(duration: 0.2), value: viewModel.showRuler)
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
     }

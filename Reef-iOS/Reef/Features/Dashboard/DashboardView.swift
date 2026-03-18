@@ -7,6 +7,7 @@ struct DashboardView: View {
     @State private var viewModel = DashboardViewModel()
     @State private var documentsVM = DocumentsViewModel()
     @State private var canvasDocument: Document?
+    @State private var canvasVM: CanvasViewModel?
 
     var body: some View {
         ZStack {
@@ -106,13 +107,14 @@ struct DashboardView: View {
             }
             // MARK: - Canvas Fullscreen Overlay
 
-            if let doc = canvasDocument {
+            if canvasDocument != nil, let vm = canvasVM {
                 CanvasView(
-                    viewModel: CanvasViewModel(document: doc),
+                    viewModel: vm,
                     onDismiss: {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             canvasDocument = nil
                         }
+                        canvasVM = nil
                     }
                 )
                 .transition(.opacity)
@@ -146,6 +148,7 @@ struct DashboardView: View {
             switch tab {
             case .documents:
                 DocumentsContentView(viewModel: documentsVM, onOpenCanvas: { doc in
+                    canvasVM = CanvasViewModel(document: doc)
                     withAnimation(.easeInOut(duration: 0.3)) {
                         canvasDocument = doc
                     }
