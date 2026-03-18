@@ -36,21 +36,13 @@ struct CanvasInfoStrip: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
 
-                if let pages = doc.pageCount {
-                    dotSeparator
-                    Text("\(pages) \(pages == 1 ? "page" : "pages")")
-                        .font(.epilogue(12, weight: .medium))
-                        .tracking(-0.04 * 12)
-                        .foregroundColor(.white.opacity(0.6))
-                }
+                dotSeparator
 
-                if let problems = doc.problemCount {
-                    dotSeparator
-                    Text("\(problems) \(problems == 1 ? "problem" : "problems")")
-                        .font(.epilogue(12, weight: .medium))
-                        .tracking(-0.04 * 12)
-                        .foregroundColor(.white.opacity(0.6))
-                }
+                Text(doc.statusLabel)
+                    .font(.epilogue(12, weight: .medium))
+                    .tracking(-0.04 * 12)
+                    .foregroundColor(.white.opacity(0.6))
+                    .lineLimit(1)
             }
 
             Spacer(minLength: 8)
