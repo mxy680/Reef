@@ -121,9 +121,12 @@ struct SettingsProfileTab: View {
     }
 
     private func profileRing(_ colors: ReefThemeColors) -> some View {
-        ZStack {
+        let bgColor = avatarColors.indices.contains(avatarColorIndex)
+            ? avatarColors[avatarColorIndex]
+            : colors.surface
+        return ZStack {
             Circle()
-                .fill(colors.surface)
+                .fill(bgColor)
                 .frame(width: metrics.profileRingSize, height: metrics.profileRingSize)
                 .overlay(Circle().stroke(colors.border, lineWidth: 2))
 
