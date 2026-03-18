@@ -39,7 +39,7 @@ struct CanvasInfoStrip: View {
 
             divider
 
-            // Doc icon + name + stats
+            // Doc icon + name + timer
             HStack(spacing: 6) {
                 Image(systemName: "doc.text.fill")
                     .font(.system(size: 12, weight: .semibold))
@@ -50,12 +50,7 @@ struct CanvasInfoStrip: View {
                     .tracking(-0.04 * 13)
                     .foregroundColor(.white)
                     .lineLimit(1)
-            }
 
-            Spacer(minLength: 8)
-
-            // Time + battery + dark mode
-            HStack(spacing: 8) {
                 HStack(spacing: 4) {
                     Image(systemName: "clock.fill")
                         .font(.system(size: 10, weight: .semibold))
@@ -65,7 +60,12 @@ struct CanvasInfoStrip: View {
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(.white.opacity(0.55))
                 }
+            }
 
+            Spacer(minLength: 8)
+
+            // Battery + dark mode
+            HStack(spacing: 8) {
                 HStack(spacing: 3) {
                     Image(viewModel.batteryIconName)
                         .renderingMode(.template)
