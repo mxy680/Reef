@@ -14,7 +14,11 @@
 		0A483380FF6AC22B6869D458 /* ProfileUpdate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837EF10AE734D9E16B28F190 /* ProfileUpdate.swift */; };
 		0C4D21737CC83E59DB26C24F /* SupabaseProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A965EEABECDE87D79AF04DC7 /* SupabaseProfileRepository.swift */; };
 		0D287237BD753E19E0F355B0 /* ReefColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82315CD65E53D1BAD137A91C /* ReefColors.swift */; };
+		0DC3FCB745F3E1C347C71AEE /* CanvasDrawingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF282AF06622A7490F913DB0 /* CanvasDrawingBar.swift */; };
+		1040571EEA06DD01EC7E1776 /* ToolSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE035BAF0664E7DC94AFD77F /* ToolSettingsPopover.swift */; };
+		114AD1A2B9668044DDDAFD7E /* EraserSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B5973EB0C19F379FCC7F2D /* EraserSettingsPopover.swift */; };
 		17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */; };
+		1851666EDD5700E210B5FE9F /* RulerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029895EBF64BA43E3B438CBE /* RulerOverlayView.swift */; };
 		1BAD8BD9673755ECB28CD6EC /* ProfileDropdownMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */; };
 		232480B1789C9A7D63D7328C /* ReefAnimations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CEA0E601A77E71794D928EC /* ReefAnimations.swift */; };
 		264E02C174CBEA25D4CDAA6F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BA9314A24B8096266704FC /* SettingsView.swift */; };
@@ -25,6 +29,7 @@
 		38D8F1790EA122FFF3657ACE /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC62F2B8191E199AABE2EE03 /* AuthRepository.swift */; };
 		3AB12E1475C678FB8E72B364 /* RenamePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034DDA05CA3DE5AEE460DA72 /* RenamePopup.swift */; };
 		3B30B4E60D151D06EA7F80B6 /* ReefTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9EC70DF58FA661881CDFA4 /* ReefTypography.swift */; };
+		45F363DF571A655205111912 /* PageOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1157F7573EC1A88B62D162BE /* PageOverlayView.swift */; };
 		49833BF79D795B399EBB53AB /* CourseDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7986E18245D3EB0F3C303539 /* CourseDTO.swift */; };
 		4B96F0FF0CCB884CF1F20FC9 /* SettingsAboutTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF3648670B8144192819600 /* SettingsAboutTab.swift */; };
 		53E8218CC2121793969853CC /* DocumentsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C94BB916726F14B8F18816A /* DocumentsContentView.swift */; };
@@ -33,6 +38,7 @@
 		5969F8911F96686594A54AB5 /* AuthFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CDCFE49DE81342DD005D2CB /* AuthFlowTests.swift */; };
 		59E51EB69B9786DCF5E3201F /* KaTeX in Resources */ = {isa = PBXBuildFile; fileRef = 1FBAAC77F6282CB6C717830B /* KaTeX */; };
 		5AC35EBDA8FAD1368CDF6500 /* MoveToCoursePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0656F4CAEF8F47621008C153 /* MoveToCoursePopup.swift */; };
+		5AF7C170E44057E00878FD76 /* CanvasToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFBBEAD892750705B8D86501 /* CanvasToolbarButton.swift */; };
 		5BC086AEA978BDB34E39257A /* UsageStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAA320FF00304DED13687F5 /* UsageStats.swift */; };
 		615F9694912D6F9F38026BBE /* DocumentUploadPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D888C15CDBA6006BA616096 /* DocumentUploadPopup.swift */; };
 		662978BA8DCB0ACB38E3AF1A /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F59C552181409C88B428D62E /* SupabaseConfig.swift */; };
@@ -46,41 +52,54 @@
 		787E897ECB403C48F3AEF26B /* ReefLayoutMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */; };
 		7CCA7D791B4FFFB255020A58 /* SettingsAccountTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F79381500047B6B71EDE6D /* SettingsAccountTab.swift */; };
 		7DCCDF72A73BD081FC3620CD /* ShimmerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06656EEC01684E7F12A1F036 /* ShimmerOverlay.swift */; };
+		81048E4F637D35FB5264D6AD /* CanvasViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E2BB1B2191FC479DE667369 /* CanvasViewModel.swift */; };
+		824A47A5769DBE95DA84EDA0 /* DrawingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1232D44FD87C498A92B57 /* DrawingManager.swift */; };
 		860EF2349412D2588706ADD3 /* SettingsPreferencesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18769193DCBDAB952D2EB46 /* SettingsPreferencesTab.swift */; };
 		86C48AE599F618C06636F0BD /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 8A0AD6F5B9C938C549CBDA7E /* GoogleSignIn */; };
 		876927BA65FC6E72AB15DA7C /* ProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8342C69F3700A9310BE6514E /* ProfileRepository.swift */; };
 		89AECE16EA6F37FBDBD3B0E3 /* DocumentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAF394687706496B518638E /* DocumentCardView.swift */; };
+		8BAFDDD832027A77304D968D /* CanvasTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5293FD272F3F0317EA3DDA9D /* CanvasTool.swift */; };
+		8FBC63CDB5CCDF7B75172271 /* PageSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049829935475A647A03F8EC0 /* PageSettingsPopover.swift */; };
 		90B58BB88071D49268A953F9 /* ReefApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20B9D25AC3198EC21D837140 /* ReefApp.swift */; };
 		9194FF7BADA783FB58CC4EC8 /* DocumentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BBC645292B51A009BA92AD /* DocumentRepository.swift */; };
 		924AD60F9C29C7A8AF240E2E /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2589F18A50DC9C05FCF0FC6C /* AuthViewModel.swift */; };
 		A560DB781FB3A50870D1E4B8 /* DocumentDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13554774B4CA9AB051AD846 /* DocumentDTO.swift */; };
 		B1342C3D4467A24E496A2705 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */; };
+		B26F3491C9BD243B4E65D766 /* MockCanvasData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81FBD2D3EFA3FA4A72ACA0F3 /* MockCanvasData.swift */; };
 		B2BDFCF83E6EC8C87F30B67B /* SupabaseUsageStatsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A01A72D1889843ADC7EACB3 /* SupabaseUsageStatsRepository.swift */; };
+		B6769F658882D3655D4DF665 /* CanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458089D68B25E880C7F9E0C3 /* CanvasView.swift */; };
 		B810EB60F5595D898E981F20 /* NotificationDropdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4689C58CCB86B7C32D03AA /* NotificationDropdownTests.swift */; };
 		BA0D8850AA60F67BD31A9008 /* DocumentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A80790E56F45AD11C42C6AE /* DocumentsViewModel.swift */; };
 		BA13FB6B1A663195074470FE /* ReefBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC89D92C9819BFC2E70F4BD /* ReefBadge.swift */; };
 		BD86A46358438D7E29C4251F /* SettingsProfileTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540FA017DB5B558F980C778C /* SettingsProfileTab.swift */; };
 		BDEF8CB0B1BDF475A9B404C0 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67343B23E7351C02A36771E0 /* Document.swift */; };
 		BE34AD54F16F85B938302FE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F68AC1C3432E326DB646676 /* Assets.xcassets */; };
+		C1054E0C1419242A566A1EA9 /* PopoverCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF40F4A25F5204FEDAF3FC4 /* PopoverCard.swift */; };
 		CC5E34E6955F3B11D1F9EAEE /* SupabaseDocumentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0F1AFE64D2E5F951871142 /* SupabaseDocumentRepository.swift */; };
 		CDE7FCB4A7A95CA3F7018D5D /* DashboardTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313CACE22D5819885170769 /* DashboardTab.swift */; };
 		CE1CEFE6CF36DA785BB586EA /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADCC5EDF667251F329B6F2A /* Profile.swift */; };
+		D02A375FA6515DB534171C08 /* TutorHintPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = A187D2FEFCCCE67BF83BA0A4 /* TutorHintPopover.swift */; };
 		D03FA7FFE2014624EFF77984 /* ReefButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E7B4C0ECBC8C19B3047E375 /* ReefButton.swift */; };
 		D04CF7B3F8B8B36872F18F99 /* DeleteConfirmPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B1625043D9BE3B466B4EF85 /* DeleteConfirmPopup.swift */; };
 		D2CEE2BCCA50F64C9096468E /* DocumentSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88C0707187B735021AB1D0D9 /* DocumentSkeletonView.swift */; };
+		D440C1F64F4138D89CE9DD4A /* CanvasInfoStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58ADFDC5DF429F967351DB7 /* CanvasInfoStrip.swift */; };
 		D4997C4B4B12928F5989D97B /* ComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D608FF89234404A5B5DDC266 /* ComingSoonView.swift */; };
 		D607BA3609664BB25C5BBCC6 /* DashboardNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA931CB0705B21CA88CF4BE6 /* DashboardNavigationTests.swift */; };
+		DE00728ECAC1B16052739324 /* CanvasPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49CF42663E725256191900B2 /* CanvasPageView.swift */; };
 		E0121FA37C4E016A0BEE7233 /* DottedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21872AA207AEEC6F2397B9F4 /* DottedBackground.swift */; };
 		E14DAD60A5888D8471C9133D /* TierLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = F962193EFD8BFBB8449D0469 /* TierLimits.swift */; };
 		E1A5CA31A4B76C02FE2353A6 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 8EDF913D03056A3B1DFF5DD0 /* Fonts */; };
 		E3351CF1B2B16F16FCBAB5C3 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED132B34EEF03AF5A9672ED /* AnalyticsView.swift */; };
+		E8EF8F87EAA7D28D7CF363C3 /* PageMenuPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC9968FBE0F62787857FD813 /* PageMenuPopover.swift */; };
 		EC0F257D22B993428D5A5FF3 /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3782C601D52EF8D22F19E789 /* SettingsComponents.swift */; };
 		EC58CCE1237EC4F39BA5A4E8 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F363767C6C99DEC96663F36 /* AppRouter.swift */; };
+		ED3D7199323CA782DA71B5A2 /* AddColorPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1453C18E7538070E48493719 /* AddColorPopup.swift */; };
 		F2568A6213CDA2E61E2CCE92 /* ReefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982248BAE2D4A7F5BE47B8D8 /* ReefCard.swift */; };
 		F318C137C0FE80E01717FD90 /* ReefTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BCE4900CD1562F72FAC77A /* ReefTheme.swift */; };
 		F485DD27CAB43B9B7FB32B36 /* ReefUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B48811F63C33857241E52D /* ReefUITestCase.swift */; };
 		F5DD1BC1EFC10CD8E368CC81 /* DashboardHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */; };
 		F979B442814B7471F31DCA1B /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B14B10AB75BC4F714166B0 /* AppleSignInCoordinator.swift */; };
+		FC2A3704CF2F9C01A9965208 /* CanvasContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D489D93195D1EB0460BB6162 /* CanvasContainerView.swift */; };
 		FDD5BDA76B374BE31525ABF1 /* DashboardSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4742404ABF6C1505BEE9BA09 /* DashboardSidebar.swift */; };
 /* End PBXBuildFile section */
 
@@ -97,12 +116,16 @@
 /* Begin PBXFileReference section */
 		00BCE4900CD1562F72FAC77A /* ReefTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTheme.swift; sourceTree = "<group>"; };
 		00F5231E0BAD269B72BDD192 /* DocumentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentThumbnailView.swift; sourceTree = "<group>"; };
+		029895EBF64BA43E3B438CBE /* RulerOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulerOverlayView.swift; sourceTree = "<group>"; };
 		034DDA05CA3DE5AEE460DA72 /* RenamePopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenamePopup.swift; sourceTree = "<group>"; };
+		049829935475A647A03F8EC0 /* PageSettingsPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSettingsPopover.swift; sourceTree = "<group>"; };
 		0656F4CAEF8F47621008C153 /* MoveToCoursePopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveToCoursePopup.swift; sourceTree = "<group>"; };
 		06656EEC01684E7F12A1F036 /* ShimmerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShimmerOverlay.swift; sourceTree = "<group>"; };
 		0C94BB916726F14B8F18816A /* DocumentsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsContentView.swift; sourceTree = "<group>"; };
 		0D32EA1898AEB34154A55CD5 /* ReefUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ReefUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D888C15CDBA6006BA616096 /* DocumentUploadPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadPopup.swift; sourceTree = "<group>"; };
+		1157F7573EC1A88B62D162BE /* PageOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageOverlayView.swift; sourceTree = "<group>"; };
+		1453C18E7538070E48493719 /* AddColorPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddColorPopup.swift; sourceTree = "<group>"; };
 		16BBC645292B51A009BA92AD /* DocumentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentRepository.swift; sourceTree = "<group>"; };
 		1CDCFE49DE81342DD005D2CB /* AuthFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowTests.swift; sourceTree = "<group>"; };
 		1EF3648670B8144192819600 /* SettingsAboutTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAboutTab.swift; sourceTree = "<group>"; };
@@ -122,14 +145,20 @@
 		3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDropdownMenu.swift; sourceTree = "<group>"; };
 		3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleIcon.swift; sourceTree = "<group>"; };
 		3F68AC1C3432E326DB646676 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		3FF40F4A25F5204FEDAF3FC4 /* PopoverCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverCard.swift; sourceTree = "<group>"; };
+		458089D68B25E880C7F9E0C3 /* CanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasView.swift; sourceTree = "<group>"; };
 		4742404ABF6C1505BEE9BA09 /* DashboardSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSidebar.swift; sourceTree = "<group>"; };
+		49CF42663E725256191900B2 /* CanvasPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPageView.swift; sourceTree = "<group>"; };
 		4E7B4C0ECBC8C19B3047E375 /* ReefButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefButton.swift; sourceTree = "<group>"; };
+		5293FD272F3F0317EA3DDA9D /* CanvasTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTool.swift; sourceTree = "<group>"; };
 		540FA017DB5B558F980C778C /* SettingsProfileTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsProfileTab.swift; sourceTree = "<group>"; };
+		56B5973EB0C19F379FCC7F2D /* EraserSettingsPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EraserSettingsPopover.swift; sourceTree = "<group>"; };
 		67343B23E7351C02A36771E0 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
 		6B1625043D9BE3B466B4EF85 /* DeleteConfirmPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteConfirmPopup.swift; sourceTree = "<group>"; };
 		7986E18245D3EB0F3C303539 /* CourseDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseDTO.swift; sourceTree = "<group>"; };
 		7CEA0E601A77E71794D928EC /* ReefAnimations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefAnimations.swift; sourceTree = "<group>"; };
 		7EC89D92C9819BFC2E70F4BD /* ReefBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefBadge.swift; sourceTree = "<group>"; };
+		81FBD2D3EFA3FA4A72ACA0F3 /* MockCanvasData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockCanvasData.swift; sourceTree = "<group>"; };
 		82315CD65E53D1BAD137A91C /* ReefColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefColors.swift; sourceTree = "<group>"; };
 		8342C69F3700A9310BE6514E /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
 		837EF10AE734D9E16B28F190 /* ProfileUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUpdate.swift; sourceTree = "<group>"; };
@@ -140,38 +169,47 @@
 		953D541D3BCC2DE8B8F073C0 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
 		982248BAE2D4A7F5BE47B8D8 /* ReefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefCard.swift; sourceTree = "<group>"; };
 		9D9EC70DF58FA661881CDFA4 /* ReefTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTypography.swift; sourceTree = "<group>"; };
+		9E2BB1B2191FC479DE667369 /* CanvasViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewModel.swift; sourceTree = "<group>"; };
 		9ED132B34EEF03AF5A9672ED /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		A187D2FEFCCCE67BF83BA0A4 /* TutorHintPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorHintPopover.swift; sourceTree = "<group>"; };
 		A2B027C742233E2E12B4D878 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		A37FCABDB72CEC9F68DABAD5 /* ProfileDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDTO.swift; sourceTree = "<group>"; };
 		A965EEABECDE87D79AF04DC7 /* SupabaseProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseProfileRepository.swift; sourceTree = "<group>"; };
 		AA931CB0705B21CA88CF4BE6 /* DashboardNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardNavigationTests.swift; sourceTree = "<group>"; };
 		AADCC5EDF667251F329B6F2A /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		AC62F2B8191E199AABE2EE03 /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
+		AE035BAF0664E7DC94AFD77F /* ToolSettingsPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolSettingsPopover.swift; sourceTree = "<group>"; };
 		B1C1085150D25A8BA7D81D2B /* Reef.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Reef.entitlements; sourceTree = "<group>"; };
 		B313CACE22D5819885170769 /* DashboardTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardTab.swift; sourceTree = "<group>"; };
+		B3B1232D44FD87C498A92B57 /* DrawingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingManager.swift; sourceTree = "<group>"; };
 		B3B14B10AB75BC4F714166B0 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
 		B73E376CEC2A475E18923446 /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
 		BF4462366B99764910AD0BD6 /* UsageStatsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStatsRepository.swift; sourceTree = "<group>"; };
 		BF7ECE3CE5AFD4A1E43FEA24 /* ReefTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTextField.swift; sourceTree = "<group>"; };
 		C13554774B4CA9AB051AD846 /* DocumentDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentDTO.swift; sourceTree = "<group>"; };
 		C4F79381500047B6B71EDE6D /* SettingsAccountTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAccountTab.swift; sourceTree = "<group>"; };
+		C58ADFDC5DF429F967351DB7 /* CanvasInfoStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasInfoStrip.swift; sourceTree = "<group>"; };
 		C7BA9314A24B8096266704FC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D489D93195D1EB0460BB6162 /* CanvasContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasContainerView.swift; sourceTree = "<group>"; };
 		D608FF89234404A5B5DDC266 /* ComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComingSoonView.swift; sourceTree = "<group>"; };
 		D65E5B2475B1D79FC1BD67A9 /* SettingsPrivacyTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPrivacyTab.swift; sourceTree = "<group>"; };
 		D98DEB59ABD1162317518CE4 /* DocumentEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmptyStateView.swift; sourceTree = "<group>"; };
 		DC4689C58CCB86B7C32D03AA /* NotificationDropdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDropdownTests.swift; sourceTree = "<group>"; };
+		DC9968FBE0F62787857FD813 /* PageMenuPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageMenuPopover.swift; sourceTree = "<group>"; };
 		DE0F1AFE64D2E5F951871142 /* SupabaseDocumentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseDocumentRepository.swift; sourceTree = "<group>"; };
 		E03E18AE30F94DABABC0A0BF /* ReefDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefDivider.swift; sourceTree = "<group>"; };
 		E1DF6E9442D61855C2F2DC6C /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		E5F643CA708229A01CC148AD /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		E93614328445674032CC85E8 /* DetailsPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailsPopup.swift; sourceTree = "<group>"; };
 		EAAF394687706496B518638E /* DocumentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCardView.swift; sourceTree = "<group>"; };
+		EF282AF06622A7490F913DB0 /* CanvasDrawingBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDrawingBar.swift; sourceTree = "<group>"; };
+		EFBBEAD892750705B8D86501 /* CanvasToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbarButton.swift; sourceTree = "<group>"; };
 		F18769193DCBDAB952D2EB46 /* SettingsPreferencesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPreferencesTab.swift; sourceTree = "<group>"; };
 		F59C552181409C88B428D62E /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
 		F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
 		F962193EFD8BFBB8449D0469 /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
 		FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefLayoutMetrics.swift; sourceTree = "<group>"; };
-		"TEMP_A3C728E5-DCFD-4485-BFEE-955CD957835C" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		"TEMP_847955C5-4315-4D2D-810E-43BA09F08A57" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -188,6 +226,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		05147B11F4B18FA70C1D6E07 /* Popovers */ = {
+			isa = PBXGroup;
+			children = (
+				1453C18E7538070E48493719 /* AddColorPopup.swift */,
+				56B5973EB0C19F379FCC7F2D /* EraserSettingsPopover.swift */,
+				DC9968FBE0F62787857FD813 /* PageMenuPopover.swift */,
+				049829935475A647A03F8EC0 /* PageSettingsPopover.swift */,
+				AE035BAF0664E7DC94AFD77F /* ToolSettingsPopover.swift */,
+				A187D2FEFCCCE67BF83BA0A4 /* TutorHintPopover.swift */,
+			);
+			path = Popovers;
+			sourceTree = "<group>";
+		};
 		18C69EFE0AF9128BD3588C6A /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -234,6 +285,25 @@
 				9ED132B34EEF03AF5A9672ED /* AnalyticsView.swift */,
 			);
 			path = Analytics;
+			sourceTree = "<group>";
+		};
+		3A572D68FFF66A69BBAA045A /* Drawing */ = {
+			isa = PBXGroup;
+			children = (
+				B3B1232D44FD87C498A92B57 /* DrawingManager.swift */,
+			);
+			path = Drawing;
+			sourceTree = "<group>";
+		};
+		3CF1AD53CC5776561FE18376 /* Toolbar */ = {
+			isa = PBXGroup;
+			children = (
+				EF282AF06622A7490F913DB0 /* CanvasDrawingBar.swift */,
+				C58ADFDC5DF429F967351DB7 /* CanvasInfoStrip.swift */,
+				5293FD272F3F0317EA3DDA9D /* CanvasTool.swift */,
+				EFBBEAD892750705B8D86501 /* CanvasToolbarButton.swift */,
+			);
+			path = Toolbar;
 			sourceTree = "<group>";
 		};
 		3E991CE445F9BC6C1CFC930F /* Data */ = {
@@ -310,6 +380,20 @@
 			path = Supabase;
 			sourceTree = "<group>";
 		};
+		6F58A5075D871B249F546A4C /* Canvas */ = {
+			isa = PBXGroup;
+			children = (
+				458089D68B25E880C7F9E0C3 /* CanvasView.swift */,
+				9E2BB1B2191FC479DE667369 /* CanvasViewModel.swift */,
+				81FBD2D3EFA3FA4A72ACA0F3 /* MockCanvasData.swift */,
+				3A572D68FFF66A69BBAA045A /* Drawing */,
+				7CE18440300DF7E632A79D0B /* PageView */,
+				05147B11F4B18FA70C1D6E07 /* Popovers */,
+				3CF1AD53CC5776561FE18376 /* Toolbar */,
+			);
+			path = Canvas;
+			sourceTree = "<group>";
+		};
 		7262DF6D88DE3E4B21390AF9 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -344,12 +428,24 @@
 			path = Entities;
 			sourceTree = "<group>";
 		};
+		7CE18440300DF7E632A79D0B /* PageView */ = {
+			isa = PBXGroup;
+			children = (
+				D489D93195D1EB0460BB6162 /* CanvasContainerView.swift */,
+				49CF42663E725256191900B2 /* CanvasPageView.swift */,
+				1157F7573EC1A88B62D162BE /* PageOverlayView.swift */,
+				029895EBF64BA43E3B438CBE /* RulerOverlayView.swift */,
+			);
+			path = PageView;
+			sourceTree = "<group>";
+		};
 		90756ECD6130EE285E1059D7 /* Components */ = {
 			isa = PBXGroup;
 			children = (
 				2ED4E8C569BD35F02677D82C /* DashboardCardModifier.swift */,
 				21872AA207AEEC6F2397B9F4 /* DottedBackground.swift */,
 				3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */,
+				3FF40F4A25F5204FEDAF3FC4 /* PopoverCard.swift */,
 				3205E3BD9FC3234A4F37231A /* PopupShellModifier.swift */,
 				7EC89D92C9819BFC2E70F4BD /* ReefBadge.swift */,
 				4E7B4C0ECBC8C19B3047E375 /* ReefButton.swift */,
@@ -422,6 +518,7 @@
 			isa = PBXGroup;
 			children = (
 				29712C8D6E09C4318C2196FE /* Auth */,
+				6F58A5075D871B249F546A4C /* Canvas */,
 				3FA23934E46F9E846ADFC9A5 /* Dashboard */,
 			);
 			path = Features;
@@ -446,10 +543,10 @@
 			path = Domain;
 			sourceTree = "<group>";
 		};
-		"TEMP_0F93EEEF-7745-4442-99D5-15207B6978B2" /* Reef-iOS */ = {
+		"TEMP_304D80B0-8220-465B-9561-6E02CBCA2DA1" /* Reef-iOS */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_A3C728E5-DCFD-4485-BFEE-955CD957835C" /* Secrets.xcconfig */,
+				"TEMP_847955C5-4315-4D2D-810E-43BA09F08A57" /* Secrets.xcconfig */,
 			);
 			path = "Reef-iOS";
 			sourceTree = "<group>";
@@ -558,12 +655,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED3D7199323CA782DA71B5A2 /* AddColorPopup.swift in Sources */,
 				E3351CF1B2B16F16FCBAB5C3 /* AnalyticsView.swift in Sources */,
 				EC58CCE1237EC4F39BA5A4E8 /* AppRouter.swift in Sources */,
 				F979B442814B7471F31DCA1B /* AppleSignInCoordinator.swift in Sources */,
 				38D8F1790EA122FFF3657ACE /* AuthRepository.swift in Sources */,
 				28A397776DD5B1EF7FE50E20 /* AuthView.swift in Sources */,
 				924AD60F9C29C7A8AF240E2E /* AuthViewModel.swift in Sources */,
+				FC2A3704CF2F9C01A9965208 /* CanvasContainerView.swift in Sources */,
+				0DC3FCB745F3E1C347C71AEE /* CanvasDrawingBar.swift in Sources */,
+				D440C1F64F4138D89CE9DD4A /* CanvasInfoStrip.swift in Sources */,
+				DE00728ECAC1B16052739324 /* CanvasPageView.swift in Sources */,
+				8BAFDDD832027A77304D968D /* CanvasTool.swift in Sources */,
+				5AF7C170E44057E00878FD76 /* CanvasToolbarButton.swift in Sources */,
+				B6769F658882D3655D4DF665 /* CanvasView.swift in Sources */,
+				81048E4F637D35FB5264D6AD /* CanvasViewModel.swift in Sources */,
 				D4997C4B4B12928F5989D97B /* ComingSoonView.swift in Sources */,
 				69A036D6A98AB8DEE63C7869 /* Course.swift in Sources */,
 				49833BF79D795B399EBB53AB /* CourseDTO.swift in Sources */,
@@ -586,8 +692,15 @@
 				53E8218CC2121793969853CC /* DocumentsContentView.swift in Sources */,
 				BA0D8850AA60F67BD31A9008 /* DocumentsViewModel.swift in Sources */,
 				E0121FA37C4E016A0BEE7233 /* DottedBackground.swift in Sources */,
+				824A47A5769DBE95DA84EDA0 /* DrawingManager.swift in Sources */,
+				114AD1A2B9668044DDDAFD7E /* EraserSettingsPopover.swift in Sources */,
 				17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */,
+				B26F3491C9BD243B4E65D766 /* MockCanvasData.swift in Sources */,
 				5AC35EBDA8FAD1368CDF6500 /* MoveToCoursePopup.swift in Sources */,
+				E8EF8F87EAA7D28D7CF363C3 /* PageMenuPopover.swift in Sources */,
+				45F363DF571A655205111912 /* PageOverlayView.swift in Sources */,
+				8FBC63CDB5CCDF7B75172271 /* PageSettingsPopover.swift in Sources */,
+				C1054E0C1419242A566A1EA9 /* PopoverCard.swift in Sources */,
 				00D8E6935299726B8B32D780 /* PopupShellModifier.swift in Sources */,
 				CE1CEFE6CF36DA785BB586EA /* Profile.swift in Sources */,
 				681E95C14DCD1F7E4AB35359 /* ProfileDTO.swift in Sources */,
@@ -606,6 +719,7 @@
 				F318C137C0FE80E01717FD90 /* ReefTheme.swift in Sources */,
 				3B30B4E60D151D06EA7F80B6 /* ReefTypography.swift in Sources */,
 				3AB12E1475C678FB8E72B364 /* RenamePopup.swift in Sources */,
+				1851666EDD5700E210B5FE9F /* RulerOverlayView.swift in Sources */,
 				4B96F0FF0CCB884CF1F20FC9 /* SettingsAboutTab.swift in Sources */,
 				7CCA7D791B4FFFB255020A58 /* SettingsAccountTab.swift in Sources */,
 				EC0F257D22B993428D5A5FF3 /* SettingsComponents.swift in Sources */,
@@ -620,6 +734,8 @@
 				0C4D21737CC83E59DB26C24F /* SupabaseProfileRepository.swift in Sources */,
 				B2BDFCF83E6EC8C87F30B67B /* SupabaseUsageStatsRepository.swift in Sources */,
 				E14DAD60A5888D8471C9133D /* TierLimits.swift in Sources */,
+				1040571EEA06DD01EC7E1776 /* ToolSettingsPopover.swift in Sources */,
+				D02A375FA6515DB534171C08 /* TutorHintPopover.swift in Sources */,
 				5BC086AEA978BDB34E39257A /* UsageStats.swift in Sources */,
 				6A2431650F553626C581166E /* UsageStatsRepository.swift in Sources */,
 				363D0A041F425FBA2FA20E54 /* UserSettings.swift in Sources */,
@@ -669,7 +785,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_A3C728E5-DCFD-4485-BFEE-955CD957835C" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_847955C5-4315-4D2D-810E-43BA09F08A57" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -735,7 +851,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_A3C728E5-DCFD-4485-BFEE-955CD957835C" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_847955C5-4315-4D2D-810E-43BA09F08A57" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;

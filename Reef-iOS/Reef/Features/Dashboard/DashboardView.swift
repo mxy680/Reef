@@ -6,6 +6,7 @@ struct DashboardView: View {
     @Environment(\.reefLayoutMetrics) private var metrics
     @State private var viewModel = DashboardViewModel()
     @State private var documentsVM = DocumentsViewModel()
+    @State private var canvasDocument: Document?
 
     var body: some View {
         ZStack {
@@ -103,7 +104,22 @@ struct DashboardView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
                 .animation(.spring(duration: 0.2), value: documentsVM.pendingUploadURL != nil)
             }
+            // MARK: - Canvas Fullscreen Overlay
+
+            if let doc = canvasDocument {
+                CanvasView(
+                    viewModel: CanvasViewModel(document: doc),
+                    onDismiss: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            canvasDocument = nil
+                        }
+                    }
+                )
+                .transition(.opacity)
+                .zIndex(100)
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: canvasDocument?.id)
         .animation(.spring(duration: 0.35, bounce: 0.15), value: viewModel.sidebarOpen)
         .alert(
             "Error",
@@ -129,7 +145,11 @@ struct DashboardView: View {
         if let tab = viewModel.selectedTab {
             switch tab {
             case .documents:
-                DocumentsContentView(viewModel: documentsVM)
+                DocumentsContentView(viewModel: documentsVM, onOpenCanvas: { doc in
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        canvasDocument = doc
+                    }
+                })
             case .analytics:
                 AnalyticsView()
             case .myReef:
