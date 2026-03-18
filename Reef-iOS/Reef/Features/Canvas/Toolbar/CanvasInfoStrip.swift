@@ -64,11 +64,19 @@ struct CanvasInfoStrip: View {
 
             Spacer(minLength: 8)
 
-            // Zoom level
-            Text("\(viewModel.zoomPercentage)%")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundColor(.white.opacity(0.55))
-                .frame(minWidth: 36)
+            // Battery
+            HStack(spacing: 4) {
+                Image(viewModel.batteryIconName)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 18, height: 18)
+                    .foregroundColor(.white.opacity(0.55))
+
+                Text("\(viewModel.batteryPercentage)%")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.55))
+            }
 
             divider
 

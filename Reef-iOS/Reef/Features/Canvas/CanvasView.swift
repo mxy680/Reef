@@ -1,5 +1,6 @@
 import SwiftUI
 import PencilKit
+import Combine
 
 // MARK: - Canvas View (fullscreen container)
 
@@ -95,5 +96,9 @@ struct CanvasView: View {
         .statusBarHidden(true)
         .animation(.easeInOut(duration: 0.2), value: viewModel.showRuler)
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
+        .onAppear { viewModel.startBatteryMonitoring() }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+            viewModel.updateBatteryLevel()
+        }
     }
 }

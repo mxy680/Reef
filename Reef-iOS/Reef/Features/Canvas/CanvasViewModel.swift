@@ -1,6 +1,7 @@
 import SwiftUI
 import PencilKit
 import PDFKit
+import UIKit
 
 // MARK: - Canvas ViewModel
 
@@ -42,8 +43,34 @@ final class CanvasViewModel {
         pdfDocument.pageCount
     }
 
-    var zoomPercentage: Int {
-        Int(zoomScale * 100)
+    // MARK: - Battery
+
+    var batteryLevel: Float = 1.0
+
+    var batteryPercentage: Int {
+        Int(batteryLevel * 100)
+    }
+
+    /// Asset name for the battery icon based on current level.
+    var batteryIconName: String {
+        switch batteryLevel {
+        case ..<0.15: "battery.1"
+        case ..<0.40: "battery.2"
+        case ..<0.70: "battery.3"
+        default:       "battery.4"
+        }
+    }
+
+    func startBatteryMonitoring() {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        batteryLevel = max(UIDevice.current.batteryLevel, 0)
+        // On simulator batteryLevel is -1; show full
+        if batteryLevel < 0 { batteryLevel = 1.0 }
+    }
+
+    func updateBatteryLevel() {
+        let level = UIDevice.current.batteryLevel
+        batteryLevel = level >= 0 ? level : 1.0
     }
 
     // MARK: - UI State
