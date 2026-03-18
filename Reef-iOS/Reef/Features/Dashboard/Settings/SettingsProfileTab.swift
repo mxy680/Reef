@@ -16,7 +16,11 @@ struct SettingsProfileTab: View {
     @State private var avatarColorIndex: Int = 0
     @State private var dailyGoalMinutes: Int = 30
     @State private var saveTask: Task<Void, Never>?
-    @State private var hasLoaded = false
+
+    // Snapshots of the last-loaded values — saves only fire when something actually changed
+    @State private var loadedDisplayName: String = ""
+    @State private var loadedGrade: String = ""
+    @State private var loadedSubjects: Set<String> = []
 
     private let avatarColors: [Color] = [
         Color(hex: 0xFCEBD5), Color(hex: 0xD5EBF0), Color(hex: 0xD5F0E0),
@@ -71,13 +75,11 @@ struct SettingsProfileTab: View {
                 .offset(x: 3, y: 3)
         )
         .compositingGroup()
-        .onAppear {
-            loadFromProfile()
-            hasLoaded = true
-        }
-        .onChange(of: displayName) { if hasLoaded { scheduleSave() } }
-        .onChange(of: selectedGrade) { if hasLoaded { scheduleSave() } }
-        .onChange(of: selectedSubjects) { if hasLoaded { scheduleSave() } }
+        .onAppear { loadFromProfile() }
+        .onDisappear { saveTask?.cancel() }
+        .onChange(of: displayName) { scheduleSave() }
+        .onChange(of: selectedGrade) { scheduleSave() }
+        .onChange(of: selectedSubjects) { scheduleSave() }
     }
 
     // MARK: - Profile Header Row
@@ -316,9 +318,10 @@ struct SettingsProfileTab: View {
 
             FlowLayout(spacing: 5) {
                 ForEach(settingsAllSubjects, id: \.self) { subject in
-                    SubjectPill(
-                        subject: subject,
-                        isSelected: selectedSubjects.contains(subject)
+                    SettingsPill(
+                        label: subject,
+                        isSelected: selectedSubjects.contains(subject),
+                        horizontalPadding: 12
                     ) {
                         if selectedSubjects.contains(subject) {
                             selectedSubjects.remove(subject)
@@ -339,9 +342,20 @@ struct SettingsProfileTab: View {
         displayName = profile.displayName ?? ""
         selectedGrade = profile.grade ?? ""
         selectedSubjects = Set(profile.subjects)
+        // Capture snapshots so onChange can detect real user changes vs initial load
+        loadedDisplayName = displayName
+        loadedGrade = selectedGrade
+        loadedSubjects = selectedSubjects
+    }
+
+    private var hasUnsavedChanges: Bool {
+        displayName != loadedDisplayName ||
+        selectedGrade != loadedGrade ||
+        selectedSubjects != loadedSubjects
     }
 
     private func scheduleSave() {
+        guard hasUnsavedChanges else { return }
         saveTask?.cancel()
         saveTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.0))
@@ -359,6 +373,10 @@ struct SettingsProfileTab: View {
         do {
             try await profileRepo.upsertProfile(update)
             await auth.completeOnboarding()
+            // Advance snapshots so unchanged fields don't re-trigger saves
+            loadedDisplayName = displayName
+            loadedGrade = selectedGrade
+            loadedSubjects = selectedSubjects
         } catch {
             onToast("Failed to save")
         }

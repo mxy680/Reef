@@ -288,6 +288,7 @@ struct SettingsPill: View {
     @Environment(ReefTheme.self) private var theme
     let label: String
     let isSelected: Bool
+    var horizontalPadding: CGFloat = 14
     let action: () -> Void
 
     @State private var isPressed = false
@@ -299,7 +300,7 @@ struct SettingsPill: View {
             .font(.epilogue(12, weight: .bold))
             .tracking(-0.04 * 12)
             .foregroundStyle(isSelected ? ReefColors.white : colors.text)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, horizontalPadding)
             .padding(.vertical, 8)
             .background(isSelected ? ReefColors.primary : colors.card)
             .clipShape(Capsule())
@@ -312,7 +313,7 @@ struct SettingsPill: View {
             .offset(x: isPressed ? 3 : 0, y: isPressed ? 3 : 0)
             .compositingGroup()
             .animation(.spring(duration: 0.15, bounce: 0.15), value: isPressed)
-            .contentShape(Rectangle())
+            .contentShape(Capsule())
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in isPressed = true }
@@ -423,48 +424,3 @@ struct FlowLayout: Layout {
     }
 }
 
-// MARK: - SubjectPill
-
-struct SubjectPill: View {
-    @Environment(ReefTheme.self) private var theme
-    let subject: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    @State private var isPressed = false
-    private let springBackDelay: TimeInterval = 0.18
-
-    var body: some View {
-        let colors = theme.colors
-        Text(subject)
-            .font(.epilogue(12, weight: .bold))
-            .tracking(-0.04 * 12)
-            .foregroundStyle(isSelected ? ReefColors.white : colors.text)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(isSelected ? ReefColors.primary : colors.card)
-            .clipShape(Capsule())
-            .overlay(Capsule().stroke(colors.border, lineWidth: 1.5))
-            .background(
-                Capsule()
-                    .fill(colors.shadow)
-                    .offset(x: isPressed ? 0 : 3, y: isPressed ? 0 : 3)
-            )
-            .offset(x: isPressed ? 3 : 0, y: isPressed ? 3 : 0)
-            .compositingGroup()
-            .animation(.spring(duration: 0.15, bounce: 0.15), value: isPressed)
-            .contentShape(Rectangle())
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in isPressed = true }
-                    .onEnded { _ in
-                        isPressed = false
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .seconds(springBackDelay))
-                            action()
-                        }
-                    }
-            )
-            .accessibilityAddTraits(.isButton)
-    }
-}
