@@ -11,6 +11,8 @@ struct CanvasInfoStrip: View {
         viewModel.isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasDrawingBar.barColor
     }
 
+    private var doc: Document { viewModel.document }
+
     var body: some View {
         HStack(spacing: 0) {
             // Home button
@@ -24,7 +26,34 @@ struct CanvasInfoStrip: View {
             .buttonStyle(.plain)
             .padding(.leading, 6)
 
-            Spacer()
+            // Center: doc name · pages · problems
+            Spacer(minLength: 8)
+
+            HStack(spacing: 0) {
+                Text(doc.displayName)
+                    .font(.epilogue(13, weight: .bold))
+                    .tracking(-0.04 * 13)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
+                if let pages = doc.pageCount {
+                    dotSeparator
+                    Text("\(pages) \(pages == 1 ? "page" : "pages")")
+                        .font(.epilogue(12, weight: .medium))
+                        .tracking(-0.04 * 12)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                if let problems = doc.problemCount {
+                    dotSeparator
+                    Text("\(problems) \(problems == 1 ? "problem" : "problems")")
+                        .font(.epilogue(12, weight: .medium))
+                        .tracking(-0.04 * 12)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+
+            Spacer(minLength: 8)
 
             // Tutor mode toggle
             HStack(spacing: 8) {
@@ -47,5 +76,11 @@ struct CanvasInfoStrip: View {
                 Color.black.opacity(viewModel.isDarkMode ? 0.3 : 0.18)
             }
         )
+    }
+
+    private var dotSeparator: some View {
+        Text("  ·  ")
+            .font(.system(size: 12, weight: .bold))
+            .foregroundColor(.white.opacity(0.35))
     }
 }
