@@ -63,7 +63,7 @@ struct ReefToggle: View {
                 .padding(size.padding)
                 .shadow(color: colors.shadow.opacity(0.3), radius: 2, x: 0, y: 1)
         }
-        .animation(.spring(duration: 0.2, bounce: 0.3), value: isOn)
+        .animation(.spring(duration: 0.35, bounce: 0.15), value: isOn)
         .contentShape(Rectangle())
         .onTapGesture { isOn.toggle() }
         .accessibilityAddTraits(.isButton)
