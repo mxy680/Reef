@@ -16,6 +16,7 @@ struct SettingsProfileTab: View {
     @State private var avatarColorIndex: Int = 0
     @State private var dailyGoalMinutes: Int = 30
     @State private var saveTask: Task<Void, Never>?
+    @State private var hasLoaded = false
 
     private let avatarColors: [Color] = [
         Color(hex: 0xFCEBD5), Color(hex: 0xD5EBF0), Color(hex: 0xD5F0E0),
@@ -70,10 +71,13 @@ struct SettingsProfileTab: View {
                 .offset(x: 3, y: 3)
         )
         .compositingGroup()
-        .onAppear { loadFromProfile() }
-        .onChange(of: displayName) { scheduleSave() }
-        .onChange(of: selectedGrade) { scheduleSave() }
-        .onChange(of: selectedSubjects) { scheduleSave() }
+        .onAppear {
+            loadFromProfile()
+            hasLoaded = true
+        }
+        .onChange(of: displayName) { if hasLoaded { scheduleSave() } }
+        .onChange(of: selectedGrade) { if hasLoaded { scheduleSave() } }
+        .onChange(of: selectedSubjects) { if hasLoaded { scheduleSave() } }
     }
 
     // MARK: - Profile Header Row
