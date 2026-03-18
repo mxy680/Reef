@@ -50,16 +50,6 @@ struct CanvasInfoStrip: View {
                     .tracking(-0.04 * 13)
                     .foregroundColor(.white)
                     .lineLimit(1)
-
-                Text("·")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white.opacity(0.3))
-
-                Text(doc.statusLabel)
-                    .font(.epilogue(12, weight: .medium))
-                    .tracking(-0.04 * 12)
-                    .foregroundColor(.white.opacity(0.55))
-                    .lineLimit(1)
             }
 
             Spacer(minLength: 8)
@@ -93,6 +83,8 @@ struct CanvasInfoStrip: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+
+            divider
 
             // Tutor mode toggle
             HStack(spacing: 8) {
