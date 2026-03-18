@@ -285,7 +285,7 @@ struct SettingsProfileTab: View {
     private func gradeSelector(_ colors: ReefThemeColors) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             SettingsFieldLabel(title: "Grade / Year")
-            FlowLayout(spacing: 8) {
+            FlowLayout(spacing: 5) {
                 ForEach(settingsGrades, id: \.self) { grade in
                     SettingsPill(
                         label: grade,
@@ -293,6 +293,7 @@ struct SettingsProfileTab: View {
                     ) {
                         selectedGrade = selectedGrade == grade ? "" : grade
                     }
+                    .padding(3)
                 }
             }
         }
@@ -309,7 +310,7 @@ struct SettingsProfileTab: View {
                     .foregroundStyle(colors.textMuted)
             }
 
-            FlowLayout(spacing: 8) {
+            FlowLayout(spacing: 5) {
                 ForEach(settingsAllSubjects, id: \.self) { subject in
                     SubjectPill(
                         subject: subject,
@@ -321,6 +322,7 @@ struct SettingsProfileTab: View {
                             selectedSubjects.insert(subject)
                         }
                     }
+                    .padding(3)
                 }
             }
         }
