@@ -28,17 +28,6 @@ struct CanvasInfoStrip: View {
 
             divider
 
-            // Page indicator pill
-            Text("Page \(viewModel.currentPageIndex + 1) / \(viewModel.pageCount)")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(Color.white.opacity(0.15))
-                .clipShape(Capsule())
-
-            divider
-
             // Doc icon + name + timer
             HStack(spacing: 6) {
                 Image(systemName: "doc.text.fill")
