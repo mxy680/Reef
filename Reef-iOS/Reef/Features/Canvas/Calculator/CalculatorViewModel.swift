@@ -107,6 +107,10 @@ final class CalculatorViewModel {
         }
     }
 
+    func clearHistory() {
+        history.removeAll()
+    }
+
     private func insertHistory(_ entry: CalculatorHistoryEntry) {
         history.insert(entry, at: 0)
         if history.count > Self.maxHistoryCount {
