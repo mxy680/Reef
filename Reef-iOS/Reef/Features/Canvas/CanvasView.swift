@@ -9,12 +9,6 @@ struct CanvasView: View {
 
     @State private var drawingManager = CanvasDrawingManager()
 
-    private var safeAreaTop: CGFloat {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.windows.first?.safeAreaInsets.top ?? 0
-    }
-
     var body: some View {
         ZStack {
             // Background
@@ -36,7 +30,6 @@ struct CanvasView: View {
                         .fill(Color.black.opacity(0.15))
                         .frame(height: 0.5)
                 }
-                .padding(.top, safeAreaTop)
                 .background(
                     ZStack {
                         (viewModel.isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasDrawingBar.barColor)
@@ -98,6 +91,7 @@ struct CanvasView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
+        .statusBarHidden(true)
         .animation(.easeInOut(duration: 0.2), value: viewModel.showRuler)
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
     }
