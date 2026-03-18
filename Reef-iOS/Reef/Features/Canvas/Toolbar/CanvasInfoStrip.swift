@@ -21,7 +21,10 @@ struct CanvasInfoStrip: View {
     var body: some View {
         HStack(spacing: 0) {
             // Home button
-            Button(action: onClose) {
+            Button(action: {
+                viewModel.dismissAllPopovers()
+                onClose()
+            }) {
                 Image(systemName: "house.fill")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)

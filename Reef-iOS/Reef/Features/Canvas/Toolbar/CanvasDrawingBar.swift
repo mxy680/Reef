@@ -145,8 +145,12 @@ struct CanvasDrawingBar: View {
 
     private var leftSection: some View {
         HStack(spacing: 0) {
-            CanvasToolbarButton(icon: "arrow.uturn.backward", isSelected: false, action: {})
-            CanvasToolbarButton(icon: "arrow.uturn.forward", isSelected: false, action: {})
+            CanvasToolbarButton(icon: "arrow.uturn.backward", isSelected: false, action: {
+                viewModel.dismissAllPopovers()
+            })
+            CanvasToolbarButton(icon: "arrow.uturn.forward", isSelected: false, action: {
+                viewModel.dismissAllPopovers()
+            })
         }
     }
 
@@ -160,13 +164,15 @@ struct CanvasDrawingBar: View {
                     isSelected: viewModel.selectedTool == tool,
                     isCustomIcon: tool.isCustomIcon,
                     action: {
+                        viewModel.dismissAllPopovers()
                         if viewModel.selectedTool != tool {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 viewModel.selectedTool = tool
                             }
-                            viewModel.dismissAllPopovers()
                         }
-                        viewModel.toolRetapped(tool)
+                        if tool.hasSettings {
+                            viewModel.toolRetapped(tool)
+                        }
                     }
                 )
                 .overlay(
@@ -196,6 +202,7 @@ struct CanvasDrawingBar: View {
                 icon: "pencil.and.ruler.fill",
                 isSelected: viewModel.showRuler,
                 action: {
+                    viewModel.dismissAllPopovers()
                     withAnimation(.easeInOut(duration: 0.2)) {
                         viewModel.showRuler.toggle()
                     }
@@ -279,12 +286,17 @@ struct CanvasDrawingBar: View {
 
     private var rightSection: some View {
         HStack(spacing: 0) {
-            CanvasToolbarButton(icon: "sidebar.trailing", isSelected: false, action: {})
-            CanvasToolbarButton(icon: "square.and.arrow.up.fill", isSelected: false, action: {})
+            CanvasToolbarButton(icon: "sidebar.trailing", isSelected: false, action: {
+                viewModel.dismissAllPopovers()
+            })
+            CanvasToolbarButton(icon: "square.and.arrow.up.fill", isSelected: false, action: {
+                viewModel.dismissAllPopovers()
+            })
             CanvasToolbarButton(
                 icon: viewModel.isDarkMode ? "sun.max.fill" : "moon.fill",
                 isSelected: viewModel.isDarkMode,
                 action: {
+                    viewModel.dismissAllPopovers()
                     withAnimation(.easeInOut(duration: 0.3)) {
                         viewModel.isDarkMode.toggle()
                     }
