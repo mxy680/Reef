@@ -290,6 +290,9 @@ struct SettingsPill: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @State private var isPressed = false
+    private let springBackDelay: TimeInterval = 0.18
+
     var body: some View {
         let colors = theme.colors
         Text(label)
@@ -300,13 +303,23 @@ struct SettingsPill: View {
             .padding(.vertical, 7)
             .background(isSelected ? ReefColors.primary : colors.card)
             .clipShape(Capsule())
-            .reef3DPushCapsule(
-                shadowOffset: 3,
-                borderWidth: 2,
-                borderColor: isSelected ? ReefColors.primary : colors.border,
-                shadowColor: colors.shadow,
-                action: action
+            .overlay(Capsule().stroke(isSelected ? ReefColors.primary : colors.border, lineWidth: 2))
+            .shadow(color: colors.shadow, radius: 0, x: isPressed ? 0 : 3, y: isPressed ? 0 : 3)
+            .offset(x: isPressed ? 3 : 0, y: isPressed ? 3 : 0)
+            .animation(.spring(duration: 0.15, bounce: 0.15), value: isPressed)
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in isPressed = true }
+                    .onEnded { _ in
+                        isPressed = false
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(springBackDelay))
+                            action()
+                        }
+                    }
             )
+            .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -413,6 +426,9 @@ struct SubjectPill: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @State private var isPressed = false
+    private let springBackDelay: TimeInterval = 0.18
+
     var body: some View {
         let colors = theme.colors
         Text(subject)
@@ -423,12 +439,22 @@ struct SubjectPill: View {
             .padding(.vertical, 7)
             .background(isSelected ? ReefColors.primary : colors.card)
             .clipShape(Capsule())
-            .reef3DPushCapsule(
-                shadowOffset: 2,
-                borderWidth: 2,
-                borderColor: isSelected ? ReefColors.primary : colors.border,
-                shadowColor: colors.shadow,
-                action: action
+            .overlay(Capsule().stroke(isSelected ? ReefColors.primary : colors.border, lineWidth: 2))
+            .shadow(color: colors.shadow, radius: 0, x: isPressed ? 0 : 3, y: isPressed ? 0 : 3)
+            .offset(x: isPressed ? 3 : 0, y: isPressed ? 3 : 0)
+            .animation(.spring(duration: 0.15, bounce: 0.15), value: isPressed)
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in isPressed = true }
+                    .onEnded { _ in
+                        isPressed = false
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(springBackDelay))
+                            action()
+                        }
+                    }
             )
+            .accessibilityAddTraits(.isButton)
     }
 }
