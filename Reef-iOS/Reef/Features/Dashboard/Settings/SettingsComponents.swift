@@ -302,6 +302,7 @@ struct SettingsPill: View {
             .clipShape(Capsule())
             .reef3DPushCapsule(
                 shadowOffset: 3,
+                borderWidth: 2,
                 borderColor: isSelected ? ReefColors.primary : colors.border,
                 shadowColor: colors.shadow,
                 action: action
@@ -424,6 +425,7 @@ struct SubjectPill: View {
             .clipShape(Capsule())
             .reef3DPushCapsule(
                 shadowOffset: 2,
+                borderWidth: 2,
                 borderColor: isSelected ? ReefColors.primary : colors.border,
                 shadowColor: colors.shadow,
                 action: action
