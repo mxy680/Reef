@@ -75,7 +75,7 @@ struct SettingsProfileTab: View {
         )
         .compositingGroup()
         .onAppear { loadFromProfile() }
-        .onDisappear { saveTask?.cancel() }
+        .onDisappear { flushSave() }
         .onChange(of: displayName) { scheduleSave() }
         .onChange(of: selectedGrade) { scheduleSave() }
         .onChange(of: selectedSubjects) { scheduleSave() }
@@ -372,6 +372,12 @@ struct SettingsProfileTab: View {
             guard !Task.isCancelled else { return }
             await saveProfile()
         }
+    }
+
+    private func flushSave() {
+        saveTask?.cancel()
+        guard hasUnsavedChanges else { return }
+        Task { @MainActor in await saveProfile() }
     }
 
     private func saveProfile() async {

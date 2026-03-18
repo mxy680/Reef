@@ -64,7 +64,7 @@ struct SettingsPrivacyTab: View {
         .frame(maxWidth: .infinity)
         .dashboardCard()
         .onAppear { loadSettings() }
-        .onDisappear { saveTask?.cancel() }
+        .onDisappear { flushSave() }
         .onChange(of: analyticsEnabled) { scheduleSave() }
         .onChange(of: crashReporting) { scheduleSave() }
         .onChange(of: performanceMonitoring) { scheduleSave() }
@@ -113,6 +113,12 @@ struct SettingsPrivacyTab: View {
         profileVisibility = s.profileVisibility
         progressBenchmarking = s.progressBenchmarking
         loadedSettings = s
+    }
+
+    private func flushSave() {
+        saveTask?.cancel()
+        guard hasUnsavedChanges else { return }
+        Task { @MainActor in await saveSettings() }
     }
 
     private func scheduleSave() {

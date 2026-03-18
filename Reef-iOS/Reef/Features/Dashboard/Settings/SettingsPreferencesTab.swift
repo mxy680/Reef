@@ -66,7 +66,7 @@ struct SettingsPreferencesTab: View {
         .frame(maxWidth: .infinity)
         .dashboardCard()
         .onAppear { loadSettings() }
-        .onDisappear { saveTask?.cancel() }
+        .onDisappear { flushSave() }
         .onChange(of: selectedThemeColorIndex) { scheduleSave() }
         .onChange(of: compactMode) { scheduleSave() }
         .onChange(of: textScale) { scheduleSave() }
@@ -135,6 +135,12 @@ struct SettingsPreferencesTab: View {
         autoAdvance = s.autoAdvance
         shuffleQuestions = s.shuffleQuestions
         loadedSettings = s
+    }
+
+    private func flushSave() {
+        saveTask?.cancel()
+        guard hasUnsavedChanges else { return }
+        Task { @MainActor in await saveSettings() }
     }
 
     private func scheduleSave() {
