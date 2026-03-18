@@ -30,6 +30,7 @@ struct CanvasView: View {
                         .fill(Color.black.opacity(0.15))
                         .frame(height: 0.5)
                 }
+                .padding(.top, 12)
                 .background(
                     ZStack {
                         (viewModel.isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasDrawingBar.barColor)
