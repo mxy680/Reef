@@ -35,7 +35,7 @@ struct CanvasInfoStrip: View {
                     .frame(width: 20, height: 20)
                     .foregroundColor(.white)
 
-                ReefToggle(isOn: $viewModel.tutorModeOn)
+                ReefToggle(isOn: $viewModel.tutorModeOn, size: .compact)
             }
             .padding(.trailing, 10)
         }
