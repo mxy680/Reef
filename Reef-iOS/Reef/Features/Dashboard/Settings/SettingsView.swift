@@ -81,22 +81,24 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var tabContent: some View {
-        Group {
-            switch activeTab {
-            case .profile:
-                SettingsProfileTab(onToast: showToast)
-            case .preferences:
-                SettingsPreferencesTab()
-            case .privacy:
-                SettingsPrivacyTab()
-            case .about:
-                SettingsAboutTab()
-            case .account:
-                SettingsAccountTab(onToast: showToast)
+        ScrollView(showsIndicators: false) {
+            Group {
+                switch activeTab {
+                case .profile:
+                    SettingsProfileTab(onToast: showToast)
+                case .preferences:
+                    SettingsPreferencesTab()
+                case .privacy:
+                    SettingsPrivacyTab()
+                case .about:
+                    SettingsAboutTab()
+                case .account:
+                    SettingsAccountTab(onToast: showToast)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding([.trailing, .bottom], 4)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding([.trailing, .bottom], 4)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
         .animation(.easeOut(duration: 0.35).delay(0.24), value: appeared)
