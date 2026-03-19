@@ -21,6 +21,34 @@ final class CanvasDrawingManager {
         drawings[pageIndex] = drawing
     }
 
+    // MARK: - Page Shift
+
+    /// Shift all drawings at `index` and above up by one slot (for page insert).
+    func shiftDrawingsForInsert(at index: Int) {
+        // Process in descending order so we don't overwrite unprocessed entries
+        let keys = drawings.keys.filter { $0 >= index }.sorted(by: >)
+        for key in keys {
+            drawings[key + 1] = drawings[key]
+            drawings.removeValue(forKey: key)
+        }
+    }
+
+    /// Remove drawing at `index` and shift all drawings above it down by one (for page delete).
+    func shiftDrawingsForDelete(at index: Int) {
+        drawings.removeValue(forKey: index)
+        let keys = drawings.keys.filter { $0 > index }.sorted()
+        for key in keys {
+            drawings[key - 1] = drawings[key]
+            drawings.removeValue(forKey: key)
+        }
+    }
+
+    /// Returns true if a non-empty drawing exists at the given page index.
+    func hasDrawing(for pageIndex: Int) -> Bool {
+        guard let drawing = drawings[pageIndex] else { return false }
+        return !drawing.strokes.isEmpty
+    }
+
     // MARK: - Undo / Redo
 
     var canUndo: Bool {

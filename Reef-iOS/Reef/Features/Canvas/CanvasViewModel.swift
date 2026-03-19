@@ -12,22 +12,43 @@ final class CanvasViewModel {
 
     // MARK: - PDF
 
-    let pdfDocument: PDFDocument
+    var pdfDocument: PDFDocument
+    var isLoadingPDF: Bool = false
+    var pdfError: String?
 
     // MARK: - Tool State
 
     var selectedTool: CanvasToolType = .pen
     var penColor: UIColor = .black
     var penWidth: CGFloat = 2.0
+    var highlighterColor: UIColor = UIColor(red: 1.0, green: 0.95, blue: 0.3, alpha: 1)
+    var highlighterWidth: CGFloat = 4.0
+    var shapesColor: UIColor = .black
+    var shapesWidth: CGFloat = 2.0
     var eraserMode: PKEraserTool.EraserType = .vector
     var eraserWidth: CGFloat = 8.0
     var customColors: [UIColor] = []
+    var customHighlighterColors: [UIColor] = []
+    var customShapesColors: [UIColor] = []
 
     /// The active PKTool derived from current settings.
     var activePKTool: PKTool {
-        selectedTool.pkTool(
-            color: penColor,
-            width: penWidth,
+        let color: UIColor
+        let width: CGFloat
+        switch selectedTool {
+        case .highlighter:
+            color = highlighterColor
+            width = highlighterWidth
+        case .shapes:
+            color = shapesColor
+            width = shapesWidth
+        default:
+            color = penColor
+            width = penWidth
+        }
+        return selectedTool.pkTool(
+            color: color,
+            width: width,
             eraserType: eraserMode,
             eraserWidth: eraserWidth
         )
@@ -36,6 +57,7 @@ final class CanvasViewModel {
     // MARK: - Page State
 
     var currentPageIndex: Int = 0
+    var pageVersion: Int = 0
     var zoomScale: CGFloat = 1.0
     var overlaySettings: CanvasOverlaySettings = CanvasOverlaySettings()
 
@@ -94,8 +116,13 @@ final class CanvasViewModel {
 
     // MARK: - UI State
 
+    var showPageControls: Bool = false
     var showRuler: Bool = false
     var isDarkMode: Bool = false
+    var showSidebar: Bool = false
+    var isMicOn: Bool = false
+    var showCalculator: Bool = false
+    let calculatorViewModel = CalculatorViewModel()
 
     // MARK: - Popover State
 
@@ -109,6 +136,23 @@ final class CanvasViewModel {
     var selectedToolMidX: CGFloat = 0
     var pageSettingsMidX: CGFloat = 0
     var pageMenuMidX: CGFloat = 0
+
+    // MARK: - Connection State
+
+    var isWifiConnected: Bool = false
+    private var wifiTask: Task<Void, Never>?
+
+    func startWifiMonitoring() {
+        isWifiConnected = WifiMonitor.shared.isConnected
+        wifiTask?.cancel()
+        wifiTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(2))
+                guard let self, !Task.isCancelled else { break }
+                self.isWifiConnected = WifiMonitor.shared.isConnected
+            }
+        }
+    }
 
     // MARK: - Tutor State
 
@@ -142,6 +186,33 @@ final class CanvasViewModel {
     init(document: Document) {
         self.document = document
         self.pdfDocument = MockCanvasData.blankPDF()
+        Task { await loadPDF() }
+    }
+
+    private static let pdfSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 120
+        return URLSession(configuration: config)
+    }()
+
+    private func loadPDF() async {
+        isLoadingPDF = true
+        pdfError = nil
+        do {
+            let repo = SupabaseDocumentRepository()
+            let signedURL = try await repo.getDownloadURL(document.id)
+            let (data, _) = try await Self.pdfSession.data(from: signedURL)
+            guard let pdf = PDFDocument(data: data) else {
+                pdfError = "Unable to open PDF"
+                isLoadingPDF = false
+                return
+            }
+            pdfDocument = pdf
+        } catch {
+            pdfError = "Failed to download document"
+        }
+        isLoadingPDF = false
     }
 
     // MARK: - Actions
@@ -153,6 +224,7 @@ final class CanvasViewModel {
         showPageMenu = false
         showHintPopover = false
         showRevealPopover = false
+        showPageControls = false
     }
 
     func toolRetapped(_ tool: CanvasToolType) {
@@ -177,8 +249,71 @@ final class CanvasViewModel {
         showRevealPopover = false
     }
 
+    // MARK: - Page Mutations
+
+    func addBlankPageAtEnd(drawingManager: CanvasDrawingManager) {
+        let insertIndex = pdfDocument.pageCount
+        let blank = createBlankPage()
+        pdfDocument.insert(blank, at: insertIndex)
+        drawingManager.shiftDrawingsForInsert(at: insertIndex)
+        pageVersion += 1
+    }
+
+    func addBlankPageAfterCurrent(drawingManager: CanvasDrawingManager) {
+        let insertIndex = currentPageIndex + 1
+        let blank = createBlankPage()
+        pdfDocument.insert(blank, at: insertIndex)
+        drawingManager.shiftDrawingsForInsert(at: insertIndex)
+        pageVersion += 1
+    }
+
+    func deleteCurrentPage(drawingManager: CanvasDrawingManager) {
+        guard pdfDocument.pageCount > 1 else { return }
+        let removeIndex = currentPageIndex
+        pdfDocument.removePage(at: removeIndex)
+        drawingManager.shiftDrawingsForDelete(at: removeIndex)
+        if currentPageIndex >= pdfDocument.pageCount {
+            currentPageIndex = pdfDocument.pageCount - 1
+        }
+        pageVersion += 1
+    }
+
+    private func createBlankPage() -> PDFPage {
+        let size: CGSize
+        if let firstPage = pdfDocument.page(at: 0) {
+            let bounds = firstPage.bounds(for: .mediaBox)
+            size = CGSize(width: bounds.width, height: bounds.height)
+        } else {
+            size = CGSize(width: 612, height: 792)
+        }
+
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+        }
+
+        guard let cgImage = image.cgImage else {
+            return PDFPage()
+        }
+
+        let page = PDFPage(image: UIImage(cgImage: cgImage))!
+        page.setBounds(CGRect(origin: .zero, size: size), for: .mediaBox)
+        return page
+    }
+
     func addColor(_ color: UIColor) {
-        customColors.append(color)
+        switch selectedTool {
+        case .highlighter:
+            customHighlighterColors.append(color)
+            highlighterColor = color
+        case .shapes:
+            customShapesColors.append(color)
+            shapesColor = color
+        default:
+            customColors.append(color)
+            penColor = color
+        }
         showAddColor = false
     }
 

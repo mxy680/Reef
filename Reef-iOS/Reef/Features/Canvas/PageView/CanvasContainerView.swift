@@ -18,6 +18,7 @@ final class CanvasContainerView: UIView {
     private var pageWrappers: [UIView] = []
     private var contentWidthConstraint: NSLayoutConstraint?
     private var isDarkMode = false
+    private(set) var currentPageVersion: Int = 0
 
     /// Original rendered page images (light mode)
     private var originalImages: [UIImage] = []
@@ -104,7 +105,8 @@ final class CanvasContainerView: UIView {
 
     // MARK: - Configure
 
-    func configure(pdfDocument: PDFDocument) {
+    func configure(pdfDocument: PDFDocument, pageVersion: Int = 0) {
+        currentPageVersion = pageVersion
         Task { [weak self] in
             guard let self else { return }
             let images = await self.renderPDFPages(document: pdfDocument)
@@ -116,6 +118,22 @@ final class CanvasContainerView: UIView {
                 }
             }
         }
+    }
+
+    // MARK: - Scroll To Page
+
+    func scrollToPage(_ index: Int, animated: Bool = true) {
+        guard index >= 0, index < pageWrappers.count else { return }
+        let wrapper = pageWrappers[index]
+        // Convert wrapper frame to scroll view's content coordinate space
+        let frameInContent = wrapper.convert(wrapper.bounds, to: contentView)
+        let targetRect = CGRect(
+            x: frameInContent.minX,
+            y: frameInContent.minY - 20,
+            width: frameInContent.width,
+            height: frameInContent.height + 20
+        )
+        scrollView.scrollRectToVisible(targetRect, animated: animated)
     }
 
     // MARK: - Overlay

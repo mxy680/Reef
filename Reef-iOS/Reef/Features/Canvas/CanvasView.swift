@@ -9,6 +9,7 @@ struct CanvasView: View {
     let onDismiss: () -> Void
 
     @State private var drawingManager = CanvasDrawingManager()
+    @State private var scrollToPageIndex: Int? = nil
 
     var body: some View {
         ZStack {
@@ -24,7 +25,13 @@ struct CanvasView: View {
                         onClose: onDismiss
                     )
 
-                    CanvasDrawingBar(viewModel: viewModel)
+                    CanvasDrawingBar(
+                        viewModel: viewModel,
+                        drawingManager: drawingManager,
+                        onScrollToPage: { index in
+                            scrollToPageIndex = index
+                        }
+                    )
 
                     // Bottom separator
                     Rectangle()
@@ -50,13 +57,24 @@ struct CanvasView: View {
                     overlayType: viewModel.overlaySettings.type,
                     overlaySpacing: viewModel.overlaySettings.spacing,
                     overlayOpacity: viewModel.overlaySettings.opacity,
+                    pageVersion: viewModel.pageVersion,
+                    scrollToPageIndex: scrollToPageIndex,
                     onCanvasTouchBegan: {
                         viewModel.dismissAllPopovers()
+                        scrollToPageIndex = nil
                     },
                     onZoomChanged: { scale in
                         viewModel.zoomScale = scale
                     }
                 )
+                .onChange(of: scrollToPageIndex) { _, newValue in
+                    if newValue != nil {
+                        // Reset after one render cycle so it doesn't keep re-scrolling
+                        DispatchQueue.main.async {
+                            scrollToPageIndex = nil
+                        }
+                    }
+                }
                 .ignoresSafeArea(edges: .bottom)
             }
 
@@ -64,6 +82,21 @@ struct CanvasView: View {
             if viewModel.showRuler {
                 CanvasRulerOverlayView(isDarkMode: viewModel.isDarkMode)
                     .transition(.opacity)
+            }
+
+            // Calculator overlay (floating, no backdrop)
+            if viewModel.showCalculator {
+                CalculatorView(
+                    viewModel: viewModel.calculatorViewModel,
+                    isDarkMode: viewModel.isDarkMode,
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showCalculator = false
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .zIndex(50)
             }
 
             // Add Color popup (centered overlay, CLAUDE.md pattern)
@@ -93,10 +126,13 @@ struct CanvasView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
-        .statusBarHidden(true)
         .animation(.easeInOut(duration: 0.2), value: viewModel.showRuler)
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
-        .onAppear { viewModel.startBatteryMonitoring() }
+        .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
+        .onAppear {
+            viewModel.startBatteryMonitoring()
+            viewModel.startWifiMonitoring()
+        }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             viewModel.tickStudyTimer()
         }
