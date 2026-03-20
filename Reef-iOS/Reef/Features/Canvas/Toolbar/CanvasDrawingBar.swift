@@ -77,11 +77,15 @@ struct CanvasDrawingBar: View {
                 toolbarButton(icon: "canvas.add_blank_page", active: viewModel.showPageControls) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         viewModel.showPageControls.toggle()
+                        if viewModel.showPageControls { viewModel.showPageSettings = false }
                     }
                 }
 
-                toolbarButton(icon: "canvas.page_settings_new") {
-                    // TODO: page settings
+                toolbarButton(icon: "canvas.page_settings_new", active: viewModel.showPageSettings) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        viewModel.showPageSettings.toggle()
+                        if viewModel.showPageSettings { viewModel.showPageControls = false }
+                    }
                 }
             }
 
@@ -90,6 +94,8 @@ struct CanvasDrawingBar: View {
             // Tool settings — shown when pen, highlighter, eraser is selected, or page controls active
             if viewModel.showPageControls {
                 pageControlsSection
+            } else if viewModel.showPageSettings {
+                pageSettingsSection
             } else if viewModel.selectedTool == .pen || viewModel.selectedTool == .highlighter || viewModel.selectedTool == .shapes {
                 penSettingsSection
             } else if viewModel.selectedTool == .eraser {
@@ -125,7 +131,6 @@ struct CanvasDrawingBar: View {
                 .buttonStyle(.plain)
 
                 toolbarButton(icon: "canvas.export", yOffset: -1) {
-                    // TODO: export action
                 }
 
                 toolbarButton(
@@ -231,57 +236,7 @@ struct CanvasDrawingBar: View {
 
             // Thickness slider
             HStack(spacing: 6) {
-                // Custom 3D slider track
-                GeometryReader { geo in
-                    let fraction = (activeWidth.wrappedValue - 0.5) / 7.5
-                    let fillWidth = geo.size.width * fraction
-
-                    ZStack(alignment: .leading) {
-                        // Track shadow
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.black.opacity(0.35))
-                            .offset(x: 1.5, y: 1.5)
-
-                        // Track background
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.black.opacity(0.25))
-
-                        // Track fill
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.7))
-                            .frame(width: max(8, fillWidth))
-
-                        // Track border
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
-
-                        // Thumb
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 14, height: 14)
-                            .overlay(
-                                Circle().stroke(Color.black.opacity(0.5), lineWidth: 1.5)
-                            )
-                            .background(
-                                Circle()
-                                    .fill(Color.black.opacity(0.4))
-                                    .frame(width: 14, height: 14)
-                                    .offset(x: 1.5, y: 1.5)
-                            )
-                            .offset(x: fillWidth - 7)
-                    }
-                    .frame(height: 8)
-                    .frame(maxHeight: .infinity, alignment: .center)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                let pct = max(0, min(1, value.location.x / geo.size.width))
-                                activeWidth.wrappedValue = 0.5 + pct * 7.5
-                            }
-                    )
-                }
-                .frame(width: 90, height: 28)
+                Reef3DSlider(value: activeWidth, range: 0.5...8.0)
 
                 // Preview dot — scales with current width
                 let dotSize = 4 + (activeWidth.wrappedValue - 0.5) / 7.5 * 14
@@ -331,49 +286,7 @@ struct CanvasDrawingBar: View {
 
             // Thickness slider
             HStack(spacing: 6) {
-                GeometryReader { geo in
-                    let fraction = (viewModel.eraserWidth - 2) / 38
-                    let fillWidth = geo.size.width * fraction
-
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.black.opacity(0.35))
-                            .offset(x: 1.5, y: 1.5)
-
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.black.opacity(0.25))
-
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.7))
-                            .frame(width: max(8, fillWidth))
-
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
-
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 14, height: 14)
-                            .overlay(Circle().stroke(Color.black.opacity(0.5), lineWidth: 1.5))
-                            .background(
-                                Circle()
-                                    .fill(Color.black.opacity(0.4))
-                                    .frame(width: 14, height: 14)
-                                    .offset(x: 1.5, y: 1.5)
-                            )
-                            .offset(x: fillWidth - 7)
-                    }
-                    .frame(height: 8)
-                    .frame(maxHeight: .infinity, alignment: .center)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                let pct = max(0, min(1, value.location.x / geo.size.width))
-                                viewModel.eraserWidth = 2 + pct * 38
-                            }
-                    )
-                }
-                .frame(width: 90, height: 28)
+                Reef3DSlider(value: $viewModel.eraserWidth, range: 2.0...40.0)
 
                 // Preview dot
                 let dotSize = 6 + (viewModel.eraserWidth - 2) / 38 * 14
@@ -493,6 +406,91 @@ struct CanvasDrawingBar: View {
         .disabled(!canDelete)
     }
 
+    // MARK: - Page Settings Section
+
+    private var pageSettingsSection: some View {
+        HStack(alignment: .center, spacing: 6) {
+            // Overlay type icons
+            HStack(spacing: 0) {
+                overlayTypeButton(type: .none, icon: "xmark", systemIcon: true)
+                overlayTypeButton(type: .grid, icon: "grid", systemIcon: true)
+                overlayTypeButton(type: .dots, icon: "circle.grid.3x3.fill", systemIcon: true)
+                overlayTypeButton(type: .lines, icon: "line.3.horizontal", systemIcon: true)
+            }
+
+            divider
+
+            // Opacity slider
+            HStack(spacing: 3) {
+                Image(systemName: "sun.min")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.4))
+
+                Reef3DSlider(
+                    value: $viewModel.overlaySettings.opacity,
+                    range: 0.1...1.0,
+                    width: 55,
+                    height: 24,
+                    trackHeight: 6,
+                    thumbSize: 12
+                )
+
+                Text("\(Int(viewModel.overlaySettings.opacity * 100))%")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.5))
+                    .frame(width: 26, alignment: .leading)
+            }
+
+            divider
+
+            // Spacing slider
+            HStack(spacing: 3) {
+                Image(systemName: "arrow.left.and.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.4))
+
+                Reef3DSlider(
+                    value: $viewModel.overlaySettings.spacing,
+                    range: 10.0...50.0,
+                    width: 55,
+                    height: 24,
+                    trackHeight: 6,
+                    thumbSize: 12
+                )
+
+                Text("\(Int(viewModel.overlaySettings.spacing))pt")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(width: 30, alignment: .leading)
+            }
+        }
+        .transition(.opacity)
+    }
+
+    private func overlayTypeButton(type: CanvasOverlayType, icon: String, systemIcon: Bool = false) -> some View {
+        let isSelected = viewModel.overlaySettings.type == type
+        return Button {
+            viewModel.overlaySettings.type = type
+        } label: {
+            Group {
+                if systemIcon {
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .medium))
+                } else {
+                    Image(icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 18, height: 18)
+                }
+            }
+            .foregroundColor(.white.opacity(isSelected ? 1 : 0.4))
+            .frame(width: 32, height: 36)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private func colorSwatch(_ color: UIColor) -> some View {
         let isSelected = activeColor.wrappedValue == color
         return Button {
@@ -526,6 +524,7 @@ struct CanvasDrawingBar: View {
         return Button {
             viewModel.selectedTool = tool
             viewModel.showPageControls = false
+            viewModel.showPageSettings = false
         } label: {
             Image(tool.icon)
                 .renderingMode(.template)

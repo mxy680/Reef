@@ -55,7 +55,14 @@ final class CanvasViewModel {
     }
 
     var activeDrawingPolicy: PKCanvasViewDrawingPolicy {
-        selectedTool == .handDraw ? .anyInput : .pencilOnly
+        // The iOS Simulator does not support Apple Pencil input. Using `.anyInput` allows
+        // touch/mouse drawing during development so the canvas is testable without real hardware.
+        // On device, only Pencil input is accepted (unless the hand-draw tool is active).
+        #if targetEnvironment(simulator)
+        return .anyInput
+        #else
+        return selectedTool == .handDraw ? .anyInput : .pencilOnly
+        #endif
     }
 
     // MARK: - Page State
