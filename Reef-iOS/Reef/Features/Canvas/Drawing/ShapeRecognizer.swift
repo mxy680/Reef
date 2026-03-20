@@ -98,7 +98,8 @@ struct ShapeRecognizer {
 
     static func buildStroke(for shape: RecognizedShape, template: PKStroke) -> PKStroke? {
         let ink = template.ink
-        let transform = template.transform
+        // Use identity transform — geometry points are already in canvas coordinates
+        let transform = CGAffineTransform.identity
         let avgForce: CGFloat
         let avgAltitude: CGFloat
         let avgAzimuth: CGFloat
@@ -106,6 +107,8 @@ struct ShapeRecognizer {
         var forceSum: CGFloat = 0
         var altSum: CGFloat = 0
         var azSum: CGFloat = 0
+        var sizeWSum: CGFloat = 0
+        var sizeHSum: CGFloat = 0
         let count = template.path.count
         guard count > 0 else { return nil }
 
@@ -114,10 +117,13 @@ struct ShapeRecognizer {
             forceSum += pt.force
             altSum += pt.altitude
             azSum += pt.azimuth
+            sizeWSum += pt.size.width
+            sizeHSum += pt.size.height
         }
-        avgForce = forceSum / CGFloat(count)
+        avgForce = max(forceSum / CGFloat(count), 1.0)
         avgAltitude = altSum / CGFloat(count)
         avgAzimuth = azSum / CGFloat(count)
+        let avgSize = CGSize(width: max(sizeWSum / CGFloat(count), 2), height: max(sizeHSum / CGFloat(count), 2))
 
         let geometryPoints: [CGPoint]
         switch shape {
@@ -141,7 +147,8 @@ struct ShapeRecognizer {
             from: geometryPoints,
             force: avgForce,
             altitude: avgAltitude,
-            azimuth: avgAzimuth
+            azimuth: avgAzimuth,
+            size: avgSize
         )
 
         guard strokePoints.count >= 2 else { return nil }
@@ -215,7 +222,7 @@ struct ShapeRecognizer {
 
     // MARK: - Private Helpers
 
-    private static func extractPoints(from stroke: PKStroke) -> [CGPoint] {
+    static func extractPoints(from stroke: PKStroke) -> [CGPoint] {
         var pts: [CGPoint] = []
         for i in 0..<stroke.path.count {
             pts.append(stroke.path[i].location)
@@ -223,7 +230,7 @@ struct ShapeRecognizer {
         return pts
     }
 
-    private static func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
+    static func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
         let dx = a.x - b.x
         let dy = a.y - b.y
         return sqrt(dx * dx + dy * dy)
@@ -334,7 +341,8 @@ struct ShapeRecognizer {
         from geometryPoints: [CGPoint],
         force: CGFloat,
         altitude: CGFloat,
-        azimuth: CGFloat
+        azimuth: CGFloat,
+        size: CGSize = CGSize(width: 4, height: 4)
     ) -> [PKStrokePoint] {
         geometryPoints.enumerated().map { idx, location in
             let t = geometryPoints.count > 1
@@ -343,12 +351,106 @@ struct ShapeRecognizer {
             return PKStrokePoint(
                 location: location,
                 timeOffset: t,
-                size: CGSize(width: 1, height: 1),
+                size: size,
                 opacity: 1,
                 force: force,
                 azimuth: azimuth,
                 altitude: altitude
             )
+        }
+    }
+
+    // MARK: - Remote Shape Recognition
+
+    struct FitShapeResponse: Decodable {
+        let shape: String
+        let confidence: Double
+        let geometry: FitShapeGeometry
+    }
+
+    struct FitShapeGeometry: Decodable {
+        let start: [CGFloat]?
+        let end: [CGFloat]?
+        let x: CGFloat?
+        let y: CGFloat?
+        let width: CGFloat?
+        let height: CGFloat?
+        let angle: CGFloat?
+        let center: [CGFloat]?
+        let radius_x: CGFloat?
+        let radius_y: CGFloat?
+        let vertices: [[CGFloat]]?
+        let head_angle: CGFloat?
+    }
+
+    static func recognizeRemote(stroke: PKStroke) async -> RecognizedShape {
+        guard stroke.path.count >= 5 else { return .none }
+        let rawPoints = extractPoints(from: stroke)
+        let totalLength = polylineLength(rawPoints)
+        guard totalLength >= 20 else { return .none }
+
+        // Convert to [[x, y]] for JSON
+        let pointArrays: [[CGFloat]] = rawPoints.map { [$0.x, $0.y] }
+
+        // Determine if stroke is closed
+        let isClosed = distance(rawPoints.first!, rawPoints.last!) < totalLength * 0.1
+
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/fit-shape") else { return .none }
+
+        do {
+            struct RequestBody: Encodable {
+                let points: [[CGFloat]]
+                let closed: Bool
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 3
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(RequestBody(points: pointArrays, closed: isClosed))
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                return .none
+            }
+
+            let fitResponse = try JSONDecoder().decode(FitShapeResponse.self, from: data)
+            print("[ShapeRecognizer] remote: shape=\(fitResponse.shape) confidence=\(String(format: "%.2f", fitResponse.confidence))")
+
+            guard fitResponse.shape != "none" else { return .none }
+            return mapResponse(fitResponse, rawPoints: rawPoints)
+        } catch {
+            print("[ShapeRecognizer] remote failed: \(error)")
+            return .none
+        }
+    }
+
+    private static func mapResponse(_ response: FitShapeResponse, rawPoints: [CGPoint]) -> RecognizedShape {
+        let geo = response.geometry
+
+        switch response.shape {
+        case "line":
+            guard let s = geo.start, let e = geo.end, s.count >= 2, e.count >= 2 else { return .none }
+            return .line(start: CGPoint(x: s[0], y: s[1]), end: CGPoint(x: e[0], y: e[1]))
+        case "rectangle":
+            guard let x = geo.x, let y = geo.y, let w = geo.width, let h = geo.height else { return .none }
+            return .rectangle(CGRect(x: x, y: y, width: w, height: h), angle: geo.angle ?? 0)
+        case "circle":
+            guard let c = geo.center, c.count >= 2, let rx = geo.radius_x, let ry = geo.radius_y else { return .none }
+            return .circle(center: CGPoint(x: c[0], y: c[1]), radiusX: rx, radiusY: ry)
+        case "triangle":
+            guard let verts = geo.vertices, verts.count >= 3 else { return .none }
+            return .triangle(
+                CGPoint(x: verts[0][0], y: verts[0][1]),
+                CGPoint(x: verts[1][0], y: verts[1][1]),
+                CGPoint(x: verts[2][0], y: verts[2][1])
+            )
+        case "arrow":
+            guard let s = geo.start, let e = geo.end, s.count >= 2, e.count >= 2 else { return .none }
+            return .arrow(start: CGPoint(x: s[0], y: s[1]), end: CGPoint(x: e[0], y: e[1]), headAngle: geo.head_angle ?? 0)
+        default:
+            return .none
         }
     }
 }

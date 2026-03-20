@@ -479,15 +479,31 @@ extension CanvasContainerView: PKCanvasViewDelegate {
         guard currentCount == previousCount + 1 else { return }
         guard let lastStroke = canvasView.drawing.strokes.last else { return }
 
-        let shape = ShapeRecognizer.recognize(stroke: lastStroke)
-        guard !shape.isNone,
-              let cleanStroke = ShapeRecognizer.buildStroke(for: shape, template: lastStroke) else { return }
+        let strokeIndex = currentCount - 1
+        let capturedStroke = lastStroke
 
-        isReplacingStroke = true
-        var newDrawing = canvasView.drawing
-        newDrawing.strokes[newDrawing.strokes.count - 1] = cleanStroke
-        canvasView.drawing = newDrawing
-        isReplacingStroke = false
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            let shape = await ShapeRecognizer.recognizeRemote(stroke: capturedStroke)
+            guard !shape.isNone,
+                  let cleanStroke = ShapeRecognizer.buildStroke(for: shape, template: capturedStroke)
+            else { return }
+
+            // Re-validate: stroke must still be at the expected index
+            guard canvasView.drawing.strokes.count > strokeIndex else { return }
+
+            self.isReplacingStroke = true
+            var newDrawing = canvasView.drawing
+            newDrawing.strokes[strokeIndex] = cleanStroke
+            canvasView.drawing = newDrawing
+            self.isReplacingStroke = false
+
+            // Update drawing manager
+            if let idx = self.canvasViews.firstIndex(of: canvasView) {
+                self.drawingManager?.setDrawing(canvasView.drawing, for: idx)
+            }
+        }
     }
 
     func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
