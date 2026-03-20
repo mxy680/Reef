@@ -16,6 +16,9 @@ final class CanvasDrawingManager {
     /// The currently active PKCanvasView (for undo/redo forwarding)
     weak var activeCanvasView: PKCanvasView?
 
+    /// Called after any drawing is stored — used to trigger auto-save debounce.
+    var onDrawingChanged: (() -> Void)?
+
     // MARK: - Get / Set
 
     func drawing(for pageIndex: Int) -> PKDrawing {
@@ -25,6 +28,7 @@ final class CanvasDrawingManager {
     func setDrawing(_ drawing: PKDrawing, for pageIndex: Int) {
         drawings[pageIndex] = drawing
         drawingVersion += 1
+        onDrawingChanged?()
     }
 
     // MARK: - Page Shift

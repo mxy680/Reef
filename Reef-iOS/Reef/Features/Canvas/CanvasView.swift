@@ -8,8 +8,8 @@ struct CanvasView: View {
     @Bindable var viewModel: CanvasViewModel
     let onDismiss: () -> Void
 
-    @State private var drawingManager = CanvasDrawingManager()
     @State private var scrollToPageIndex: Int? = nil
+    @State private var autoSaveTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -22,12 +22,15 @@ struct CanvasView: View {
                 VStack(spacing: 0) {
                     CanvasInfoStrip(
                         viewModel: viewModel,
-                        onClose: onDismiss
+                        onClose: {
+                            viewModel.saveCanvasState()
+                            onDismiss()
+                        }
                     )
 
                     CanvasDrawingBar(
                         viewModel: viewModel,
-                        drawingManager: drawingManager,
+                        drawingManager: viewModel.drawingManager,
                         onScrollToPage: { index in
                             scrollToPageIndex = index
                         }
@@ -51,7 +54,7 @@ struct CanvasView: View {
                 // PDF + Drawing area
                 CanvasPageView(
                     pdfDocument: viewModel.pdfDocument,
-                    drawingManager: drawingManager,
+                    drawingManager: viewModel.drawingManager,
                     currentTool: viewModel.activePKTool,
                     drawingPolicy: viewModel.activeDrawingPolicy,
                     selectedToolType: viewModel.selectedTool,
@@ -101,41 +104,41 @@ struct CanvasView: View {
                 .zIndex(50)
             }
 
-            // Tutor overlay (hint OR reveal, top-right corner)
+            // Tutor overlays — kept alive to cache KaTeX WKWebView content
             if let step = viewModel.currentHintStep {
-                if viewModel.showHintPopover {
-                    TutorHintCard(
-                        hintText: step.explanation,
-                        stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
-                        isDarkMode: viewModel.isDarkMode,
-                        onClose: {
-                            withAnimation(.spring(duration: 0.2)) {
-                                viewModel.showHintPopover = false
-                            }
+                TutorHintCard(
+                    hintText: step.explanation,
+                    stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
+                    isDarkMode: viewModel.isDarkMode,
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showHintPopover = false
                         }
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(.top, 100)
-                    .padding(.trailing, 16)
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
-                    .zIndex(51)
-                } else if viewModel.showRevealPopover {
-                    TutorRevealCard(
-                        workText: step.work,
-                        stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
-                        isDarkMode: viewModel.isDarkMode,
-                        onClose: {
-                            withAnimation(.spring(duration: 0.2)) {
-                                viewModel.showRevealPopover = false
-                            }
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding(.top, 100)
+                .padding(.trailing, 16)
+                .opacity(viewModel.showHintPopover ? 1 : 0)
+                .allowsHitTesting(viewModel.showHintPopover)
+                .zIndex(51)
+
+                TutorRevealCard(
+                    workText: step.work,
+                    stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
+                    isDarkMode: viewModel.isDarkMode,
+                    onClose: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showRevealPopover = false
                         }
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(.top, 100)
-                    .padding(.trailing, 16)
-                    .transition(.scale(scale: 0.95).combined(with: .opacity))
-                    .zIndex(51)
-                }
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding(.top, 100)
+                .padding(.trailing, 16)
+                .opacity(viewModel.showRevealPopover ? 1 : 0)
+                .allowsHitTesting(viewModel.showRevealPopover)
+                .zIndex(52)
             }
 
             // Add Color popup (centered overlay, CLAUDE.md pattern)
@@ -173,12 +176,24 @@ struct CanvasView: View {
         .onAppear {
             viewModel.startBatteryMonitoring()
             viewModel.startWifiMonitoring()
+            viewModel.drawingManager.onDrawingChanged = { [weak viewModel] in
+                guard let viewModel else { return }
+                autoSaveTask?.cancel()
+                autoSaveTask = Task {
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    viewModel.saveCanvasState()
+                }
+            }
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             viewModel.tickStudyTimer()
         }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
             viewModel.updateBatteryLevel()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            viewModel.saveCanvasState()
         }
     }
 }

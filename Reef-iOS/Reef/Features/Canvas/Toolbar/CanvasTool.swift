@@ -4,30 +4,35 @@ import PencilKit
 
 enum CanvasToolType: String, CaseIterable {
     case pen
+    case highlighter
+    case shapes
+    case lasso
+    case handDraw
     case diagram
     case eraser
-    case lasso
 
     var icon: String {
         switch self {
-        case .pen: "pencil.tip"
+        case .pen: "canvas.pen"
+        case .highlighter: "canvas.highlighter"
+        case .shapes: "canvas.shapes"
+        case .lasso: "canvas.lasso"
+        case .handDraw: "canvas.hand_draw"
         case .diagram: "canvas.diagram"
-        case .eraser: "eraser.fill"
-        case .lasso: "lasso"
+        case .eraser: "canvas.eraser_new"
         }
     }
 
     var isCustomIcon: Bool {
         switch self {
-        case .diagram: true
-        case .pen, .eraser, .lasso: false
+        case .pen, .highlighter, .shapes, .lasso, .handDraw, .diagram, .eraser: true
         }
     }
 
     var hasSettings: Bool {
         switch self {
-        case .pen, .diagram, .eraser: true
-        case .lasso: false
+        case .pen, .highlighter, .diagram, .eraser: true
+        case .shapes, .lasso, .handDraw: false
         }
     }
 
@@ -39,6 +44,10 @@ enum CanvasToolType: String, CaseIterable {
     ) -> PKTool {
         switch self {
         case .pen:
+            return PKInkingTool(.pen, color: color, width: width)
+        case .highlighter:
+            return PKInkingTool(.marker, color: color.withAlphaComponent(0.3), width: width * 4)
+        case .shapes, .handDraw:
             return PKInkingTool(.pen, color: color, width: width)
         case .diagram:
             return PKInkingTool(.monoline, color: color, width: width * 2)
@@ -52,7 +61,7 @@ enum CanvasToolType: String, CaseIterable {
 
 // MARK: - Page Overlay Settings
 
-enum CanvasOverlayType: String, CaseIterable {
+enum CanvasOverlayType: String, CaseIterable, Codable {
     case none, grid, dots, lines
 
     var label: String {
@@ -65,7 +74,7 @@ enum CanvasOverlayType: String, CaseIterable {
     }
 }
 
-struct CanvasOverlaySettings: Equatable {
+struct CanvasOverlaySettings: Equatable, Codable {
     var type: CanvasOverlayType = .none
     var spacing: CGFloat = 20
     var opacity: CGFloat = 0.35

@@ -18,6 +18,7 @@ final class CanvasViewModel {
 
     // MARK: - Tool State
 
+    let drawingManager = CanvasDrawingManager()
     var selectedTool: CanvasToolType = .pen
     var penColor: UIColor = .black
     var penWidth: CGFloat = 2.0
@@ -71,6 +72,9 @@ final class CanvasViewModel {
     var pageVersion: Int = 0
     var zoomScale: CGFloat = 1.0
     var overlaySettings: CanvasOverlaySettings = CanvasOverlaySettings()
+    var originalPageCount: Int = 0
+    var addedPageIndices: [Int] = []
+    private var savedState: CanvasDocumentData?
 
     var pageCount: Int {
         pdfDocument.pageCount
@@ -233,6 +237,7 @@ final class CanvasViewModel {
     init(document: Document) {
         self.document = document
         self.pdfDocument = MockCanvasData.blankPDF()
+        self.savedState = CanvasStorageService.load(documentId: document.id)
         Task { await loadPDF() }
         Task { await loadAnswerKeys() }
     }
@@ -258,6 +263,31 @@ final class CanvasViewModel {
             }
             pdfDocument = pdf
             pageVersion += 1
+            originalPageCount = pdf.pageCount
+
+            if let saved = savedState {
+                overlaySettings = saved.overlaySettings
+                currentPageIndex = min(saved.currentPageIndex, pdf.pageCount - 1)
+
+                // Restore added blank pages in ascending index order
+                for index in saved.addedPageIndices.sorted() {
+                    if index <= pdfDocument.pageCount {
+                        let blankPage = createBlankPage()
+                        pdfDocument.insert(blankPage, at: index)
+                    }
+                }
+                addedPageIndices = saved.addedPageIndices
+
+                // Restore per-page drawings
+                for (key, data) in saved.drawingDataByPage {
+                    if let pageIndex = Int(key), let drawing = try? PKDrawing(data: data) {
+                        drawingManager.setDrawing(drawing, for: pageIndex)
+                    }
+                }
+
+                pageVersion += 1
+                savedState = nil
+            }
         } catch {
             pdfError = "Failed to download document"
         }
@@ -305,6 +335,7 @@ final class CanvasViewModel {
         let blank = createBlankPage()
         pdfDocument.insert(blank, at: insertIndex)
         drawingManager.shiftDrawingsForInsert(at: insertIndex)
+        addedPageIndices.append(insertIndex)
         pageVersion += 1
     }
 
@@ -313,6 +344,9 @@ final class CanvasViewModel {
         let blank = createBlankPage()
         pdfDocument.insert(blank, at: insertIndex)
         drawingManager.shiftDrawingsForInsert(at: insertIndex)
+        // Shift any tracked added indices that are >= insertIndex
+        addedPageIndices = addedPageIndices.map { $0 >= insertIndex ? $0 + 1 : $0 }
+        addedPageIndices.append(insertIndex)
         pageVersion += 1
     }
 
@@ -321,10 +355,38 @@ final class CanvasViewModel {
         let removeIndex = currentPageIndex
         pdfDocument.removePage(at: removeIndex)
         drawingManager.shiftDrawingsForDelete(at: removeIndex)
+        // Remove the deleted index and shift down indices above it
+        addedPageIndices.removeAll { $0 == removeIndex }
+        addedPageIndices = addedPageIndices.map { $0 > removeIndex ? $0 - 1 : $0 }
         if currentPageIndex >= pdfDocument.pageCount {
             currentPageIndex = pdfDocument.pageCount - 1
         }
         pageVersion += 1
+    }
+
+    // MARK: - Persistence
+
+    func saveCanvasState() {
+        let drawingData: [String: Data] = drawingManager.drawings.reduce(into: [:]) { result, pair in
+            result[String(pair.key)] = pair.value.dataRepresentation()
+        }
+
+        let state = CanvasDocumentData(
+            documentId: document.id,
+            originalPageCount: originalPageCount,
+            addedPageIndices: addedPageIndices,
+            overlaySettings: overlaySettings,
+            currentPageIndex: currentPageIndex,
+            drawingDataByPage: drawingData
+        )
+
+        Task.detached {
+            do {
+                try CanvasStorageService.save(state)
+            } catch {
+                print("[CanvasVM] Save failed: \(error)")
+            }
+        }
     }
 
     private func createBlankPage() -> PDFPage {
