@@ -162,6 +162,26 @@ class MathpixClient:
             resp.raise_for_status()
             return resp.content
 
+    async def transcribe_image(self, image_base64: str) -> str:
+        """Send a base64 PNG image to Mathpix and get back LaTeX."""
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                "https://api.mathpix.com/v3/text",
+                headers={
+                    **self._headers,
+                    "Content-type": "application/json",
+                },
+                json={
+                    "src": f"data:image/png;base64,{image_base64}",
+                    "formats": ["latex_styled"],
+                    "math_inline_delimiters": ["$", "$"],
+                    "math_display_delimiters": ["\\[", "\\]"],
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data.get("latex_styled", data.get("text", ""))
+
     async def process_pdf(
         self, pdf_bytes: bytes
     ) -> tuple[str, dict[str, bytes], dict[str, str]]:
