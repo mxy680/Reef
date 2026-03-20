@@ -467,7 +467,7 @@ extension CanvasContainerView: PKCanvasViewDelegate {
         guard let index = canvasViews.firstIndex(of: canvasView) else { return }
         drawingManager?.setDrawing(canvasView.drawing, for: index)
 
-        // Shape auto-snap: replace the last stroke with a clean geometric version
+        // Shape auto-snap with dwell detection
         guard !isReplacingStroke else { return }
         guard selectedToolType == .shapes else { return }
 
@@ -479,30 +479,27 @@ extension CanvasContainerView: PKCanvasViewDelegate {
         guard currentCount == previousCount + 1 else { return }
         guard let lastStroke = canvasView.drawing.strokes.last else { return }
 
-        let strokeIndex = currentCount - 1
-        let capturedStroke = lastStroke
+        // Only snap if user held the pencil still at the end (dwell detection)
+        guard ShapeRecognizer.detectDwell(in: lastStroke) else { return }
 
-        Task { @MainActor [weak self] in
-            guard let self else { return }
+        let shape = ShapeRecognizer.recognize(stroke: lastStroke)
+        guard !shape.isNone,
+              let cleanStroke = ShapeRecognizer.buildStroke(for: shape, template: lastStroke)
+        else { return }
 
-            let shape = await ShapeRecognizer.recognizeRemote(stroke: capturedStroke)
-            guard !shape.isNone,
-                  let cleanStroke = ShapeRecognizer.buildStroke(for: shape, template: capturedStroke)
-            else { return }
+        isReplacingStroke = true
+        var newDrawing = canvasView.drawing
+        newDrawing.strokes[newDrawing.strokes.count - 1] = cleanStroke
+        canvasView.drawing = newDrawing
+        isReplacingStroke = false
 
-            // Re-validate: stroke must still be at the expected index
-            guard canvasView.drawing.strokes.count > strokeIndex else { return }
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
 
-            self.isReplacingStroke = true
-            var newDrawing = canvasView.drawing
-            newDrawing.strokes[strokeIndex] = cleanStroke
-            canvasView.drawing = newDrawing
-            self.isReplacingStroke = false
-
-            // Update drawing manager
-            if let idx = self.canvasViews.firstIndex(of: canvasView) {
-                self.drawingManager?.setDrawing(canvasView.drawing, for: idx)
-            }
+        // Update drawing manager
+        if let idx = canvasViews.firstIndex(of: canvasView) {
+            drawingManager?.setDrawing(canvasView.drawing, for: idx)
         }
     }
 
