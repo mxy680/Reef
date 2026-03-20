@@ -23,25 +23,75 @@ struct ShapeRecognizer {
 
     // MARK: - Entry Point
 
+    private static let recognizer: UnistrokeRecognizer = {
+        UnistrokeRecognizer(templates: ShapeTemplates.all)
+    }()
+
+    private static let minimumConfidence: Double = 0.75
+
     static func recognize(stroke: PKStroke) -> RecognizedShape {
         guard stroke.path.count >= 5 else { return .none }
-
         let rawPoints = extractPoints(from: stroke)
         let totalLength = polylineLength(rawPoints)
         guard totalLength >= 20 else { return .none }
 
-        let reversals = countDirectionReversals(rawPoints)
-        guard reversals <= 8 else { return .none }
+        guard let result = recognizer.recognize(rawPoints) else { return .none }
+        print("[ShapeRecognizer] match=\(result.name) score=\(String(format: "%.2f", result.score))")
+        guard result.score >= minimumConfidence else { return .none }
 
+        // Map template name → RecognizedShape using geometric parameters from the original stroke.
         let points = resamplePoints(rawPoints, count: 50)
 
-        if let line = tryLine(points) { return line }
-        if let arrow = tryArrow(points) { return arrow }
-        if let triangle = tryTriangle(points) { return triangle }
-        if let rect = tryRectangle(points) { return rect }
-        if let circle = tryCircle(points) { return circle }
+        switch result.name {
+        case "line":
+            return .line(start: rawPoints.first!, end: rawPoints.last!)
 
-        return .none
+        case "rectangle":
+            let corners = findCorners(points: points, count: 4)
+            if corners.count == 4 {
+                let pts = corners.map { points[$0] }
+                let minX = pts.map(\.x).min()!
+                let minY = pts.map(\.y).min()!
+                let maxX = pts.map(\.x).max()!
+                let maxY = pts.map(\.y).max()!
+                let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+                let angle = atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x)
+                return .rectangle(rect, angle: angle)
+            }
+            // Fallback to axis-aligned bounding box
+            let xs = rawPoints.map(\.x)
+            let ys = rawPoints.map(\.y)
+            let rect = CGRect(
+                x: xs.min()!, y: ys.min()!,
+                width: xs.max()! - xs.min()!, height: ys.max()! - ys.min()!
+            )
+            return .rectangle(rect, angle: 0)
+
+        case "circle":
+            let c = computeCentroid(points)
+            let xs = rawPoints.map(\.x)
+            let ys = rawPoints.map(\.y)
+            let radiusX = (xs.max()! - xs.min()!) / 2.0
+            let radiusY = (ys.max()! - ys.min()!) / 2.0
+            return .circle(center: c, radiusX: radiusX, radiusY: radiusY)
+
+        case "triangle":
+            let corners = findCorners(points: points, count: 3)
+            if corners.count == 3 {
+                return .triangle(points[corners[0]], points[corners[1]], points[corners[2]])
+            }
+            return .none
+
+        case "arrow":
+            let start = rawPoints.first!
+            // Approximate shaft end at 75 % of the stroke — head occupies the remaining 25 %.
+            let shaftEnd = rawPoints[rawPoints.count * 3 / 4]
+            let dir = CGPoint(x: shaftEnd.x - start.x, y: shaftEnd.y - start.y)
+            return .arrow(start: start, end: shaftEnd, headAngle: atan2(dir.y, dir.x))
+
+        default:
+            return .none
+        }
     }
 
     // MARK: - Build Clean Stroke
@@ -98,154 +148,6 @@ struct ShapeRecognizer {
 
         let path = PKStrokePath(controlPoints: strokePoints, creationDate: Date())
         return PKStroke(ink: ink, path: path, transform: transform, mask: template.mask)
-    }
-
-    // MARK: - Detection Helpers
-
-    private static func tryLine(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 2 else { return nil }
-        let start = points.first!
-        let end = points.last!
-        let startEndDist = distance(start, end)
-        guard startEndDist > 0 else { return nil }
-        let strokeLen = polylineLength(points)
-
-        let maxDev = maxPerpendicularDeviation(points: points, lineStart: start, lineEnd: end)
-
-        if maxDev / strokeLen < 0.06 && strokeLen / startEndDist < 1.15 {
-            return .line(start: start, end: end)
-        }
-        return nil
-    }
-
-    private static func tryArrow(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 8 else { return nil }
-        let splitIndex = Int(Double(points.count) * 0.75)
-        let headPoints = Array(points[splitIndex...])
-        let bodyPoints = Array(points[...splitIndex])
-
-        // Body must be line-like
-        guard let bodyLine = tryLine(bodyPoints) else { return nil }
-        guard case .line(let start, _) = bodyLine else { return nil }
-
-        // Tail must have a sharp direction change
-        guard headPoints.count >= 3 else { return nil }
-        var directionChanges = 0
-        for i in 1..<headPoints.count - 1 {
-            let v1 = CGPoint(x: headPoints[i].x - headPoints[i-1].x,
-                             y: headPoints[i].y - headPoints[i-1].y)
-            let v2 = CGPoint(x: headPoints[i+1].x - headPoints[i].x,
-                             y: headPoints[i+1].y - headPoints[i].y)
-            let angle = abs(angleBetween(v1, v2))
-            if angle > (CGFloat.pi * 30.0 / 180.0) {
-                directionChanges += 1
-            }
-        }
-        guard directionChanges >= 2 else { return nil }
-
-        let end = bodyPoints.last!
-        let dir = CGPoint(x: end.x - start.x, y: end.y - start.y)
-        let headAngle = atan2(dir.y, dir.x)
-
-        return .arrow(start: start, end: end, headAngle: headAngle)
-    }
-
-    private static func tryTriangle(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 4 else { return nil }
-        guard isClosed(points, threshold: 0.08) else { return nil }
-
-        let corners = findCorners(points: points, count: 3)
-        guard corners.count == 3 else { return nil }
-        let a = points[corners[0]]
-        let b = points[corners[1]]
-        let c = points[corners[2]]
-
-        let angleA = interiorAngle(vertex: a, p1: b, p2: c)
-        let angleB = interiorAngle(vertex: b, p1: a, p2: c)
-        let angleC = interiorAngle(vertex: c, p1: a, p2: b)
-        let sumDeg = (angleA + angleB + angleC) * 180.0 / CGFloat.pi
-        guard abs(sumDeg - 180.0) < 30.0 else { return nil }
-
-        // Verify segments are roughly straight
-        let segments = [(0, corners[0]), (corners[0], corners[1]), (corners[1], corners[2]), (corners[2], points.count - 1)]
-        for (start, end) in segments {
-            if end <= start { continue }
-            let seg = Array(points[start...end])
-            guard seg.count >= 2 else { continue }
-            let s = seg.first!
-            let e = seg.last!
-            let segLen = polylineLength(seg)
-            let dev = maxPerpendicularDeviation(points: seg, lineStart: s, lineEnd: e)
-            guard segLen > 0, dev / segLen < 0.15 else { return nil }
-        }
-
-        return .triangle(a, b, c)
-    }
-
-    private static func tryRectangle(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 5 else { return nil }
-        guard isClosed(points, threshold: 0.08) else { return nil }
-
-        let corners = findCorners(points: points, count: 4)
-        guard corners.count == 4 else { return nil }
-
-        let pts = corners.map { points[$0] }
-        for i in 0..<4 {
-            let prev = pts[(i + 3) % 4]
-            let curr = pts[i]
-            let next = pts[(i + 1) % 4]
-            let v1 = CGPoint(x: curr.x - prev.x, y: curr.y - prev.y)
-            let v2 = CGPoint(x: next.x - curr.x, y: next.y - curr.y)
-            let angle = abs(angleBetween(v1, v2)) * 180.0 / CGFloat.pi
-            guard abs(angle - 90.0) < 25.0 else { return nil }
-        }
-
-        // Verify opposite sides roughly equal
-        let s0 = distance(pts[0], pts[1])
-        let s1 = distance(pts[1], pts[2])
-        let s2 = distance(pts[2], pts[3])
-        let s3 = distance(pts[3], pts[0])
-        guard s0 > 0, s1 > 0, s2 > 0, s3 > 0 else { return nil }
-        let ratio02 = min(s0, s2) / max(s0, s2)
-        let ratio13 = min(s1, s3) / max(s1, s3)
-        guard ratio02 >= 0.6 && ratio13 >= 0.6 else { return nil }
-
-        // Compute bounding rect from corners and angle
-        let minX = pts.map { $0.x }.min()!
-        let minY = pts.map { $0.y }.min()!
-        let maxX = pts.map { $0.x }.max()!
-        let maxY = pts.map { $0.y }.max()!
-        let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
-
-        // Compute angle from first edge
-        let dx = pts[1].x - pts[0].x
-        let dy = pts[1].y - pts[0].y
-        let angle = atan2(dy, dx)
-
-        return .rectangle(rect, angle: angle)
-    }
-
-    private static func tryCircle(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 5 else { return nil }
-        guard isClosed(points, threshold: 0.10) else { return nil }
-
-        let centroid = computeCentroid(points)
-        let distances = points.map { distance($0, centroid) }
-        let mean = distances.reduce(0, +) / CGFloat(distances.count)
-        guard mean > 0 else { return nil }
-
-        let variance = distances.map { pow($0 - mean, 2) }.reduce(0, +) / CGFloat(distances.count)
-        let stdDev = sqrt(variance)
-
-        guard stdDev / mean < 0.15 else { return nil }
-
-        // Compute radii as bounding extents from centroid
-        let xs = points.map { $0.x }
-        let ys = points.map { $0.y }
-        let radiusX = (xs.max()! - xs.min()!) / 2.0
-        let radiusY = (ys.max()! - ys.min()!) / 2.0
-
-        return .circle(center: centroid, radiusX: radiusX, radiusY: radiusY)
     }
 
     // MARK: - Geometry Utilities
@@ -311,20 +213,6 @@ struct ShapeRecognizer {
         return length
     }
 
-    static func countDirectionReversals(_ points: [CGPoint]) -> Int {
-        guard points.count >= 3 else { return 0 }
-        var reversals = 0
-        for i in 1..<points.count - 1 {
-            let v1 = CGPoint(x: points[i].x - points[i-1].x,
-                             y: points[i].y - points[i-1].y)
-            let v2 = CGPoint(x: points[i+1].x - points[i].x,
-                             y: points[i+1].y - points[i].y)
-            let dot = v1.x * v2.x + v1.y * v2.y
-            if dot < 0 { reversals += 1 }
-        }
-        return reversals
-    }
-
     // MARK: - Private Helpers
 
     private static func extractPoints(from stroke: PKStroke) -> [CGPoint] {
@@ -341,17 +229,6 @@ struct ShapeRecognizer {
         return sqrt(dx * dx + dy * dy)
     }
 
-    private static func maxPerpendicularDeviation(points: [CGPoint], lineStart: CGPoint, lineEnd: CGPoint) -> CGFloat {
-        points.map { perpendicularDistance(point: $0, lineStart: lineStart, lineEnd: lineEnd) }.max() ?? 0
-    }
-
-    private static func isClosed(_ points: [CGPoint], threshold: CGFloat) -> Bool {
-        guard let first = points.first, let last = points.last else { return false }
-        let perim = polylineLength(points)
-        guard perim > 0 else { return false }
-        return distance(first, last) / perim < threshold
-    }
-
     private static func computeCentroid(_ points: [CGPoint]) -> CGPoint {
         let n = CGFloat(points.count)
         let sumX = points.map { $0.x }.reduce(0, +)
@@ -365,7 +242,7 @@ struct ShapeRecognizer {
         return angleBetween(v1, v2)
     }
 
-    /// Finds `count` corner indices by finding points with highest cumulative angle change
+    /// Finds `count` corner indices by finding points with highest cumulative angle change.
     private static func findCorners(points: [CGPoint], count: Int) -> [Int] {
         guard points.count > count * 2 else { return [] }
         var angleChanges: [(index: Int, change: CGFloat)] = []
