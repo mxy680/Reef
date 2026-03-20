@@ -138,6 +138,8 @@ final class CanvasViewModel {
     var isMicOn: Bool = false
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
+    var isExporting: Bool = false
+    var exportedPDFURL: URL?
 
     // MARK: - Popover State
 
@@ -238,6 +240,7 @@ final class CanvasViewModel {
         self.document = document
         self.pdfDocument = MockCanvasData.blankPDF()
         self.savedState = CanvasStorageService.load(documentId: document.id)
+        print("[CanvasVM] Loaded saved state: \(savedState != nil ? "\(savedState!.drawingDataByPage.count) drawings" : "none")")
         Task { await loadPDF() }
         Task { await loadAnswerKeys() }
     }
@@ -262,10 +265,10 @@ final class CanvasViewModel {
                 return
             }
             pdfDocument = pdf
-            pageVersion += 1
             originalPageCount = pdf.pageCount
 
             if let saved = savedState {
+                print("[CanvasVM] Restoring: \(saved.drawingDataByPage.count) drawings, overlay=\(saved.overlaySettings.type.rawValue)")
                 overlaySettings = saved.overlaySettings
                 currentPageIndex = min(saved.currentPageIndex, pdf.pageCount - 1)
 
@@ -278,16 +281,27 @@ final class CanvasViewModel {
                 }
                 addedPageIndices = saved.addedPageIndices
 
-                // Restore per-page drawings
+                // Restore per-page drawings (suppress onDrawingChanged to avoid re-saving)
+                let savedCallback = drawingManager.onDrawingChanged
+                drawingManager.onDrawingChanged = nil
                 for (key, data) in saved.drawingDataByPage {
-                    if let pageIndex = Int(key), let drawing = try? PKDrawing(data: data) {
+                    guard let pageIndex = Int(key) else { continue }
+                    do {
+                        let drawing = try PKDrawing(data: data)
                         drawingManager.setDrawing(drawing, for: pageIndex)
+                    } catch {
+                        print("[CanvasVM] Failed to decode drawing for page \(pageIndex): \(error)")
                     }
                 }
+                drawingManager.onDrawingChanged = savedCallback
+                print("[CanvasVM] Restored \(saved.drawingDataByPage.count) drawings")
 
-                pageVersion += 1
                 savedState = nil
             }
+
+            // Single pageVersion bump AFTER all state is restored
+            // so setupPages reads the restored drawings
+            pageVersion += 1
         } catch {
             pdfError = "Failed to download document"
         }
@@ -304,6 +318,31 @@ final class CanvasViewModel {
         showHintPopover = false
         showRevealPopover = false
         showPageControls = false
+    }
+
+    func exportDocument() {
+        guard !isExporting else { return }
+        isExporting = true
+
+        let pdfDoc = pdfDocument
+        let drawings = drawingManager.drawings
+        let overlay = overlaySettings
+        let docName = document.displayName
+
+        Task {
+            let data = CanvasExportService.exportPDF(
+                pdfDocument: pdfDoc,
+                drawings: drawings,
+                overlaySettings: overlay
+            )
+
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(docName).pdf")
+            try? data.write(to: tempURL)
+
+            exportedPDFURL = tempURL
+            isExporting = false
+        }
     }
 
     func toolRetapped(_ tool: CanvasToolType) {
@@ -371,6 +410,8 @@ final class CanvasViewModel {
             result[String(pair.key)] = pair.value.dataRepresentation()
         }
 
+        print("[CanvasVM] Saving: \(drawingData.count) drawings, \(drawingData.values.map(\.count).reduce(0,+)) bytes total")
+
         let state = CanvasDocumentData(
             documentId: document.id,
             originalPageCount: originalPageCount,
@@ -383,6 +424,7 @@ final class CanvasViewModel {
         Task.detached {
             do {
                 try CanvasStorageService.save(state)
+                print("[CanvasVM] Save OK")
             } catch {
                 print("[CanvasVM] Save failed: \(error)")
             }

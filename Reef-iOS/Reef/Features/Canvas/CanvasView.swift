@@ -195,5 +195,25 @@ struct CanvasView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             viewModel.saveCanvasState()
         }
+        .sheet(isPresented: Binding(
+            get: { viewModel.exportedPDFURL != nil },
+            set: { if !$0 { viewModel.exportedPDFURL = nil } }
+        )) {
+            if let url = viewModel.exportedPDFURL {
+                ShareSheet(url: url)
+            }
+        }
     }
+}
+
+// MARK: - Share Sheet
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }

@@ -131,7 +131,10 @@ struct CanvasDrawingBar: View {
                 .buttonStyle(.plain)
 
                 toolbarButton(icon: "canvas.export", yOffset: -1) {
+                    viewModel.exportDocument()
                 }
+                .opacity(viewModel.isExporting ? 0.3 : 1.0)
+                .disabled(viewModel.isExporting)
 
                 toolbarButton(
                     icon: viewModel.showSidebar ? "canvas.sidebar_close" : "canvas.sidebar_open",

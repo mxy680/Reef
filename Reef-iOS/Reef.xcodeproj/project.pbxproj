@@ -99,6 +99,7 @@
 		D02A375FA6515DB534171C08 /* TutorHintPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = A187D2FEFCCCE67BF83BA0A4 /* TutorHintPopover.swift */; };
 		D03FA7FFE2014624EFF77984 /* ReefButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E7B4C0ECBC8C19B3047E375 /* ReefButton.swift */; };
 		D04CF7B3F8B8B36872F18F99 /* DeleteConfirmPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B1625043D9BE3B466B4EF85 /* DeleteConfirmPopup.swift */; };
+		D2A232A617B5D22378A2ED14 /* CanvasExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2488E4B45293319F3C207810 /* CanvasExportService.swift */; };
 		D2CEE2BCCA50F64C9096468E /* DocumentSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88C0707187B735021AB1D0D9 /* DocumentSkeletonView.swift */; };
 		D440C1F64F4138D89CE9DD4A /* CanvasInfoStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58ADFDC5DF429F967351DB7 /* CanvasInfoStrip.swift */; };
 		D4997C4B4B12928F5989D97B /* ComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D608FF89234404A5B5DDC266 /* ComingSoonView.swift */; };
@@ -163,6 +164,7 @@
 		1FBAAC77F6282CB6C717830B /* KaTeX */ = {isa = PBXFileReference; lastKnownFileType = folder; name = KaTeX; path = Reef/Resources/KaTeX; sourceTree = SOURCE_ROOT; };
 		20B9D25AC3198EC21D837140 /* ReefApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefApp.swift; sourceTree = "<group>"; };
 		21872AA207AEEC6F2397B9F4 /* DottedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DottedBackground.swift; sourceTree = "<group>"; };
+		2488E4B45293319F3C207810 /* CanvasExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasExportService.swift; sourceTree = "<group>"; };
 		2589F18A50DC9C05FCF0FC6C /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		29B48811F63C33857241E52D /* ReefUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefUITestCase.swift; sourceTree = "<group>"; };
 		2A80790E56F45AD11C42C6AE /* DocumentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsViewModel.swift; sourceTree = "<group>"; };
@@ -261,7 +263,7 @@
 		F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
 		F962193EFD8BFBB8449D0469 /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
 		FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefLayoutMetrics.swift; sourceTree = "<group>"; };
-		"TEMP_716AD363-B3F2-4216-9760-125126EC9AFB" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		"TEMP_D81DB421-D972-42B8-9A03-5F6205546AA1" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -413,6 +415,7 @@
 		4D9F576D29524B2F00CE2003 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				2488E4B45293319F3C207810 /* CanvasExportService.swift */,
 				64BCA06641FCCA06780192E3 /* CanvasStorageService.swift */,
 				F09B04CD69D0B940054A668D /* WifiMonitor.swift */,
 			);
@@ -661,10 +664,10 @@
 			path = Courses;
 			sourceTree = "<group>";
 		};
-		"TEMP_2F3BD1D3-2466-4917-AEAB-273831F411B9" /* Reef-iOS */ = {
+		"TEMP_2B20928B-5F99-492C-8B60-ED1B0DD0F8DD" /* Reef-iOS */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_716AD363-B3F2-4216-9760-125126EC9AFB" /* Secrets.xcconfig */,
+				"TEMP_D81DB421-D972-42B8-9A03-5F6205546AA1" /* Secrets.xcconfig */,
 			);
 			path = "Reef-iOS";
 			sourceTree = "<group>";
@@ -790,6 +793,7 @@
 				FC2A3704CF2F9C01A9965208 /* CanvasContainerView.swift in Sources */,
 				916287CF30C7FC567AF4EFB1 /* CanvasDocumentData.swift in Sources */,
 				0DC3FCB745F3E1C347C71AEE /* CanvasDrawingBar.swift in Sources */,
+				D2A232A617B5D22378A2ED14 /* CanvasExportService.swift in Sources */,
 				D440C1F64F4138D89CE9DD4A /* CanvasInfoStrip.swift in Sources */,
 				DE00728ECAC1B16052739324 /* CanvasPageView.swift in Sources */,
 				22657CCF5B44EF6A1C62E8E4 /* CanvasStorageService.swift in Sources */,
@@ -929,7 +933,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_716AD363-B3F2-4216-9760-125126EC9AFB" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_D81DB421-D972-42B8-9A03-5F6205546AA1" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -995,7 +999,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_716AD363-B3F2-4216-9760-125126EC9AFB" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_D81DB421-D972-42B8-9A03-5F6205546AA1" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
