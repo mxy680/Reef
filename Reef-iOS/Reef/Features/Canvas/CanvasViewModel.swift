@@ -138,8 +138,12 @@ final class CanvasViewModel {
     var isMicOn: Bool = false
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
+    let handwritingService = HandwritingTranscriptionService()
     var isExporting: Bool = false
+    var exportedPDFData: Data?
     var exportedPDFURL: URL?
+    var showExportPreview: Bool = false
+    weak var containerView: CanvasContainerView?
 
     // MARK: - Popover State
 
@@ -321,28 +325,42 @@ final class CanvasViewModel {
     }
 
     func exportDocument() {
-        guard !isExporting else { return }
+        guard !isExporting, let container = containerView else { return }
         isExporting = true
 
-        let pdfDoc = pdfDocument
-        let drawings = drawingManager.drawings
-        let overlay = overlaySettings
-        let docName = document.displayName
-
-        Task {
-            let data = CanvasExportService.exportPDF(
-                pdfDocument: pdfDoc,
-                drawings: drawings,
-                overlaySettings: overlay
-            )
-
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("\(docName).pdf")
-            try? data.write(to: tempURL)
-
-            exportedPDFURL = tempURL
-            isExporting = false
+        // If dark mode, temporarily switch to light for export
+        let wasDarkMode = isDarkMode
+        if wasDarkMode {
+            isDarkMode = false
+            container.applyDarkMode(false)
         }
+
+        // Screenshot each page — WYSIWYG, no coordinate math
+        let data = CanvasExportService.exportFromContainer(container)
+
+        // Restore dark mode
+        if wasDarkMode {
+            isDarkMode = true
+            container.applyDarkMode(true)
+        }
+
+        exportedPDFData = data
+        showExportPreview = true
+        isExporting = false
+    }
+
+    func shareExportedPDF() {
+        guard let data = exportedPDFData else { return }
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(document.displayName).pdf")
+        try? data.write(to: tempURL)
+        exportedPDFURL = tempURL
+    }
+
+    func dismissExportPreview() {
+        showExportPreview = false
+        exportedPDFData = nil
+        exportedPDFURL = nil
     }
 
     func toolRetapped(_ tool: CanvasToolType) {

@@ -19,9 +19,8 @@ struct CanvasView: View {
             (viewModel.isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
                 .ignoresSafeArea()
 
-            HStack(spacing: 0) {
             VStack(spacing: 0) {
-                // Toolbar
+                // Toolbar — always full width
                 VStack(spacing: 0) {
                     CanvasInfoStrip(
                         viewModel: viewModel,
@@ -54,48 +53,51 @@ struct CanvasView: View {
                 )
                 .zIndex(2)
 
-                // PDF + Drawing area
-                CanvasPageView(
-                    pdfDocument: viewModel.pdfDocument,
-                    drawingManager: viewModel.drawingManager,
-                    currentTool: viewModel.activePKTool,
-                    drawingPolicy: viewModel.activeDrawingPolicy,
-                    selectedToolType: viewModel.selectedTool,
-                    darkMode: viewModel.isDarkMode,
-                    overlayType: viewModel.overlaySettings.type,
-                    overlaySpacing: viewModel.overlaySettings.spacing,
-                    overlayOpacity: viewModel.overlaySettings.opacity,
-                    pageVersion: viewModel.pageVersion,
-                    scrollToPageIndex: scrollToPageIndex,
-                    onCanvasTouchBegan: {
-                        viewModel.dismissAllPopovers()
-                        scrollToPageIndex = nil
-                    },
-                    onZoomChanged: { scale in
-                        viewModel.zoomScale = scale
-                    },
-                    onContainerCreated: { container in
-                        viewModel.containerView = container
-                    }
-                )
-                .onChange(of: scrollToPageIndex) { _, newValue in
-                    if newValue != nil {
-                        // Reset after one render cycle so it doesn't keep re-scrolling
-                        DispatchQueue.main.async {
+                // Canvas + Sidebar — sidebar only pushes the canvas area
+                HStack(spacing: 0) {
+                    CanvasPageView(
+                        pdfDocument: viewModel.pdfDocument,
+                        drawingManager: viewModel.drawingManager,
+                        currentTool: viewModel.activePKTool,
+                        drawingPolicy: viewModel.activeDrawingPolicy,
+                        selectedToolType: viewModel.selectedTool,
+                        darkMode: viewModel.isDarkMode,
+                        overlayType: viewModel.overlaySettings.type,
+                        overlaySpacing: viewModel.overlaySettings.spacing,
+                        overlayOpacity: viewModel.overlaySettings.opacity,
+                        pageVersion: viewModel.pageVersion,
+                        scrollToPageIndex: scrollToPageIndex,
+                        onCanvasTouchBegan: {
+                            viewModel.dismissAllPopovers()
                             scrollToPageIndex = nil
+                        },
+                        onZoomChanged: { scale in
+                            viewModel.zoomScale = scale
+                        },
+                        onContainerCreated: { container in
+                            viewModel.containerView = container
+                        }
+                    )
+                    .onChange(of: scrollToPageIndex) { _, newValue in
+                        if newValue != nil {
+                            DispatchQueue.main.async {
+                                scrollToPageIndex = nil
+                            }
                         }
                     }
-                }
-                .ignoresSafeArea(edges: .bottom)
-            } // VStack
 
-            if viewModel.showSidebar {
-                CanvasSidebarView(isDarkMode: viewModel.isDarkMode)
-                    .frame(width: metrics.canvasSidebarWidth)
-                    .transition(.move(edge: .trailing))
+                    if viewModel.showSidebar {
+                        CanvasSidebarView(
+                            isDarkMode: viewModel.isDarkMode,
+                            transcriptionService: viewModel.handwritingService
+                        )
+                        .frame(width: metrics.canvasSidebarWidth)
+                        .transition(.move(edge: .trailing))
+                    }
+                }
+                .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.showSidebar)
+                .ignoresSafeArea(edges: .bottom)
             }
-            } // HStack
-            .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.showSidebar)
 
             // Ruler overlay
             if viewModel.showRuler {
@@ -225,6 +227,11 @@ struct CanvasView: View {
                     try? await Task.sleep(for: .seconds(2))
                     guard !Task.isCancelled else { return }
                     viewModel.saveCanvasState()
+                }
+                // Live transcription when sidebar is open
+                if viewModel.showSidebar {
+                    let drawing = viewModel.drawingManager.drawing(for: viewModel.currentPageIndex)
+                    viewModel.handwritingService.onDrawingChanged(drawing: drawing)
                 }
             }
         }

@@ -19,6 +19,7 @@
 		1040571EEA06DD01EC7E1776 /* ToolSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE035BAF0664E7DC94AFD77F /* ToolSettingsPopover.swift */; };
 		114AD1A2B9668044DDDAFD7E /* EraserSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B5973EB0C19F379FCC7F2D /* EraserSettingsPopover.swift */; };
 		11E74EB9CAA26F3776EE774D /* CourseRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD8763733BAAB023C8D2CFF /* CourseRepository.swift */; };
+		15A4D41DC0FC74C073BB398D /* HandwritingTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B631BDD9B4ADCB364AEFA27 /* HandwritingTranscriptionService.swift */; };
 		17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */; };
 		1851666EDD5700E210B5FE9F /* RulerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029895EBF64BA43E3B438CBE /* RulerOverlayView.swift */; };
 		1BAD8BD9673755ECB28CD6EC /* ProfileDropdownMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */; };
@@ -159,6 +160,7 @@
 		1453C18E7538070E48493719 /* AddColorPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddColorPopup.swift; sourceTree = "<group>"; };
 		16BBC645292B51A009BA92AD /* DocumentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentRepository.swift; sourceTree = "<group>"; };
 		16E7D8D9AB1CD2E1E50122E0 /* ExportPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportPreviewView.swift; sourceTree = "<group>"; };
+		1B631BDD9B4ADCB364AEFA27 /* HandwritingTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingTranscriptionService.swift; sourceTree = "<group>"; };
 		1CDCFE49DE81342DD005D2CB /* AuthFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowTests.swift; sourceTree = "<group>"; };
 		1DF6F897609CDB22C4ABE252 /* ShapeRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeRecognizer.swift; sourceTree = "<group>"; };
 		1EABCAE9AC6CDFAB155B57D4 /* CalculatorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorEngine.swift; sourceTree = "<group>"; };
@@ -267,7 +269,7 @@
 		F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
 		F962193EFD8BFBB8449D0469 /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
 		FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefLayoutMetrics.swift; sourceTree = "<group>"; };
-		"TEMP_26FB343B-430F-4691-8B9F-9195A903FBAC" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		"TEMP_C8EF0396-5007-4D76-B4A1-37330179C698" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -444,6 +446,7 @@
 			isa = PBXGroup;
 			children = (
 				85288EB05437D44A3FEC547F /* CanvasSidebarView.swift */,
+				1B631BDD9B4ADCB364AEFA27 /* HandwritingTranscriptionService.swift */,
 			);
 			path = Sidebar;
 			sourceTree = "<group>";
@@ -678,10 +681,10 @@
 			path = Courses;
 			sourceTree = "<group>";
 		};
-		"TEMP_07803BC7-714B-4B6E-B54E-E1B8AC00CFFB" /* Reef-iOS */ = {
+		"TEMP_2B1E4AD3-2508-4C47-992D-1F740EDFFE37" /* Reef-iOS */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_26FB343B-430F-4691-8B9F-9195A903FBAC" /* Secrets.xcconfig */,
+				"TEMP_C8EF0396-5007-4D76-B4A1-37330179C698" /* Secrets.xcconfig */,
 			);
 			path = "Reef-iOS";
 			sourceTree = "<group>";
@@ -849,6 +852,7 @@
 				114AD1A2B9668044DDDAFD7E /* EraserSettingsPopover.swift in Sources */,
 				616DA14DB392B614F530E097 /* ExportPreviewView.swift in Sources */,
 				17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */,
+				15A4D41DC0FC74C073BB398D /* HandwritingTranscriptionService.swift in Sources */,
 				903339E4247C9C8EBCE24624 /* KaTeXView.swift in Sources */,
 				E6DD16240CF1B56A193E21F4 /* MathText.swift in Sources */,
 				B26F3491C9BD243B4E65D766 /* MockCanvasData.swift in Sources */,
@@ -949,7 +953,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_26FB343B-430F-4691-8B9F-9195A903FBAC" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_C8EF0396-5007-4D76-B4A1-37330179C698" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1015,7 +1019,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_26FB343B-430F-4691-8B9F-9195A903FBAC" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_C8EF0396-5007-4D76-B4A1-37330179C698" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;

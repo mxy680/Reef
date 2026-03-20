@@ -3,10 +3,7 @@ import SwiftUI
 struct CanvasSidebarView: View {
     @Environment(ReefTheme.self) private var theme
     var isDarkMode: Bool
-
-    private var toolbarColor: Color {
-        isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasDrawingBar.barColor
-    }
+    var transcriptionService: HandwritingTranscriptionService
 
     var body: some View {
         let colors = theme.colors
@@ -17,50 +14,68 @@ struct CanvasSidebarView: View {
                 .fill(Color.black.opacity(0.2))
                 .frame(width: 0.5)
 
-            VStack(spacing: 0) {
-                // Header matching toolbar rows (info strip 40pt + drawing bar 48pt)
-                VStack(spacing: 0) {
-                    // Info strip row — label shown here
-                    HStack {
-                        Text("Sidebar")
-                            .font(.epilogue(13, weight: .black))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(.white)
-                        Spacer()
+            VStack(alignment: .leading, spacing: 0) {
+                // Header
+                HStack {
+                    Image(systemName: "text.viewfinder")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(colors.textSecondary)
+                    Text("Transcription")
+                        .font(.epilogue(13, weight: .black))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(colors.text)
+                    Spacer()
+                    if transcriptionService.isTranscribing {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .scaleEffect(0.7)
+                            .tint(ReefColors.primary)
                     }
-                    .padding(.horizontal, 16)
-                    .frame(height: 40)
-
-                    // Drawing bar row spacer
-                    Color.clear
-                        .frame(height: 48)
-
-                    // Bottom separator
-                    Rectangle()
-                        .fill(Color.black.opacity(0.15))
-                        .frame(height: 0.5)
                 }
-                .padding(.top, 12)
-                .background(
-                    ZStack {
-                        toolbarColor
-                        Color.black.opacity(isDarkMode ? 0.3 : 0.18)
-                    }
-                    .ignoresSafeArea(edges: .top)
-                )
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
 
-                // Content area
-                VStack {
-                    Spacer()
-                    Text("Coming soon")
-                        .font(.epilogue(14, weight: .medium))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(colors.textMuted)
-                    Spacer()
+                // Separator
+                Rectangle()
+                    .fill(colors.divider)
+                    .frame(height: 0.5)
+
+                // Content
+                ScrollView {
+                    if !transcriptionService.latexResult.isEmpty {
+                        MathText(
+                            text: transcriptionService.latexResult,
+                            fontSize: 15,
+                            color: colors.text
+                        )
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else if transcriptionService.isTranscribing {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .tint(ReefColors.primary)
+                            Text("Transcribing...")
+                                .font(.epilogue(13, weight: .medium))
+                                .foregroundStyle(colors.textMuted)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.top, 60)
+                    } else if let error = transcriptionService.errorMessage {
+                        Text(error)
+                            .font(.epilogue(13, weight: .medium))
+                            .foregroundStyle(Color(hex: 0xE57373))
+                            .padding(16)
+                    } else {
+                        Text("Start writing to see transcription")
+                            .font(.epilogue(13, weight: .medium))
+                            .foregroundStyle(colors.textMuted)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 60)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
             }
+            .background(isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
         }
     }
 }
