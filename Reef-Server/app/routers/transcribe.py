@@ -1,32 +1,112 @@
+"""POST /ai/transcribe-strokes — proxy handwriting strokes to Mathpix v3 Strokes API."""
+
 import logging
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from app.auth import get_current_user, AuthenticatedUser
+
+from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
-from app.services.mathpix import MathpixClient
 
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
-class TranscribeRequest(BaseModel):
-    image_base64: str
+class StrokeData(BaseModel):
+    x: list[float]
+    y: list[float]
 
 
-class TranscribeResponse(BaseModel):
+class TranscribeStrokesRequest(BaseModel):
+    strokes: list[StrokeData]
+    session_id: str | None = None
+    app_token: str | None = None
+
+
+class TranscribeStrokesResponse(BaseModel):
     latex: str
+    session_id: str | None = None
 
 
-@router.post("/transcribe-handwriting", response_model=TranscribeResponse)
-async def transcribe_handwriting(
-    req: TranscribeRequest,
+class CreateSessionResponse(BaseModel):
+    app_token: str
+    strokes_session_id: str
+    expires_at: int  # unix timestamp ms
+
+
+@router.post("/strokes-session", response_model=CreateSessionResponse)
+async def create_strokes_session(
     user: AuthenticatedUser = Depends(get_current_user),
-) -> TranscribeResponse:
-    try:
-        client = MathpixClient(settings.mathpix_app_id, settings.mathpix_app_key)
-        latex = await client.transcribe_image(req.image_base64)
-        return TranscribeResponse(latex=latex)
-    except Exception as e:
-        log.error(f"Transcription failed for user {user.id}: {e}")
-        raise HTTPException(status_code=502, detail=f"Transcription failed: {str(e)}")
+):
+    if not settings.mathpix_app_key:
+        raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.post(
+            "https://api.mathpix.com/v3/app-tokens",
+            headers={"app_key": settings.mathpix_app_key},
+            json={"include_strokes_session_id": True, "expires": 300},
+        )
+    if resp.status_code != 200:
+        log.warning(f"Mathpix app-tokens API returned {resp.status_code}: {resp.text}")
+        raise HTTPException(status_code=502, detail="Failed to create Mathpix session")
+    data = resp.json()
+    return CreateSessionResponse(
+        app_token=data["app_token"],
+        strokes_session_id=data["strokes_session_id"],
+        expires_at=data.get("app_token_expires_at", 0),
+    )
+
+
+@router.post("/transcribe-strokes", response_model=TranscribeStrokesResponse)
+async def transcribe_strokes(
+    body: TranscribeStrokesRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    if not settings.mathpix_app_id or not settings.mathpix_app_key:
+        raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
+
+    payload: dict = {
+        "strokes": {
+            "strokes": {
+                "x": [s.x for s in body.strokes],
+                "y": [s.y for s in body.strokes],
+            }
+        },
+    }
+    if body.session_id:
+        payload["strokes_session_id"] = body.session_id
+
+    if body.app_token:
+        headers = {"app_token": body.app_token, "Content-Type": "application/json"}
+    else:
+        headers = {
+            "app_id": settings.mathpix_app_id,
+            "app_key": settings.mathpix_app_key,
+            "Content-Type": "application/json",
+        }
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.post(
+            "https://api.mathpix.com/v3/strokes",
+            json=payload,
+            headers=headers,
+        )
+
+    if resp.status_code != 200:
+        log.warning(f"Mathpix strokes API returned {resp.status_code}: {resp.text}")
+        raise HTTPException(status_code=502, detail="Mathpix transcription failed")
+
+    data = resp.json()
+    if "error" in data:
+        raise HTTPException(status_code=502, detail=f"Mathpix error: {data.get('error')}")
+
+    latex = data.get("latex", data.get("text", ""))
+    session_id = data.get("strokes_session_id", data.get("session_id"))
+
+    # Wrap in display math delimiters if not already wrapped
+    if latex and not latex.startswith("$") and not latex.startswith("\\[") and not latex.startswith("\\("):
+        latex = f"$$ {latex} $$"
+    return TranscribeStrokesResponse(latex=latex, session_id=session_id)
