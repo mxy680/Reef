@@ -5,6 +5,7 @@ struct DashboardSidebar: View {
     @Environment(AuthViewModel.self) private var auth
     @Environment(\.reefLayoutMetrics) private var metrics
     var viewModel: DashboardViewModel
+    var coursesVM: CoursesViewModel
 
     private var isOpen: Bool { viewModel.sidebarOpen }
 
@@ -86,7 +87,7 @@ struct DashboardSidebar: View {
         }
     }
 
-    // MARK: - Courses Section (stub)
+    // MARK: - Courses Section
 
     private var coursesSection: some View {
         let colors = theme.colors
@@ -98,16 +99,32 @@ struct DashboardSidebar: View {
                         .tracking(0.06 * 11)
                         .foregroundStyle(colors.textDisabled)
 
+                    if let max = coursesVM.maxCourses {
+                        Text("\(coursesVM.courses.count)/\(max)")
+                            .font(.epilogue(10, weight: .bold))
+                            .tracking(0.04 * 10)
+                            .foregroundStyle(colors.textDisabled)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(colors.subtle)
+                            .clipShape(Capsule())
+                    }
+
                     Spacer()
                 }
 
                 Image(systemName: "plus")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(colors.textDisabled)
+                    .foregroundStyle(coursesVM.atCourseLimit ? colors.textDisabled.opacity(0.4) : colors.textDisabled)
                     .frame(width: 24, height: 24)
                     .compositingGroup()
                     .contentShape(Rectangle())
-                    .onTapGesture { /* Stub — course creation wired later */ }
+                    .onTapGesture {
+                        if !coursesVM.atCourseLimit {
+                            coursesVM.addCourseTarget = true
+                        }
+                    }
+                    .disabled(coursesVM.atCourseLimit)
                     .accessibilityLabel("Add course")
                     .accessibilityAddTraits(.isButton)
             }
@@ -115,28 +132,89 @@ struct DashboardSidebar: View {
             .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : 0)
             .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
 
-            // Empty state
-            HStack(spacing: 12) {
-                Image(systemName: "plus.circle.dashed")
-                    .font(.system(size: 18))
-                    .frame(width: 24, height: 24)
+            if coursesVM.courses.isEmpty {
+                // Empty state
+                HStack(spacing: 12) {
+                    Image(systemName: "plus.circle.dashed")
+                        .font(.system(size: 18))
+                        .frame(width: 24, height: 24)
 
-                if isOpen {
-                    Text("Add a course")
-                        .font(.epilogue(15, weight: .semiBold))
-                        .tracking(-0.04 * 15)
+                    if isOpen {
+                        Text("Add a course")
+                            .font(.epilogue(15, weight: .semiBold))
+                            .tracking(-0.04 * 15)
+                    }
+                }
+                .foregroundStyle(colors.textDisabled)
+                .padding(.vertical, 8)
+                .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : 0)
+                .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+                .compositingGroup()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if !coursesVM.atCourseLimit {
+                        coursesVM.addCourseTarget = true
+                    }
+                }
+                .accessibilityLabel("Add a course")
+                .accessibilityAddTraits(.isButton)
+            } else {
+                ForEach(coursesVM.courses) { course in
+                    courseNavItem(course)
                 }
             }
-            .foregroundStyle(colors.textDisabled)
-            .padding(.vertical, 8)
-            .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : 0)
-            .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
-            .compositingGroup()
-            .contentShape(Rectangle())
-            .onTapGesture { /* Stub */ }
-            .accessibilityLabel("Add a course")
-            .accessibilityAddTraits(.isButton)
         }
+    }
+
+    private func courseNavItem(_ course: Course) -> some View {
+        let isActive = viewModel.selectedCourseId == course.id
+        let colors = theme.colors
+
+        return HStack(spacing: 12) {
+            Image(course.emoji)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 20, height: 20)
+                .frame(width: 24, height: 24)
+
+            if isOpen {
+                Text(course.name)
+                    .font(.epilogue(15, weight: isActive ? .bold : .semiBold))
+                    .tracking(-0.04 * 15)
+                    .lineLimit(1)
+
+                Spacer()
+            }
+        }
+        .foregroundStyle(isActive ? colors.text : colors.textSecondary)
+        .padding(.vertical, 8)
+        .padding(.horizontal, isOpen ? metrics.sidebarItemHPadding : 0)
+        .frame(maxWidth: .infinity, alignment: isOpen ? .leading : .center)
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(colors.activeNavBg)
+                : nil
+        )
+        .overlay(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .stroke(colors.activeNavBorder, lineWidth: 2)
+                : nil
+        )
+        .background(
+            isActive
+                ? RoundedRectangle(cornerRadius: 10)
+                    .fill(colors.shadow)
+                    .offset(x: 3, y: 3)
+                : nil
+        )
+        .compositingGroup()
+        .contentShape(RoundedRectangle(cornerRadius: 10))
+        .onTapGesture { viewModel.selectCourse(course.id) }
+        .accessibilityIdentifier("sidebar.course.\(course.id)")
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Nav Item
