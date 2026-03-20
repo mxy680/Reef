@@ -54,6 +54,7 @@ struct CanvasView: View {
                     drawingManager: drawingManager,
                     currentTool: viewModel.activePKTool,
                     drawingPolicy: viewModel.activeDrawingPolicy,
+                    selectedToolType: viewModel.selectedTool,
                     darkMode: viewModel.isDarkMode,
                     overlayType: viewModel.overlaySettings.type,
                     overlaySpacing: viewModel.overlaySettings.spacing,

@@ -46,6 +46,15 @@ final class CanvasContainerView: UIView {
         }
     }
 
+    /// Selected tool type — used to gate shape auto-snap
+    var selectedToolType: CanvasToolType = .pen
+
+    /// Prevents re-entrant delegate calls while replacing a stroke
+    private var isReplacingStroke = false
+
+    /// Tracks previous stroke counts per canvas view to detect new strokes
+    private var previousStrokeCounts: [ObjectIdentifier: Int] = [:]
+
     /// Separator height between pages
     private static let separatorHeight: CGFloat = 16
 
@@ -457,6 +466,28 @@ extension CanvasContainerView: PKCanvasViewDelegate {
     func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         guard let index = canvasViews.firstIndex(of: canvasView) else { return }
         drawingManager?.setDrawing(canvasView.drawing, for: index)
+
+        // Shape auto-snap: replace the last stroke with a clean geometric version
+        guard !isReplacingStroke else { return }
+        guard selectedToolType == .shapes else { return }
+
+        let currentCount = canvasView.drawing.strokes.count
+        let viewId = ObjectIdentifier(canvasView)
+        let previousCount = previousStrokeCounts[viewId] ?? 0
+        previousStrokeCounts[viewId] = currentCount
+
+        guard currentCount == previousCount + 1 else { return }
+        guard let lastStroke = canvasView.drawing.strokes.last else { return }
+
+        let shape = ShapeRecognizer.recognize(stroke: lastStroke)
+        guard !shape.isNone,
+              let cleanStroke = ShapeRecognizer.buildStroke(for: shape, template: lastStroke) else { return }
+
+        isReplacingStroke = true
+        var newDrawing = canvasView.drawing
+        newDrawing.strokes[newDrawing.strokes.count - 1] = cleanStroke
+        canvasView.drawing = newDrawing
+        isReplacingStroke = false
     }
 
     func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
