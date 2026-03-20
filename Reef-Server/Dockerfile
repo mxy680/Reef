@@ -2,12 +2,13 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# System deps for PyMuPDF, Pillow, and tectonic
+# System deps for PyMuPDF, tectonic, and opencv-python-headless
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libfontconfig1 \
     libfreetype6 \
     libharfbuzz0b \
     libfribidi0 \
+    libglib2.0-0 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -15,15 +16,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh \
     && mv tectonic /usr/local/bin/
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
 
 COPY app/ app/
 
 RUN useradd --create-home reef
 USER reef
 
-# Pre-warm tectonic cache as reef user (downloads TeX packages on first run)
+# Pre-warm tectonic cache (downloads TeX packages on first run)
 RUN printf '\\documentclass{article}\\begin{document}Hello\\end{document}\n' > /tmp/test.tex \
     && tectonic /tmp/test.tex \
     && rm /tmp/test.tex /tmp/test.pdf

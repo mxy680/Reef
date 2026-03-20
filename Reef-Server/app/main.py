@@ -1,109 +1,78 @@
+import asyncio
 import logging
-import os
 from contextlib import asynccontextmanager
-
-# Set root logger to INFO so all app loggers emit info-level messages
-logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO").upper())
-
-import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.config import settings
-from app.routers import health, reconstruct, reconstruct_v2, render_latex, transcribe, tutor, ws
+from app.routers import health
+from app.routers import reconstruct_v2
+from app.routers import fit_shape
 from app.services.cancellation import get_in_flight_ids
 from app.services.progress import update_document_status
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+log = logging.getLogger(__name__)
+
+# Strong references to background tasks (prevent GC)
+_background_tasks: set[asyncio.Task] = set()
 
 
 async def _recover_stale_documents():
-    """Mark documents stuck in 'processing' as 'failed' on startup.
-
-    Any document still 'processing' at boot is an orphan from a previous
-    server instance that crashed or was killed before shutdown could run.
-    """
-    if not settings.supabase_url or not settings.supabase_service_role_key:
-        return
+    """Mark any documents stuck in 'processing' as failed on startup."""
+    from app.config import settings
     try:
-        url = (
-            f"{settings.supabase_url}/rest/v1/documents"
-            f"?status=eq.processing&select=id"
-        )
-        headers = {
-            "apikey": settings.supabase_service_role_key,
-            "Authorization": f"Bearer {settings.supabase_service_role_key}",
-        }
+        import httpx
         async with httpx.AsyncClient() as client:
-            resp = await client.get(url, headers=headers, timeout=10)
-            resp.raise_for_status()
-            stuck_docs = resp.json()
-
-        if not stuck_docs:
-            logger.info("Startup recovery: no stale documents found")
-            return
-
-        logger.warning(f"Startup recovery: found {len(stuck_docs)} stale document(s)")
-        for doc in stuck_docs:
-            doc_id = doc["id"]
-            await update_document_status(
-                doc_id,
-                status="failed",
-                error_message="Server restarted — document was not fully processed",
-                status_message=None,
+            resp = await client.get(
+                f"{settings.supabase_url}/rest/v1/documents",
+                params={"status": "eq.processing", "select": "id"},
+                headers={
+                    "apikey": settings.supabase_service_role_key,
+                    "Authorization": f"Bearer {settings.supabase_service_role_key}",
+                },
+                timeout=10,
             )
-            logger.info(f"Startup recovery: marked {doc_id} as failed")
+            if resp.status_code == 200:
+                stale = resp.json()
+                for doc in stale:
+                    await update_document_status(
+                        doc["id"],
+                        status="failed",
+                        error_message="Server restarted — document was not fully processed. Please retry.",
+                    )
+                if stale:
+                    log.warning("Recovered %d stale documents", len(stale))
     except Exception as e:
-        logger.error(f"Startup recovery failed: {e}")
+        log.warning("Stale document recovery failed: %s", e)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"Reef Server starting on {settings.host}:{settings.port}")
+    log.info("Reef server starting")
     await _recover_stale_documents()
     yield
-
-    # Graceful shutdown: mark in-flight documents as failed
-    in_flight = get_in_flight_ids()
-    if in_flight:
-        logger.warning(f"Shutting down with {len(in_flight)} in-flight document(s): {in_flight}")
-        for doc_id in in_flight:
-            try:
-                await update_document_status(
-                    doc_id,
-                    status="failed",
-                    error_message="Server restarted during processing",
-                    status_message=None,
-                )
-            except Exception as e:
-                logger.error(f"Failed to mark {doc_id} as failed on shutdown: {e}")
-    logger.info("Reef Server shut down")
+    log.info("Reef server shutting down")
+    # Mark in-flight documents as failed
+    for doc_id in get_in_flight_ids():
+        try:
+            await update_document_status(
+                doc_id,
+                status="failed",
+                error_message="Server shutting down — document was not fully processed. Please retry.",
+            )
+        except Exception:
+            pass
 
 
-app = FastAPI(
-    title="Reef Server",
-    version="0.1.0",
-    lifespan=lifespan,
-    docs_url="/docs" if settings.debug else None,
-    redoc_url=None,
-)
+app = FastAPI(title="Reef Server", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://studyreef.com",
-        "https://www.studyreef.com",
-        "http://localhost:3000",
-    ],
+    allow_origins=["https://studyreef.com", "https://www.studyreef.com", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(health.router)
-app.include_router(reconstruct.router)
 app.include_router(reconstruct_v2.router)
-app.include_router(render_latex.router)
-app.include_router(transcribe.router)
-app.include_router(tutor.router)
-app.include_router(ws.router)
+app.include_router(fit_shape.router)
