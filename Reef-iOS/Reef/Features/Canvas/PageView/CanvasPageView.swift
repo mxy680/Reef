@@ -18,6 +18,8 @@ struct CanvasPageView: UIViewRepresentable {
     var scrollToPageIndex: Int? = nil
     var onCanvasTouchBegan: (() -> Void)?
     var onZoomChanged: ((CGFloat) -> Void)?
+    var onStrokePositionChanged: ((_ pageIndex: Int, _ yPosition: Double) -> Void)?
+    var onContainerCreated: ((CanvasContainerView) -> Void)?
 
     func makeUIView(context: Context) -> CanvasContainerView {
         let container = CanvasContainerView()
@@ -27,9 +29,11 @@ struct CanvasPageView: UIViewRepresentable {
         container.selectedToolType = selectedToolType
         container.onCanvasTouchBegan = onCanvasTouchBegan
         container.onZoomChanged = onZoomChanged
+        container.onStrokePositionChanged = onStrokePositionChanged
         container.configure(pdfDocument: pdfDocument, pageVersion: pageVersion)
         container.applyDarkMode(darkMode)
         container.updateOverlay(type: overlayType, spacing: overlaySpacing, opacity: overlayOpacity)
+        onContainerCreated?(container)
         return container
     }
 
@@ -39,6 +43,7 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.selectedToolType = selectedToolType
         uiView.onCanvasTouchBegan = onCanvasTouchBegan
         uiView.onZoomChanged = onZoomChanged
+        uiView.onStrokePositionChanged = onStrokePositionChanged
 
         // Re-render pages when the PDF document or page structure changes
         if uiView.currentPageVersion != pageVersion {

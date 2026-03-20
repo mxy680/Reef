@@ -74,6 +74,9 @@ struct CanvasView: View {
                         onZoomChanged: { scale in
                             viewModel.zoomScale = scale
                         },
+                        onStrokePositionChanged: { pageIndex, yPosition in
+                            viewModel.updateActiveQuestion(pageIndex: pageIndex, yPosition: yPosition)
+                        },
                         onContainerCreated: { container in
                             viewModel.containerView = container
                         }
@@ -89,7 +92,8 @@ struct CanvasView: View {
                     if viewModel.showSidebar {
                         CanvasSidebarView(
                             isDarkMode: viewModel.isDarkMode,
-                            transcriptionService: viewModel.handwritingService
+                            transcriptionService: viewModel.handwritingService,
+                            activeQuestionLabel: viewModel.activeQuestionLabel
                         )
                         .frame(width: metrics.canvasSidebarWidth)
                         .transition(.move(edge: .trailing))

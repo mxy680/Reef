@@ -135,6 +135,7 @@ final class CanvasViewModel {
     var showRuler: Bool = false
     var isDarkMode: Bool = false
     var showSidebar: Bool = false
+    var activeQuestionLabel: String?
     var isMicOn: Bool = false
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
@@ -310,6 +311,23 @@ final class CanvasViewModel {
             pdfError = "Failed to download document"
         }
         isLoadingPDF = false
+    }
+
+    // MARK: - Question Region Detection
+
+    func updateActiveQuestion(pageIndex: Int, yPosition: Double) {
+        let originalPage = originalPageIndex(for: pageIndex)
+        activeQuestionLabel = QuestionRegionTracker.activeLabel(
+            forPage: originalPage,
+            yPosition: yPosition,
+            questionRegions: document.questionRegions
+        )
+    }
+
+    /// Map current page index back to original index, accounting for added blank pages.
+    private func originalPageIndex(for currentIndex: Int) -> Int {
+        let addedBefore = addedPageIndices.filter { $0 <= currentIndex }.count
+        return currentIndex - addedBefore
     }
 
     // MARK: - Actions

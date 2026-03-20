@@ -11,7 +11,7 @@ final class CanvasContainerView: UIView {
 
     private var pageImageViews: [UIImageView] = []
     private var canvasViews: [PKCanvasView] = []
-    private var pageContainerViews: [UIView] = []
+    private(set) var pageContainerViews: [UIView] = []
     private var shadowViews: [UIView] = []
     private var pageOverlayViews: [CanvasPageOverlayView] = []
     private var separatorViews: [UIView] = []
@@ -28,6 +28,7 @@ final class CanvasContainerView: UIView {
     /// Callback when pencil touches down on canvas (dismiss popovers)
     var onCanvasTouchBegan: (() -> Void)?
     var onZoomChanged: ((CGFloat) -> Void)?
+    var onStrokePositionChanged: ((_ pageIndex: Int, _ yPosition: Double) -> Void)?
 
     /// Drawing state manager
     weak var drawingManager: CanvasDrawingManager?
@@ -181,18 +182,31 @@ final class CanvasContainerView: UIView {
         guard document.pageCount > 0 else { return images }
         for i in 0..<document.pageCount {
             guard let page = document.page(at: i) else { continue }
-            let pageRect = page.bounds(for: .mediaBox)
+            let mediaBox = page.bounds(for: .mediaBox)
+            // Account for page rotation
+            let pageSize: CGSize
+            if page.rotation == 90 || page.rotation == 270 {
+                pageSize = CGSize(width: mediaBox.height, height: mediaBox.width)
+            } else {
+                pageSize = mediaBox.size
+            }
 
             let renderer = UIGraphicsImageRenderer(
-                size: CGSize(width: pageRect.width * scale, height: pageRect.height * scale)
+                size: CGSize(width: pageSize.width * scale, height: pageSize.height * scale)
             )
             let image = renderer.image { ctx in
                 UIColor.white.setFill()
                 ctx.fill(CGRect(origin: .zero, size: renderer.format.bounds.size))
-                ctx.cgContext.translateBy(x: 0, y: pageRect.height * scale)
+                // Compensate for non-zero mediaBox origin + flip Y for PDF coordinates
+                ctx.cgContext.translateBy(
+                    x: -mediaBox.origin.x * scale,
+                    y: pageSize.height * scale + mediaBox.origin.y * scale
+                )
                 ctx.cgContext.scaleBy(x: scale, y: -scale)
                 page.draw(with: .mediaBox, to: ctx.cgContext)
             }
+            // IMPORTANT: scale:2.0 so image.size returns PDF point dimensions.
+            // PKCanvasView is sized to image.size, so strokes are in PDF point space.
             let scaledImage = UIImage(cgImage: image.cgImage!, scale: scale, orientation: .up)
             images.append(scaledImage)
         }
@@ -273,22 +287,7 @@ final class CanvasContainerView: UIView {
                 canvasView.drawing = manager.drawing(for: index)
             }
 
-            pageView.addSubview(canvasView)
-            canvasViews.append(canvasView)
-
-            NSLayoutConstraint.activate([
-                imageView.topAnchor.constraint(equalTo: pageView.topAnchor),
-                imageView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
-                imageView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
-                imageView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
-
-                canvasView.topAnchor.constraint(equalTo: pageView.topAnchor),
-                canvasView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
-                canvasView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
-                canvasView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
-            ])
-
-            // Page overlay
+            // Page overlay (added before canvas so drawing renders on top)
             let overlayView = CanvasPageOverlayView()
             overlayView.translatesAutoresizingMaskIntoConstraints = false
             overlayView.isUserInteractionEnabled = false
@@ -298,11 +297,25 @@ final class CanvasContainerView: UIView {
             pageView.addSubview(overlayView)
             pageOverlayViews.append(overlayView)
 
+            // Canvas view (on top of overlay so strokes are visible)
+            pageView.addSubview(canvasView)
+            canvasViews.append(canvasView)
+
             NSLayoutConstraint.activate([
+                imageView.topAnchor.constraint(equalTo: pageView.topAnchor),
+                imageView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
+                imageView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
+                imageView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
+
                 overlayView.topAnchor.constraint(equalTo: pageView.topAnchor),
                 overlayView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
                 overlayView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
                 overlayView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
+
+                canvasView.topAnchor.constraint(equalTo: pageView.topAnchor),
+                canvasView.leadingAnchor.constraint(equalTo: pageView.leadingAnchor),
+                canvasView.trailingAnchor.constraint(equalTo: pageView.trailingAnchor),
+                canvasView.bottomAnchor.constraint(equalTo: pageView.bottomAnchor),
             ])
 
             NSLayoutConstraint.activate([
@@ -467,7 +480,13 @@ extension CanvasContainerView: PKCanvasViewDelegate {
         guard let index = canvasViews.firstIndex(of: canvasView) else { return }
         drawingManager?.setDrawing(canvasView.drawing, for: index)
 
-        // Shape auto-snap with dwell detection
+        // Report latest stroke position for question detection
+        if let lastStroke = canvasView.drawing.strokes.last {
+            let midY = Double(lastStroke.renderBounds.midY)
+            onStrokePositionChanged?(index, midY)
+        }
+
+        // Shape auto-snap via server
         guard !isReplacingStroke else { return }
         guard selectedToolType == .shapes else { return }
 
@@ -479,27 +498,33 @@ extension CanvasContainerView: PKCanvasViewDelegate {
         guard currentCount == previousCount + 1 else { return }
         guard let lastStroke = canvasView.drawing.strokes.last else { return }
 
-        // Only snap if user held the pencil still at the end (dwell detection)
-        guard ShapeRecognizer.detectDwell(in: lastStroke) else { return }
+        let strokeIndex = currentCount - 1
 
-        let shape = ShapeRecognizer.recognize(stroke: lastStroke)
-        guard !shape.isNone,
-              let cleanStroke = ShapeRecognizer.buildStroke(for: shape, template: lastStroke)
-        else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
 
-        isReplacingStroke = true
-        var newDrawing = canvasView.drawing
-        newDrawing.strokes[newDrawing.strokes.count - 1] = cleanStroke
-        canvasView.drawing = newDrawing
-        isReplacingStroke = false
+            let shape = await ShapeRecognizer.recognizeRemote(stroke: lastStroke)
+            guard !shape.isNone,
+                  let cleanStroke = ShapeRecognizer.buildStroke(for: shape, template: lastStroke)
+            else { return }
 
-        // Haptic feedback
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+            // Re-validate stroke is still at expected index
+            guard canvasView.drawing.strokes.count > strokeIndex else { return }
 
-        // Update drawing manager
-        if let idx = canvasViews.firstIndex(of: canvasView) {
-            drawingManager?.setDrawing(canvasView.drawing, for: idx)
+            self.isReplacingStroke = true
+            var newDrawing = canvasView.drawing
+            newDrawing.strokes[strokeIndex] = cleanStroke
+            canvasView.drawing = newDrawing
+            self.isReplacingStroke = false
+
+            // Haptic feedback
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+
+            // Update drawing manager
+            if let idx = self.canvasViews.firstIndex(of: canvasView) {
+                self.drawingManager?.setDrawing(canvasView.drawing, for: idx)
+            }
         }
     }
 

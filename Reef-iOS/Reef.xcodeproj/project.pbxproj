@@ -109,6 +109,7 @@
 		D59B49AF47DF7C49B0713D9D /* Reef3DSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E433D80D018772EA5F6029B0 /* Reef3DSlider.swift */; };
 		D607BA3609664BB25C5BBCC6 /* DashboardNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA931CB0705B21CA88CF4BE6 /* DashboardNavigationTests.swift */; };
 		D664AF2F23E294623E3637E3 /* CalculatorHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F2D019882BDFA54D431F92 /* CalculatorHistoryView.swift */; };
+		D9EB8781EF594AE0B76076D6 /* QuestionRegionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E963723E19073830F29D78 /* QuestionRegionTracker.swift */; };
 		DCF7737C0F05DBF497C4B26C /* SupabaseAnswerKeyRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58730458CA6F0DE1DCF18A8E /* SupabaseAnswerKeyRepository.swift */; };
 		DE00728ECAC1B16052739324 /* CanvasPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49CF42663E725256191900B2 /* CanvasPageView.swift */; };
 		E0121FA37C4E016A0BEE7233 /* DottedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21872AA207AEEC6F2397B9F4 /* DottedBackground.swift */; };
@@ -177,6 +178,7 @@
 		2ED4E8C569BD35F02677D82C /* DashboardCardModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCardModifier.swift; sourceTree = "<group>"; };
 		2FBE66A9E92A7CCD7A95310A /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
 		2FEBC9D0D9B06F74E3F564A1 /* Reef.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Reef.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		31E963723E19073830F29D78 /* QuestionRegionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionRegionTracker.swift; sourceTree = "<group>"; };
 		3205E3BD9FC3234A4F37231A /* PopupShellModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupShellModifier.swift; sourceTree = "<group>"; };
 		3782C601D52EF8D22F19E789 /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
 		3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDropdownMenu.swift; sourceTree = "<group>"; };
@@ -269,7 +271,7 @@
 		F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
 		F962193EFD8BFBB8449D0469 /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
 		FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefLayoutMetrics.swift; sourceTree = "<group>"; };
-		"TEMP_C8EF0396-5007-4D76-B4A1-37330179C698" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		"TEMP_18215147-9575-4572-9D6F-FF74755DA779" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -481,6 +483,7 @@
 				9E2BB1B2191FC479DE667369 /* CanvasViewModel.swift */,
 				16E7D8D9AB1CD2E1E50122E0 /* ExportPreviewView.swift */,
 				81FBD2D3EFA3FA4A72ACA0F3 /* MockCanvasData.swift */,
+				31E963723E19073830F29D78 /* QuestionRegionTracker.swift */,
 				E0F7C45AAC0407E46A862D23 /* Calculator */,
 				3A572D68FFF66A69BBAA045A /* Drawing */,
 				7CE18440300DF7E632A79D0B /* PageView */,
@@ -681,10 +684,10 @@
 			path = Courses;
 			sourceTree = "<group>";
 		};
-		"TEMP_2B1E4AD3-2508-4C47-992D-1F740EDFFE37" /* Reef-iOS */ = {
+		"TEMP_EE30FA8B-5AB1-4DBA-8CE8-00269945BAD2" /* Reef-iOS */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_C8EF0396-5007-4D76-B4A1-37330179C698" /* Secrets.xcconfig */,
+				"TEMP_18215147-9575-4572-9D6F-FF74755DA779" /* Secrets.xcconfig */,
 			);
 			path = "Reef-iOS";
 			sourceTree = "<group>";
@@ -867,6 +870,7 @@
 				1BAD8BD9673755ECB28CD6EC /* ProfileDropdownMenu.swift in Sources */,
 				876927BA65FC6E72AB15DA7C /* ProfileRepository.swift in Sources */,
 				0A483380FF6AC22B6869D458 /* ProfileUpdate.swift in Sources */,
+				D9EB8781EF594AE0B76076D6 /* QuestionRegionTracker.swift in Sources */,
 				D59B49AF47DF7C49B0713D9D /* Reef3DSlider.swift in Sources */,
 				232480B1789C9A7D63D7328C /* ReefAnimations.swift in Sources */,
 				90B58BB88071D49268A953F9 /* ReefApp.swift in Sources */,
@@ -953,7 +957,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_C8EF0396-5007-4D76-B4A1-37330179C698" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_18215147-9575-4572-9D6F-FF74755DA779" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1019,7 +1023,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_C8EF0396-5007-4D76-B4A1-37330179C698" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_18215147-9575-4572-9D6F-FF74755DA779" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
