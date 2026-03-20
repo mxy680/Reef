@@ -8,6 +8,7 @@ struct CanvasPageView: UIViewRepresentable {
     var pdfDocument: PDFDocument
     let drawingManager: CanvasDrawingManager
     let currentTool: PKTool
+    var drawingPolicy: PKCanvasViewDrawingPolicy = .pencilOnly
     var darkMode: Bool = false
     var overlayType: CanvasOverlayType = .none
     var overlaySpacing: CGFloat = 20
@@ -21,6 +22,7 @@ struct CanvasPageView: UIViewRepresentable {
         let container = CanvasContainerView()
         container.drawingManager = drawingManager
         container.currentTool = currentTool
+        container.drawingPolicy = drawingPolicy
         container.onCanvasTouchBegan = onCanvasTouchBegan
         container.onZoomChanged = onZoomChanged
         container.configure(pdfDocument: pdfDocument, pageVersion: pageVersion)
@@ -31,6 +33,7 @@ struct CanvasPageView: UIViewRepresentable {
 
     func updateUIView(_ uiView: CanvasContainerView, context: Context) {
         uiView.currentTool = currentTool
+        uiView.drawingPolicy = drawingPolicy
         uiView.onCanvasTouchBegan = onCanvasTouchBegan
         uiView.onZoomChanged = onZoomChanged
 

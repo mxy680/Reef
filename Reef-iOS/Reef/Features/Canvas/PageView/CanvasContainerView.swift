@@ -39,6 +39,13 @@ final class CanvasContainerView: UIView {
         }
     }
 
+    /// Drawing policy — controls whether finger or only pencil can draw
+    var drawingPolicy: PKCanvasViewDrawingPolicy = .pencilOnly {
+        didSet {
+            canvasViews.forEach { $0.drawingPolicy = drawingPolicy }
+        }
+    }
+
     /// Separator height between pages
     private static let separatorHeight: CGFloat = 16
 
@@ -177,7 +184,8 @@ final class CanvasContainerView: UIView {
                 ctx.cgContext.scaleBy(x: scale, y: -scale)
                 page.draw(with: .mediaBox, to: ctx.cgContext)
             }
-            images.append(image)
+            let scaledImage = UIImage(cgImage: image.cgImage!, scale: scale, orientation: .up)
+            images.append(scaledImage)
         }
 
         return images
@@ -186,6 +194,11 @@ final class CanvasContainerView: UIView {
     // MARK: - Setup Pages
 
     private func setupPages(with images: [UIImage]) {
+        // Save current drawings before rebuilding pages
+        for (index, canvasView) in canvasViews.enumerated() {
+            drawingManager?.setDrawing(canvasView.drawing, for: index)
+        }
+
         for view in pageImageViews { view.removeFromSuperview() }
         for view in canvasViews { view.removeFromSuperview() }
         for view in pageOverlayViews { view.removeFromSuperview() }
@@ -241,7 +254,7 @@ final class CanvasContainerView: UIView {
             canvasView.translatesAutoresizingMaskIntoConstraints = false
             canvasView.backgroundColor = .clear
             canvasView.isOpaque = false
-            canvasView.drawingPolicy = .pencilOnly
+            canvasView.drawingPolicy = self.drawingPolicy
             canvasView.tool = currentTool
             canvasView.delegate = self
             canvasView.overrideUserInterfaceStyle = .light
@@ -342,6 +355,10 @@ final class CanvasContainerView: UIView {
             targetImages = invertedImages!
         } else {
             targetImages = originalImages
+        }
+
+        for canvasView in canvasViews {
+            canvasView.overrideUserInterfaceStyle = dark ? .dark : .light
         }
 
         UIView.transition(

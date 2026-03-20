@@ -54,6 +54,10 @@ final class CanvasViewModel {
         )
     }
 
+    var activeDrawingPolicy: PKCanvasViewDrawingPolicy {
+        selectedTool == .handDraw ? .anyInput : .pencilOnly
+    }
+
     // MARK: - Page State
 
     var currentPageIndex: Int = 0
@@ -158,22 +162,58 @@ final class CanvasViewModel {
 
     var tutorModeOn: Bool = false
     var currentTutorStepIndex: Int = 0
+    var currentQuestionIndex: Int = 0
     var showHintPopover: Bool = false
     var showRevealPopover: Bool = false
     var hintMidX: CGFloat = 0
     var revealMidX: CGFloat = 0
 
-    var currentTutorStep: MockTutorStep? {
-        let steps = MockCanvasData.tutorSteps
-        guard currentTutorStepIndex < steps.count else { return nil }
-        return steps[currentTutorStepIndex]
+    // Answer key data
+    var answerKeys: [Int: QuestionAnswer] = [:]
+    var isLoadingAnswerKeys: Bool = false
+
+    /// Whether this document has been reconstructed (has answer keys available)
+    var isReconstructed: Bool {
+        document.problemCount != nil && (document.problemCount ?? 0) > 0
     }
 
-    var tutorStepCount: Int { MockCanvasData.tutorSteps.count }
+    var currentAnswerKey: QuestionAnswer? {
+        answerKeys[currentQuestionIndex + 1] // 1-based question numbers
+    }
+
+    var currentSteps: [AnswerKeyStep] {
+        guard let ak = currentAnswerKey else { return [] }
+        // If the question has parts, show steps from the first part
+        if let firstPart = ak.parts.first, !firstPart.steps.isEmpty {
+            return firstPart.steps
+        }
+        return ak.steps
+    }
+
+    var tutorStepCount: Int { currentSteps.count }
+
+    var currentHintStep: AnswerKeyStep? {
+        guard currentTutorStepIndex < currentSteps.count else { return nil }
+        return currentSteps[currentTutorStepIndex]
+    }
+
+    var currentTutorStepLabel: String {
+        guard currentTutorStepIndex < currentSteps.count else { return "" }
+        return currentSteps[currentTutorStepIndex].description
+    }
 
     var tutorProgress: Double {
         guard tutorStepCount > 0 else { return 0 }
         return Double(currentTutorStepIndex) / Double(tutorStepCount)
+    }
+
+    func loadAnswerKeys() async {
+        guard isReconstructed else { return }
+        isLoadingAnswerKeys = true
+        let repo = SupabaseAnswerKeyRepository()
+        let result = await repo.fetchAnswerKeys(documentId: document.id)
+        answerKeys = result.answers
+        isLoadingAnswerKeys = false
     }
 
     // MARK: - Toolbar Layout
@@ -187,6 +227,7 @@ final class CanvasViewModel {
         self.document = document
         self.pdfDocument = MockCanvasData.blankPDF()
         Task { await loadPDF() }
+        Task { await loadAnswerKeys() }
     }
 
     private static let pdfSession: URLSession = {
@@ -209,6 +250,7 @@ final class CanvasViewModel {
                 return
             }
             pdfDocument = pdf
+            pageVersion += 1
         } catch {
             pdfError = "Failed to download document"
         }

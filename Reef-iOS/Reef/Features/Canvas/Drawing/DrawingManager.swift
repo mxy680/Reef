@@ -1,12 +1,17 @@
+import SwiftUI
 import PencilKit
 import UIKit
 
 // MARK: - Drawing Manager (in-memory only, no persistence)
 
+@Observable
 @MainActor
 final class CanvasDrawingManager {
     /// Per-page PKDrawing data. Key = absolute page index.
     private(set) var drawings: [Int: PKDrawing] = [:]
+
+    /// Incremented each time a drawing changes — used to trigger toolbar re-renders.
+    var drawingVersion: Int = 0
 
     /// The currently active PKCanvasView (for undo/redo forwarding)
     weak var activeCanvasView: PKCanvasView?
@@ -19,6 +24,7 @@ final class CanvasDrawingManager {
 
     func setDrawing(_ drawing: PKDrawing, for pageIndex: Int) {
         drawings[pageIndex] = drawing
+        drawingVersion += 1
     }
 
     // MARK: - Page Shift

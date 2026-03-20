@@ -53,6 +53,7 @@ struct CanvasView: View {
                     pdfDocument: viewModel.pdfDocument,
                     drawingManager: drawingManager,
                     currentTool: viewModel.activePKTool,
+                    drawingPolicy: viewModel.activeDrawingPolicy,
                     darkMode: viewModel.isDarkMode,
                     overlayType: viewModel.overlaySettings.type,
                     overlaySpacing: viewModel.overlaySettings.spacing,
@@ -99,6 +100,43 @@ struct CanvasView: View {
                 .zIndex(50)
             }
 
+            // Tutor overlay (hint OR reveal, top-right corner)
+            if let step = viewModel.currentHintStep {
+                if viewModel.showHintPopover {
+                    TutorHintCard(
+                        hintText: step.explanation,
+                        stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
+                        isDarkMode: viewModel.isDarkMode,
+                        onClose: {
+                            withAnimation(.spring(duration: 0.2)) {
+                                viewModel.showHintPopover = false
+                            }
+                        }
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(.top, 100)
+                    .padding(.trailing, 16)
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .zIndex(51)
+                } else if viewModel.showRevealPopover {
+                    TutorRevealCard(
+                        workText: step.work,
+                        stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
+                        isDarkMode: viewModel.isDarkMode,
+                        onClose: {
+                            withAnimation(.spring(duration: 0.2)) {
+                                viewModel.showRevealPopover = false
+                            }
+                        }
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(.top, 100)
+                    .padding(.trailing, 16)
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    .zIndex(51)
+                }
+            }
+
             // Add Color popup (centered overlay, CLAUDE.md pattern)
             if viewModel.showAddColor {
                 Color.black.opacity(0.3)
@@ -129,6 +167,8 @@ struct CanvasView: View {
         .animation(.easeInOut(duration: 0.2), value: viewModel.showRuler)
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
+        .animation(.spring(duration: 0.2), value: viewModel.showHintPopover)
+        .animation(.spring(duration: 0.2), value: viewModel.showRevealPopover)
         .onAppear {
             viewModel.startBatteryMonitoring()
             viewModel.startWifiMonitoring()
