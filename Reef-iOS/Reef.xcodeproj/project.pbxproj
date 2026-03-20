@@ -50,6 +50,7 @@
 		5AF7C170E44057E00878FD76 /* CanvasToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFBBEAD892750705B8D86501 /* CanvasToolbarButton.swift */; };
 		5BC086AEA978BDB34E39257A /* UsageStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAA320FF00304DED13687F5 /* UsageStats.swift */; };
 		615F9694912D6F9F38026BBE /* DocumentUploadPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D888C15CDBA6006BA616096 /* DocumentUploadPopup.swift */; };
+		616DA14DB392B614F530E097 /* ExportPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16E7D8D9AB1CD2E1E50122E0 /* ExportPreviewView.swift */; };
 		662978BA8DCB0ACB38E3AF1A /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F59C552181409C88B428D62E /* SupabaseConfig.swift */; };
 		681E95C14DCD1F7E4AB35359 /* ProfileDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37FCABDB72CEC9F68DABAD5 /* ProfileDTO.swift */; };
 		69A036D6A98AB8DEE63C7869 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = 953D541D3BCC2DE8B8F073C0 /* Course.swift */; };
@@ -86,6 +87,7 @@
 		B6769F658882D3655D4DF665 /* CanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458089D68B25E880C7F9E0C3 /* CanvasView.swift */; };
 		B810EB60F5595D898E981F20 /* NotificationDropdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4689C58CCB86B7C32D03AA /* NotificationDropdownTests.swift */; };
 		B8CD553E58BC1E97CB314D85 /* DeleteCoursePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD4957A8822E66C3898DFD6 /* DeleteCoursePopup.swift */; };
+		B9285897F3873C770BF858E7 /* CanvasSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85288EB05437D44A3FEC547F /* CanvasSidebarView.swift */; };
 		BA0D8850AA60F67BD31A9008 /* DocumentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A80790E56F45AD11C42C6AE /* DocumentsViewModel.swift */; };
 		BA13FB6B1A663195074470FE /* ReefBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC89D92C9819BFC2E70F4BD /* ReefBadge.swift */; };
 		BD86A46358438D7E29C4251F /* SettingsProfileTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540FA017DB5B558F980C778C /* SettingsProfileTab.swift */; };
@@ -156,6 +158,7 @@
 		1157F7573EC1A88B62D162BE /* PageOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageOverlayView.swift; sourceTree = "<group>"; };
 		1453C18E7538070E48493719 /* AddColorPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddColorPopup.swift; sourceTree = "<group>"; };
 		16BBC645292B51A009BA92AD /* DocumentRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentRepository.swift; sourceTree = "<group>"; };
+		16E7D8D9AB1CD2E1E50122E0 /* ExportPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportPreviewView.swift; sourceTree = "<group>"; };
 		1CDCFE49DE81342DD005D2CB /* AuthFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowTests.swift; sourceTree = "<group>"; };
 		1DF6F897609CDB22C4ABE252 /* ShapeRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeRecognizer.swift; sourceTree = "<group>"; };
 		1EABCAE9AC6CDFAB155B57D4 /* CalculatorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorEngine.swift; sourceTree = "<group>"; };
@@ -202,6 +205,7 @@
 		82315CD65E53D1BAD137A91C /* ReefColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefColors.swift; sourceTree = "<group>"; };
 		8342C69F3700A9310BE6514E /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
 		837EF10AE734D9E16B28F190 /* ProfileUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUpdate.swift; sourceTree = "<group>"; };
+		85288EB05437D44A3FEC547F /* CanvasSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSidebarView.swift; sourceTree = "<group>"; };
 		87EC19536891CBB9AFED3E07 /* CoursesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoursesViewModel.swift; sourceTree = "<group>"; };
 		88C0707187B735021AB1D0D9 /* DocumentSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSkeletonView.swift; sourceTree = "<group>"; };
 		8A01A72D1889843ADC7EACB3 /* SupabaseUsageStatsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseUsageStatsRepository.swift; sourceTree = "<group>"; };
@@ -263,7 +267,7 @@
 		F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardHeader.swift; sourceTree = "<group>"; };
 		F962193EFD8BFBB8449D0469 /* TierLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierLimits.swift; sourceTree = "<group>"; };
 		FADDF42D81B0209677FA4A36 /* ReefLayoutMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefLayoutMetrics.swift; sourceTree = "<group>"; };
-		"TEMP_D81DB421-D972-42B8-9A03-5F6205546AA1" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		"TEMP_26FB343B-430F-4691-8B9F-9195A903FBAC" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -436,6 +440,14 @@
 			path = Documents;
 			sourceTree = "<group>";
 		};
+		53DD15FA05A897032D0FD98E /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+				85288EB05437D44A3FEC547F /* CanvasSidebarView.swift */,
+			);
+			path = Sidebar;
+			sourceTree = "<group>";
+		};
 		624D905650AFCFF61C8BAAD8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -464,11 +476,13 @@
 			children = (
 				458089D68B25E880C7F9E0C3 /* CanvasView.swift */,
 				9E2BB1B2191FC479DE667369 /* CanvasViewModel.swift */,
+				16E7D8D9AB1CD2E1E50122E0 /* ExportPreviewView.swift */,
 				81FBD2D3EFA3FA4A72ACA0F3 /* MockCanvasData.swift */,
 				E0F7C45AAC0407E46A862D23 /* Calculator */,
 				3A572D68FFF66A69BBAA045A /* Drawing */,
 				7CE18440300DF7E632A79D0B /* PageView */,
 				05147B11F4B18FA70C1D6E07 /* Popovers */,
+				53DD15FA05A897032D0FD98E /* Sidebar */,
 				3CF1AD53CC5776561FE18376 /* Toolbar */,
 				0A1391E830274A537EE690A4 /* TutorOverlay */,
 			);
@@ -664,10 +678,10 @@
 			path = Courses;
 			sourceTree = "<group>";
 		};
-		"TEMP_2B20928B-5F99-492C-8B60-ED1B0DD0F8DD" /* Reef-iOS */ = {
+		"TEMP_07803BC7-714B-4B6E-B54E-E1B8AC00CFFB" /* Reef-iOS */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_D81DB421-D972-42B8-9A03-5F6205546AA1" /* Secrets.xcconfig */,
+				"TEMP_26FB343B-430F-4691-8B9F-9195A903FBAC" /* Secrets.xcconfig */,
 			);
 			path = "Reef-iOS";
 			sourceTree = "<group>";
@@ -796,6 +810,7 @@
 				D2A232A617B5D22378A2ED14 /* CanvasExportService.swift in Sources */,
 				D440C1F64F4138D89CE9DD4A /* CanvasInfoStrip.swift in Sources */,
 				DE00728ECAC1B16052739324 /* CanvasPageView.swift in Sources */,
+				B9285897F3873C770BF858E7 /* CanvasSidebarView.swift in Sources */,
 				22657CCF5B44EF6A1C62E8E4 /* CanvasStorageService.swift in Sources */,
 				8BAFDDD832027A77304D968D /* CanvasTool.swift in Sources */,
 				5AF7C170E44057E00878FD76 /* CanvasToolbarButton.swift in Sources */,
@@ -832,6 +847,7 @@
 				824A47A5769DBE95DA84EDA0 /* DrawingManager.swift in Sources */,
 				23789E8F1C5423718DCCCB50 /* EditCoursePopup.swift in Sources */,
 				114AD1A2B9668044DDDAFD7E /* EraserSettingsPopover.swift in Sources */,
+				616DA14DB392B614F530E097 /* ExportPreviewView.swift in Sources */,
 				17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */,
 				903339E4247C9C8EBCE24624 /* KaTeXView.swift in Sources */,
 				E6DD16240CF1B56A193E21F4 /* MathText.swift in Sources */,
@@ -933,7 +949,7 @@
 		};
 		1BD7BEF1E89EDDE56CE4C087 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_D81DB421-D972-42B8-9A03-5F6205546AA1" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_26FB343B-430F-4691-8B9F-9195A903FBAC" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -999,7 +1015,7 @@
 		};
 		2F86F9DF4FC6D46CAC4D5011 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_D81DB421-D972-42B8-9A03-5F6205546AA1" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_26FB343B-430F-4691-8B9F-9195A903FBAC" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;

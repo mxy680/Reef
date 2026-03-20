@@ -11,12 +11,15 @@ struct CanvasView: View {
     @State private var scrollToPageIndex: Int? = nil
     @State private var autoSaveTask: Task<Void, Never>?
 
+    @Environment(\.reefLayoutMetrics) private var metrics
+
     var body: some View {
         ZStack {
             // Background
             (viewModel.isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
                 .ignoresSafeArea()
 
+            HStack(spacing: 0) {
             VStack(spacing: 0) {
                 // Toolbar
                 VStack(spacing: 0) {
@@ -70,6 +73,9 @@ struct CanvasView: View {
                     },
                     onZoomChanged: { scale in
                         viewModel.zoomScale = scale
+                    },
+                    onContainerCreated: { container in
+                        viewModel.containerView = container
                     }
                 )
                 .onChange(of: scrollToPageIndex) { _, newValue in
@@ -81,7 +87,15 @@ struct CanvasView: View {
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
+            } // VStack
+
+            if viewModel.showSidebar {
+                CanvasSidebarView(isDarkMode: viewModel.isDarkMode)
+                    .frame(width: metrics.canvasSidebarWidth)
+                    .transition(.move(edge: .trailing))
             }
+            } // HStack
+            .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.showSidebar)
 
             // Ruler overlay
             if viewModel.showRuler {
@@ -165,11 +179,39 @@ struct CanvasView: View {
                 )
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
+
+            // Export preview overlay
+            if viewModel.showExportPreview, let data = viewModel.exportedPDFData {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.dismissExportPreview()
+                        }
+                    }
+
+                ExportPreviewView(
+                    pdfData: data,
+                    documentName: viewModel.document.displayName,
+                    onShare: {
+                        viewModel.shareExportedPDF()
+                    },
+                    onDismiss: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.dismissExportPreview()
+                        }
+                    }
+                )
+                .frame(maxWidth: 600, maxHeight: 700)
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .zIndex(200)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
         .animation(.easeInOut(duration: 0.2), value: viewModel.showRuler)
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
+        .animation(.spring(duration: 0.25), value: viewModel.showExportPreview)
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
         .animation(.spring(duration: 0.2), value: viewModel.showHintPopover)
         .animation(.spring(duration: 0.2), value: viewModel.showRevealPopover)

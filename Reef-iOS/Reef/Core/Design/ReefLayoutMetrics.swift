@@ -25,6 +25,7 @@ struct ReefLayoutMetrics {
     var sectionSpacing: CGFloat { lerp(14, 20) }
     var dashboardHPadding: CGFloat { lerp(10, 16) }
     var headerGap: CGFloat { lerp(12, 20) }
+    var dashboardTopPadding: CGFloat { lerp(12, 20) }
 
     // MARK: - Dropdowns
 
@@ -41,6 +42,10 @@ struct ReefLayoutMetrics {
     var sidebarItemHPaddingCollapsed: CGFloat { lerp(8, 12) }
     var sidebarNavTopPadding: CGFloat { lerp(10, 16) }
     var sidebarFooterBottomPadding: CGFloat { lerp(12, 20) }
+
+    // MARK: - Canvas Sidebar
+
+    var canvasSidebarWidth: CGFloat { lerp(260, 300) }
 
     // MARK: - Auth
 
