@@ -23,7 +23,6 @@ final class SpeechRecognitionService {
     // MARK: - Authorization
 
     func requestAuthorization() {
-        // Request mic permission first, then speech
         AVAudioApplication.requestRecordPermission { [weak self] micGranted in
             guard micGranted else {
                 Task { @MainActor in self?.isAuthorized = false }
@@ -32,10 +31,6 @@ final class SpeechRecognitionService {
             SFSpeechRecognizer.requestAuthorization { status in
                 Task { @MainActor in
                     self?.isAuthorized = (status == .authorized)
-                    // Auto-start if authorization was requested from a mic tap
-                    if status == .authorized {
-                        self?.startListening()
-                    }
                 }
             }
         }
@@ -57,59 +52,54 @@ final class SpeechRecognitionService {
         stopListening(sendTranscript: false)
 
         transcript = ""
+        isListening = true
 
+        // Audio session + engine setup must all succeed or bail
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
-        } catch {
-            print("[Speech] Audio session setup failed: \(error)")
-            return
-        }
 
-        let request = SFSpeechAudioBufferRecognitionRequest()
-        request.shouldReportPartialResults = true
-        request.requiresOnDeviceRecognition = true
-        recognitionRequest = request
+            let request = SFSpeechAudioBufferRecognitionRequest()
+            request.shouldReportPartialResults = true
+            request.requiresOnDeviceRecognition = true
+            recognitionRequest = request
 
-        let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
+            let inputNode = audioEngine.inputNode
+            let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
-        }
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+                self?.recognitionRequest?.append(buffer)
+            }
 
-        do {
             audioEngine.prepare()
             try audioEngine.start()
-        } catch {
-            print("[Speech] Audio engine failed to start: \(error)")
-            inputNode.removeTap(onBus: 0)
-            return
-        }
 
-        isListening = true
+            recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
+                Task { @MainActor in
+                    guard let self else { return }
 
-        recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
-            Task { @MainActor in
-                guard let self else { return }
+                    if let result {
+                        self.transcript = result.bestTranscription.formattedString
+                        self.resetSilenceTimer()
 
-                if let result {
-                    self.transcript = result.bestTranscription.formattedString
-                    self.resetSilenceTimer()
+                        if result.isFinal {
+                            self.stopListening(sendTranscript: true)
+                        }
+                    }
 
-                    if result.isFinal {
-                        self.stopListening(sendTranscript: true)
+                    if error != nil {
+                        self.stopListening(sendTranscript: !self.transcript.isEmpty)
                     }
                 }
-
-                if error != nil {
-                    self.stopListening(sendTranscript: !self.transcript.isEmpty)
-                }
             }
-        }
 
-        resetSilenceTimer()
+            resetSilenceTimer()
+        } catch {
+            print("[Speech] Failed to start: \(error)")
+            isListening = false
+            recognitionRequest = nil
+        }
     }
 
     func stopListening(sendTranscript: Bool = true) {
