@@ -14,9 +14,10 @@ final class SpeechRecognitionService {
 
     private var recognitionTask: SFSpeechRecognitionTask?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    private let audioEngine = AVAudioEngine()
+    private var audioEngine: AVAudioEngine?
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var silenceTimer: Task<Void, Never>?
+    private var hasTap: Bool = false
 
     private static let silenceTimeout: Duration = .seconds(10)
 
@@ -36,44 +37,63 @@ final class SpeechRecognitionService {
         }
     }
 
+    // MARK: - Toggle
+
+    /// Returns true if listening started, false if only auth was requested.
+    @discardableResult
+    func toggle() -> Bool {
+        if isListening {
+            stopListening(sendTranscript: true)
+            return false
+        } else {
+            return startListening()
+        }
+    }
+
     // MARK: - Start / Stop
 
-    func startListening() {
+    /// Returns true if listening actually started.
+    @discardableResult
+    func startListening() -> Bool {
         guard let recognizer = speechRecognizer, recognizer.isAvailable else {
-            return
+            return false
         }
 
         if !isAuthorized {
             requestAuthorization()
-            return
+            return false
         }
 
         // Stop any existing session
         stopListening(sendTranscript: false)
 
         transcript = ""
-        isListening = true
 
-        // Audio session + engine setup must all succeed or bail
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
+
+            let engine = AVAudioEngine()
+            self.audioEngine = engine
 
             let request = SFSpeechAudioBufferRecognitionRequest()
             request.shouldReportPartialResults = true
             request.requiresOnDeviceRecognition = true
             recognitionRequest = request
 
-            let inputNode = audioEngine.inputNode
+            let inputNode = engine.inputNode
             let recordingFormat = inputNode.outputFormat(forBus: 0)
 
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
                 self?.recognitionRequest?.append(buffer)
             }
+            hasTap = true
 
-            audioEngine.prepare()
-            try audioEngine.start()
+            engine.prepare()
+            try engine.start()
+
+            isListening = true
 
             recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
                 Task { @MainActor in
@@ -95,10 +115,11 @@ final class SpeechRecognitionService {
             }
 
             resetSilenceTimer()
+            return true
         } catch {
             print("[Speech] Failed to start: \(error)")
-            isListening = false
-            recognitionRequest = nil
+            cleanupEngine()
+            return false
         }
     }
 
@@ -106,12 +127,12 @@ final class SpeechRecognitionService {
         silenceTimer?.cancel()
         silenceTimer = nil
 
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
         recognitionRequest?.endAudio()
         recognitionTask?.cancel()
         recognitionRequest = nil
         recognitionTask = nil
+
+        cleanupEngine()
 
         let finalTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         isListening = false
@@ -124,12 +145,15 @@ final class SpeechRecognitionService {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
-    func toggle() {
-        if isListening {
-            stopListening(sendTranscript: true)
-        } else {
-            startListening()
+    private func cleanupEngine() {
+        if let engine = audioEngine {
+            engine.stop()
+            if hasTap {
+                engine.inputNode.removeTap(onBus: 0)
+                hasTap = false
+            }
         }
+        audioEngine = nil
     }
 
     // MARK: - Silence Timer
