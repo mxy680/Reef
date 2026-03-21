@@ -106,6 +106,11 @@ async def transcribe_strokes(
     latex = data.get("latex", data.get("text", ""))
     session_id = data.get("strokes_session_id", data.get("session_id"))
 
+    # Sanitize for KaTeX compatibility before wrapping
+    if latex:
+        from app.services.katex_sanitizer import sanitize_for_katex
+        latex = sanitize_for_katex(latex)
+
     # Wrap in display math delimiters if not already wrapped
     if latex and not latex.startswith("$") and not latex.startswith("\\[") and not latex.startswith("\\("):
         latex = f"$$ {latex} $$"
