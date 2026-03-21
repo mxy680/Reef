@@ -21,6 +21,14 @@ struct TutorStepState: Codable {
     let currentStepIndex: Int
     let stepEvaluations: [StepEvaluation]
     let lastTranscription: String
+    let chatMessages: [SavedChatMessage]?
+}
+
+/// Persisted chat message.
+struct SavedChatMessage: Codable {
+    let role: String  // "student" or "tutor"
+    let latex: String
+    let timestamp: Date
 }
 
 /// Saved evaluation result for a single step.

@@ -374,6 +374,13 @@ final class CanvasViewModel {
     /// Save current tutor state into the in-memory cache for a given label.
     private func saveTutorStateForLabel(_ label: String) {
         if savedTutorProgress == nil { savedTutorProgress = [:] }
+        let savedMessages = tutorEvalService.chatMessages.map { msg in
+            SavedChatMessage(
+                role: msg.role == .student ? "student" : "tutor",
+                latex: msg.latex,
+                timestamp: msg.timestamp
+            )
+        }
         savedTutorProgress?[label] = TutorStepState(
             currentStepIndex: currentTutorStepIndex,
             stepEvaluations: [StepEvaluation(
@@ -381,7 +388,8 @@ final class CanvasViewModel {
                 status: tutorEvalService.status,
                 mistakeExplanation: tutorEvalService.mistakeExplanation
             )],
-            lastTranscription: handwritingService.latexResult
+            lastTranscription: handwritingService.latexResult,
+            chatMessages: savedMessages.isEmpty ? nil : savedMessages
         )
     }
 
@@ -400,6 +408,19 @@ final class CanvasViewModel {
             tutorEvalService.stepProgress = eval.progress
             tutorEvalService.status = eval.status
             tutorEvalService.mistakeExplanation = eval.mistakeExplanation
+        }
+
+        // Restore chat messages
+        if let saved = state.chatMessages, !saved.isEmpty {
+            tutorEvalService.chatMessages = saved.map { msg in
+                TutorChatMessage(
+                    role: msg.role == "student" ? .student : .tutor,
+                    latex: msg.latex,
+                    timestamp: msg.timestamp
+                )
+            }
+        } else {
+            tutorEvalService.chatMessages.removeAll()
         }
 
         if !state.lastTranscription.isEmpty {
@@ -763,6 +784,13 @@ final class CanvasViewModel {
         // Build tutor progress snapshot
         var tutorState: [String: TutorStepState] = savedTutorProgress ?? [:]
         if tutorModeOn, let label = activeQuestionLabel {
+            let savedMessages = tutorEvalService.chatMessages.map { msg in
+                SavedChatMessage(
+                    role: msg.role == .student ? "student" : "tutor",
+                    latex: msg.latex,
+                    timestamp: msg.timestamp
+                )
+            }
             tutorState[label] = TutorStepState(
                 currentStepIndex: currentTutorStepIndex,
                 stepEvaluations: [StepEvaluation(
@@ -770,7 +798,8 @@ final class CanvasViewModel {
                     status: tutorEvalService.status,
                     mistakeExplanation: tutorEvalService.mistakeExplanation
                 )],
-                lastTranscription: handwritingService.latexResult
+                lastTranscription: handwritingService.latexResult,
+                chatMessages: savedMessages.isEmpty ? nil : savedMessages
             )
         }
 
