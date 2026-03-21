@@ -28,10 +28,8 @@ final class SpeechRecognitionService {
             return
         }
 
-        // Check current permission state (may have been granted in a previous session)
-        if AVAudioApplication.shared.recordPermission == .granted {
-            isAuthorized = true
-        }
+        // Check current permission state
+        isAuthorized = (AVAudioApplication.shared.recordPermission == .granted)
 
         if isAuthorized {
             startRecording()
@@ -77,15 +75,14 @@ final class SpeechRecognitionService {
             ]
 
             let recorder = try AVAudioRecorder(url: url, settings: settings)
-            let started = recorder.record()
-            NSLog("[Speech] Recording started: \(started), url: \(url.lastPathComponent)")
+            recorder.record()
             audioRecorder = recorder
             isListening = true
             transcript = "Listening..."
 
             resetSilenceTimer()
         } catch {
-            NSLog("[Speech] Recording failed: \(error)")
+            print("[Speech] Recording failed: \(error)")
             isListening = false
         }
     }
@@ -100,14 +97,23 @@ final class SpeechRecognitionService {
     }
 
     func stopAndTranscribe() {
-        let url = tempFileURL
-        stopRecording()
+        silenceTimer?.cancel()
+        silenceTimer = nil
 
+        // Stop recorder but keep audio session active until we read the file
+        let recorder = audioRecorder
+        recorder?.stop()
+        audioRecorder = nil
+        isListening = false
+
+        let url = tempFileURL
         let exists = FileManager.default.fileExists(atPath: url.path)
         let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
-        NSLog("[Speech] Stop: file exists=\(exists), size=\(size) bytes")
 
-        guard exists, size > 0 else {
+        // Deactivate audio session after file is confirmed written
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+
+        guard exists, size > 100 else {
             transcript = ""
             return
         }
@@ -117,13 +123,11 @@ final class SpeechRecognitionService {
         Task {
             do {
                 let text = try await transcribeViaServer(fileURL: url)
-                NSLog("[Speech] Transcribed: \(text.prefix(60))")
                 transcript = ""
                 if !text.isEmpty {
                     onTranscriptReady?(text)
                 }
             } catch {
-                NSLog("[Speech] Server transcription failed: \(error)")
                 transcript = ""
             }
             try? FileManager.default.removeItem(at: url)
