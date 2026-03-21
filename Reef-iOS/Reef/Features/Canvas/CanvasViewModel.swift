@@ -199,13 +199,42 @@ final class CanvasViewModel {
         document.problemCount != nil && (document.problemCount ?? 0) > 0
     }
 
+    /// Derives question number and part label from activeQuestionLabel.
+    private var activeQuestionNumber: Int {
+        guard let label = activeQuestionLabel, label.hasPrefix("Q") else { return 1 }
+        var numStr = ""
+        for ch in label.dropFirst() {
+            if ch.isNumber { numStr.append(ch) } else { break }
+        }
+        return Int(numStr) ?? 1
+    }
+
+    private var activePartLabel: String? {
+        guard let label = activeQuestionLabel, label.hasPrefix("Q") else { return nil }
+        var partStr = ""
+        var pastNum = false
+        for ch in label.dropFirst() {
+            if ch.isNumber { pastNum = true } else if pastNum { partStr.append(ch) }
+        }
+        return partStr.isEmpty ? nil : partStr
+    }
+
     var currentAnswerKey: QuestionAnswer? {
-        answerKeys[currentQuestionIndex + 1] // 1-based question numbers
+        answerKeys[activeQuestionNumber]
     }
 
     var currentSteps: [AnswerKeyStep] {
         guard let ak = currentAnswerKey else { return [] }
-        // If the question has parts, show steps from the first part
+        // Find steps for the active part label
+        if let partLabel = activePartLabel {
+            for part in ak.parts {
+                if part.label == partLabel { return part.steps }
+                for sub in part.parts {
+                    if sub.label == partLabel { return sub.steps }
+                }
+            }
+        }
+        // Fallback: first part or top-level steps
         if let firstPart = ak.parts.first, !firstPart.steps.isEmpty {
             return firstPart.steps
         }
@@ -471,9 +500,9 @@ final class CanvasViewModel {
         showEraserSettings = false
         showPageSettings = false
         showPageMenu = false
-        showHintPopover = false
-        showRevealPopover = false
         showPageControls = false
+        // Note: hint and reveal popovers are NOT dismissed here —
+        // user closes them manually via X button
     }
 
     func exportDocument() {
