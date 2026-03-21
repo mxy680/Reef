@@ -112,7 +112,11 @@ struct CanvasDrawingBar: View {
                     active: viewModel.isMicOn
                 ) {
                     viewModel.isMicOn.toggle()
+                    viewModel.speechService.toggle()
                 }
+                .opacity(viewModel.speechService.isListening ? 1.0 : 0.8)
+                .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true),
+                           value: viewModel.speechService.isListening)
 
                 // Tutor: prev/next question + reset
                 if viewModel.tutorModeOn {

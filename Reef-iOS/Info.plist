@@ -49,6 +49,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Reef uses speech recognition so you can ask the tutor questions by voice.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Reef uses the microphone to listen for voice questions to the tutor.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations~ipad</key>

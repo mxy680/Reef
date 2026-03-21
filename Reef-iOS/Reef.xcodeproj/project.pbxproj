@@ -39,6 +39,8 @@
 		3AB12E1475C678FB8E72B364 /* RenamePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034DDA05CA3DE5AEE460DA72 /* RenamePopup.swift */; };
 		3B30B4E60D151D06EA7F80B6 /* ReefTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9EC70DF58FA661881CDFA4 /* ReefTypography.swift */; };
 		449DDE8B3A75A2C2EA2CC125 /* WifiMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F09B04CD69D0B940054A668D /* WifiMonitor.swift */; };
+		141309C544FF40AC81F0952A /* SpeechRecognitionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionService.swift; sourceTree = "<group>"; };
+		37FD0BFDC9B74FE5980E4161 /* SpeechRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 141309C544FF40AC81F0952A /* SpeechRecognitionService.swift */; };
 		45F363DF571A655205111912 /* PageOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1157F7573EC1A88B62D162BE /* PageOverlayView.swift */; };
 		49833BF79D795B399EBB53AB /* CourseDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7986E18245D3EB0F3C303539 /* CourseDTO.swift */; };
 		4B96F0FF0CCB884CF1F20FC9 /* SettingsAboutTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF3648670B8144192819600 /* SettingsAboutTab.swift */; };
@@ -428,6 +430,7 @@
 				2488E4B45293319F3C207810 /* CanvasExportService.swift */,
 				64BCA06641FCCA06780192E3 /* CanvasStorageService.swift */,
 				F09B04CD69D0B940054A668D /* WifiMonitor.swift */,
+				141309C544FF40AC81F0952A /* SpeechRecognitionService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -915,6 +918,7 @@
 				6A2431650F553626C581166E /* UsageStatsRepository.swift in Sources */,
 				363D0A041F425FBA2FA20E54 /* UserSettings.swift in Sources */,
 				449DDE8B3A75A2C2EA2CC125 /* WifiMonitor.swift in Sources */,
+				37FD0BFDC9B74FE5980E4161 /* SpeechRecognitionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
