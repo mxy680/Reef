@@ -27,6 +27,9 @@ struct CanvasView: View {
                         onClose: {
                             viewModel.saveCanvasState()
                             onDismiss()
+                        },
+                        onScrollToPage: { index in
+                            scrollToPageIndex = index
                         }
                     )
 

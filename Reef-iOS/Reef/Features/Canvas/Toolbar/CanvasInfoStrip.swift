@@ -6,6 +6,7 @@ struct CanvasInfoStrip: View {
     @Bindable var viewModel: CanvasViewModel
 
     let onClose: () -> Void
+    var onScrollToPage: ((Int) -> Void)?
 
     private var activeBarColor: Color {
         viewModel.isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasDrawingBar.barColor
@@ -94,16 +95,18 @@ struct CanvasInfoStrip: View {
                     divider
 
                     Button {
-                        viewModel.advanceTutorStep()
+                        if let pageIndex = viewModel.skipToNextQuestion() {
+                            onScrollToPage?(pageIndex)
+                        }
                     } label: {
                         Image(systemName: "forward.fill")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white.opacity(viewModel.currentTutorStepIndex < viewModel.tutorStepCount - 1 ? 0.8 : 0.3))
+                            .foregroundColor(.white.opacity(viewModel.canSkipToNextQuestion ? 0.8 : 0.3))
                             .frame(width: 24, height: 24)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .disabled(viewModel.currentTutorStepIndex >= viewModel.tutorStepCount - 1)
+                    .disabled(!viewModel.canSkipToNextQuestion)
 
                     Button {
                         viewModel.showHintPopover.toggle()

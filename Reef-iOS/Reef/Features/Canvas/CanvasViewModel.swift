@@ -515,6 +515,78 @@ final class CanvasViewModel {
         tutorEvalService.reset()
     }
 
+    /// Ordered list of all question labels in the document (e.g. ["Q1a", "Q1b", "Q2a", ...]).
+    var allQuestionLabels: [String] {
+        guard let qPages = document.questionPages,
+              let qRegions = document.questionRegions else { return [] }
+
+        var labels: [String] = []
+        for (qi, _) in qPages.enumerated() {
+            let qNum = qi + 1
+            if qi < qRegions.count, let data = qRegions[qi] {
+                // Collect unique part labels in order
+                var seen = Set<String>()
+                for region in data.regions {
+                    let partLabel = region.label ?? "a"
+                    let full = "Q\(qNum)\(partLabel)"
+                    if seen.insert(full).inserted {
+                        labels.append(full)
+                    }
+                }
+            } else {
+                labels.append("Q\(qNum)a")
+            }
+        }
+        return labels
+    }
+
+    /// Whether there is a next question/subquestion to skip to.
+    var canSkipToNextQuestion: Bool {
+        guard let label = activeQuestionLabel else { return !allQuestionLabels.isEmpty }
+        let labels = allQuestionLabels
+        guard let idx = labels.firstIndex(of: label) else { return false }
+        return idx < labels.count - 1
+    }
+
+    /// Skip to the next question/subquestion. Returns the page index to scroll to, or nil.
+    func skipToNextQuestion() -> Int? {
+        let labels = allQuestionLabels
+        let currentLabel = activeQuestionLabel ?? ""
+        let currentIdx = labels.firstIndex(of: currentLabel) ?? -1
+        let nextIdx = currentIdx + 1
+        guard nextIdx < labels.count else { return nil }
+
+        let nextLabel = labels[nextIdx]
+
+        // Save current question's tutor state
+        if let old = activeQuestionLabel, tutorModeOn {
+            saveTutorStateForLabel(old)
+        }
+
+        // Parse next label to find its page
+        guard nextLabel.hasPrefix("Q"), nextLabel.count >= 2 else { return nil }
+        let numAndLabel = nextLabel.dropFirst()
+        var numStr = ""
+        for ch in numAndLabel {
+            if ch.isNumber { numStr.append(ch) } else { break }
+        }
+        guard let qNum = Int(numStr), qNum >= 1,
+              let qPages = document.questionPages,
+              qNum - 1 < qPages.count else { return nil }
+
+        let pageRange = qPages[qNum - 1]
+        guard pageRange.count >= 2 else { return nil }
+
+        // Reset tutor state for the new question
+        activeQuestionLabel = nextLabel
+        currentTutorStepIndex = 0
+        tutorEvalService.resetForNextStep()
+        handwritingService.latexResult = ""
+        restoreTutorStateForLabel(nextLabel)
+
+        return pageRange[0] // scroll to the question's start page
+    }
+
     /// Trigger AI evaluation of the current student work.
     func triggerTutorEvaluation() {
         NSLog("[TutorEval] triggerTutorEvaluation called — tutorModeOn=\(tutorModeOn), latex=\(handwritingService.latexResult.prefix(40)), activeQ=\(activeQuestionLabel ?? "nil")")
