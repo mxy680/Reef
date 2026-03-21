@@ -137,7 +137,6 @@ final class CanvasViewModel {
     var showSidebar: Bool = false
     var activeQuestionLabel: String?
     var isMicOn: Bool = false
-    let speechService = SpeechRecognitionService()
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
@@ -301,12 +300,6 @@ final class CanvasViewModel {
         handwritingService.onLatexChanged = { [weak self] _ in
             guard let self else { return }
             self.triggerTutorEvaluation()
-        }
-
-        speechService.onTranscriptReady = { [weak self] transcript in
-            guard let self else { return }
-            self.isMicOn = false
-            self.sendTutorChat(transcript)
         }
 
         Task { await loadPDF() }
