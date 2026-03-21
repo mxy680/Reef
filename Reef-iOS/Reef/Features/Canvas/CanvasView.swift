@@ -93,6 +93,8 @@ struct CanvasView: View {
                         CanvasSidebarView(
                             isDarkMode: viewModel.isDarkMode,
                             transcriptionService: viewModel.handwritingService,
+                            tutorEvalService: viewModel.tutorEvalService,
+                            tutorModeOn: viewModel.tutorModeOn,
                             activeQuestionLabel: viewModel.activeQuestionLabel
                         )
                         .frame(width: metrics.canvasSidebarWidth)
@@ -221,6 +223,14 @@ struct CanvasView: View {
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
         .animation(.spring(duration: 0.2), value: viewModel.showHintPopover)
         .animation(.spring(duration: 0.2), value: viewModel.showRevealPopover)
+        .alert("Clear All Strokes?", isPresented: $viewModel.showClearConfirmation) {
+            Button("Clear", role: .destructive) {
+                viewModel.clearAllStrokes()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will erase all drawings on every page.")
+        }
         .onAppear {
             viewModel.startBatteryMonitoring()
             viewModel.startWifiMonitoring()
@@ -232,10 +242,18 @@ struct CanvasView: View {
                     guard !Task.isCancelled else { return }
                     viewModel.saveCanvasState()
                 }
-                // Live transcription when sidebar is open
+                // Live transcription when sidebar is open — only strokes in active subquestion
                 if viewModel.showSidebar {
                     let drawing = viewModel.drawingManager.drawing(for: viewModel.currentPageIndex)
-                    viewModel.handwritingService.onDrawingChanged(drawing: drawing)
+                    let regions = viewModel.activeSubquestionRegions()
+                    viewModel.handwritingService.onDrawingChanged(
+                        drawing: drawing,
+                        activeRegions: regions
+                    )
+                }
+                // Trigger AI tutor evaluation when transcription is available
+                if viewModel.tutorModeOn {
+                    viewModel.triggerTutorEvaluation()
                 }
             }
         }

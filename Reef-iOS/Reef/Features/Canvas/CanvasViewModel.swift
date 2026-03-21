@@ -140,6 +140,8 @@ final class CanvasViewModel {
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
+    let tutorEvalService = TutorEvaluationService()
+    var showClearConfirmation: Bool = false
     var isExporting: Bool = false
     var exportedPDFData: Data?
     var exportedPDFURL: URL?
@@ -222,7 +224,9 @@ final class CanvasViewModel {
 
     var tutorProgress: Double {
         guard tutorStepCount > 0 else { return 0 }
-        return Double(currentTutorStepIndex) / Double(tutorStepCount)
+        let completedSteps = Double(currentTutorStepIndex)
+        let intraStepProgress = tutorEvalService.stepProgress
+        return (completedSteps + intraStepProgress) / Double(tutorStepCount)
     }
 
     func loadAnswerKeys() async {
@@ -232,6 +236,7 @@ final class CanvasViewModel {
         let result = await repo.fetchAnswerKeys(documentId: document.id)
         answerKeys = result.answers
         isLoadingAnswerKeys = false
+        tutorModeOn = !answerKeys.isEmpty
     }
 
     // MARK: - Toolbar Layout
@@ -245,7 +250,12 @@ final class CanvasViewModel {
         self.document = document
         self.pdfDocument = MockCanvasData.blankPDF()
         self.savedState = CanvasStorageService.load(documentId: document.id)
-        print("[CanvasVM] Loaded saved state: \(savedState != nil ? "\(savedState!.drawingDataByPage.count) drawings" : "none")")
+
+        tutorEvalService.onStepCompleted = { [weak self] in
+            guard let self else { return }
+            self.advanceTutorStep()
+        }
+
         Task { await loadPDF() }
         Task { await loadAnswerKeys() }
     }
@@ -316,12 +326,54 @@ final class CanvasViewModel {
     // MARK: - Question Region Detection
 
     func updateActiveQuestion(pageIndex: Int, yPosition: Double) {
+        // Update current page index so region filtering uses the correct page
+        currentPageIndex = pageIndex
+
         let originalPage = originalPageIndex(for: pageIndex)
-        activeQuestionLabel = QuestionRegionTracker.activeLabel(
+        let newLabel = QuestionRegionTracker.activeLabel(
             forPage: originalPage,
             yPosition: yPosition,
-            questionRegions: document.questionRegions
+            questionRegions: document.questionRegions,
+            questionPages: document.questionPages
         )
+
+        // Clear stale LaTeX when question changes — new strokes will produce new result
+        if newLabel != activeQuestionLabel {
+            handwritingService.latexResult = ""
+        }
+
+        activeQuestionLabel = newLabel
+    }
+
+    /// Returns only the active SUBquestion's regions for stroke filtering.
+    /// e.g. if activeQuestionLabel is "Q2a", returns only regions with label "a" for Q2.
+    func activeSubquestionRegions() -> [PartRegion]? {
+        guard let label = activeQuestionLabel,
+              let qPages = document.questionPages,
+              let qRegions = document.questionRegions else { return nil }
+
+        // Parse "Q2a" → questionIndex=1, partLabel="a"
+        // Format: Q<number><label>
+        guard label.hasPrefix("Q"), label.count >= 3 else { return nil }
+        let numAndLabel = label.dropFirst() // "2a"
+        var numStr = ""
+        var partLabel = ""
+        for ch in numAndLabel {
+            if ch.isNumber {
+                numStr.append(ch)
+            } else {
+                partLabel.append(ch)
+            }
+        }
+        guard let qNum = Int(numStr), qNum >= 1 else { return nil }
+        let qi = qNum - 1
+
+        guard qi < qPages.count, qi < qRegions.count,
+              let data = qRegions[qi] else { return nil }
+
+        // Filter to only the matching part label (or nil for stem)
+        let targetLabel = partLabel.isEmpty ? nil : partLabel
+        return data.regions.filter { $0.label == targetLabel }
     }
 
     /// Map current page index back to original index, accounting for added blank pages.
@@ -395,12 +447,43 @@ final class CanvasViewModel {
         currentTutorStepIndex += 1
         showHintPopover = false
         showRevealPopover = false
+        tutorEvalService.resetForNextStep()
     }
 
     func resetTutorSteps() {
         currentTutorStepIndex = 0
         showHintPopover = false
         showRevealPopover = false
+        tutorEvalService.reset()
+    }
+
+    /// Trigger AI evaluation of the current student work.
+    func triggerTutorEvaluation() {
+        guard tutorModeOn,
+              !handwritingService.latexResult.isEmpty,
+              let label = activeQuestionLabel else { return }
+
+        // Parse "Q2a" → questionNumber=2, partLabel="a"
+        guard label.hasPrefix("Q"), label.count >= 2 else { return }
+        let numAndLabel = label.dropFirst()
+        var numStr = ""
+        var partLabel = ""
+        for ch in numAndLabel {
+            if ch.isNumber {
+                numStr.append(ch)
+            } else {
+                partLabel.append(ch)
+            }
+        }
+        guard let qNum = Int(numStr) else { return }
+
+        tutorEvalService.evaluate(
+            latex: handwritingService.latexResult,
+            documentId: document.id,
+            questionNumber: qNum,
+            partLabel: partLabel.isEmpty ? nil : partLabel,
+            stepIndex: currentTutorStepIndex
+        )
     }
 
     // MARK: - Page Mutations
@@ -423,6 +506,18 @@ final class CanvasViewModel {
         addedPageIndices = addedPageIndices.map { $0 >= insertIndex ? $0 + 1 : $0 }
         addedPageIndices.append(insertIndex)
         pageVersion += 1
+    }
+
+    func clearAllStrokes() {
+        guard let container = containerView else { return }
+        let savedCallback = drawingManager.onDrawingChanged
+        drawingManager.onDrawingChanged = nil
+        for i in 0..<container.canvasViews.count {
+            drawingManager.setDrawing(PKDrawing(), for: i)
+            container.canvasViews[i].drawing = PKDrawing()
+        }
+        drawingManager.onDrawingChanged = savedCallback
+        drawingManager.onDrawingChanged?()
     }
 
     func deleteCurrentPage(drawingManager: CanvasDrawingManager) {

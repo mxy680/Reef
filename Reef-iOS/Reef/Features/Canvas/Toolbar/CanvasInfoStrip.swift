@@ -26,6 +26,15 @@ struct CanvasInfoStrip: View {
             .buttonStyle(.plain)
             .padding(.leading, 6)
 
+            // Wifi status indicator
+            Image(viewModel.isWifiConnected ? "canvas.wifi_on" : "canvas.wifi_off")
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 18, height: 18)
+                .foregroundColor(viewModel.isWifiConnected ? .white.opacity(0.7) : Color(hex: 0xE57373))
+                .frame(width: 32, height: 36)
+
             divider
 
             // Doc icon + name + timer
@@ -34,7 +43,7 @@ struct CanvasInfoStrip: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white.opacity(0.5))
 
-                Text(doc.displayName)
+                Text(doc.displayName.count > 12 ? String(doc.displayName.prefix(12)) + "..." : doc.displayName)
                     .font(.epilogue(13, weight: .bold))
                     .tracking(-0.04 * 13)
                     .foregroundColor(.white)
@@ -51,10 +60,66 @@ struct CanvasInfoStrip: View {
                 }
             }
 
+            // Step hint — tutor mode only
+            if viewModel.tutorModeOn {
+                divider
+
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Text(viewModel.currentTutorStepLabel)
+                        .font(.epilogue(11, weight: .medium))
+                        .tracking(-0.04 * 11)
+                        .foregroundColor(.white.opacity(0.85))
+                        .lineLimit(1)
+                }
+                .transition(.opacity)
+            }
+
             Spacer(minLength: 8)
 
-            // Battery + dark mode
-            HStack(spacing: 8) {
+            if viewModel.tutorModeOn {
+                // Tutor mode: progress bar | hint + reveal
+                HStack(spacing: 4) {
+                    HStack(spacing: 4) {
+                        progressBar(progress: viewModel.tutorProgress)
+
+                        Text("\(Int(viewModel.tutorProgress * 100))%")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.55))
+                    }
+
+                    divider
+
+                    Button {
+                        viewModel.showHintPopover.toggle()
+                        if viewModel.showHintPopover { viewModel.showRevealPopover = false }
+                    } label: {
+                        Image(systemName: "lightbulb.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(viewModel.showHintPopover ? 1 : 0.8))
+                            .frame(width: 24, height: 24)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        viewModel.showRevealPopover.toggle()
+                        if viewModel.showRevealPopover { viewModel.showHintPopover = false }
+                    } label: {
+                        Image(systemName: "eye.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                            .frame(width: 24, height: 24)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .transition(.opacity)
+            } else {
+                // Normal mode: battery
                 HStack(spacing: 3) {
                     Image(viewModel.batteryIconName)
                         .renderingMode(.template)
@@ -67,19 +132,7 @@ struct CanvasInfoStrip: View {
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundColor(.white.opacity(0.55))
                 }
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        viewModel.isDarkMode.toggle()
-                    }
-                } label: {
-                    Image(systemName: viewModel.isDarkMode ? "sun.max.fill" : "moon.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.8))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                .transition(.opacity)
             }
 
             divider
@@ -91,9 +144,23 @@ struct CanvasInfoStrip: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 20, height: 20)
-                    .foregroundColor(.white)
+                    .foregroundColor(.white.opacity(viewModel.isReconstructed ? 1 : 0.4))
 
-                ReefToggle(isOn: $viewModel.tutorModeOn, size: .compact)
+                if viewModel.isReconstructed {
+                    ReefToggle(isOn: Binding(
+                        get: { viewModel.tutorModeOn },
+                        set: { newValue in
+                            viewModel.tutorModeOn = newValue
+                            if !newValue {
+                                viewModel.showSidebar = false
+                            }
+                        }
+                    ), size: .compact)
+                } else {
+                    ReefToggle(isOn: .constant(false), size: .compact)
+                        .disabled(true)
+                        .opacity(0.5)
+                }
             }
             .padding(.trailing, 10)
         }
@@ -105,7 +172,57 @@ struct CanvasInfoStrip: View {
                 Color.black.opacity(viewModel.isDarkMode ? 0.3 : 0.18)
             }
         )
+        .animation(.easeInOut(duration: 0.25), value: viewModel.tutorModeOn)
     }
+
+    // MARK: - 3D Progress Bar
+
+    private func progressBar(progress: Double) -> some View {
+        let barHeight: CGFloat = 12
+        let cornerRadius: CGFloat = 4
+        let shadowOffset: CGFloat = 1.5
+
+        return ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color.black.opacity(0.3))
+                .offset(x: shadowOffset, y: shadowOffset)
+
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color.black.opacity(0.2))
+
+            GeometryReader { geo in
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(progressFillColor(for: progress))
+                    .frame(width: max(barHeight, geo.size.width * progress))
+            }
+
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.15), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: barHeight / 2)
+
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+        }
+        .frame(width: 80, height: barHeight)
+    }
+
+    private func progressFillColor(for progress: Double) -> Color {
+        if progress < 0.5 {
+            return .white.opacity(0.85)
+        } else if progress < 0.8 {
+            return ReefColors.accent
+        } else {
+            return Color(hex: 0x81C784)
+        }
+    }
+
+    // MARK: - Helpers
 
     private var divider: some View {
         Text("|")

@@ -7,6 +7,7 @@ from app.routers import health
 from app.routers import reconstruct_v2
 from app.routers import fit_shape
 from app.routers import transcribe
+from app.routers import tutor_evaluate
 from app.services.cancellation import get_in_flight_ids
 from app.services.progress import update_document_status
 
@@ -78,3 +79,4 @@ app.include_router(health.router)
 app.include_router(reconstruct_v2.router)
 app.include_router(fit_shape.router)
 app.include_router(transcribe.router)
+app.include_router(tutor_evaluate.router)

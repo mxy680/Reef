@@ -20,6 +20,8 @@
 		114AD1A2B9668044DDDAFD7E /* EraserSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B5973EB0C19F379FCC7F2D /* EraserSettingsPopover.swift */; };
 		11E74EB9CAA26F3776EE774D /* CourseRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD8763733BAAB023C8D2CFF /* CourseRepository.swift */; };
 		15A4D41DC0FC74C073BB398D /* HandwritingTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B631BDD9B4ADCB364AEFA27 /* HandwritingTranscriptionService.swift */; };
+		DC31B62573F444088AECABB8 /* TutorEvaluationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorEvaluationService.swift; sourceTree = "<group>"; };
+		642BAEA75512457AA28EED5F /* TutorEvaluationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC31B62573F444088AECABB8 /* TutorEvaluationService.swift */; };
 		17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */; };
 		1851666EDD5700E210B5FE9F /* RulerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029895EBF64BA43E3B438CBE /* RulerOverlayView.swift */; };
 		1BAD8BD9673755ECB28CD6EC /* ProfileDropdownMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */; };
@@ -449,6 +451,7 @@
 			children = (
 				85288EB05437D44A3FEC547F /* CanvasSidebarView.swift */,
 				1B631BDD9B4ADCB364AEFA27 /* HandwritingTranscriptionService.swift */,
+				DC31B62573F444088AECABB8 /* TutorEvaluationService.swift */,
 			);
 			path = Sidebar;
 			sourceTree = "<group>";
@@ -856,6 +859,7 @@
 				616DA14DB392B614F530E097 /* ExportPreviewView.swift in Sources */,
 				17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */,
 				15A4D41DC0FC74C073BB398D /* HandwritingTranscriptionService.swift in Sources */,
+				642BAEA75512457AA28EED5F /* TutorEvaluationService.swift in Sources */,
 				903339E4247C9C8EBCE24624 /* KaTeXView.swift in Sources */,
 				E6DD16240CF1B56A193E21F4 /* MathText.swift in Sources */,
 				B26F3491C9BD243B4E65D766 /* MockCanvasData.swift in Sources */,
