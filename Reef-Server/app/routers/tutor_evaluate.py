@@ -62,14 +62,15 @@ async def _fetch_answer_key(document_id: str, question_number: int, user_id: str
 
 
 def _resolve_steps(answer_key: QuestionAnswer, part_label: str | None) -> list:
-    """Find the correct steps list for the given part label."""
+    """Find the correct steps list for the given part label.
+
+    Fallback order matches iOS ``currentSteps``: parts first, then top-level steps.
+    """
     if part_label is None:
-        # No part — use top-level steps or first part's steps
-        if answer_key.steps:
-            return answer_key.steps
-        if answer_key.parts:
+        # No part — try first part's steps, then top-level (matches iOS priority)
+        if answer_key.parts and answer_key.parts[0].steps:
             return answer_key.parts[0].steps
-        return []
+        return answer_key.steps
 
     # Search for matching part label (supports one level of nesting)
     for part in answer_key.parts:
@@ -204,14 +205,25 @@ async def tutor_chat(
         f"Step {i + 1}: {s.description}" for i, s in enumerate(steps)
     )
 
+    delimited_student_work = (
+        "<<<STUDENT_WORK_START>>>\n"
+        + (body.student_latex or "(no work yet)")
+        + "\n<<<STUDENT_WORK_END>>>"
+    )
+    delimited_user_message = (
+        "<<<USER_MESSAGE_START>>>\n"
+        + body.user_message
+        + "\n<<<USER_MESSAGE_END>>>"
+    )
+
     prompt = TUTOR_CHAT_PROMPT.format(
         question_text=f"Question {answer_key.question_number}",
         steps_overview=steps_overview,
         current_step_num=body.step_index + 1,
         current_step_description=current_step_desc,
         current_step_work=current_step_work,
-        student_work=body.student_latex or "(no work yet)",
-        user_message=body.user_message,
+        student_work=delimited_student_work,
+        user_message=delimited_user_message,
     )
 
     llm = LLMClient(

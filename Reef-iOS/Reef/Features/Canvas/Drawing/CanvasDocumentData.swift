@@ -26,7 +26,7 @@ struct TutorStepState: Codable {
 
 /// Persisted chat message.
 struct SavedChatMessage: Codable {
-    let role: String  // "student" or "tutor"
+    let role: String  // "student", "error", "reinforcement", or "answer"
     let latex: String
     let timestamp: Date
 }

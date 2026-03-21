@@ -73,6 +73,10 @@ final class TutorEvaluationService {
             }
 
             self.isEvaluating = true
+            defer {
+                self.isEvaluating = false
+                self.evaluateTask = nil
+            }
 
             do {
                 let response = try await self.callServer(
@@ -115,9 +119,6 @@ final class TutorEvaluationService {
                 guard !Task.isCancelled, self.generation == myGeneration else { return }
                 print("[TutorEvalSvc] Evaluation failed: \(error)")
             }
-
-            self.isEvaluating = false
-            self.evaluateTask = nil
         }
     }
 

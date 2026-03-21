@@ -91,13 +91,17 @@ async def validate_and_fix_answer_key(
             fixed_explanation = await _validate_and_fix_field(
                 step.explanation, llm_client, max_fix_attempts
             )
+            fixed_reinforcement = await _validate_and_fix_field(
+                step.reinforcement, llm_client, max_fix_attempts
+            )
 
-            if fixed_work != step.work or fixed_explanation != step.explanation:
+            if fixed_work != step.work or fixed_explanation != step.explanation or fixed_reinforcement != step.reinforcement:
                 any_fixed = True
                 fixed_steps.append(Step(
                     description=step.description,
                     explanation=fixed_explanation,
                     work=fixed_work,
+                    reinforcement=fixed_reinforcement,
                 ))
             else:
                 fixed_steps.append(step)
