@@ -108,11 +108,10 @@ struct CanvasDrawingBar: View {
             HStack(alignment: .center, spacing: 0) {
                 // Mic toggle
                 toolbarButton(
-                    icon: viewModel.isMicOn ? "canvas.mic_on" : "canvas.mic_off",
-                    active: viewModel.isMicOn
+                    icon: viewModel.speechService.isListening ? "canvas.mic_on" : "canvas.mic_off",
+                    active: viewModel.speechService.isListening
                 ) {
                     viewModel.speechService.toggle()
-                    viewModel.isMicOn = viewModel.speechService.isListening
                 }
 
                 // Tutor: prev/next question + reset

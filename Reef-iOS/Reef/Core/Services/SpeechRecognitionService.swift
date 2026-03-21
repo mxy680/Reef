@@ -29,7 +29,12 @@ final class SpeechRecognitionService {
             if isAuthorized {
                 startRecording()
             } else {
-                Task { await requestMicPermission() }
+                Task {
+                    await requestMicPermission()
+                    if isAuthorized {
+                        startRecording()
+                    }
+                }
             }
         }
     }
