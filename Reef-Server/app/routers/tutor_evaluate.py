@@ -159,6 +159,13 @@ async def tutor_evaluate(
 
     evaluation = TutorEvaluation.model_validate_json(result.content)
 
+    # Validate mistake explanation LaTeX if present
+    if evaluation.mistake_explanation:
+        from app.services.katex_validator import _validate_and_fix_field
+        evaluation.mistake_explanation = await _validate_and_fix_field(
+            evaluation.mistake_explanation, llm, max_attempts=1,
+        )
+
     log.info(
         f"[tutor-eval] Q{body.question_number} step {body.step_index + 1}: "
         f"status={evaluation.status} progress={evaluation.progress:.0%} "
