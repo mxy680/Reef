@@ -7,8 +7,6 @@ struct CanvasSidebarView: View {
     var tutorEvalService: TutorEvaluationService
     var tutorModeOn: Bool
     var activeQuestionLabel: String?
-    var speechTranscript: String = ""
-    var isListening: Bool = false
     var onSendChat: ((String) -> Void)?
 
     @State private var chatInput: String = ""
@@ -212,38 +210,24 @@ struct CanvasSidebarView: View {
                 .frame(height: 0.5)
 
             HStack(spacing: 8) {
-                if isListening {
-                    // Show live speech transcript
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(Color(hex: 0xE57373))
-                            .frame(width: 8, height: 8)
-                        Text(speechTranscript.isEmpty ? "Listening..." : speechTranscript)
-                            .font(.system(size: 13))
-                            .foregroundStyle(speechTranscript.isEmpty ? colors.textMuted : colors.text)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    TextField("Ask the tutor...", text: $chatInput)
-                        .font(.system(size: 13))
-                        .textFieldStyle(.plain)
-                        .foregroundStyle(colors.text)
-                        .submitLabel(.send)
-                        .onSubmit { submitChat() }
+                TextField("Ask the tutor...", text: $chatInput)
+                    .font(.system(size: 13))
+                    .textFieldStyle(.plain)
+                    .foregroundStyle(colors.text)
+                    .submitLabel(.send)
+                    .onSubmit { submitChat() }
 
-                    Button(action: submitChat) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundStyle(
-                                chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                ? colors.textMuted
-                                : ReefColors.primary
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || tutorEvalService.isSendingChat)
+                Button(action: submitChat) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(
+                            chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? colors.textMuted
+                            : ReefColors.primary
+                        )
                 }
+                .buttonStyle(.plain)
+                .disabled(chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || tutorEvalService.isSendingChat)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

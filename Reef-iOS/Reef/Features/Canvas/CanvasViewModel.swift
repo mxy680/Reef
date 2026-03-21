@@ -2,6 +2,8 @@ import SwiftUI
 import PencilKit
 import PDFKit
 import UIKit
+import AVFoundation
+@preconcurrency import Supabase
 
 // MARK: - Canvas ViewModel
 
@@ -137,7 +139,8 @@ final class CanvasViewModel {
     var showSidebar: Bool = false
     var activeQuestionLabel: String?
     var isMicOn: Bool = false
-    let speechService = SpeechRecognitionService()
+    private var audioRecorder: AVAudioRecorder?
+    private var micSilenceTimer: Task<Void, Never>?
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
@@ -301,11 +304,6 @@ final class CanvasViewModel {
         handwritingService.onLatexChanged = { [weak self] _ in
             guard let self else { return }
             self.triggerTutorEvaluation()
-        }
-
-        speechService.onTranscriptReady = { [weak self] transcript in
-            guard let self else { return }
-            self.sendTutorChat(transcript)
         }
 
         Task { await loadPDF() }
@@ -730,6 +728,131 @@ final class CanvasViewModel {
         } else {
             tutorEvalService.pendingReinforcement = nil
         }
+    }
+
+    private var micTempURL: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("reef_voice.m4a")
+    }
+
+    func toggleMic() {
+        if isMicOn {
+            // Stop recording and transcribe
+            micSilenceTimer?.cancel()
+            micSilenceTimer = nil
+            audioRecorder?.stop()
+            audioRecorder = nil
+            isMicOn = false
+
+            let url = micTempURL
+            guard FileManager.default.fileExists(atPath: url.path) else { return }
+
+            // Add a "thinking" bubble
+            tutorEvalService.chatMessages.append(TutorChatMessage(
+                role: .student, latex: "🎤 Voice message...", timestamp: Date()
+            ))
+
+            Task {
+                do {
+                    let text = try await uploadAudioForTranscription(fileURL: url)
+                    // Replace the placeholder with actual text
+                    if let lastIdx = tutorEvalService.chatMessages.indices.last {
+                        tutorEvalService.chatMessages[lastIdx] = TutorChatMessage(
+                            role: .student, latex: text, timestamp: Date()
+                        )
+                    }
+                    sendTutorChat(text)
+                } catch {
+                    if let lastIdx = tutorEvalService.chatMessages.indices.last {
+                        tutorEvalService.chatMessages[lastIdx] = TutorChatMessage(
+                            role: .student, latex: "Voice failed: \(error.localizedDescription)", timestamp: Date()
+                        )
+                    }
+                }
+                try? FileManager.default.removeItem(at: url)
+                try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            }
+        } else {
+            // Start recording
+            let permission = AVAudioApplication.shared.recordPermission
+            if permission == .granted {
+                startMicRecording()
+            } else {
+                Task {
+                    let granted = await withCheckedContinuation { cont in
+                        AVAudioApplication.requestRecordPermission { g in
+                            cont.resume(returning: g)
+                        }
+                    }
+                    if granted {
+                        startMicRecording()
+                    }
+                }
+            }
+        }
+    }
+
+    private func startMicRecording() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try session.setActive(true)
+
+            let url = micTempURL
+            try? FileManager.default.removeItem(at: url)
+
+            let recorder = try AVAudioRecorder(url: url, settings: [
+                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                AVSampleRateKey: 16000.0,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue,
+            ])
+            recorder.record()
+            audioRecorder = recorder
+            isMicOn = true
+
+            // Auto-stop after 10s silence
+            micSilenceTimer = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(10))
+                guard let self, !Task.isCancelled, self.isMicOn else { return }
+                self.toggleMic()
+            }
+        } catch {
+            isMicOn = false
+        }
+    }
+
+    private func uploadAudioForTranscription(fileURL: URL) async throws -> String {
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/transcribe-audio") else {
+            throw URLError(.badURL)
+        }
+
+        let audioData = try Data(contentsOf: fileURL)
+        let boundary = UUID().uuidString
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let authSession = try await supabase.auth.session
+        request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"voice.m4a\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: audio/m4a\r\n\r\n".data(using: .utf8)!)
+        body.append(audioData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+
+        struct TranscribeResponse: Decodable { let text: String }
+        return try JSONDecoder().decode(TranscribeResponse.self, from: data).text
     }
 
     /// Send a chat message to the tutor.

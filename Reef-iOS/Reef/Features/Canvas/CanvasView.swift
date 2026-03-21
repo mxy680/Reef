@@ -96,8 +96,6 @@ struct CanvasView: View {
                             tutorEvalService: viewModel.tutorEvalService,
                             tutorModeOn: viewModel.tutorModeOn,
                             activeQuestionLabel: viewModel.activeQuestionLabel,
-                            speechTranscript: viewModel.speechService.transcript,
-                            isListening: viewModel.speechService.isListening,
                             onSendChat: { message in
                                 viewModel.sendTutorChat(message)
                             }
