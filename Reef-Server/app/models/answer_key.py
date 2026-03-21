@@ -26,6 +26,10 @@ class Step(BaseModel):
         ...,
         description="Just the math or key reasoning — no narration (LaTeX with $...$ inline, \\[...\\] display, or plain text)",
     )
+    reinforcement: str = Field(
+        default="",
+        description="Short celebratory message when the student completes this step (1 sentence, warm and specific)",
+    )
 
 
 class PartAnswer(BaseModel):

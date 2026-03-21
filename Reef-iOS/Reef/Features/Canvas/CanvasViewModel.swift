@@ -274,6 +274,7 @@ final class CanvasViewModel {
                 activeQuestionLabel = "Q1a"
             }
             restoreTutorStateForLabel(activeQuestionLabel!)
+            updatePendingReinforcement()
         }
     }
 
@@ -404,7 +405,7 @@ final class CanvasViewModel {
         if savedTutorProgress == nil { savedTutorProgress = [:] }
         let savedMessages = tutorEvalService.chatMessages.map { msg in
             SavedChatMessage(
-                role: msg.role == .student ? "student" : "tutor",
+                role: msg.role.rawValue,
                 latex: msg.latex,
                 timestamp: msg.timestamp
             )
@@ -442,7 +443,7 @@ final class CanvasViewModel {
         if let saved = state.chatMessages, !saved.isEmpty {
             tutorEvalService.chatMessages = saved.map { msg in
                 TutorChatMessage(
-                    role: msg.role == "student" ? .student : .tutor,
+                    role: TutorChatMessage.Role(rawValue: msg.role) ?? .answer,
                     latex: msg.latex,
                     timestamp: msg.timestamp
                 )
@@ -558,6 +559,7 @@ final class CanvasViewModel {
         currentTutorStepIndex += 1
         // Don't dismiss hint/reveal — user closes them manually via X button
         tutorEvalService.resetForNextStep()
+        updatePendingReinforcement()
     }
 
     func resetTutorSteps() {
@@ -715,6 +717,15 @@ final class CanvasViewModel {
         saveCanvasState()
     }
 
+    /// Set the pending reinforcement text from the current step's answer key.
+    private func updatePendingReinforcement() {
+        if currentTutorStepIndex < currentSteps.count {
+            tutorEvalService.pendingReinforcement = currentSteps[currentTutorStepIndex].reinforcement
+        } else {
+            tutorEvalService.pendingReinforcement = nil
+        }
+    }
+
     /// Send a chat message to the tutor.
     func sendTutorChat(_ message: String) {
         let label = activeQuestionLabel ?? "Q1a"
@@ -832,7 +843,7 @@ final class CanvasViewModel {
         if tutorModeOn, let label = activeQuestionLabel {
             let savedMessages = tutorEvalService.chatMessages.map { msg in
                 SavedChatMessage(
-                    role: msg.role == .student ? "student" : "tutor",
+                    role: msg.role.rawValue,
                     latex: msg.latex,
                     timestamp: msg.timestamp
                 )

@@ -243,24 +243,36 @@ struct CanvasSidebarView: View {
 
     // MARK: - Chat Bubble
 
+    private func bubbleConfig(for role: TutorChatMessage.Role) -> (icon: String, label: String, color: Color) {
+        switch role {
+        case .student:
+            return ("pencil.line", "You", .clear)
+        case .error:
+            return ("exclamationmark.triangle.fill", "Error", Color(hex: 0xE57373))
+        case .reinforcement:
+            return ("checkmark.circle.fill", "Nice", Color(hex: 0x81C784))
+        case .answer:
+            return ("brain.head.profile", "Tutor", ReefColors.primary)
+        }
+    }
+
     @ViewBuilder
     private func chatBubble(message: TutorChatMessage, colors: ReefThemeColors) -> some View {
         let isStudent = message.role == .student
+        let config = bubbleConfig(for: message.role)
 
         HStack {
             if isStudent { Spacer(minLength: 24) }
 
             VStack(alignment: .leading, spacing: 4) {
-                // Role label
                 HStack(spacing: 4) {
-                    Image(systemName: isStudent ? "pencil.line" : "brain.head.profile")
+                    Image(systemName: config.icon)
                         .font(.system(size: 10, weight: .semibold))
-                    Text(isStudent ? "Your work" : "Feedback")
+                    Text(config.label)
                         .font(.system(size: 10, weight: .bold))
                 }
-                .foregroundStyle(isStudent ? colors.textMuted : Color(hex: 0xE57373))
+                .foregroundStyle(isStudent ? colors.textMuted : config.color)
 
-                // Content
                 MathText(
                     text: message.latex,
                     fontSize: 13,
@@ -273,14 +285,11 @@ struct CanvasSidebarView: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(isStudent
                           ? (isDarkMode ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
-                          : Color(hex: 0xE57373).opacity(0.08))
+                          : config.color.opacity(0.08))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(isStudent
-                            ? Color.clear
-                            : Color(hex: 0xE57373).opacity(0.25),
-                            lineWidth: 1)
+                    .stroke(isStudent ? Color.clear : config.color.opacity(0.25), lineWidth: 1)
             )
 
             if !isStudent { Spacer(minLength: 24) }

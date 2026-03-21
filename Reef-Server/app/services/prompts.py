@@ -284,7 +284,7 @@ You are generating a structured answer key for a homework or exam question. The 
 
 ## Output structure
 
-Break every solution into discrete **steps**. Each step has three fields:
+Break every solution into discrete **steps**. Each step has four fields:
 
 - `description` — A short, punchy label for this step. Max 50 characters. Think of it as a progress-bar label, not a sentence. No periods. Be specific about what happens in this step.
   - Good: "Pull given values from problem"
@@ -300,6 +300,12 @@ Break every solution into discrete **steps**. Each step has three fields:
   - Bad: "Apply Newton's second law" (that's just restating the description)
   - Bad: "Great job! You can do it! Think harder!" (empty encouragement)
 - `work` — The actual solution for this step: just the math or key reasoning, nothing extra. Use LaTeX ($...$ inline, \\[...\\] display). No narration, no personality — just the work itself. Keep this field strictly technical.
+- `reinforcement` — A short celebration shown when the student completes this step. One sentence. Be specific about what they just accomplished and build momentum. Use $...$ for any math references.
+  - Good: "Solid — you've got $F = ma$ set up, now it's just algebra"
+  - Good: "That factoring was clean, the hard part is behind you"
+  - Good: "Units check out — $\\text{m/s}^2$ is exactly right"
+  - Bad: "Great job!" (too generic)
+  - Bad: "You did it! Amazing! Keep going!" (performative)
 
 ## Tone
 

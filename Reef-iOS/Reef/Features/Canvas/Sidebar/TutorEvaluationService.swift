@@ -8,9 +8,11 @@ struct TutorChatMessage: Identifiable {
     let latex: String
     let timestamp: Date
 
-    enum Role {
-        case student   // student's transcribed work
-        case tutor     // tutor feedback (mistake, on track, completed)
+    enum Role: String {
+        case student        // student's transcribed work or typed question
+        case error          // tutor detected a mistake
+        case reinforcement  // tutor celebrates step completion
+        case answer         // tutor responds to a user question
     }
 }
 
@@ -29,6 +31,9 @@ final class TutorEvaluationService {
 
     /// Fires when the model marks the current step as "completed".
     var onStepCompleted: (() -> Void)?
+
+    /// Reinforcement text for the current step (from answer key).
+    var pendingReinforcement: String?
 
     // MARK: - Private
 
@@ -89,17 +94,21 @@ final class TutorEvaluationService {
                 // Add chat messages for mistakes
                 if let mistake = response.mistakeExplanation, response.status == "mistake" {
                     let now = Date()
-                    // Student message: what they wrote
                     self.chatMessages.append(TutorChatMessage(
                         role: .student, latex: latex, timestamp: now
                     ))
-                    // Tutor message: the feedback
                     self.chatMessages.append(TutorChatMessage(
-                        role: .tutor, latex: mistake, timestamp: now
+                        role: .error, latex: mistake, timestamp: now
                     ))
                 }
 
+                // Step completed — show reinforcement then advance
                 if response.status == "completed" {
+                    if let reinforcement = self.pendingReinforcement, !reinforcement.isEmpty {
+                        self.chatMessages.append(TutorChatMessage(
+                            role: .reinforcement, latex: reinforcement, timestamp: Date()
+                        ))
+                    }
                     self.onStepCompleted?()
                 }
             } catch {
@@ -239,11 +248,11 @@ final class TutorEvaluationService {
                     studentLatex: studentLatex
                 )
                 self.chatMessages.append(TutorChatMessage(
-                    role: .tutor, latex: reply, timestamp: Date()
+                    role: .answer, latex: reply, timestamp: Date()
                 ))
             } catch {
                 self.chatMessages.append(TutorChatMessage(
-                    role: .tutor, latex: "Sorry, couldn't get a response. Try again.", timestamp: Date()
+                    role: .answer, latex: "Sorry, couldn't get a response. Try again.", timestamp: Date()
                 ))
             }
             self.isSendingChat = false
