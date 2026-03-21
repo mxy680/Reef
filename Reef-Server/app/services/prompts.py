@@ -303,7 +303,7 @@ Break every solution into discrete **steps**. Each step has four fields:
 - `reinforcement` — A short celebration shown when the student completes this step. One sentence. Be specific about what they just accomplished and build momentum. Use $...$ for any math references.
   - Good: "Solid — you've got $F = ma$ set up, now it's just algebra"
   - Good: "That factoring was clean, the hard part is behind you"
-  - Good: "Units check out — $\\text{m/s}^2$ is exactly right"
+  - Good: "Units check out — $\\text{{m/s}}^2$ is exactly right"
   - Bad: "Great job!" (too generic)
   - Bad: "You did it! Amazing! Keep going!" (performative)
 
