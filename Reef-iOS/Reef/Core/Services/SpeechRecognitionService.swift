@@ -25,15 +25,21 @@ final class SpeechRecognitionService {
     func toggle() {
         if isListening {
             stopAndTranscribe()
+            return
+        }
+
+        // Check current permission state (may have been granted in a previous session)
+        if AVAudioApplication.shared.recordPermission == .granted {
+            isAuthorized = true
+        }
+
+        if isAuthorized {
+            startRecording()
         } else {
-            if isAuthorized {
-                startRecording()
-            } else {
-                Task {
-                    await requestMicPermission()
-                    if isAuthorized {
-                        startRecording()
-                    }
+            Task {
+                await requestMicPermission()
+                if isAuthorized {
+                    startRecording()
                 }
             }
         }
@@ -71,14 +77,15 @@ final class SpeechRecognitionService {
             ]
 
             let recorder = try AVAudioRecorder(url: url, settings: settings)
-            recorder.record()
+            let started = recorder.record()
+            NSLog("[Speech] Recording started: \(started), url: \(url.lastPathComponent)")
             audioRecorder = recorder
             isListening = true
             transcript = "Listening..."
 
             resetSilenceTimer()
         } catch {
-            print("[Speech] Recording failed: \(error)")
+            NSLog("[Speech] Recording failed: \(error)")
             isListening = false
         }
     }
@@ -96,7 +103,11 @@ final class SpeechRecognitionService {
         let url = tempFileURL
         stopRecording()
 
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        let exists = FileManager.default.fileExists(atPath: url.path)
+        let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+        NSLog("[Speech] Stop: file exists=\(exists), size=\(size) bytes")
+
+        guard exists, size > 0 else {
             transcript = ""
             return
         }
@@ -106,12 +117,13 @@ final class SpeechRecognitionService {
         Task {
             do {
                 let text = try await transcribeViaServer(fileURL: url)
+                NSLog("[Speech] Transcribed: \(text.prefix(60))")
                 transcript = ""
                 if !text.isEmpty {
                     onTranscriptReady?(text)
                 }
             } catch {
-                print("[Speech] Server transcription failed: \(error)")
+                NSLog("[Speech] Server transcription failed: \(error)")
                 transcript = ""
             }
             try? FileManager.default.removeItem(at: url)
