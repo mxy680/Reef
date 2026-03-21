@@ -94,6 +94,18 @@ struct CanvasInfoStrip: View {
                     divider
 
                     Button {
+                        viewModel.advanceTutorStep()
+                    } label: {
+                        Image(systemName: "forward.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(viewModel.currentTutorStepIndex < viewModel.tutorStepCount - 1 ? 0.8 : 0.3))
+                            .frame(width: 24, height: 24)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(viewModel.currentTutorStepIndex >= viewModel.tutorStepCount - 1)
+
+                    Button {
                         viewModel.showHintPopover.toggle()
                         if viewModel.showHintPopover { viewModel.showRevealPopover = false }
                     } label: {
