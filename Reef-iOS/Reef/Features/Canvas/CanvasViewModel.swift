@@ -618,9 +618,10 @@ final class CanvasViewModel {
 
     /// Reset all work for the current question: erase strokes on its pages and reset tutor progress.
     func resetCurrentQuestion() {
-        guard let container = containerView,
-              let label = activeQuestionLabel,
-              let qPages = document.questionPages else { return }
+        guard let container = containerView else { return }
+
+        let label = activeQuestionLabel ?? "Q1a"
+        guard let qPages = document.questionPages else { return }
 
         // Parse label to get question number
         guard label.hasPrefix("Q"), label.count >= 2 else { return }
@@ -633,13 +634,16 @@ final class CanvasViewModel {
         let pageRange = qPages[qNum - 1]
         guard pageRange.count >= 2 else { return }
 
-        // Clear strokes on question's pages
+        // Clear strokes on question's pages (original indices → actual indices accounting for added pages)
         let savedCallback = drawingManager.onDrawingChanged
         drawingManager.onDrawingChanged = nil
-        for pageIdx in pageRange[0]...pageRange[1] {
-            if pageIdx < container.canvasViews.count {
-                drawingManager.setDrawing(PKDrawing(), for: pageIdx)
-                container.canvasViews[pageIdx].drawing = PKDrawing()
+        for origPageIdx in pageRange[0]...pageRange[1] {
+            // Map original page index to actual page index (accounting for blank pages inserted before it)
+            let addedBefore = addedPageIndices.filter { $0 <= origPageIdx }.count
+            let actualPageIdx = origPageIdx + addedBefore
+            if actualPageIdx < container.canvasViews.count {
+                drawingManager.setDrawing(PKDrawing(), for: actualPageIdx)
+                container.canvasViews[actualPageIdx].drawing = PKDrawing()
             }
         }
         drawingManager.onDrawingChanged = savedCallback
