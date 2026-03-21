@@ -33,7 +33,11 @@ final class SpeechRecognitionService {
     // MARK: - Start / Stop
 
     func startListening() {
-        guard let recognizer = speechRecognizer, recognizer.isAvailable, isAuthorized else {
+        guard let recognizer = speechRecognizer, recognizer.isAvailable else {
+            return
+        }
+
+        if !isAuthorized {
             requestAuthorization()
             return
         }
@@ -42,7 +46,15 @@ final class SpeechRecognitionService {
         stopListening(sendTranscript: false)
 
         transcript = ""
-        isListening = true
+
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            print("[Speech] Audio session setup failed: \(error)")
+            return
+        }
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
@@ -57,16 +69,15 @@ final class SpeechRecognitionService {
         }
 
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
             audioEngine.prepare()
             try audioEngine.start()
         } catch {
             print("[Speech] Audio engine failed to start: \(error)")
-            isListening = false
+            inputNode.removeTap(onBus: 0)
             return
         }
+
+        isListening = true
 
         recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in

@@ -308,7 +308,6 @@ final class CanvasViewModel {
             self.isMicOn = false
             self.sendTutorChat(transcript)
         }
-        speechService.requestAuthorization()
 
         Task { await loadPDF() }
         Task { await loadAnswerKeys() }
