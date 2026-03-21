@@ -95,7 +95,10 @@ struct CanvasView: View {
                             transcriptionService: viewModel.handwritingService,
                             tutorEvalService: viewModel.tutorEvalService,
                             tutorModeOn: viewModel.tutorModeOn,
-                            activeQuestionLabel: viewModel.activeQuestionLabel
+                            activeQuestionLabel: viewModel.activeQuestionLabel,
+                            onSendChat: { message in
+                                viewModel.sendTutorChat(message)
+                            }
                         )
                         .frame(width: metrics.canvasSidebarWidth)
                         .transition(.move(edge: .trailing))

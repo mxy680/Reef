@@ -45,3 +45,20 @@ class TutorEvaluateResponse(BaseModel):
     progress: float
     status: TutorStatus
     mistake_explanation: str | None = None
+
+
+class TutorChatRequest(BaseModel):
+    """Request body for POST /ai/tutor-chat."""
+
+    document_id: str = Field(..., description="Supabase document UUID")
+    question_number: int = Field(..., description="1-based question number")
+    part_label: str | None = Field(None, description="Part label or null")
+    step_index: int = Field(..., description="0-based step index")
+    student_latex: str = Field(default="", max_length=5000, description="Current transcribed work")
+    user_message: str = Field(..., max_length=1000, description="User's question to the tutor")
+
+
+class TutorChatResponse(BaseModel):
+    """Response body for POST /ai/tutor-chat."""
+
+    reply: str

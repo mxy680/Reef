@@ -202,4 +202,112 @@ final class TutorEvaluationService {
 
         return try JSONDecoder().decode(EvalResponse.self, from: data)
     }
+
+    // MARK: - Chat
+
+    var isSendingChat: Bool = false
+
+    /// Send a user question to the tutor and get a reply.
+    func sendChat(
+        message: String,
+        documentId: String,
+        questionNumber: Int,
+        partLabel: String?,
+        stepIndex: Int,
+        studentLatex: String
+    ) {
+        guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Add user message immediately
+        chatMessages.append(TutorChatMessage(
+            role: .student, latex: trimmed, timestamp: Date()
+        ))
+
+        isSendingChat = true
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let reply = try await self.callChatServer(
+                    message: trimmed,
+                    documentId: documentId,
+                    questionNumber: questionNumber,
+                    partLabel: partLabel,
+                    stepIndex: stepIndex,
+                    studentLatex: studentLatex
+                )
+                self.chatMessages.append(TutorChatMessage(
+                    role: .tutor, latex: reply, timestamp: Date()
+                ))
+            } catch {
+                self.chatMessages.append(TutorChatMessage(
+                    role: .tutor, latex: "Sorry, couldn't get a response. Try again.", timestamp: Date()
+                ))
+            }
+            self.isSendingChat = false
+        }
+    }
+
+    private struct ChatRequest: Encodable {
+        let documentId: String
+        let questionNumber: Int
+        let partLabel: String?
+        let stepIndex: Int
+        let studentLatex: String
+        let userMessage: String
+
+        enum CodingKeys: String, CodingKey {
+            case documentId = "document_id"
+            case questionNumber = "question_number"
+            case partLabel = "part_label"
+            case stepIndex = "step_index"
+            case studentLatex = "student_latex"
+            case userMessage = "user_message"
+        }
+    }
+
+    private struct ChatResponse: Decodable {
+        let reply: String
+    }
+
+    private func callChatServer(
+        message: String,
+        documentId: String,
+        questionNumber: Int,
+        partLabel: String?,
+        stepIndex: Int,
+        studentLatex: String
+    ) async throws -> String {
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/tutor-chat") else {
+            throw URLError(.badURL)
+        }
+
+        let authSession = try await supabase.auth.session
+
+        let body = ChatRequest(
+            documentId: documentId,
+            questionNumber: questionNumber,
+            partLabel: partLabel,
+            stepIndex: stepIndex,
+            studentLatex: studentLatex,
+            userMessage: message
+        )
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 35
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+
+        return try JSONDecoder().decode(ChatResponse.self, from: data).reply
+    }
 }

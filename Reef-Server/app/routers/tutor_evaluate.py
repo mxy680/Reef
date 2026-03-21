@@ -10,9 +10,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
 from app.models.answer_key import QuestionAnswer
-from app.models.tutor import TutorEvaluateRequest, TutorEvaluateResponse, TutorEvaluation
+from app.models.tutor import (
+    TutorChatRequest, TutorChatResponse,
+    TutorEvaluateRequest, TutorEvaluateResponse, TutorEvaluation,
+)
 from app.services.llm_client import LLMClient
-from app.services.prompts import TUTOR_EVALUATE_PROMPT
+from app.services.prompts import TUTOR_CHAT_PROMPT, TUTOR_EVALUATE_PROMPT
 
 log = logging.getLogger(__name__)
 
@@ -177,3 +180,55 @@ async def tutor_evaluate(
         status=evaluation.status,
         mistake_explanation=evaluation.mistake_explanation,
     )
+
+
+@router.post("/tutor-chat", response_model=TutorChatResponse)
+async def tutor_chat(
+    body: TutorChatRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    if not settings.openrouter_api_key:
+        raise HTTPException(status_code=503, detail="OpenRouter not configured")
+
+    # Fetch answer key (ownership verified inside)
+    answer_key = await _fetch_answer_key(body.document_id, body.question_number, user.id)
+    steps = _resolve_steps(answer_key, body.part_label)
+
+    current_step_desc = ""
+    current_step_work = ""
+    if steps and body.step_index < len(steps):
+        current_step_desc = steps[body.step_index].description
+        current_step_work = steps[body.step_index].work
+
+    steps_overview = "\n".join(
+        f"Step {i + 1}: {s.description}" for i, s in enumerate(steps)
+    )
+
+    prompt = TUTOR_CHAT_PROMPT.format(
+        question_text=f"Question {answer_key.question_number}",
+        steps_overview=steps_overview,
+        current_step_num=body.step_index + 1,
+        current_step_description=current_step_desc,
+        current_step_work=current_step_work,
+        student_work=body.student_latex or "(no work yet)",
+        user_message=body.user_message,
+    )
+
+    llm = LLMClient(
+        api_key=settings.openrouter_api_key,
+        model=TUTOR_MODEL,
+        base_url="https://openrouter.ai/api/v1",
+    )
+
+    result = await asyncio.to_thread(
+        llm.generate, prompt=prompt, timeout=30.0,
+    )
+
+    reply = result.content.strip()
+
+    log.info(
+        f"[tutor-chat] Q{body.question_number} step {body.step_index + 1}: "
+        f"({result.input_tokens}in/{result.output_tokens}out)"
+    )
+
+    return TutorChatResponse(reply=reply)

@@ -715,6 +715,28 @@ final class CanvasViewModel {
         saveCanvasState()
     }
 
+    /// Send a chat message to the tutor.
+    func sendTutorChat(_ message: String) {
+        let label = activeQuestionLabel ?? "Q1a"
+        guard label.hasPrefix("Q"), label.count >= 2 else { return }
+        let numAndLabel = label.dropFirst()
+        var numStr = ""
+        var partLabel = ""
+        for ch in numAndLabel {
+            if ch.isNumber { numStr.append(ch) } else { partLabel.append(ch) }
+        }
+        guard let qNum = Int(numStr) else { return }
+
+        tutorEvalService.sendChat(
+            message: message,
+            documentId: document.id,
+            questionNumber: qNum,
+            partLabel: partLabel.isEmpty ? nil : partLabel,
+            stepIndex: currentTutorStepIndex,
+            studentLatex: handwritingService.latexResult
+        )
+    }
+
     /// Trigger AI evaluation of the current student work.
     func triggerTutorEvaluation() {
         guard tutorModeOn,

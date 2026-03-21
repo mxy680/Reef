@@ -7,12 +7,9 @@ struct CanvasSidebarView: View {
     var tutorEvalService: TutorEvaluationService
     var tutorModeOn: Bool
     var activeQuestionLabel: String?
+    var onSendChat: ((String) -> Void)?
 
-    private var timerLabel: String {
-        let r = transcriptionService.sessionSecondsRemaining
-        guard r > 0 else { return "" }
-        return String(format: "%d:%02d", r / 60, r % 60)
-    }
+    @State private var chatInput: String = ""
 
     var body: some View {
         let colors = theme.colors
@@ -79,18 +76,6 @@ struct CanvasSidebarView: View {
             }
 
             Spacer()
-
-            if transcriptionService.sessionSecondsRemaining > 0 {
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(transcriptionService.sessionSecondsRemaining > 60
-                              ? Color(hex: 0x81C784) : Color(hex: 0xE57373))
-                        .frame(width: 6, height: 6)
-                    Text(timerLabel)
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(colors.textMuted)
-                }
-            }
 
             if transcriptionService.isTranscribing {
                 ProgressView()
@@ -218,7 +203,42 @@ struct CanvasSidebarView: View {
                     }
                 }
             }
+
+            // Chat input bar
+            Rectangle()
+                .fill(colors.divider)
+                .frame(height: 0.5)
+
+            HStack(spacing: 8) {
+                TextField("Ask the tutor...", text: $chatInput)
+                    .font(.system(size: 13))
+                    .textFieldStyle(.plain)
+                    .foregroundStyle(colors.text)
+                    .submitLabel(.send)
+                    .onSubmit { submitChat() }
+
+                Button(action: submitChat) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(
+                            chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? colors.textMuted
+                            : ReefColors.primary
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || tutorEvalService.isSendingChat)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
         }
+    }
+
+    private func submitChat() {
+        let message = chatInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !message.isEmpty else { return }
+        chatInput = ""
+        onSendChat?(message)
     }
 
     // MARK: - Chat Bubble
