@@ -119,9 +119,7 @@ struct CanvasDrawingBar: View {
                     divider
 
                     Button {
-                        if let pageIndex = viewModel.skipToNextQuestion() {
-                            onScrollToPage?(pageIndex)
-                        }
+                        _ = viewModel.skipToNextQuestion()
                     } label: {
                         Image(systemName: "forward.fill")
                             .font(.system(size: 15, weight: .medium))
