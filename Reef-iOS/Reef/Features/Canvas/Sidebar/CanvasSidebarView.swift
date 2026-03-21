@@ -223,20 +223,30 @@ struct CanvasSidebarView: View {
 
     // MARK: - Chat Bubble
 
+    private let shadowOffset: CGFloat = 3
+
     @ViewBuilder
     private func chatBubble(message: TutorChatMessage, colors: ReefThemeColors) -> some View {
         let isStudent = message.role == .student
+        let bgColor = isStudent
+            ? (isDarkMode ? Color.white.opacity(0.08) : Color.white)
+            : (isDarkMode ? Color(hex: 0xE57373).opacity(0.15) : Color(hex: 0xFFF0F0))
+        let borderColor = isStudent
+            ? Color.black.opacity(isDarkMode ? 0.4 : 0.8)
+            : Color(hex: 0xE57373)
 
         HStack {
-            if !isStudent { Spacer(minLength: 16) }
+            // Student on right, tutor on left
+            if isStudent { Spacer(minLength: 20) }
 
-            VStack(alignment: isStudent ? .leading : .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 4) {
                 // Role label
                 HStack(spacing: 4) {
                     Image(systemName: isStudent ? "pencil.line" : "brain.head.profile")
                         .font(.system(size: 10, weight: .semibold))
                     Text(isStudent ? "Your work" : "Feedback")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.epilogue(10, weight: .bold))
+                        .tracking(-0.04 * 10)
                 }
                 .foregroundStyle(isStudent ? colors.textMuted : Color(hex: 0xE57373))
 
@@ -244,26 +254,29 @@ struct CanvasSidebarView: View {
                 MathText(
                     text: message.latex,
                     fontSize: 13,
-                    color: isStudent ? colors.text : colors.text
+                    color: colors.text
                 )
             }
             .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isStudent
-                          ? (isDarkMode ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
-                          : Color(hex: 0xE57373).opacity(0.08))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isStudent
-                            ? Color.clear
-                            : Color(hex: 0xE57373).opacity(0.25),
-                            lineWidth: 1)
+                ZStack {
+                    // 3D shadow
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(borderColor)
+                        .offset(x: shadowOffset, y: shadowOffset)
+                    // Main fill
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(bgColor)
+                    // Border
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(borderColor, lineWidth: 1.5)
+                }
             )
 
-            if isStudent { Spacer(minLength: 16) }
+            if !isStudent { Spacer(minLength: 20) }
         }
+        .padding(.trailing, isStudent ? shadowOffset : 0)
+        .padding(.leading, !isStudent ? 0 : 0)
+        .padding(.bottom, shadowOffset)
     }
 }
