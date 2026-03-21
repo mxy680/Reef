@@ -23,9 +23,20 @@ final class SpeechRecognitionService {
     // MARK: - Authorization
 
     func requestAuthorization() {
-        SFSpeechRecognizer.requestAuthorization { [weak self] status in
-            Task { @MainActor in
-                self?.isAuthorized = (status == .authorized)
+        // Request mic permission first, then speech
+        AVAudioApplication.requestRecordPermission { [weak self] micGranted in
+            guard micGranted else {
+                Task { @MainActor in self?.isAuthorized = false }
+                return
+            }
+            SFSpeechRecognizer.requestAuthorization { status in
+                Task { @MainActor in
+                    self?.isAuthorized = (status == .authorized)
+                    // Auto-start if authorization was requested from a mic tap
+                    if status == .authorized {
+                        self?.startListening()
+                    }
+                }
             }
         }
     }
@@ -49,7 +60,7 @@ final class SpeechRecognitionService {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             print("[Speech] Audio session setup failed: \(error)")
