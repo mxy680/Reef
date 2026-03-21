@@ -241,9 +241,10 @@ final class CanvasViewModel {
         tutorModeOn = !answerKeys.isEmpty
         if tutorModeOn {
             showSidebar = true
-            // Restore tutor state for the active question (or default Q1a)
-            let label = activeQuestionLabel ?? "Q1a"
-            restoreTutorStateForLabel(label)
+            if activeQuestionLabel == nil {
+                activeQuestionLabel = "Q1a"
+            }
+            restoreTutorStateForLabel(activeQuestionLabel!)
         }
     }
 
