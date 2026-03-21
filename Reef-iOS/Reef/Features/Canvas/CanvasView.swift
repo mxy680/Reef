@@ -27,9 +27,6 @@ struct CanvasView: View {
                         onClose: {
                             viewModel.saveCanvasState()
                             onDismiss()
-                        },
-                        onScrollToPage: { index in
-                            scrollToPageIndex = index
                         }
                     )
 
@@ -233,6 +230,14 @@ struct CanvasView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will erase all drawings on every page.")
+        }
+        .alert("Reset This Question?", isPresented: $viewModel.showResetQuestionConfirmation) {
+            Button("Reset", role: .destructive) {
+                viewModel.resetCurrentQuestion()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will erase all strokes and tutor progress for this question.")
         }
         .onAppear {
             viewModel.startBatteryMonitoring()

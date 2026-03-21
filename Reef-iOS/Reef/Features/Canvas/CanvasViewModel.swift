@@ -142,6 +142,7 @@ final class CanvasViewModel {
     let handwritingService = HandwritingTranscriptionService()
     let tutorEvalService = TutorEvaluationService()
     var showClearConfirmation: Bool = false
+    var showResetQuestionConfirmation: Bool = false
     var isExporting: Bool = false
     var exportedPDFData: Data?
     var exportedPDFURL: URL?
@@ -585,6 +586,50 @@ final class CanvasViewModel {
         restoreTutorStateForLabel(nextLabel)
 
         return pageRange[0] // scroll to the question's start page
+    }
+
+    /// Reset all work for the current question: erase strokes on its pages and reset tutor progress.
+    func resetCurrentQuestion() {
+        guard let container = containerView,
+              let label = activeQuestionLabel,
+              let qPages = document.questionPages else { return }
+
+        // Parse label to get question number
+        guard label.hasPrefix("Q"), label.count >= 2 else { return }
+        var numStr = ""
+        for ch in label.dropFirst() {
+            if ch.isNumber { numStr.append(ch) } else { break }
+        }
+        guard let qNum = Int(numStr), qNum >= 1, qNum - 1 < qPages.count else { return }
+
+        let pageRange = qPages[qNum - 1]
+        guard pageRange.count >= 2 else { return }
+
+        // Clear strokes on question's pages
+        let savedCallback = drawingManager.onDrawingChanged
+        drawingManager.onDrawingChanged = nil
+        for pageIdx in pageRange[0]...pageRange[1] {
+            if pageIdx < container.canvasViews.count {
+                drawingManager.setDrawing(PKDrawing(), for: pageIdx)
+                container.canvasViews[pageIdx].drawing = PKDrawing()
+            }
+        }
+        drawingManager.onDrawingChanged = savedCallback
+        drawingManager.onDrawingChanged?()
+
+        // Reset tutor state for this question
+        currentTutorStepIndex = 0
+        tutorEvalService.reset()
+        handwritingService.latexResult = ""
+        handwritingService.resetSession()
+
+        // Clear saved progress for all subquestions of this question
+        if savedTutorProgress != nil {
+            let prefix = "Q\(qNum)"
+            savedTutorProgress = savedTutorProgress?.filter { !$0.key.hasPrefix(prefix) }
+        }
+
+        saveCanvasState()
     }
 
     /// Trigger AI evaluation of the current student work.

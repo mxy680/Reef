@@ -114,6 +114,36 @@ struct CanvasDrawingBar: View {
                     viewModel.isMicOn.toggle()
                 }
 
+                // Tutor: skip to next question + reset current question
+                if viewModel.tutorModeOn {
+                    divider
+
+                    Button {
+                        if let pageIndex = viewModel.skipToNextQuestion() {
+                            onScrollToPage?(pageIndex)
+                        }
+                    } label: {
+                        Image(systemName: "forward.fill")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(viewModel.canSkipToNextQuestion ? 0.8 : 0.3))
+                            .frame(width: 38, height: 48)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!viewModel.canSkipToNextQuestion)
+
+                    Button {
+                        viewModel.showResetQuestionConfirmation = true
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                            .frame(width: 38, height: 48)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 divider
 
                 // Dark mode toggle
@@ -144,6 +174,8 @@ struct CanvasDrawingBar: View {
                         viewModel.showSidebar.toggle()
                     }
                 }
+                .opacity(viewModel.tutorModeOn ? 1.0 : 0.3)
+                .disabled(!viewModel.tutorModeOn)
             }
             .padding(.trailing, 4)
         }
@@ -306,6 +338,11 @@ struct CanvasDrawingBar: View {
                     .frame(width: 22, height: 22)
                     .animation(.easeOut(duration: 0.1), value: viewModel.eraserWidth)
             }
+
+            divider
+
+            // Clear all strokes — same style as Delete Page pill
+            clearAllPill
         }
         .transition(.opacity)
     }
@@ -407,6 +444,31 @@ struct CanvasDrawingBar: View {
         .scaleEffect(0.85)
         .opacity(canDelete ? 1 : 0.4)
         .disabled(!canDelete)
+    }
+
+    private var clearAllPill: some View {
+        Button {
+            viewModel.showClearConfirmation = true
+        } label: {
+            Text("Clear All")
+                .font(.epilogue(12, weight: .bold))
+                .tracking(-0.04 * 12)
+                .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color.white)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule().stroke(Color(red: 0.85, green: 0.20, blue: 0.20), lineWidth: 1.5)
+                )
+                .background(
+                    Capsule()
+                        .fill(Color.black.opacity(0.25))
+                        .offset(x: 3, y: 3)
+                )
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(0.85)
     }
 
     // MARK: - Page Settings Section
