@@ -111,7 +111,8 @@ struct CanvasDrawingBar: View {
                     icon: viewModel.isMicOn ? "canvas.mic_on" : "canvas.mic_off",
                     active: viewModel.isMicOn
                 ) {
-                    viewModel.isMicOn.toggle()
+                    viewModel.speechService.toggle()
+                    viewModel.isMicOn = viewModel.speechService.isListening
                 }
 
                 // Tutor: prev/next question + reset

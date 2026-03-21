@@ -137,6 +137,20 @@ final class CanvasViewModel {
     var showSidebar: Bool = false
     var activeQuestionLabel: String?
     var isMicOn: Bool = false
+    var speechTranscript: String { _speechService?.transcript ?? "" }
+    private var _speechService: SpeechRecognitionService?
+    var speechService: SpeechRecognitionService {
+        if _speechService == nil {
+            let svc = SpeechRecognitionService()
+            svc.onTranscriptReady = { [weak self] transcript in
+                guard let self else { return }
+                self.isMicOn = false
+                self.sendTutorChat(transcript)
+            }
+            _speechService = svc
+        }
+        return _speechService!
+    }
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
