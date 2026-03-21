@@ -231,11 +231,18 @@ Expected work: {current_step_work}
 
 Evaluate ONLY Step {current_step_num}. The student's work may contain work from previous (completed) steps — focus on whether the current step's expected work appears in the student's writing.
 
-- progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly)
-- status: "idle" (no work related to this step), "working" (partial but on track), "mistake" (error in this step's work), "completed" (step done correctly)
-- mistake_explanation: When status is "mistake", provide a concise LaTeX explanation of what the student did wrong and what the correct approach is. Use $...$ for inline math. For example: "You wrote $3x + 2 = 8$ but the coefficient should be $4$, giving $4x + 2 = 8$." Set to null when status is not "mistake".
+## CRITICAL: Incomplete work is NOT a mistake
+The student is actively writing and thinking. Missing work simply means they haven't gotten there yet. ONLY mark "mistake" if the student has written something **mathematically incorrect** — a wrong number, wrong operation, wrong variable, wrong formula. Never flag missing or incomplete work as a mistake.
 
-Only mark "completed" if the student has written the specific mathematical expression from the expected work. Partial work toward the expression should be "working". If prior steps are completed, the student's work will contain their work too — don't penalize for that.
+- progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly). Base this on how much of the expected work the student has correctly written so far.
+- status:
+  - "idle" — no work related to this step yet
+  - "working" — partial work that is correct so far (even if far from complete)
+  - "mistake" — the student wrote something **mathematically wrong** (NOT just incomplete)
+  - "completed" — step done correctly
+- mistake_explanation: ONLY when status is "mistake", provide a concise LaTeX explanation of what the student wrote incorrectly and what it should be. Use $...$ for inline math. Example: "You wrote $3x + 2 = 8$ but the coefficient should be $4$, giving $4x + 2 = 8$." Set to null for all other statuses.
+
+Only mark "completed" if the student has written the specific mathematical expression from the expected work. Partial but correct work toward the expression should be "working" with progress reflecting how far along they are. If prior steps are completed, the student's work will contain their work too — don't penalize for that.
 """
 
 ANSWER_KEY_PROMPT = """\
@@ -250,12 +257,13 @@ You are generating a structured answer key for a homework or exam question. The 
 
 Break every solution into discrete **steps**. Each step has three fields:
 
-- `description` — A casual, friendly sentence shown to the student explaining what this step does. Write like a sharp friend who's good at the subject — direct and warm, not textbook-stiff. Aim for 10-20 words.
-  - Good: "Let's pull out what we know — grab the values from the problem"
-  - Good: "Time to bring in F=ma and connect force to acceleration"
-  - Good: "Almost there — just clean up the expression by combining like terms"
-  - Bad: "Identify the given values from the problem and assign variables" (too formal)
-  - Bad: "OMG let's DO this!!" (too much)
+- `description` — A short, punchy label for this step. Max 50 characters. Think of it as a progress-bar label, not a sentence. No periods. Be specific about what happens in this step.
+  - Good: "Pull given values from problem"
+  - Good: "Apply F=ma for acceleration"
+  - Good: "Combine like terms"
+  - Good: "Factor out common term"
+  - Bad: "Let's pull out what we know — grab the values from the problem" (too long)
+  - Bad: "Identify the given values from the problem and assign variables" (too long, too formal)
 - `explanation` — A short, encouraging nudge when the student is stuck. One sentence max. Make them feel like you're rooting for them and the answer is within reach.
   - Good: "You've got F and m — what's the only thing left to find?"
   - Good: "This looks hairy, but try factoring out what's common"

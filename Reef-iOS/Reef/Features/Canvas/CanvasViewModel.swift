@@ -191,6 +191,7 @@ final class CanvasViewModel {
     // Answer key data
     var answerKeys: [Int: QuestionAnswer] = [:]
     var isLoadingAnswerKeys: Bool = false
+    private var savedTutorProgress: [String: TutorStepState]?
 
     /// Whether this document has been reconstructed (has answer keys available)
     var isReconstructed: Bool {
@@ -237,6 +238,12 @@ final class CanvasViewModel {
         answerKeys = result.answers
         isLoadingAnswerKeys = false
         tutorModeOn = !answerKeys.isEmpty
+        if tutorModeOn {
+            showSidebar = true
+            // Restore tutor state for the active question (or default Q1a)
+            let label = activeQuestionLabel ?? "Q1a"
+            restoreTutorStateForLabel(label)
+        }
     }
 
     // MARK: - Toolbar Layout
@@ -249,11 +256,18 @@ final class CanvasViewModel {
     init(document: Document) {
         self.document = document
         self.pdfDocument = MockCanvasData.blankPDF()
-        self.savedState = CanvasStorageService.load(documentId: document.id)
+        let loaded = CanvasStorageService.load(documentId: document.id)
+        self.savedState = loaded
+        self.savedTutorProgress = loaded?.tutorProgress
 
         tutorEvalService.onStepCompleted = { [weak self] in
             guard let self else { return }
             self.advanceTutorStep()
+        }
+
+        handwritingService.onLatexChanged = { [weak self] _ in
+            guard let self else { return }
+            self.triggerTutorEvaluation()
         }
 
         Task { await loadPDF() }
@@ -337,12 +351,57 @@ final class CanvasViewModel {
             questionPages: document.questionPages
         )
 
-        // Clear stale LaTeX when question changes — new strokes will produce new result
+        // On question change: save current state, restore new question's state
         if newLabel != activeQuestionLabel {
+            // Save outgoing question's tutor state
+            if let oldLabel = activeQuestionLabel, tutorModeOn {
+                saveTutorStateForLabel(oldLabel)
+            }
+
             handwritingService.latexResult = ""
+            activeQuestionLabel = newLabel
+
+            // Restore incoming question's tutor state
+            if let label = newLabel {
+                restoreTutorStateForLabel(label)
+            }
+        }
+    }
+
+    /// Save current tutor state into the in-memory cache for a given label.
+    private func saveTutorStateForLabel(_ label: String) {
+        if savedTutorProgress == nil { savedTutorProgress = [:] }
+        savedTutorProgress?[label] = TutorStepState(
+            currentStepIndex: currentTutorStepIndex,
+            stepEvaluations: [StepEvaluation(
+                progress: tutorEvalService.stepProgress,
+                status: tutorEvalService.status,
+                mistakeExplanation: tutorEvalService.mistakeExplanation
+            )],
+            lastTranscription: handwritingService.latexResult
+        )
+    }
+
+    /// Restore tutor state from saved data for a given label.
+    private func restoreTutorStateForLabel(_ label: String) {
+        guard let state = savedTutorProgress?[label] else {
+            // No saved state — reset to beginning
+            currentTutorStepIndex = 0
+            tutorEvalService.resetForNextStep()
+            return
         }
 
-        activeQuestionLabel = newLabel
+        currentTutorStepIndex = min(state.currentStepIndex, max(0, tutorStepCount - 1))
+
+        if let eval = state.stepEvaluations.first {
+            tutorEvalService.stepProgress = eval.progress
+            tutorEvalService.status = eval.status
+            tutorEvalService.mistakeExplanation = eval.mistakeExplanation
+        }
+
+        if !state.lastTranscription.isEmpty {
+            handwritingService.latexResult = state.lastTranscription
+        }
     }
 
     /// Returns only the active SUBquestion's regions for stroke filtering.
@@ -445,8 +504,7 @@ final class CanvasViewModel {
     func advanceTutorStep() {
         guard currentTutorStepIndex < tutorStepCount - 1 else { return }
         currentTutorStepIndex += 1
-        showHintPopover = false
-        showRevealPopover = false
+        // Don't dismiss hint/reveal — user closes them manually via X button
         tutorEvalService.resetForNextStep()
     }
 
@@ -459,9 +517,16 @@ final class CanvasViewModel {
 
     /// Trigger AI evaluation of the current student work.
     func triggerTutorEvaluation() {
+        NSLog("[TutorEval] triggerTutorEvaluation called — tutorModeOn=\(tutorModeOn), latex=\(handwritingService.latexResult.prefix(40)), activeQ=\(activeQuestionLabel ?? "nil")")
+
         guard tutorModeOn,
-              !handwritingService.latexResult.isEmpty,
-              let label = activeQuestionLabel else { return }
+              !handwritingService.latexResult.isEmpty else {
+            NSLog("[TutorEval] Skipped: tutorModeOn=\(tutorModeOn), latexEmpty=\(handwritingService.latexResult.isEmpty)")
+            return
+        }
+
+        // If no active question label, use Q1a as default for reconstructed docs
+        let label = activeQuestionLabel ?? "Q1a"
 
         // Parse "Q2a" → questionNumber=2, partLabel="a"
         guard label.hasPrefix("Q"), label.count >= 2 else { return }
@@ -476,6 +541,8 @@ final class CanvasViewModel {
             }
         }
         guard let qNum = Int(numStr) else { return }
+
+        NSLog("[TutorEval] Evaluating Q\(qNum)\(partLabel) step \(currentTutorStepIndex) with latex: \(handwritingService.latexResult.prefix(60))")
 
         tutorEvalService.evaluate(
             latex: handwritingService.latexResult,
@@ -543,13 +610,28 @@ final class CanvasViewModel {
 
         print("[CanvasVM] Saving: \(drawingData.count) drawings, \(drawingData.values.map(\.count).reduce(0,+)) bytes total")
 
+        // Build tutor progress snapshot
+        var tutorState: [String: TutorStepState] = savedTutorProgress ?? [:]
+        if tutorModeOn, let label = activeQuestionLabel {
+            tutorState[label] = TutorStepState(
+                currentStepIndex: currentTutorStepIndex,
+                stepEvaluations: [StepEvaluation(
+                    progress: tutorEvalService.stepProgress,
+                    status: tutorEvalService.status,
+                    mistakeExplanation: tutorEvalService.mistakeExplanation
+                )],
+                lastTranscription: handwritingService.latexResult
+            )
+        }
+
         let state = CanvasDocumentData(
             documentId: document.id,
             originalPageCount: originalPageCount,
             addedPageIndices: addedPageIndices,
             overlaySettings: overlaySettings,
             currentPageIndex: currentPageIndex,
-            drawingDataByPage: drawingData
+            drawingDataByPage: drawingData,
+            tutorProgress: tutorState.isEmpty ? nil : tutorState
         )
 
         Task.detached {

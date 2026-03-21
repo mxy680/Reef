@@ -3,14 +3,24 @@ import PencilKit
 @preconcurrency import Supabase
 
 /// Sends PKDrawing strokes to the server for Mathpix real-time transcription.
-/// Uses Mathpix session-based Strokes API — sends on every new stroke, no debounce.
+/// Uses Mathpix session-based Strokes API — sends on every new stroke.
 /// Sessions last 5 minutes; a new session is created automatically when expired.
+/// Only sends strokes within the active question region.
 @Observable
 @MainActor
 final class HandwritingTranscriptionService {
-    var latexResult: String = ""
+    var latexResult: String = "" {
+        didSet {
+            if latexResult != oldValue, !latexResult.isEmpty {
+                onLatexChanged?(latexResult)
+            }
+        }
+    }
     var isTranscribing: Bool = false
     var errorMessage: String?
+
+    /// Called when latexResult changes to a new non-empty value.
+    var onLatexChanged: ((String) -> Void)?
 
     private(set) var sessionId: String?
     private(set) var sessionStart: Date?
@@ -20,17 +30,15 @@ final class HandwritingTranscriptionService {
     private var generation: Int = 0
     private var transcribeTask: Task<Void, Never>?
 
-    private static let sessionTTL: TimeInterval = 300 // 5 minutes
+    private static let sessionTTL: TimeInterval = 300
 
     // MARK: - Session Management
 
     private func ensureSession() async throws -> (token: String, sessionId: String) {
-        // Reuse existing valid session
         if let token = appToken, let sid = sessionId, let expires = expiresAt, Date() < expires {
             return (token, sid)
         }
 
-        // Create new session via server proxy
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
               let url = URL(string: "\(serverURL)/ai/strokes-session") else {
             throw URLError(.badURL)
@@ -59,7 +67,6 @@ final class HandwritingTranscriptionService {
         self.appToken = result.app_token
         self.sessionId = result.strokes_session_id
         self.sessionStart = Date()
-        // Use 300s TTL from now for simplicity
         self.expiresAt = Date().addingTimeInterval(Self.sessionTTL)
         self.sessionSecondsRemaining = 300
 
@@ -68,26 +75,54 @@ final class HandwritingTranscriptionService {
 
     // MARK: - Transcription
 
-    /// Called on every drawing change — sends all strokes immediately.
-    func onDrawingChanged(drawing: PKDrawing) {
-        guard !drawing.strokes.isEmpty else {
+    /// Called on every drawing change. Filters strokes to the active question region.
+    /// - Parameters:
+    ///   - drawing: The full page drawing
+    ///   - activeRegions: The regions for the active question on the current local page (nil = send all strokes)
+    ///   - screenScale: The screen scale factor to convert renderBounds to PDF points
+    func onDrawingChanged(drawing: PKDrawing, activeRegions: [PartRegion]?, screenScale: CGFloat = 2.0) {
+        // Filter strokes to active question region
+        let relevantStrokes: [PKStroke]
+        if let regions = activeRegions, !regions.isEmpty {
+            relevantStrokes = drawing.strokes.filter { stroke in
+                let midY = Double(stroke.renderBounds.midY) / Double(screenScale)
+                return regions.contains { region in
+                    midY >= region.yStart && midY <= region.yEnd
+                }
+            }
+        } else {
+            relevantStrokes = drawing.strokes
+        }
+
+        guard !relevantStrokes.isEmpty else {
             latexResult = ""
             return
         }
 
-        // Cancel previous in-flight request
         transcribeTask?.cancel()
 
-        // Extract stroke coordinates from PKDrawing
-        let strokePayloads: [StrokePayload] = drawing.strokes.map { stroke in
+        // Extract stroke coordinates and normalize to (0,0)
+        var allPoints: [(x: Double, y: Double)] = []
+        let strokePayloads: [StrokePayload] = relevantStrokes.map { stroke in
             var xs: [Double] = []
             var ys: [Double] = []
             for i in 0..<stroke.path.count {
                 let pt = stroke.path[i].location
                 xs.append(Double(pt.x))
                 ys.append(Double(pt.y))
+                allPoints.append((Double(pt.x), Double(pt.y)))
             }
             return StrokePayload(x: xs, y: ys)
+        }
+
+        // Normalize: translate so bounding box starts at (0,0)
+        let minX = allPoints.map(\.x).min() ?? 0
+        let minY = allPoints.map(\.y).min() ?? 0
+        let normalizedPayloads = strokePayloads.map { payload in
+            StrokePayload(
+                x: payload.x.map { $0 - minX },
+                y: payload.y.map { $0 - minY }
+            )
         }
 
         generation += 1
@@ -111,7 +146,7 @@ final class HandwritingTranscriptionService {
                 let authSession = try await supabase.auth.session
 
                 let body = TranscribeStrokesRequest(
-                    strokes: strokePayloads,
+                    strokes: normalizedPayloads,
                     session_id: sid,
                     app_token: token
                 )
@@ -133,7 +168,6 @@ final class HandwritingTranscriptionService {
                 let result = try JSONDecoder().decode(TranscribeStrokesResponse.self, from: data)
 
                 guard self.generation == myGeneration else { return }
-
                 self.latexResult = result.latex
             } catch {
                 guard !Task.isCancelled, self.generation == myGeneration else { return }
@@ -147,7 +181,6 @@ final class HandwritingTranscriptionService {
 
     // MARK: - Timer
 
-    /// Call every second from the view to update the countdown.
     func tickTimer() {
         guard let start = sessionStart else {
             sessionSecondsRemaining = 0
@@ -156,7 +189,6 @@ final class HandwritingTranscriptionService {
         let elapsed = Int(Date().timeIntervalSince(start))
         sessionSecondsRemaining = max(0, 300 - elapsed)
         if sessionSecondsRemaining == 0 {
-            // Session expired — clear so next stroke creates a new one
             sessionId = nil
             sessionStart = nil
             appToken = nil
@@ -166,16 +198,24 @@ final class HandwritingTranscriptionService {
 
     // MARK: - Reset
 
-    func reset() {
+    /// Reset session only (on question change) — clears Mathpix session so new strokes
+    /// aren't mixed with previous question's accumulated data.
+    func resetSession() {
         transcribeTask?.cancel()
-        latexResult = ""
-        errorMessage = nil
-        isTranscribing = false
+        generation += 1
         sessionId = nil
         sessionStart = nil
         sessionSecondsRemaining = 0
         appToken = nil
         expiresAt = nil
+        isTranscribing = false
+        errorMessage = nil
+    }
+
+    /// Full reset (on sidebar close).
+    func reset() {
+        resetSession()
+        latexResult = ""
     }
 }
 

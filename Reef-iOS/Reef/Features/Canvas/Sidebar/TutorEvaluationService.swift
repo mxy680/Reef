@@ -36,7 +36,12 @@ final class TutorEvaluationService {
         figureURLs: [String] = []
     ) {
         // Skip if latex hasn't changed since last eval
-        guard !latex.isEmpty, latex != lastEvaluatedLatex else { return }
+        guard !latex.isEmpty, latex != lastEvaluatedLatex else {
+            NSLog("[TutorEvalSvc] Skipped: empty=\(latex.isEmpty), unchanged=\(latex == lastEvaluatedLatex)")
+            return
+        }
+
+        NSLog("[TutorEvalSvc] Starting eval: Q\(questionNumber) step \(stepIndex), latex=\(latex.prefix(40))")
 
         evaluateTask?.cancel()
         generation += 1
@@ -47,6 +52,7 @@ final class TutorEvaluationService {
             try? await Task.sleep(for: Self.debounceInterval)
             guard let self, !Task.isCancelled, self.generation == myGeneration else { return }
 
+            NSLog("[TutorEvalSvc] Debounce passed, calling server...")
             self.isEvaluating = true
 
             do {
@@ -61,6 +67,7 @@ final class TutorEvaluationService {
 
                 guard self.generation == myGeneration else { return }
 
+                NSLog("[TutorEvalSvc] Response: progress=\(response.progress), status=\(response.status), mistake=\(response.mistakeExplanation ?? "nil")")
                 self.stepProgress = response.progress
                 self.status = response.status
                 self.mistakeExplanation = response.mistakeExplanation
@@ -71,7 +78,7 @@ final class TutorEvaluationService {
                 }
             } catch {
                 guard !Task.isCancelled, self.generation == myGeneration else { return }
-                print("[TutorEval] Error: \(error)")
+                NSLog("[TutorEvalSvc] Error: \(error)")
             }
 
             self.isEvaluating = false

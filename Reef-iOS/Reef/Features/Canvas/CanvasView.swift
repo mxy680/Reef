@@ -242,8 +242,8 @@ struct CanvasView: View {
                     guard !Task.isCancelled else { return }
                     viewModel.saveCanvasState()
                 }
-                // Live transcription when sidebar is open — only strokes in active subquestion
-                if viewModel.showSidebar {
+                // Live transcription — when sidebar is open OR tutor mode is on
+                if viewModel.showSidebar || viewModel.tutorModeOn {
                     let drawing = viewModel.drawingManager.drawing(for: viewModel.currentPageIndex)
                     let regions = viewModel.activeSubquestionRegions()
                     viewModel.handwritingService.onDrawingChanged(
@@ -251,10 +251,7 @@ struct CanvasView: View {
                         activeRegions: regions
                     )
                 }
-                // Trigger AI tutor evaluation when transcription is available
-                if viewModel.tutorModeOn {
-                    viewModel.triggerTutorEvaluation()
-                }
+                // Tutor evaluation is triggered reactively via .onChange(of: latexResult) below
             }
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
