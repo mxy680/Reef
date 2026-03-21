@@ -11,8 +11,10 @@ dependencies = [
     "openai>=1.60",
     "PyJWT[crypto]>=2.10",
     "PyMuPDF>=1.25",
-    "opencv-python-headless>=4.9",
     "numpy>=1.26",
+    "rdp>=0.8",
+    "circle-fit>=0.2",
+    "python-multipart>=0.0.20",
 ]
 
 [project.optional-dependencies]
