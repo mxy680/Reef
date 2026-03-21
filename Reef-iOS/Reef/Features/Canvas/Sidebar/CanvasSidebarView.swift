@@ -163,19 +163,20 @@ struct CanvasSidebarView: View {
 
                 Spacer()
 
-                // Step progress indicator
-                if tutorEvalService.status == "working" || tutorEvalService.status == "completed" {
-                    Text("\(Int(tutorEvalService.stepProgress * 100))%")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(tutorEvalService.status == "completed"
-                                         ? Color(hex: 0x81C784) : colors.textMuted)
-                }
-
                 if tutorEvalService.isEvaluating {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .scaleEffect(0.6)
-                        .tint(ReefColors.primary)
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .scaleEffect(0.6)
+                            .tint(ReefColors.primary)
+                        Text("thinking")
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .foregroundStyle(colors.textMuted)
+                    }
+                } else {
+                    Text("idle")
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(colors.textMuted)
                 }
             }
             .padding(.horizontal, 16)
