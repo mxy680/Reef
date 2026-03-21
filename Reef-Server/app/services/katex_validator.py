@@ -40,7 +40,8 @@ def _validate_katex_expression(expr: str) -> str | None:
     """Validate a single KaTeX math expression. Returns error string or None if valid."""
     try:
         result = subprocess.run(
-            ["npx", "katex", "--input", expr],
+            ["npx", "katex"],
+            input=expr,
             capture_output=True, text=True, timeout=5,
         )
         if result.returncode != 0:

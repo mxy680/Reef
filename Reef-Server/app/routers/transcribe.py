@@ -1,6 +1,8 @@
 """POST /ai/transcribe-strokes — proxy handwriting strokes to Mathpix v3 Strokes API."""
 
+import asyncio
 import logging
+import re as _re
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -8,6 +10,9 @@ from pydantic import BaseModel
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
+from app.services.katex_sanitizer import sanitize_for_katex
+from app.services.katex_validator import KATEX_FIX_PROMPT, _validate_katex_expression
+from app.services.llm_client import LLMClient
 
 log = logging.getLogger(__name__)
 
@@ -108,32 +113,28 @@ async def transcribe_strokes(
 
     # Sanitize for KaTeX compatibility before wrapping
     if latex:
-        from app.services.katex_sanitizer import sanitize_for_katex
-        from app.services.katex_validator import _validate_katex_expression
         latex = sanitize_for_katex(latex)
 
         # Validate — if KaTeX still fails, try LLM fix (once)
-        error = _validate_katex_expression(latex)
+        error = await asyncio.to_thread(_validate_katex_expression, latex)
         if error:
             log.warning(f"KaTeX validation failed after sanitize: {error[:80]}")
             try:
-                from app.services.katex_validator import KATEX_FIX_PROMPT
-                from app.services.llm_client import LLMClient
-                from app.config import settings
-                import re as _re
                 llm = LLMClient(
                     api_key=settings.openrouter_api_key,
                     model="google/gemini-2.0-flash-001",
                     base_url="https://openrouter.ai/api/v1",
                 )
                 fix_prompt = KATEX_FIX_PROMPT.format(expression=latex, error=error)
-                result = llm.generate(prompt=fix_prompt, timeout=10.0)
+                result = await asyncio.to_thread(
+                    llm.generate, prompt=fix_prompt, timeout=10.0,
+                )
                 fixed = result.content.strip()
                 if fixed.startswith("```"):
                     fixed = _re.sub(r"^```\w*\n?", "", fixed)
                     fixed = _re.sub(r"\n?```$", "", fixed)
                 # Only use fix if it validates
-                fix_error = _validate_katex_expression(fixed)
+                fix_error = await asyncio.to_thread(_validate_katex_expression, fixed)
                 if not fix_error:
                     latex = fixed
                     log.info("KaTeX fix succeeded via LLM")
