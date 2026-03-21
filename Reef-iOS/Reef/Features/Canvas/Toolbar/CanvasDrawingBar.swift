@@ -114,9 +114,21 @@ struct CanvasDrawingBar: View {
                     viewModel.isMicOn.toggle()
                 }
 
-                // Tutor: skip to next question + reset current question
+                // Tutor: prev/next question + reset
                 if viewModel.tutorModeOn {
                     divider
+
+                    Button {
+                        viewModel.goToPreviousQuestion()
+                    } label: {
+                        Image(systemName: "backward.fill")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(viewModel.canGoToPreviousQuestion ? 0.8 : 0.3))
+                            .frame(width: 38, height: 48)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!viewModel.canGoToPreviousQuestion)
 
                     Button {
                         _ = viewModel.skipToNextQuestion()

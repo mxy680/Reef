@@ -541,6 +541,14 @@ final class CanvasViewModel {
         return labels
     }
 
+    /// Whether there is a previous question/subquestion to go back to.
+    var canGoToPreviousQuestion: Bool {
+        guard let label = activeQuestionLabel else { return false }
+        let labels = allQuestionLabels
+        guard let idx = labels.firstIndex(of: label) else { return false }
+        return idx > 0
+    }
+
     /// Whether there is a next question/subquestion to skip to.
     var canSkipToNextQuestion: Bool {
         guard let label = activeQuestionLabel else { return !allQuestionLabels.isEmpty }
@@ -586,6 +594,26 @@ final class CanvasViewModel {
         restoreTutorStateForLabel(nextLabel)
 
         return pageRange[0] // scroll to the question's start page
+    }
+
+    /// Go back to the previous question/subquestion.
+    func goToPreviousQuestion() {
+        let labels = allQuestionLabels
+        let currentLabel = activeQuestionLabel ?? ""
+        guard let currentIdx = labels.firstIndex(of: currentLabel), currentIdx > 0 else { return }
+
+        let prevLabel = labels[currentIdx - 1]
+
+        // Save current question's tutor state
+        if let old = activeQuestionLabel, tutorModeOn {
+            saveTutorStateForLabel(old)
+        }
+
+        activeQuestionLabel = prevLabel
+        currentTutorStepIndex = 0
+        tutorEvalService.resetForNextStep()
+        handwritingService.latexResult = ""
+        restoreTutorStateForLabel(prevLabel)
     }
 
     /// Reset all work for the current question: erase strokes on its pages and reset tutor progress.
