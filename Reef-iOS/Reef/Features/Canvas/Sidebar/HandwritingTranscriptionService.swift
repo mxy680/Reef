@@ -9,13 +9,7 @@ import PencilKit
 @Observable
 @MainActor
 final class HandwritingTranscriptionService {
-    var latexResult: String = "" {
-        didSet {
-            if latexResult != oldValue, !latexResult.isEmpty {
-                onLatexChanged?(latexResult)
-            }
-        }
-    }
+    var latexResult: String = ""
     var isTranscribing: Bool = false
     var errorMessage: String?
 
@@ -168,7 +162,11 @@ final class HandwritingTranscriptionService {
                 let result = try JSONDecoder().decode(TranscribeStrokesResponse.self, from: data)
 
                 guard self.generation == myGeneration else { return }
+                let oldLatex = self.latexResult
                 self.latexResult = result.latex
+                if result.latex != oldLatex, !result.latex.isEmpty {
+                    self.onLatexChanged?(result.latex)
+                }
             } catch {
                 guard !Task.isCancelled, self.generation == myGeneration else { return }
                 self.errorMessage = "Transcription failed"
