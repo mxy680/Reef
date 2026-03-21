@@ -14,13 +14,9 @@ struct CanvasSidebarView: View {
         return String(format: "%d:%02d", r / 60, r % 60)
     }
 
-    // Teal-on-teal palette (white text on toolbar color)
-    private let headerText = Color.white
-    private let headerMuted = Color.white.opacity(0.55)
-    private let headerSecondary = Color.white.opacity(0.7)
-    private let dividerColor = Color.white.opacity(0.15)
-
     var body: some View {
+        let colors = theme.colors
+
         HStack(spacing: 0) {
             // Leading separator
             Rectangle()
@@ -31,28 +27,28 @@ struct CanvasSidebarView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     // === Top 1/3: Transcription ===
                     VStack(alignment: .leading, spacing: 0) {
-                        transcriptionHeader
+                        transcriptionHeader(colors: colors)
 
                         Rectangle()
-                            .fill(dividerColor)
+                            .fill(colors.divider)
                             .frame(height: 0.5)
 
-                        transcriptionContent
+                        transcriptionContent(colors: colors)
                     }
                     .frame(height: tutorModeOn ? geo.size.height / 3 : geo.size.height)
 
                     // === Bottom 2/3: Tutor Chat ===
                     if tutorModeOn {
                         Rectangle()
-                            .fill(dividerColor)
+                            .fill(colors.divider)
                             .frame(height: 1)
 
-                        tutorChatSection
+                        tutorChatSection(colors: colors)
                             .frame(maxHeight: .infinity)
                     }
                 }
             }
-            .background(isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasDrawingBar.barColor)
+            .background(isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             transcriptionService.tickTimer()
@@ -61,24 +57,25 @@ struct CanvasSidebarView: View {
 
     // MARK: - Transcription Header
 
-    private var transcriptionHeader: some View {
+    @ViewBuilder
+    private func transcriptionHeader(colors: ReefThemeColors) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "text.viewfinder")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(headerSecondary)
+                .foregroundStyle(colors.textSecondary)
             Text("Transcription")
                 .font(.epilogue(13, weight: .black))
                 .tracking(-0.04 * 13)
-                .foregroundStyle(headerText)
+                .foregroundStyle(colors.text)
 
             if let label = activeQuestionLabel {
                 Text("·")
                     .font(.epilogue(13, weight: .black))
-                    .foregroundStyle(headerMuted)
+                    .foregroundStyle(colors.textMuted)
                 Text(label)
                     .font(.epilogue(13, weight: .black))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(ReefColors.primary)
             }
 
             Spacer()
@@ -91,7 +88,7 @@ struct CanvasSidebarView: View {
                         .frame(width: 6, height: 6)
                     Text(timerLabel)
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(headerMuted)
+                        .foregroundStyle(colors.textMuted)
                 }
             }
 
@@ -99,7 +96,7 @@ struct CanvasSidebarView: View {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .scaleEffect(0.7)
-                    .tint(.white)
+                    .tint(ReefColors.primary)
             }
         }
         .padding(.horizontal, 16)
@@ -109,13 +106,13 @@ struct CanvasSidebarView: View {
     // MARK: - Transcription Content
 
     @ViewBuilder
-    private var transcriptionContent: some View {
+    private func transcriptionContent(colors: ReefThemeColors) -> some View {
         if !transcriptionService.latexResult.isEmpty {
             ScrollView {
                 MathText(
                     text: transcriptionService.latexResult,
                     fontSize: 14,
-                    color: .white
+                    color: colors.text
                 )
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -124,10 +121,10 @@ struct CanvasSidebarView: View {
         } else if transcriptionService.isTranscribing {
             VStack(spacing: 8) {
                 ProgressView()
-                    .tint(.white)
+                    .tint(ReefColors.primary)
                 Text("Transcribing...")
                     .font(.epilogue(12, weight: .medium))
-                    .foregroundStyle(headerMuted)
+                    .foregroundStyle(colors.textMuted)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = transcriptionService.errorMessage {
@@ -140,10 +137,10 @@ struct CanvasSidebarView: View {
             VStack(spacing: 6) {
                 Image(systemName: "pencil.tip")
                     .font(.system(size: 20))
-                    .foregroundStyle(headerMuted)
+                    .foregroundStyle(colors.textMuted)
                 Text("Start writing")
                     .font(.epilogue(12, weight: .medium))
-                    .foregroundStyle(headerMuted)
+                    .foregroundStyle(colors.textMuted)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -151,17 +148,18 @@ struct CanvasSidebarView: View {
 
     // MARK: - Tutor Chat Section
 
-    private var tutorChatSection: some View {
+    @ViewBuilder
+    private func tutorChatSection(colors: ReefThemeColors) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // Chat header
             HStack(spacing: 6) {
                 Image(systemName: "brain.head.profile")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(headerSecondary)
+                    .foregroundStyle(colors.textSecondary)
                 Text("Tutor")
                     .font(.epilogue(13, weight: .black))
                     .tracking(-0.04 * 13)
-                    .foregroundStyle(headerText)
+                    .foregroundStyle(colors.text)
 
                 Spacer()
 
@@ -170,22 +168,22 @@ struct CanvasSidebarView: View {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .scaleEffect(0.6)
-                            .tint(.white)
+                            .tint(ReefColors.primary)
                         Text("thinking")
                             .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(headerMuted)
+                            .foregroundStyle(colors.textMuted)
                     }
                 } else {
                     Text("idle")
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
-                        .foregroundStyle(headerMuted)
+                        .foregroundStyle(colors.textMuted)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
 
             Rectangle()
-                .fill(dividerColor)
+                .fill(colors.divider)
                 .frame(height: 0.5)
 
             // Chat messages
@@ -193,17 +191,18 @@ struct CanvasSidebarView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
                         if tutorEvalService.chatMessages.isEmpty {
+                            // Empty state
                             VStack(spacing: 8) {
                                 Text("Your work and feedback will appear here")
                                     .font(.epilogue(12, weight: .medium))
-                                    .foregroundStyle(headerMuted)
+                                    .foregroundStyle(colors.textMuted)
                                     .multilineTextAlignment(.center)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.top, 24)
                         } else {
                             ForEach(tutorEvalService.chatMessages) { message in
-                                chatBubble(message: message)
+                                chatBubble(message: message, colors: colors)
                                     .id(message.id)
                             }
                         }
@@ -224,52 +223,47 @@ struct CanvasSidebarView: View {
 
     // MARK: - Chat Bubble
 
-    private let shadowOffset: CGFloat = 3
-
     @ViewBuilder
-    private func chatBubble(message: TutorChatMessage) -> some View {
+    private func chatBubble(message: TutorChatMessage, colors: ReefThemeColors) -> some View {
         let isStudent = message.role == .student
-        let bgColor: Color = isStudent ? .white : Color(hex: 0xFFF0F0)
-        let borderColor = isStudent
-            ? Color.black.opacity(0.8)
-            : Color(hex: 0xE57373)
-        let textColor: Color = isStudent ? .black : .black
 
         HStack {
-            if isStudent { Spacer(minLength: 20) }
+            if isStudent { Spacer(minLength: 24) }
 
             VStack(alignment: .leading, spacing: 4) {
+                // Role label
                 HStack(spacing: 4) {
                     Image(systemName: isStudent ? "pencil.line" : "brain.head.profile")
                         .font(.system(size: 10, weight: .semibold))
                     Text(isStudent ? "Your work" : "Feedback")
-                        .font(.epilogue(10, weight: .bold))
-                        .tracking(-0.04 * 10)
+                        .font(.system(size: 10, weight: .bold))
                 }
-                .foregroundStyle(isStudent ? Color.black.opacity(0.4) : Color(hex: 0xE57373))
+                .foregroundStyle(isStudent ? colors.textMuted : Color(hex: 0xE57373))
 
+                // Content
                 MathText(
                     text: message.latex,
                     fontSize: 13,
-                    color: textColor
+                    color: colors.text
                 )
             }
             .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(borderColor)
-                        .offset(x: shadowOffset, y: shadowOffset)
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(bgColor)
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(borderColor, lineWidth: 1.5)
-                }
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isStudent
+                          ? (isDarkMode ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
+                          : Color(hex: 0xE57373).opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isStudent
+                            ? Color.clear
+                            : Color(hex: 0xE57373).opacity(0.25),
+                            lineWidth: 1)
             )
 
-            if !isStudent { Spacer(minLength: 20) }
+            if !isStudent { Spacer(minLength: 24) }
         }
-        .padding(.trailing, isStudent ? shadowOffset : 0)
-        .padding(.bottom, shadowOffset)
     }
 }
