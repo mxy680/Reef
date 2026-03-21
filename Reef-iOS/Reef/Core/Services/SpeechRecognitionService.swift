@@ -2,6 +2,11 @@ import Speech
 import AVFoundation
 
 /// On-device speech recognition with auto-stop on 10s silence.
+/// Key safety rules for iOS 18:
+/// - SFSpeechRecognizer must be created lazily (after auth)
+/// - AVAudioSession category must be set BEFORE creating AVAudioEngine
+/// - Permission requests must be serial, not nested
+/// - AVAudioEngine must be created fresh each session
 @Observable
 @MainActor
 final class SpeechRecognitionService {
@@ -9,13 +14,12 @@ final class SpeechRecognitionService {
     var isListening: Bool = false
     var isAuthorized: Bool = false
 
-    /// Called with the final transcript when speech ends (silence timeout or manual stop).
+    /// Called with the final transcript when speech ends.
     var onTranscriptReady: ((String) -> Void)?
 
     private var recognitionTask: SFSpeechRecognitionTask?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var audioEngine: AVAudioEngine?
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var silenceTimer: Task<Void, Never>?
     private var hasTap: Bool = false
 
@@ -23,67 +27,91 @@ final class SpeechRecognitionService {
 
     // MARK: - Authorization
 
-    func requestAuthorization() {
-        AVAudioApplication.requestRecordPermission { [weak self] micGranted in
-            guard micGranted else {
-                Task { @MainActor in self?.isAuthorized = false }
-                return
+    /// Request mic + speech permissions serially. Call from mic button tap.
+    func requestAuthorization() async {
+        // Step 1: Mic permission
+        let micGranted = await withCheckedContinuation { cont in
+            AVAudioApplication.requestRecordPermission { granted in
+                cont.resume(returning: granted)
             }
+        }
+        guard micGranted else {
+            isAuthorized = false
+            return
+        }
+
+        // Step 2: Speech permission (serial, not nested)
+        let speechStatus = await withCheckedContinuation { cont in
             SFSpeechRecognizer.requestAuthorization { status in
-                Task { @MainActor in
-                    self?.isAuthorized = (status == .authorized)
+                cont.resume(returning: status)
+            }
+        }
+        isAuthorized = (speechStatus == .authorized)
+    }
+
+    // MARK: - Toggle
+
+    func toggle() {
+        if isListening {
+            stopListening(sendTranscript: true)
+        } else {
+            if isAuthorized {
+                startListening()
+            } else {
+                Task {
+                    await requestAuthorization()
+                    // Don't auto-start — user taps again
                 }
             }
         }
     }
 
-    // MARK: - Toggle
-
-    /// Returns true if listening started, false if only auth was requested.
-    @discardableResult
-    func toggle() -> Bool {
-        if isListening {
-            stopListening(sendTranscript: true)
-            return false
-        } else {
-            return startListening()
-        }
-    }
-
     // MARK: - Start / Stop
 
-    /// Returns true if listening actually started.
-    @discardableResult
-    func startListening() -> Bool {
-        guard let recognizer = speechRecognizer, recognizer.isAvailable else {
-            return false
+    func startListening() {
+        guard isAuthorized else { return }
+
+        // Create recognizer lazily (after auth confirmed)
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US")),
+              recognizer.isAvailable else {
+            return
         }
 
-        if !isAuthorized {
-            requestAuthorization()
-            return false
-        }
-
-        // Stop any existing session
         stopListening(sendTranscript: false)
-
         transcript = ""
 
+        // 1. Configure audio session BEFORE creating engine
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            print("[Speech] Audio session setup failed: \(error)")
+            return
+        }
 
-            let engine = AVAudioEngine()
-            self.audioEngine = engine
+        // 2. Create engine AFTER audio session is active
+        let engine = AVAudioEngine()
+        self.audioEngine = engine
 
-            let request = SFSpeechAudioBufferRecognitionRequest()
-            request.shouldReportPartialResults = true
+        // 3. Set up recognition request
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        if recognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
-            recognitionRequest = request
+        }
+        recognitionRequest = request
 
+        // 4. Install tap and start engine
+        do {
             let inputNode = engine.inputNode
             let recordingFormat = inputNode.outputFormat(forBus: 0)
+
+            guard recordingFormat.sampleRate > 0 else {
+                print("[Speech] Invalid recording format (sampleRate=0)")
+                cleanupEngine()
+                return
+            }
 
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
                 self?.recognitionRequest?.append(buffer)
@@ -92,35 +120,37 @@ final class SpeechRecognitionService {
 
             engine.prepare()
             try engine.start()
+        } catch {
+            print("[Speech] Engine start failed: \(error)")
+            cleanupEngine()
+            return
+        }
 
-            isListening = true
+        isListening = true
 
-            recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
-                Task { @MainActor in
-                    guard let self else { return }
+        // 5. Start recognition task
+        recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            Task { @MainActor in
+                guard let self else { return }
 
-                    if let result {
-                        self.transcript = result.bestTranscription.formattedString
-                        self.resetSilenceTimer()
+                if let result {
+                    self.transcript = result.bestTranscription.formattedString
+                    self.resetSilenceTimer()
 
-                        if result.isFinal {
-                            self.stopListening(sendTranscript: true)
-                        }
-                    }
-
-                    if error != nil {
-                        self.stopListening(sendTranscript: !self.transcript.isEmpty)
+                    if result.isFinal {
+                        self.stopListening(sendTranscript: true)
                     }
                 }
-            }
 
-            resetSilenceTimer()
-            return true
-        } catch {
-            print("[Speech] Failed to start: \(error)")
-            cleanupEngine()
-            return false
+                if error != nil, !self.transcript.isEmpty {
+                    self.stopListening(sendTranscript: true)
+                } else if error != nil {
+                    self.stopListening(sendTranscript: false)
+                }
+            }
         }
+
+        resetSilenceTimer()
     }
 
     func stopListening(sendTranscript: Bool = true) {
@@ -135,9 +165,10 @@ final class SpeechRecognitionService {
         cleanupEngine()
 
         let finalTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let wasListening = isListening
         isListening = false
 
-        if sendTranscript, !finalTranscript.isEmpty {
+        if sendTranscript, wasListening, !finalTranscript.isEmpty {
             onTranscriptReady?(finalTranscript)
             transcript = ""
         }
@@ -146,12 +177,11 @@ final class SpeechRecognitionService {
     }
 
     private func cleanupEngine() {
-        if let engine = audioEngine {
-            engine.stop()
-            if hasTap {
-                engine.inputNode.removeTap(onBus: 0)
-                hasTap = false
-            }
+        guard let engine = audioEngine else { return }
+        engine.stop()
+        if hasTap {
+            engine.inputNode.removeTap(onBus: 0)
+            hasTap = false
         }
         audioEngine = nil
     }
