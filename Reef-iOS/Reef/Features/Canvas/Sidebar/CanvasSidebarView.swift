@@ -52,12 +52,7 @@ struct CanvasSidebarView: View {
                     }
                 }
             }
-            .background(
-                ZStack {
-                    (isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasDrawingBar.barColor)
-                    Color.black.opacity(isDarkMode ? 0.15 : 0.05)
-                }
-            )
+            .background(isDarkMode ? ReefColors.CanvasDark.toolbar : CanvasDrawingBar.barColor)
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             transcriptionService.tickTimer()
