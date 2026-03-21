@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 @preconcurrency import Supabase
 
 /// A single message in the tutor chat feed.
@@ -240,7 +241,7 @@ final class TutorEvaluationService {
         Task { [weak self] in
             guard let self else { return }
             do {
-                let reply = try await self.callChatServer(
+                let response = try await self.callChatServer(
                     message: trimmed,
                     documentId: documentId,
                     questionNumber: questionNumber,
@@ -249,8 +250,13 @@ final class TutorEvaluationService {
                     studentLatex: studentLatex
                 )
                 self.chatMessages.append(TutorChatMessage(
-                    role: .answer, latex: reply, timestamp: Date()
+                    role: .answer, latex: response.reply, timestamp: Date()
                 ))
+                // Play TTS audio if available
+                if let audioBase64 = response.speechAudio,
+                   let audioData = Data(base64Encoded: audioBase64) {
+                    self.playAudio(audioData)
+                }
             } catch {
                 self.chatMessages.append(TutorChatMessage(
                     role: .answer, latex: "Sorry, couldn't get a response. Try again.", timestamp: Date()
@@ -280,6 +286,12 @@ final class TutorEvaluationService {
 
     private struct ChatResponse: Decodable {
         let reply: String
+        let speechAudio: String?
+
+        enum CodingKeys: String, CodingKey {
+            case reply
+            case speechAudio = "speech_audio"
+        }
     }
 
     private func callChatServer(
@@ -289,7 +301,7 @@ final class TutorEvaluationService {
         partLabel: String?,
         stepIndex: Int,
         studentLatex: String
-    ) async throws -> String {
+    ) async throws -> ChatResponse {
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
               let url = URL(string: "\(serverURL)/ai/tutor-chat") else {
             throw URLError(.badURL)
@@ -318,6 +330,23 @@ final class TutorEvaluationService {
             throw URLError(.badServerResponse)
         }
 
-        return try JSONDecoder().decode(ChatResponse.self, from: data).reply
+        return try JSONDecoder().decode(ChatResponse.self, from: data)
+    }
+
+    // MARK: - Audio Playback
+
+    private var audioPlayer: AVAudioPlayer?
+
+    private func playAudio(_ data: Data) {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default)
+            try session.setActive(true)
+
+            audioPlayer = try AVAudioPlayer(data: data)
+            audioPlayer?.play()
+        } catch {
+            print("[TutorEval] Audio playback failed: \(error)")
+        }
     }
 }

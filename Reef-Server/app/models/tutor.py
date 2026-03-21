@@ -58,7 +58,15 @@ class TutorChatRequest(BaseModel):
     user_message: str = Field(..., max_length=1000, description="User's question to the tutor")
 
 
+class TutorChatLLMOutput(BaseModel):
+    """Structured output from the LLM for chat responses."""
+
+    reply: str = Field(..., description="Written response with $...$ math notation for display")
+    speech: str = Field(..., description="Verbal response — no math notation, say numbers and formulas in words")
+
+
 class TutorChatResponse(BaseModel):
     """Response body for POST /ai/tutor-chat."""
 
     reply: str
+    speech_audio: str | None = None  # base64-encoded audio

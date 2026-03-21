@@ -11,7 +11,7 @@ from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
 from app.models.answer_key import QuestionAnswer
 from app.models.tutor import (
-    TutorChatRequest, TutorChatResponse,
+    TutorChatLLMOutput, TutorChatRequest, TutorChatResponse,
     TutorEvaluateRequest, TutorEvaluateResponse, TutorEvaluation,
 )
 from app.services.llm_client import LLMClient
@@ -233,14 +233,51 @@ async def tutor_chat(
     )
 
     result = await asyncio.to_thread(
-        llm.generate, prompt=prompt, timeout=30.0,
+        llm.generate,
+        prompt=prompt,
+        response_schema=TutorChatLLMOutput.model_json_schema(),
+        timeout=30.0,
     )
 
-    reply = result.content.strip()
+    try:
+        output = TutorChatLLMOutput.model_validate_json(result.content)
+    except Exception:
+        # Fallback if structured output fails
+        output = TutorChatLLMOutput(reply=result.content.strip(), speech=result.content.strip())
 
     log.info(
         f"[tutor-chat] Q{body.question_number} step {body.step_index + 1}: "
         f"({result.input_tokens}in/{result.output_tokens}out)"
     )
 
-    return TutorChatResponse(reply=reply)
+    # Generate TTS audio via Groq
+    speech_audio = None
+    if settings.groq_api_key and output.speech:
+        try:
+            speech_audio = await _generate_tts(output.speech)
+        except Exception as e:
+            log.warning(f"[tutor-chat] TTS failed: {e}")
+
+    return TutorChatResponse(reply=output.reply, speech_audio=speech_audio)
+
+
+async def _generate_tts(text: str) -> str | None:
+    """Generate TTS audio via Groq and return base64-encoded audio."""
+    import base64
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(
+            "https://api.groq.com/openai/v1/audio/speech",
+            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+            json={
+                "model": "playai-tts",
+                "input": text,
+                "voice": "Arista-PlayAI",
+                "response_format": "wav",
+            },
+        )
+    if resp.status_code != 200:
+        log.warning(f"[tts] Groq TTS returned {resp.status_code}: {resp.text[:200]}")
+        return None
+
+    return base64.b64encode(resp.content).decode()
