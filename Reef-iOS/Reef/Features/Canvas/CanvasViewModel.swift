@@ -746,27 +746,16 @@ final class CanvasViewModel {
             let url = micTempURL
             guard FileManager.default.fileExists(atPath: url.path) else { return }
 
-            // Add a "thinking" bubble
-            tutorEvalService.chatMessages.append(TutorChatMessage(
-                role: .student, latex: "🎤 Voice message...", timestamp: Date()
-            ))
-
             Task {
                 do {
                     let text = try await uploadAudioForTranscription(fileURL: url)
-                    // Replace the placeholder with actual text
-                    if let lastIdx = tutorEvalService.chatMessages.indices.last {
-                        tutorEvalService.chatMessages[lastIdx] = TutorChatMessage(
-                            role: .student, latex: text, timestamp: Date()
-                        )
+                    if !text.isEmpty {
+                        sendTutorChat(text)
                     }
-                    sendTutorChat(text)
                 } catch {
-                    if let lastIdx = tutorEvalService.chatMessages.indices.last {
-                        tutorEvalService.chatMessages[lastIdx] = TutorChatMessage(
-                            role: .student, latex: "Voice failed: \(error.localizedDescription)", timestamp: Date()
-                        )
-                    }
+                    tutorEvalService.chatMessages.append(TutorChatMessage(
+                        role: .error, latex: "Voice failed: \(error.localizedDescription)", timestamp: Date()
+                    ))
                 }
                 try? FileManager.default.removeItem(at: url)
                 try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -847,8 +836,14 @@ final class CanvasViewModel {
         request.httpBody = body
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+        guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw NSError(domain: "VoiceUpload", code: http.statusCode, userInfo: [
+                NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(body.prefix(200))"
+            ])
         }
 
         struct TranscribeResponse: Decodable { let text: String }
