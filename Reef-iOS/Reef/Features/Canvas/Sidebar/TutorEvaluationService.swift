@@ -51,20 +51,24 @@ final class TutorEvaluationService {
     ) {
         // Skip if latex hasn't changed since last eval
         guard !latex.isEmpty, latex != lastEvaluatedLatex else {
-            NSLog("[TutorEvalSvc] Skipped: empty=\(latex.isEmpty), unchanged=\(latex == lastEvaluatedLatex)")
             return
         }
 
-        NSLog("[TutorEvalSvc] Starting eval: Q\(questionNumber) step \(stepIndex), latex=\(latex.prefix(40))")
+        // Don't restart the debounce if we're already waiting with the same latex
+        if evaluateTask != nil {
+            return
+        }
 
-        evaluateTask?.cancel()
         generation += 1
         let myGeneration = generation
 
         evaluateTask = Task { [weak self] in
             // Debounce
             try? await Task.sleep(for: Self.debounceInterval)
-            guard let self, !Task.isCancelled, self.generation == myGeneration else { return }
+            guard let self, !Task.isCancelled, self.generation == myGeneration else {
+                await MainActor.run { self?.evaluateTask = nil }
+                return
+            }
 
             NSLog("[TutorEvalSvc] Debounce passed, calling server...")
             self.isEvaluating = true
@@ -109,6 +113,7 @@ final class TutorEvaluationService {
             }
 
             self.isEvaluating = false
+            self.evaluateTask = nil
         }
     }
 
@@ -117,6 +122,7 @@ final class TutorEvaluationService {
     /// Reset for a new step (keeps chat history).
     func resetForNextStep() {
         evaluateTask?.cancel()
+        evaluateTask = nil
         generation += 1
         stepProgress = 0.0
         status = "idle"

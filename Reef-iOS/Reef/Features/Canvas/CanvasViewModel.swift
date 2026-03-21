@@ -193,6 +193,7 @@ final class CanvasViewModel {
     var answerKeys: [Int: QuestionAnswer] = [:]
     var isLoadingAnswerKeys: Bool = false
     private var savedTutorProgress: [String: TutorStepState]?
+    var evalDebugCount: Int = 0
 
     /// Whether this document has been reconstructed (has answer keys available)
     var isReconstructed: Bool {
@@ -667,11 +668,10 @@ final class CanvasViewModel {
 
     /// Trigger AI evaluation of the current student work.
     func triggerTutorEvaluation() {
-        NSLog("[TutorEval] triggerTutorEvaluation called — tutorModeOn=\(tutorModeOn), latex=\(handwritingService.latexResult.prefix(40)), activeQ=\(activeQuestionLabel ?? "nil")")
+        evalDebugCount += 1
 
         guard tutorModeOn,
               !handwritingService.latexResult.isEmpty else {
-            NSLog("[TutorEval] Skipped: tutorModeOn=\(tutorModeOn), latexEmpty=\(handwritingService.latexResult.isEmpty)")
             return
         }
 
