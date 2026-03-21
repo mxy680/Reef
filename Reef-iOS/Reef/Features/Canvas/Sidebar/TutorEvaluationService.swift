@@ -1,6 +1,19 @@
 import SwiftUI
 @preconcurrency import Supabase
 
+/// A single message in the tutor chat feed.
+struct TutorChatMessage: Identifiable {
+    let id = UUID()
+    let role: Role
+    let latex: String
+    let timestamp: Date
+
+    enum Role {
+        case student   // student's transcribed work
+        case tutor     // tutor feedback (mistake, on track, completed)
+    }
+}
+
 /// Evaluates student handwriting against the answer key in real time.
 /// Debounces requests by 1.5s and discards stale responses via a generation counter.
 @Observable
@@ -12,6 +25,7 @@ final class TutorEvaluationService {
     var status: String = "idle"
     var mistakeExplanation: String?
     var isEvaluating: Bool = false
+    var chatMessages: [TutorChatMessage] = []
 
     /// Fires when the model marks the current step as "completed".
     var onStepCompleted: (() -> Void)?
@@ -73,6 +87,19 @@ final class TutorEvaluationService {
                 self.mistakeExplanation = response.mistakeExplanation
                 self.lastEvaluatedLatex = latex
 
+                // Add chat messages for mistakes
+                if let mistake = response.mistakeExplanation, response.status == "mistake" {
+                    let now = Date()
+                    // Student message: what they wrote
+                    self.chatMessages.append(TutorChatMessage(
+                        role: .student, latex: latex, timestamp: now
+                    ))
+                    // Tutor message: the feedback
+                    self.chatMessages.append(TutorChatMessage(
+                        role: .tutor, latex: mistake, timestamp: now
+                    ))
+                }
+
                 if response.status == "completed" {
                     self.onStepCompleted?()
                 }
@@ -87,7 +114,7 @@ final class TutorEvaluationService {
 
     // MARK: - Reset
 
-    /// Reset for a new step (keeps history context).
+    /// Reset for a new step (keeps chat history).
     func resetForNextStep() {
         evaluateTask?.cancel()
         generation += 1
@@ -101,6 +128,7 @@ final class TutorEvaluationService {
     /// Full reset (tutor mode toggled off or question changed).
     func reset() {
         resetForNextStep()
+        chatMessages.removeAll()
     }
 
     // MARK: - Network
