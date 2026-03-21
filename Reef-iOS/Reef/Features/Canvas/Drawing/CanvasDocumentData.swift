@@ -19,7 +19,7 @@ struct CanvasDocumentData: Codable {
 /// Saved state for a single question/subquestion's tutor progress.
 struct TutorStepState: Codable {
     let currentStepIndex: Int
-    let stepEvaluations: [StepEvaluation]
+    let stepEvaluation: StepEvaluation?
     let lastTranscription: String
     let chatMessages: [SavedChatMessage]?
 }

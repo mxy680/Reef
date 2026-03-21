@@ -21,19 +21,33 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 TUTOR_MODEL = "google/gemini-3-flash-preview"
 
 
-async def _fetch_answer_key(document_id: str, question_number: int) -> QuestionAnswer:
-    """Fetch a single answer key row from Supabase."""
-    url = f"{settings.supabase_url}/rest/v1/answer_keys"
-    params = {
-        "document_id": f"eq.{document_id}",
-        "question_number": f"eq.{question_number}",
-        "select": "answer_text,question_json",
-    }
+async def _fetch_answer_key(document_id: str, question_number: int, user_id: str) -> QuestionAnswer:
+    """Fetch a single answer key row from Supabase, verifying ownership via the documents table."""
     headers = {
         "apikey": settings.supabase_service_role_key,
         "Authorization": f"Bearer {settings.supabase_service_role_key}",
     }
+
     async with httpx.AsyncClient(timeout=10) as client:
+        # Verify document ownership before fetching the answer key
+        doc_url = f"{settings.supabase_url}/rest/v1/documents"
+        doc_params = {
+            "id": f"eq.{document_id}",
+            "user_id": f"eq.{user_id}",
+            "select": "id",
+        }
+        doc_resp = await client.get(doc_url, params=doc_params, headers=headers)
+        doc_resp.raise_for_status()
+        if not doc_resp.json():
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Fetch the answer key
+        url = f"{settings.supabase_url}/rest/v1/answer_keys"
+        params = {
+            "document_id": f"eq.{document_id}",
+            "question_number": f"eq.{question_number}",
+            "select": "answer_text,question_json",
+        }
         resp = await client.get(url, params=params, headers=headers)
         resp.raise_for_status()
 
@@ -65,25 +79,16 @@ def _resolve_steps(answer_key: QuestionAnswer, part_label: str | None) -> list:
     return []
 
 
-def _build_question_text(answer_key: QuestionAnswer, part_label: str | None) -> str:
-    """Extract question text from the stored question_json context."""
-    # The answer key stores the question context — we reconstruct a readable version
-    parts_text = []
-    if part_label:
-        for part in answer_key.parts:
-            if part.label == part_label:
-                parts_text.append(f"Part ({part.label}): {part.final_answer}")
-                break
-    return f"Question {answer_key.question_number}"
-
-
 async def _download_images(urls: list[str]) -> list[bytes]:
-    """Download figure images from signed URLs."""
+    """Download figure images from signed Supabase storage URLs."""
     if not urls:
         return []
     images = []
     async with httpx.AsyncClient(timeout=15) as client:
         for url in urls[:4]:  # Cap at 4 images to limit token cost
+            if not url.startswith(settings.supabase_url):
+                log.warning(f"Rejected figure URL not from Supabase storage: {url[:80]}")
+                continue
             try:
                 resp = await client.get(url)
                 if resp.status_code == 200:
@@ -101,8 +106,8 @@ async def tutor_evaluate(
     if not settings.openrouter_api_key:
         raise HTTPException(status_code=503, detail="OpenRouter not configured")
 
-    # Fetch answer key
-    answer_key = await _fetch_answer_key(body.document_id, body.question_number)
+    # Fetch answer key (ownership verified inside)
+    answer_key = await _fetch_answer_key(body.document_id, body.question_number, user.id)
 
     # Resolve steps for the target part
     steps = _resolve_steps(answer_key, body.part_label)
@@ -117,6 +122,13 @@ async def tutor_evaluate(
         for i, s in enumerate(steps)
     )
 
+    # Wrap student input in delimiters to prevent prompt injection
+    delimited_student_work = (
+        "<<<STUDENT_WORK_START>>>\n"
+        + body.student_latex
+        + "\n<<<STUDENT_WORK_END>>>"
+    )
+
     # Build prompt
     prompt = TUTOR_EVALUATE_PROMPT.format(
         question_text=f"Question {answer_key.question_number}",
@@ -124,7 +136,7 @@ async def tutor_evaluate(
         current_step_num=body.step_index + 1,
         current_step_description=current_step.description,
         current_step_work=current_step.work,
-        student_work=body.student_latex,
+        student_work=delimited_student_work,
     )
 
     # Download figure images if provided (vision model)

@@ -263,10 +263,6 @@ struct CanvasView: View {
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             viewModel.tickStudyTimer()
-            // Poll for tutor evaluation when transcription has new results
-            if viewModel.tutorModeOn, !viewModel.handwritingService.latexResult.isEmpty {
-                viewModel.triggerTutorEvaluation()
-            }
         }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
             viewModel.updateBatteryLevel()

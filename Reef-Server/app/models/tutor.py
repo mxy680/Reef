@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+TutorStatus = Literal["idle", "working", "mistake", "completed"]
 
 
 class TutorEvaluateRequest(BaseModel):
@@ -12,7 +16,7 @@ class TutorEvaluateRequest(BaseModel):
     question_number: int = Field(..., description="1-based question number")
     part_label: str | None = Field(None, description="Part label (a, b, i, ii) or null for top-level")
     step_index: int = Field(..., description="0-based step index within the part")
-    student_latex: str = Field(..., description="Transcribed LaTeX from student handwriting")
+    student_latex: str = Field(..., max_length=5000, description="Transcribed LaTeX from student handwriting")
     figure_urls: list[str] = Field(default_factory=list, description="Signed URLs for question figures")
 
 
@@ -25,7 +29,7 @@ class TutorEvaluation(BaseModel):
         ge=0.0,
         le=1.0,
     )
-    status: str = Field(
+    status: TutorStatus = Field(
         ...,
         description="One of: idle, working, mistake, completed",
     )
@@ -39,5 +43,5 @@ class TutorEvaluateResponse(BaseModel):
     """Response body for POST /ai/tutor-evaluate."""
 
     progress: float
-    status: str
+    status: TutorStatus
     mistake_explanation: str | None = None

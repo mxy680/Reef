@@ -193,7 +193,6 @@ final class CanvasViewModel {
     var answerKeys: [Int: QuestionAnswer] = [:]
     var isLoadingAnswerKeys: Bool = false
     private var savedTutorProgress: [String: TutorStepState]?
-    var evalDebugCount: Int = 0
 
     /// Whether this document has been reconstructed (has answer keys available)
     var isReconstructed: Bool {
@@ -383,11 +382,11 @@ final class CanvasViewModel {
         }
         savedTutorProgress?[label] = TutorStepState(
             currentStepIndex: currentTutorStepIndex,
-            stepEvaluations: [StepEvaluation(
+            stepEvaluation: StepEvaluation(
                 progress: tutorEvalService.stepProgress,
                 status: tutorEvalService.status,
                 mistakeExplanation: tutorEvalService.mistakeExplanation
-            )],
+            ),
             lastTranscription: handwritingService.latexResult,
             chatMessages: savedMessages.isEmpty ? nil : savedMessages
         )
@@ -404,7 +403,7 @@ final class CanvasViewModel {
 
         currentTutorStepIndex = min(state.currentStepIndex, max(0, tutorStepCount - 1))
 
-        if let eval = state.stepEvaluations.first {
+        if let eval = state.stepEvaluation {
             tutorEvalService.stepProgress = eval.progress
             tutorEvalService.status = eval.status
             tutorEvalService.mistakeExplanation = eval.mistakeExplanation
@@ -689,8 +688,6 @@ final class CanvasViewModel {
 
     /// Trigger AI evaluation of the current student work.
     func triggerTutorEvaluation() {
-        evalDebugCount += 1
-
         guard tutorModeOn,
               !handwritingService.latexResult.isEmpty else {
             return
@@ -712,8 +709,6 @@ final class CanvasViewModel {
             }
         }
         guard let qNum = Int(numStr) else { return }
-
-        NSLog("[TutorEval] Evaluating Q\(qNum)\(partLabel) step \(currentTutorStepIndex) with latex: \(handwritingService.latexResult.prefix(60))")
 
         tutorEvalService.evaluate(
             latex: handwritingService.latexResult,
@@ -793,11 +788,11 @@ final class CanvasViewModel {
             }
             tutorState[label] = TutorStepState(
                 currentStepIndex: currentTutorStepIndex,
-                stepEvaluations: [StepEvaluation(
+                stepEvaluation: StepEvaluation(
                     progress: tutorEvalService.stepProgress,
                     status: tutorEvalService.status,
                     mistakeExplanation: tutorEvalService.mistakeExplanation
-                )],
+                ),
                 lastTranscription: handwritingService.latexResult,
                 chatMessages: savedMessages.isEmpty ? nil : savedMessages
             )

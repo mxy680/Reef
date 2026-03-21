@@ -54,11 +54,8 @@ final class TutorEvaluationService {
             return
         }
 
-        // Don't restart the debounce if we're already waiting with the same latex
-        if evaluateTask != nil {
-            return
-        }
-
+        // Cancel any pending debounce and restart with new latex
+        evaluateTask?.cancel()
         generation += 1
         let myGeneration = generation
 
@@ -70,7 +67,6 @@ final class TutorEvaluationService {
                 return
             }
 
-            NSLog("[TutorEvalSvc] Debounce passed, calling server...")
             self.isEvaluating = true
 
             do {
@@ -85,7 +81,6 @@ final class TutorEvaluationService {
 
                 guard self.generation == myGeneration else { return }
 
-                NSLog("[TutorEvalSvc] Response: progress=\(response.progress), status=\(response.status), mistake=\(response.mistakeExplanation ?? "nil")")
                 self.stepProgress = response.progress
                 self.status = response.status
                 self.mistakeExplanation = response.mistakeExplanation
@@ -109,7 +104,7 @@ final class TutorEvaluationService {
                 }
             } catch {
                 guard !Task.isCancelled, self.generation == myGeneration else { return }
-                NSLog("[TutorEvalSvc] Error: \(error)")
+                print("[TutorEvalSvc] Evaluation failed: \(error)")
             }
 
             self.isEvaluating = false
