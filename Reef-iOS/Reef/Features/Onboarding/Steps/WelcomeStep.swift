@@ -16,15 +16,15 @@ struct WelcomeStep: View {
                     // Left side — text content
                     VStack(alignment: .leading, spacing: 0) {
                         // Logo
-                        Text("REEF")
-                            .font(.epilogue(18, weight: .black))
-                            .tracking(2)
+                        Text("finally")
+                            .font(.epilogue(16, weight: .bold))
+                            .tracking(-0.04 * 16)
                             .foregroundStyle(ReefColors.primary)
                             .fadeUp(index: 0)
-                            .padding(.bottom, 20)
+                            .padding(.bottom, 12)
 
                         // Headline
-                        Text("Your tutor\nnever sleeps")
+                        Text("Office hours\nthat never close")
                             .font(.epilogue(34, weight: .black))
                             .tracking(-0.04 * 34)
                             .foregroundStyle(colors.text)
@@ -33,7 +33,7 @@ struct WelcomeStep: View {
                             .padding(.bottom, 14)
 
                         // Subline
-                        Text("Write. Get stuck. Get unstuck.\nAll in one place.")
+                        Text("A tutor that reads your work and talks you through it.")
                             .font(.epilogue(14, weight: .medium))
                             .tracking(-0.04 * 14)
                             .foregroundStyle(colors.textSecondary)
