@@ -18,32 +18,48 @@ struct OnboardingStepShell<Content: View>: View {
 
         VStack(spacing: 0) {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    // Top spacing
+                VStack(spacing: 0) {
                     Spacer()
-                        .frame(height: 40)
+                        .frame(height: 32)
 
-                    // Title
-                    Text(title)
-                        .font(.epilogue(32, weight: .black))
-                        .tracking(-0.04 * 32)
-                        .foregroundStyle(colors.text)
-                        .padding(.bottom, subtitle != nil ? 12 : 28)
-                        .fadeUp(index: 0)
+                    // Card
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Title
+                        Text(title)
+                            .font(.epilogue(28, weight: .black))
+                            .tracking(-0.04 * 28)
+                            .foregroundStyle(colors.text)
+                            .padding(.bottom, subtitle != nil ? 10 : 24)
+                            .fadeUp(index: 0)
 
-                    // Subtitle
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.epilogue(16, weight: .medium))
-                            .tracking(-0.04 * 16)
-                            .foregroundStyle(colors.textSecondary)
-                            .padding(.bottom, 28)
-                            .fadeUp(index: 1)
+                        // Subtitle
+                        if let subtitle {
+                            Text(subtitle)
+                                .font(.epilogue(15, weight: .medium))
+                                .tracking(-0.04 * 15)
+                                .foregroundStyle(colors.textSecondary)
+                                .padding(.bottom, 24)
+                                .fadeUp(index: 1)
+                        }
+
+                        // Content
+                        content()
+                            .fadeUp(index: subtitle != nil ? 2 : 1)
                     }
-
-                    // Content
-                    content()
-                        .fadeUp(index: subtitle != nil ? 2 : 1)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 28)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(colors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(colors.border, lineWidth: 2)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(colors.shadow)
+                            .offset(x: 5, y: 5)
+                    )
                 }
                 .frame(maxWidth: metrics.onboardingCardMaxWidth, alignment: .leading)
                 .padding(.horizontal, metrics.authHPadding)
@@ -52,11 +68,6 @@ struct OnboardingStepShell<Content: View>: View {
 
             // Navigation footer
             VStack(spacing: 0) {
-                // Divider
-                Rectangle()
-                    .fill(colors.divider)
-                    .frame(height: 1)
-
                 HStack(spacing: 16) {
                     if showBack, let onBack {
                         Button(action: onBack) {
@@ -80,7 +91,7 @@ struct OnboardingStepShell<Content: View>: View {
                 .padding(.vertical, 16)
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)
             }
-            .background(colors.background.opacity(0.95))
+            .background(colors.background)
         }
         .frame(maxWidth: .infinity)
     }
