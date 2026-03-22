@@ -60,21 +60,21 @@ struct AppRouter: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .environment(\.reefLayoutMetrics, ReefLayoutMetrics(screenHeight: shortSide))
             #if DEBUG
-            .overlay(alignment: .topTrailing) {
+            .overlay(alignment: .bottomLeading) {
                 if currentScreen == .dashboard {
                     Button(action: restartOnboarding) {
                         Label("Restart Onboarding", systemImage: "arrow.counterclockwise")
                             .font(.epilogue(11, weight: .bold))
                             .tracking(-0.04 * 11)
                             .foregroundStyle(ReefColors.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(ReefColors.destructive.opacity(0.85))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(ReefColors.destructive)
                             .clipShape(Capsule())
                     }
                     .buttonStyle(NoHighlightButtonStyle())
-                    .padding(.top, 4)
-                    .padding(.trailing, 8)
+                    .padding(.bottom, 20)
+                    .padding(.leading, 20)
                 }
             }
             #endif
