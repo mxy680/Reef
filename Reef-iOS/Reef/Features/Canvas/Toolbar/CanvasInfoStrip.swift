@@ -64,16 +64,18 @@ struct CanvasInfoStrip: View {
             if viewModel.tutorModeOn {
                 divider
 
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                HStack(alignment: .center, spacing: 4) {
                     Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(.white.opacity(0.7))
 
-                    Text(viewModel.currentTutorStepLabel)
-                        .font(.epilogue(11, weight: .medium))
-                        .tracking(-0.04 * 11)
-                        .foregroundColor(.white.opacity(0.85))
-                        .lineLimit(1)
+                    MathText(
+                        text: viewModel.currentTutorStepLabel,
+                        fontSize: 11,
+                        color: .white.opacity(0.85),
+                        maxHeight: 24
+                    )
+                    .frame(maxWidth: 200)
                 }
                 .transition(.opacity)
             }
