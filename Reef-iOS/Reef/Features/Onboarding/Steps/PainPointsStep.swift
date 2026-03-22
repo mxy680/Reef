@@ -5,7 +5,6 @@ struct PainPointsStep: View {
 
     var body: some View {
         OnboardingStepShell(
-            step: .painPoints,
             title: "What trips you up the most?",
             subtitle: "Be real. No judgment — we've seen it all.",
             canAdvance: viewModel.canAdvance,

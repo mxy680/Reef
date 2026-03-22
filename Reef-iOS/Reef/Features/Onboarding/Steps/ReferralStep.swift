@@ -5,7 +5,6 @@ struct ReferralStep: View {
 
     var body: some View {
         OnboardingStepShell(
-            step: .referral,
             title: "Last one, promise — how'd you find us?",
             canAdvance: viewModel.canAdvance,
             forwardLabel: "Let's study",

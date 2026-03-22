@@ -31,6 +31,10 @@ struct AppRouter: View {
         GeometryReader { proxy in
             let shortSide = min(proxy.size.width, proxy.size.height)
             ZStack {
+                // Prevent gray flash during screen transitions
+                theme.colors.background
+                    .ignoresSafeArea()
+
                 switch currentScreen {
                 case .loading:
                     splashView
