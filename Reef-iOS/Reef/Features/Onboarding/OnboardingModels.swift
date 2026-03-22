@@ -239,4 +239,19 @@ enum CourseCatalog {
 
         return "e.g. \"derivatives\", \"Newton's laws\", \"acid-base reactions\""
     }
+
+    static func topicSuggestions(for courses: Set<String>) -> [String] {
+        var suggestions: [String] = []
+        if courses.contains("Calculus") { suggestions.append(contentsOf: ["derivatives", "integrals", "limits"]) }
+        if courses.contains("Physics") { suggestions.append(contentsOf: ["kinematics", "Newton's laws", "circuits"]) }
+        if courses.contains("Chemistry") { suggestions.append(contentsOf: ["stoichiometry", "bonding", "equilibrium"]) }
+        if courses.contains("Biology") { suggestions.append(contentsOf: ["mitosis", "Krebs cycle", "genetics"]) }
+        if courses.contains("Organic Chemistry") { suggestions.append(contentsOf: ["SN2 reactions", "mechanisms", "stereochemistry"]) }
+        if courses.contains("Computer Science") { suggestions.append(contentsOf: ["recursion", "binary trees", "algorithms"]) }
+        if courses.contains("Linear Algebra") { suggestions.append(contentsOf: ["eigenvalues", "matrices", "vector spaces"]) }
+        if courses.contains("Statistics") { suggestions.append(contentsOf: ["hypothesis testing", "regression", "probability"]) }
+        if courses.contains("Economics") { suggestions.append(contentsOf: ["supply & demand", "elasticity", "GDP"]) }
+        if suggestions.isEmpty { suggestions = ["derivatives", "Newton's laws", "redox reactions"] }
+        return Array(suggestions.prefix(6))
+    }
 }

@@ -11,7 +11,7 @@ struct StudyGoalStep: View {
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
         ) {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 ForEach(StudyGoal.allCases, id: \.self) { goal in
                     OnboardingOption(
                         label: goal.displayLabel,

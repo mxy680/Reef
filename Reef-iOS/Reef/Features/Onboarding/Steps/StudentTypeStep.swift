@@ -11,7 +11,7 @@ struct StudentTypeStep: View {
             onBack: nil,
             onForward: { viewModel.goNext() }
         ) {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 ForEach(StudentType.allCases, id: \.self) { type in
                     OnboardingOption(
                         label: type.displayLabel,

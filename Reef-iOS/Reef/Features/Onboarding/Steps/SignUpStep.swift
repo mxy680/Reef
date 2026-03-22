@@ -12,49 +12,60 @@ struct SignUpStep: View {
 
         VStack(spacing: 0) {
             ScrollView(showsIndicators: false) {
-                VStack(spacing: metrics.onboardingStepSpacing) {
+                VStack(spacing: 24) {
                     Spacer()
                         .frame(height: metrics.authVerticalSpacer)
 
-                    Text("Don't let this plan ghost you.")
-                        .font(.epilogue(28, weight: .black))
-                        .tracking(-0.04 * 28)
-                        .foregroundStyle(colors.text)
-                        .multilineTextAlignment(.center)
+                    // Logo
+                    Text("REEF")
+                        .font(.epilogue(20, weight: .black))
+                        .tracking(8)
+                        .foregroundStyle(ReefColors.primary)
                         .fadeUp(index: 0)
 
-                    Text("Create an account so all of this actually saves.")
-                        .font(.epilogue(15, weight: .medium))
-                        .tracking(-0.04 * 15)
-                        .foregroundStyle(colors.textSecondary)
+                    Text("Don't let this plan\nghost you.")
+                        .font(.epilogue(32, weight: .black))
+                        .tracking(-0.04 * 32)
+                        .foregroundStyle(colors.text)
                         .multilineTextAlignment(.center)
                         .fadeUp(index: 1)
 
-                    VStack(spacing: 12) {
+                    Text("Create an account so all of this actually saves.")
+                        .font(.epilogue(16, weight: .medium))
+                        .tracking(-0.04 * 16)
+                        .foregroundStyle(colors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fadeUp(index: 2)
+
+                    VStack(spacing: 14) {
                         ReefButton(.secondary, action: { auth.signInWithApple() }) {
-                            HStack(spacing: 8) {
+                            HStack(spacing: 10) {
                                 Image(systemName: "apple.logo")
+                                    .font(.system(size: 18, weight: .medium))
                                 Text("Continue with Apple")
                             }
                         }
 
                         ReefButton(.secondary, action: { auth.signInWithGoogle() }) {
-                            HStack(spacing: 8) {
+                            HStack(spacing: 10) {
                                 Image(systemName: "g.circle.fill")
+                                    .font(.system(size: 18, weight: .medium))
                                 Text("Continue with Google")
                             }
                         }
                     }
-                    .frame(maxWidth: 320)
-                    .fadeUp(index: 2)
+                    .frame(maxWidth: 360)
+                    .fadeUp(index: 3)
 
                     // Skip link
-                    ReefButton(.ghost, action: { viewModel.goNext() }) {
+                    Button(action: { viewModel.goNext() }) {
                         Text("skip for now")
                             .font(.epilogue(13, weight: .medium))
                             .tracking(-0.04 * 13)
+                            .foregroundStyle(colors.textMuted)
                     }
-                    .fadeUp(index: 3)
+                    .buttonStyle(NoHighlightButtonStyle())
+                    .fadeUp(index: 4)
                 }
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)
                 .padding(.horizontal, metrics.authHPadding)

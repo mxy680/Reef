@@ -11,7 +11,7 @@ struct DailyGoalStep: View {
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
         ) {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 ForEach(DailyGoalOption.allCases, id: \.self) { option in
                     OnboardingOption(
                         label: option.displayLabel,

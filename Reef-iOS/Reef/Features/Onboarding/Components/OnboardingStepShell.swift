@@ -18,50 +18,69 @@ struct OnboardingStepShell<Content: View>: View {
 
         VStack(spacing: 0) {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: metrics.onboardingStepSpacing) {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Top spacing
+                    Spacer()
+                        .frame(height: 40)
+
                     // Title
                     Text(title)
-                        .font(.epilogue(28, weight: .black))
-                        .tracking(-0.04 * 28)
+                        .font(.epilogue(32, weight: .black))
+                        .tracking(-0.04 * 32)
                         .foregroundStyle(colors.text)
+                        .padding(.bottom, subtitle != nil ? 12 : 28)
                         .fadeUp(index: 0)
 
                     // Subtitle
                     if let subtitle {
                         Text(subtitle)
-                            .font(.epilogue(15, weight: .medium))
-                            .tracking(-0.04 * 15)
+                            .font(.epilogue(16, weight: .medium))
+                            .tracking(-0.04 * 16)
                             .foregroundStyle(colors.textSecondary)
+                            .padding(.bottom, 28)
                             .fadeUp(index: 1)
                     }
 
                     // Content
                     content()
-                        .fadeUp(index: 2)
+                        .fadeUp(index: subtitle != nil ? 2 : 1)
                 }
                 .frame(maxWidth: metrics.onboardingCardMaxWidth, alignment: .leading)
                 .padding(.horizontal, metrics.authHPadding)
-                .padding(.top, metrics.onboardingStepSpacing)
-                .padding(.bottom, 100) // space for nav
+                .padding(.bottom, 120)
             }
 
             // Navigation footer
-            HStack {
-                if showBack, let onBack {
-                    ReefButton(.ghost, action: onBack) {
-                        Text("Back")
+            VStack(spacing: 0) {
+                // Divider
+                Rectangle()
+                    .fill(colors.divider)
+                    .frame(height: 1)
+
+                HStack(spacing: 16) {
+                    if showBack, let onBack {
+                        Button(action: onBack) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(colors.textSecondary)
+                                .frame(width: 48, height: 48)
+                                .background(colors.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(colors.border, lineWidth: 2)
+                                )
+                        }
+                        .buttonStyle(NoHighlightButtonStyle())
                     }
-                    .frame(maxWidth: 80)
+
+                    ReefButton(forwardLabel, disabled: !canAdvance, action: onForward)
                 }
-
-                Spacer()
-
-                ReefButton(forwardLabel, disabled: !canAdvance, action: onForward)
-                    .frame(maxWidth: 200)
+                .padding(.horizontal, metrics.authHPadding)
+                .padding(.vertical, 16)
+                .frame(maxWidth: metrics.onboardingCardMaxWidth)
             }
-            .padding(.horizontal, metrics.authHPadding)
-            .padding(.bottom, metrics.onboardingStepSpacing)
-            .frame(maxWidth: metrics.onboardingCardMaxWidth)
+            .background(colors.background.opacity(0.95))
         }
         .frame(maxWidth: .infinity)
     }
