@@ -200,7 +200,7 @@ final class TutorEvaluationService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 35
+        request.timeoutInterval = 60
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONEncoder().encode(body)
@@ -260,7 +260,7 @@ final class TutorEvaluationService {
                 }
             } catch {
                 self.chatMessages.append(TutorChatMessage(
-                    role: .answer, latex: "Sorry, couldn't get a response. Try again.", timestamp: Date()
+                    role: .answer, latex: "Failed: \(error.localizedDescription)", timestamp: Date()
                 ))
             }
             self.isSendingChat = false
@@ -321,7 +321,7 @@ final class TutorEvaluationService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 35
+        request.timeoutInterval = 60
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONEncoder().encode(body)
