@@ -272,7 +272,7 @@ async def _generate_tts(text: str) -> str | None:
             json={
                 "model": "canopylabs/orpheus-v1-english",
                 "input": text,
-                "voice": "hannah",
+                "voice": "autumn",
                 "response_format": "wav",
             },
         )
