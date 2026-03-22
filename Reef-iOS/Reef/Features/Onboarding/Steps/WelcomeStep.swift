@@ -10,95 +10,156 @@ struct WelcomeStep: View {
         let colors = theme.colors
 
         GeometryReader { geo in
-            // Card fits content, centered in viewport
-            HStack(alignment: .center, spacing: 0) {
-                // Left side — text content
-                VStack(alignment: .leading, spacing: 0) {
-                    // Logo
-                    Text("REEF")
-                        .font(.epilogue(18, weight: .black))
-                        .tracking(6)
-                        .foregroundStyle(ReefColors.primary)
-                        .fadeUp(index: 0)
-                        .padding(.bottom, 20)
+            ScrollView(showsIndicators: false) {
+                // Card with horizontal split
+                HStack(spacing: 0) {
+                    // Left side — text content
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Logo
+                        Text("REEF")
+                            .font(.epilogue(18, weight: .black))
+                            .tracking(6)
+                            .foregroundStyle(ReefColors.primary)
+                            .fadeUp(index: 0)
+                            .padding(.bottom, 20)
 
-                    // Headline
-                    Text("Your practice\nproblems\ntalk back")
-                        .font(.epilogue(34, weight: .black))
-                        .tracking(-0.04 * 34)
-                        .foregroundStyle(colors.text)
-                        .lineSpacing(2)
-                        .fadeUp(index: 1)
-                        .padding(.bottom, 14)
+                        // Headline
+                        Text("Your practice\nproblems\ntalk back")
+                            .font(.epilogue(34, weight: .black))
+                            .tracking(-0.04 * 34)
+                            .foregroundStyle(colors.text)
+                            .lineSpacing(2)
+                            .fadeUp(index: 1)
+                            .padding(.bottom, 14)
 
-                    // Subline
-                    Text("Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.")
-                        .font(.epilogue(14, weight: .medium))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(colors.textSecondary)
-                        .lineSpacing(3)
-                        .fadeUp(index: 2)
-                        .padding(.bottom, 20)
-
-                    // Social proof
-                    HStack(spacing: 6) {
-                        Text("🐠")
-                            .font(.system(size: 13))
-                        Text("Trusted by 10,000+ students")
-                            .font(.epilogue(12, weight: .bold))
-                            .tracking(-0.04 * 12)
+                        // Subline
+                        Text("Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.")
+                            .font(.epilogue(14, weight: .medium))
+                            .tracking(-0.04 * 14)
                             .foregroundStyle(colors.textSecondary)
-                    }
-                    .fadeUp(index: 3)
-                    .padding(.bottom, 24)
+                            .lineSpacing(3)
+                            .fadeUp(index: 2)
+                            .padding(.bottom, 20)
 
-                    // CTA
-                    ReefButton("Let's go", action: onContinue)
-                        .frame(maxWidth: 200)
-                        .fadeUp(index: 4)
-                }
-                .frame(maxWidth: geo.size.width * 0.35, alignment: .leading)
-                .padding(32)
-
-                Spacer(minLength: 0)
-
-                // Right side — app screenshot placeholder
-                // TODO: Replace with Image("onboarding-screenshot").resizable().aspectRatio(contentMode: .fit)
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(colors.subtle)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(colors.border, lineWidth: 1.5)
-                    )
-                    .overlay(
-                        VStack(spacing: 8) {
-                            Image(systemName: "photo")
-                                .font(.system(size: 28, weight: .light))
-                                .foregroundStyle(colors.textMuted)
-                            Text("App screenshot")
-                                .font(.epilogue(11, weight: .medium))
-                                .tracking(-0.04 * 11)
-                                .foregroundStyle(colors.textMuted)
+                        // Social proof
+                        HStack(spacing: 6) {
+                            Text("🐠")
+                                .font(.system(size: 13))
+                            Text("Trusted by 10,000+ students")
+                                .font(.epilogue(12, weight: .bold))
+                                .tracking(-0.04 * 12)
+                                .foregroundStyle(colors.textSecondary)
                         }
-                    )
-                    .frame(height: geo.size.height * 0.65)
-                    .frame(maxWidth: geo.size.width * 0.35)
-                    .padding(32)
-                    .fadeUp(index: 2)
+                        .fadeUp(index: 3)
+                        .padding(.bottom, 24)
+
+                        // CTA
+                        ReefButton("Let's go", action: onContinue)
+                            .frame(maxWidth: 200)
+                            .fadeUp(index: 4)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(28)
+
+                    // Right side — visual block
+                    VStack(spacing: 14) {
+                        // Feature cards stacked with slight overlap
+                        featureCard(
+                            icon: "bubble.left.and.bubble.right.fill",
+                            label: "AI Tutor",
+                            description: "Talks you through problems",
+                            color: ReefColors.primary
+                        )
+                        .fadeUp(index: 1)
+                        .rotationEffect(.degrees(-2))
+
+                        featureCard(
+                            icon: "pencil.tip.crop.circle",
+                            label: "Handwriting",
+                            description: "Reads what you write",
+                            color: Color(hex: 0xEB8C73)
+                        )
+                        .fadeUp(index: 2)
+                        .rotationEffect(.degrees(1.5))
+
+                        featureCard(
+                            icon: "chart.line.uptrend.xyaxis",
+                            label: "Analytics",
+                            description: "Tracks your progress",
+                            color: ReefColors.accent
+                        )
+                        .fadeUp(index: 3)
+                        .rotationEffect(.degrees(-1))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+                    .padding(.trailing, 28)
+                }
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(colors.border, lineWidth: 2)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(colors.shadow)
+                        .offset(x: 5, y: 5)
+                )
+                .frame(maxWidth: metrics.onboardingCardMaxWidth + 100)
+                .padding(.horizontal, metrics.authHPadding)
+                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity)
             }
-            .background(colors.card)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(colors.border, lineWidth: 2)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(colors.shadow)
-                    .offset(x: 5, y: 5)
-            )
-            .frame(width: geo.size.width * 0.78)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .scrollBounceBehavior(.basedOnSize)
         }
+    }
+
+    private func featureCard(
+        icon: String,
+        label: String,
+        description: String,
+        color: Color
+    ) -> some View {
+        let colors = theme.colors
+
+        return HStack(spacing: 14) {
+            // Icon circle
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(color)
+                    .frame(width: 44, height: 44)
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(ReefColors.white)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.text)
+
+                Text(description)
+                    .font(.epilogue(11, weight: .medium))
+                    .tracking(-0.04 * 11)
+                    .foregroundStyle(colors.textMuted)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(colors.border, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(colors.shadow)
+                .offset(x: 3, y: 3)
+        )
     }
 }
