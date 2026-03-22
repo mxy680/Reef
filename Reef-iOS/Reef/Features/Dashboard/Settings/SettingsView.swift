@@ -13,9 +13,16 @@ struct SettingsView: View {
     var body: some View {
         let colors = theme.colors
         VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
-            headerSection(colors)
-            tabBar
-            tabContent
+            if appeared {
+                headerSection(colors)
+                    .transition(.opacity.combined(with: .offset(y: 16)))
+
+                tabBar
+                    .transition(.opacity.combined(with: .offset(y: 12)))
+
+                tabContent
+                    .transition(.opacity.combined(with: .offset(y: 12)))
+            }
         }
         .padding(4)
         .padding(.trailing, 4)
@@ -24,7 +31,7 @@ struct SettingsView: View {
         .padding(metrics.contentPadding)
         .dashboardCard()
         .onAppear {
-            withAnimation(.easeOut(duration: 0.35).delay(0.1)) {
+            withAnimation(.easeOut(duration: 0.4).delay(0.05)) {
                 appeared = true
             }
         }
@@ -53,8 +60,6 @@ struct SettingsView: View {
                 .foregroundStyle(colors.textSecondary)
         }
         .padding(.horizontal, 4)
-        .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 16)
     }
 
     // MARK: - Tab Bar
@@ -75,10 +80,6 @@ struct SettingsView: View {
             .padding(.trailing, 4)
             .padding(.bottom, 4)
         }
-        .buttonStyle(.plain)
-        .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 12)
-        .animation(.easeOut(duration: 0.35).delay(0.18), value: appeared)
     }
 
     // MARK: - Tab Content
@@ -103,10 +104,6 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding([.trailing, .bottom], 4)
         }
-        .buttonStyle(.plain)
-        .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 12)
-        .animation(.easeOut(duration: 0.35).delay(0.24), value: appeared)
     }
 
     // MARK: - Toast
