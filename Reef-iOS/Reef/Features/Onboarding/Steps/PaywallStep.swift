@@ -20,12 +20,9 @@ struct PaywallStep: View {
     var body: some View {
         let colors = theme.colors
 
-        VStack(spacing: 0) {
+        GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: metrics.onboardingStepSpacing) {
-                    Spacer()
-                        .frame(height: metrics.onboardingStepSpacing)
-
                     Text(greeting)
                         .font(.epilogue(28, weight: .black))
                         .tracking(-0.04 * 28)
@@ -78,10 +75,11 @@ struct PaywallStep: View {
                 }
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)
                 .padding(.horizontal, metrics.authHPadding)
-                .padding(.bottom, metrics.onboardingStepSpacing)
+                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity)
             }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(maxWidth: .infinity)
     }
 
     private func tierCard(

@@ -173,7 +173,7 @@ enum DailyGoalOption: Int, Codable, Sendable, CaseIterable {
         case .fifteen: "15 min"
         case .thirty: "30 min"
         case .fortyFive: "45 min"
-        case .sixty: "60 min"
+        case .sixty: "60+ min"
         }
     }
 

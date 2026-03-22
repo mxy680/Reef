@@ -9,12 +9,9 @@ struct GoalValidationStep: View {
     var body: some View {
         let colors = theme.colors
 
-        VStack(spacing: 0) {
+        GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
-                    Spacer()
-                        .frame(height: 48)
-
                     // Checkmark badge
                     ZStack {
                         Circle()
@@ -64,18 +61,9 @@ struct GoalValidationStep: View {
 
                     // Feature cards row
                     HStack(spacing: 12) {
-                        featureCard(
-                            icon: "eye.fill",
-                            text: "Watches your work in real time"
-                        )
-                        featureCard(
-                            icon: "bubble.left.fill",
-                            text: "Jumps in before you spiral"
-                        )
-                        featureCard(
-                            icon: "brain.head.profile.fill",
-                            text: "Like a TA who actually shows up"
-                        )
+                        featureCard(icon: "eye.fill", text: "Watches your work in real time")
+                        featureCard(icon: "bubble.left.fill", text: "Jumps in before you spiral")
+                        featureCard(icon: "brain.head.profile.fill", text: "Like a TA who actually shows up")
                     }
                     .fadeUp(index: 2)
 
@@ -86,10 +74,11 @@ struct GoalValidationStep: View {
                 }
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)
                 .padding(.horizontal, metrics.authHPadding)
-                .padding(.bottom, 40)
+                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity)
             }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(maxWidth: .infinity)
     }
 
     private func featureCard(icon: String, text: String) -> some View {

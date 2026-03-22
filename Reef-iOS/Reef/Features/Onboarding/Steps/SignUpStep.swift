@@ -10,12 +10,9 @@ struct SignUpStep: View {
     var body: some View {
         let colors = theme.colors
 
-        VStack(spacing: 0) {
+        GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
-                    Spacer()
-                        .frame(height: metrics.authVerticalSpacer)
-
                     // Logo
                     Text("REEF")
                         .font(.epilogue(20, weight: .black))
@@ -69,8 +66,16 @@ struct SignUpStep: View {
                 }
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)
                 .padding(.horizontal, metrics.authHPadding)
+                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .onAppear {
+            // Skip this screen if already authenticated
+            if auth.isAuthenticated {
+                viewModel.goNext()
             }
         }
-        .frame(maxWidth: .infinity)
     }
 }

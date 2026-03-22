@@ -31,28 +31,27 @@ struct LearningStyleStep: View {
 
                 // Reassurance callout card
                 if viewModel.showLearningStyleReassurance {
-                    HStack(spacing: 0) {
+                    HStack(alignment: .top, spacing: 12) {
                         RoundedRectangle(cornerRadius: 2)
                             .fill(ReefColors.primary)
-                            .frame(width: 4)
+                            .frame(width: 4, height: 44)
 
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text("Good news — Reef does all of these.")
-                                .font(.epilogue(15, weight: .bold))
-                                .tracking(-0.04 * 15)
+                                .font(.epilogue(14, weight: .bold))
+                                .tracking(-0.04 * 14)
                                 .foregroundStyle(ReefColors.primary)
 
-                            Text("Diagrams, voice explanations, hands-on problem solving, and written breakdowns. We didn't want to pick favorites either.")
-                                .font(.epilogue(13, weight: .medium))
-                                .tracking(-0.04 * 13)
+                            Text("Diagrams, voice, hands-on, and text. We didn't want to pick favorites either.")
+                                .font(.epilogue(12, weight: .medium))
+                                .tracking(-0.04 * 12)
                                 .foregroundStyle(colors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        .padding(.leading, 14)
-                        .padding(.vertical, 4)
                     }
-                    .padding(16)
+                    .padding(12)
                     .background(ReefColors.primary.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                     .padding(.top, 8)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }

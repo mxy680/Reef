@@ -9,12 +9,9 @@ struct PlanPreviewStep: View {
     var body: some View {
         let colors = theme.colors
 
-        VStack(spacing: 0) {
+        GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
-                    Spacer()
-                        .frame(height: 32)
-
                     // Ready badge
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.circle.fill")
@@ -40,15 +37,15 @@ struct PlanPreviewStep: View {
 
                     // Plan card
                     VStack(spacing: 0) {
-                        planRow(emoji: "📚", label: "Courses", value: viewModel.planCoursesLabel, isFirst: true)
+                        planRow(emoji: "📚", label: "Courses", value: viewModel.planCoursesLabel)
                         planDivider()
-                        planRow(emoji: "🎯", label: "Goal", value: viewModel.planGoalLabel, isFirst: false)
+                        planRow(emoji: "🎯", label: "Goal", value: viewModel.planGoalLabel)
                         planDivider()
-                        planRow(emoji: "⏰", label: "Daily commitment", value: viewModel.planDailyLabel, isFirst: false)
+                        planRow(emoji: "⏰", label: "Daily commitment", value: viewModel.planDailyLabel)
                         planDivider()
-                        planRow(emoji: "🧠", label: "Tutor style", value: "Adaptive — visual, audio, hands-on, text", isFirst: false)
+                        planRow(emoji: "🧠", label: "Tutor style", value: "Adaptive — visual, audio, hands-on, text")
                         planDivider()
-                        planRow(emoji: "💪", label: "Focus areas", value: viewModel.planFocusLabel, isFirst: false)
+                        planRow(emoji: "💪", label: "Focus areas", value: viewModel.planFocusLabel)
                     }
                     .background(colors.card)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -68,16 +65,16 @@ struct PlanPreviewStep: View {
                 }
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)
                 .padding(.horizontal, metrics.authHPadding)
-                .padding(.bottom, 40)
+                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity)
             }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(maxWidth: .infinity)
     }
 
-    private func planRow(emoji: String, label: String, value: String, isFirst: Bool) -> some View {
+    private func planRow(emoji: String, label: String, value: String) -> some View {
         let colors = theme.colors
         return HStack(alignment: .top, spacing: 14) {
-            // Emoji in a circle
             Text(emoji)
                 .font(.system(size: 18))
                 .frame(width: 36, height: 36)
