@@ -37,8 +37,8 @@ struct OnboardingFlowView: View {
                 // Step content
                 stepContent
                     .id(viewModel.currentStep)
-                    .transition(slideTransition)
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.25), value: viewModel.currentStep)
             }
         }
         .onAppear {
