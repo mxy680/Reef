@@ -43,7 +43,7 @@ struct AppRouter: View {
                         .accessibilityIdentifier("screen.auth")
 
                 case .onboarding:
-                    placeholderOnboarding
+                    OnboardingFlowView()
                         .transition(.opacity)
                         .accessibilityIdentifier("screen.onboarding")
 
@@ -79,18 +79,4 @@ struct AppRouter: View {
         }
     }
 
-    // MARK: - Placeholders
-
-    private var placeholderOnboarding: some View {
-        ZStack {
-            theme.colors.background
-                .ignoresSafeArea()
-            VStack(spacing: 16) {
-                Text("Onboarding")
-                    .reefHeading()
-                Text("Complete your profile to continue")
-                    .reefBody()
-            }
-        }
-    }
 }
