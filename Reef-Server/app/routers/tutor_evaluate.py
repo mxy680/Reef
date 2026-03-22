@@ -16,7 +16,10 @@ from app.models.tutor import (
     TutorEvaluateRequest, TutorEvaluateResponse, TutorEvaluation,
 )
 from app.services.llm_client import LLMClient
-from app.services.prompts import TUTOR_CHAT_PROMPT, TUTOR_EVALUATE_PROMPT
+from app.services.prompts import (
+    TUTOR_CHAT_PROMPT, TUTOR_CHAT_SYSTEM,
+    TUTOR_EVALUATE_PROMPT, TUTOR_EVALUATE_SYSTEM,
+)
 
 log = logging.getLogger(__name__)
 
@@ -162,6 +165,7 @@ async def tutor_evaluate(
     result = await asyncio.to_thread(
         llm.generate,
         prompt=prompt,
+        system_prompt=TUTOR_EVALUATE_SYSTEM,
         images=images or None,
         response_schema=TutorEvaluation.model_json_schema(),
         timeout=30.0,
@@ -257,6 +261,7 @@ async def tutor_chat(
     result = await asyncio.to_thread(
         llm.generate,
         prompt=prompt,
+        system_prompt=TUTOR_CHAT_SYSTEM,
         images=chat_images,
         response_schema=TutorChatLLMOutput.model_json_schema(),
         timeout=30.0,
