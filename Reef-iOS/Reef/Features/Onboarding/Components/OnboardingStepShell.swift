@@ -43,21 +43,12 @@ struct OnboardingStepShell<Content: View>: View {
                         .fadeUp(index: subtitle != nil ? 2 : 1)
 
                     // Navigation inside card
-                    HStack(spacing: 16) {
+                    HStack(spacing: 12) {
                         if showBack, let onBack {
-                            Button(action: onBack) {
+                            ReefButton(.secondary, size: .compact, action: onBack) {
                                 Image(systemName: "chevron.left")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundStyle(colors.textSecondary)
-                                    .frame(width: 48, height: 48)
-                                    .background(colors.subtle)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(colors.border, lineWidth: 1.5)
-                                    )
+                                    .font(.system(size: 16, weight: .bold))
                             }
-                            .buttonStyle(NoHighlightButtonStyle())
                         }
 
                         ReefButton(forwardLabel, disabled: !canAdvance, action: onForward)
