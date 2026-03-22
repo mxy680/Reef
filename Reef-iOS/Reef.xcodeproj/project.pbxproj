@@ -129,6 +129,8 @@
 		EC0F257D22B993428D5A5FF3 /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3782C601D52EF8D22F19E789 /* SettingsComponents.swift */; };
 		EC58CCE1237EC4F39BA5A4E8 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F363767C6C99DEC96663F36 /* AppRouter.swift */; };
 		ED3D7199323CA782DA71B5A2 /* AddColorPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1453C18E7538070E48493719 /* AddColorPopup.swift */; };
+		09F8C453B4C743A2BC15B0F0 /* BugReportPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReportPopup.swift; sourceTree = "<group>"; };
+		CFDAF646BDC14E8F9404FE60 /* BugReportPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F8C453B4C743A2BC15B0F0 /* BugReportPopup.swift */; };
 		EE0C09594C59B498107EE5A9 /* CourseContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA80694B42F69DE6BB00C5F /* CourseContentView.swift */; };
 		F2568A6213CDA2E61E2CCE92 /* ReefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982248BAE2D4A7F5BE47B8D8 /* ReefCard.swift */; };
 		F318C137C0FE80E01717FD90 /* ReefTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BCE4900CD1562F72FAC77A /* ReefTheme.swift */; };
@@ -298,6 +300,7 @@
 			isa = PBXGroup;
 			children = (
 				1453C18E7538070E48493719 /* AddColorPopup.swift */,
+				09F8C453B4C743A2BC15B0F0 /* BugReportPopup.swift */,
 				56B5973EB0C19F379FCC7F2D /* EraserSettingsPopover.swift */,
 				DC9968FBE0F62787857FD813 /* PageMenuPopover.swift */,
 				049829935475A647A03F8EC0 /* PageSettingsPopover.swift */,
@@ -806,6 +809,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				ED3D7199323CA782DA71B5A2 /* AddColorPopup.swift in Sources */,
+				CFDAF646BDC14E8F9404FE60 /* BugReportPopup.swift in Sources */,
 				E604A66F4CD6A3BCF6F53BC8 /* AddCoursePopup.swift in Sources */,
 				E3351CF1B2B16F16FCBAB5C3 /* AnalyticsView.swift in Sources */,
 				522AC474D3D71362DDF04CA6 /* AnswerKey.swift in Sources */,

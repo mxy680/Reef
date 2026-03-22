@@ -166,6 +166,29 @@ struct CanvasView: View {
                 .zIndex(52)
             }
 
+            // Bug report popup
+            if viewModel.showBugReport {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showBugReport = false
+                        }
+                    }
+
+                BugReportPopup(
+                    documentId: viewModel.document.id,
+                    questionLabel: viewModel.activeQuestionLabel,
+                    onDismiss: {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showBugReport = false
+                        }
+                    }
+                )
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .zIndex(100)
+            }
+
             // Add Color popup (centered overlay, CLAUDE.md pattern)
             if viewModel.showAddColor {
                 Color.black.opacity(0.3)
@@ -221,6 +244,7 @@ struct CanvasView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
         .animation(.easeInOut(duration: 0.2), value: viewModel.showRuler)
+        .animation(.spring(duration: 0.2), value: viewModel.showBugReport)
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
         .animation(.spring(duration: 0.25), value: viewModel.showExportPreview)
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)

@@ -7,6 +7,7 @@ from app.routers import health
 from app.routers import reconstruct_v2
 from app.routers import fit_shape
 from app.routers import transcribe
+from app.routers import bug_report
 from app.routers import transcribe_audio
 from app.routers import tutor_evaluate
 from app.services.cancellation import get_in_flight_ids
@@ -78,6 +79,7 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(bug_report.router)
 app.include_router(reconstruct_v2.router)
 app.include_router(fit_shape.router)
 app.include_router(transcribe.router)
