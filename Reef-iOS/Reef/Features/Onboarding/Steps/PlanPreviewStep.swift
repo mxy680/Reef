@@ -17,7 +17,7 @@ struct PlanPreviewStep: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 14))
                             .foregroundStyle(ReefColors.primary)
-                        Text("READY")
+                        Text("LOCKED IN")
                             .font(.epilogue(12, weight: .black))
                             .tracking(2)
                             .foregroundStyle(ReefColors.primary)
@@ -28,7 +28,7 @@ struct PlanPreviewStep: View {
                     .clipShape(Capsule())
                     .fadeUp(index: 0)
 
-                    Text("Your study plan\nis locked in.")
+                    Text("Your tutor\nknows the plan.")
                         .font(.epilogue(32, weight: .black))
                         .tracking(-0.04 * 32)
                         .foregroundStyle(colors.text)
@@ -43,7 +43,7 @@ struct PlanPreviewStep: View {
                         planDivider()
                         planRow(emoji: "⏰", label: "Daily commitment", value: viewModel.planDailyLabel)
                         planDivider()
-                        planRow(emoji: "🧠", label: "Tutor style", value: "Adaptive — visual, audio, hands-on, text")
+                        planRow(emoji: "🧠", label: "Learns best by", value: viewModel.planStyleLabel)
                         planDivider()
                         planRow(emoji: "💪", label: "Focus areas", value: viewModel.planFocusLabel)
                     }
@@ -60,7 +60,7 @@ struct PlanPreviewStep: View {
                     )
                     .fadeUp(index: 2)
 
-                    ReefButton("Activate my plan", action: { viewModel.goNext() })
+                    ReefButton("Let's get to work", action: { viewModel.goNext() })
                         .fadeUp(index: 3)
                 }
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)

@@ -142,7 +142,16 @@ final class OnboardingViewModel {
 
     var planDailyLabel: String {
         guard let goal = answers.dailyGoal else { return "30 min/day" }
-        return "\(goal.rawValue) min/day"
+        let minutes = goal.rawValue
+        if minutes >= 60 {
+            let hours = minutes / 60
+            return hours == 1 ? "1 hour/day" : "\(hours)+ hours/day"
+        }
+        return "\(minutes) min/day"
+    }
+
+    var planStyleLabel: String {
+        answers.learningStyle?.displayLabel ?? "Whatever works for you"
     }
 
     var planFocusLabel: String {
