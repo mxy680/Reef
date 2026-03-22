@@ -322,14 +322,14 @@ struct CanvasDrawingBar: View {
             // Mode toggle: stroke vs area
             HStack(spacing: 2) {
                 eraserModeButton(
-                    assetIcon: "canvas.eraser_stroke",
+                    assetIcon: "canvas.eraser_area",
                     isSelected: viewModel.eraserMode == .vector
                 ) {
                     viewModel.eraserMode = .vector
                 }
 
                 eraserModeButton(
-                    assetIcon: "canvas.eraser_area",
+                    assetIcon: "canvas.eraser_stroke",
                     isSelected: viewModel.eraserMode == .bitmap
                 ) {
                     viewModel.eraserMode = .bitmap
