@@ -143,10 +143,10 @@ enum LearningStyle: String, Codable, Sendable, CaseIterable {
 
     var displayLabel: String {
         switch self {
-        case .visual: "Seeing it"
-        case .auditory: "Hearing it"
-        case .handson: "Doing it"
-        case .reading: "Reading it"
+        case .visual: "I need a YouTube video for everything"
+        case .auditory: "If someone explains it I get it instantly"
+        case .handson: "I don't get it until I try it myself"
+        case .reading: "I'm a 'read the textbook at 3am' person"
         }
     }
 
