@@ -139,8 +139,8 @@ final class CanvasViewModel {
     var showSidebar: Bool = false
     var activeQuestionLabel: String?
     var isMicOn: Bool = false
-    /// Set of stroke hashes that were drawn with the shape tool — excluded from transcription.
-    private var shapeStrokeHashes: Set<Int> = []
+    /// Stroke bounds drawn with the shape tool — excluded from transcription.
+    private var shapeStrokeBounds: Set<CGRect> = []
     private var audioRecorder: AVAudioRecorder?
     private var micSilenceTimer: Task<Void, Never>?
     var showCalculator: Bool = false
@@ -721,29 +721,35 @@ final class CanvasViewModel {
             savedTutorProgress = savedTutorProgress?.filter { !$0.key.hasPrefix(prefix) }
         }
 
+        clearShapeStrokes()
         saveCanvasState()
     }
 
     /// Track new strokes added with the shape tool.
     func markShapeStrokes(in drawing: PKDrawing) {
         for stroke in drawing.strokes {
-            shapeStrokeHashes.insert(stroke.renderBounds.hashValue)
+            shapeStrokeBounds.insert(stroke.renderBounds)
         }
     }
 
     /// Return a filtered drawing with shape strokes removed (for transcription only).
     func drawingWithoutShapes(for pageIndex: Int) -> PKDrawing {
         let drawing = drawingManager.drawing(for: pageIndex)
-        guard !shapeStrokeHashes.isEmpty else { return drawing }
+        guard !shapeStrokeBounds.isEmpty else { return drawing }
 
         let filtered = drawing.strokes.filter { stroke in
-            !shapeStrokeHashes.contains(stroke.renderBounds.hashValue)
+            !shapeStrokeBounds.contains(stroke.renderBounds)
         }
         var newDrawing = PKDrawing()
         for stroke in filtered {
             newDrawing.strokes.append(stroke)
         }
         return newDrawing
+    }
+
+    /// Clear shape stroke tracking (called on clear/reset).
+    func clearShapeStrokes() {
+        shapeStrokeBounds.removeAll()
     }
 
     /// Capture a JPEG snapshot of the student's drawing for the active question region.
@@ -1007,6 +1013,7 @@ final class CanvasViewModel {
         }
         drawingManager.onDrawingChanged = savedCallback
         drawingManager.onDrawingChanged?()
+        clearShapeStrokes()
     }
 
     func deleteCurrentPage(drawingManager: CanvasDrawingManager) {
