@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - FlowLayout
 
-struct FlowLayout: Layout {
+struct OnboardingFlowLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) -> CGSize {

@@ -11,7 +11,7 @@ struct PainPointsStep: View {
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
         ) {
-            FlowLayout(spacing: 10) {
+            OnboardingFlowLayout(spacing: 10) {
                 ForEach(PainPoint.allCases, id: \.self) { point in
                     OnboardingPill(
                         label: point.displayLabel,

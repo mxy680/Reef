@@ -167,7 +167,11 @@ final class OnboardingViewModel {
             learningStyle: answers.learningStyle?.rawValue,
             favoriteTopic: answers.favoriteTopic,
             onboardingCompleted: true,
-            settings: UserSettings(dailyGoalMinutes: answers.dailyGoal?.rawValue ?? 30)
+            settings: {
+                var s = UserSettings()
+                s.dailyGoalMinutes = answers.dailyGoal?.rawValue ?? 30
+                return s
+            }()
         )
 
         do {

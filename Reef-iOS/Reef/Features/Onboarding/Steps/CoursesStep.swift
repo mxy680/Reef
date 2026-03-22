@@ -15,7 +15,7 @@ struct CoursesStep: View {
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
         ) {
-            FlowLayout(spacing: 10) {
+            OnboardingFlowLayout(spacing: 10) {
                 ForEach(courseList, id: \.self) { course in
                     OnboardingPill(
                         label: course,
