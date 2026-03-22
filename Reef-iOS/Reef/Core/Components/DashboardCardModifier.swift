@@ -13,7 +13,7 @@ struct DashboardCardModifier: ViewModifier {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(theme.isDarkMode ? ReefColors.Dark.border : ReefColors.gray500, lineWidth: 1.5)
+                    .strokeBorder(theme.isDarkMode ? ReefColors.Dark.border : ReefColors.gray500, lineWidth: 1.5)
             )
             .background(
                 RoundedRectangle(cornerRadius: 16)
