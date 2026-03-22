@@ -45,10 +45,11 @@ struct OnboardingStepShell<Content: View>: View {
                     // Navigation inside card
                     HStack(spacing: 12) {
                         if showBack, let onBack {
-                            ReefButton(.secondary, size: .compact, action: onBack) {
+                            ReefButton(.secondary, action: onBack) {
                                 Image(systemName: "chevron.left")
                                     .font(.system(size: 16, weight: .bold))
                             }
+                            .frame(width: 56)
                         }
 
                         ReefButton(forwardLabel, disabled: !canAdvance, action: onForward)
