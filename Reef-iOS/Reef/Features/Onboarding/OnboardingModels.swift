@@ -161,26 +161,26 @@ enum LearningStyle: String, Codable, Sendable, CaseIterable {
 }
 
 enum DailyGoalOption: Int, Codable, Sendable, CaseIterable {
-    case fifteen = 15
     case thirty = 30
-    case fortyFive = 45
     case sixty = 60
+    case threeHours = 180
+    case twelve = 720
 
     var displayLabel: String {
         switch self {
-        case .fifteen: "15 min"
         case .thirty: "30 min"
-        case .fortyFive: "45 min"
-        case .sixty: "60+ min"
+        case .sixty: "1 hour"
+        case .threeHours: "3 hours"
+        case .twelve: "12+ hours"
         }
     }
 
     var subtitle: String {
         switch self {
-        case .fifteen: "just a taste"
-        case .thirty: "solid effort"
-        case .fortyFive: "okay we see you"
-        case .sixty: "absolute machine"
+        case .thirty: "coffee break length"
+        case .sixty: "one episode of something"
+        case .threeHours: "you're not messing around"
+        case .twelve: "do you need a wellness check?"
         }
     }
 }

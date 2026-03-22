@@ -5,7 +5,7 @@ struct DailyGoalStep: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "How much studying are we talking?",
+            title: "How hard are we going?",
             subtitle: "Pick a daily goal. We'll gently haunt you about it.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },
