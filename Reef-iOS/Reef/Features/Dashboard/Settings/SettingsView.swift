@@ -119,6 +119,6 @@ struct SettingsView: View {
             .padding(.vertical, 12)
             .background(colors.text)
             .clipShape(Capsule())
-            .overlay(Capsule().stroke(colors.border, lineWidth: 1.5))
+            .overlay(Capsule().strokeBorder(colors.border, lineWidth: 1.5))
     }
 }

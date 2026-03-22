@@ -345,7 +345,7 @@ struct SettingsAccountTab: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(isCurrent ? accentColor : colors.border, lineWidth: isCurrent ? 2 : 1.5)
+                .strokeBorder(isCurrent ? accentColor : colors.border, lineWidth: isCurrent ? 2 : 1.5)
         )
         .background(
             RoundedRectangle(cornerRadius: 14)

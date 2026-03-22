@@ -203,7 +203,7 @@ struct SettingsSegmentedControl: View {
                     .background(isSelected ? colors.card : colors.subtle)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(isSelected ? colors.border : Color.clear, lineWidth: 1.5)
+                            .strokeBorder(isSelected ? colors.border : Color.clear, lineWidth: 1.5)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .animation(.easeInOut(duration: 0.15), value: selection)
@@ -214,7 +214,7 @@ struct SettingsSegmentedControl: View {
         .padding(4)
         .background(colors.subtle)
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(colors.border, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(colors.border, lineWidth: 1.5))
     }
 }
 
@@ -252,7 +252,7 @@ struct SettingsStepper: View {
         }
         .background(colors.subtle)
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(colors.border, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(colors.border, lineWidth: 1.5))
     }
 
     private func stepButton(icon: String, action: @escaping () -> Void) -> some View {
@@ -288,7 +288,7 @@ struct SettingsPill: View {
             .padding(.vertical, 8)
             .background(isSelected ? ReefColors.primary : colors.card)
             .clipShape(Capsule())
-            .overlay(Capsule().stroke(colors.border, lineWidth: 1.5))
+            .overlay(Capsule().strokeBorder(colors.border, lineWidth: 1.5))
             .background(
                 Capsule()
                     .fill(colors.shadow)

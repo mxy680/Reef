@@ -125,7 +125,7 @@ struct SettingsProfileTab: View {
             Circle()
                 .fill(bgColor)
                 .frame(width: metrics.profileRingSize, height: metrics.profileRingSize)
-                .overlay(Circle().stroke(colors.border, lineWidth: 2))
+                .overlay(Circle().strokeBorder(colors.border, lineWidth: 2))
 
             Text(auth.userInitials)
                 .font(.epilogue(metrics.profileRingSize * 0.32, weight: .black))
@@ -202,7 +202,7 @@ struct SettingsProfileTab: View {
                         Circle()
                             .fill(avatarColors[idx])
                             .frame(width: 32, height: 32)
-                            .overlay(Circle().stroke(isSelected ? ReefColors.primary : colors.border, lineWidth: isSelected ? 2.5 : 1.5))
+                            .overlay(Circle().strokeBorder(isSelected ? ReefColors.primary : colors.border, lineWidth: isSelected ? 2.5 : 1.5))
                         if isSelected {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 11, weight: .bold))
@@ -259,7 +259,7 @@ struct SettingsProfileTab: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(colors.inputBorder, lineWidth: 1.5)
+                        .strokeBorder(colors.inputBorder, lineWidth: 1.5)
                 )
         }
     }
