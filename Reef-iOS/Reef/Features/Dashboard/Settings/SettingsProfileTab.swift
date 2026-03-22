@@ -62,22 +62,19 @@ struct SettingsProfileTab: View {
             }
 
             // Save button
-            if hasUnsavedChanges {
-                Rectangle()
-                    .fill(colors.divider)
-                    .frame(height: 1)
+            Rectangle()
+                .fill(colors.divider)
+                .frame(height: 1)
 
-                HStack {
-                    Spacer()
-                    ReefButton(.primary, size: .compact) {
-                        Task { await saveProfile() }
-                    } label: {
-                        Text("Save Changes")
-                    }
+            HStack {
+                Spacer()
+                ReefButton(.primary, size: .compact, disabled: !hasUnsavedChanges) {
+                    Task { await saveProfile() }
+                } label: {
+                    Text("Save Changes")
                 }
-                .padding(metrics.cardPadding)
-                .transition(.opacity.combined(with: .offset(y: 8)))
             }
+            .padding(metrics.cardPadding)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(colors.card)
@@ -92,7 +89,6 @@ struct SettingsProfileTab: View {
                 .offset(x: 3, y: 3)
         )
         .compositingGroup()
-        .animation(.easeOut(duration: 0.2), value: hasUnsavedChanges)
         .onAppear { loadFromProfile() }
     }
 
