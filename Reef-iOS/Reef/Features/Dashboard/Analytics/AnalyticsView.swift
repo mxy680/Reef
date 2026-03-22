@@ -86,6 +86,12 @@ struct AnalyticsView: View {
                 .font(.epilogue(14, weight: .medium))
                 .tracking(-0.04 * 14)
                 .foregroundStyle(colors.textSecondary)
+
+            Text("Preview — data shown is for demonstration purposes only.")
+                .font(.epilogue(11, weight: .medium))
+                .tracking(-0.04 * 11)
+                .foregroundStyle(colors.textMuted)
+                .italic()
         }
         .padding(.horizontal, 4)
         .opacity(appeared ? 1 : 0)
