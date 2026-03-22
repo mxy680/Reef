@@ -747,7 +747,16 @@ final class CanvasViewModel {
 
         guard bounds.width > 0, bounds.height > 0 else { return nil }
 
-        let image = drawing.image(from: bounds, scale: 2.0)
+        // Render drawing with white background (PKDrawing.image has transparent bg → black in JPEG)
+        let scale: CGFloat = 2.0
+        let pixelSize = CGSize(width: bounds.width * scale, height: bounds.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: pixelSize)
+        let image = renderer.image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: pixelSize))
+            let drawingImage = drawing.image(from: bounds, scale: scale)
+            drawingImage.draw(in: CGRect(origin: .zero, size: pixelSize))
+        }
         guard let jpegData = image.jpegData(compressionQuality: 0.5) else { return nil }
 
         // Skip if image is tiny (likely empty/noise)
