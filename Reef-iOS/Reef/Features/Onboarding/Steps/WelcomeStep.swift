@@ -16,7 +16,7 @@ struct WelcomeStep: View {
                     // Left side — text content
                     VStack(alignment: .leading, spacing: 0) {
                         // Logo
-                        Text("finally")
+                        Text("hey, come in")
                             .font(.epilogue(16, weight: .bold))
                             .tracking(-0.04 * 16)
                             .foregroundStyle(ReefColors.primary)
@@ -24,7 +24,7 @@ struct WelcomeStep: View {
                             .padding(.bottom, 12)
 
                         // Headline
-                        Text("Office hours\nthat never close")
+                        Text("Your TA\nis ready")
                             .font(.epilogue(34, weight: .black))
                             .tracking(-0.04 * 34)
                             .foregroundStyle(colors.text)
@@ -33,7 +33,7 @@ struct WelcomeStep: View {
                             .padding(.bottom, 14)
 
                         // Subline
-                        Text("A tutor that reads your work and talks you through it.")
+                        Text("Reads your handwriting. Talks you through it. Never cancels.")
                             .font(.epilogue(14, weight: .medium))
                             .tracking(-0.04 * 14)
                             .foregroundStyle(colors.textSecondary)
