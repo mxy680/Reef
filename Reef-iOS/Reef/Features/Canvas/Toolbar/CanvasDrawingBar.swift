@@ -100,6 +100,10 @@ struct CanvasDrawingBar: View {
                 penSettingsSection
             } else if viewModel.selectedTool == .eraser {
                 eraserSettingsSection
+            } else if viewModel.selectedTool == .lasso {
+                Text("Tap to select strokes")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
             }
 
             Spacer()

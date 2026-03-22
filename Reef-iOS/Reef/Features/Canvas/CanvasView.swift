@@ -277,8 +277,8 @@ struct CanvasView: View {
                     guard !Task.isCancelled else { return }
                     viewModel.saveCanvasState()
                 }
-                // Track shape tool strokes so they're excluded from transcription
-                if viewModel.selectedTool == .shapes {
+                // Track shape/highlighter strokes so they're excluded from transcription
+                if viewModel.selectedTool == .shapes || viewModel.selectedTool == .highlighter {
                     let drawing = viewModel.drawingManager.drawing(for: viewModel.currentPageIndex)
                     viewModel.markShapeStrokes(in: drawing)
                 }
