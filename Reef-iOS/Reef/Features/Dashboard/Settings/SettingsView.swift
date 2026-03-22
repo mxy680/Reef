@@ -24,7 +24,7 @@ struct SettingsView: View {
         .padding(metrics.contentPadding)
         .dashboardCard()
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            withAnimation(.easeOut(duration: 0.35).delay(0.1)) {
                 appeared = true
             }
         }
@@ -55,7 +55,6 @@ struct SettingsView: View {
         .padding(.horizontal, 4)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)
-        .animation(.easeOut(duration: 0.35).delay(0.1), value: appeared)
     }
 
     // MARK: - Tab Bar
@@ -63,10 +62,12 @@ struct SettingsView: View {
     private var tabBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                ForEach(SettingsTab.allCases) { tab in
-                    SettingsTabButton(tab: tab, isActive: activeTab == tab) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            activeTab = tab
+                if appeared {
+                    ForEach(SettingsTab.allCases) { tab in
+                        SettingsTabButton(tab: tab, isActive: activeTab == tab) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                activeTab = tab
+                            }
                         }
                     }
                 }
@@ -78,7 +79,6 @@ struct SettingsView: View {
         }
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
-        .animation(.easeOut(duration: 0.35).delay(0.18), value: appeared)
     }
 
     // MARK: - Tab Content
@@ -86,26 +86,27 @@ struct SettingsView: View {
     @ViewBuilder
     private var tabContent: some View {
         ScrollView(showsIndicators: false) {
-            Group {
-                switch activeTab {
-                case .profile:
-                    SettingsProfileTab(onToast: showToast)
-                case .preferences:
-                    SettingsPreferencesTab(onToast: showToast)
-                case .privacy:
-                    SettingsPrivacyTab(onToast: showToast)
-                case .about:
-                    SettingsAboutTab()
-                case .account:
-                    SettingsAccountTab(onToast: showToast)
+            if appeared {
+                Group {
+                    switch activeTab {
+                    case .profile:
+                        SettingsProfileTab(onToast: showToast)
+                    case .preferences:
+                        SettingsPreferencesTab(onToast: showToast)
+                    case .privacy:
+                        SettingsPrivacyTab(onToast: showToast)
+                    case .about:
+                        SettingsAboutTab()
+                    case .account:
+                        SettingsAccountTab(onToast: showToast)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding([.trailing, .bottom], 4)
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding([.trailing, .bottom], 4)
         }
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
-        .animation(.easeOut(duration: 0.35).delay(0.24), value: appeared)
     }
 
     // MARK: - Toast
