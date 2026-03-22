@@ -75,7 +75,7 @@ struct SettingsView: View {
             .padding(.trailing, 4)
             .padding(.bottom, 4)
         }
-        .scrollContentBackground(.hidden)
+        .buttonStyle(.plain)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
         .animation(.easeOut(duration: 0.35).delay(0.18), value: appeared)
@@ -103,7 +103,7 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding([.trailing, .bottom], 4)
         }
-        .scrollContentBackground(.hidden)
+        .buttonStyle(.plain)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 12)
         .animation(.easeOut(duration: 0.35).delay(0.24), value: appeared)
