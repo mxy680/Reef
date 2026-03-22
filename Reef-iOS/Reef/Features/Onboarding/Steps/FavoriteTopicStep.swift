@@ -45,34 +45,6 @@ struct FavoriteTopicStep: View {
                     autocorrection: true
                 )
 
-                // Suggestion chips
-                if viewModel.answers.favoriteTopic.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Try one of these:")
-                            .font(.epilogue(12, weight: .semiBold))
-                            .tracking(-0.04 * 12)
-                            .foregroundStyle(colors.textMuted)
-
-                        OnboardingFlowLayout(spacing: 8) {
-                            ForEach(suggestions, id: \.self) { suggestion in
-                                Button(action: {
-                                    viewModel.answers.favoriteTopic = suggestion
-                                }) {
-                                    Text(suggestion)
-                                        .font(.epilogue(12, weight: .semiBold))
-                                        .tracking(-0.04 * 12)
-                                        .foregroundStyle(ReefColors.primary)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(ReefColors.primary.opacity(0.1))
-                                        .clipShape(Capsule())
-                                }
-                                .buttonStyle(NoHighlightButtonStyle())
-                            }
-                        }
-                    }
-                    .transition(.opacity)
-                }
             }
         }
     }
