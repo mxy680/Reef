@@ -13,16 +13,9 @@ struct SettingsView: View {
     var body: some View {
         let colors = theme.colors
         VStack(alignment: .leading, spacing: metrics.sectionSpacing) {
-            if appeared {
-                headerSection(colors)
-                    .transition(.opacity.combined(with: .offset(y: 16)))
-
-                tabBar
-                    .transition(.opacity.combined(with: .offset(y: 12)))
-
-                tabContent
-                    .transition(.opacity.combined(with: .offset(y: 12)))
-            }
+            headerSection(colors)
+            tabBar
+            tabContent
         }
         .padding(4)
         .padding(.trailing, 4)
@@ -30,6 +23,10 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(metrics.contentPadding)
         .dashboardCard()
+        .compositingGroup()
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 12)
+        .animation(.easeOut(duration: 0.35).delay(0.1), value: appeared)
         .onAppear { appeared = true }
         .overlay(alignment: .bottom) {
             if let message = toastMessage {
