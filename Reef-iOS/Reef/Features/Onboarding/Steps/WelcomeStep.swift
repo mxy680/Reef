@@ -18,7 +18,7 @@ struct WelcomeStep: View {
                         // Logo
                         Text("REEF")
                             .font(.epilogue(18, weight: .black))
-                            .tracking(6)
+                            .tracking(2)
                             .foregroundStyle(ReefColors.primary)
                             .fadeUp(index: 0)
                             .padding(.bottom, 20)
