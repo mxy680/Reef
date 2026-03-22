@@ -61,39 +61,28 @@ struct WelcomeStep: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(28)
 
-                    // Right side — visual block
-                    VStack(spacing: 14) {
-                        // Feature cards stacked with slight overlap
-                        featureCard(
-                            icon: "bubble.left.and.bubble.right.fill",
-                            label: "AI Tutor",
-                            description: "Talks you through problems",
-                            color: ReefColors.primary
+                    // Right side — app screenshot placeholder
+                    // TODO: Replace with Image("onboarding-screenshot").resizable()
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(colors.subtle)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(colors.border, lineWidth: 1.5)
                         )
-                        .fadeUp(index: 1)
-                        .rotationEffect(.degrees(-2))
-
-                        featureCard(
-                            icon: "pencil.tip.crop.circle",
-                            label: "Handwriting",
-                            description: "Reads what you write",
-                            color: Color(hex: 0xEB8C73)
+                        .overlay(
+                            VStack(spacing: 8) {
+                                Image(systemName: "photo")
+                                    .font(.system(size: 32, weight: .light))
+                                    .foregroundStyle(colors.textMuted)
+                                Text("App screenshot")
+                                    .font(.epilogue(12, weight: .medium))
+                                    .tracking(-0.04 * 12)
+                                    .foregroundStyle(colors.textMuted)
+                            }
                         )
+                        .frame(maxWidth: .infinity)
+                        .padding(28)
                         .fadeUp(index: 2)
-                        .rotationEffect(.degrees(1.5))
-
-                        featureCard(
-                            icon: "chart.line.uptrend.xyaxis",
-                            label: "Analytics",
-                            description: "Tracks your progress",
-                            color: ReefColors.accent
-                        )
-                        .fadeUp(index: 3)
-                        .rotationEffect(.degrees(-1))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 28)
-                    .padding(.trailing, 28)
                 }
                 .background(colors.card)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -113,53 +102,5 @@ struct WelcomeStep: View {
             }
             .scrollBounceBehavior(.basedOnSize)
         }
-    }
-
-    private func featureCard(
-        icon: String,
-        label: String,
-        description: String,
-        color: Color
-    ) -> some View {
-        let colors = theme.colors
-
-        return HStack(spacing: 14) {
-            // Icon circle
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(color)
-                    .frame(width: 44, height: 44)
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(ReefColors.white)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.epilogue(14, weight: .bold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(colors.text)
-
-                Text(description)
-                    .font(.epilogue(11, weight: .medium))
-                    .tracking(-0.04 * 11)
-                    .foregroundStyle(colors.textMuted)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(colors.border, lineWidth: 1.5)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(colors.shadow)
-                .offset(x: 3, y: 3)
-        )
     }
 }
