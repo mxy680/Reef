@@ -93,8 +93,7 @@ struct WelcomeStep: View {
                 .offset(x: 5, y: 5)
         )
         .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: metrics.onboardingCardMaxWidth + 100)
-        .padding(.horizontal, metrics.authHPadding)
+        .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
