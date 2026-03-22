@@ -55,10 +55,41 @@ struct AppRouter: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .environment(\.reefLayoutMetrics, ReefLayoutMetrics(screenHeight: shortSide))
+            #if DEBUG
+            .overlay(alignment: .topTrailing) {
+                if currentScreen == .dashboard {
+                    Button(action: restartOnboarding) {
+                        Label("Restart Onboarding", systemImage: "arrow.counterclockwise")
+                            .font(.epilogue(11, weight: .bold))
+                            .tracking(-0.04 * 11)
+                            .foregroundStyle(ReefColors.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(ReefColors.destructive.opacity(0.85))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(NoHighlightButtonStyle())
+                    .padding(.top, 4)
+                    .padding(.trailing, 8)
+                }
+            }
+            #endif
         }
         .animation(.easeInOut(duration: 0.35), value: currentScreen)
         .hoverEffectDisabled()
     }
+
+    // MARK: - Debug
+
+    #if DEBUG
+    private func restartOnboarding() {
+        let repo = SupabaseProfileRepository()
+        Task {
+            try? await repo.upsertProfile(ProfileUpdate(onboardingCompleted: false))
+            await auth.completeOnboarding() // refreshes profile → router shows onboarding
+        }
+    }
+    #endif
 
     // MARK: - Splash / Loading
 
