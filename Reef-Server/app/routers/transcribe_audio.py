@@ -21,6 +21,11 @@ async def transcribe_audio(
     if not settings.groq_api_key:
         raise HTTPException(status_code=503, detail="Groq API key not configured")
 
+    # Validate content type
+    allowed_types = {"audio/m4a", "audio/aac", "audio/mpeg", "audio/wav", "audio/mp4", "audio/webm", "audio/x-m4a"}
+    if file.content_type and file.content_type not in allowed_types:
+        raise HTTPException(status_code=415, detail="Unsupported audio format")
+
     audio_data = await file.read()
     if len(audio_data) > 10 * 1024 * 1024:  # 10MB limit
         raise HTTPException(status_code=413, detail="Audio file too large")

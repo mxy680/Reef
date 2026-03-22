@@ -227,6 +227,7 @@ final class TutorEvaluationService {
         stepIndex: Int,
         studentLatex: String
     ) {
+        guard !isSendingChat else { return }
         guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
         let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)

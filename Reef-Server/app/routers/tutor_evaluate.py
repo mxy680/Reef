@@ -254,7 +254,7 @@ async def tutor_chat(
     speech_audio = None
     if settings.groq_api_key and output.speech:
         try:
-            speech_audio = await _generate_tts(output.speech)
+            speech_audio = await _generate_tts(output.speech[:500])
         except Exception as e:
             log.warning(f"[tutor-chat] TTS failed: {e}")
 

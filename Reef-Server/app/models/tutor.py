@@ -62,7 +62,7 @@ class TutorChatLLMOutput(BaseModel):
     """Structured output from the LLM for chat responses."""
 
     reply: str = Field(..., description="Written response with $...$ math notation for display")
-    speech: str = Field(..., description="Verbal response — no math notation, say numbers and formulas in words")
+    speech: str = Field(..., max_length=500, description="Verbal response — no math notation, say numbers and formulas in words, 1-2 sentences max")
 
 
 class TutorChatResponse(BaseModel):
