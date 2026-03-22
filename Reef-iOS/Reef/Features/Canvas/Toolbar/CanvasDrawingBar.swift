@@ -101,7 +101,7 @@ struct CanvasDrawingBar: View {
             } else if viewModel.selectedTool == .eraser {
                 eraserSettingsSection
             } else if viewModel.selectedTool == .lasso {
-                Text("Draw around strokes to select")
+                Text("Draw around strokes and tap to select")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.5))
             }
