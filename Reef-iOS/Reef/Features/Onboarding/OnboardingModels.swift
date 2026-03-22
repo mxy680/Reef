@@ -228,16 +228,17 @@ enum CourseCatalog {
         case .engineering:
             return ["Calculus", "Physics", "Linear Algebra", "Differential Equations",
                     "Chemistry", "Statistics", "Computer Science", "Engineering",
-                    "Data Science"]
+                    "Data Science", "Economics"]
         case .premed:
             return ["Biology", "Chemistry", "Organic Chemistry", "Anatomy",
-                    "Biochemistry", "Physics", "Statistics"]
+                    "Biochemistry", "Physics", "Statistics", "Economics"]
         case .cs:
             return ["Computer Science", "Calculus", "Linear Algebra", "Statistics",
-                    "Data Science", "Discrete Math", "Physics"]
+                    "Data Science", "Discrete Math", "Physics", "Economics"]
         case .science:
             return ["Calculus", "Physics", "Chemistry", "Biology", "Statistics",
-                    "Linear Algebra", "Differential Equations", "Organic Chemistry"]
+                    "Linear Algebra", "Differential Equations", "Organic Chemistry",
+                    "Economics"]
         case .other, nil:
             switch studentType {
             case .highSchool:
