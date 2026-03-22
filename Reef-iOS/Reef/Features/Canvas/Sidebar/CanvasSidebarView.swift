@@ -18,8 +18,8 @@ struct CanvasSidebarView: View {
         HStack(spacing: 0) {
             // Leading separator
             Rectangle()
-                .fill(Color.black.opacity(0.2))
-                .frame(width: 0.5)
+                .fill(isDarkMode ? Color.white.opacity(0.15) : Color.black.opacity(0.2))
+                .frame(width: 1)
 
             GeometryReader { geo in
                 VStack(alignment: .leading, spacing: 0) {
@@ -216,7 +216,7 @@ struct CanvasSidebarView: View {
                 .frame(height: 0.5)
 
             HStack(spacing: 8) {
-                TextField("Ask the tutor...", text: $chatInput)
+                TextField("Ask the tutor...", text: $chatInput, prompt: Text("Ask the tutor...").foregroundStyle(colors.textMuted))
                     .font(.system(size: 13))
                     .textFieldStyle(.plain)
                     .foregroundStyle(colors.text)
