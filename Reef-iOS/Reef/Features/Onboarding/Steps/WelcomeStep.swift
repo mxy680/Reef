@@ -45,7 +45,7 @@ struct WelcomeStep: View {
                         HStack(spacing: 6) {
                             Text("🐠")
                                 .font(.system(size: 13))
-                            Text("10,000+ students already in")
+                            Text("built by a student who needed this")
                                 .font(.epilogue(12, weight: .bold))
                                 .tracking(-0.04 * 12)
                                 .foregroundStyle(colors.textSecondary)
