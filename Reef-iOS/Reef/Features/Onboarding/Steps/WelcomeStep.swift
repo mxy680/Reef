@@ -9,91 +9,157 @@ struct WelcomeStep: View {
     var body: some View {
         let colors = theme.colors
 
-        VStack(spacing: 0) {
-            Spacer()
+        GeometryReader { geo in
+            ScrollView(showsIndicators: false) {
+                // Card with horizontal split
+                HStack(spacing: 0) {
+                    // Left side — text content
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Logo
+                        Text("REEF")
+                            .font(.epilogue(18, weight: .black))
+                            .tracking(6)
+                            .foregroundStyle(ReefColors.primary)
+                            .fadeUp(index: 0)
+                            .padding(.bottom, 20)
 
-            // Hero icon composition
-            ZStack {
-                // Background circle
-                Circle()
-                    .fill(ReefColors.primary.opacity(0.1))
-                    .frame(width: 140, height: 140)
+                        // Headline
+                        Text("Your practice\nproblems\ntalk back")
+                            .font(.epilogue(34, weight: .black))
+                            .tracking(-0.04 * 34)
+                            .foregroundStyle(colors.text)
+                            .lineSpacing(2)
+                            .fadeUp(index: 1)
+                            .padding(.bottom, 14)
 
-                // Main icon
-                Image(systemName: "bubble.left.and.text.bubble.right.fill")
-                    .font(.system(size: 56, weight: .medium))
-                    .foregroundStyle(ReefColors.primary)
+                        // Subline
+                        Text("Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.")
+                            .font(.epilogue(14, weight: .medium))
+                            .tracking(-0.04 * 14)
+                            .foregroundStyle(colors.textSecondary)
+                            .lineSpacing(3)
+                            .fadeUp(index: 2)
+                            .padding(.bottom, 20)
 
-                // Pencil accent
-                Image(systemName: "pencil.tip")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(colors.text)
-                    .offset(x: 50, y: -40)
-            }
-            .fadeUp(index: 0)
-            .padding(.bottom, 32)
+                        // Social proof
+                        HStack(spacing: 6) {
+                            Text("🐠")
+                                .font(.system(size: 13))
+                            Text("Trusted by 10,000+ students")
+                                .font(.epilogue(12, weight: .bold))
+                                .tracking(-0.04 * 12)
+                                .foregroundStyle(colors.textSecondary)
+                        }
+                        .fadeUp(index: 3)
+                        .padding(.bottom, 24)
 
-            // Logo
-            Text("REEF")
-                .font(.epilogue(20, weight: .black))
-                .tracking(8)
-                .foregroundStyle(ReefColors.primary)
-                .fadeUp(index: 1)
-                .padding(.bottom, 16)
+                        // CTA
+                        ReefButton("Let's go", action: onContinue)
+                            .frame(maxWidth: 200)
+                            .fadeUp(index: 4)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(28)
 
-            // Headline
-            Text("Your practice problems\ntalk back")
-                .font(.epilogue(38, weight: .black))
-                .tracking(-0.04 * 38)
-                .foregroundStyle(colors.text)
-                .multilineTextAlignment(.center)
-                .fadeUp(index: 2)
-                .padding(.bottom, 16)
+                    // Right side — visual block
+                    VStack(spacing: 14) {
+                        // Feature cards stacked with slight overlap
+                        featureCard(
+                            icon: "bubble.left.and.bubble.right.fill",
+                            label: "AI Tutor",
+                            description: "Talks you through problems",
+                            color: ReefColors.primary
+                        )
+                        .fadeUp(index: 1)
+                        .rotationEffect(.degrees(-2))
 
-            // Subline
-            Text("Stop switching apps. Stop waiting for office hours.\nGet real-time help the moment you need it.")
-                .font(.epilogue(16, weight: .medium))
-                .tracking(-0.04 * 16)
-                .foregroundStyle(colors.textSecondary)
-                .multilineTextAlignment(.center)
-                .fadeUp(index: 3)
-                .padding(.bottom, 24)
+                        featureCard(
+                            icon: "pencil.tip.crop.circle",
+                            label: "Handwriting",
+                            description: "Reads what you write",
+                            color: Color(hex: 0xEB8C73)
+                        )
+                        .fadeUp(index: 2)
+                        .rotationEffect(.degrees(1.5))
 
-            // Social proof badge
-            HStack(spacing: 6) {
-                Text("🐠")
-                    .font(.system(size: 14))
-                Text("Trusted by 10,000+ students")
-                    .font(.epilogue(13, weight: .bold))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(colors.text)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(colors.card)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(colors.border, lineWidth: 2)
-            )
-            .background(
-                Capsule()
-                    .fill(colors.shadow)
-                    .offset(x: 3, y: 3)
-            )
-            .fadeUp(index: 4)
-
-            Spacer()
-
-            // CTA
-            ReefButton("Let's go", action: onContinue)
-                .frame(maxWidth: 320)
+                        featureCard(
+                            icon: "chart.line.uptrend.xyaxis",
+                            label: "Analytics",
+                            description: "Tracks your progress",
+                            color: ReefColors.accent
+                        )
+                        .fadeUp(index: 3)
+                        .rotationEffect(.degrees(-1))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+                    .padding(.trailing, 28)
+                }
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(colors.border, lineWidth: 2)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(colors.shadow)
+                        .offset(x: 5, y: 5)
+                )
+                .frame(maxWidth: metrics.onboardingCardMaxWidth + 100)
                 .padding(.horizontal, metrics.authHPadding)
-                .fadeUp(index: 5)
+                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private func featureCard(
+        icon: String,
+        label: String,
+        description: String,
+        color: Color
+    ) -> some View {
+        let colors = theme.colors
+
+        return HStack(spacing: 14) {
+            // Icon circle
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(color)
+                    .frame(width: 44, height: 44)
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(ReefColors.white)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.text)
+
+                Text(description)
+                    .font(.epilogue(11, weight: .medium))
+                    .tracking(-0.04 * 11)
+                    .foregroundStyle(colors.textMuted)
+            }
 
             Spacer()
-                .frame(height: 40)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(colors.border, lineWidth: 1.5)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(colors.shadow)
+                .offset(x: 3, y: 3)
+        )
     }
 }
