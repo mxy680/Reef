@@ -250,13 +250,13 @@ struct CanvasView: View {
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
         .animation(.spring(duration: 0.2), value: viewModel.showHintPopover)
         .animation(.spring(duration: 0.2), value: viewModel.showRevealPopover)
-        .alert("Clear All Strokes?", isPresented: $viewModel.showClearConfirmation) {
-            Button("Clear", role: .destructive) {
+        .alert("Clear Everything?", isPresented: $viewModel.showClearConfirmation) {
+            Button("Clear All", role: .destructive) {
                 viewModel.clearAllStrokes()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will erase all drawings on every page.")
+            Text("This will erase all drawings, tutor progress, and chat history for every question. This cannot be undone.")
         }
         .alert("Reset This Question?", isPresented: $viewModel.showResetQuestionConfirmation) {
             Button("Reset", role: .destructive) {

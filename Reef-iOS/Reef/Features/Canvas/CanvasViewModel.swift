@@ -1005,13 +1005,24 @@ final class CanvasViewModel {
 
     func clearAllStrokes() {
         guard let container = containerView else { return }
-        // Set empty drawings on each canvas view — PKCanvasView registers
-        // this with its undo manager so the user can undo the clear.
+        let savedCallback = drawingManager.onDrawingChanged
+        drawingManager.onDrawingChanged = nil
         for i in 0..<container.canvasViews.count {
-            container.canvasViews[i].drawing = PKDrawing()
             drawingManager.setDrawing(PKDrawing(), for: i)
+            container.canvasViews[i].drawing = PKDrawing()
         }
+        drawingManager.onDrawingChanged = savedCallback
+        drawingManager.onDrawingChanged?()
+
+        // Reset all tutor state
         clearShapeStrokes()
+        currentTutorStepIndex = 0
+        tutorEvalService.reset()
+        handwritingService.latexResult = ""
+        handwritingService.resetSession()
+        savedTutorProgress = nil
+
+        saveCanvasState()
     }
 
     func deleteCurrentPage(drawingManager: CanvasDrawingManager) {
