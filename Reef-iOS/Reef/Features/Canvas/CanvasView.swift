@@ -253,8 +253,8 @@ struct CanvasView: View {
                     guard !Task.isCancelled else { return }
                     viewModel.saveCanvasState()
                 }
-                // Live transcription — when sidebar is open OR tutor mode is on
-                if viewModel.showSidebar || viewModel.tutorModeOn {
+                // Live transcription — skip when using shape tool (diagrams go as images, not strokes)
+                if (viewModel.showSidebar || viewModel.tutorModeOn) && viewModel.selectedTool != .shapes {
                     let drawing = viewModel.drawingManager.drawing(for: viewModel.currentPageIndex)
                     let regions = viewModel.activeSubquestionRegions()
                     viewModel.handwritingService.onDrawingChanged(
