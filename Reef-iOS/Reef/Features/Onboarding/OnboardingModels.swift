@@ -98,10 +98,10 @@ enum StudyGoal: String, Codable, Sendable, CaseIterable {
 
     var displayLabel: String {
         switch self {
-        case .aceExams: "Ace my exams"
-        case .understand: "Actually understand what's going on"
-        case .saveTime: "Stop studying until 3am"
-        case .boostGPA: "Rescue my GPA"
+        case .aceExams: "Walk into an exam and not panic"
+        case .understand: "Stop nodding along in lecture"
+        case .saveTime: "Have a social life again"
+        case .boostGPA: "Fix what last semester did to me"
         }
     }
 
