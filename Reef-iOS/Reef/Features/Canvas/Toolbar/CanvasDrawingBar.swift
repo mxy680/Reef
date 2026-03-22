@@ -170,6 +170,17 @@ struct CanvasDrawingBar: View {
                 }
                 .buttonStyle(.plain)
 
+                Button {
+                    viewModel.showBugReport = true
+                } label: {
+                    Image(systemName: "ladybug.fill")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                        .frame(width: 38, height: 48)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
                 toolbarButton(icon: "canvas.export", yOffset: -1) {
                     viewModel.exportDocument()
                 }

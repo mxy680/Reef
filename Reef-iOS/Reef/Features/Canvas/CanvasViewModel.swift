@@ -147,6 +147,7 @@ final class CanvasViewModel {
     let tutorEvalService = TutorEvaluationService()
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
+    var showBugReport: Bool = false
     var isExporting: Bool = false
     var exportedPDFData: Data?
     var exportedPDFURL: URL?
