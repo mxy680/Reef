@@ -163,9 +163,9 @@ struct CanvasDrawingBar: View {
                     }
                 } label: {
                     Image(systemName: viewModel.isDarkMode ? "sun.max.fill" : "moon.fill")
-                        .font(.system(size: 17, weight: .medium))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.8))
-                        .frame(width: 38, height: 48)
+                        .frame(width: 28, height: 48)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -174,9 +174,9 @@ struct CanvasDrawingBar: View {
                     viewModel.showBugReport = true
                 } label: {
                     Image(systemName: "ladybug.fill")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.8))
-                        .frame(width: 38, height: 48)
+                        .frame(width: 28, height: 48)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -647,7 +647,7 @@ struct CanvasDrawingBar: View {
                 .frame(width: 22, height: 22)
                 .offset(y: yOffset)
                 .foregroundColor(.white.opacity(active ? 1 : 0.8))
-                .frame(width: 38, height: 48)
+                .frame(width: 28, height: 48)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
