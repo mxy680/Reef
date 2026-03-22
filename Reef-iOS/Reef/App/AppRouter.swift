@@ -48,6 +48,7 @@ struct AppRouter: View {
 
                 case .onboarding:
                     OnboardingFlowView()
+                        .id(onboardingResetID)
                         .transition(.opacity)
                         .accessibilityIdentifier("screen.onboarding")
 
@@ -89,12 +90,15 @@ struct AppRouter: View {
 
     // MARK: - Debug
 
+    @State private var onboardingResetID = UUID()
+
     #if DEBUG
     private func restartOnboarding() {
         let repo = SupabaseProfileRepository()
         Task {
             try? await repo.upsertProfile(ProfileUpdate(onboardingCompleted: false))
-            await auth.completeOnboarding() // refreshes profile → router shows onboarding
+            await auth.completeOnboarding()
+            onboardingResetID = UUID() // force recreate OnboardingFlowView
         }
     }
     #endif
