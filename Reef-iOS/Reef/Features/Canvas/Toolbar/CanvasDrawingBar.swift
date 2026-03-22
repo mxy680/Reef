@@ -318,7 +318,9 @@ struct CanvasDrawingBar: View {
     // MARK: - Eraser Settings
 
     private var eraserSettingsSection: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: 8) {
+            divider
+
             // Mode toggle: stroke vs area
             HStack(spacing: 2) {
                 eraserModeButton(
@@ -336,11 +338,10 @@ struct CanvasDrawingBar: View {
                 }
             }
 
-            // Thickness slider
+            // Thickness slider + preview dot
             HStack(spacing: 6) {
                 Reef3DSlider(value: $viewModel.eraserWidth, range: 2.0...40.0)
 
-                // Preview dot
                 let dotSize = 6 + (viewModel.eraserWidth - 2) / 38 * 14
                 Circle()
                     .fill(Color.white.opacity(0.6))
@@ -356,10 +357,22 @@ struct CanvasDrawingBar: View {
                     .animation(.easeOut(duration: 0.1), value: viewModel.eraserWidth)
             }
 
-            divider
+            // Clear all strokes — trash icon
+            Button {
+                viewModel.showClearConfirmation = true
+            } label: {
+                Image("canvas.trash")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 18, height: 18)
+                    .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
-            // Clear all strokes — same style as Delete Page pill
-            clearAllPill
+            divider
         }
         .transition(.opacity)
     }
