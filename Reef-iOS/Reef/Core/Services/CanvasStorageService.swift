@@ -20,8 +20,19 @@ enum CanvasStorageService {
         let fileURL = baseDirectory
             .appendingPathComponent(documentId)
             .appendingPathComponent("canvas-state.json")
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        return try? JSONDecoder().decode(CanvasDocumentData.self, from: data)
+        let rawData: Data
+        do {
+            rawData = try Data(contentsOf: fileURL)
+        } catch {
+            // File doesn't exist yet (first open) — not an error
+            return nil
+        }
+        do {
+            return try JSONDecoder().decode(CanvasDocumentData.self, from: rawData)
+        } catch {
+            print("[CanvasStorage] Failed to decode saved state for \(documentId): \(error)")
+            return nil
+        }
     }
 
     static func delete(documentId: String) throws {

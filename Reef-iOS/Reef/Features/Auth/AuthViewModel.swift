@@ -93,12 +93,7 @@ final class AuthViewModel {
             session = try await authRepo.restoreSession()
             await refreshProfile()
         } catch {
-            #if DEBUG
-            devLogin()
-            return
-            #else
             session = nil
-            #endif
         }
 
         // 2. Listen for ongoing auth changes (sign-in, sign-out, token refresh)

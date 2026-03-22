@@ -46,14 +46,15 @@ struct CanvasAddColorPopup: View {
         UIColor(red: 0.85, green: 0.75, blue: 0.6, alpha: 1),
     ]
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 6)
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 20) {
             Text("Pick a Color")
-                .font(.system(size: 16, weight: .bold))
+                .font(.epilogue(18, weight: .black))
+                .tracking(-0.04 * 18)
 
-            LazyVGrid(columns: columns, spacing: 8) {
+            LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(Array(Self.palette.enumerated()), id: \.offset) { index, color in
                     let isSelected = selectedIndex == index
                     Button {
@@ -63,55 +64,80 @@ struct CanvasAddColorPopup: View {
                             .fill(Color(color))
                             .frame(width: 32, height: 32)
                             .overlay(
+                                Circle().stroke(ReefColors.black.opacity(0.6), lineWidth: 1.5)
+                            )
+                            .background(
                                 Circle()
-                                    .stroke(Color.white, lineWidth: isSelected ? 2.5 : 0)
+                                    .fill(ReefColors.black.opacity(0.5))
+                                    .offset(x: 2, y: 2)
                             )
                             .overlay(
-                                Circle()
-                                    .stroke(
-                                        isSelected ? ReefColors.black : ReefColors.gray200,
-                                        lineWidth: isSelected ? 2 : 1
-                                    )
-                                    .padding(isSelected ? -2 : 0)
+                                isSelected
+                                    ? Circle().stroke(ReefColors.black, lineWidth: 3).frame(width: 38, height: 38)
+                                    : nil
                             )
+                            .frame(width: 40, height: 40)
                     }
                     .buttonStyle(.plain)
                 }
             }
 
             HStack(spacing: 12) {
+                // Cancel button — 3D
                 Button {
                     onDismiss()
                 } label: {
                     Text("Cancel")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(ReefColors.gray600)
+                        .font(.epilogue(14, weight: .bold))
+                        .tracking(-0.04 * 14)
+                        .foregroundColor(ReefColors.black)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(ReefColors.gray100)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .padding(.vertical, 12)
+                        .background(
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(ReefColors.black)
+                                    .offset(x: 3, y: 3)
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(ReefColors.white)
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(ReefColors.black, lineWidth: 2)
+                            }
+                        )
                 }
                 .buttonStyle(.plain)
 
+                // Add button — 3D filled
                 Button {
                     if let index = selectedIndex {
                         onAdd(Self.palette[index])
                     }
                 } label: {
                     Text("Add")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.epilogue(14, weight: .black))
+                        .tracking(-0.04 * 14)
+                        .foregroundColor(selectedIndex != nil ? .white : ReefColors.gray500)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(selectedIndex != nil ? ReefColors.primary : ReefColors.gray400)
+                        .padding(.vertical, 12)
+                        .background(selectedIndex != nil ? ReefColors.primary : ReefColors.gray100)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(selectedIndex != nil ? ReefColors.black : ReefColors.gray400, lineWidth: selectedIndex != nil ? 2 : 1.5)
+                        )
+                        .compositingGroup()
+                        .background(
+                            selectedIndex != nil
+                                ? AnyView(RoundedRectangle(cornerRadius: 10).fill(ReefColors.black).offset(x: 3, y: 3))
+                                : AnyView(EmptyView())
+                        )
                 }
                 .buttonStyle(.plain)
                 .disabled(selectedIndex == nil)
             }
         }
-        .padding(20)
-        .frame(width: 280)
+        .padding(24)
+        .frame(width: 300)
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: 16)

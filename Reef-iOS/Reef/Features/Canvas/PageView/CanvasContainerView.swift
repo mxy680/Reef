@@ -10,7 +10,7 @@ final class CanvasContainerView: UIView {
     let pagesStackView = UIStackView()
 
     private var pageImageViews: [UIImageView] = []
-    private var canvasViews: [PKCanvasView] = []
+    private(set) var canvasViews: [PKCanvasView] = []
     private(set) var pageContainerViews: [UIView] = []
     private var shadowViews: [UIView] = []
     private var pageOverlayViews: [CanvasPageOverlayView] = []
@@ -478,13 +478,18 @@ extension CanvasContainerView: UIScrollViewDelegate {
 extension CanvasContainerView: PKCanvasViewDelegate {
     func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         guard let index = canvasViews.firstIndex(of: canvasView) else { return }
-        drawingManager?.setDrawing(canvasView.drawing, for: index)
 
-        // Report latest stroke position for question detection
+        // 1. Report stroke position FIRST so ViewModel updates activeQuestionLabel
+        //    before transcription is triggered by onDrawingChanged
         if let lastStroke = canvasView.drawing.strokes.last {
-            let midY = Double(lastStroke.renderBounds.midY)
+            let screenScale = canvasView.window?.screen.scale ?? 2.0
+            let midY = Double(lastStroke.renderBounds.midY) / screenScale
             onStrokePositionChanged?(index, midY)
         }
+
+        // 2. THEN update drawing — this triggers onDrawingChanged which reads
+        //    the now-current activeQuestionLabel for region filtering
+        drawingManager?.setDrawing(canvasView.drawing, for: index)
 
         // Shape auto-snap via server
         guard !isReplacingStroke else { return }

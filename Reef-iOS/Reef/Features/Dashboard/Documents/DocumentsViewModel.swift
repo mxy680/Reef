@@ -109,6 +109,11 @@ final class DocumentsViewModel {
         do {
             let doc = try await repo.uploadDocument(fileURL: url, courseId: courseId, reconstruct: reconstruct)
             documents.insert(doc, at: 0)
+            // Fetch thumbnail URL for the newly uploaded doc
+            if let urls = try? await repo.getThumbnailURLs([doc.id]),
+               let thumbURL = urls[doc.id] {
+                thumbnailURLs[doc.id] = thumbURL
+            }
             if reconstruct {
                 showToast("Document uploading — processing will begin shortly")
                 startPollingIfNeeded()

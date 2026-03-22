@@ -28,6 +28,7 @@ struct ReefApp: App {
             AppRouter()
                 .environment(auth)
                 .environment(theme)
+                .statusBarHidden(true)
                 .onOpenURL { url in
                     auth.handleURL(url)
                 }

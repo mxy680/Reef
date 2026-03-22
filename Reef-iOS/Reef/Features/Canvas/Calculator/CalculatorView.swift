@@ -9,11 +9,6 @@ struct CalculatorView: View {
     var isDarkMode: Bool
     var onClose: () -> Void
 
-    // MARK: - Drag State
-
-    @State private var position: CGSize = .zero
-    @State private var dragOffset: CGSize = .zero
-
     // MARK: - Layout Constants
 
     private var cardWidth: CGFloat { viewModel.isCompact ? 280 : 380 }
@@ -28,31 +23,31 @@ struct CalculatorView: View {
     var body: some View {
         let colors = theme.colors
 
-        VStack(spacing: 0) {
-            titleBar(colors: colors)
-            displayArea(colors: colors)
+        DraggableCard {
+            VStack(spacing: 0) {
+                titleBar(colors: colors)
+                displayArea(colors: colors)
 
-            if viewModel.isShowingHistory {
-                historyPanel(colors: colors)
+                if viewModel.isShowingHistory {
+                    historyPanel(colors: colors)
+                }
+
+                buttonGrid
+                    .padding(10)
             }
-
-            buttonGrid
-                .padding(10)
+            .frame(width: cardWidth)
+            .background(colors.cardElevated)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(colors.border, lineWidth: borderWidth)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(colors.shadow)
+                    .offset(x: shadowOffset, y: shadowOffset)
+            )
         }
-        .frame(width: cardWidth)
-        .background(colors.cardElevated)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(colors.border, lineWidth: borderWidth)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(colors.shadow)
-                .offset(x: shadowOffset, y: shadowOffset)
-        )
-        .compositingGroup()
-        .offset(x: position.width + dragOffset.width, y: position.height + dragOffset.height)
         .animation(.spring(duration: 0.25, bounce: 0.1), value: viewModel.isCompact)
     }
 
@@ -103,19 +98,6 @@ struct CalculatorView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .gesture(
-            DragGesture()
-                .onChanged { value in
-                    dragOffset = value.translation
-                }
-                .onEnded { value in
-                    position = CGSize(
-                        width: position.width + value.translation.width,
-                        height: position.height + value.translation.height
-                    )
-                    dragOffset = .zero
-                }
-        )
     }
 
     // MARK: - Display Area

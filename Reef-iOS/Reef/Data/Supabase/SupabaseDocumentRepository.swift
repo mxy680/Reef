@@ -107,7 +107,33 @@ struct SupabaseDocumentRepository: DocumentRepository {
                 .upload(thumbPath, data: thumbnailData, options: .init(contentType: "image/png"))
         }
 
+        // Trigger reconstruction on the server if requested
+        if reconstruct {
+            do {
+                try await triggerReconstruction(documentId: newDoc.id)
+            } catch {
+                print("[DocumentRepo] Reconstruction trigger failed for \(newDoc.id): \(error)")
+            }
+        }
+
         return newDoc
+    }
+
+    private func triggerReconstruction(documentId: String) async throws {
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/v2/reconstruct-document") else { return }
+
+        let session = try await supabase.auth.session
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONEncoder().encode(["document_id": documentId])
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
     }
 
     // MARK: - Delete
@@ -219,8 +245,14 @@ struct SupabaseDocumentRepository: DocumentRepository {
 
     func getDownloadURL(_ id: String) async throws -> URL {
         let userId = try await getUserId()
-        let path = "\(userId)/\(id)/output.pdf"
-        return try await supabase.storage.from("documents").createSignedURL(path: path, expiresIn: 3600)
+        // Try output.pdf first (reconstructed), fall back to original.pdf
+        do {
+            return try await supabase.storage.from("documents")
+                .createSignedURL(path: "\(userId)/\(id)/output.pdf", expiresIn: 3600)
+        } catch {
+            return try await supabase.storage.from("documents")
+                .createSignedURL(path: "\(userId)/\(id)/original.pdf", expiresIn: 3600)
+        }
     }
 
     func getShareURL(_ id: String) async throws -> URL {

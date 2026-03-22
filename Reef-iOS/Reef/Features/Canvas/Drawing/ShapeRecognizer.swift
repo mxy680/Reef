@@ -17,229 +17,102 @@ enum RecognizedShape {
     }
 }
 
+// MARK: - Shape Recognizer
+
 struct ShapeRecognizer {
 
-    // MARK: - Dwell Detection
+    // MARK: - Remote Shape Recognition
 
-    /// Check if the user held the pencil still at the end of the stroke.
-    /// Returns true if the last 400ms+ of the stroke shows < 5pt of movement.
-    static func detectDwell(in stroke: PKStroke, dwellDuration: TimeInterval = 0.4, maxMovement: CGFloat = 5.0) -> Bool {
-        let path = stroke.path
-        guard path.count >= 10 else { return false }
-
-        let totalDuration = path[path.count - 1].timeOffset
-        guard totalDuration > dwellDuration else { return false }
-
-        let dwellStartTime = totalDuration - dwellDuration
-        let lastPoint = path[path.count - 1].location
-
-        // Check all points after dwellStartTime — they should all be within maxMovement of the last point
-        for i in stride(from: path.count - 1, through: 0, by: -1) {
-            let pt = path[i]
-            if pt.timeOffset < dwellStartTime { break }
-            let dist = hypot(pt.location.x - lastPoint.x, pt.location.y - lastPoint.y)
-            if dist > maxMovement { return false }
-        }
-
-        return true
+    struct FitShapeResponse: Decodable {
+        let shape: String
+        let confidence: Double
+        let geometry: FitShapeGeometry
     }
 
-    // MARK: - Shape Recognition (only called after dwell confirmed)
+    struct FitShapeGeometry: Decodable {
+        let start: [CGFloat]?
+        let end: [CGFloat]?
+        let x: CGFloat?
+        let y: CGFloat?
+        let width: CGFloat?
+        let height: CGFloat?
+        let angle: CGFloat?
+        let center: [CGFloat]?
+        let radius_x: CGFloat?
+        let radius_y: CGFloat?
+        let vertices: [[CGFloat]]?
+        let head_angle: CGFloat?
+    }
 
-    static func recognize(stroke: PKStroke) -> RecognizedShape {
+    static func recognizeRemote(stroke: PKStroke) async -> RecognizedShape {
+        guard stroke.path.count >= 5 else { return .none }
         let rawPoints = extractPoints(from: stroke)
-        guard rawPoints.count >= 5 else { return .none }
         let totalLength = polylineLength(rawPoints)
         guard totalLength >= 20 else { return .none }
 
-        // Trim the dwell tail — remove points from the end that are part of the hold
-        let trimmedPoints = trimDwellTail(rawPoints, stroke: stroke, dwellDuration: 0.4)
-        guard trimmedPoints.count >= 3 else { return .none }
+        let pointArrays: [[CGFloat]] = rawPoints.map { [$0.x, $0.y] }
+        let isClosed = distance(rawPoints.first!, rawPoints.last!) < totalLength * 0.15
 
-        let isClosed = isStrokeClosed(trimmedPoints, totalLength: polylineLength(trimmedPoints))
-
-        // Try detection in order
-        if !isClosed {
-            if let line = tryLine(trimmedPoints) { return line }
-            if let arrow = tryArrow(trimmedPoints) { return arrow }
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/fit-shape") else {
+            print("[ShapeRecognizer] No REEF_SERVER_URL configured")
+            return .none
         }
 
-        if isClosed {
-            if let circle = tryCircle(trimmedPoints) { return circle }
-            if let rect = tryRectangle(trimmedPoints) { return rect }
-            if let tri = tryTriangle(trimmedPoints) { return tri }
-        }
-
-        return .none
-    }
-
-    // MARK: - Trim Dwell Tail
-
-    private static func trimDwellTail(_ points: [CGPoint], stroke: PKStroke, dwellDuration: TimeInterval) -> [CGPoint] {
-        let path = stroke.path
-        let totalDuration = path[path.count - 1].timeOffset
-        let dwellStartTime = totalDuration - dwellDuration
-
-        var trimmedCount = points.count
-        for i in stride(from: path.count - 1, through: 0, by: -1) {
-            if path[i].timeOffset < dwellStartTime { break }
-            trimmedCount = i
-        }
-
-        return Array(points.prefix(max(3, trimmedCount)))
-    }
-
-    // MARK: - Closed Detection
-
-    private static func isStrokeClosed(_ points: [CGPoint], totalLength: CGFloat) -> Bool {
-        guard let first = points.first, let last = points.last else { return false }
-        let closeDist = hypot(first.x - last.x, first.y - last.y)
-        return closeDist < totalLength * 0.15
-    }
-
-    // MARK: - Line Detection
-
-    private static func tryLine(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 2 else { return nil }
-        let start = points.first!
-        let end = points.last!
-        let startEndDist = hypot(end.x - start.x, end.y - start.y)
-        guard startEndDist > 10 else { return nil }
-
-        let pathLen = polylineLength(points)
-        // Path should not be much longer than straight-line distance
-        guard pathLen / startEndDist < 1.3 else { return nil }
-
-        // Max perpendicular deviation should be small relative to length
-        var maxDev: CGFloat = 0
-        for point in points {
-            let dev = perpendicularDistance(point: point, lineStart: start, lineEnd: end)
-            maxDev = max(maxDev, dev)
-        }
-        guard maxDev / startEndDist < 0.12 else { return nil }
-
-        return .line(start: start, end: end)
-    }
-
-    // MARK: - Arrow Detection
-
-    private static func tryArrow(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 10 else { return nil }
-
-        // Check if main body (first 70%) is line-like
-        let splitIdx = Int(Double(points.count) * 0.7)
-        let bodyPoints = Array(points[0..<splitIdx])
-        guard tryLine(bodyPoints) != nil else { return nil }
-
-        // Check for V-shaped head in the last 30%
-        let headPoints = Array(points[splitIdx...])
-        guard headPoints.count >= 3 else { return nil }
-
-        // The head should have at least one sharp direction reversal
-        var hasReversal = false
-        for i in 1..<headPoints.count - 1 {
-            let v1 = CGPoint(x: headPoints[i].x - headPoints[i-1].x, y: headPoints[i].y - headPoints[i-1].y)
-            let v2 = CGPoint(x: headPoints[i+1].x - headPoints[i].x, y: headPoints[i+1].y - headPoints[i].y)
-            let dot = v1.x * v2.x + v1.y * v2.y
-            let mag1 = hypot(v1.x, v1.y)
-            let mag2 = hypot(v2.x, v2.y)
-            guard mag1 > 0, mag2 > 0 else { continue }
-            let cosAngle = dot / (mag1 * mag2)
-            if cosAngle < -0.3 { // > ~107 degrees
-                hasReversal = true
-                break
+        do {
+            struct RequestBody: Encodable {
+                let points: [[CGFloat]]
+                let closed: Bool
             }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 3
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(RequestBody(points: pointArrays, closed: isClosed))
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                print("[ShapeRecognizer] Server returned non-2xx")
+                return .none
+            }
+
+            let fitResponse = try JSONDecoder().decode(FitShapeResponse.self, from: data)
+            print("[ShapeRecognizer] remote: shape=\(fitResponse.shape) confidence=\(String(format: "%.2f", fitResponse.confidence))")
+
+            guard fitResponse.shape != "none" else { return .none }
+            return mapResponse(fitResponse)
+        } catch {
+            print("[ShapeRecognizer] remote failed: \(error)")
+            return .none
         }
-        guard hasReversal else { return nil }
-
-        let start = points.first!
-        let end = bodyPoints.last!
-        let dir = CGPoint(x: end.x - start.x, y: end.y - start.y)
-        return .arrow(start: start, end: end, headAngle: atan2(dir.y, dir.x))
     }
 
-    // MARK: - Circle Detection
-
-    private static func tryCircle(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 8 else { return nil }
-
-        let cx = points.map(\.x).reduce(0, +) / CGFloat(points.count)
-        let cy = points.map(\.y).reduce(0, +) / CGFloat(points.count)
-
-        let distances = points.map { hypot($0.x - cx, $0.y - cy) }
-        let meanR = distances.reduce(0, +) / CGFloat(distances.count)
-        guard meanR > 5 else { return nil }
-
-        let variance = distances.map { pow($0 - meanR, 2) }.reduce(0, +) / CGFloat(distances.count)
-        let stdDev = sqrt(variance)
-        let cv = stdDev / meanR
-
-        // Coefficient of variation < 0.2 means points are roughly equidistant from center
-        guard cv < 0.20 else { return nil }
-
-        let xs = points.map(\.x)
-        let ys = points.map(\.y)
-        let radiusX = (xs.max()! - xs.min()!) / 2.0
-        let radiusY = (ys.max()! - ys.min()!) / 2.0
-        let centroid = CGPoint(x: cx, y: cy)
-
-        return .circle(center: centroid, radiusX: radiusX, radiusY: radiusY)
-    }
-
-    // MARK: - Rectangle Detection
-
-    private static func tryRectangle(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 8 else { return nil }
-
-        let corners = findCorners(points, targetCount: 4)
-        guard corners.count == 4 else { return nil }
-
-        let pts = corners.map { points[$0] }
-
-        // Check all 4 angles are roughly 90 degrees
-        for i in 0..<4 {
-            let prev = pts[(i + 3) % 4]
-            let curr = pts[i]
-            let next = pts[(i + 1) % 4]
-            let v1 = CGPoint(x: curr.x - prev.x, y: curr.y - prev.y)
-            let v2 = CGPoint(x: next.x - curr.x, y: next.y - curr.y)
-            let dot = v1.x * v2.x + v1.y * v2.y
-            let mag = hypot(v1.x, v1.y) * hypot(v2.x, v2.y)
-            guard mag > 0 else { return nil }
-            let angle = acos(max(-1, min(1, dot / mag))) * 180 / .pi
-            guard abs(angle - 90) < 35 else { return nil }
+    private static func mapResponse(_ response: FitShapeResponse) -> RecognizedShape {
+        let geo = response.geometry
+        switch response.shape {
+        case "line":
+            guard let s = geo.start, let e = geo.end, s.count >= 2, e.count >= 2 else { return .none }
+            return .line(start: CGPoint(x: s[0], y: s[1]), end: CGPoint(x: e[0], y: e[1]))
+        case "rectangle":
+            guard let x = geo.x, let y = geo.y, let w = geo.width, let h = geo.height else { return .none }
+            return .rectangle(CGRect(x: x, y: y, width: w, height: h), angle: geo.angle ?? 0)
+        case "circle":
+            guard let c = geo.center, c.count >= 2, let rx = geo.radius_x, let ry = geo.radius_y else { return .none }
+            return .circle(center: CGPoint(x: c[0], y: c[1]), radiusX: rx, radiusY: ry)
+        case "triangle":
+            guard let verts = geo.vertices, verts.count >= 3 else { return .none }
+            return .triangle(
+                CGPoint(x: verts[0][0], y: verts[0][1]),
+                CGPoint(x: verts[1][0], y: verts[1][1]),
+                CGPoint(x: verts[2][0], y: verts[2][1])
+            )
+        case "arrow":
+            guard let s = geo.start, let e = geo.end, s.count >= 2, e.count >= 2 else { return .none }
+            return .arrow(start: CGPoint(x: s[0], y: s[1]), end: CGPoint(x: e[0], y: e[1]), headAngle: geo.head_angle ?? 0)
+        default:
+            return .none
         }
-
-        let minX = pts.map(\.x).min()!
-        let minY = pts.map(\.y).min()!
-        let maxX = pts.map(\.x).max()!
-        let maxY = pts.map(\.y).max()!
-        let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
-        let angle = atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x)
-
-        return .rectangle(rect, angle: angle)
-    }
-
-    // MARK: - Triangle Detection
-
-    private static func tryTriangle(_ points: [CGPoint]) -> RecognizedShape? {
-        guard points.count >= 6 else { return nil }
-
-        let corners = findCorners(points, targetCount: 3)
-        guard corners.count == 3 else { return nil }
-
-        let a = points[corners[0]]
-        let b = points[corners[1]]
-        let c = points[corners[2]]
-
-        // Verify angles sum to roughly 180
-        let angleA = interiorAngle(vertex: a, p1: b, p2: c)
-        let angleB = interiorAngle(vertex: b, p1: a, p2: c)
-        let angleC = interiorAngle(vertex: c, p1: a, p2: b)
-        let sumDeg = (angleA + angleB + angleC) * 180 / .pi
-        guard abs(sumDeg - 180) < 40 else { return nil }
-
-        return .triangle(a, b, c)
     }
 
     // MARK: - Build Clean Stroke
@@ -248,7 +121,6 @@ struct ShapeRecognizer {
         let ink = template.ink
         let transform = CGAffineTransform.identity
 
-        // Compute average stroke properties from template
         var forceSum: CGFloat = 0, sizeWSum: CGFloat = 0, sizeHSum: CGFloat = 0
         let count = template.path.count
         guard count > 0 else { return nil }
@@ -263,35 +135,41 @@ struct ShapeRecognizer {
         let geometryPoints: [CGPoint]
         switch shape {
         case .line(let start, let end):
-            geometryPoints = [start, end]
+            geometryPoints = interpolateEdge(from: start, to: end, count: 10)
         case .rectangle(let rect, _):
-            geometryPoints = [
-                CGPoint(x: rect.minX, y: rect.minY),
-                CGPoint(x: rect.maxX, y: rect.minY),
-                CGPoint(x: rect.maxX, y: rect.maxY),
-                CGPoint(x: rect.minX, y: rect.maxY),
-                CGPoint(x: rect.minX, y: rect.minY)
-            ]
+            let tl = CGPoint(x: rect.minX, y: rect.minY)
+            let tr = CGPoint(x: rect.maxX, y: rect.minY)
+            let br = CGPoint(x: rect.maxX, y: rect.maxY)
+            let bl = CGPoint(x: rect.minX, y: rect.maxY)
+            geometryPoints = interpolateEdge(from: tl, to: tr, count: 8)
+                + interpolateEdge(from: tr, to: br, count: 8).dropFirst()
+                + interpolateEdge(from: br, to: bl, count: 8).dropFirst()
+                + interpolateEdge(from: bl, to: tl, count: 8).dropFirst()
         case .circle(let center, let rx, let ry):
-            geometryPoints = (0...36).map { i in
-                let angle = CGFloat(i) / 36.0 * 2.0 * .pi
+            geometryPoints = (0...64).map { i in
+                let angle = CGFloat(i) / 64.0 * 2.0 * .pi
                 return CGPoint(x: center.x + rx * cos(angle), y: center.y + ry * sin(angle))
             }
         case .triangle(let a, let b, let c):
-            geometryPoints = [a, b, c, a]
+            geometryPoints = interpolateEdge(from: a, to: b, count: 8)
+                + interpolateEdge(from: b, to: c, count: 8).dropFirst()
+                + interpolateEdge(from: c, to: a, count: 8).dropFirst()
         case .arrow(let start, let end, _):
             let dx = end.x - start.x, dy = end.y - start.y
             let len = hypot(dx, dy)
             guard len > 0 else { return nil }
             let headLen = min(len * 0.2, 30)
             let ux = dx / len, uy = dy / len
-            let px = -uy, py = ux // perpendicular
+            let px = -uy, py = ux
             let tip = end
             let wing1 = CGPoint(x: tip.x - headLen * ux + headLen * 0.4 * px,
                                y: tip.y - headLen * uy + headLen * 0.4 * py)
             let wing2 = CGPoint(x: tip.x - headLen * ux - headLen * 0.4 * px,
                                y: tip.y - headLen * uy - headLen * 0.4 * py)
-            geometryPoints = [start, tip, wing1, tip, wing2]
+            geometryPoints = interpolateEdge(from: start, to: tip, count: 10)
+                + interpolateEdge(from: tip, to: wing1, count: 4).dropFirst()
+                + interpolateEdge(from: wing1, to: tip, count: 4).dropFirst()
+                + interpolateEdge(from: tip, to: wing2, count: 4).dropFirst()
         case .none:
             return nil
         }
@@ -314,7 +192,15 @@ struct ShapeRecognizer {
         return PKStroke(ink: ink, path: path, transform: transform, mask: template.mask)
     }
 
-    // MARK: - Geometry Helpers
+    // MARK: - Helpers
+
+    private static func interpolateEdge(from a: CGPoint, to b: CGPoint, count: Int) -> [CGPoint] {
+        guard count >= 2 else { return [a, b] }
+        return (0..<count).map { i in
+            let t = CGFloat(i) / CGFloat(count - 1)
+            return CGPoint(x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y))
+        }
+    }
 
     static func extractPoints(from stroke: PKStroke) -> [CGPoint] {
         (0..<stroke.path.count).map { stroke.path[$0].location }
@@ -327,55 +213,5 @@ struct ShapeRecognizer {
 
     static func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
         hypot(a.x - b.x, a.y - b.y)
-    }
-
-    private static func perpendicularDistance(point: CGPoint, lineStart: CGPoint, lineEnd: CGPoint) -> CGFloat {
-        let dx = lineEnd.x - lineStart.x
-        let dy = lineEnd.y - lineStart.y
-        let len = hypot(dx, dy)
-        guard len > 0 else { return hypot(point.x - lineStart.x, point.y - lineStart.y) }
-        return abs(dy * point.x - dx * point.y + lineEnd.x * lineStart.y - lineEnd.y * lineStart.x) / len
-    }
-
-    private static func interiorAngle(vertex: CGPoint, p1: CGPoint, p2: CGPoint) -> CGFloat {
-        let v1 = CGPoint(x: p1.x - vertex.x, y: p1.y - vertex.y)
-        let v2 = CGPoint(x: p2.x - vertex.x, y: p2.y - vertex.y)
-        let dot = v1.x * v2.x + v1.y * v2.y
-        let mag = hypot(v1.x, v1.y) * hypot(v2.x, v2.y)
-        guard mag > 0 else { return 0 }
-        return acos(max(-1, min(1, dot / mag)))
-    }
-
-    private static func findCorners(_ points: [CGPoint], targetCount: Int) -> [Int] {
-        guard points.count > targetCount * 3 else { return [] }
-        let step = max(1, points.count / (targetCount * 4))
-
-        var candidates: [(index: Int, angle: CGFloat)] = []
-        for i in step..<points.count - step {
-            let v1 = CGPoint(x: points[i].x - points[i - step].x, y: points[i].y - points[i - step].y)
-            let v2 = CGPoint(x: points[i + step].x - points[i].x, y: points[i + step].y - points[i].y)
-            let dot = v1.x * v2.x + v1.y * v2.y
-            let mag = hypot(v1.x, v1.y) * hypot(v2.x, v2.y)
-            guard mag > 0 else { continue }
-            let cosAngle = dot / mag
-            let angle = acos(max(-1, min(1, cosAngle)))
-            if angle > .pi / 6 { // > 30 degrees
-                candidates.append((i, angle))
-            }
-        }
-
-        candidates.sort { $0.angle > $1.angle }
-
-        // Non-maximum suppression: keep corners that are far enough apart
-        let minDist = points.count / (targetCount * 2)
-        var selected: [Int] = []
-        for c in candidates {
-            if selected.allSatisfy({ abs($0 - c.index) > minDist }) {
-                selected.append(c.index)
-            }
-            if selected.count == targetCount { break }
-        }
-
-        return selected.sorted()
     }
 }

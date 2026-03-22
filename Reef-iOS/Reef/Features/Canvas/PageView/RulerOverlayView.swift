@@ -45,8 +45,8 @@ struct CanvasRulerOverlayView: View {
 
     private var rulerFill: Color {
         isDarkMode
-            ? Color(red: 0.22, green: 0.24, blue: 0.28)
-            : Color(red: 0.96, green: 0.88, blue: 0.55)
+            ? ReefColors.CanvasDark.background
+            : Color(hex: 0xF8F0E6)
     }
 
     private var borderColor: Color {
