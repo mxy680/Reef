@@ -357,17 +357,14 @@ struct CanvasDrawingBar: View {
                     .animation(.easeOut(duration: 0.1), value: viewModel.eraserWidth)
             }
 
-            // Clear all strokes — trash icon
+            // Clear all strokes
             Button {
                 viewModel.showClearConfirmation = true
             } label: {
-                Image("canvas.trash")
-                    .renderingMode(.template)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 18, height: 18)
-                    .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20))
-                    .frame(width: 32, height: 32)
+                Image(systemName: "trash.fill")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 38, height: 48)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
