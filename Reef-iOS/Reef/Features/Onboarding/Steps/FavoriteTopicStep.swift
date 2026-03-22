@@ -16,28 +16,13 @@ struct FavoriteTopicStep: View {
         let colors = theme.colors
 
         OnboardingStepShell(
-            title: "What are you studying right now that you actually like?",
-            subtitle: "Could be a topic, a chapter, a concept — whatever you're vibing with lately. We're gonna use this.",
+            title: "What's the one thing you don't hate studying?",
+            subtitle: "We're gonna use this to show you something cool.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
         ) {
             VStack(alignment: .leading, spacing: 16) {
-                // Illustration
-                HStack {
-                    Spacer()
-                    ZStack {
-                        Circle()
-                            .fill(ReefColors.primary.opacity(0.1))
-                            .frame(width: 72, height: 72)
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 32, weight: .medium))
-                            .foregroundStyle(ReefColors.primary)
-                    }
-                    Spacer()
-                }
-                .padding(.bottom, 8)
-
                 ReefTextField(
                     placeholder: placeholder,
                     text: $viewModel.answers.favoriteTopic,
