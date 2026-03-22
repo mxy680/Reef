@@ -4,6 +4,7 @@ struct OnboardingStepShell<Content: View>: View {
     @Environment(ReefTheme.self) private var theme
     @Environment(\.reefLayoutMetrics) private var metrics
 
+    let step: OnboardingStep
     let title: String
     var subtitle: String? = nil
     let canAdvance: Bool
@@ -16,66 +17,81 @@ struct OnboardingStepShell<Content: View>: View {
     var body: some View {
         let colors = theme.colors
 
-        // No ScrollView — card is locked in place, vertically centered
-        VStack(alignment: .leading, spacing: 0) {
-            // Title
-            Text(title)
-                .font(.epilogue(28, weight: .black))
-                .tracking(-0.04 * 28)
-                .foregroundStyle(colors.text)
-                .padding(.bottom, subtitle != nil ? 10 : 24)
-                .fadeUp(index: 0)
+        VStack(spacing: 16) {
+            // Step icon above the card
+            ZStack {
+                Circle()
+                    .fill(ReefColors.primary.opacity(0.12))
+                    .frame(width: 64, height: 64)
 
-            // Subtitle
-            if let subtitle {
-                Text(subtitle)
-                    .font(.epilogue(15, weight: .medium))
-                    .tracking(-0.04 * 15)
-                    .foregroundStyle(colors.textSecondary)
-                    .padding(.bottom, 24)
-                    .fadeUp(index: 1)
+                Image(systemName: step.icon)
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundStyle(ReefColors.primary)
             }
+            .fadeUp(index: 0)
 
-            // Content
-            content()
-                .fadeUp(index: subtitle != nil ? 2 : 1)
+            // Card
+            VStack(alignment: .leading, spacing: 0) {
+                // Title
+                Text(title)
+                    .font(.epilogue(28, weight: .black))
+                    .tracking(-0.04 * 28)
+                    .foregroundStyle(colors.text)
+                    .padding(.bottom, subtitle != nil ? 10 : 24)
+                    .fadeUp(index: 1)
 
-            // Navigation inside card
-            HStack(spacing: 16) {
-                if showBack, let onBack {
-                    Button(action: onBack) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(colors.textSecondary)
-                            .frame(width: 48, height: 48)
-                            .background(colors.subtle)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(colors.border, lineWidth: 1.5)
-                            )
-                    }
-                    .buttonStyle(NoHighlightButtonStyle())
+                // Subtitle
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.epilogue(15, weight: .medium))
+                        .tracking(-0.04 * 15)
+                        .foregroundStyle(colors.textSecondary)
+                        .padding(.bottom, 24)
+                        .fadeUp(index: 2)
                 }
 
-                ReefButton(forwardLabel, disabled: !canAdvance, action: onForward)
+                // Content
+                content()
+                    .fadeUp(index: subtitle != nil ? 3 : 2)
+
+                // Navigation inside card
+                HStack(spacing: 16) {
+                    if showBack, let onBack {
+                        Button(action: onBack) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(colors.textSecondary)
+                                .frame(width: 48, height: 48)
+                                .background(colors.subtle)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(colors.border, lineWidth: 1.5)
+                                )
+                        }
+                        .buttonStyle(NoHighlightButtonStyle())
+                    }
+
+                    ReefButton(forwardLabel, disabled: !canAdvance, action: onForward)
+                }
+                .padding(.top, 28)
             }
-            .padding(.top, 28)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 28)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(colors.border, lineWidth: 2)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(colors.shadow)
+                    .offset(x: 5, y: 5)
+            )
+            .fadeUp(index: 1)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 28)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(colors.border, lineWidth: 2)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(colors.shadow)
-                .offset(x: 5, y: 5)
-        )
         .frame(maxWidth: metrics.onboardingCardMaxWidth)
         .padding(.horizontal, metrics.authHPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

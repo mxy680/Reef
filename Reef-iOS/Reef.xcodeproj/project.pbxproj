@@ -165,6 +165,7 @@
 		92E9598A7CF74987B94AE9E1 /* SignUpStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D5C439333D4481FAEB0471E /* SignUpStep.swift */; };
 		F97CEE9B646C4C56850EA1B7 /* PaywallStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74EFB0776F4149E9B55DCA54 /* PaywallStep.swift */; };
 		8F48D2ADC5844F77B4D042CD /* ReferralStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B2344E9C2345589D3B8798 /* ReferralStep.swift */; };
+		D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -330,6 +331,7 @@
 		0D5C439333D4481FAEB0471E /* SignUpStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpStep.swift; sourceTree = "<group>"; };
 		74EFB0776F4149E9B55DCA54 /* PaywallStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallStep.swift; sourceTree = "<group>"; };
 		B6B2344E9C2345589D3B8798 /* ReferralStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralStep.swift; sourceTree = "<group>"; };
+		CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -776,6 +778,7 @@
 				38C1DBEA81114C1697EAED41 /* OnboardingPill.swift */,
 				CB44D3A43ED24B23A0F7161A /* OnboardingFlowLayout.swift */,
 				D154202623CB4E49B29A6415 /* SocialProofBanner.swift */,
+							CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -907,6 +910,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */,
 				ED3D7199323CA782DA71B5A2 /* AddColorPopup.swift in Sources */,
 				CFDAF646BDC14E8F9404FE60 /* BugReportPopup.swift in Sources */,
 				E604A66F4CD6A3BCF6F53BC8 /* AddCoursePopup.swift in Sources */,

@@ -19,6 +19,39 @@ enum OnboardingStep: Int, CaseIterable, Equatable {
     case signUp
     case paywall
     case referral
+
+    /// SF Symbol for the step icon shown above the card
+    var icon: String {
+        switch self {
+        case .welcome: "bubble.left.and.text.bubble.right.fill"
+        case .studentType: "graduationcap.fill"
+        case .major: "building.columns.fill"
+        case .courses: "books.vertical.fill"
+        case .favoriteTopic: "lightbulb.fill"
+        case .studyGoal: "target"
+        case .goalValidation: "checkmark.seal.fill"
+        case .painPoints: "bandage.fill"
+        case .learningStyle: "brain.head.profile.fill"
+        case .dailyGoal: "clock.fill"
+        case .tutorDemo: "bubble.left.and.bubble.right.fill"
+        case .generatingPlan: "waveform.circle.fill"
+        case .planPreview: "list.clipboard.fill"
+        case .signUp: "person.crop.circle.fill"
+        case .paywall: "crown.fill"
+        case .referral: "megaphone.fill"
+        }
+    }
+
+    /// Whether this step uses OnboardingStepShell (vs custom layout)
+    var usesShell: Bool {
+        switch self {
+        case .welcome, .goalValidation, .tutorDemo, .generatingPlan,
+             .planPreview, .signUp, .paywall:
+            return false
+        default:
+            return true
+        }
+    }
 }
 
 // MARK: - Enums

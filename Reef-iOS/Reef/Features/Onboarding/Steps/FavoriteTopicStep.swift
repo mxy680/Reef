@@ -16,6 +16,7 @@ struct FavoriteTopicStep: View {
         let colors = theme.colors
 
         OnboardingStepShell(
+            step: .favoriteTopic,
             title: "What are you studying right now that you actually like?",
             subtitle: "Could be a topic, a chapter, a concept — whatever you're vibing with lately. We're gonna use this.",
             canAdvance: viewModel.canAdvance,

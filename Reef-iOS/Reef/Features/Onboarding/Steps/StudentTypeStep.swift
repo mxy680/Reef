@@ -5,6 +5,7 @@ struct StudentTypeStep: View {
 
     var body: some View {
         OnboardingStepShell(
+            step: .studentType,
             title: "Real quick — what are you?",
             canAdvance: viewModel.canAdvance,
             showBack: false,

@@ -5,6 +5,7 @@ struct MajorStep: View {
 
     var body: some View {
         OnboardingStepShell(
+            step: .major,
             title: "What's your field?",
             subtitle: "Don't overthink it. Broad strokes.",
             canAdvance: viewModel.canAdvance,

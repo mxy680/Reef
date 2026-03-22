@@ -22,6 +22,8 @@ struct OnboardingFlowView: View {
             colors.background
                 .ignoresSafeArea()
 
+            OnboardingDotGrid()
+
             VStack(spacing: 0) {
                 // Progress bar (hidden on welcome)
                 if viewModel.showProgressBar {

@@ -8,6 +8,7 @@ struct LearningStyleStep: View {
         let colors = theme.colors
 
         OnboardingStepShell(
+            step: .learningStyle,
             title: "How do you learn best?",
             subtitle: "Pick your vibe.",
             canAdvance: viewModel.canAdvance,
