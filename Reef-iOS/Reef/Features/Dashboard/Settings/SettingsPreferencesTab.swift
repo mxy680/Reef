@@ -60,22 +60,22 @@ struct SettingsPreferencesTab: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .padding(metrics.cardPadding)
             }
+
+            Rectangle().fill(colors.divider).frame(height: 1)
+
+            HStack {
+                Spacer()
+                ReefButton(.primary, size: .compact, disabled: !hasUnsavedChanges) {
+                    Task { await saveSettings() }
+                } label: {
+                    Text("Save Changes")
+                }
+            }
+            .padding(metrics.cardPadding)
         }
         .frame(maxWidth: .infinity)
         .dashboardCard()
         .onAppear { loadSettings() }
-        .onDisappear { flushSave() }
-        .onChange(of: selectedThemeColorIndex) { scheduleSave() }
-        .onChange(of: studyReminders) { scheduleSave() }
-        .onChange(of: weeklyDigest) { scheduleSave() }
-        .onChange(of: newFeatures) { scheduleSave() }
-        .onChange(of: achievementAlerts) { scheduleSave() }
-        .onChange(of: reminderTime) { scheduleSave() }
-        .onChange(of: difficultyLevel) { scheduleSave() }
-        .onChange(of: questionCount) { scheduleSave() }
-        .onChange(of: timerEnabled) { scheduleSave() }
-        .onChange(of: autoAdvance) { scheduleSave() }
-        .onChange(of: shuffleQuestions) { scheduleSave() }
     }
 
     // MARK: - Data
