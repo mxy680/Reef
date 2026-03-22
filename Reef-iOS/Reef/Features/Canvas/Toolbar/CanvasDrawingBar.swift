@@ -320,24 +320,20 @@ struct CanvasDrawingBar: View {
     private var eraserSettingsSection: some View {
         HStack(alignment: .center, spacing: 12) {
             // Mode toggle: stroke vs area
-            HStack(spacing: 4) {
-                SettingsPill(
-                    label: "Stroke",
-                    isSelected: viewModel.eraserMode == .vector,
-                    horizontalPadding: 12
+            HStack(spacing: 2) {
+                eraserModeButton(
+                    icon: "pencil.tip",
+                    isSelected: viewModel.eraserMode == .vector
                 ) {
                     viewModel.eraserMode = .vector
                 }
-                .scaleEffect(0.85)
 
-                SettingsPill(
-                    label: "Area",
-                    isSelected: viewModel.eraserMode == .bitmap,
-                    horizontalPadding: 12
+                eraserModeButton(
+                    icon: "square.dashed",
+                    isSelected: viewModel.eraserMode == .bitmap
                 ) {
                     viewModel.eraserMode = .bitmap
                 }
-                .scaleEffect(0.85)
             }
 
             // Thickness slider
@@ -648,6 +644,25 @@ struct CanvasDrawingBar: View {
                 .offset(y: yOffset)
                 .foregroundColor(.white.opacity(active ? 1 : 0.8))
                 .frame(width: 38, height: 48)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func eraserModeButton(
+        icon: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(isSelected ? .white : .white.opacity(0.5))
+                .frame(width: 32, height: 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isSelected ? Color.white.opacity(0.25) : Color.clear)
+                )
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
