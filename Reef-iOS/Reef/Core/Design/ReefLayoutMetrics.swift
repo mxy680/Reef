@@ -89,6 +89,13 @@ struct ReefLayoutMetrics {
 
     var profileRingSize: CGFloat { lerp(80, 112) }
 
+    // MARK: - Onboarding
+
+    var onboardingCardMaxWidth: CGFloat { lerp(500, 620) }
+    var onboardingProgressHeight: CGFloat { lerp(4, 6) }
+    var onboardingStepSpacing: CGFloat { lerp(20, 32) }
+    var onboardingOptionSpacing: CGFloat { lerp(10, 14) }
+
     // MARK: - Helpers
 
     private func lerp(_ lo: CGFloat, _ hi: CGFloat) -> CGFloat {
