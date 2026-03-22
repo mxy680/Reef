@@ -828,7 +828,7 @@ final class CanvasViewModel {
                     }
                 } catch {
                     tutorEvalService.chatMessages.append(TutorChatMessage(
-                        role: .error, latex: "Voice failed: \(error.localizedDescription)", timestamp: Date()
+                        role: .error, latex: "Voice message failed. Try again.", timestamp: Date()
                     ))
                 }
                 try? FileManager.default.removeItem(at: url)

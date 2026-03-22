@@ -136,14 +136,16 @@ async def tutor_evaluate(
         + body.student_latex
         + "\n<<<STUDENT_WORK_END>>>"
     )
+    delimited_steps = f"<<<STEPS_START>>>\n{steps_overview}\n<<<STEPS_END>>>"
+    delimited_step_work = f"<<<EXPECTED_WORK_START>>>\n{current_step.work}\n<<<EXPECTED_WORK_END>>>"
 
     # Build prompt
     prompt = TUTOR_EVALUATE_PROMPT.format(
         question_text=f"Question {answer_key.question_number}",
-        steps_overview=steps_overview,
+        steps_overview=delimited_steps,
         current_step_num=body.step_index + 1,
         current_step_description=current_step.description,
-        current_step_work=current_step.work,
+        current_step_work=delimited_step_work,
         student_work=delimited_student_work,
     )
 
@@ -232,7 +234,7 @@ async def tutor_chat(
         lines = []
         for msg in body.history[-10:]:
             label = "Student" if msg.role == "student" else "Tutor"
-            lines.append(f"{label}: {msg.text}")
+            lines.append(f"<<<{label.upper()}_MSG>>>\n{msg.text}\n<<</{label.upper()}_MSG>>>")
         history_text = "\n".join(lines)
 
     prompt = TUTOR_CHAT_PROMPT.format(

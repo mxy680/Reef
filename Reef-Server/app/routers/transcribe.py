@@ -6,7 +6,7 @@ import re as _re
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
@@ -20,12 +20,12 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 
 class StrokeData(BaseModel):
-    x: list[float]
-    y: list[float]
+    x: list[float] = Field(..., max_length=2000)
+    y: list[float] = Field(..., max_length=2000)
 
 
 class TranscribeStrokesRequest(BaseModel):
-    strokes: list[StrokeData]
+    strokes: list[StrokeData] = Field(..., max_length=100)
     session_id: str | None = None
     app_token: str | None = None
 
@@ -68,6 +68,10 @@ async def transcribe_strokes(
     if not settings.mathpix_app_id or not settings.mathpix_app_key:
         raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
 
+    from app.services.mathpix_pool import acquire_session
+    token, sid, _ = await acquire_session()
+    headers = {"app_token": token, "Content-Type": "application/json"}
+
     payload: dict = {
         "strokes": {
             "strokes": {
@@ -75,18 +79,8 @@ async def transcribe_strokes(
                 "y": [s.y for s in body.strokes],
             }
         },
+        "strokes_session_id": sid,
     }
-    if body.session_id:
-        payload["strokes_session_id"] = body.session_id
-
-    if body.app_token:
-        headers = {"app_token": body.app_token, "Content-Type": "application/json"}
-    else:
-        headers = {
-            "app_id": settings.mathpix_app_id,
-            "app_key": settings.mathpix_app_key,
-            "Content-Type": "application/json",
-        }
 
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.post(

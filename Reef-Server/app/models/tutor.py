@@ -18,7 +18,7 @@ class TutorEvaluateRequest(BaseModel):
     step_index: int = Field(..., description="0-based step index within the part")
     student_latex: str = Field(..., max_length=5000, description="Transcribed LaTeX from student handwriting")
     figure_urls: list[str] = Field(default_factory=list, description="Signed URLs for question figures")
-    student_image: str | None = Field(None, description="Base64-encoded JPEG of student's drawing")
+    student_image: str | None = Field(None, max_length=2_000_000, description="Base64-encoded JPEG of student's drawing")
 
 
 class TutorEvaluation(BaseModel):
@@ -50,7 +50,7 @@ class TutorEvaluateResponse(BaseModel):
 
 class ChatHistoryMessage(BaseModel):
     """A single message in the conversation history."""
-    role: str = Field(..., description="student, error, reinforcement, or answer")
+    role: Literal["student", "error", "reinforcement", "answer"] = Field(...)
     text: str = Field(..., max_length=2000)
 
 
@@ -64,7 +64,7 @@ class TutorChatRequest(BaseModel):
     student_latex: str = Field(default="", max_length=5000, description="Current transcribed work")
     user_message: str = Field(..., max_length=1000, description="User's question to the tutor")
     history: list[ChatHistoryMessage] = Field(default_factory=list, description="Previous chat messages for context")
-    student_image: str | None = Field(None, description="Base64-encoded JPEG of student's drawing")
+    student_image: str | None = Field(None, max_length=2_000_000, description="Base64-encoded JPEG of student's drawing")
 
 
 class TutorChatLLMOutput(BaseModel):

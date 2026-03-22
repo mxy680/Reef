@@ -268,7 +268,7 @@ final class TutorEvaluationService {
                 }
             } catch {
                 self.chatMessages.append(TutorChatMessage(
-                    role: .answer, latex: "Failed: \(error.localizedDescription)", timestamp: Date()
+                    role: .answer, latex: "Couldn't reach the tutor right now. Try again in a moment.", timestamp: Date()
                 ))
             }
             self.isSendingChat = false

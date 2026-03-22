@@ -66,6 +66,7 @@ async def lifespan(app: FastAPI):
             pass
 
 
+# TODO: Add slowapi rate limiting before production launch
 app = FastAPI(title="Reef Server", lifespan=lifespan)
 
 app.add_middleware(

@@ -127,7 +127,7 @@ struct KaTeXView: UIViewRepresentable {
             ],
             throwOnError: false,
             errorColor: '#888888',
-            trust: true,
+            trust: false,
             strict: false
           });
           // Hide KaTeX error elements — show nothing instead of red error text

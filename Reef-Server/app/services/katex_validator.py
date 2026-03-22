@@ -38,6 +38,8 @@ Fix it so it renders correctly. Return ONLY the fixed expression — no explanat
 
 def _validate_katex_expression(expr: str) -> str | None:
     """Validate a single KaTeX math expression. Returns error string or None if valid."""
+    if len(expr) > 10000:
+        return "Expression too long for validation"
     try:
         result = subprocess.run(
             ["npx", "katex"],

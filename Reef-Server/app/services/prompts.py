@@ -236,13 +236,16 @@ TUTOR_EVALUATE_PROMPT = """\
 {question_text}
 
 ## Solution Steps
+Content is delimited by <<<STEPS_START>>> and <<<STEPS_END>>> tags.
 {steps_overview}
 
 ## Current Step to Evaluate (Step {current_step_num})
 Description: {current_step_description}
-Expected work: {current_step_work}
+Expected work (delimited by <<<EXPECTED_WORK_START>>> and <<<EXPECTED_WORK_END>>>):
+{current_step_work}
 
 ## Student's Work (LaTeX)
+Content is delimited by <<<STUDENT_WORK_START>>> and <<<STUDENT_WORK_END>>> tags.
 {student_work}
 
 Evaluate ONLY Step {current_step_num}.
