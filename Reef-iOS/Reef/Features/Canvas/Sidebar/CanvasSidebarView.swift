@@ -195,6 +195,11 @@ struct CanvasSidebarView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                 }
+                .onAppear {
+                    if let last = tutorEvalService.chatMessages.last {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    }
+                }
                 .onChange(of: tutorEvalService.chatMessages.count) { _, _ in
                     if let last = tutorEvalService.chatMessages.last {
                         withAnimation(.easeOut(duration: 0.2)) {
