@@ -177,10 +177,10 @@ enum DailyGoalOption: Int, Codable, Sendable, CaseIterable {
 
     var subtitle: String {
         switch self {
-        case .thirty: "coffee break length"
-        case .sixty: "one episode of something"
-        case .threeHours: "you're not messing around"
-        case .twelve: "do you need a wellness check?"
+        case .thirty: "shorter than a Reels spiral"
+        case .sixty: "your mom would be proud"
+        case .threeHours: "someone's got a midterm"
+        case .twelve: "you good?"
         }
     }
 }
