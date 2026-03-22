@@ -11,67 +11,66 @@ struct GoalValidationStep: View {
 
         GeometryReader { geo in
             ScrollView(showsIndicators: false) {
+                // Outer card wrapping everything
                 VStack(spacing: 24) {
                     // Checkmark badge
                     ZStack {
                         Circle()
                             .fill(ReefColors.primary)
-                            .frame(width: 64, height: 64)
+                            .frame(width: 56, height: 56)
                         Image(systemName: "checkmark")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.system(size: 24, weight: .bold))
                             .foregroundStyle(ReefColors.white)
                     }
                     .background(
                         Circle()
                             .fill(colors.shadow)
-                            .frame(width: 64, height: 64)
-                            .offset(x: 4, y: 4)
+                            .frame(width: 56, height: 56)
+                            .offset(x: 3, y: 3)
                     )
                     .fadeUp(index: 0)
 
-                    // Main headline card
-                    VStack(spacing: 16) {
-                        Text(viewModel.goalValidationHeadline)
-                            .font(.epilogue(28, weight: .black))
-                            .tracking(-0.04 * 28)
-                            .foregroundStyle(ReefColors.white)
-                            .multilineTextAlignment(.center)
+                    // Headline
+                    Text(viewModel.goalValidationHeadline)
+                        .font(.epilogue(28, weight: .black))
+                        .tracking(-0.04 * 28)
+                        .foregroundStyle(colors.text)
+                        .multilineTextAlignment(.center)
+                        .fadeUp(index: 1)
 
-                        Text("Real talk — most students struggle because they're studying alone with zero feedback.")
-                            .font(.epilogue(14, weight: .medium))
-                            .tracking(-0.04 * 14)
-                            .foregroundStyle(ReefColors.white.opacity(0.85))
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 28)
-                    .frame(maxWidth: .infinity)
-                    .background(ReefColors.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(colors.border, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(colors.shadow)
-                            .offset(x: 5, y: 5)
-                    )
-                    .fadeUp(index: 1)
+                    Text("Real talk — most students struggle because they're studying alone with zero feedback. Reef watches your work in real time and jumps in before you spiral.")
+                        .font(.epilogue(14, weight: .medium))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(colors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fadeUp(index: 2)
 
                     // Feature cards row
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         featureCard(icon: "eye.fill", text: "Watches your work in real time")
                         featureCard(icon: "bubble.left.fill", text: "Jumps in before you spiral")
-                        featureCard(icon: "brain.head.profile.fill", text: "Like a TA who actually shows up")
+                        featureCard(icon: "brain.head.profile.fill", text: "Like a TA who shows up")
                     }
-                    .fadeUp(index: 2)
+                    .fadeUp(index: 3)
 
                     // CTA
                     ReefButton("I'm in. Keep going", action: { viewModel.goNext() })
-                        .frame(maxWidth: 300)
-                        .fadeUp(index: 3)
+                        .fadeUp(index: 4)
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 28)
+                .frame(maxWidth: .infinity)
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(colors.border, lineWidth: 2)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(colors.shadow)
+                        .offset(x: 5, y: 5)
+                )
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)
                 .padding(.horizontal, metrics.authHPadding)
                 .frame(minHeight: geo.size.height)
@@ -83,26 +82,22 @@ struct GoalValidationStep: View {
 
     private func featureCard(icon: String, text: String) -> some View {
         let colors = theme.colors
-        return VStack(spacing: 10) {
+        return VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(ReefColors.primary)
 
             Text(text)
-                .font(.epilogue(12, weight: .semiBold))
-                .tracking(-0.04 * 12)
+                .font(.epilogue(11, weight: .semiBold))
+                .tracking(-0.04 * 11)
                 .foregroundStyle(colors.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 16)
-        .background(colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(colors.border, lineWidth: 1.5)
-        )
+        .padding(.horizontal, 8)
+        .padding(.vertical, 12)
+        .background(ReefColors.primary.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
