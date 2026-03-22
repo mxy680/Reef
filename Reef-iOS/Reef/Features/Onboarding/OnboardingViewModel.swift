@@ -115,16 +115,16 @@ final class OnboardingViewModel {
     // MARK: - Goal Validation Copy
 
     var goalValidationHeadline: String {
-        let courseList = Array(answers.courses)
+        let courseList = Array(answers.courses).filter { $0 != "Other" }
         switch courseList.count {
         case 0:
-            return "You've totally got this."
+            return "Yeah, we got you."
         case 1:
-            return "Acing \(courseList[0]) is totally doable."
+            return "\(courseList[0])? Yeah, we got you."
         case 2:
-            return "Acing \(courseList[0]) and \(courseList[1]) is totally doable."
+            return "\(courseList[0]) and \(courseList[1])? Yeah, we got you."
         default:
-            return "Acing \(courseList[0]), \(courseList[1]), and the rest is totally doable."
+            return "\(courseList[0]), \(courseList[1]), and the rest? Yeah, we got you."
         }
     }
 

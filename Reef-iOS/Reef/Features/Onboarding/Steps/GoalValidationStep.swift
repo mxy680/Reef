@@ -38,7 +38,7 @@ struct GoalValidationStep: View {
                         .multilineTextAlignment(.center)
                         .fadeUp(index: 1)
 
-                    Text("Real talk — most students struggle because they're studying alone with zero feedback. Reef watches your work in real time and jumps in before you spiral.")
+                    Text("You're not bad at this. You just don't have anyone watching your back. Now you do.")
                         .font(.epilogue(14, weight: .medium))
                         .tracking(-0.04 * 14)
                         .foregroundStyle(colors.textSecondary)
@@ -47,9 +47,9 @@ struct GoalValidationStep: View {
 
                     // Feature cards row
                     HStack(spacing: 10) {
-                        featureCard(icon: "eye.fill", text: "Watches your work in real time")
-                        featureCard(icon: "bubble.left.fill", text: "Jumps in before you spiral")
-                        featureCard(icon: "brain.head.profile.fill", text: "Like a TA who shows up")
+                        featureCard(icon: "eye.fill", text: "Sees your mistakes")
+                        featureCard(icon: "bubble.left.fill", text: "Explains, doesn't judge")
+                        featureCard(icon: "moon.stars.fill", text: "Available at 2am")
                     }
                     .fadeUp(index: 3)
 
