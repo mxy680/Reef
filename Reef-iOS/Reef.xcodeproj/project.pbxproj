@@ -166,6 +166,7 @@
 		F97CEE9B646C4C56850EA1B7 /* PaywallStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74EFB0776F4149E9B55DCA54 /* PaywallStep.swift */; };
 		8F48D2ADC5844F77B4D042CD /* ReferralStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B2344E9C2345589D3B8798 /* ReferralStep.swift */; };
 		D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */; };
+		DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -332,6 +333,7 @@
 		74EFB0776F4149E9B55DCA54 /* PaywallStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallStep.swift; sourceTree = "<group>"; };
 		B6B2344E9C2345589D3B8798 /* ReferralStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralStep.swift; sourceTree = "<group>"; };
 		CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
+		84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoProblemService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -760,6 +762,7 @@
 		2960E0DD1C614E079B66D98B /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				F5584AF033CB42A2BB357D83 /* Services */,
 				214602FE85D44D90A2C1841F /* Components */,
 				5CF9F9ABF137401BAEE33A97 /* Steps */,
 				0735F0FE85324132A0F98FA5 /* OnboardingModels.swift */,
@@ -804,6 +807,14 @@
 				B6B2344E9C2345589D3B8798 /* ReferralStep.swift */,
 			);
 			path = Steps;
+			sourceTree = "<group>";
+		};
+		F5584AF033CB42A2BB357D83 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -911,6 +922,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */,
+				DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */,
 				ED3D7199323CA782DA71B5A2 /* AddColorPopup.swift in Sources */,
 				CFDAF646BDC14E8F9404FE60 /* BugReportPopup.swift in Sources */,
 				E604A66F4CD6A3BCF6F53BC8 /* AddCoursePopup.swift in Sources */,

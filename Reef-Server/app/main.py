@@ -10,6 +10,7 @@ from app.routers import transcribe
 from app.routers import bug_report
 from app.routers import transcribe_audio
 from app.routers import tutor_evaluate
+from app.routers import demo_problem
 from app.services.cancellation import get_in_flight_ids
 from app.services.progress import update_document_status
 
@@ -85,3 +86,4 @@ app.include_router(fit_shape.router)
 app.include_router(transcribe.router)
 app.include_router(transcribe_audio.router)
 app.include_router(tutor_evaluate.router)
+app.include_router(demo_problem.router)
