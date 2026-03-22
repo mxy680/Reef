@@ -67,7 +67,7 @@ struct WelcomeStep: View {
                         featureCard(
                             icon: "bubble.left.and.bubble.right.fill",
                             label: "Voice tutor",
-                            description: "Talks through problems out loud",
+                            description: "Explains things like a person, not a textbook",
                             color: ReefColors.primary
                         )
                         .fadeUp(index: 1)
@@ -75,17 +75,17 @@ struct WelcomeStep: View {
 
                         featureCard(
                             icon: "pencil.tip.crop.circle",
-                            label: "Reads your writing",
-                            description: "No typing. Just write.",
+                            label: "Reads handwriting",
+                            description: "Yours included. Yes, really.",
                             color: Color(hex: 0xEB8C73)
                         )
                         .fadeUp(index: 2)
                         .rotationEffect(.degrees(1.5))
 
                         featureCard(
-                            icon: "chart.line.uptrend.xyaxis",
-                            label: "Knows when you're stuck",
-                            description: "Jumps in before you spiral",
+                            icon: "eye.fill",
+                            label: "Watches you work",
+                            description: "And knows exactly when to help",
                             color: ReefColors.accent
                         )
                         .fadeUp(index: 3)
