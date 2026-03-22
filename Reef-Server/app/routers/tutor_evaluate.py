@@ -270,9 +270,9 @@ async def _generate_tts(text: str) -> str | None:
             "https://api.groq.com/openai/v1/audio/speech",
             headers={"Authorization": f"Bearer {settings.groq_api_key}"},
             json={
-                "model": "playai-tts",
+                "model": "canopylabs/orpheus-v1-english",
                 "input": text,
-                "voice": "Arista-PlayAI",
+                "voice": "hannah",
                 "response_format": "wav",
             },
         )
