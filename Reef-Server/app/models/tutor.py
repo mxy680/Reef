@@ -47,6 +47,12 @@ class TutorEvaluateResponse(BaseModel):
     mistake_explanation: str | None = None
 
 
+class ChatHistoryMessage(BaseModel):
+    """A single message in the conversation history."""
+    role: str = Field(..., description="student, error, reinforcement, or answer")
+    text: str = Field(..., max_length=2000)
+
+
 class TutorChatRequest(BaseModel):
     """Request body for POST /ai/tutor-chat."""
 
@@ -56,6 +62,7 @@ class TutorChatRequest(BaseModel):
     step_index: int = Field(..., description="0-based step index")
     student_latex: str = Field(default="", max_length=5000, description="Current transcribed work")
     user_message: str = Field(..., max_length=1000, description="User's question to the tutor")
+    history: list[ChatHistoryMessage] = Field(default_factory=list, description="Previous chat messages for context")
 
 
 class TutorChatLLMOutput(BaseModel):

@@ -253,7 +253,10 @@ Question: {question_text}
 Current step: Step {current_step_num} — {current_step_description}
 Student's work so far: {student_work}
 
-## Student says
+## Conversation so far
+{conversation_history}
+
+## Student says now
 {user_message}
 
 ## Output

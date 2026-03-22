@@ -216,13 +216,21 @@ async def tutor_chat(
         + "\n<<<USER_MESSAGE_END>>>"
     )
 
+    # Build conversation history (last 10 messages max)
+    history_text = ""
+    if body.history:
+        lines = []
+        for msg in body.history[-10:]:
+            label = "Student" if msg.role == "student" else "Tutor"
+            lines.append(f"{label}: {msg.text}")
+        history_text = "\n".join(lines)
+
     prompt = TUTOR_CHAT_PROMPT.format(
         question_text=f"Question {answer_key.question_number}",
-        steps_overview=steps_overview,
         current_step_num=body.step_index + 1,
         current_step_description=current_step_desc,
-        current_step_work=current_step_work,
         student_work=delimited_student_work,
+        conversation_history=history_text or "(no prior conversation)",
         user_message=delimited_user_message,
     )
 

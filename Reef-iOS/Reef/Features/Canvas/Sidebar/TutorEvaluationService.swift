@@ -267,6 +267,11 @@ final class TutorEvaluationService {
         }
     }
 
+    private struct HistoryMessage: Encodable {
+        let role: String
+        let text: String
+    }
+
     private struct ChatRequest: Encodable {
         let documentId: String
         let questionNumber: Int
@@ -274,6 +279,7 @@ final class TutorEvaluationService {
         let stepIndex: Int
         let studentLatex: String
         let userMessage: String
+        let history: [HistoryMessage]
 
         enum CodingKeys: String, CodingKey {
             case documentId = "document_id"
@@ -282,6 +288,7 @@ final class TutorEvaluationService {
             case stepIndex = "step_index"
             case studentLatex = "student_latex"
             case userMessage = "user_message"
+            case history
         }
     }
 
@@ -310,13 +317,19 @@ final class TutorEvaluationService {
 
         let authSession = try await supabase.auth.session
 
+        // Send last 10 messages as history
+        let historyMessages = chatMessages.suffix(10).map { msg in
+            HistoryMessage(role: msg.role.rawValue, text: msg.latex)
+        }
+
         let body = ChatRequest(
             documentId: documentId,
             questionNumber: questionNumber,
             partLabel: partLabel,
             stepIndex: stepIndex,
             studentLatex: studentLatex,
-            userMessage: message
+            userMessage: message,
+            history: historyMessages
         )
 
         var request = URLRequest(url: url)
