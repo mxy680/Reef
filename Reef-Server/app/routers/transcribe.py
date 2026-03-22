@@ -48,21 +48,16 @@ async def create_strokes_session(
     if not settings.mathpix_app_key:
         raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.post(
-            "https://api.mathpix.com/v3/app-tokens",
-            headers={"app_key": settings.mathpix_app_key},
-            json={"include_strokes_session_id": True, "expires": 300},
+    try:
+        from app.services.mathpix_pool import get_shared_session
+        token, session_id, expires_at = await get_shared_session()
+        return CreateSessionResponse(
+            app_token=token,
+            strokes_session_id=session_id,
+            expires_at=expires_at,
         )
-    if resp.status_code != 200:
-        log.warning(f"Mathpix app-tokens API returned {resp.status_code}: {resp.text}")
-        raise HTTPException(status_code=502, detail="Failed to create Mathpix session")
-    data = resp.json()
-    return CreateSessionResponse(
-        app_token=data["app_token"],
-        strokes_session_id=data["strokes_session_id"],
-        expires_at=data.get("app_token_expires_at", 0),
-    )
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.post("/transcribe-strokes", response_model=TranscribeStrokesResponse)
