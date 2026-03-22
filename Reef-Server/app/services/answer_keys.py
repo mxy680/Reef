@@ -14,6 +14,7 @@ import httpx
 
 from app.config import settings
 from app.models.answer_key import PartAnswer, QuestionAnswer
+from app.services.katex_validator import validate_and_fix_answer_key
 from app.services.llm_client import LLMClient
 from app.services.prompts import ANSWER_KEY_PROMPT
 
@@ -109,6 +110,9 @@ async def _generate_single_answer(
                     final_answer=answer.final_answer,
                 )],
             )
+
+        # Validate LaTeX and fix KaTeX rendering errors
+        answer = await validate_and_fix_answer_key(answer, llm_client)
 
         await _upsert_answer_key(
             document_id=document_id,

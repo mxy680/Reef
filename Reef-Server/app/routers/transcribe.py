@@ -1,32 +1,63 @@
-"""POST /ai/transcribe-strokes — proxy handwriting strokes to Mathpix v3."""
+"""POST /ai/transcribe-strokes — proxy handwriting strokes to Mathpix v3 Strokes API."""
 
+import asyncio
 import logging
+import re as _re
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
+from app.services.katex_sanitizer import sanitize_for_katex
+from app.services.katex_validator import KATEX_FIX_PROMPT, _validate_katex_expression
+from app.services.llm_client import LLMClient
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/ai", tags=["transcribe"])
+router = APIRouter(prefix="/ai", tags=["ai"])
 
 
 class StrokeData(BaseModel):
-    x: list[float]
-    y: list[float]
+    x: list[float] = Field(..., max_length=2000)
+    y: list[float] = Field(..., max_length=2000)
 
 
 class TranscribeStrokesRequest(BaseModel):
-    strokes: list[StrokeData]
+    strokes: list[StrokeData] = Field(..., max_length=100)
     session_id: str | None = None
+    app_token: str | None = None
 
 
 class TranscribeStrokesResponse(BaseModel):
     latex: str
     session_id: str | None = None
+
+
+class CreateSessionResponse(BaseModel):
+    app_token: str
+    strokes_session_id: str
+    expires_at: int  # unix timestamp ms
+
+
+@router.post("/strokes-session", response_model=CreateSessionResponse)
+async def create_strokes_session(
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    if not settings.mathpix_app_key:
+        raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
+
+    try:
+        from app.services.mathpix_pool import acquire_session
+        token, session_id, expires_at = await acquire_session()
+        return CreateSessionResponse(
+            app_token=token,
+            strokes_session_id=session_id,
+            expires_at=expires_at,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.post("/transcribe-strokes", response_model=TranscribeStrokesResponse)
@@ -37,6 +68,10 @@ async def transcribe_strokes(
     if not settings.mathpix_app_id or not settings.mathpix_app_key:
         raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
 
+    from app.services.mathpix_pool import acquire_session
+    token, sid, _ = await acquire_session()
+    headers = {"app_token": token, "Content-Type": "application/json"}
+
     payload: dict = {
         "strokes": {
             "strokes": {
@@ -44,40 +79,58 @@ async def transcribe_strokes(
                 "y": [s.y for s in body.strokes],
             }
         },
+        "strokes_session_id": sid,
     }
-    if body.session_id:
-        payload["strokes_session_id"] = body.session_id
-
-    # Log stroke coordinate ranges for debugging
-    print(f"[transcribe] {len(body.strokes)} strokes, session_id={body.session_id}")
-    for i, s in enumerate(body.strokes):
-        if s.x and s.y:
-            print(
-                f"[transcribe] Stroke {i}: x=[{min(s.x):.1f}..{max(s.x):.1f}] "
-                f"y=[{min(s.y):.1f}..{max(s.y):.1f}] pts={len(s.x)}"
-            )
 
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.post(
             "https://api.mathpix.com/v3/strokes",
             json=payload,
-            headers={
-                "app_id": settings.mathpix_app_id,
-                "app_key": settings.mathpix_app_key,
-                "Content-Type": "application/json",
-            },
+            headers=headers,
         )
 
-    print(f"[transcribe] Mathpix status={resp.status_code} body={resp.text[:500]}")
-
     if resp.status_code != 200:
-        logger.warning(f"Mathpix strokes API returned {resp.status_code}: {resp.text}")
+        log.warning(f"Mathpix strokes API returned {resp.status_code}: {resp.text}")
         raise HTTPException(status_code=502, detail="Mathpix transcription failed")
 
     data = resp.json()
     if "error" in data:
-        print(f"[transcribe] Mathpix error: {data}")
         raise HTTPException(status_code=502, detail=f"Mathpix error: {data.get('error')}")
+
     latex = data.get("latex", data.get("text", ""))
     session_id = data.get("strokes_session_id", data.get("session_id"))
+
+    # Sanitize for KaTeX compatibility before wrapping
+    if latex:
+        latex = sanitize_for_katex(latex)
+
+        # Validate — if KaTeX still fails, try LLM fix (once)
+        error = await asyncio.to_thread(_validate_katex_expression, latex)
+        if error:
+            log.warning(f"KaTeX validation failed after sanitize: {error[:80]}")
+            try:
+                llm = LLMClient(
+                    api_key=settings.openrouter_api_key,
+                    model="google/gemini-2.0-flash-001",
+                    base_url="https://openrouter.ai/api/v1",
+                )
+                fix_prompt = KATEX_FIX_PROMPT.format(expression=latex, error=error)
+                result = await asyncio.to_thread(
+                    llm.generate, prompt=fix_prompt, timeout=10.0,
+                )
+                fixed = result.content.strip()
+                if fixed.startswith("```"):
+                    fixed = _re.sub(r"^```\w*\n?", "", fixed)
+                    fixed = _re.sub(r"\n?```$", "", fixed)
+                # Only use fix if it validates
+                fix_error = await asyncio.to_thread(_validate_katex_expression, fixed)
+                if not fix_error:
+                    latex = fixed
+                    log.info("KaTeX fix succeeded via LLM")
+            except Exception as e:
+                log.warning(f"KaTeX LLM fix failed: {e}")
+
+    # Wrap in display math delimiters if not already wrapped
+    if latex and not latex.startswith("$") and not latex.startswith("\\[") and not latex.startswith("\\("):
+        latex = f"$$ {latex} $$"
     return TranscribeStrokesResponse(latex=latex, session_id=session_id)

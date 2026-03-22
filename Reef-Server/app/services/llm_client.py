@@ -107,6 +107,7 @@ class LLMClient:
         response_schema: dict | None = None,
         max_retries: int = 3,
         timeout: float = 120.0,
+        system_prompt: str | None = None,
     ) -> LLMResult:
         content: list[dict] = [{"type": "text", "text": prompt}]
         if images:
@@ -117,9 +118,14 @@ class LLMClient:
                     "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
                 })
 
+        messages: list[dict] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": content})
+
         kwargs: dict = {
             "model": self.model,
-            "messages": [{"role": "user", "content": content}],
+            "messages": messages,
             "timeout": timeout,
         }
         if temperature is not None:

@@ -29,12 +29,19 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: Reef
-    resources:
+      - path: Reef/App
+      - path: Reef/Core
+      - path: Reef/Domain
+      - path: Reef/Data
+      - path: Reef/Features
+      - path: Reef/Assets.xcassets
+      - path: Reef/Reef.entitlements
       - path: Reef/Resources/Fonts
         buildPhase: resources
+        type: folder
       - path: Reef/Resources/KaTeX
         buildPhase: resources
+        type: folder
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.studyreef.app
@@ -48,3 +55,31 @@ targets:
       - package: Supabase
       - package: GoogleSignIn
       - sdk: AuthenticationServices.framework
+
+  ReefUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: ReefUITests
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "2"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: SMJLWBZ8X6
+        SWIFT_VERSION: "5.0"
+        TEST_TARGET_NAME: Reef
+        GENERATE_INFOPLIST_FILE: "YES"
+        PRODUCT_BUNDLE_IDENTIFIER: com.studyreef.app.uitests
+    dependencies:
+      - target: Reef
+        embed: false
+
+schemes:
+  Reef:
+    build:
+      targets:
+        Reef: all
+        ReefUITests: [test]
+    test:
+      targets:
+        - ReefUITests

@@ -22,10 +22,10 @@
 	<string>$(REEF_SERVER_URL)</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Epilogue-Medium.ttf</string>
-		<string>Epilogue-SemiBold.ttf</string>
-		<string>Epilogue-Bold.ttf</string>
-		<string>Epilogue-Black.ttf</string>
+		<string>Fonts/Epilogue-Medium.ttf</string>
+		<string>Fonts/Epilogue-SemiBold.ttf</string>
+		<string>Fonts/Epilogue-Bold.ttf</string>
+		<string>Fonts/Epilogue-Black.ttf</string>
 	</array>
 	<key>GIDClientID</key>
 	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
@@ -49,6 +49,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Reef uses speech recognition so you can ask the tutor questions by voice.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Reef uses the microphone to listen for voice questions to the tutor.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations~ipad</key>

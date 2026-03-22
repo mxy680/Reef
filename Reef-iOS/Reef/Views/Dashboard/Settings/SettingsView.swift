@@ -1,45 +1,13 @@
 import SwiftUI
-import Supabase
 
 // MARK: - Settings View
 
 struct SettingsView: View {
-    @Environment(AuthManager.self) var authManager
-    @Environment(ThemeManager.self) var theme
-    @State var activeTab: SettingsTab = .profile
-    @State var appeared = false
-
-    // Profile editing state
-    @State var isEditingName = false
-    @State var editedName = ""
-    @State var selectedGrade = ""
-    @State var selectedSubjects: [String] = []
-    @State var educationDirty = false
-
-    // Preferences state (local only, matching web)
-    @State var selectedTheme = "#5B9EAD"
-    @State var emailNotifications = true
-    @State var studyReminders = false
-    @State var weeklyDigest = true
-    @State var focusWeakAreas = true
-    @State var quizDifficulty = "medium"
-    @State var questionCount = 10
-    @State var quizTimer = "off"
-
-    // Privacy state (local only)
-    @State var usageAnalytics = true
-    @State var crashReports = true
-    @State var personalizedExperience = false
-    @State var thirdPartySharing = false
-
-    // Toast
-    @State var toastMessage: String?
-
-    // Delete confirmation
-    @State var showDeleteConfirm = false
-
-    let profileManager = ProfileManager()
-    @Environment(\.layoutMetrics) var metrics
+    @Environment(ThemeManager.self) private var theme
+    @State private var activeTab: SettingsTab = .profile
+    @State private var appeared = false
+    @State private var toastMessage: String?
+    @Environment(\.layoutMetrics) private var metrics
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -54,10 +22,7 @@ struct SettingsView: View {
         .padding(metrics.contentPadding)
         .dashboardCard()
         .overlay(alignment: .bottomTrailing) { toastOverlay }
-        .onAppear {
-            appeared = true
-            loadProfile()
-        }
+        .onAppear { appeared = true }
     }
 
     // MARK: - Header
@@ -97,11 +62,16 @@ struct SettingsView: View {
     private var tabContent: some View {
         Group {
             switch activeTab {
-            case .profile: profileTab
-            case .preferences: preferencesTab
-            case .privacy: privacyTab
-            case .about: aboutTab
-            case .account: accountTab
+            case .profile:
+                SettingsProfileTab(onToast: showToast)
+            case .preferences:
+                SettingsPreferencesTab()
+            case .privacy:
+                SettingsPrivacyTab(onToast: showToast)
+            case .about:
+                SettingsAboutTab()
+            case .account:
+                SettingsAccountTab(onToast: showToast)
             }
         }
         .opacity(appeared ? 1 : 0)
@@ -109,16 +79,9 @@ struct SettingsView: View {
         .animation(.easeOut(duration: 0.3).delay(0.2), value: appeared)
     }
 
-    // MARK: - Helpers
+    // MARK: - Toast
 
-    private func loadProfile() {
-        guard let profile = authManager.profile else { return }
-        editedName = profile.displayName ?? ""
-        selectedGrade = profile.grade ?? ""
-        selectedSubjects = profile.subjects
-    }
-
-    func showToast(_ message: String) {
+    private func showToast(_ message: String) {
         toastMessage = message
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
             if toastMessage == message { toastMessage = nil }

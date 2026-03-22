@@ -2,171 +2,204 @@ import SwiftUI
 
 // MARK: - Account Tab
 
-extension SettingsView {
-    var accountTab: some View {
+struct SettingsAccountTab: View {
+    @Environment(AuthManager.self) private var authManager
+    @Environment(ThemeManager.self) private var theme
+
+    let onToast: (String) -> Void
+
+    @State private var showDeleteConfirm = false
+    @State private var appeared = false
+
+    var body: some View {
         let dark = theme.isDarkMode
         let tier: Tier = .shore
         let limits = TierLimits.current()
 
-        return VStack(spacing: 16) {
+        VStack(spacing: 16) {
             // Row 1: Your Plan | Security
             SettingsRow {
-                SettingsCard {
-                    VStack(alignment: .leading, spacing: 0) {
-                        SettingsSectionHeader("Your Plan")
-
-                        Text("Shore")
-                            .font(.epilogue(13, weight: .bold))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(ReefColors.accent)
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
-                            .padding(.bottom, 16)
-
-                        usageBar(label: "Documents", current: 0, max: limits.maxDocuments)
-                            .padding(.bottom, 12)
-
-                        usageBar(label: "Courses", current: 0, max: limits.maxCourses)
-                            .padding(.bottom, 12)
-
-                        SettingsDivider()
-
-                        HStack {
-                            Text("Max File Size")
-                                .font(.epilogue(13, weight: .medium))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
-                            Spacer()
-                            Text("\(limits.maxFileSizeMB) MB")
-                                .font(.epilogue(13, weight: .bold))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
-                        }
-
-                        Button {
-                            showToast("Upgrades coming soon!")
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "arrow.up.circle")
-                                Text("Upgrade Plan")
-                            }
-                        }
-                        .reefCompactStyle(.primary)
-                        .padding(.top, 16)
-                    }
-                }
-
-                SettingsCard {
-                    VStack(alignment: .leading, spacing: 0) {
-                        SettingsSectionHeader("Security")
-
-                        SettingsFieldLabel("Sign-in Method")
-                        HStack(spacing: 8) {
-                            Image(systemName: "link")
-                                .font(.system(size: 13))
-                                .foregroundStyle(ReefColors.primary)
-                            Text("Magic Link")
-                                .font(.epilogue(14, weight: .semiBold))
-                                .tracking(-0.04 * 14)
-                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
-                        }
-                        Text(authManager.session?.user.email ?? "—")
-                            .font(.epilogue(12, weight: .medium))
-                            .tracking(-0.04 * 12)
-                            .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
-                            .padding(.top, 2)
-
-                        SettingsDivider()
-
-                        SettingsFieldLabel("Two-Factor Authentication")
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
-                                .frame(width: 8, height: 8)
-                            Text("Not enabled")
-                                .font(.epilogue(13, weight: .medium))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
-                            Spacer()
-                            Button("Enable") {}
-                                .reefCompactStyle(.secondary)
-                        }
-
-                        SettingsDivider()
-
-                        SettingsFieldLabel("Active Sessions")
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(Color(hex: 0x4CAF50))
-                                .frame(width: 8, height: 8)
-                            Text("This device — Active now")
-                                .font(.epilogue(13, weight: .medium))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
-                        }
-                    }
-                }
+                planCard(limits: limits, dark: dark)
+                securityCard(dark: dark)
             }
 
-            // Row 2: Compare Plans (full width)
-            SettingsCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    SettingsSectionHeader("Compare Plans")
+            // Row 2: Compare Plans
+            comparePlansCard(tier: tier, dark: dark)
 
-                    HStack(spacing: 12) {
-                        planColumn(name: "Shore", price: "Free", color: ReefColors.accent, docs: "5", fileSize: "20 MB", courses: "1", isCurrent: tier == .shore)
-                        planColumn(name: "Reef", price: "$9.99/mo", color: ReefColors.primary, docs: "50", fileSize: "50 MB", courses: "5", isCurrent: tier == .reef)
-                        planColumn(name: "Abyss", price: "$29.99/mo", color: Color(hex: 0x6C3FA0), docs: "Unlimited", fileSize: "100 MB", courses: "Unlimited", isCurrent: tier == .abyss)
-                    }
-                }
-            }
+            // Row 3: Actions
+            actionsCard(dark: dark)
+        }
+        .onAppear { appeared = true }
+    }
 
-            // Row 3: Actions (full width)
-            SettingsCard {
-                HStack(spacing: 12) {
-                    Button {
-                        Task { await authManager.signOut() }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text("Sign Out")
-                        }
-                    }
-                    .reefCompactStyle(.secondary)
+    // MARK: - Your Plan
 
-                    Button {
-                        showDeleteConfirm = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "trash")
-                            Text("Delete Account")
-                        }
-                        .font(.epilogue(12, weight: .bold))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(Color(hex: 0xC62828))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(hex: 0xE57373), lineWidth: 1.5)
-                        )
-                    }
-                    .buttonStyle(NoHighlightButtonStyle())
+    private func planCard(limits: TierLimits, dark: Bool) -> some View {
+        SettingsCard {
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsSectionHeader("Your Plan")
 
+                Text("Shore")
+                    .font(.epilogue(13, weight: .bold))
+                    .tracking(-0.04 * 13)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(ReefColors.accent)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(dark ? ReefColors.DashboardDark.border : ReefColors.black, lineWidth: 1.5))
+                    .padding(.bottom, 16)
+
+                usageBar(label: "Documents", current: 0, max: limits.maxDocuments, dark: dark)
+                    .padding(.bottom, 12)
+
+                usageBar(label: "Courses", current: 0, max: limits.maxCourses, dark: dark)
+                    .padding(.bottom, 12)
+
+                SettingsDivider()
+
+                HStack {
+                    Text("Max File Size")
+                        .font(.epilogue(13, weight: .medium))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textSecondary : ReefColors.gray600)
                     Spacer()
+                    Text("\(limits.maxFileSizeMB) MB")
+                        .font(.epilogue(13, weight: .bold))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                }
+
+                Button {
+                    onToast("Upgrades coming soon!")
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.circle")
+                        Text("Upgrade Plan")
+                    }
+                }
+                .reefCompactStyle(.primary)
+                .padding(.top, 16)
+            }
+        }
+    }
+
+    // MARK: - Security
+
+    private func securityCard(dark: Bool) -> some View {
+        SettingsCard {
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsSectionHeader("Security")
+
+                SettingsFieldLabel("Sign-in Method")
+                HStack(spacing: 8) {
+                    Image(systemName: "link")
+                        .font(.system(size: 13))
+                        .foregroundStyle(ReefColors.primary)
+                    Text("Magic Link")
+                        .font(.epilogue(14, weight: .semiBold))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
+                }
+                Text(authManager.session?.user.email ?? "—")
+                    .font(.epilogue(12, weight: .medium))
+                    .tracking(-0.04 * 12)
+                    .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
+                    .padding(.top, 2)
+
+                SettingsDivider()
+
+                SettingsFieldLabel("Two-Factor Authentication")
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(dark ? ReefColors.DashboardDark.textDisabled : ReefColors.gray400)
+                        .frame(width: 8, height: 8)
+                    Text("Not enabled")
+                        .font(.epilogue(13, weight: .medium))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.textMuted : ReefColors.gray500)
+                    Spacer()
+                    Button("Enable") {}
+                        .reefCompactStyle(.secondary)
+                }
+
+                SettingsDivider()
+
+                SettingsFieldLabel("Active Sessions")
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(ReefColors.success)
+                        .frame(width: 8, height: 8)
+                    Text("This device — Active now")
+                        .font(.epilogue(13, weight: .medium))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(dark ? ReefColors.DashboardDark.text : ReefColors.black)
                 }
             }
         }
     }
 
-    func usageBar(label: String, current: Int, max limit: Int) -> some View {
-        let dark = theme.isDarkMode
-        return VStack(alignment: .leading, spacing: 6) {
+    // MARK: - Compare Plans
+
+    private func comparePlansCard(tier: Tier, dark: Bool) -> some View {
+        SettingsCard {
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsSectionHeader("Compare Plans")
+
+                HStack(spacing: 12) {
+                    planColumn(name: "Shore", price: "Free", color: ReefColors.accent, docs: "5", fileSize: "20 MB", courses: "1", isCurrent: tier == .shore, dark: dark)
+                    planColumn(name: "Reef", price: "$9.99/mo", color: ReefColors.primary, docs: "50", fileSize: "50 MB", courses: "5", isCurrent: tier == .reef, dark: dark)
+                    planColumn(name: "Abyss", price: "$29.99/mo", color: ReefColors.abyss, docs: "Unlimited", fileSize: "100 MB", courses: "Unlimited", isCurrent: tier == .abyss, dark: dark)
+                }
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func actionsCard(dark: Bool) -> some View {
+        SettingsCard {
+            HStack(spacing: 12) {
+                Button {
+                    Task { await authManager.signOut() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                        Text("Sign Out")
+                    }
+                }
+                .reefCompactStyle(.secondary)
+
+                Button {
+                    showDeleteConfirm = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "trash")
+                        Text("Delete Account")
+                    }
+                    .font(.epilogue(12, weight: .bold))
+                    .tracking(-0.04 * 12)
+                    .foregroundStyle(ReefColors.destructive)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(dark ? ReefColors.DashboardDark.card : ReefColors.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(ReefColors.destructiveBorder, lineWidth: 1.5)
+                    )
+                }
+                .buttonStyle(NoHighlightButtonStyle())
+
+                Spacer()
+            }
+        }
+    }
+
+    // MARK: - Usage Bar
+
+    private func usageBar(label: String, current: Int, max limit: Int, dark: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(label)
                     .font(.epilogue(13, weight: .medium))
@@ -193,9 +226,10 @@ extension SettingsView {
         }
     }
 
-    func planColumn(name: String, price: String, color: Color, docs: String, fileSize: String, courses: String, isCurrent: Bool) -> some View {
-        let dark = theme.isDarkMode
-        return VStack(spacing: 12) {
+    // MARK: - Plan Column
+
+    private func planColumn(name: String, price: String, color: Color, docs: String, fileSize: String, courses: String, isCurrent: Bool, dark: Bool) -> some View {
+        VStack(spacing: 12) {
             if isCurrent {
                 Text("Current")
                     .font(.epilogue(10, weight: .bold))
@@ -216,9 +250,9 @@ extension SettingsView {
 
             SettingsDivider()
 
-            planFeature(label: "Documents", value: docs)
-            planFeature(label: "File Size", value: fileSize)
-            planFeature(label: "Courses", value: courses)
+            planFeature(label: "Documents", value: docs, dark: dark)
+            planFeature(label: "File Size", value: fileSize, dark: dark)
+            planFeature(label: "Courses", value: courses, dark: dark)
         }
         .frame(maxWidth: .infinity)
         .padding(20)
@@ -230,9 +264,8 @@ extension SettingsView {
         )
     }
 
-    func planFeature(label: String, value: String) -> some View {
-        let dark = theme.isDarkMode
-        return VStack(spacing: 2) {
+    private func planFeature(label: String, value: String, dark: Bool) -> some View {
+        VStack(spacing: 2) {
             Text(value)
                 .font(.epilogue(14, weight: .bold))
                 .tracking(-0.04 * 14)

@@ -12,6 +12,10 @@ enum ReefColors {
     static let gray200 = Color(red: 200 / 255, green: 200 / 255, blue: 200 / 255)
     static let gray100 = Color(red: 235 / 255, green: 235 / 255, blue: 235 / 255)
     static let error = Color(hex: 0xD32F2F)
+    static let destructive = Color(hex: 0xC62828)
+    static let destructiveBorder = Color(hex: 0xE57373)
+    static let success = Color(hex: 0x4CAF50)
+    static let abyss = Color(hex: 0x6C3FA0)
 
     // MARK: - Dashboard Dark Mode
 
