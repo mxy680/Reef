@@ -123,6 +123,8 @@
 		E3351CF1B2B16F16FCBAB5C3 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED132B34EEF03AF5A9672ED /* AnalyticsView.swift */; };
 		E604A66F4CD6A3BCF6F53BC8 /* AddCoursePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CD364038E9412CE2BF892A /* AddCoursePopup.swift */; };
 		E6DD16240CF1B56A193E21F4 /* MathText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09281299BE4A3431EB4BEA5A /* MathText.swift */; };
+		CF7CF010C0824C8087F5DB98 /* LaTeXToUnicode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaTeXToUnicode.swift; sourceTree = "<group>"; };
+		1CB456FFE88241459BDD2565 /* LaTeXToUnicode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7CF010C0824C8087F5DB98 /* LaTeXToUnicode.swift */; };
 		E8EF8F87EAA7D28D7CF363C3 /* PageMenuPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC9968FBE0F62787857FD813 /* PageMenuPopover.swift */; };
 		EC0F257D22B993428D5A5FF3 /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3782C601D52EF8D22F19E789 /* SettingsComponents.swift */; };
 		EC58CCE1237EC4F39BA5A4E8 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F363767C6C99DEC96663F36 /* AppRouter.swift */; };
@@ -557,6 +559,7 @@
 				3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */,
 				D4769DBB9758DDBC41716E4E /* KaTeXView.swift */,
 				09281299BE4A3431EB4BEA5A /* MathText.swift */,
+				CF7CF010C0824C8087F5DB98 /* LaTeXToUnicode.swift */,
 				3FF40F4A25F5204FEDAF3FC4 /* PopoverCard.swift */,
 				3205E3BD9FC3234A4F37231A /* PopupShellModifier.swift */,
 				E433D80D018772EA5F6029B0 /* Reef3DSlider.swift */,
@@ -865,6 +868,7 @@
 				642BAEA75512457AA28EED5F /* TutorEvaluationService.swift in Sources */,
 				903339E4247C9C8EBCE24624 /* KaTeXView.swift in Sources */,
 				E6DD16240CF1B56A193E21F4 /* MathText.swift in Sources */,
+				1CB456FFE88241459BDD2565 /* LaTeXToUnicode.swift in Sources */,
 				B26F3491C9BD243B4E65D766 /* MockCanvasData.swift in Sources */,
 				5AC35EBDA8FAD1368CDF6500 /* MoveToCoursePopup.swift in Sources */,
 				E8EF8F87EAA7D28D7CF363C3 /* PageMenuPopover.swift in Sources */,
