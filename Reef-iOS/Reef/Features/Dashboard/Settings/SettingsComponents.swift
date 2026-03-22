@@ -34,7 +34,7 @@ let settingsGrades = ["9th", "10th", "11th", "12th", "Freshman", "Sophomore", "J
 
 let settingsAllSubjects = [
     "Mathematics", "Calculus", "Statistics", "Biology", "Chemistry", "Physics",
-    "History", "Literature", "Computer Science", "Economics", "Psychology", "Philosophy"
+    "Computer Science", "Economics", "Psychology", "Philosophy"
 ]
 
 let settingsAvatarColors: [Color] = [

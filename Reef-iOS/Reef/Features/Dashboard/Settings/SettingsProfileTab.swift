@@ -60,6 +60,24 @@ struct SettingsProfileTab: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .padding(metrics.cardPadding)
             }
+
+            // Save button
+            if hasUnsavedChanges {
+                Rectangle()
+                    .fill(colors.divider)
+                    .frame(height: 1)
+
+                HStack {
+                    Spacer()
+                    ReefButton(.primary, size: .compact) {
+                        Task { await saveProfile() }
+                    } label: {
+                        Text("Save Changes")
+                    }
+                }
+                .padding(metrics.cardPadding)
+                .transition(.opacity.combined(with: .offset(y: 8)))
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(colors.card)
@@ -74,13 +92,8 @@ struct SettingsProfileTab: View {
                 .offset(x: 3, y: 3)
         )
         .compositingGroup()
+        .animation(.easeOut(duration: 0.2), value: hasUnsavedChanges)
         .onAppear { loadFromProfile() }
-        .onDisappear { flushSave() }
-        .onChange(of: displayName) { scheduleSave() }
-        .onChange(of: selectedGrade) { scheduleSave() }
-        .onChange(of: selectedSubjects) { scheduleSave() }
-        .onChange(of: avatarColorIndex) { scheduleSave() }
-        .onChange(of: dailyGoalMinutes) { scheduleSave() }
     }
 
     // MARK: - Profile Header Row
