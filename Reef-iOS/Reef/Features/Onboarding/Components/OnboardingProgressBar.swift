@@ -6,19 +6,41 @@ struct OnboardingProgressBar: View {
 
     let progress: CGFloat
 
-    var body: some View {
-        GeometryReader { geo in
-            let colors = theme.colors
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: metrics.onboardingProgressHeight / 2)
-                    .fill(colors.subtle)
+    private let barHeight: CGFloat = 14
+    private let cornerRadius: CGFloat = 7
+    private let shadowOffset: CGFloat = 3
 
-                RoundedRectangle(cornerRadius: metrics.onboardingProgressHeight / 2)
+    var body: some View {
+        let colors = theme.colors
+
+        GeometryReader { geo in
+            let fillWidth = max(barHeight, geo.size.width * progress)
+
+            ZStack(alignment: .leading) {
+                // Track
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(colors.card)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .stroke(colors.border, lineWidth: 2)
+                    )
+                    .background(
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(colors.shadow)
+                            .offset(x: shadowOffset, y: shadowOffset)
+                    )
+
+                // Fill
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(ReefColors.primary)
-                    .frame(width: max(metrics.onboardingProgressHeight, geo.size.width * progress))
+                    .frame(width: fillWidth)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .stroke(colors.border, lineWidth: 2)
+                    )
             }
         }
-        .frame(height: metrics.onboardingProgressHeight)
+        .frame(height: barHeight)
         .animation(.spring(duration: 0.4), value: progress)
     }
 }
