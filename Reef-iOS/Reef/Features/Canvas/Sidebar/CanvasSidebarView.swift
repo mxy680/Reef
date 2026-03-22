@@ -12,7 +12,8 @@ struct CanvasSidebarView: View {
     @State private var chatInput: String = ""
 
     var body: some View {
-        let colors = theme.colors
+        // Use canvas isDarkMode, not the global theme — canvas has its own toggle
+        let colors = ReefThemeColors(isDarkMode: isDarkMode)
 
         HStack(spacing: 0) {
             // Leading separator
