@@ -30,11 +30,7 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(metrics.contentPadding)
         .dashboardCard()
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.4).delay(0.05)) {
-                appeared = true
-            }
-        }
+        .onAppear { appeared = true }
         .overlay(alignment: .bottom) {
             if let message = toastMessage {
                 toastView(message: message)
