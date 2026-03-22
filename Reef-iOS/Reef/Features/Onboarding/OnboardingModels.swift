@@ -125,12 +125,12 @@ enum PainPoint: String, Codable, Sendable, CaseIterable {
 
     var displayLabel: String {
         switch self {
-        case .procrastination: "Procrastination"
-        case .confusingMaterial: "Confusing material"
-        case .noOneToAsk: "No one to ask"
-        case .testAnxiety: "Test anxiety"
-        case .cantRetain: "Can't retain anything"
-        case .timeManagement: "Time management"
+        case .procrastination: "Procrastination (it's a lifestyle)"
+        case .confusingMaterial: "Nothing makes sense"
+        case .noOneToAsk: "No help when I need it"
+        case .testAnxiety: "Tests freak me out"
+        case .cantRetain: "Goldfish memory"
+        case .timeManagement: "Not enough hours in the day"
         }
     }
 }

@@ -5,8 +5,8 @@ struct PainPointsStep: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "What trips you up the most?",
-            subtitle: "Be real. No judgment — we've seen it all.",
+            title: "What's actually getting in the way?",
+            subtitle: "We've heard it all. Literally all of it.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
