@@ -12,8 +12,6 @@ struct SettingsPreferencesTab: View {
 
     // Appearance (dark mode is owned by ReefTheme, not persisted here)
     @State private var selectedThemeColorIndex: Int = 0
-    @State private var compactMode = false
-    @State private var textScale = "Standard"
 
     // Notifications
     @State private var studyReminders = true
@@ -68,8 +66,6 @@ struct SettingsPreferencesTab: View {
         .onAppear { loadSettings() }
         .onDisappear { flushSave() }
         .onChange(of: selectedThemeColorIndex) { scheduleSave() }
-        .onChange(of: compactMode) { scheduleSave() }
-        .onChange(of: textScale) { scheduleSave() }
         .onChange(of: studyReminders) { scheduleSave() }
         .onChange(of: weeklyDigest) { scheduleSave() }
         .onChange(of: newFeatures) { scheduleSave() }
@@ -87,8 +83,6 @@ struct SettingsPreferencesTab: View {
     private var currentSettings: UserSettings {
         var s = auth.profile?.settings ?? UserSettings()
         s.themeColorIndex = selectedThemeColorIndex
-        s.compactMode = compactMode
-        s.textScale = textScale
         s.studyReminders = studyReminders
         s.weeklyDigest = weeklyDigest
         s.newFeatures = newFeatures
@@ -105,8 +99,6 @@ struct SettingsPreferencesTab: View {
     private var hasUnsavedChanges: Bool {
         let s = loadedSettings
         return selectedThemeColorIndex != s.themeColorIndex ||
-            compactMode != s.compactMode ||
-            textScale != s.textScale ||
             studyReminders != s.studyReminders ||
             weeklyDigest != s.weeklyDigest ||
             newFeatures != s.newFeatures ||
@@ -122,8 +114,6 @@ struct SettingsPreferencesTab: View {
     private func loadSettings() {
         let s = auth.profile?.settings ?? UserSettings()
         selectedThemeColorIndex = s.themeColorIndex
-        compactMode = s.compactMode
-        textScale = s.textScale
         studyReminders = s.studyReminders
         weeklyDigest = s.weeklyDigest
         newFeatures = s.newFeatures
@@ -174,30 +164,6 @@ struct SettingsPreferencesTab: View {
             darkModeRow
             SettingsDivider()
             themeColorRow(colors)
-            SettingsDivider()
-            textScaleRow(colors)
-            SettingsDivider()
-            SettingsToggleRow(
-                label: "Compact Mode",
-                subtitle: "Reduce spacing for more content on screen",
-                isOn: $compactMode
-            )
-        }
-    }
-
-    private func textScaleRow(_ colors: ReefThemeColors) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Text Size")
-                    .font(.epilogue(14, weight: .semiBold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(colors.text)
-                Spacer()
-            }
-            SettingsSegmentedControl(
-                options: ["Small", "Standard", "Large"],
-                selection: $textScale
-            )
         }
     }
 
