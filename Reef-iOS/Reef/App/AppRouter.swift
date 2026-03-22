@@ -60,21 +60,28 @@ struct AppRouter: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .environment(\.reefLayoutMetrics, ReefLayoutMetrics(screenHeight: shortSide))
             #if DEBUG
-            .overlay(alignment: .bottomLeading) {
+            .overlay(alignment: .bottomTrailing) {
                 if currentScreen == .dashboard {
                     Button(action: restartOnboarding) {
-                        Label("Restart Onboarding", systemImage: "arrow.counterclockwise")
-                            .font(.epilogue(11, weight: .bold))
-                            .tracking(-0.04 * 11)
-                            .foregroundStyle(ReefColors.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(ReefColors.destructive)
-                            .clipShape(Capsule())
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 14, weight: .bold))
+                            Text("Reset Onboarding")
+                                .font(.epilogue(12, weight: .bold))
+                                .tracking(-0.04 * 12)
+                        }
+                        .foregroundStyle(ReefColors.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(ReefColors.destructive)
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(ReefColors.black, lineWidth: 2))
+                        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
                     }
                     .buttonStyle(NoHighlightButtonStyle())
-                    .padding(.bottom, 20)
-                    .padding(.leading, 20)
+                    .padding(.bottom, 40)
+                    .padding(.trailing, 40)
+                    .zIndex(999)
                 }
             }
             #endif
