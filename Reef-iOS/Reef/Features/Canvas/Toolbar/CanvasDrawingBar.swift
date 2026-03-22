@@ -322,14 +322,14 @@ struct CanvasDrawingBar: View {
             // Mode toggle: stroke vs area
             HStack(spacing: 2) {
                 eraserModeButton(
-                    icon: "pencil.tip",
+                    assetIcon: "canvas.eraser_stroke",
                     isSelected: viewModel.eraserMode == .vector
                 ) {
                     viewModel.eraserMode = .vector
                 }
 
                 eraserModeButton(
-                    icon: "square.dashed",
+                    assetIcon: "canvas.eraser_area",
                     isSelected: viewModel.eraserMode == .bitmap
                 ) {
                     viewModel.eraserMode = .bitmap
@@ -650,13 +650,16 @@ struct CanvasDrawingBar: View {
     }
 
     private func eraserModeButton(
-        icon: String,
+        assetIcon: String,
         isSelected: Bool,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+            Image(assetIcon)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 18, height: 18)
                 .foregroundColor(isSelected ? .white : .white.opacity(0.5))
                 .frame(width: 32, height: 32)
                 .background(
