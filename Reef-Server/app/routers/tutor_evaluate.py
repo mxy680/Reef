@@ -1,6 +1,7 @@
 """POST /ai/tutor-evaluate — real-time evaluation of student handwriting against answer key."""
 
 import asyncio
+import base64
 import json
 import logging
 
@@ -143,8 +144,13 @@ async def tutor_evaluate(
         student_work=delimited_student_work,
     )
 
-    # Download figure images if provided (vision model)
+    # Collect images: figure URLs + student drawing
     images = await _download_images(body.figure_urls)
+    if body.student_image:
+        try:
+            images.append(base64.b64decode(body.student_image))
+        except Exception:
+            pass
 
     # Call LLM
     llm = LLMClient(
@@ -234,6 +240,14 @@ async def tutor_chat(
         user_message=delimited_user_message,
     )
 
+    # Include student drawing if provided
+    chat_images: list[bytes] | None = None
+    if body.student_image:
+        try:
+            chat_images = [base64.b64decode(body.student_image)]
+        except Exception:
+            pass
+
     llm = LLMClient(
         api_key=settings.openrouter_api_key,
         model=TUTOR_MODEL,
@@ -243,6 +257,7 @@ async def tutor_chat(
     result = await asyncio.to_thread(
         llm.generate,
         prompt=prompt,
+        images=chat_images,
         response_schema=TutorChatLLMOutput.model_json_schema(),
         timeout=30.0,
     )

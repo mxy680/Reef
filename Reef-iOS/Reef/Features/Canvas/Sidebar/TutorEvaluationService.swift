@@ -53,7 +53,8 @@ final class TutorEvaluationService {
         questionNumber: Int,
         partLabel: String?,
         stepIndex: Int,
-        figureURLs: [String] = []
+        figureURLs: [String] = [],
+        studentImage: String? = nil
     ) {
         // Skip if latex hasn't changed since last eval
         guard !latex.isEmpty, latex != lastEvaluatedLatex else {
@@ -86,7 +87,8 @@ final class TutorEvaluationService {
                     questionNumber: questionNumber,
                     partLabel: partLabel,
                     stepIndex: stepIndex,
-                    figureURLs: figureURLs
+                    figureURLs: figureURLs,
+                    studentImage: studentImage
                 )
 
                 guard self.generation == myGeneration else { return }
@@ -163,6 +165,7 @@ final class TutorEvaluationService {
         let stepIndex: Int
         let studentLatex: String
         let figureUrls: [String]
+        let studentImage: String?
 
         enum CodingKeys: String, CodingKey {
             case documentId = "document_id"
@@ -171,6 +174,7 @@ final class TutorEvaluationService {
             case stepIndex = "step_index"
             case studentLatex = "student_latex"
             case figureUrls = "figure_urls"
+            case studentImage = "student_image"
         }
     }
 
@@ -180,7 +184,8 @@ final class TutorEvaluationService {
         questionNumber: Int,
         partLabel: String?,
         stepIndex: Int,
-        figureURLs: [String]
+        figureURLs: [String],
+        studentImage: String? = nil
     ) async throws -> EvalResponse {
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
               let url = URL(string: "\(serverURL)/ai/tutor-evaluate") else {
@@ -195,7 +200,8 @@ final class TutorEvaluationService {
             partLabel: partLabel,
             stepIndex: stepIndex,
             studentLatex: latex,
-            figureUrls: figureURLs
+            figureUrls: figureURLs,
+            studentImage: studentImage
         )
 
         var request = URLRequest(url: url)
@@ -225,7 +231,8 @@ final class TutorEvaluationService {
         questionNumber: Int,
         partLabel: String?,
         stepIndex: Int,
-        studentLatex: String
+        studentLatex: String,
+        studentImage: String? = nil
     ) {
         guard !isSendingChat else { return }
         guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -248,7 +255,8 @@ final class TutorEvaluationService {
                     questionNumber: questionNumber,
                     partLabel: partLabel,
                     stepIndex: stepIndex,
-                    studentLatex: studentLatex
+                    studentLatex: studentLatex,
+                    studentImage: studentImage
                 )
                 self.chatMessages.append(TutorChatMessage(
                     role: .answer, latex: response.reply, timestamp: Date()
@@ -280,6 +288,7 @@ final class TutorEvaluationService {
         let studentLatex: String
         let userMessage: String
         let history: [HistoryMessage]
+        let studentImage: String?
 
         enum CodingKeys: String, CodingKey {
             case documentId = "document_id"
@@ -289,6 +298,7 @@ final class TutorEvaluationService {
             case studentLatex = "student_latex"
             case userMessage = "user_message"
             case history
+            case studentImage = "student_image"
         }
     }
 
@@ -308,7 +318,8 @@ final class TutorEvaluationService {
         questionNumber: Int,
         partLabel: String?,
         stepIndex: Int,
-        studentLatex: String
+        studentLatex: String,
+        studentImage: String? = nil
     ) async throws -> ChatResponse {
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
               let url = URL(string: "\(serverURL)/ai/tutor-chat") else {
@@ -329,7 +340,8 @@ final class TutorEvaluationService {
             stepIndex: stepIndex,
             studentLatex: studentLatex,
             userMessage: message,
-            history: historyMessages
+            history: historyMessages,
+            studentImage: studentImage
         )
 
         var request = URLRequest(url: url)

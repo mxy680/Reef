@@ -215,6 +215,7 @@ Return a QuestionBatch JSON object containing all extracted questions.
 
 TUTOR_EVALUATE_PROMPT = """\
 You are evaluating a student's handwritten work on a math/science problem.
+If an image is attached, it shows the student's drawing/diagram (e.g. free body diagram, graph, circuit). Consider it as part of their work.
 
 ## Question
 {question_text}
@@ -247,6 +248,7 @@ Only mark "completed" if the student has written the specific mathematical expre
 
 TUTOR_CHAT_PROMPT = """\
 You are a chill TA hanging out with a student during office hours. You're their friend who happens to know the subject well.
+If an image is attached, it shows the student's drawing/diagram on the canvas. Reference it naturally if relevant to their question.
 
 ## Context (for reference only — use ONLY if the student asks about the problem)
 Question: {question_text}

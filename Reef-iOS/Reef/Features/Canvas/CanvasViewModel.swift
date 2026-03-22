@@ -722,6 +722,40 @@ final class CanvasViewModel {
         saveCanvasState()
     }
 
+    /// Capture a JPEG snapshot of the student's drawing for the active question region.
+    /// Returns base64-encoded JPEG or nil if no strokes in the region.
+    func captureActiveQuestionImage() -> String? {
+        let drawing = drawingManager.drawing(for: currentPageIndex)
+        guard !drawing.strokes.isEmpty else { return nil }
+
+        // Get the question region bounds, or use the full drawing bounds
+        let bounds: CGRect
+        if let regions = activeSubquestionRegions(), !regions.isEmpty {
+            let minY = regions.map(\.yStart).min() ?? 0
+            let maxY = regions.map(\.yEnd).max() ?? 0
+            // Use full page width, cropped to question Y range
+            let drawingBounds = drawing.bounds
+            bounds = CGRect(
+                x: drawingBounds.minX - 10,
+                y: CGFloat(minY) - 10,
+                width: drawingBounds.width + 20,
+                height: CGFloat(maxY - minY) + 20
+            )
+        } else {
+            bounds = drawing.bounds.insetBy(dx: -10, dy: -10)
+        }
+
+        guard bounds.width > 0, bounds.height > 0 else { return nil }
+
+        let image = drawing.image(from: bounds, scale: 2.0)
+        guard let jpegData = image.jpegData(compressionQuality: 0.5) else { return nil }
+
+        // Skip if image is tiny (likely empty/noise)
+        guard jpegData.count > 500 else { return nil }
+
+        return jpegData.base64EncodedString()
+    }
+
     /// Set the pending reinforcement text from the current step's answer key.
     private func updatePendingReinforcement() {
         if currentTutorStepIndex < currentSteps.count {
@@ -869,7 +903,8 @@ final class CanvasViewModel {
             questionNumber: qNum,
             partLabel: partLabel.isEmpty ? nil : partLabel,
             stepIndex: currentTutorStepIndex,
-            studentLatex: handwritingService.latexResult
+            studentLatex: handwritingService.latexResult,
+            studentImage: captureActiveQuestionImage()
         )
     }
 
@@ -902,7 +937,8 @@ final class CanvasViewModel {
             documentId: document.id,
             questionNumber: qNum,
             partLabel: partLabel.isEmpty ? nil : partLabel,
-            stepIndex: currentTutorStepIndex
+            stepIndex: currentTutorStepIndex,
+            studentImage: captureActiveQuestionImage()
         )
     }
 
