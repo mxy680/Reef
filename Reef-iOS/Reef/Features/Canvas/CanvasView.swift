@@ -253,12 +253,18 @@ struct CanvasView: View {
                     guard !Task.isCancelled else { return }
                     viewModel.saveCanvasState()
                 }
-                // Live transcription — skip when using shape tool (diagrams go as images, not strokes)
-                if (viewModel.showSidebar || viewModel.tutorModeOn) && viewModel.selectedTool != .shapes {
+                // Track shape tool strokes so they're excluded from transcription
+                if viewModel.selectedTool == .shapes {
                     let drawing = viewModel.drawingManager.drawing(for: viewModel.currentPageIndex)
+                    viewModel.markShapeStrokes(in: drawing)
+                }
+
+                // Live transcription — send filtered drawing (no shape strokes)
+                if viewModel.showSidebar || viewModel.tutorModeOn {
+                    let filtered = viewModel.drawingWithoutShapes(for: viewModel.currentPageIndex)
                     let regions = viewModel.activeSubquestionRegions()
                     viewModel.handwritingService.onDrawingChanged(
-                        drawing: drawing,
+                        drawing: filtered,
                         activeRegions: regions
                     )
                 }

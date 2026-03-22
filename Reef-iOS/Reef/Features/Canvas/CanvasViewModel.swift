@@ -139,6 +139,8 @@ final class CanvasViewModel {
     var showSidebar: Bool = false
     var activeQuestionLabel: String?
     var isMicOn: Bool = false
+    /// Set of stroke hashes that were drawn with the shape tool — excluded from transcription.
+    private var shapeStrokeHashes: Set<Int> = []
     private var audioRecorder: AVAudioRecorder?
     private var micSilenceTimer: Task<Void, Never>?
     var showCalculator: Bool = false
@@ -720,6 +722,28 @@ final class CanvasViewModel {
         }
 
         saveCanvasState()
+    }
+
+    /// Track new strokes added with the shape tool.
+    func markShapeStrokes(in drawing: PKDrawing) {
+        for stroke in drawing.strokes {
+            shapeStrokeHashes.insert(stroke.renderBounds.hashValue)
+        }
+    }
+
+    /// Return a filtered drawing with shape strokes removed (for transcription only).
+    func drawingWithoutShapes(for pageIndex: Int) -> PKDrawing {
+        let drawing = drawingManager.drawing(for: pageIndex)
+        guard !shapeStrokeHashes.isEmpty else { return drawing }
+
+        let filtered = drawing.strokes.filter { stroke in
+            !shapeStrokeHashes.contains(stroke.renderBounds.hashValue)
+        }
+        var newDrawing = PKDrawing()
+        for stroke in filtered {
+            newDrawing.strokes.append(stroke)
+        }
+        return newDrawing
     }
 
     /// Capture a JPEG snapshot of the student's drawing for the active question region.
