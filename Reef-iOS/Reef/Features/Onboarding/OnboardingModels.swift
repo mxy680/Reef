@@ -73,20 +73,18 @@ enum StudentType: String, Codable, Sendable, CaseIterable {
 }
 
 enum MajorField: String, Codable, Sendable, CaseIterable {
-    case stem = "stem"
-    case business = "business"
-    case humanities = "humanities"
-    case arts = "arts"
-    case health = "health"
+    case engineering = "engineering"
+    case premed = "premed"
+    case cs = "cs"
+    case science = "science"
     case other = "other"
 
     var displayLabel: String {
         switch self {
-        case .stem: "STEM"
-        case .business: "Business"
-        case .humanities: "Humanities"
-        case .arts: "Arts"
-        case .health: "Health / Pre-Med"
+        case .engineering: "Engineering"
+        case .premed: "Pre-Med / Health"
+        case .cs: "Computer Science"
+        case .science: "Math / Science"
         case .other: "Other"
         }
     }
@@ -227,17 +225,19 @@ struct OnboardingAnswers: Sendable {
 enum CourseCatalog {
     static func courses(for studentType: StudentType?, major: MajorField?) -> [String] {
         switch major {
-        case .stem:
-            return ["Calculus", "Physics", "Chemistry", "Biology", "Organic Chemistry",
-                    "Linear Algebra", "Differential Equations", "Statistics",
-                    "Computer Science", "Engineering", "Data Science"]
-        case .business:
-            return ["Accounting", "Economics", "Finance", "Statistics", "Business Analytics"]
-        case .health:
+        case .engineering:
+            return ["Calculus", "Physics", "Linear Algebra", "Differential Equations",
+                    "Chemistry", "Statistics", "Computer Science", "Engineering",
+                    "Data Science"]
+        case .premed:
             return ["Biology", "Chemistry", "Organic Chemistry", "Anatomy",
-                    "Biochemistry", "Physics"]
-        case .humanities, .arts:
-            return ["Math", "Statistics", "Economics", "Computer Science"]
+                    "Biochemistry", "Physics", "Statistics"]
+        case .cs:
+            return ["Computer Science", "Calculus", "Linear Algebra", "Statistics",
+                    "Data Science", "Discrete Math", "Physics"]
+        case .science:
+            return ["Calculus", "Physics", "Chemistry", "Biology", "Statistics",
+                    "Linear Algebra", "Differential Equations", "Organic Chemistry"]
         case .other, nil:
             switch studentType {
             case .highSchool:
