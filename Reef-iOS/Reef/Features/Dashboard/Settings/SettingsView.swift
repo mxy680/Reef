@@ -23,7 +23,11 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(metrics.contentPadding)
         .dashboardCard()
-        .onAppear { appeared = true }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                appeared = true
+            }
+        }
         .overlay(alignment: .bottom) {
             if let message = toastMessage {
                 toastView(message: message)
