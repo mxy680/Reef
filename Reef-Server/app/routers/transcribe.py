@@ -49,8 +49,8 @@ async def create_strokes_session(
         raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
 
     try:
-        from app.services.mathpix_pool import get_shared_session
-        token, session_id, expires_at = await get_shared_session()
+        from app.services.mathpix_pool import acquire_session
+        token, session_id, expires_at = await acquire_session()
         return CreateSessionResponse(
             app_token=token,
             strokes_session_id=session_id,
