@@ -5,7 +5,7 @@ struct StudyGoalStep: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "If this app could do one thing for you",
+            title: "If this app could do one thing",
             subtitle: "Your tutor needs a mission.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },
