@@ -62,27 +62,33 @@ struct WelcomeStep: View {
                     .padding(28)
 
                     // Right side — app screenshot placeholder
-                    // TODO: Replace with Image("onboarding-screenshot").resizable()
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(colors.subtle)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(colors.border, lineWidth: 1.5)
-                        )
-                        .overlay(
-                            VStack(spacing: 8) {
-                                Image(systemName: "photo")
-                                    .font(.system(size: 32, weight: .light))
-                                    .foregroundStyle(colors.textMuted)
-                                Text("App screenshot")
-                                    .font(.epilogue(12, weight: .medium))
-                                    .tracking(-0.04 * 12)
-                                    .foregroundStyle(colors.textMuted)
-                            }
-                        )
-                        .frame(maxWidth: .infinity)
-                        .padding(28)
-                        .fadeUp(index: 2)
+                    // TODO: Replace with Image("onboarding-screenshot").resizable().aspectRatio(contentMode: .fit)
+                    VStack {
+                        Spacer()
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(colors.subtle)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(colors.border, lineWidth: 1.5)
+                            )
+                            .overlay(
+                                VStack(spacing: 8) {
+                                    Image(systemName: "photo")
+                                        .font(.system(size: 28, weight: .light))
+                                        .foregroundStyle(colors.textMuted)
+                                    Text("App screenshot")
+                                        .font(.epilogue(11, weight: .medium))
+                                        .tracking(-0.04 * 11)
+                                        .foregroundStyle(colors.textMuted)
+                                }
+                            )
+                            .aspectRatio(4/3, contentMode: .fit)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                    .padding(.trailing, 28)
+                    .fadeUp(index: 2)
                 }
                 .background(colors.card)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
