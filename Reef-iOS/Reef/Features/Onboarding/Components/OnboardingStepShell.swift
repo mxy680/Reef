@@ -16,11 +16,8 @@ struct OnboardingStepShell<Content: View>: View {
     var body: some View {
         let colors = theme.colors
 
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                Spacer()
-                    .frame(height: 32)
-
+        GeometryReader { geo in
+            ScrollView(showsIndicators: false) {
                 // Card — contains title, subtitle, content, and navigation
                 VStack(alignment: .leading, spacing: 0) {
                     // Title
@@ -81,14 +78,12 @@ struct OnboardingStepShell<Content: View>: View {
                         .fill(colors.shadow)
                         .offset(x: 5, y: 5)
                 )
-
-                Spacer()
-                    .frame(height: 40)
+                .frame(maxWidth: metrics.onboardingCardMaxWidth)
+                .padding(.horizontal, metrics.authHPadding)
+                // Vertically center: ensure content is at least as tall as the viewport
+                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: metrics.onboardingCardMaxWidth)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, metrics.authHPadding)
         }
-        .frame(maxWidth: .infinity)
     }
 }
