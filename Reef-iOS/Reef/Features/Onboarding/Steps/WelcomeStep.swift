@@ -24,7 +24,7 @@ struct WelcomeStep: View {
                             .padding(.bottom, 20)
 
                         // Headline
-                        Text("Your practice\nproblems\ntalk back")
+                        Text("Your tutor\nnever sleeps")
                             .font(.epilogue(34, weight: .black))
                             .tracking(-0.04 * 34)
                             .foregroundStyle(colors.text)
@@ -33,7 +33,7 @@ struct WelcomeStep: View {
                             .padding(.bottom, 14)
 
                         // Subline
-                        Text("An AI tutor that reads your handwriting, watches you work, and speaks up before you spiral. It's like office hours that never close.")
+                        Text("Write. Get stuck. Get unstuck.\nAll in one place.")
                             .font(.epilogue(14, weight: .medium))
                             .tracking(-0.04 * 14)
                             .foregroundStyle(colors.textSecondary)
