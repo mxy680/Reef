@@ -33,7 +33,7 @@ struct WelcomeStep: View {
                             .padding(.bottom, 14)
 
                         // Subline
-                        Text("Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.")
+                        Text("An AI tutor that reads your handwriting, watches you work, and speaks up before you spiral. It's like office hours that never close.")
                             .font(.epilogue(14, weight: .medium))
                             .tracking(-0.04 * 14)
                             .foregroundStyle(colors.textSecondary)
@@ -45,7 +45,7 @@ struct WelcomeStep: View {
                         HStack(spacing: 6) {
                             Text("🐠")
                                 .font(.system(size: 13))
-                            Text("Trusted by 10,000+ students")
+                            Text("10,000+ students already in")
                                 .font(.epilogue(12, weight: .bold))
                                 .tracking(-0.04 * 12)
                                 .foregroundStyle(colors.textSecondary)
@@ -54,7 +54,7 @@ struct WelcomeStep: View {
                         .padding(.bottom, 24)
 
                         // CTA
-                        ReefButton("Let's go", action: onContinue)
+                        ReefButton("Dive in", action: onContinue)
                             .frame(maxWidth: 200)
                             .fadeUp(index: 4)
                     }
@@ -66,8 +66,8 @@ struct WelcomeStep: View {
                         // Feature cards stacked with slight overlap
                         featureCard(
                             icon: "bubble.left.and.bubble.right.fill",
-                            label: "AI Tutor",
-                            description: "Talks you through problems",
+                            label: "Voice tutor",
+                            description: "Talks through problems out loud",
                             color: ReefColors.primary
                         )
                         .fadeUp(index: 1)
@@ -75,8 +75,8 @@ struct WelcomeStep: View {
 
                         featureCard(
                             icon: "pencil.tip.crop.circle",
-                            label: "Handwriting",
-                            description: "Reads what you write",
+                            label: "Reads your writing",
+                            description: "No typing. Just write.",
                             color: Color(hex: 0xEB8C73)
                         )
                         .fadeUp(index: 2)
@@ -84,8 +84,8 @@ struct WelcomeStep: View {
 
                         featureCard(
                             icon: "chart.line.uptrend.xyaxis",
-                            label: "Analytics",
-                            description: "Tracks your progress",
+                            label: "Knows when you're stuck",
+                            description: "Jumps in before you spiral",
                             color: ReefColors.accent
                         )
                         .fadeUp(index: 3)
