@@ -56,30 +56,6 @@ struct TutorDemoStep: View {
                     .transition(.opacity)
                 }
 
-                // Debug log panel
-                #if DEBUG
-                VStack(alignment: .trailing, spacing: 0) {
-                    ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            ForEach(Array(walkthrough.debugLogs.enumerated()), id: \.offset) { _, entry in
-                                Text(entry)
-                                    .font(.system(size: 9, design: .monospaced))
-                                    .foregroundStyle(.white.opacity(0.8))
-                            }
-                        }
-                        .padding(8)
-                    }
-                    .frame(width: 280, height: 200)
-                    .background(Color.black.opacity(0.75))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 100)
-                .padding(.trailing, 8)
-                .zIndex(500)
-                .allowsHitTesting(false)
-                #endif
-
                 // Floating "Done" button — only after walkthrough
                 if walkthrough.isComplete {
                     VStack {
@@ -195,10 +171,18 @@ struct TutorDemoStep: View {
                 walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
-        // Detect voice command (mic)
+        // Detect voice command (mic) — wait for tutor to finish responding
         .onChange(of: canvasVM?.isMicOn) { _, isOn in
             if isOn == true && walkthrough.currentStep == .voiceCommand {
-                walkthrough.advanceAfterDelay(ms: 1500)
+                walkthrough.log("Mic activated during voiceCommand step, waiting for tutor response...")
+            }
+        }
+        .onChange(of: canvasVM?.tutorEvalService.isSendingChat) { _, isSending in
+            if isSending == false && walkthrough.currentStep == .voiceCommand {
+                // Tutor finished responding — advance after a short delay
+                if canvasVM?.tutorEvalService.chatMessages.contains(where: { $0.role == .answer }) == true {
+                    walkthrough.advanceAfterDelay(ms: 2000)
+                }
             }
         }
         // Detect sidebar toggle

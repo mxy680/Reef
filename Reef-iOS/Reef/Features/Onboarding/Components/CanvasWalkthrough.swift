@@ -33,50 +33,46 @@ enum WalkthroughStep: Int, CaseIterable {
 
     var text: String {
         switch self {
+        // Phase 1: Tool Training
         case .drawSomething:
-            "Go ahead — draw something. Anything. This is your canvas."
+            "Pick up your Pencil and doodle something. Let's see what you got."
         case .tryHighlighter:
-            "Alright, now tap the highlighter and mark something up."
+            "Look up at the toolbar, switch to the highlighter and scribble over something."
         case .eraseHighlight:
-            "Cool. Now grab the eraser and get rid of that highlight."
+            "Now grab the eraser and clean that up."
         case .shapeTool:
-            "Tap the shape tool and draw a shape. You'll need this for diagrams — it's the only way to draw them."
+            "Let's try the shape tool. This is how you'll draw every diagram in Reef."
         case .lassoTool:
-            "Now the lasso. Circle something you drew, then tap the selection to move or delete it."
+            "The lasso tool will let you grab things. Circle a drawing, then tap it to move or trash it."
         case .fingerDraw:
-            "This one lets you draw with your finger. Tap it and try."
+            "Want to draw without your Pencil? Tap the next tool and use your finger."
         case .ruler:
-            "Tap the ruler. Gives you straight lines."
+            "Tap the ruler. Makes your lines not look like they were drawn during an earthquake."
         case .calculator:
-            "Now the calculator. Built-in, so you don't have to switch apps."
+            "Need to do some quick math? Tap the calculator."
         case .pageSettings:
-            "Page settings. Tap it to change your background to grid, dots, or lines."
-        case .voiceCommand:
-            "See the mic icon? Tap it to ask your tutor a question out loud. No typing needed."
-        case .sidebarToggle:
-            "This button toggles the sidebar. Tap it to hide or show your tutor panel."
-        case .bugReport:
-            "Found something broken? Tap the bug icon to report it. We actually read these."
-        case .exportFeature:
-            "Tap the export button to save your work as a PDF. Great for turning in homework."
+            "Want graph paper? Tap page settings and pick your background."
+        // Phase 2: Tutor Training
         case .enableTutor:
-            "OK here's the fun part. Tap the tutor button to turn on your AI tutor."
+            "Here's where it gets interesting. Tap the tutor button to wake up your AI."
         case .tutorHint:
-            "See the lightbulb? Tap it. That's your hint when you're stuck."
+            "See the lightbulb on the top right? That's your lifeline. Tap it when you're stuck and it'll nudge you forward."
         case .tutorReveal:
-            "Now tap the eye icon. That reveals the full answer."
+            "Want the full answer? Tap the eye icon. We won't tell anyone."
+        // Phase 3: Solve It
         case .solveIt:
-            "Now try solving the problem for real. Your tutor's watching — it'll help if you get stuck."
+            "Your turn. Solve the problem — your tutor's watching and will jump in if you need help."
+        // Phase 4: Post-Solve
         case .voiceCommand:
-            "Nice work. See the mic icon? Tap it to ask your tutor a question out loud. No typing needed."
+            "See the mic? Tap it and just talk. Ask your tutor anything — no typing required."
         case .sidebarToggle:
-            "This button toggles the sidebar. Tap it to hide or show your tutor panel."
+            "Need more room to work? Click the sidebar icon on the right."
         case .bugReport:
-            "Found something broken? Tap the bug icon to report it. We actually read these."
+            "Found a bug? Tap this icon to report it. We actually fix these."
         case .exportFeature:
-            "Tap the export button to save your work as a PDF. Great for turning in homework."
+            "Tap export to save your work as a PDF. Perfect for submitting homework."
         case .ready:
-            "That's everything. You're all set."
+            "You're all set. Now go make your tutor proud."
         }
     }
 
@@ -142,14 +138,9 @@ final class CanvasWalkthroughState {
     var drawingReaction: String?
     var waitingForReaction = false
     var isSpeaking = false  // True once TTS audio starts playing for current step
-    var debugLogs: [String] = []
     private var audioPlayer: AVAudioPlayer?
 
     func log(_ message: String) {
-        let timestamp = Date().formatted(date: .omitted, time: .standard)
-        let entry = "[\(timestamp)] \(message)"
-        debugLogs.append(entry)
-        if debugLogs.count > 50 { debugLogs.removeFirst() }
         print("[Walkthrough] \(message)")
     }
 
