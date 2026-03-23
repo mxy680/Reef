@@ -60,7 +60,7 @@ struct CanvasDrawingBar: View {
 
             divider
 
-            // Canvas tools: ruler, calculator, add page, page settings
+            // Canvas tools: ruler, calculator, page settings
             HStack(alignment: .center, spacing: 0) {
                 toolbarButton(icon: "canvas.ruler_new", active: viewModel.showRuler) {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -74,27 +74,18 @@ struct CanvasDrawingBar: View {
                     }
                 }
 
-                toolbarButton(icon: "canvas.add_blank_page", active: viewModel.showPageControls) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showPageControls.toggle()
-                        if viewModel.showPageControls { viewModel.showPageSettings = false }
-                    }
-                }
-
                 toolbarButton(icon: "canvas.page_settings_new", active: viewModel.showPageSettings) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         viewModel.showPageSettings.toggle()
-                        if viewModel.showPageSettings { viewModel.showPageControls = false }
+                        viewModel.showPageControls = false
                     }
                 }
             }
 
             Spacer()
 
-            // Tool settings — shown when pen, highlighter, eraser is selected, or page controls active
-            if viewModel.showPageControls {
-                pageControlsSection
-            } else if viewModel.showPageSettings {
+            // Tool settings — shown when pen, highlighter, eraser is selected, or page settings active
+            if viewModel.showPageSettings {
                 pageSettingsSection
             } else if viewModel.selectedTool == .pen || viewModel.selectedTool == .highlighter || viewModel.selectedTool == .shapes {
                 penSettingsSection
@@ -379,73 +370,6 @@ struct CanvasDrawingBar: View {
     }
 
     // MARK: - Page Controls Section
-
-    private var pageControlsSection: some View {
-        HStack(alignment: .center, spacing: 6) {
-            // Compact pagination: < 1/3 >
-            Button {
-                let newIndex = viewModel.currentPageIndex - 1
-                viewModel.currentPageIndex = newIndex
-                onScrollToPage?(newIndex)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white.opacity(viewModel.currentPageIndex > 0 ? 0.8 : 0.3))
-                    .frame(width: 24, height: 48)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.currentPageIndex <= 0)
-
-            Text("\(viewModel.currentPageIndex + 1)/\(viewModel.pageCount)")
-                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                .foregroundColor(.white.opacity(0.9))
-                .fixedSize()
-
-            Button {
-                let newIndex = viewModel.currentPageIndex + 1
-                viewModel.currentPageIndex = newIndex
-                onScrollToPage?(newIndex)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white.opacity(viewModel.currentPageIndex < viewModel.pageCount - 1 ? 0.8 : 0.3))
-                    .frame(width: 24, height: 48)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.currentPageIndex >= viewModel.pageCount - 1)
-
-            divider
-
-            // Add page
-            Button {
-                viewModel.addBlankPageAfterCurrent(drawingManager: drawingManager)
-            } label: {
-                Image(systemName: "plus.rectangle")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
-                    .frame(width: 34, height: 48)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            // Delete page
-            Button {
-                viewModel.deleteCurrentPage(drawingManager: drawingManager)
-            } label: {
-                Image(systemName: "minus.rectangle")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.white.opacity(viewModel.pageCount > 1 ? 0.8 : 0.3))
-                    .frame(width: 34, height: 48)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.pageCount <= 1)
-        }
-        .transition(.opacity)
-    }
-
 
     private var clearAllPill: some View {
         Button {
