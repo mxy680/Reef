@@ -201,6 +201,11 @@ final class CanvasWalkthroughState {
         pendingAdvanceTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(ms))
             guard !Task.isCancelled else { return }
+            // Wait for walkthrough TTS to finish before advancing
+            while isPlayingAudio {
+                try? await Task.sleep(for: .milliseconds(200))
+                guard !Task.isCancelled else { return }
+            }
             advance()
         }
     }
@@ -220,7 +225,9 @@ final class CanvasWalkthroughState {
     var drawingReaction: String?
     var waitingForReaction = false
     var isSpeaking = false  // True once TTS audio starts playing for current step
+    var isPlayingAudio = false  // True while audio is actively playing
     private var audioPlayer: AVAudioPlayer?
+    private var audioDelegate: WalkthroughAudioDelegate?
 
     func log(_ message: String) {
         print("[Walkthrough] \(message)")
@@ -350,10 +357,29 @@ final class CanvasWalkthroughState {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback)
             try AVAudioSession.sharedInstance().setActive(true)
-            audioPlayer = try AVAudioPlayer(data: data)
-            audioPlayer?.play()
+            let player = try AVAudioPlayer(data: data)
+            let delegate = WalkthroughAudioDelegate { [weak self] in
+                Task { @MainActor in
+                    self?.isPlayingAudio = false
+                }
+            }
+            player.delegate = delegate
+            audioDelegate = delegate
+            audioPlayer = player
+            isPlayingAudio = true
+            player.play()
         } catch {
-            // Silent failure
+            isPlayingAudio = false
         }
+    }
+}
+
+// MARK: - Audio Delegate
+
+private final class WalkthroughAudioDelegate: NSObject, AVAudioPlayerDelegate {
+    let onFinish: () -> Void
+    init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        onFinish()
     }
 }
