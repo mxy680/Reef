@@ -9,7 +9,6 @@ struct GeneratingPlanStep: View {
     @State private var progress: CGFloat = 0
     @State private var messageIndex = 0
     @State private var isPulsing = false
-    @State private var showSocialProof = false
 
     private let messages = [
         "Crunching your courses...",
@@ -74,21 +73,12 @@ struct GeneratingPlanStep: View {
                     .frame(height: 14)
                 }
 
-                // Social proof — always takes space, opacity controls visibility
-                HStack(spacing: 8) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(ReefColors.primary)
-                    Text("92% of Reef students say they study less and learn more")
-                        .font(.epilogue(12, weight: .semiBold))
-                        .tracking(-0.04 * 12)
-                        .foregroundStyle(colors.textSecondary)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(ReefColors.primary.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .opacity(showSocialProof ? 1 : 0)
+                // Fun fact
+                Text("Fun fact: this app was built instead of studying for midterms")
+                    .font(.epilogue(12, weight: .semiBold))
+                    .tracking(-0.04 * 12)
+                    .foregroundStyle(colors.textMuted)
+                    .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 32)
@@ -129,14 +119,6 @@ struct GeneratingPlanStep: View {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     messageIndex = i
                 }
-            }
-        }
-
-        // Show social proof at 2s
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(2.0))
-            withAnimation(.easeIn(duration: 0.4)) {
-                showSocialProof = true
             }
         }
 
