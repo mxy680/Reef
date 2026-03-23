@@ -18,15 +18,43 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
-                // Walkthrough overlay
-                if let step = walkthrough.currentStep {
-                    WalkthroughPopup(
-                        step: step,
-                        onGotIt: { walkthrough.advance() },
-                        onSkip: { walkthrough.skip() }
-                    )
-                    .zIndex(300)
+                // Walkthrough overlay — stacked popups (max 2)
+                VStack(alignment: .leading, spacing: 8) {
+                    Spacer()
+
+                    // Previous step (fading out)
+                    if let prev = walkthrough.previousStep {
+                        WalkthroughCard(step: prev, showButtons: false)
+                            .opacity(0.5)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+
+                    // Current step (active)
+                    if let step = walkthrough.currentStep {
+                        WalkthroughCard(step: step, showButtons: true) {
+                            withAnimation(.spring(duration: 0.3)) { walkthrough.advance() }
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+
+                    // Skip button
+                    if walkthrough.currentStep != nil {
+                        ReefButton(.primary, size: .compact, action: {
+                            withAnimation { walkthrough.skip() }
+                        }) {
+                            Text("Skip tutorial")
+                                .font(.epilogue(11, weight: .bold))
+                                .tracking(-0.04 * 11)
+                        }
+                    }
                 }
+                .padding(.leading, 20)
+                .padding(.bottom, 20)
+                .frame(maxWidth: .infinity, alignment: .bottomLeading)
+                .animation(.spring(duration: 0.3), value: walkthrough.currentStep)
+                .animation(.easeOut(duration: 0.3), value: walkthrough.previousStep)
+                .zIndex(300)
+                .allowsHitTesting(true)
 
                 // Floating "Done" button — only after walkthrough
                 if walkthrough.isComplete {

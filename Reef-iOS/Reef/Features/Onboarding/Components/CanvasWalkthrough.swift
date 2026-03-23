@@ -80,10 +80,18 @@ enum WalkthroughPopupPosition {
 @MainActor
 final class CanvasWalkthroughState {
     var currentStep: WalkthroughStep? = .drawSomething
+    var previousStep: WalkthroughStep? = nil
     var isComplete = false
+
+    private var removePreviousTask: Task<Void, Never>?
 
     func advance() {
         guard let current = currentStep else { return }
+
+        // Previous step becomes the one we're leaving
+        removePreviousTask?.cancel()
+        previousStep = current
+
         let allSteps = WalkthroughStep.allCases
         if let idx = allSteps.firstIndex(of: current), idx + 1 < allSteps.count {
             currentStep = allSteps[idx + 1]
@@ -91,10 +99,21 @@ final class CanvasWalkthroughState {
             currentStep = nil
             isComplete = true
         }
+
+        // Remove previous after a short delay
+        removePreviousTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.3)) {
+                previousStep = nil
+            }
+        }
     }
 
     func skip() {
+        removePreviousTask?.cancel()
         currentStep = nil
+        previousStep = nil
         isComplete = true
     }
 }
