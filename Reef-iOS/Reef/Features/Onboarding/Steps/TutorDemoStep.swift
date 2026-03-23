@@ -182,11 +182,7 @@ struct TutorDemoStep: View {
                 // Tutor finished responding — wait for audio, then advance
                 if canvasVM?.tutorEvalService.chatMessages.contains(where: { $0.role == .answer }) == true {
                     Task { @MainActor in
-                        // Wait for tutor audio to finish playing
-                        while canvasVM?.tutorEvalService.isTutorSpeaking == true {
-                            try? await Task.sleep(for: .milliseconds(200))
-                        }
-                        try? await Task.sleep(for: .milliseconds(500))
+                        await waitForTutorAudio()
                         walkthrough.advance()
                     }
                 }
@@ -225,12 +221,8 @@ struct TutorDemoStep: View {
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
             if status == "completed" && walkthrough.currentStep == .solveIt {
                 if let vm = canvasVM, vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
-                    // Wait for tutor's congratulations audio to finish
                     Task { @MainActor in
-                        while canvasVM?.tutorEvalService.isTutorSpeaking == true {
-                            try? await Task.sleep(for: .milliseconds(200))
-                        }
-                        try? await Task.sleep(for: .milliseconds(500))
+                        await waitForTutorAudio()
                         walkthrough.advance()
                     }
                 }
@@ -245,11 +237,7 @@ struct TutorDemoStep: View {
                 // Wait for real tutor audio to finish before walkthrough speaks
                 if canvasVM?.tutorEvalService.isTutorSpeaking == true {
                     Task { @MainActor in
-                        // Poll until tutor finishes speaking
-                        while canvasVM?.tutorEvalService.isTutorSpeaking == true {
-                            try? await Task.sleep(for: .milliseconds(200))
-                        }
-                        try? await Task.sleep(for: .milliseconds(500)) // brief pause
+                        await waitForTutorAudio()
                         walkthrough.speakInstruction(speechText)
                     }
                 } else {
@@ -279,6 +267,18 @@ struct TutorDemoStep: View {
                 withAnimation { walkthrough.advance() }
             }
         }
+    }
+
+    // MARK: - Audio Wait Helper
+
+    /// Wait for tutor audio to finish with a 15-second timeout to prevent infinite loops.
+    private func waitForTutorAudio() async {
+        var waited = 0
+        while canvasVM?.tutorEvalService.isTutorSpeaking == true, waited < 75 {
+            try? await Task.sleep(for: .milliseconds(200))
+            waited += 1
+        }
+        try? await Task.sleep(for: .milliseconds(500))
     }
 
     // MARK: - Pre-Dialog

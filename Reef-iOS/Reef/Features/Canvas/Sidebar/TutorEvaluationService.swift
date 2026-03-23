@@ -416,6 +416,7 @@ private final class AudioFinishDelegate: NSObject, AVAudioPlayerDelegate {
     let onFinish: () -> Void
     init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         onFinish()
     }
 }

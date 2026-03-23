@@ -103,8 +103,12 @@ async def demo_problem(body: DemoProblemRequest, user: AuthenticatedUser = Depen
     if not settings.openrouter_api_key:
         raise HTTPException(status_code=503, detail="OpenRouter not configured")
 
+    def _esc(s: str) -> str:
+        """Escape curly braces in user input for str.format()."""
+        return s.replace("{", "{{").replace("}", "}}")
+
     prompt = DEMO_PROBLEM_PROMPT.format(
-        topic=body.topic[:200],
+        topic=_esc(body.topic[:200]),
         student_type=body.student_type,
     )
 
@@ -144,6 +148,10 @@ async def demo_chat(body: DemoChatRequest, user: AuthenticatedUser = Depends(get
     if not settings.openrouter_api_key:
         raise HTTPException(status_code=503, detail="OpenRouter not configured")
 
+    def _esc(s: str) -> str:
+        """Escape curly braces in user input for str.format()."""
+        return s.replace("{", "{{").replace("}", "}}")
+
     # Build conversation history
     history_text = ""
     if body.history:
@@ -154,12 +162,12 @@ async def demo_chat(body: DemoChatRequest, user: AuthenticatedUser = Depends(get
         history_text = "\n".join(lines)
 
     prompt = DEMO_CHAT_PROMPT.format(
-        question_text=body.question_text,
-        steps_overview=body.steps_overview or "(no steps)",
-        current_step_description=body.current_step_description or "(not started)",
-        student_work=body.student_work or "(no work yet)",
-        conversation_history=history_text or "(no prior conversation)",
-        user_message=body.user_message,
+        question_text=_esc(body.question_text),
+        steps_overview=_esc(body.steps_overview or "(no steps)"),
+        current_step_description=_esc(body.current_step_description or "(not started)"),
+        student_work=_esc(body.student_work or "(no work yet)"),
+        conversation_history=_esc(history_text or "(no prior conversation)"),
+        user_message=_esc(body.user_message),
     )
 
     llm = LLMClient(
@@ -208,8 +216,11 @@ async def demo_document(
         raise HTTPException(status_code=503, detail="Supabase not configured")
 
     # 1. Generate problem via LLM (same logic as /demo-problem)
+    def _esc(s: str) -> str:
+        return s.replace("{", "{{").replace("}", "}}")
+
     prompt = DEMO_PROBLEM_PROMPT.format(
-        topic=body.topic[:200],
+        topic=_esc(body.topic[:200]),
         student_type=body.student_type,
     )
 

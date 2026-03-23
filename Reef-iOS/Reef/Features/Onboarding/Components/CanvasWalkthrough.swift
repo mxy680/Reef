@@ -291,19 +291,19 @@ final class CanvasWalkthroughState {
                 log("reactToDrawing() — got reaction: \(decoded.reaction)")
                 drawingReaction = decoded.reaction
 
-                // Speak reaction + next step together
-                if let nextStep = WalkthroughStep(rawValue: WalkthroughStep.drawSomething.rawValue + 1) {
+                // Speak reaction + next step together, then advance after TTS completes
+                let allSteps = WalkthroughStep.allCases
+                if let idx = allSteps.firstIndex(of: .drawSomething), idx + 1 < allSteps.count {
+                    let nextStep = allSteps[idx + 1]
                     let combined = decoded.reaction + " " + nextStep.speech
                     log("Speaking combined: \(combined.prefix(80))...")
                     speakInstruction(combined)
-                } else if let audioBase64 = decoded.speechAudio,
-                          let audioData = Data(base64Encoded: audioBase64) {
-                    playAudio(audioData)
                 }
             }
 
             waitingForReaction = false
-            advance()
+            // Advance after a delay to let TTS start (advance resets isSpeaking)
+            advanceAfterDelay(ms: 500)
         }
     }
 
@@ -380,6 +380,7 @@ private final class WalkthroughAudioDelegate: NSObject, AVAudioPlayerDelegate {
     let onFinish: () -> Void
     init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         onFinish()
     }
 }
