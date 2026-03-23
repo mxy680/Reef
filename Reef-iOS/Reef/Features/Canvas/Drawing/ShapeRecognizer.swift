@@ -1,5 +1,6 @@
 import PencilKit
 import UIKit
+@preconcurrency import Supabase
 
 // MARK: - Recognized Shape
 
@@ -69,6 +70,12 @@ struct ShapeRecognizer {
             request.httpMethod = "POST"
             request.timeoutInterval = 3
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            // Auth token required by /ai/fit-shape
+            if let token = try? await supabase.auth.session.accessToken {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+
             request.httpBody = try JSONEncoder().encode(RequestBody(points: pointArrays, closed: isClosed))
 
             let (data, response) = try await URLSession.shared.data(for: request)

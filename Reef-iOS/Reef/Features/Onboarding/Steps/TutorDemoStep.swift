@@ -50,7 +50,7 @@ struct TutorDemoStep: View {
                         }
                     }
                     .padding(.leading, 20)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 40)
                     .frame(maxWidth: .infinity, alignment: .bottomLeading)
                     .zIndex(300)
                     .transition(.opacity)
@@ -179,9 +179,16 @@ struct TutorDemoStep: View {
         }
         .onChange(of: canvasVM?.tutorEvalService.isSendingChat) { _, isSending in
             if isSending == false && walkthrough.currentStep == .voiceCommand {
-                // Tutor finished responding — advance after a short delay
+                // Tutor finished responding — wait for audio, then advance
                 if canvasVM?.tutorEvalService.chatMessages.contains(where: { $0.role == .answer }) == true {
-                    walkthrough.advanceAfterDelay(ms: 2000)
+                    Task { @MainActor in
+                        // Wait for tutor audio to finish playing
+                        while canvasVM?.tutorEvalService.isTutorSpeaking == true {
+                            try? await Task.sleep(for: .milliseconds(200))
+                        }
+                        try? await Task.sleep(for: .milliseconds(500))
+                        walkthrough.advance()
+                    }
                 }
             }
         }
@@ -218,7 +225,14 @@ struct TutorDemoStep: View {
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
             if status == "completed" && walkthrough.currentStep == .solveIt {
                 if let vm = canvasVM, vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
-                    walkthrough.advanceAfterDelay(ms: 2000)
+                    // Wait for tutor's congratulations audio to finish
+                    Task { @MainActor in
+                        while canvasVM?.tutorEvalService.isTutorSpeaking == true {
+                            try? await Task.sleep(for: .milliseconds(200))
+                        }
+                        try? await Task.sleep(for: .milliseconds(500))
+                        walkthrough.advance()
+                    }
                 }
             }
         }
@@ -230,7 +244,20 @@ struct TutorDemoStep: View {
                     .replacingOccurrences(of: "• ", with: "")
                     .replacingOccurrences(of: "\n\n", with: ". ")
                     .replacingOccurrences(of: "\n", with: ". ")
-                walkthrough.speakInstruction(speechText)
+
+                // Wait for real tutor audio to finish before walkthrough speaks
+                if canvasVM?.tutorEvalService.isTutorSpeaking == true {
+                    Task { @MainActor in
+                        // Poll until tutor finishes speaking
+                        while canvasVM?.tutorEvalService.isTutorSpeaking == true {
+                            try? await Task.sleep(for: .milliseconds(200))
+                        }
+                        try? await Task.sleep(for: .milliseconds(500)) // brief pause
+                        walkthrough.speakInstruction(speechText)
+                    }
+                } else {
+                    walkthrough.speakInstruction(speechText)
+                }
 
                 // Auto-complete ready step after speaking
                 if step == .ready {

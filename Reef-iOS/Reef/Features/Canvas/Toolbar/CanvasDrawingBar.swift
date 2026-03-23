@@ -64,20 +64,29 @@ struct CanvasDrawingBar: View {
             HStack(alignment: .center, spacing: 0) {
                 toolbarButton(icon: "canvas.ruler_new", active: viewModel.showRuler) {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showRuler.toggle()
+                        let wasOn = viewModel.showRuler
+                        viewModel.showCalculator = false
+                        viewModel.showPageSettings = false
+                        viewModel.showRuler = !wasOn
                     }
                 }
 
                 toolbarButton(icon: "canvas.calculator", active: viewModel.showCalculator) {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showCalculator.toggle()
+                        let wasOn = viewModel.showCalculator
+                        viewModel.showRuler = false
+                        viewModel.showPageSettings = false
+                        viewModel.showCalculator = !wasOn
                     }
                 }
 
                 toolbarButton(icon: "canvas.page_settings_new", active: viewModel.showPageSettings) {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showPageSettings.toggle()
+                        let wasOn = viewModel.showPageSettings
+                        viewModel.showRuler = false
+                        viewModel.showCalculator = false
                         viewModel.showPageControls = false
+                        viewModel.showPageSettings = !wasOn
                     }
                 }
             }
@@ -193,7 +202,7 @@ struct CanvasDrawingBar: View {
                 .opacity(viewModel.tutorModeOn ? 1.0 : 0.3)
                 .disabled(!viewModel.tutorModeOn)
             }
-            .padding(.trailing, 4)
+            .padding(.trailing, 14)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 48)

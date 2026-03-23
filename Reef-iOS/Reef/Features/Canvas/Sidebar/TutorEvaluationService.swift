@@ -382,18 +382,40 @@ final class TutorEvaluationService {
 
     // MARK: - Audio Playback
 
+    var isTutorSpeaking: Bool = false
     private var audioPlayer: AVAudioPlayer?
+    private var audioDelegate: AudioFinishDelegate?
 
-    private func playAudio(_ data: Data) {
+    func playAudio(_ data: Data) {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default)
             try session.setActive(true)
 
-            audioPlayer = try AVAudioPlayer(data: data)
-            audioPlayer?.play()
+            let player = try AVAudioPlayer(data: data)
+            let delegate = AudioFinishDelegate { [weak self] in
+                Task { @MainActor in
+                    self?.isTutorSpeaking = false
+                }
+            }
+            player.delegate = delegate
+            audioDelegate = delegate
+            audioPlayer = player
+            isTutorSpeaking = true
+            player.play()
         } catch {
             print("[TutorEval] Audio playback failed: \(error)")
+            isTutorSpeaking = false
         }
+    }
+}
+
+// MARK: - Audio Delegate
+
+private final class AudioFinishDelegate: NSObject, AVAudioPlayerDelegate {
+    let onFinish: () -> Void
+    init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        onFinish()
     }
 }

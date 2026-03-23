@@ -13,6 +13,8 @@ struct WalkthroughCard: View {
     @State private var displayedText = ""
     @State private var showButton = false
     @State private var typingTask: Task<Void, Never>?
+    @State private var thinkingDots = ""
+    @State private var thinkingTask: Task<Void, Never>?
     private let charDelay: UInt64 = 20_000_000 // 20ms per character
 
     private var fullText: String {
@@ -27,13 +29,25 @@ struct WalkthroughCard: View {
         let colors = theme.colors
 
         VStack(alignment: .leading, spacing: 12) {
-            Text(displayedText)
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(colors.text)
-                .lineSpacing(3)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
+            if !readyToType && displayedText.isEmpty {
+                // Thinking animation while waiting for TTS
+                Text("thinking\(thinkingDots)")
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.textMuted)
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onAppear { startThinking() }
+                    .onDisappear { thinkingTask?.cancel() }
+            } else {
+                Text(displayedText)
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.text)
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             if showButton, let step, !step.requiresAction {
                 ReefButton(step.buttonLabel, size: .compact, action: onGotIt)
@@ -80,8 +94,21 @@ struct WalkthroughCard: View {
         }
     }
 
+    private func startThinking() {
+        thinkingTask?.cancel()
+        thinkingDots = ""
+        thinkingTask = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 400_000_000) // 400ms
+                guard !Task.isCancelled else { return }
+                thinkingDots = thinkingDots.count >= 3 ? "" : thinkingDots + "."
+            }
+        }
+    }
+
     private func startTyping(_ text: String) {
         typingTask?.cancel()
+        thinkingTask?.cancel()
         displayedText = ""
         showButton = false
 

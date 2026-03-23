@@ -162,7 +162,7 @@ struct CanvasInfoStrip: View {
                         .opacity(0.5)
                 }
             }
-            .padding(.trailing, 10)
+            .padding(.trailing, 18)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)
