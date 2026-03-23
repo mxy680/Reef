@@ -48,6 +48,7 @@ struct AppRouter: View {
 
                 case .onboarding:
                     OnboardingFlowView()
+                        .id(onboardingResetID)
                         .transition(.opacity)
                         .accessibilityIdentifier("screen.onboarding")
 
@@ -62,7 +63,45 @@ struct AppRouter: View {
         }
         .animation(.easeInOut(duration: 0.35), value: currentScreen)
         .hoverEffectDisabled()
+        #if DEBUG
+        .overlay(alignment: .bottomTrailing) {
+            Button(action: restartOnboarding) {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("Reset Onboarding")
+                        .font(.epilogue(12, weight: .bold))
+                        .tracking(-0.04 * 12)
+                }
+                .foregroundStyle(ReefColors.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(ReefColors.destructive)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(ReefColors.black, lineWidth: 2))
+                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+            }
+            .buttonStyle(NoHighlightButtonStyle())
+            .padding(.bottom, 40)
+            .padding(.trailing, 40)
+        }
+        #endif
     }
+
+    // MARK: - Debug
+
+    @State private var onboardingResetID = UUID()
+
+    #if DEBUG
+    private func restartOnboarding() {
+        let repo = SupabaseProfileRepository()
+        Task {
+            try? await repo.upsertProfile(ProfileUpdate(onboardingCompleted: false))
+            await auth.completeOnboarding()
+            onboardingResetID = UUID()
+        }
+    }
+    #endif
 
     // MARK: - Splash / Loading
 
