@@ -294,7 +294,10 @@ async def demo_document(
             "document_id": doc_id,
             "question_number": 1,
             "answer_text": answer_key.model_dump_json(),
-            "question_json": question.model_dump_json(),
+            "question_json": question.model_dump(),
+            "model": TUTOR_MODEL,
+            "input_tokens": result.input_tokens,
+            "output_tokens": result.output_tokens,
         }
         resp = await client.post(
             f"{settings.supabase_url}/rest/v1/answer_keys",
