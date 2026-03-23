@@ -167,6 +167,7 @@
 		8F48D2ADC5844F77B4D042CD /* ReferralStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B2344E9C2345589D3B8798 /* ReferralStep.swift */; };
 		D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */; };
 		DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */; };
+		C2544AF066DC4E6185AEAEEC /* TutorDemoOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -334,6 +335,7 @@
 		B6B2344E9C2345589D3B8798 /* ReferralStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralStep.swift; sourceTree = "<group>"; };
 		CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
 		84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoProblemService.swift; sourceTree = "<group>"; };
+		21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorDemoOverlay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -775,6 +777,7 @@
 		214602FE85D44D90A2C1841F /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */,
 				39622361D80C4B58A2BE8C07 /* OnboardingProgressBar.swift */,
 				6041CD52A359487BB35EDE2B /* OnboardingStepShell.swift */,
 				00057DD4F29743959369E2AB /* OnboardingOption.swift */,
@@ -921,6 +924,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C2544AF066DC4E6185AEAEEC /* TutorDemoOverlay.swift in Sources */,
 				D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */,
 				DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */,
 				ED3D7199323CA782DA71B5A2 /* AddColorPopup.swift in Sources */,

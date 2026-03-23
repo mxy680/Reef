@@ -7,6 +7,7 @@ struct TutorDemoStep: View {
     @Bindable var viewModel: OnboardingViewModel
     @State private var demoService = DemoProblemService()
     @State private var canvasVM: CanvasViewModel?
+    @State private var tutorialStep: TutorDemoOverlay.TutorialStep = .writeHere
 
     var body: some View {
         ZStack {
@@ -16,19 +17,29 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
+                // Tutorial overlay
+                TutorDemoOverlay(
+                    tutorialStep: $tutorialStep,
+                    onDismiss: { tutorialStep = .done }
+                )
+                .zIndex(300)
+
                 // Floating "Done" button — bottom-left overlay
-                VStack {
-                    Spacer()
-                    HStack {
-                        ReefButton("Done — show me my plan", size: .compact, action: {
-                            viewModel.goNext()
-                        })
-                        .padding(20)
+                if tutorialStep == .trySolving || tutorialStep == .done {
+                    VStack {
                         Spacer()
+                        HStack {
+                            ReefButton("Done — show me my plan", size: .compact, action: {
+                                viewModel.goNext()
+                            })
+                            .padding(20)
+                            Spacer()
+                        }
                     }
+                    .ignoresSafeArea(edges: .bottom)
+                    .zIndex(200)
+                    .transition(.opacity)
                 }
-                .ignoresSafeArea(edges: .bottom)
-                .zIndex(200)
             } else {
                 loadingCard
             }
@@ -47,9 +58,34 @@ struct TutorDemoStep: View {
                 }
             }
         }
+        // Detect first stroke → advance from step 1 to step 2
+        .onChange(of: canvasVM?.handwritingService.latexResult) { _, newLatex in
+            if let latex = newLatex, !latex.isEmpty, tutorialStep == .writeHere {
+                withAnimation(.spring(duration: 0.3)) {
+                    tutorialStep = .meetTutor
+                }
+                // Open the sidebar so they can see the tutor
+                canvasVM?.showSidebar = true
+            }
+        }
     }
 
     // MARK: - Loading Card
+
+    @State private var isPulsing = false
+    @State private var messageIndex = 0
+    @State private var loadingTasks: [Task<Void, Never>] = []
+
+    private var currentLoadingMessage: String {
+        let topic = viewModel.answers.favoriteTopic
+        let messages = [
+            "Generating a problem just for you...",
+            "Compiling the math...",
+            topic.isEmpty ? "Training your tutor..." : "Teaching your tutor about \(topic)...",
+            "Almost ready...",
+        ]
+        return messages[min(messageIndex, messages.count - 1)]
+    }
 
     private var loadingCard: some View {
         let colors = theme.colors
@@ -92,26 +128,10 @@ struct TutorDemoStep: View {
         }
     }
 
-    @State private var isPulsing = false
-    @State private var messageIndex = 0
-    @State private var loadingTasks: [Task<Void, Never>] = []
-
-    private var currentLoadingMessage: String {
-        let topic = viewModel.answers.favoriteTopic
-        let messages = [
-            "Generating a problem just for you...",
-            "Compiling the math...",
-            topic.isEmpty ? "Training your tutor..." : "Teaching your tutor about \(topic)...",
-            "Almost ready...",
-        ]
-        return messages[min(messageIndex, messages.count - 1)]
-    }
-
-    // MARK: - Subviews
+    // MARK: - Generating View
 
     private var generatingView: some View {
         VStack(spacing: 24) {
-            // Pulsing icon
             ZStack {
                 Circle()
                     .fill(ReefColors.primary.opacity(isPulsing ? 0.15 : 0.1))
@@ -123,7 +143,6 @@ struct TutorDemoStep: View {
                     .scaleEffect(isPulsing ? 1.08 : 1.0)
             }
 
-            // Rotating message
             Text(currentLoadingMessage)
                 .font(.epilogue(16, weight: .bold))
                 .tracking(-0.04 * 16)
@@ -132,7 +151,6 @@ struct TutorDemoStep: View {
                 .id(messageIndex)
                 .transition(.opacity)
 
-            // Fun fact
             Text("Fun fact: this problem didn't exist 10 seconds ago")
                 .font(.epilogue(12, weight: .medium))
                 .tracking(-0.04 * 12)
@@ -159,6 +177,8 @@ struct TutorDemoStep: View {
         .fadeUp(index: 1)
     }
 
+    // MARK: - Error View
+
     private func errorView(message: String, colors: ReefThemeColors) -> some View {
         VStack(spacing: 12) {
             Text("Couldn't generate a problem")
@@ -178,6 +198,7 @@ struct TutorDemoStep: View {
                         studentType: viewModel.answers.studentType?.rawValue ?? "college"
                     )
                     if let doc = demoService.demoDocument {
+                        viewModel.demoDocumentId = doc.id
                         canvasVM = CanvasViewModel(document: doc)
                     }
                 }
