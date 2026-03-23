@@ -381,91 +381,71 @@ struct CanvasDrawingBar: View {
     // MARK: - Page Controls Section
 
     private var pageControlsSection: some View {
-        HStack(alignment: .center, spacing: 8) {
-            // Page X of Y with prev/next navigation
-            HStack(spacing: 4) {
-                Button {
-                    let newIndex = viewModel.currentPageIndex - 1
-                    viewModel.currentPageIndex = newIndex
-                    onScrollToPage?(newIndex)
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(viewModel.currentPageIndex > 0 ? 0.8 : 0.3))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.currentPageIndex <= 0)
-
-                Text("Page \(viewModel.currentPageIndex + 1) of \(viewModel.pageCount)")
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.9))
-                    .fixedSize()
-
-                Button {
-                    let newIndex = viewModel.currentPageIndex + 1
-                    viewModel.currentPageIndex = newIndex
-                    onScrollToPage?(newIndex)
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(viewModel.currentPageIndex < viewModel.pageCount - 1 ? 0.8 : 0.3))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.currentPageIndex >= viewModel.pageCount - 1)
+        HStack(alignment: .center, spacing: 6) {
+            // Compact pagination: < 1/3 >
+            Button {
+                let newIndex = viewModel.currentPageIndex - 1
+                viewModel.currentPageIndex = newIndex
+                onScrollToPage?(newIndex)
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white.opacity(viewModel.currentPageIndex > 0 ? 0.8 : 0.3))
+                    .frame(width: 24, height: 48)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(viewModel.currentPageIndex <= 0)
+
+            Text("\(viewModel.currentPageIndex + 1)/\(viewModel.pageCount)")
+                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                .foregroundColor(.white.opacity(0.9))
+                .fixedSize()
+
+            Button {
+                let newIndex = viewModel.currentPageIndex + 1
+                viewModel.currentPageIndex = newIndex
+                onScrollToPage?(newIndex)
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white.opacity(viewModel.currentPageIndex < viewModel.pageCount - 1 ? 0.8 : 0.3))
+                    .frame(width: 24, height: 48)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.currentPageIndex >= viewModel.pageCount - 1)
 
             divider
 
-            // Add page after current
+            // Add page
             Button {
                 viewModel.addBlankPageAfterCurrent(drawingManager: drawingManager)
             } label: {
-                Image(systemName: "plus.rectangle.on.rectangle")
-                    .font(.system(size: 16, weight: .medium))
+                Image(systemName: "plus.rectangle")
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.white.opacity(0.8))
-                    .frame(width: 38, height: 48)
+                    .frame(width: 34, height: 48)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-
-            // Add page at end
-            Button {
-                viewModel.addBlankPageAtEnd(drawingManager: drawingManager)
-            } label: {
-                Image(systemName: "rectangle.stack.badge.plus")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
-                    .frame(width: 38, height: 48)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            divider
 
             // Delete page
-            deletePageButton
+            Button {
+                viewModel.deleteCurrentPage(drawingManager: drawingManager)
+            } label: {
+                Image(systemName: "minus.rectangle")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white.opacity(viewModel.pageCount > 1 ? 0.8 : 0.3))
+                    .frame(width: 34, height: 48)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.pageCount <= 1)
         }
         .transition(.opacity)
     }
 
-    private var deletePageButton: some View {
-        let canDelete = viewModel.pageCount > 1
-        return Button {
-            viewModel.deleteCurrentPage(drawingManager: drawingManager)
-        } label: {
-            Image(systemName: "rectangle.badge.minus")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20).opacity(canDelete ? 0.8 : 0.3))
-                .frame(width: 38, height: 48)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!canDelete)
-    }
 
     private var clearAllPill: some View {
         Button {
