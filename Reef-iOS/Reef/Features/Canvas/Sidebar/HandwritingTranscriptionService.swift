@@ -95,6 +95,18 @@ final class HandwritingTranscriptionService {
 
         transcribeTask?.cancel()
 
+        // Debounce: only transcribe after 200ms of no new strokes (pencil lifted)
+        let debounceGeneration = generation + 1
+        generation = debounceGeneration
+
+        transcribeTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(200))
+            guard let self, self.generation == debounceGeneration, !Task.isCancelled else { return }
+            await self.performTranscription(strokes: relevantStrokes)
+        }
+    }
+
+    private func performTranscription(strokes relevantStrokes: [PKStroke]) async {
         // Extract stroke coordinates and normalize to (0,0)
         var allPoints: [(x: Double, y: Double)] = []
         let strokePayloads: [StrokePayload] = relevantStrokes.map { stroke in
@@ -119,62 +131,58 @@ final class HandwritingTranscriptionService {
             )
         }
 
-        generation += 1
         let myGeneration = generation
 
-        transcribeTask = Task { [weak self] in
-            guard let self else { return }
-            self.isTranscribing = true
-            self.errorMessage = nil
+        isTranscribing = true
+        errorMessage = nil
 
-            do {
-                let (token, sid) = try await ensureSession()
+        do {
+            let (token, sid) = try await ensureSession()
 
-                guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
-                      let url = URL(string: "\(serverURL)/ai/transcribe-strokes") else {
-                    self.errorMessage = "Server not configured"
-                    self.isTranscribing = false
-                    return
-                }
-
-                let authSession = try await supabase.auth.session
-
-                let body = TranscribeStrokesRequest(
-                    strokes: normalizedPayloads,
-                    session_id: sid,
-                    app_token: token
-                )
-
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.timeoutInterval = 10
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
-                request.httpBody = try JSONEncoder().encode(body)
-
-                let (data, response) = try await URLSession.shared.data(for: request)
-
-                guard !Task.isCancelled else { return }
-                guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                    throw URLError(.badServerResponse)
-                }
-
-                let result = try JSONDecoder().decode(TranscribeStrokesResponse.self, from: data)
-
-                guard self.generation == myGeneration else { return }
-                let oldLatex = self.latexResult
-                self.latexResult = result.latex
-                if result.latex != oldLatex, !result.latex.isEmpty {
-                    self.onLatexChanged?(result.latex)
-                }
-            } catch {
-                guard !Task.isCancelled, self.generation == myGeneration else { return }
-                self.errorMessage = "Transcription failed"
-                print("[Transcription] Error: \(error)")
+            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+                  let url = URL(string: "\(serverURL)/ai/transcribe-strokes") else {
+                errorMessage = "Server not configured"
+                isTranscribing = false
+                return
             }
 
-            self.isTranscribing = false
+            let authSession = try await supabase.auth.session
+
+            let body = TranscribeStrokesRequest(
+                strokes: normalizedPayloads,
+                session_id: sid,
+                app_token: token
+            )
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 10
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONEncoder().encode(body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard !Task.isCancelled else { return }
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                throw URLError(.badServerResponse)
+            }
+
+            let result = try JSONDecoder().decode(TranscribeStrokesResponse.self, from: data)
+
+            guard generation == myGeneration else { return }
+            let oldLatex = latexResult
+            latexResult = result.latex
+            if result.latex != oldLatex, !result.latex.isEmpty {
+                onLatexChanged?(result.latex)
+            }
+        } catch {
+            guard !Task.isCancelled, generation == myGeneration else { return }
+            errorMessage = "Transcription failed"
+            print("[Transcription] Error: \(error)")
         }
+
+        isTranscribing = false
     }
 
     // MARK: - Timer
