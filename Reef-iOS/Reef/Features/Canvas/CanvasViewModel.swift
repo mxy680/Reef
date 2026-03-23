@@ -576,17 +576,9 @@ final class CanvasViewModel {
         let remaining = tutorStepCount - currentTutorStepIndex
         let stepsToAdvance = min(count, remaining)
 
-        for i in 0..<stepsToAdvance {
-            let stepIdx = currentTutorStepIndex
-            // Show reinforcement for each completed step (step 0's is already posted by eval service)
-            if stepIdx < currentSteps.count, i > 0,
-               let reinforcement = currentSteps[stepIdx].reinforcement,
-               !reinforcement.isEmpty {
-                tutorEvalService.chatMessages.append(TutorChatMessage(
-                    role: .reinforcement, latex: reinforcement, timestamp: Date()
-                ))
-            }
-
+        for _ in 0..<stepsToAdvance {
+            // Only advance — reinforcement is handled by TutorEvaluationService
+            // (shows only the most recent one, not stacked)
             if currentTutorStepIndex < tutorStepCount - 1 {
                 currentTutorStepIndex += 1
                 tutorEvalService.resetForNextStep()

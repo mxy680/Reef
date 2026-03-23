@@ -38,6 +38,14 @@ class TutorEvaluation(BaseModel):
         None,
         description="LaTeX explanation of the mistake (null unless status is mistake)",
     )
+    mistake_speech: str | None = Field(
+        None,
+        description="Verbal version of mistake_explanation for TTS — no math notation, say formulas in words. 1-2 sentences max. Null unless status is mistake.",
+    )
+    reinforcement_speech: str | None = Field(
+        None,
+        description="Short celebratory spoken message when status is completed. No math, 1 sentence. Null unless status is completed.",
+    )
     steps_completed: int = Field(
         default=1,
         description="How many steps the student completed at once. 1 = just the current step. 2+ = student skipped ahead or combined multiple steps into one.",
@@ -52,6 +60,7 @@ class TutorEvaluateResponse(BaseModel):
     status: TutorStatus
     mistake_explanation: str | None = None
     steps_completed: int = 1
+    speech_audio: str | None = None  # base64-encoded WAV
 
 
 class ChatHistoryMessage(BaseModel):

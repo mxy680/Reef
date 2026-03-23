@@ -203,11 +203,21 @@ async def tutor_evaluate(
     max_steps = len(steps) - body.step_index
     capped_steps = min(evaluation.steps_completed, max_steps)
 
+    # Generate TTS for mistakes or reinforcements
+    speech_audio = None
+    speech_text = evaluation.mistake_speech or evaluation.reinforcement_speech
+    if settings.groq_api_key and speech_text:
+        try:
+            speech_audio = await _generate_tts(speech_text[:500])
+        except Exception as e:
+            log.warning(f"[tutor-eval] TTS failed: {e}")
+
     return TutorEvaluateResponse(
         progress=evaluation.progress,
         status=evaluation.status,
         mistake_explanation=evaluation.mistake_explanation,
         steps_completed=capped_steps,
+        speech_audio=speech_audio,
     )
 
 

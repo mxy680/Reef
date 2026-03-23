@@ -109,14 +109,22 @@ final class TutorEvaluationService {
                     ))
                 }
 
-                // Step completed — show reinforcement then advance
+                // Step completed — show ONLY the most recent reinforcement, then advance
                 if response.status == "completed" {
                     if let reinforcement = self.pendingReinforcement, !reinforcement.isEmpty {
+                        // Remove any previous reinforcement messages to avoid stacking
+                        self.chatMessages.removeAll { $0.role == .reinforcement }
                         self.chatMessages.append(TutorChatMessage(
                             role: .reinforcement, latex: reinforcement, timestamp: Date()
                         ))
                     }
                     self.onStepCompleted?(response.stepsCompleted)
+                }
+
+                // Play TTS audio for mistakes or reinforcements
+                if let audioBase64 = response.speechAudio,
+                   let audioData = Data(base64Encoded: audioBase64) {
+                    self.playAudio(audioData)
                 }
             } catch {
                 guard !Task.isCancelled, self.generation == myGeneration else { return }
@@ -152,11 +160,13 @@ final class TutorEvaluationService {
         let status: String
         let mistakeExplanation: String?
         let stepsCompleted: Int
+        let speechAudio: String?
 
         enum CodingKeys: String, CodingKey {
             case progress, status
             case mistakeExplanation = "mistake_explanation"
             case stepsCompleted = "steps_completed"
+            case speechAudio = "speech_audio"
         }
 
         init(from decoder: Decoder) throws {
@@ -165,6 +175,7 @@ final class TutorEvaluationService {
             status = try container.decode(String.self, forKey: .status)
             mistakeExplanation = try container.decodeIfPresent(String.self, forKey: .mistakeExplanation)
             stepsCompleted = try container.decodeIfPresent(Int.self, forKey: .stepsCompleted) ?? 1
+            speechAudio = try container.decodeIfPresent(String.self, forKey: .speechAudio)
         }
     }
 
