@@ -31,6 +31,21 @@ struct TutorDemoStep: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Spacer()
 
+                        // Drawing reaction (if any)
+                        if let reaction = walkthrough.drawingReaction {
+                            Text(reaction)
+                                .font(.epilogue(13, weight: .bold))
+                                .tracking(-0.04 * 13)
+                                .foregroundStyle(ReefColors.primary)
+                                .italic()
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(ReefColors.primary.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .frame(maxWidth: 320, alignment: .leading)
+                                .transition(.opacity)
+                        }
+
                         // Card — always present, text changes inside
                         WalkthroughCard(
                             step: walkthrough.currentStep,
@@ -113,6 +128,30 @@ struct TutorDemoStep: View {
                 break
             }
         }
+        // Speak each new step instruction + react to drawing
+        .onChange(of: walkthrough.currentStep) { oldStep, newStep in
+            // Speak the new instruction
+            if let step = newStep {
+                // Use a shortened version for speech (strip bullet points)
+                let speechText = step.text
+                    .replacingOccurrences(of: "• ", with: "")
+                    .replacingOccurrences(of: "\n\n", with: ". ")
+                    .replacingOccurrences(of: "\n", with: ". ")
+                walkthrough.speakInstruction(speechText)
+            }
+
+            // React to drawing after the "draw something" step
+            if oldStep == .drawSomething, newStep == .tryHighlighter {
+                if let vm = canvasVM, let image = vm.captureActiveQuestionImage() {
+                    walkthrough.reactToDrawing(imageBase64: image)
+                }
+            }
+
+            // When walkthrough reaches enableTutor, allow the toggle to work
+            if newStep == .enableTutor {
+                canvasVM?.deferTutorMode = false
+            }
+        }
         .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
             if isOn == true && walkthrough.currentStep == .enableTutor {
                 // User toggled tutor on — finish setup that was deferred
@@ -123,12 +162,6 @@ struct TutorDemoStep: View {
                     }
                 }
                 withAnimation { walkthrough.advance() }
-            }
-        }
-        .onChange(of: walkthrough.currentStep) { _, newStep in
-            // When walkthrough reaches enableTutor, allow the toggle to work
-            if newStep == .enableTutor {
-                canvasVM?.deferTutorMode = false
             }
         }
     }

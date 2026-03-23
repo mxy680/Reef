@@ -72,3 +72,35 @@ class DemoDocumentResponse(BaseModel):
     filename: str
     page_count: int
     problem_count: int
+
+
+class WalkthroughReactRequest(BaseModel):
+    """Request body for POST /ai/walkthrough-react."""
+
+    image: str = Field(..., max_length=2_000_000, description="Base64-encoded JPEG of what the user drew")
+
+
+class WalkthroughReactLLMOutput(BaseModel):
+    """LLM output for reacting to a drawing."""
+
+    reaction: str = Field(..., description="A funny, sarcastic one-liner about what the user drew. Reference specific things you see. If it's boring (a line, circle, scribble), be playfully sarcastic. 1-2 sentences max.")
+    speech: str = Field(..., max_length=300, description="Same reaction but for speaking out loud. No math, no special characters. 1-2 sentences max.")
+
+
+class WalkthroughReactResponse(BaseModel):
+    """Response body for POST /ai/walkthrough-react."""
+
+    reaction: str
+    speech_audio: str | None = None
+
+
+class WalkthroughTTSRequest(BaseModel):
+    """Request body for POST /ai/walkthrough-tts."""
+
+    text: str = Field(..., max_length=500)
+
+
+class WalkthroughTTSResponse(BaseModel):
+    """Response body for POST /ai/walkthrough-tts."""
+
+    speech_audio: str | None = None

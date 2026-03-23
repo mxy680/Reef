@@ -16,6 +16,8 @@ from app.models.demo import (
     DemoChatRequest, DemoChatResponse,
     DemoProblem, DemoProblemRequest, DemoProblemResponse,
     DemoDocumentRequest, DemoDocumentResponse,
+    WalkthroughReactRequest, WalkthroughReactResponse,
+    WalkthroughTTSRequest, WalkthroughTTSResponse,
 )
 from app.models.question import Question
 from app.models.tutor import TutorChatLLMOutput
@@ -328,6 +330,80 @@ async def demo_document(
         page_count=1,
         problem_count=1,
     )
+
+
+@router.post("/walkthrough-react", response_model=WalkthroughReactResponse)
+async def walkthrough_react(
+    body: WalkthroughReactRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """React to what the user drew during the walkthrough with a funny comment."""
+    if not settings.openrouter_api_key:
+        raise HTTPException(status_code=503, detail="OpenRouter not configured")
+
+    import base64
+
+    llm = LLMClient(
+        api_key=settings.openrouter_api_key,
+        model=TUTOR_MODEL,
+        base_url="https://openrouter.ai/api/v1",
+    )
+
+    images = []
+    try:
+        images.append(base64.b64decode(body.image))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid image data")
+
+    from app.models.demo import WalkthroughReactLLMOutput
+
+    result = await asyncio.to_thread(
+        llm.generate,
+        prompt="Look at this image of what a student just drew on their iPad during an app tutorial. Give a funny, specific reaction to what you see. If it's just a boring line or circle, be playfully sarcastic. If it's actually creative, be genuinely impressed. Reference what you actually see in the image.",
+        system_prompt="You are a funny, sarcastic college TA reacting to a student's doodle. Be specific about what you see. Keep it to 1-2 sentences. Be like a friend roasting you, not mean. Examples: 'Is that a... cat? Or a cloud with legs? Either way, bold choice.' or 'A single line. Wow. Really pushed the creative boundaries there.' or 'OK that's actually pretty good. Don't let it go to your head.'",
+        images=images,
+        response_schema=WalkthroughReactLLMOutput.model_json_schema(),
+        timeout=15.0,
+    )
+
+    try:
+        output = WalkthroughReactLLMOutput.model_validate_json(result.content)
+    except Exception:
+        output = WalkthroughReactLLMOutput(
+            reaction="Nice drawing. I think.",
+            speech="Nice drawing. I think.",
+        )
+
+    log.info(f"[walkthrough-react] ({result.input_tokens}in/{result.output_tokens}out)")
+
+    speech_audio = None
+    if settings.groq_api_key and output.speech:
+        try:
+            speech_audio = await _generate_tts(output.speech[:300])
+        except Exception as e:
+            log.warning(f"[walkthrough-react] TTS failed: {e}")
+
+    return WalkthroughReactResponse(reaction=output.reaction, speech_audio=speech_audio)
+
+
+@router.post("/walkthrough-tts", response_model=WalkthroughTTSResponse)
+async def walkthrough_tts(
+    body: WalkthroughTTSRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Generate TTS for a walkthrough instruction."""
+    if not settings.groq_api_key:
+        raise HTTPException(status_code=503, detail="Groq not configured")
+
+    from app.models.demo import WalkthroughTTSResponse
+
+    speech_audio = None
+    try:
+        speech_audio = await _generate_tts(body.text[:500])
+    except Exception as e:
+        log.warning(f"[walkthrough-tts] TTS failed: {e}")
+
+    return WalkthroughTTSResponse(speech_audio=speech_audio)
 
 
 async def _generate_tts(text: str) -> str | None:

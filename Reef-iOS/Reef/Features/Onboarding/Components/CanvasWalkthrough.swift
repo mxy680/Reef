@@ -1,4 +1,6 @@
 import SwiftUI
+import AVFoundation
+@preconcurrency import Supabase
 
 // MARK: - Walkthrough Step
 
@@ -96,5 +98,91 @@ final class CanvasWalkthroughState {
         pendingAdvanceTask?.cancel()
         currentStep = nil
         isComplete = true
+    }
+
+    // MARK: - Drawing Reaction
+
+    var drawingReaction: String?
+    private var audioPlayer: AVAudioPlayer?
+
+    private var serverURL: String {
+        Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String ?? ""
+    }
+
+    /// Send an image of what the user drew and get a funny reaction + TTS.
+    func reactToDrawing(imageBase64: String) {
+        Task { @MainActor in
+            guard let url = URL(string: "\(serverURL)/ai/walkthrough-react"),
+                  let token = try? await supabase.auth.session.accessToken else { return }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.timeoutInterval = 20
+            request.httpBody = try? JSONSerialization.data(withJSONObject: ["image": imageBase64])
+
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+
+            struct ReactResponse: Decodable {
+                let reaction: String
+                let speechAudio: String?
+                enum CodingKeys: String, CodingKey {
+                    case reaction
+                    case speechAudio = "speech_audio"
+                }
+            }
+
+            guard let result = try? JSONDecoder().decode(ReactResponse.self, from: data) else { return }
+            drawingReaction = result.reaction
+
+            if let audioBase64 = result.speechAudio,
+               let audioData = Data(base64Encoded: audioBase64) {
+                playAudio(audioData)
+            }
+        }
+    }
+
+    /// Generate TTS for a walkthrough step instruction.
+    func speakInstruction(_ text: String) {
+        Task { @MainActor in
+            guard let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+                  let token = try? await supabase.auth.session.accessToken else { return }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.timeoutInterval = 15
+            request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": text])
+
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+
+            struct TTSResponse: Decodable {
+                let speechAudio: String?
+                enum CodingKeys: String, CodingKey {
+                    case speechAudio = "speech_audio"
+                }
+            }
+
+            guard let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
+                  let audioBase64 = result.speechAudio,
+                  let audioData = Data(base64Encoded: audioBase64) else { return }
+
+            playAudio(audioData)
+        }
+    }
+
+    private func playAudio(_ data: Data) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+            try AVAudioSession.sharedInstance().setActive(true)
+            audioPlayer = try AVAudioPlayer(data: data)
+            audioPlayer?.play()
+        } catch {
+            // Silent failure
+        }
     }
 }
