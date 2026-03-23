@@ -11,6 +11,8 @@ struct ProfileUpdate: Sendable {
     var painPoints: [String]?
     var learningStyle: String?
     var favoriteTopic: String?
+    var referralCode: String?
+    var referredBy: String?
     var onboardingCompleted: Bool?
     var settings: UserSettings?
 }

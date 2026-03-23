@@ -15,6 +15,8 @@ struct ProfileDTO: Codable {
     var painPoints: [String]?
     var learningStyle: String?
     var favoriteTopic: String?
+    var referralCode: String?
+    var referredBy: String?
     var settings: UserSettings?
     var createdAt: String?
     var updatedAt: String?
@@ -32,6 +34,8 @@ struct ProfileDTO: Codable {
         case painPoints = "pain_points"
         case learningStyle = "learning_style"
         case favoriteTopic = "favorite_topic"
+        case referralCode = "referral_code"
+        case referredBy = "referred_by"
         case settings
         case createdAt = "created_at"
         case updatedAt = "updated_at"
@@ -51,6 +55,8 @@ struct ProfileDTO: Codable {
             painPoints: painPoints,
             learningStyle: learningStyle,
             favoriteTopic: favoriteTopic,
+            referralCode: referralCode,
+            referredBy: referredBy,
             settings: settings ?? UserSettings(),
             createdAt: createdAt,
             updatedAt: updatedAt

@@ -13,6 +13,8 @@ struct Profile: Sendable {
     var painPoints: [String]?
     var learningStyle: String?
     var favoriteTopic: String?
+    var referralCode: String?
+    var referredBy: String?
     var settings: UserSettings = UserSettings()
     var createdAt: String?
     var updatedAt: String?

@@ -1,4 +1,5 @@
 import SwiftUI
+@preconcurrency import Supabase
 
 @Observable
 @MainActor
@@ -166,6 +167,18 @@ final class OnboardingViewModel {
         isSubmitting = true
         error = nil
 
+        // Generate a unique referral code for this user (REEF-XXXXXX)
+        let referralCode = "REEF-" + String((0..<6).map { _ in
+            "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".randomElement()!
+        })
+
+        // Look up referral code if entered
+        var referredBy: String?
+        let enteredCode = answers.referralCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if !enteredCode.isEmpty {
+            referredBy = await lookupReferralCode(enteredCode)
+        }
+
         let update = ProfileUpdate(
             grade: answers.studentType?.rawValue,
             subjects: Array(answers.courses),
@@ -175,6 +188,8 @@ final class OnboardingViewModel {
             painPoints: answers.painPoints.map(\.rawValue),
             learningStyle: answers.learningStyle?.rawValue,
             favoriteTopic: answers.favoriteTopic,
+            referralCode: referralCode,
+            referredBy: referredBy,
             onboardingCompleted: true,
             settings: {
                 var s = UserSettings()
@@ -191,6 +206,23 @@ final class OnboardingViewModel {
         }
 
         isSubmitting = false
+    }
+
+    /// Look up a referral code and return the referrer's user ID, or nil if invalid.
+    private func lookupReferralCode(_ code: String) async -> String? {
+        do {
+            struct ReferralRow: Decodable { let id: String }
+            let rows: [ReferralRow] = try await supabase
+                .from("profiles")
+                .select("id")
+                .eq("referral_code", value: code)
+                .limit(1)
+                .execute()
+                .value
+            return rows.first?.id
+        } catch {
+            return nil
+        }
     }
 
     /// Called after successful submit to trigger auth refresh.
