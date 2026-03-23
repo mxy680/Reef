@@ -16,7 +16,7 @@ struct TutorDemoStep: View {
         ZStack {
             if let canvasVM {
                 // Full canvas experience
-                CanvasView(viewModel: canvasVM, onDismiss: {
+                CanvasView(viewModel: canvasVM, walkthroughStep: walkthrough.currentStep, onDismiss: {
                     viewModel.goNext()
                 })
 

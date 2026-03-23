@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CanvasInfoStrip: View {
     @Bindable var viewModel: CanvasViewModel
+    var walkthroughStep: WalkthroughStep? = nil
 
     let onClose: () -> Void
 
@@ -102,6 +103,7 @@ struct CanvasInfoStrip: View {
                             .foregroundColor(.white.opacity(viewModel.showHintPopover ? 1 : 0.8))
                             .frame(width: 24, height: 24)
                             .contentShape(Rectangle())
+                            .walkthroughGlow(active: walkthroughStep?.targetButton == .hint)
                     }
                     .buttonStyle(.plain)
 
@@ -114,6 +116,7 @@ struct CanvasInfoStrip: View {
                             .foregroundColor(.white.opacity(0.8))
                             .frame(width: 24, height: 24)
                             .contentShape(Rectangle())
+                            .walkthroughGlow(active: walkthroughStep?.targetButton == .reveal)
                     }
                     .buttonStyle(.plain)
                 }
@@ -145,6 +148,7 @@ struct CanvasInfoStrip: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 20, height: 20)
                     .foregroundColor(.white.opacity(viewModel.isReconstructed ? 1 : 0.4))
+                    .walkthroughGlow(active: walkthroughStep?.targetButton == .tutorToggle)
 
                 if viewModel.isReconstructed {
                     ReefToggle(isOn: Binding(

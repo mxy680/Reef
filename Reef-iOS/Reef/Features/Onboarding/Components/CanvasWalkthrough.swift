@@ -130,6 +130,41 @@ enum WalkthroughStep: Int, CaseIterable {
     var buttonLabel: String {
         ""
     }
+
+    /// Which drawing tool this step targets (for glow highlight).
+    var targetDrawingTool: CanvasToolType? {
+        switch self {
+        case .tryHighlighter: .highlighter
+        case .eraseHighlight: .eraser
+        case .shapeTool: .shapes
+        case .lassoTool: .lasso
+        case .fingerDraw: .handDraw
+        default: nil
+        }
+    }
+
+    /// Which utility/right-side button this step targets (for glow highlight).
+    enum TargetButton: String {
+        case ruler, calculator, pageSettings
+        case mic, sidebar, bugReport, export
+        case tutorToggle, hint, reveal
+    }
+
+    var targetButton: TargetButton? {
+        switch self {
+        case .ruler: .ruler
+        case .calculator: .calculator
+        case .pageSettings: .pageSettings
+        case .enableTutor: .tutorToggle
+        case .tutorHint: .hint
+        case .tutorReveal: .reveal
+        case .voiceCommand: .mic
+        case .sidebarToggle: .sidebar
+        case .bugReport: .bugReport
+        case .exportFeature: .export
+        default: nil
+        }
+    }
 }
 
 // MARK: - Walkthrough State Machine
