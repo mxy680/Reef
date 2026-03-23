@@ -16,7 +16,13 @@ enum WalkthroughStep: Int, CaseIterable {
     case calculator
     case pageSettings
 
-    // Phase 2: Tutor Training
+    // Phase 2: Canvas Features
+    case voiceCommand
+    case sidebarToggle
+    case bugReport
+    case exportFeature
+
+    // Phase 3: Tutor Training
     case enableTutor
     case tutorHint
     case tutorReveal
@@ -41,7 +47,15 @@ enum WalkthroughStep: Int, CaseIterable {
         case .calculator:
             "Now the calculator. Built-in, so you don't have to switch apps."
         case .pageSettings:
-            "Last one — page settings. Change your background to grid, dots, or lines."
+            "Page settings. Tap it to change your background to grid, dots, or lines."
+        case .voiceCommand:
+            "See the mic icon? Tap it to ask your tutor a question out loud. No typing needed."
+        case .sidebarToggle:
+            "This button toggles the sidebar. Tap it to hide or show your tutor panel."
+        case .bugReport:
+            "Found something broken? Tap the bug icon to report it. We actually read these."
+        case .exportFeature:
+            "Tap the export button to save your work as a PDF. Great for turning in homework."
         case .enableTutor:
             "OK here's the fun part. Tap the tutor button to turn on your AI tutor."
         case .tutorHint:
@@ -54,11 +68,11 @@ enum WalkthroughStep: Int, CaseIterable {
     }
 
     var requiresAction: Bool {
-        true  // All steps detect actual user action, including ready (auto-completes)
+        true
     }
 
     var buttonLabel: String {
-        ""  // No buttons — all action-based
+        ""
     }
 }
 

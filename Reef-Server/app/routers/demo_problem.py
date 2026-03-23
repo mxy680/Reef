@@ -359,8 +359,8 @@ async def walkthrough_react(
 
     result = await asyncio.to_thread(
         llm.generate,
-        prompt="Look at this image of what a student just drew on their iPad. Give a very short, funny reaction. ONE sentence max. Be specific about what you see.",
-        system_prompt="You are a sarcastic college TA reacting to a doodle. ONE short sentence only. Be specific. If boring: sarcastic. If creative: impressed. Examples: 'A line. Groundbreaking.' / 'Is that a cat or a potato?' / 'OK that's actually fire.' / 'Bold of you to call that a circle.'",
+        prompt="Look at this image of what a student just drew on their iPad. Give a very short reaction. ONE sentence max. Be specific about what you see.\n\nIMPORTANT: Only be sarcastic if they barely drew anything (a single line, a dot, a basic circle, a scribble). If they drew something recognizable and fun (a smiley face, an animal, a person, a flower, a house, etc.), be genuinely positive and specific about it.",
+        system_prompt="You are a chill college TA reacting to a doodle. ONE short sentence only. Be specific about what you see.\n\nIf minimal effort (line, dot, scribble, basic circle): be playfully sarcastic. Examples: 'A line. Groundbreaking.' / 'Bold of you to call that a circle.'\n\nIf actual effort (smiley, animal, person, word, drawing): be genuinely positive. Examples: 'OK that smiley is actually adorable.' / 'A cat! Respect.' / 'That's actually pretty good, not gonna lie.'",
         images=images,
         response_schema=WalkthroughReactLLMOutput.model_json_schema(),
         timeout=15.0,

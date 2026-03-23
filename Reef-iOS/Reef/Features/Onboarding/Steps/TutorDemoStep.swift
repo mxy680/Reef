@@ -195,6 +195,30 @@ struct TutorDemoStep: View {
                 walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
+        // Detect voice command (mic)
+        .onChange(of: canvasVM?.isMicOn) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .voiceCommand {
+                walkthrough.advanceAfterDelay(ms: 1500)
+            }
+        }
+        // Detect sidebar toggle
+        .onChange(of: canvasVM?.showSidebar) { _, isOn in
+            if walkthrough.currentStep == .sidebarToggle {
+                walkthrough.advanceAfterDelay(ms: 1000)
+            }
+        }
+        // Detect bug report
+        .onChange(of: canvasVM?.showBugReport) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .bugReport {
+                walkthrough.advanceAfterDelay(ms: 1500)
+            }
+        }
+        // Detect export
+        .onChange(of: canvasVM?.showExportPreview) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .exportFeature {
+                walkthrough.advanceAfterDelay(ms: 1500)
+            }
+        }
         // Detect hint and reveal
         .onChange(of: canvasVM?.showHintPopover) { _, isOn in
             if isOn == true && walkthrough.currentStep == .tutorHint {
