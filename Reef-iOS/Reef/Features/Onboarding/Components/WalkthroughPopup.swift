@@ -13,51 +13,50 @@ struct WalkthroughPopup: View {
         let position = step.position
 
         ZStack {
-            // Dim background (light, not fully blocking)
+            // Dim background
             Color.black.opacity(0.25)
                 .ignoresSafeArea()
-                .allowsHitTesting(!step.requiresAction) // Pass through if waiting for action
+                .allowsHitTesting(!step.requiresAction)
                 .onTapGesture {
                     if !step.requiresAction {
                         onGotIt()
                     }
                 }
 
-            // Popup card — positioned based on step
-            VStack(alignment: .leading, spacing: 12) {
-                Text(step.text)
-                    .font(.epilogue(15, weight: .semiBold))
-                    .tracking(-0.04 * 15)
-                    .foregroundStyle(colors.text)
-                    .fixedSize(horizontal: false, vertical: true)
+            // Card + skip button stack
+            VStack(spacing: 14) {
+                // Popup card
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(step.text)
+                        .font(.epilogue(14, weight: .semiBold))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(colors.text)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineSpacing(3)
 
-                HStack(spacing: 12) {
                     if !step.requiresAction {
                         ReefButton(step.buttonLabel, size: .compact, action: onGotIt)
                     }
+                }
+                .padding(20)
+                .frame(maxWidth: 360, alignment: .leading)
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(colors.border, lineWidth: 2)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(colors.shadow)
+                        .offset(x: 4, y: 4)
+                )
 
-                    Button(action: onSkip) {
-                        Text("Skip tutorial")
-                            .font(.epilogue(12, weight: .medium))
-                            .tracking(-0.04 * 12)
-                            .foregroundStyle(colors.textMuted)
-                    }
-                    .buttonStyle(NoHighlightButtonStyle())
+                // Skip button — primary style below card
+                ReefButton(.secondary, size: .compact, action: onSkip) {
+                    Text("Skip tutorial")
                 }
             }
-            .padding(20)
-            .frame(maxWidth: 340, alignment: .leading)
-            .background(colors.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(colors.border, lineWidth: 2)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(colors.shadow)
-                    .offset(x: 4, y: 4)
-            )
             .shadow(color: .black.opacity(0.1), radius: 12, y: 6)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: position.alignment)
             .padding(position.padding)

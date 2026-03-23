@@ -7,58 +7,50 @@ enum WalkthroughStep: Int, CaseIterable {
     case drawSomething = 0
     case tryHighlighter
     case eraseHighlight
-    case shapeTool
-    case lassoTool
-    case fingerDraw
-    case ruler
-    case calculator
-    case pageSettings
+    case otherTools        // shape, lasso, finger draw combined
+    case utilityTools      // ruler, calculator, page settings combined
 
     // Phase 2: Tutor Training
     case enableTutor
-    case readStep
-    case tapHint
-    case tapAnswer
-    case progressBar
-    case sidebar
+    case tutorFeatures     // read step + hint + answer combined
+    case tutorUI           // progress bar + sidebar combined
     case ready
 
     var text: String {
         switch self {
-        case .drawSomething: "Grab your Apple Pencil and draw anything. Seriously, anything."
-        case .tryHighlighter: "Now tap the highlighter and mark something up."
-        case .eraseHighlight: "Now erase what you just highlighted."
-        case .shapeTool: "This is for diagrams — draw a shape and Reef cleans it up. Perfect for free-body diagrams, circuits, and graphs."
-        case .lassoTool: "Circle any drawing to select it. Move it, resize it, or delete it."
-        case .fingerDraw: "Turn this on to draw with your finger instead of just your Pencil."
-        case .ruler: "Straight-line ruler. Tap to toggle."
-        case .calculator: "Built-in calculator. Because who wants to switch apps."
-        case .pageSettings: "Change your page background — grid, dots, lines, or blank."
-        case .enableTutor: "Now let's try the AI tutor. It watches your work and helps in real time."
-        case .readStep: "Read what the tutor wants you to do for Step 1."
-        case .tapHint: "Stuck? Tap this for a hint."
-        case .tapAnswer: "Want to see the full answer? Tap here."
-        case .progressBar: "This shows how far you are. It fills up as you solve each step."
-        case .sidebar: "Your tutor lives here. It shows steps, hints, and chats with you about the problem."
-        case .ready: "That's it. Now try solving the problem. Your tutor's watching."
+        case .drawSomething:
+            "Grab your Apple Pencil and draw anything. Seriously, anything."
+        case .tryHighlighter:
+            "Now tap the highlighter and mark something up."
+        case .eraseHighlight:
+            "Now erase what you just highlighted."
+        case .otherTools:
+            "A few more tools:\n\n• Shape tool — draw a shape and Reef cleans it up. Great for diagrams.\n• Lasso — circle anything to select, move, or delete it.\n• Finger draw — lets you draw with your finger too."
+        case .utilityTools:
+            "And some handy extras:\n\n• Ruler — for straight lines.\n• Calculator — built-in, because who wants to switch apps.\n• Page settings — grid, dots, lines, or blank background."
+        case .enableTutor:
+            "Now let's try the AI tutor. Tap the tutor button to turn it on."
+        case .tutorFeatures:
+            "Your tutor gives you:\n\n• Step descriptions — what to do next.\n• 💡 Hints — tap the lightbulb when you're stuck.\n• 👁 Answers — tap to reveal the full solution."
+        case .tutorUI:
+            "A couple more things:\n\n• The progress bar shows how far you've solved.\n• The sidebar is where your tutor lives — steps, hints, and chat."
+        case .ready:
+            "That's it. Now try solving the problem. Your tutor's watching."
         }
     }
 
-    /// Whether this step requires the user to perform an action (vs just tapping "Got it")
     var requiresAction: Bool {
         switch self {
-        case .drawSomething, .tryHighlighter, .eraseHighlight, .enableTutor, .tapHint, .tapAnswer:
+        case .drawSomething, .tryHighlighter, .eraseHighlight, .enableTutor:
             return true
         default:
             return false
         }
     }
 
-    /// Button label for non-action steps
     var buttonLabel: String {
         switch self {
         case .ready: "Let's go"
-        case .enableTutor: "Enable tutor mode"
         default: "Got it"
         }
     }
@@ -66,10 +58,10 @@ enum WalkthroughStep: Int, CaseIterable {
     var position: WalkthroughPopupPosition {
         switch self {
         case .drawSomething: .bottomLeading
-        case .tryHighlighter, .eraseHighlight, .shapeTool, .lassoTool, .fingerDraw: .topCenter
-        case .ruler, .calculator, .pageSettings: .topTrailing
+        case .tryHighlighter, .eraseHighlight, .otherTools: .topCenter
+        case .utilityTools: .topTrailing
         case .enableTutor, .ready: .center
-        case .readStep, .tapHint, .tapAnswer, .progressBar, .sidebar: .centerTrailing
+        case .tutorFeatures, .tutorUI: .centerTrailing
         }
     }
 }

@@ -89,39 +89,9 @@ struct TutorDemoStep: View {
                 break
             }
         }
-        .onChange(of: canvasVM?.selectedTool) { _, newTool in
-            // Auto-advance when user selects the requested tool
-            switch walkthrough.currentStep {
-            case .tryHighlighter:
-                // Don't advance yet — wait for them to actually draw with it
-                break
-            case .eraseHighlight:
-                // Don't advance yet — wait for them to actually erase
-                break
-            default:
-                break
-            }
-        }
         .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
             if isOn == true && walkthrough.currentStep == .enableTutor {
                 withAnimation { walkthrough.advance() }
-            }
-        }
-        .onChange(of: canvasVM?.showHintPopover) { _, isShowing in
-            if isShowing == true && walkthrough.currentStep == .tapHint {
-                // Small delay so they can see the hint
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(1.5))
-                    withAnimation { walkthrough.advance() }
-                }
-            }
-        }
-        .onChange(of: canvasVM?.showRevealPopover) { _, isShowing in
-            if isShowing == true && walkthrough.currentStep == .tapAnswer {
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(1.5))
-                    withAnimation { walkthrough.advance() }
-                }
             }
         }
     }
