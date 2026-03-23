@@ -15,16 +15,27 @@ struct WalkthroughCard: View {
 
     var body: some View {
         let colors = theme.colors
+        let fullText = step?.text ?? ""
 
         VStack(alignment: .leading, spacing: 12) {
-            Text(displayedText)
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(colors.text)
-                .lineSpacing(3)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                // Reserve height so card doesn't jump
-                .frame(minHeight: 40)
+            // ZStack: invisible full text reserves height, visible typed text on top
+            ZStack(alignment: .topLeading) {
+                // Invisible full text — reserves the final height
+                Text(fullText)
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .opacity(0)
+
+                // Visible typewriter text
+                Text(displayedText)
+                    .font(.epilogue(14, weight: .semiBold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.text)
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
 
             if showButton, let step, !step.requiresAction {
                 ReefButton(step.buttonLabel, size: .compact, action: onGotIt)
@@ -45,6 +56,7 @@ struct WalkthroughCard: View {
                 .fill(colors.shadow)
                 .offset(x: 3, y: 3)
         )
+        .animation(.easeInOut(duration: 0.2), value: showButton)
         .onChange(of: step) { _, newStep in
             startTyping(newStep?.text ?? "")
         }
