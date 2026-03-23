@@ -7,8 +7,7 @@ struct PaywallStep: View {
 
     @Bindable var viewModel: OnboardingViewModel
 
-    @State private var selectedPlan = 0  // 0=free, 1=hourly, 2=unlimited
-    @State private var isAnnual = false
+    @State private var selectedPlan = 0  // 0=free, 1=unlimited monthly, 2=unlimited annual
 
     var body: some View {
         let colors = theme.colors
@@ -38,69 +37,32 @@ struct PaywallStep: View {
                     .frame(maxWidth: .infinity)
                     .background(ReefColors.primary)
 
-                    // Annual toggle
-                    HStack(spacing: 10) {
-                        Text("Monthly")
-                            .font(.epilogue(13, weight: isAnnual ? .medium : .bold))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(isAnnual ? colors.textMuted : colors.text)
-
-                        // Toggle pill
-                        ZStack {
-                            Capsule()
-                                .fill(isAnnual ? ReefColors.primary : colors.subtle)
-                                .frame(width: 48, height: 28)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(colors.border, lineWidth: 1.5)
-                                )
-
-                            Circle()
-                                .fill(ReefColors.white)
-                                .frame(width: 22, height: 22)
-                                .overlay(
-                                    Circle()
-                                        .stroke(colors.border, lineWidth: 1)
-                                )
-                                .offset(x: isAnnual ? 10 : -10)
-                        }
-                        .onTapGesture {
-                            withAnimation(.spring(duration: 0.25)) {
-                                isAnnual.toggle()
-                            }
-                        }
-
-                        HStack(spacing: 4) {
-                            Text("Annual")
-                                .font(.epilogue(13, weight: isAnnual ? .bold : .medium))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(isAnnual ? colors.text : colors.textMuted)
-
-                            if isAnnual {
-                                Text("SAVE 50%")
-                                    .font(.epilogue(9, weight: .black))
-                                    .tracking(0.5)
-                                    .foregroundStyle(ReefColors.white)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(ReefColors.primary)
-                                    .clipShape(Capsule())
-                                    .transition(.scale.combined(with: .opacity))
-                            }
-                        }
-                    }
-                    .padding(.vertical, 16)
-
                     // Plans
-                    VStack(spacing: 10) {
+                    VStack(spacing: 14) {
                         // Free plan
                         planRow(
                             title: "Free",
                             price: "3 hours",
                             subtitle: "No expiry. Use them whenever.",
                             planIndex: 0,
-                            badge: "RECOMMENDED"
+                            isHighlighted: true
                         )
+
+                        // Divider with "or upgrade"
+                        HStack(spacing: 12) {
+                            Rectangle()
+                                .fill(colors.divider)
+                                .frame(height: 1)
+                            Text("or upgrade later")
+                                .font(.epilogue(11, weight: .semiBold))
+                                .tracking(-0.04 * 11)
+                                .foregroundStyle(colors.textMuted)
+                                .layoutPriority(1)
+                            Rectangle()
+                                .fill(colors.divider)
+                                .frame(height: 1)
+                        }
+                        .padding(.vertical, 4)
 
                         // Pay as you go
                         planRow(
@@ -108,35 +70,32 @@ struct PaywallStep: View {
                             price: "$1.99/hr",
                             subtitle: "Buy hours when you need them",
                             planIndex: 1,
-                            badge: nil
+                            isHighlighted: false
                         )
 
-                        // Unlimited
+                        // Unlimited monthly
                         planRow(
                             title: "Unlimited",
-                            price: isAnnual ? "$15/mo" : "$29.99/mo",
-                            subtitle: isAnnual
-                                ? "$179.99 billed annually"
-                                : "Everything. No limits.",
+                            price: "$29.99/mo",
+                            subtitle: "Everything. No limits.",
                             planIndex: 2,
-                            badge: nil
+                            isHighlighted: false
+                        )
+
+                        // Unlimited annual
+                        planRow(
+                            title: "Unlimited Annual",
+                            price: "$179.99/yr",
+                            subtitle: "$15/mo — save 50%",
+                            planIndex: 3,
+                            isHighlighted: false
                         )
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
+                    .padding(20)
 
                     // CTA
                     VStack(spacing: 12) {
-                        ReefButton(
-                            selectedPlan == 0
-                                ? "Start with 3 free hours"
-                                : selectedPlan == 1
-                                    ? "Get started"
-                                    : isAnnual
-                                        ? "Subscribe — $179.99/year"
-                                        : "Subscribe — $29.99/month",
-                            action: { viewModel.goNext() }
-                        )
+                        ReefButton("Start with 3 free hours", action: { viewModel.goNext() })
 
                         Button(action: { viewModel.goNext() }) {
                             Text("Restore Purchases")
@@ -176,12 +135,12 @@ struct PaywallStep: View {
         price: String,
         subtitle: String,
         planIndex: Int,
-        badge: String?
+        isHighlighted: Bool
     ) -> some View {
         let colors = theme.colors
         let isSelected = selectedPlan == planIndex
 
-        return HStack(spacing: 14) {
+        return HStack {
             // Radio circle
             ZStack {
                 Circle()
@@ -202,8 +161,8 @@ struct PaywallStep: View {
                         .tracking(-0.04 * 15)
                         .foregroundStyle(colors.text)
 
-                    if let badge {
-                        Text(badge)
+                    if isHighlighted {
+                        Text("RECOMMENDED")
                             .font(.epilogue(9, weight: .black))
                             .tracking(0.5)
                             .foregroundStyle(ReefColors.white)
@@ -241,6 +200,5 @@ struct PaywallStep: View {
                 selectedPlan = planIndex
             }
         }
-        .animation(.spring(duration: 0.2), value: isSelected)
     }
 }
