@@ -16,16 +16,19 @@ enum WalkthroughStep: Int, CaseIterable {
     case calculator
     case pageSettings
 
-    // Phase 2: Canvas Features
+    // Phase 2: Tutor Training
+    case enableTutor
+    case tutorHint
+    case tutorReveal
+
+    // Phase 3: Solve the problem (user works freely)
+    case solveIt
+
+    // Phase 4: After solving — remaining features
     case voiceCommand
     case sidebarToggle
     case bugReport
     case exportFeature
-
-    // Phase 3: Tutor Training
-    case enableTutor
-    case tutorHint
-    case tutorReveal
     case ready
 
     var text: String {
@@ -62,8 +65,18 @@ enum WalkthroughStep: Int, CaseIterable {
             "See the lightbulb? Tap it. That's your hint when you're stuck."
         case .tutorReveal:
             "Now tap the eye icon. That reveals the full answer."
+        case .solveIt:
+            "Now try solving the problem for real. Your tutor's watching — it'll help if you get stuck."
+        case .voiceCommand:
+            "Nice work. See the mic icon? Tap it to ask your tutor a question out loud. No typing needed."
+        case .sidebarToggle:
+            "This button toggles the sidebar. Tap it to hide or show your tutor panel."
+        case .bugReport:
+            "Found something broken? Tap the bug icon to report it. We actually read these."
+        case .exportFeature:
+            "Tap the export button to save your work as a PDF. Great for turning in homework."
         case .ready:
-            "That's everything. Your tutor's ready. You're ready. Go solve it."
+            "That's everything. You're all set."
         }
     }
 

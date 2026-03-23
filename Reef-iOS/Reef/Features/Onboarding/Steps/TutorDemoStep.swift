@@ -230,6 +230,14 @@ struct TutorDemoStep: View {
                 walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
+        // Detect problem solved — tutor progress reaches 100%
+        .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
+            if status == "completed" && walkthrough.currentStep == .solveIt {
+                if let vm = canvasVM, vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
+                    walkthrough.advanceAfterDelay(ms: 2000)
+                }
+            }
+        }
         // Speak step instructions + handle drawing reaction flow
         .onChange(of: walkthrough.currentStep) { oldStep, newStep in
             // Speak step instructions (skip if coming from drawSomething — reactToDrawing handles that)
