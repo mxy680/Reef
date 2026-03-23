@@ -54,3 +54,19 @@ class DemoChatResponse(BaseModel):
 
     reply: str
     speech_audio: str | None = None
+
+
+class DemoDocumentRequest(BaseModel):
+    """Request body for POST /ai/demo-document."""
+
+    topic: str = Field(..., max_length=200)
+    student_type: str = Field(default="college")
+
+
+class DemoDocumentResponse(BaseModel):
+    """Response body for POST /ai/demo-document."""
+
+    document_id: str
+    filename: str
+    page_count: int
+    problem_count: int
