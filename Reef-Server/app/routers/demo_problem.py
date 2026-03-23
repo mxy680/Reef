@@ -3,6 +3,7 @@ POST /ai/demo-chat — chat with tutor about the demo problem (no auth required)
 POST /ai/demo-document — generate a problem, compile to PDF, and store in Supabase."""
 
 import asyncio
+import hashlib
 import logging
 import uuid
 
@@ -406,24 +407,104 @@ async def walkthrough_tts(
     return WalkthroughTTSResponse(speech_audio=speech_audio)
 
 
+TTS_VOICE = "autumn"
+TTS_MODEL = "canopylabs/orpheus-v1-english"
+TTS_SPEED = 1.15
+
+
+def _tts_cache_key(text: str) -> str:
+    """SHA-256 hash of text+voice+speed+model for cache lookup."""
+    raw = f"{text}|{TTS_VOICE}|{TTS_SPEED}|{TTS_MODEL}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+async def _get_tts_cache(cache_key: str) -> str | None:
+    """Look up cached TTS audio from Supabase."""
+    if not settings.supabase_url or not settings.supabase_service_role_key:
+        return None
+
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(
+                f"{settings.supabase_url}/rest/v1/tts_cache",
+                headers=headers,
+                params={"cache_key": f"eq.{cache_key}", "select": "audio_base64", "limit": "1"},
+            )
+        if resp.status_code == 200:
+            rows = resp.json()
+            if rows:
+                log.info(f"[tts] Cache HIT for key {cache_key[:12]}...")
+                return rows[0]["audio_base64"]
+    except Exception as e:
+        log.warning(f"[tts] Cache lookup failed: {e}")
+    return None
+
+
+async def _set_tts_cache(cache_key: str, text: str, audio_base64: str) -> None:
+    """Store TTS audio in Supabase cache."""
+    if not settings.supabase_url or not settings.supabase_service_role_key:
+        return
+
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=ignore-duplicates",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.post(
+                f"{settings.supabase_url}/rest/v1/tts_cache",
+                headers=headers,
+                json={
+                    "cache_key": cache_key,
+                    "text_input": text[:500],
+                    "audio_base64": audio_base64,
+                    "voice": TTS_VOICE,
+                    "model": TTS_MODEL,
+                    "speed": TTS_SPEED,
+                },
+            )
+        log.info(f"[tts] Cached audio for key {cache_key[:12]}...")
+    except Exception as e:
+        log.warning(f"[tts] Cache write failed: {e}")
+
+
 async def _generate_tts(text: str) -> str | None:
-    """Generate TTS audio via Groq and return base64-encoded audio."""
+    """Generate TTS audio via Groq with Supabase caching."""
     import base64
 
+    cache_key = _tts_cache_key(text)
+
+    # Check cache first
+    cached = await _get_tts_cache(cache_key)
+    if cached:
+        return cached
+
+    # Generate fresh via Groq
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.post(
             "https://api.groq.com/openai/v1/audio/speech",
             headers={"Authorization": f"Bearer {settings.groq_api_key}"},
             json={
-                "model": "canopylabs/orpheus-v1-english",
+                "model": TTS_MODEL,
                 "input": text,
-                "voice": "autumn",
+                "voice": TTS_VOICE,
                 "response_format": "wav",
-                "speed": 1.15,
+                "speed": TTS_SPEED,
             },
         )
     if resp.status_code != 200:
         log.warning(f"[tts] Groq TTS returned {resp.status_code}: {resp.text[:200]}")
         return None
 
-    return base64.b64encode(resp.content).decode()
+    audio_base64 = base64.b64encode(resp.content).decode()
+
+    # Cache for future requests
+    await _set_tts_cache(cache_key, text, audio_base64)
+
+    return audio_base64
