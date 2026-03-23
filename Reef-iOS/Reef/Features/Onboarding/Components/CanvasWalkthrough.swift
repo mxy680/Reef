@@ -29,38 +29,36 @@ enum WalkthroughStep: Int, CaseIterable {
         case .eraseHighlight:
             "Now erase what you just highlighted."
         case .shapeTool:
-            "This is the shape tool. Draw any shape and Reef automatically cleans it up. Perfect for free-body diagrams, circuits, and graphs."
+            "Tap the shape tool and draw any shape. Reef will clean it up automatically."
         case .lassoTool:
-            "This is the lasso tool. Circle any drawing to select it — then move it, resize it, or delete it."
+            "Tap the lasso tool and circle something you drew. You can move it or delete it."
         case .fingerDraw:
-            "Finger draw mode. Turn this on if you want to draw with your finger instead of just your Pencil."
+            "Tap the finger draw tool and draw something with your finger."
         case .utilityTools:
-            "A few handy extras:\n\n• Ruler — for straight lines.\n• Calculator — built-in, because who wants to switch apps.\n• Page settings — grid, dots, lines, or blank background."
+            "Try tapping the ruler, calculator, or page settings to see what they do."
         case .enableTutor:
             "Now let's try the AI tutor. Tap the tutor button to turn it on."
         case .tutorFeatures:
-            "Your tutor gives you:\n\n• Step descriptions — what to do next.\n• Hints — tap the lightbulb when you're stuck.\n• Answers — tap to reveal the full solution."
+            "Tap the lightbulb to see a hint for this step."
         case .tutorUI:
-            "A couple more things:\n\n• The progress bar shows how far you've solved.\n• The sidebar is where your tutor lives — steps, hints, and chat."
+            "Tap the eye icon to reveal the full answer."
         case .ready:
             "That's it. Now try solving the problem. Your tutor's watching."
         }
     }
 
+    /// Whether this step requires detecting a user action (vs a button tap)
     var requiresAction: Bool {
         switch self {
-        case .drawSomething, .tryHighlighter, .eraseHighlight, .enableTutor:
-            return true
+        case .ready:
+            return false  // Only "ready" has a button
         default:
-            return false
+            return true   // All others detect the actual action
         }
     }
 
     var buttonLabel: String {
-        switch self {
-        case .ready: "Let's go"
-        default: "Got it"
-        }
+        "Let's go"
     }
 }
 

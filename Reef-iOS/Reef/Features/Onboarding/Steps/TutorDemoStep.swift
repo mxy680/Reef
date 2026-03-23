@@ -160,8 +160,50 @@ struct TutorDemoStep: View {
                     walkthrough.advanceAfterDelay(ms: 1000)
                 }
 
+            case .shapeTool:
+                if vm.selectedTool == .shapes {
+                    walkthrough.advanceAfterDelay(ms: 1000)
+                }
+
+            case .lassoTool:
+                if vm.selectedTool == .lasso {
+                    walkthrough.advanceAfterDelay(ms: 1000)
+                }
+
+            case .fingerDraw:
+                if vm.selectedTool == .handDraw {
+                    walkthrough.advanceAfterDelay(ms: 1000)
+                }
+
             default:
                 break
+            }
+        }
+        // Detect tool selection for utility tools step
+        .onChange(of: canvasVM?.showRuler) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .utilityTools {
+                walkthrough.advanceAfterDelay(ms: 1500)
+            }
+        }
+        .onChange(of: canvasVM?.showCalculator) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .utilityTools {
+                walkthrough.advanceAfterDelay(ms: 1500)
+            }
+        }
+        .onChange(of: canvasVM?.showPageSettings) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .utilityTools {
+                walkthrough.advanceAfterDelay(ms: 1500)
+            }
+        }
+        // Detect hint/answer for tutor features
+        .onChange(of: canvasVM?.showHintPopover) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .tutorFeatures {
+                walkthrough.advanceAfterDelay(ms: 1500)
+            }
+        }
+        .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .tutorUI {
+                walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
         // Speak step instructions + handle drawing reaction flow
