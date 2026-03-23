@@ -7,7 +7,13 @@ final class OnboardingViewModel {
     // MARK: - State
 
     var answers = OnboardingAnswers()
-    var currentStep: OnboardingStep = .welcome
+    var currentStep: OnboardingStep = {
+        #if DEBUG
+        return .favoriteTopic
+        #else
+        return .welcome
+        #endif
+    }()
     var slideDirection: CGFloat = 1  // 1 = forward, -1 = back
     var isSubmitting = false
     var error: String?
