@@ -80,40 +80,61 @@ enum WalkthroughPopupPosition {
 @MainActor
 final class CanvasWalkthroughState {
     var currentStep: WalkthroughStep? = .drawSomething
-    var previousStep: WalkthroughStep? = nil
     var isComplete = false
+    var isTransitioning = false
 
-    private var removePreviousTask: Task<Void, Never>?
+    private var advanceTask: Task<Void, Never>?
 
+    /// Advance with a fade-out → pause → fade-in transition.
     func advance() {
-        guard let current = currentStep else { return }
+        guard let current = currentStep, !isTransitioning else { return }
 
-        // Previous step becomes the one we're leaving
-        removePreviousTask?.cancel()
-        previousStep = current
-
-        let allSteps = WalkthroughStep.allCases
-        if let idx = allSteps.firstIndex(of: current), idx + 1 < allSteps.count {
-            currentStep = allSteps[idx + 1]
-        } else {
-            currentStep = nil
-            isComplete = true
-        }
-
-        // Remove previous after a short delay
-        removePreviousTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(1.5))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: 0.3)) {
-                previousStep = nil
+        advanceTask?.cancel()
+        advanceTask = Task { @MainActor in
+            // Fade out current
+            isTransitioning = true
+            withAnimation(.easeOut(duration: 0.25)) {
+                currentStep = nil
             }
+
+            // Brief pause
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+
+            // Determine next step
+            let allSteps = WalkthroughStep.allCases
+            if let idx = allSteps.firstIndex(of: current), idx + 1 < allSteps.count {
+                withAnimation(.easeIn(duration: 0.25)) {
+                    currentStep = allSteps[idx + 1]
+                }
+            } else {
+                isComplete = true
+            }
+
+            isTransitioning = false
         }
     }
 
+    /// Advance after a delay (e.g. wait for pen lift).
+    func advanceAfterDelay(ms: Int) {
+        advanceTask?.cancel()
+        advanceTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(ms))
+            guard !Task.isCancelled else { return }
+            advance()
+        }
+    }
+
+    /// Cancel any pending delayed advance (e.g. user started drawing again).
+    func cancelPendingAdvance() {
+        advanceTask?.cancel()
+    }
+
     func skip() {
-        removePreviousTask?.cancel()
-        currentStep = nil
-        previousStep = nil
+        advanceTask?.cancel()
+        withAnimation(.easeOut(duration: 0.2)) {
+            currentStep = nil
+        }
         isComplete = true
     }
 }

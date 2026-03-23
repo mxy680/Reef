@@ -18,41 +18,32 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
-                // Walkthrough overlay — stacked popups (max 2)
+                // Walkthrough popup — single card, fade in/out
                 VStack(alignment: .leading, spacing: 8) {
                     Spacer()
 
-                    // Previous step (fading out)
-                    if let prev = walkthrough.previousStep {
-                        WalkthroughCard(step: prev, showButtons: false)
-                            .opacity(0.5)
-                            .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    }
-
-                    // Current step (active)
                     if let step = walkthrough.currentStep {
                         WalkthroughCard(step: step, showButtons: true) {
-                            withAnimation(.spring(duration: 0.3)) { walkthrough.advance() }
+                            walkthrough.advance()
                         }
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .transition(.opacity)
+                        .id(step)
                     }
 
-                    // Skip button
                     if walkthrough.currentStep != nil {
                         ReefButton(.primary, size: .compact, action: {
-                            withAnimation { walkthrough.skip() }
+                            walkthrough.skip()
                         }) {
                             Text("Skip tutorial")
                                 .font(.epilogue(11, weight: .bold))
                                 .tracking(-0.04 * 11)
                         }
+                        .transition(.opacity)
                     }
                 }
                 .padding(.leading, 20)
                 .padding(.bottom, 20)
                 .frame(maxWidth: .infinity, alignment: .bottomLeading)
-                .animation(.spring(duration: 0.3), value: walkthrough.currentStep)
-                .animation(.easeOut(duration: 0.3), value: walkthrough.previousStep)
                 .zIndex(300)
                 .allowsHitTesting(true)
 
@@ -92,27 +83,24 @@ struct TutorDemoStep: View {
                 }
             }
         }
-        // MARK: - Walkthrough Detection
+        // MARK: - Walkthrough Detection (1000ms after pen lift)
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
             guard let vm = canvasVM else { return }
 
             switch walkthrough.currentStep {
             case .drawSomething:
-                // Detect first pen stroke
                 if vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
-                    withAnimation { walkthrough.advance() }
+                    walkthrough.advanceAfterDelay(ms: 1000)
                 }
 
             case .tryHighlighter:
-                // Detect highlighter stroke (tool must be highlighter + drawing exists)
                 if vm.selectedTool == .highlighter && vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
-                    withAnimation { walkthrough.advance() }
+                    walkthrough.advanceAfterDelay(ms: 1000)
                 }
 
             case .eraseHighlight:
-                // Detect eraser use (tool is eraser and a drawing change happened)
                 if vm.selectedTool == .eraser {
-                    withAnimation { walkthrough.advance() }
+                    walkthrough.advanceAfterDelay(ms: 1000)
                 }
 
             default:
