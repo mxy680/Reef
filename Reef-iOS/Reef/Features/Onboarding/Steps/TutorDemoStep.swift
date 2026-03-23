@@ -9,6 +9,7 @@ struct TutorDemoStep: View {
     @State private var demoService = DemoProblemService()
     @State private var canvasVM: CanvasViewModel?
     @State private var walkthrough = CanvasWalkthroughState()
+    @State private var showPreDialog = true
 
     var body: some View {
         ZStack {
@@ -18,8 +19,15 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
+                // Pre-walkthrough dialog — sound + pencil check
+                if showPreDialog {
+                    preDialog
+                        .zIndex(400)
+                        .transition(.opacity)
+                }
+
                 // Walkthrough — persistent card with typewriter text
-                if !walkthrough.isComplete {
+                if !walkthrough.isComplete && !showPreDialog {
                     VStack(alignment: .leading, spacing: 8) {
                         Spacer()
 
@@ -122,6 +130,84 @@ struct TutorDemoStep: View {
             if newStep == .enableTutor {
                 canvasVM?.deferTutorMode = false
             }
+        }
+    }
+
+    // MARK: - Pre-Dialog
+
+    private var preDialog: some View {
+        let colors = theme.colors
+
+        return ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                Text("Before we start")
+                    .font(.epilogue(24, weight: .black))
+                    .tracking(-0.04 * 24)
+                    .foregroundStyle(colors.text)
+
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundStyle(ReefColors.primary)
+                            .frame(width: 32)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Turn your sound on")
+                                .font(.epilogue(15, weight: .bold))
+                                .tracking(-0.04 * 15)
+                                .foregroundStyle(colors.text)
+
+                            Text("Your tutor talks out loud.")
+                                .font(.epilogue(12, weight: .medium))
+                                .tracking(-0.04 * 12)
+                                .foregroundStyle(colors.textMuted)
+                        }
+                    }
+
+                    HStack(spacing: 14) {
+                        Image(systemName: "applepencil.gen2")
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundStyle(ReefColors.primary)
+                            .frame(width: 32)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Grab your Apple Pencil")
+                                .font(.epilogue(15, weight: .bold))
+                                .tracking(-0.04 * 15)
+                                .foregroundStyle(colors.text)
+
+                            Text("You'll need it to write on the canvas.")
+                                .font(.epilogue(12, weight: .medium))
+                                .tracking(-0.04 * 12)
+                                .foregroundStyle(colors.textMuted)
+                        }
+                    }
+                }
+
+                ReefButton("I'm ready", action: {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        showPreDialog = false
+                    }
+                })
+                .frame(maxWidth: 200)
+            }
+            .padding(28)
+            .frame(maxWidth: 380)
+            .background(colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(colors.border, lineWidth: 2)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(colors.shadow)
+                    .offset(x: 5, y: 5)
+            )
         }
     }
 
