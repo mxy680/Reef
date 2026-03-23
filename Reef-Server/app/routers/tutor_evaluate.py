@@ -196,6 +196,7 @@ async def tutor_evaluate(
     log.info(
         f"[tutor-eval] Q{body.question_number} step {body.step_index + 1}: "
         f"status={evaluation.status} progress={evaluation.progress:.0%} "
+        f"steps_completed={evaluation.steps_completed} "
         f"({result.input_tokens}in/{result.output_tokens}out)"
     )
 

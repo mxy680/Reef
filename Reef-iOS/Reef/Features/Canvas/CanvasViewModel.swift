@@ -590,6 +590,10 @@ final class CanvasViewModel {
         if currentTutorStepIndex >= tutorStepCount - 1 && stepsToAdvance >= remaining {
             tutorEvalService.stepProgress = 1.0
             tutorEvalService.status = "completed"
+        } else if !handwritingService.latexResult.isEmpty {
+            // Re-evaluate existing work against the new step — the student's work
+            // may already cover this step but no new transcription will fire
+            triggerTutorEvaluation()
         }
     }
 
