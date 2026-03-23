@@ -103,17 +103,23 @@ final class CanvasWalkthroughState {
     // MARK: - Drawing Reaction
 
     var drawingReaction: String?
+    var waitingForReaction = false
     private var audioPlayer: AVAudioPlayer?
 
     private var serverURL: String {
         Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String ?? ""
     }
 
-    /// Send an image of what the user drew and get a funny reaction + TTS.
+    /// Send an image of what the user drew, get a funny reaction, then advance with combined text.
     func reactToDrawing(imageBase64: String) {
+        waitingForReaction = true
         Task { @MainActor in
             guard let url = URL(string: "\(serverURL)/ai/walkthrough-react"),
-                  let token = try? await supabase.auth.session.accessToken else { return }
+                  let token = try? await supabase.auth.session.accessToken else {
+                waitingForReaction = false
+                advance()
+                return
+            }
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
@@ -123,7 +129,11 @@ final class CanvasWalkthroughState {
             request.httpBody = try? JSONSerialization.data(withJSONObject: ["image": imageBase64])
 
             guard let (data, response) = try? await URLSession.shared.data(for: request),
-                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                waitingForReaction = false
+                advance()
+                return
+            }
 
             struct ReactResponse: Decodable {
                 let reaction: String
@@ -134,13 +144,24 @@ final class CanvasWalkthroughState {
                 }
             }
 
-            guard let result = try? JSONDecoder().decode(ReactResponse.self, from: data) else { return }
-            drawingReaction = result.reaction
+            if let result = try? JSONDecoder().decode(ReactResponse.self, from: data) {
+                drawingReaction = result.reaction
 
-            if let audioBase64 = result.speechAudio,
-               let audioData = Data(base64Encoded: audioBase64) {
-                playAudio(audioData)
+                // Speak reaction + next step together
+                if let nextStep = WalkthroughStep(rawValue: WalkthroughStep.drawSomething.rawValue + 1) {
+                    let combined = result.reaction + " " + nextStep.text
+                        .replacingOccurrences(of: "• ", with: "")
+                        .replacingOccurrences(of: "\n\n", with: ". ")
+                        .replacingOccurrences(of: "\n", with: ". ")
+                    speakInstruction(combined)
+                } else if let audioBase64 = result.speechAudio,
+                          let audioData = Data(base64Encoded: audioBase64) {
+                    playAudio(audioData)
+                }
             }
+
+            waitingForReaction = false
+            advance()
         }
     }
 

@@ -359,8 +359,8 @@ async def walkthrough_react(
 
     result = await asyncio.to_thread(
         llm.generate,
-        prompt="Look at this image of what a student just drew on their iPad during an app tutorial. Give a funny, specific reaction to what you see. If it's just a boring line or circle, be playfully sarcastic. If it's actually creative, be genuinely impressed. Reference what you actually see in the image.",
-        system_prompt="You are a funny, sarcastic college TA reacting to a student's doodle. Be specific about what you see. Keep it to 1-2 sentences. Be like a friend roasting you, not mean. Examples: 'Is that a... cat? Or a cloud with legs? Either way, bold choice.' or 'A single line. Wow. Really pushed the creative boundaries there.' or 'OK that's actually pretty good. Don't let it go to your head.'",
+        prompt="Look at this image of what a student just drew on their iPad. Give a very short, funny reaction. ONE sentence max. Be specific about what you see.",
+        system_prompt="You are a sarcastic college TA reacting to a doodle. ONE short sentence only. Be specific. If boring: sarcastic. If creative: impressed. Examples: 'A line. Groundbreaking.' / 'Is that a cat or a potato?' / 'OK that's actually fire.' / 'Bold of you to call that a circle.'",
         images=images,
         response_schema=WalkthroughReactLLMOutput.model_json_schema(),
         timeout=15.0,
@@ -419,6 +419,7 @@ async def _generate_tts(text: str) -> str | None:
                 "input": text,
                 "voice": "autumn",
                 "response_format": "wav",
+                "speed": 1.15,
             },
         )
     if resp.status_code != 200:

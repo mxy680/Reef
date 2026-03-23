@@ -6,6 +6,7 @@ struct WalkthroughCard: View {
     @Environment(ReefTheme.self) private var theme
 
     let step: WalkthroughStep?
+    var reactionPrefix: String? = nil
     let onGotIt: () -> Void
 
     @State private var displayedText = ""
@@ -15,7 +16,13 @@ struct WalkthroughCard: View {
 
     var body: some View {
         let colors = theme.colors
-        let fullText = step?.text ?? ""
+        let stepText = step?.text ?? ""
+        let fullText: String = {
+            if let reaction = reactionPrefix, step == .tryHighlighter {
+                return reaction + "\n\n" + stepText
+            }
+            return stepText
+        }()
 
         VStack(alignment: .leading, spacing: 12) {
             // ZStack: invisible full text reserves height, visible typed text on top

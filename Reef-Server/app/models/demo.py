@@ -83,8 +83,8 @@ class WalkthroughReactRequest(BaseModel):
 class WalkthroughReactLLMOutput(BaseModel):
     """LLM output for reacting to a drawing."""
 
-    reaction: str = Field(..., description="A funny, sarcastic one-liner about what the user drew. Reference specific things you see. If it's boring (a line, circle, scribble), be playfully sarcastic. 1-2 sentences max.")
-    speech: str = Field(..., max_length=300, description="Same reaction but for speaking out loud. No math, no special characters. 1-2 sentences max.")
+    reaction: str = Field(..., description="ONE short funny sentence about what you see. Be specific.")
+    speech: str = Field(..., max_length=150, description="Same reaction for speaking. ONE sentence. No special characters.")
 
 
 class WalkthroughReactResponse(BaseModel):

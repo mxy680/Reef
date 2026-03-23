@@ -10,6 +10,7 @@ struct TutorDemoStep: View {
     @State private var canvasVM: CanvasViewModel?
     @State private var walkthrough = CanvasWalkthroughState()
     @State private var showPreDialog = true
+    @State private var pendingReactionTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -31,24 +32,10 @@ struct TutorDemoStep: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Spacer()
 
-                        // Drawing reaction (if any)
-                        if let reaction = walkthrough.drawingReaction {
-                            Text(reaction)
-                                .font(.epilogue(13, weight: .bold))
-                                .tracking(-0.04 * 13)
-                                .foregroundStyle(ReefColors.primary)
-                                .italic()
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(ReefColors.primary.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .frame(maxWidth: 320, alignment: .leading)
-                                .transition(.opacity)
-                        }
-
                         // Card — always present, text changes inside
                         WalkthroughCard(
                             step: walkthrough.currentStep,
+                            reactionPrefix: walkthrough.drawingReaction,
                             onGotIt: { walkthrough.advance() }
                         )
 
@@ -104,14 +91,31 @@ struct TutorDemoStep: View {
                 }
             }
         }
+        // Speak first step when pre-dialog is dismissed
+        .onChange(of: showPreDialog) { _, showing in
+            if !showing && walkthrough.currentStep == .drawSomething {
+                walkthrough.speakInstruction(WalkthroughStep.drawSomething.text)
+            }
+        }
         // MARK: - Walkthrough Detection (1000ms after pen lift)
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard let vm = canvasVM else { return }
+            guard let vm = canvasVM, !walkthrough.waitingForReaction else { return }
 
             switch walkthrough.currentStep {
             case .drawSomething:
                 if vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
-                    walkthrough.advanceAfterDelay(ms: 1000)
+                    // After 1000ms pen-lift, capture and react (which advances when done)
+                    walkthrough.cancelPendingAdvance()
+                    pendingReactionTask?.cancel()
+                    pendingReactionTask = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(1000))
+                        guard !Task.isCancelled else { return }
+                        if let image = vm.captureActiveQuestionImage() {
+                            walkthrough.reactToDrawing(imageBase64: image)
+                        } else {
+                            walkthrough.advance()
+                        }
+                    }
                 }
 
             case .tryHighlighter:
@@ -128,11 +132,10 @@ struct TutorDemoStep: View {
                 break
             }
         }
-        // Speak each new step instruction + react to drawing
+        // Speak step instructions + handle drawing reaction flow
         .onChange(of: walkthrough.currentStep) { oldStep, newStep in
-            // Speak the new instruction
-            if let step = newStep {
-                // Use a shortened version for speech (strip bullet points)
+            // Speak step instructions (skip if coming from drawSomething — reactToDrawing handles that)
+            if let step = newStep, oldStep != .drawSomething {
                 let speechText = step.text
                     .replacingOccurrences(of: "• ", with: "")
                     .replacingOccurrences(of: "\n\n", with: ". ")
@@ -140,14 +143,7 @@ struct TutorDemoStep: View {
                 walkthrough.speakInstruction(speechText)
             }
 
-            // React to drawing after the "draw something" step
-            if oldStep == .drawSomething, newStep == .tryHighlighter {
-                if let vm = canvasVM, let image = vm.captureActiveQuestionImage() {
-                    walkthrough.reactToDrawing(imageBase64: image)
-                }
-            }
-
-            // When walkthrough reaches enableTutor, allow the toggle to work
+            // When walkthrough reaches enableTutor, allow the toggle
             if newStep == .enableTutor {
                 canvasVM?.deferTutorMode = false
             }
