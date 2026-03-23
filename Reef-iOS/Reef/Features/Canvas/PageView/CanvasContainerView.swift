@@ -19,6 +19,9 @@ final class CanvasContainerView: UIView {
     private var contentWidthConstraint: NSLayoutConstraint?
     private var isDarkMode = false
     private(set) var currentPageVersion: Int = 0
+    /// When true, setupPages will NOT save current canvas drawings back to the manager
+    /// (because the manager was already shifted by insert/delete operations).
+    var skipDrawingSaveOnRebuild = false
 
     /// Original rendered page images (light mode)
     private var originalImages: [UIImage] = []
@@ -217,10 +220,14 @@ final class CanvasContainerView: UIView {
     // MARK: - Setup Pages
 
     private func setupPages(with images: [UIImage]) {
-        // Save current drawings before rebuilding pages
-        for (index, canvasView) in canvasViews.enumerated() {
-            drawingManager?.setDrawing(canvasView.drawing, for: index)
+        // Save current drawings before rebuilding pages — skip if drawings were
+        // already shifted by an insert/delete operation (prevents overwriting the shift)
+        if !skipDrawingSaveOnRebuild {
+            for (index, canvasView) in canvasViews.enumerated() {
+                drawingManager?.setDrawing(canvasView.drawing, for: index)
+            }
         }
+        skipDrawingSaveOnRebuild = false
 
         for view in pageImageViews { view.removeFromSuperview() }
         for view in canvasViews { view.removeFromSuperview() }

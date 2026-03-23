@@ -1025,6 +1025,7 @@ final class CanvasViewModel {
         pdfDocument.insert(blank, at: insertIndex)
         drawingManager.shiftDrawingsForInsert(at: insertIndex)
         addedPageIndices.append(insertIndex)
+        containerView?.skipDrawingSaveOnRebuild = true
         pageVersion += 1
     }
 
@@ -1036,6 +1037,7 @@ final class CanvasViewModel {
         // Shift any tracked added indices that are >= insertIndex
         addedPageIndices = addedPageIndices.map { $0 >= insertIndex ? $0 + 1 : $0 }
         addedPageIndices.append(insertIndex)
+        containerView?.skipDrawingSaveOnRebuild = true
         pageVersion += 1
     }
 
@@ -1072,6 +1074,7 @@ final class CanvasViewModel {
         if currentPageIndex >= pdfDocument.pageCount {
             currentPageIndex = pdfDocument.pageCount - 1
         }
+        containerView?.skipDrawingSaveOnRebuild = true
         pageVersion += 1
     }
 
