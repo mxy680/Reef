@@ -573,30 +573,36 @@ final class CanvasViewModel {
     /// Advance by multiple steps at once (handles step skipping).
     /// Shows reinforcement for each skipped step before advancing.
     func advanceTutorSteps(count: Int) {
-        for i in 0..<count {
+        let remaining = tutorStepCount - currentTutorStepIndex
+        let stepsToAdvance = min(count, remaining)
+
+        for i in 0..<stepsToAdvance {
             let stepIdx = currentTutorStepIndex
-            // Show reinforcement for each completed step
+            // Show reinforcement for each completed step (step 0's is already posted by eval service)
             if stepIdx < currentSteps.count, i > 0,
                let reinforcement = currentSteps[stepIdx].reinforcement,
                !reinforcement.isEmpty {
-                // First step's reinforcement is already posted by TutorEvaluationService
                 tutorEvalService.chatMessages.append(TutorChatMessage(
                     role: .reinforcement, latex: reinforcement, timestamp: Date()
                 ))
             }
-            advanceTutorStep()
+
+            if currentTutorStepIndex < tutorStepCount - 1 {
+                currentTutorStepIndex += 1
+                tutorEvalService.resetForNextStep()
+                updatePendingReinforcement()
+            }
+        }
+
+        // If we completed all steps, mark as done (don't reset — let status stay "completed")
+        if currentTutorStepIndex >= tutorStepCount - 1 && stepsToAdvance >= remaining {
+            tutorEvalService.stepProgress = 1.0
+            tutorEvalService.status = "completed"
         }
     }
 
     func advanceTutorStep() {
-        // Always reset eval state (even on final step) so tutor doesn't freeze
-        tutorEvalService.resetForNextStep()
-
-        if currentTutorStepIndex < tutorStepCount - 1 {
-            currentTutorStepIndex += 1
-        }
-        // Don't dismiss hint/reveal — user closes them manually via X button
-        updatePendingReinforcement()
+        advanceTutorSteps(count: 1)
     }
 
     func resetTutorSteps() {
@@ -980,9 +986,10 @@ final class CanvasViewModel {
     /// Trigger AI evaluation of the current student work.
     func triggerTutorEvaluation() {
         guard tutorModeOn,
+              tutorStepCount > 0,
               !handwritingService.latexResult.isEmpty,
               // Don't evaluate if all steps are already complete
-              !(currentTutorStepIndex == tutorStepCount - 1 && tutorEvalService.status == "completed")
+              !(currentTutorStepIndex >= tutorStepCount - 1 && tutorEvalService.status == "completed")
         else {
             return
         }
