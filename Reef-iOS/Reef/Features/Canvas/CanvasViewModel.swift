@@ -306,10 +306,8 @@ final class CanvasViewModel {
         self.savedTutorProgress = loaded?.tutorProgress
 
         tutorEvalService.onStepCompleted = { [weak self] stepsCompleted in
-            guard let self else { return }
-            for _ in 0..<stepsCompleted {
-                self.advanceTutorStep()
-            }
+            guard let self, stepsCompleted >= 1 else { return }
+            self.advanceTutorSteps(count: stepsCompleted)
         }
 
         handwritingService.onLatexChanged = { [weak self] _ in
@@ -398,12 +396,15 @@ final class CanvasViewModel {
             questionPages: document.questionPages
         )
 
-        // On question change: save current state, restore new question's state
+        // On question change: save current state, cancel in-flight eval, restore new question's state
         if newLabel != activeQuestionLabel {
             // Save outgoing question's tutor state
             if let oldLabel = activeQuestionLabel, tutorModeOn {
                 saveTutorStateForLabel(oldLabel)
             }
+
+            // Cancel any in-flight evaluation so stale results don't corrupt the new question
+            tutorEvalService.resetForNextStep()
 
             handwritingService.latexResult = ""
             activeQuestionLabel = newLabel
@@ -569,11 +570,32 @@ final class CanvasViewModel {
         }
     }
 
+    /// Advance by multiple steps at once (handles step skipping).
+    /// Shows reinforcement for each skipped step before advancing.
+    func advanceTutorSteps(count: Int) {
+        for i in 0..<count {
+            let stepIdx = currentTutorStepIndex
+            // Show reinforcement for each completed step
+            if stepIdx < currentSteps.count, i > 0,
+               let reinforcement = currentSteps[stepIdx].reinforcement,
+               !reinforcement.isEmpty {
+                // First step's reinforcement is already posted by TutorEvaluationService
+                tutorEvalService.chatMessages.append(TutorChatMessage(
+                    role: .reinforcement, latex: reinforcement, timestamp: Date()
+                ))
+            }
+            advanceTutorStep()
+        }
+    }
+
     func advanceTutorStep() {
-        guard currentTutorStepIndex < tutorStepCount - 1 else { return }
-        currentTutorStepIndex += 1
-        // Don't dismiss hint/reveal — user closes them manually via X button
+        // Always reset eval state (even on final step) so tutor doesn't freeze
         tutorEvalService.resetForNextStep()
+
+        if currentTutorStepIndex < tutorStepCount - 1 {
+            currentTutorStepIndex += 1
+        }
+        // Don't dismiss hint/reveal — user closes them manually via X button
         updatePendingReinforcement()
     }
 
@@ -958,7 +980,10 @@ final class CanvasViewModel {
     /// Trigger AI evaluation of the current student work.
     func triggerTutorEvaluation() {
         guard tutorModeOn,
-              !handwritingService.latexResult.isEmpty else {
+              !handwritingService.latexResult.isEmpty,
+              // Don't evaluate if all steps are already complete
+              !(currentTutorStepIndex == tutorStepCount - 1 && tutorEvalService.status == "completed")
+        else {
             return
         }
 
