@@ -14,44 +14,57 @@ struct PaywallStep: View {
                 // Card
                 VStack(spacing: 0) {
                     // Header — beta hero
-                    VStack(spacing: 12) {
+                    VStack(spacing: 14) {
                         Text("🐠")
-                            .font(.system(size: 36))
+                            .font(.system(size: 40))
 
                         Text("Welcome to the beta")
-                            .font(.epilogue(26, weight: .black))
-                            .tracking(-0.04 * 26)
+                            .font(.epilogue(28, weight: .black))
+                            .tracking(-0.04 * 28)
                             .foregroundStyle(ReefColors.white)
 
                         Text("Everything is free while we're in beta.\nJust use it. Tell us what's broken.")
                             .font(.epilogue(14, weight: .medium))
                             .tracking(-0.04 * 14)
                             .foregroundStyle(ReefColors.white.opacity(0.85))
+                            .lineSpacing(3)
                     }
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 28)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 32)
                     .frame(maxWidth: .infinity)
                     .background(ReefColors.primary)
 
-                    // What you get
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("WHAT YOU GET")
-                            .font(.epilogue(11, weight: .bold))
-                            .tracking(1)
-                            .foregroundStyle(colors.textMuted)
-                            .padding(.bottom, 4)
+                    // Features — styled cards
+                    VStack(spacing: 10) {
+                        featureCard(
+                            icon: "infinity",
+                            title: "Unlimited tutoring",
+                            subtitle: "No hour limits. Study as much as you want."
+                        )
 
-                        featureRow(icon: "infinity", text: "Unlimited tutoring hours")
-                        featureRow(icon: "book.closed.fill", text: "All courses")
-                        featureRow(icon: "mic.fill", text: "Voice chat with your tutor")
-                        featureRow(icon: "chart.line.uptrend.xyaxis", text: "Study analytics")
-                        featureRow(icon: "sparkles", text: "Early access to new features")
+                        featureCard(
+                            icon: "bubble.left.and.bubble.right.fill",
+                            title: "Voice chat",
+                            subtitle: "Talk to your tutor out loud."
+                        )
+
+                        featureCard(
+                            icon: "pencil.tip.crop.circle",
+                            title: "Handwriting recognition",
+                            subtitle: "Just write. Reef reads it."
+                        )
+
+                        featureCard(
+                            icon: "sparkles",
+                            title: "Early access",
+                            subtitle: "New features before anyone else."
+                        )
                     }
-                    .padding(24)
+                    .padding(20)
 
                     // CTA
-                    VStack(spacing: 12) {
+                    VStack(spacing: 14) {
                         ReefButton("Let's go — it's free", action: { viewModel.goNext() })
 
                         Text("Pricing comes later. You'll be the first to know.")
@@ -60,8 +73,8 @@ struct PaywallStep: View {
                             .foregroundStyle(colors.textMuted)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 28)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
                 }
                 .background(colors.card)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -83,19 +96,46 @@ struct PaywallStep: View {
         }
     }
 
-    private func featureRow(icon: String, text: String) -> some View {
+    private func featureCard(icon: String, title: String, subtitle: String) -> some View {
         let colors = theme.colors
 
         return HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(ReefColors.primary)
-                .frame(width: 24)
+            // Icon in tinted circle
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.primary.opacity(0.1))
+                    .frame(width: 40, height: 40)
 
-            Text(text)
-                .font(.epilogue(15, weight: .medium))
-                .tracking(-0.04 * 15)
-                .foregroundStyle(colors.text)
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(ReefColors.primary)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+                    .foregroundStyle(colors.text)
+
+                Text(subtitle)
+                    .font(.epilogue(12, weight: .medium))
+                    .tracking(-0.04 * 12)
+                    .foregroundStyle(colors.textMuted)
+            }
+
+            Spacer()
+
+            Image(systemName: "checkmark")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(ReefColors.primary)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(colors.divider, lineWidth: 1)
+        )
     }
 }
