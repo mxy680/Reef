@@ -279,7 +279,16 @@ final class CanvasViewModel {
         guard isReconstructed else { return }
         isLoadingAnswerKeys = true
         let repo = SupabaseAnswerKeyRepository()
-        let result = await repo.fetchAnswerKeys(documentId: document.id)
+
+        // Retry up to 10 times (every 3s) if answer keys are still generating
+        var attempts = 0
+        var result = await repo.fetchAnswerKeys(documentId: document.id)
+        while result.answers.isEmpty && attempts < 10 {
+            attempts += 1
+            try? await Task.sleep(for: .seconds(3))
+            result = await repo.fetchAnswerKeys(documentId: document.id)
+        }
+
         answerKeys = result.answers
         isLoadingAnswerKeys = false
         if !deferTutorMode {
