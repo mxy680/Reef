@@ -54,6 +54,7 @@ struct CanvasView: View {
                     }
                     .ignoresSafeArea(edges: .top)
                 )
+                .ignoresSafeArea(edges: .horizontal)
                 .zIndex(2)
 
                 // Canvas + Sidebar — sidebar only pushes the canvas area
