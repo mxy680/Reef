@@ -13,6 +13,7 @@ final class OnboardingViewModel {
     var isSubmitting = false
     var error: String?
     var showLearningStyleReassurance = false
+    var demoDocumentId: String?
 
     // MARK: - Dependencies
 
@@ -200,12 +201,42 @@ final class OnboardingViewModel {
 
         do {
             try await profileRepo.upsertProfile(update)
+
+            // Clean up demo document
+            if let docId = demoDocumentId {
+                await deleteDemoDocument(docId)
+            }
+
             onComplete?()
         } catch {
             self.error = error.localizedDescription
         }
 
         isSubmitting = false
+    }
+
+    /// Delete the demo document, answer key, and PDF from Supabase.
+    private func deleteDemoDocument(_ documentId: String) async {
+        // Delete answer key
+        try? await supabase
+            .from("answer_keys")
+            .delete()
+            .eq("document_id", value: documentId)
+            .execute()
+
+        // Delete document record
+        try? await supabase
+            .from("documents")
+            .delete()
+            .eq("id", value: documentId)
+            .execute()
+
+        // Delete PDF from storage (fire and forget)
+        let userId = (try? await supabase.auth.session.user.id.uuidString) ?? ""
+        let path = "\(userId)/\(documentId)"
+        try? await supabase.storage
+            .from("documents")
+            .remove(paths: ["\(path)/original.pdf"])
     }
 
     /// Look up a referral code and return the referrer's user ID, or nil if invalid.

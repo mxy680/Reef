@@ -41,6 +41,7 @@ struct TutorDemoStep: View {
                         studentType: viewModel.answers.studentType?.rawValue ?? "college"
                     )
                     if let doc = demoService.demoDocument {
+                        viewModel.demoDocumentId = doc.id
                         canvasVM = CanvasViewModel(document: doc)
                     }
                 }
