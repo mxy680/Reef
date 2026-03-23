@@ -57,7 +57,9 @@ struct TutorDemoStep: View {
                     )
                     if let doc = demoService.demoDocument {
                         viewModel.demoDocumentId = doc.id
-                        canvasVM = CanvasViewModel(document: doc)
+                        let vm = CanvasViewModel(document: doc)
+                        vm.deferTutorMode = true  // Walkthrough controls when tutor enables
+                        canvasVM = vm
                     }
                 }
             }
@@ -91,7 +93,20 @@ struct TutorDemoStep: View {
         }
         .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
             if isOn == true && walkthrough.currentStep == .enableTutor {
+                // User toggled tutor on — finish setup that was deferred
+                if let vm = canvasVM {
+                    vm.showSidebar = true
+                    if vm.activeQuestionLabel == nil {
+                        vm.activeQuestionLabel = "Q1a"
+                    }
+                }
                 withAnimation { walkthrough.advance() }
+            }
+        }
+        .onChange(of: walkthrough.currentStep) { _, newStep in
+            // When walkthrough reaches enableTutor, allow the toggle to work
+            if newStep == .enableTutor {
+                canvasVM?.deferTutorMode = false
             }
         }
     }

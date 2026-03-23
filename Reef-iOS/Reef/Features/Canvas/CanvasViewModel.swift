@@ -189,6 +189,8 @@ final class CanvasViewModel {
     // MARK: - Tutor State
 
     var tutorModeOn: Bool = false
+    /// When true, tutor mode won't auto-enable on answer key load (walkthrough controls it)
+    var deferTutorMode: Bool = false
     var currentTutorStepIndex: Int = 0
     var currentQuestionIndex: Int = 0
     var showHintPopover: Bool = false
@@ -280,14 +282,16 @@ final class CanvasViewModel {
         let result = await repo.fetchAnswerKeys(documentId: document.id)
         answerKeys = result.answers
         isLoadingAnswerKeys = false
-        tutorModeOn = !answerKeys.isEmpty
-        if tutorModeOn {
-            showSidebar = true
-            if activeQuestionLabel == nil {
-                activeQuestionLabel = "Q1a"
+        if !deferTutorMode {
+            tutorModeOn = !answerKeys.isEmpty
+            if tutorModeOn {
+                showSidebar = true
+                if activeQuestionLabel == nil {
+                    activeQuestionLabel = "Q1a"
+                }
+                restoreTutorStateForLabel(activeQuestionLabel!)
+                updatePendingReinforcement()
             }
-            restoreTutorStateForLabel(activeQuestionLabel!)
-            updatePendingReinforcement()
         }
     }
 
