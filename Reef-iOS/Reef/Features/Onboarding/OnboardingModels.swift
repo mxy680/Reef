@@ -186,21 +186,19 @@ enum DailyGoalOption: Int, Codable, Sendable, CaseIterable {
 }
 
 enum ReferralSource: String, Codable, Sendable, CaseIterable {
-    case tiktok = "tiktok"
-    case instagram = "instagram"
+    case social = "social"
     case friend = "friend"
     case teacherSchool = "teacher_school"
-    case google = "google"
+    case mark = "mark"
     case other = "other"
 
     var displayLabel: String {
         switch self {
-        case .tiktok: "TikTok"
-        case .instagram: "Instagram"
-        case .friend: "A friend (bless them)"
-        case .teacherSchool: "Teacher / School"
-        case .google: "Google"
-        case .other: "Other"
+        case .social: "TikTok / Instagram"
+        case .friend: "A friend (they have good taste)"
+        case .teacherSchool: "Teacher or school"
+        case .mark: "Mark"
+        case .other: "Honestly don't remember"
         }
     }
 }

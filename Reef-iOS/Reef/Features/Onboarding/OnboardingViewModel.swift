@@ -7,7 +7,7 @@ final class OnboardingViewModel {
     // MARK: - State
 
     var answers = OnboardingAnswers()
-    var currentStep: OnboardingStep = .paywall
+    var currentStep: OnboardingStep = .referral
     var slideDirection: CGFloat = 1  // 1 = forward, -1 = back
     var isSubmitting = false
     var error: String?
