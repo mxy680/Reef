@@ -179,30 +179,30 @@ struct TutorDemoStep: View {
                 break
             }
         }
-        // Detect tool selection for utility tools step
+        // Detect ruler/calculator/page settings individually
         .onChange(of: canvasVM?.showRuler) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .utilityTools {
+            if isOn == true && walkthrough.currentStep == .ruler {
                 walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
         .onChange(of: canvasVM?.showCalculator) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .utilityTools {
+            if isOn == true && walkthrough.currentStep == .calculator {
                 walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
         .onChange(of: canvasVM?.showPageSettings) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .utilityTools {
+            if isOn == true && walkthrough.currentStep == .pageSettings {
                 walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
-        // Detect hint/answer for tutor features
+        // Detect hint and reveal
         .onChange(of: canvasVM?.showHintPopover) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .tutorFeatures {
+            if isOn == true && walkthrough.currentStep == .tutorHint {
                 walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
         .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .tutorUI {
+            if isOn == true && walkthrough.currentStep == .tutorReveal {
                 walkthrough.advanceAfterDelay(ms: 1500)
             }
         }
@@ -215,6 +215,11 @@ struct TutorDemoStep: View {
                     .replacingOccurrences(of: "\n\n", with: ". ")
                     .replacingOccurrences(of: "\n", with: ". ")
                 walkthrough.speakInstruction(speechText)
+
+                // Auto-complete ready step after speaking
+                if step == .ready {
+                    walkthrough.advanceAfterDelay(ms: 4000)
+                }
             }
 
             // When walkthrough reaches enableTutor, allow the toggle

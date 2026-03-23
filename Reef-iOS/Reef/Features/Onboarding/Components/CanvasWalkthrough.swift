@@ -12,53 +12,53 @@ enum WalkthroughStep: Int, CaseIterable {
     case shapeTool
     case lassoTool
     case fingerDraw
-    case utilityTools
+    case ruler
+    case calculator
+    case pageSettings
 
     // Phase 2: Tutor Training
     case enableTutor
-    case tutorFeatures
-    case tutorUI
+    case tutorHint
+    case tutorReveal
     case ready
 
     var text: String {
         switch self {
         case .drawSomething:
-            "Grab your Apple Pencil and draw anything. Seriously, anything."
+            "Go ahead — draw something. Anything. This is your canvas."
         case .tryHighlighter:
-            "Now tap the highlighter and mark something up."
+            "Alright, now tap the highlighter and mark something up."
         case .eraseHighlight:
-            "Now erase what you just highlighted."
+            "Cool. Now grab the eraser and get rid of that highlight."
         case .shapeTool:
-            "Tap the shape tool and draw any shape. Reef will clean it up automatically."
+            "Tap the shape tool and draw a shape. You'll need this for diagrams — it's the only way to draw them."
         case .lassoTool:
-            "Tap the lasso tool and circle something you drew. You can move it or delete it."
+            "Now the lasso. Circle something you drew, then tap the selection to move or delete it."
         case .fingerDraw:
-            "Tap the finger draw tool and draw something with your finger."
-        case .utilityTools:
-            "Try tapping the ruler, calculator, or page settings to see what they do."
+            "This one lets you draw with your finger. Tap it and try."
+        case .ruler:
+            "Tap the ruler. Gives you straight lines."
+        case .calculator:
+            "Now the calculator. Built-in, so you don't have to switch apps."
+        case .pageSettings:
+            "Last one — page settings. Change your background to grid, dots, or lines."
         case .enableTutor:
-            "Now let's try the AI tutor. Tap the tutor button to turn it on."
-        case .tutorFeatures:
-            "Tap the lightbulb to see a hint for this step."
-        case .tutorUI:
-            "Tap the eye icon to reveal the full answer."
+            "OK here's the fun part. Tap the tutor button to turn on your AI tutor."
+        case .tutorHint:
+            "See the lightbulb? Tap it. That's your hint when you're stuck."
+        case .tutorReveal:
+            "Now tap the eye icon. That reveals the full answer."
         case .ready:
-            "That's it. Now try solving the problem. Your tutor's watching."
+            "That's everything. Your tutor's ready. You're ready. Go solve it."
         }
     }
 
-    /// Whether this step requires detecting a user action (vs a button tap)
     var requiresAction: Bool {
-        switch self {
-        case .ready:
-            return false  // Only "ready" has a button
-        default:
-            return true   // All others detect the actual action
-        }
+        true  // All steps detect actual user action, including ready (auto-completes)
     }
 
     var buttonLabel: String {
-        "Let's go"
+        ""  // No buttons — all action-based
     }
 }
 
