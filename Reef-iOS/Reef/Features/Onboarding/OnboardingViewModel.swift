@@ -165,6 +165,7 @@ final class OnboardingViewModel {
     // MARK: - Submit
 
     func submitOnboarding() async {
+        guard !isSubmitting else { return }
         isSubmitting = true
         error = nil
 
@@ -232,7 +233,8 @@ final class OnboardingViewModel {
             .execute()
 
         // Delete PDF from storage (fire and forget)
-        let userId = (try? await supabase.auth.session.user.id.uuidString) ?? ""
+        guard let userId = try? await supabase.auth.session.user.id.uuidString,
+              !userId.isEmpty else { return }
         let path = "\(userId)/\(documentId)"
         try? await supabase.storage
             .from("documents")

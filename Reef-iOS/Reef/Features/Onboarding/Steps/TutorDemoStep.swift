@@ -94,13 +94,7 @@ struct TutorDemoStep: View {
 
     @State private var isPulsing = false
     @State private var messageIndex = 0
-
-    private let loadingMessages = [
-        "Generating a problem just for you...",
-        "Compiling the math...",
-        "Teaching your tutor about \("")",  // placeholder, overridden below
-        "Almost ready...",
-    ]
+    @State private var loadingTasks: [Task<Void, Never>] = []
 
     private var currentLoadingMessage: String {
         let topic = viewModel.answers.favoriteTopic
@@ -151,11 +145,16 @@ struct TutorDemoStep: View {
                 isPulsing = true
             }
             for i in 1...3 {
-                Task { @MainActor in
+                let task = Task { @MainActor in
                     try? await Task.sleep(for: .seconds(Double(i) * 2.5))
                     withAnimation(.easeInOut(duration: 0.3)) { messageIndex = i }
                 }
+                loadingTasks.append(task)
             }
+        }
+        .onDisappear {
+            loadingTasks.forEach { $0.cancel() }
+            loadingTasks.removeAll()
         }
         .fadeUp(index: 1)
     }

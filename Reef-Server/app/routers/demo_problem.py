@@ -95,7 +95,7 @@ DEMO_CHAT_PROMPT = """\
 
 
 @router.post("/demo-problem", response_model=DemoProblemResponse)
-async def demo_problem(body: DemoProblemRequest):
+async def demo_problem(body: DemoProblemRequest, user: AuthenticatedUser = Depends(get_current_user)):
     """Generate a demo problem — no auth required (onboarding use only)."""
     if not settings.openrouter_api_key:
         raise HTTPException(status_code=503, detail="OpenRouter not configured")
@@ -136,7 +136,7 @@ async def demo_problem(body: DemoProblemRequest):
 
 
 @router.post("/demo-chat", response_model=DemoChatResponse)
-async def demo_chat(body: DemoChatRequest):
+async def demo_chat(body: DemoChatRequest, user: AuthenticatedUser = Depends(get_current_user)):
     """Chat with tutor about a demo problem — no auth required."""
     if not settings.openrouter_api_key:
         raise HTTPException(status_code=503, detail="OpenRouter not configured")

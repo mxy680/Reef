@@ -74,7 +74,9 @@ struct SignUpStep: View {
         .onAppear {
             // Skip this screen if already authenticated
             if auth.isAuthenticated {
-                viewModel.goNext()
+                Task { @MainActor in
+                    viewModel.goNext()
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ struct GeneratingPlanStep: View {
     @State private var progress: CGFloat = 0
     @State private var messageIndex = 0
     @State private var isPulsing = false
+    @State private var advanceTask: Task<Void, Never>?
 
     private let messages = [
         "Crunching your courses...",
@@ -99,6 +100,7 @@ struct GeneratingPlanStep: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear { startAnimation() }
+        .onDisappear { advanceTask?.cancel() }
     }
 
     private func startAnimation() {
@@ -123,7 +125,7 @@ struct GeneratingPlanStep: View {
         }
 
         // Auto-advance at 4.2s
-        Task { @MainActor in
+        advanceTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(4.2))
             onComplete()
         }
