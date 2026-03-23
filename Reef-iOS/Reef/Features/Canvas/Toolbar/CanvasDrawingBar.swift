@@ -459,7 +459,7 @@ struct CanvasDrawingBar: View {
         } label: {
             Image(systemName: "rectangle.badge.minus")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20).opacity(canDelete ? 1 : 0.4))
+                .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20).opacity(canDelete ? 0.8 : 0.3))
                 .frame(width: 38, height: 48)
                 .contentShape(Rectangle())
         }
