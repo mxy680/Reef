@@ -285,10 +285,15 @@ async def demo_document(
             raise HTTPException(status_code=500, detail="Failed to upload PDF")
 
         # 7. Create answer key record
+        # Wrap steps in a part "a" so iOS tutor can resolve via activeQuestionLabel "Q1a"
+        from app.models.answer_key import PartAnswer
         answer_key = QuestionAnswer(
             question_number=1,
-            steps=problem.steps,
-            final_answer=problem.final_answer,
+            parts=[PartAnswer(
+                label="a",
+                steps=problem.steps,
+                final_answer=problem.final_answer,
+            )],
         )
         answer_key_row = {
             "document_id": doc_id,

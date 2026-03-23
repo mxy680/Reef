@@ -71,7 +71,7 @@ final class OnboardingViewModel {
     }
 
     var showProgressBar: Bool {
-        currentStep != .welcome
+        currentStep != .welcome && currentStep != .tutorDemo
     }
 
     // MARK: - Validation
