@@ -31,27 +31,28 @@ enum WalkthroughStep: Int, CaseIterable {
     case exportFeature
     case ready
 
+    /// What's displayed in the walkthrough popup card.
     var text: String {
         switch self {
         // Phase 1: Tool Training
         case .drawSomething:
-            "Pick up your Pencil and doodle something. Let's see what you got."
+            "Grab your Apple Pencil and draw something. Literally anything — a cat, a stick figure, whatever comes to mind."
         case .tryHighlighter:
-            "Look up at the toolbar, switch to the highlighter and scribble over something."
+            "Tap the highlighter tool up top. It's transparent, so it layers over your ink — great for annotating."
         case .eraseHighlight:
-            "Now grab the eraser and clean that up."
+            "Made a mess? Good. Tap the eraser and clean it up — it removes anything you draw over."
         case .shapeTool:
-            "Let's try the shape tool. This is how you'll draw every diagram in Reef."
+            "Tap the shape tool and draw a shape freehand. Reef auto-snaps it into a clean version — circles, rectangles, triangles."
         case .lassoTool:
-            "The lasso tool will let you grab things. Circle a drawing, then tap it to move or trash it."
+            "Try the lasso. Draw a loop around something — now you can drag it, scale it, or send it to the abyss."
         case .fingerDraw:
-            "Want to draw without your Pencil? Tap the next tool and use your finger."
+            "Don't have your Pencil handy? Tap finger draw and sketch with your finger instead — same canvas, just your fingertip."
         case .ruler:
-            "Tap the ruler. Makes your lines not look like they were drawn during an earthquake."
+            "Tap the ruler tool. A straight edge appears on the canvas — rotate it, position it, draw along it. No more diagrams that look like they survived a tsunami."
         case .calculator:
-            "Need to do some quick math? Tap the calculator."
+            "Need to check your math? Tap the calculator — it floats right on your canvas so you never lose your place."
         case .pageSettings:
-            "Want graph paper? Tap page settings and pick your background."
+            "Customize your workspace. Tap page settings and pick a background — every reef looks different, make this one yours."
         // Phase 2: Tutor Training
         case .enableTutor:
             "Here's where it gets interesting. Tap the tutor button to wake up your AI."
@@ -71,6 +72,52 @@ enum WalkthroughStep: Int, CaseIterable {
             "Found a bug? Tap this icon to report it. We actually fix these."
         case .exportFeature:
             "Tap export to save your work as a PDF. Perfect for submitting homework."
+        case .ready:
+            "You're all set. Now go make your tutor proud."
+        }
+    }
+
+    /// TTS-optimized version with precise punctuation for Orpheus voice model.
+    var speech: String {
+        switch self {
+        // Phase 1: Tool Training
+        case .drawSomething:
+            "Grab your Apple Pencil, and draw something. Literally anything. A cat, a stick figure, whatever comes to mind."
+        case .tryHighlighter:
+            "Tap the highlighter tool up top. It's transparent, so it layers over your ink. Great for annotating."
+        case .eraseHighlight:
+            "Made a mess? Good. Tap the eraser and clean it up. It removes anything you draw over."
+        case .shapeTool:
+            "Tap the shape tool, and draw a shape freehand. Reef auto snaps it into a clean version. Circles, rectangles, triangles."
+        case .lassoTool:
+            "Try the lasso. Draw a loop around something. Now you can drag it, scale it, or send it to the abyss."
+        case .fingerDraw:
+            "Don't have your pencil handy? Tap finger draw, and sketch with your finger instead. Same canvas, just your fingertip."
+        case .ruler:
+            "Tap the ruler tool. A straight edge appears on the canvas. Rotate it, position it, draw along it. No more diagrams that look like they survived a tsunami."
+        case .calculator:
+            "Need to check your math? Tap the calculator. It floats right on your canvas, so you never lose your place."
+        case .pageSettings:
+            "Customize your workspace. Tap page settings, and pick a background. Every reef looks different. Make this one yours."
+        // Phase 2: Tutor Training
+        case .enableTutor:
+            "Here's where it gets interesting. Tap the tutor button, to wake up your A I."
+        case .tutorHint:
+            "See the lightbulb on the top right? That's your lifeline. Tap it when you're stuck, and it'll nudge you forward."
+        case .tutorReveal:
+            "Want the full answer? Tap the eye icon. We won't tell anyone."
+        // Phase 3: Solve It
+        case .solveIt:
+            "Your turn. Solve the problem. Your tutor's watching, and will jump in if you need help."
+        // Phase 4: Post-Solve
+        case .voiceCommand:
+            "See the mic? Tap it and just talk. Ask your tutor anything. No typing required."
+        case .sidebarToggle:
+            "Need more room to work? Click the sidebar icon on the right."
+        case .bugReport:
+            "Found a bug? Tap this icon to report it. We actually fix these."
+        case .exportFeature:
+            "Tap export to save your work as a P D F. Perfect for submitting homework."
         case .ready:
             "You're all set. Now go make your tutor proud."
         }
@@ -204,11 +251,7 @@ final class CanvasWalkthroughState {
 
                 // Speak reaction + next step together
                 if let nextStep = WalkthroughStep(rawValue: WalkthroughStep.drawSomething.rawValue + 1) {
-                    let stepText = nextStep.text
-                        .replacingOccurrences(of: "• ", with: "")
-                        .replacingOccurrences(of: "\n\n", with: ". ")
-                        .replacingOccurrences(of: "\n", with: ". ")
-                    let combined = decoded.reaction + " " + stepText
+                    let combined = decoded.reaction + " " + nextStep.speech
                     log("Speaking combined: \(combined.prefix(80))...")
                     speakInstruction(combined)
                 } else if let audioBase64 = decoded.speechAudio,

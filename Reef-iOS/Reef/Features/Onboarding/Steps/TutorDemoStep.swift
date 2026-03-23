@@ -95,7 +95,7 @@ struct TutorDemoStep: View {
         // Speak first step when pre-dialog is dismissed
         .onChange(of: showPreDialog) { _, showing in
             if !showing && walkthrough.currentStep == .drawSomething {
-                walkthrough.speakInstruction(WalkthroughStep.drawSomething.text)
+                walkthrough.speakInstruction(WalkthroughStep.drawSomething.speech)
             }
         }
         // MARK: - Walkthrough Detection (1000ms after pen lift)
@@ -240,10 +240,7 @@ struct TutorDemoStep: View {
         .onChange(of: walkthrough.currentStep) { oldStep, newStep in
             // Speak step instructions (skip if coming from drawSomething — reactToDrawing handles that)
             if let step = newStep, oldStep != .drawSomething {
-                let speechText = step.text
-                    .replacingOccurrences(of: "• ", with: "")
-                    .replacingOccurrences(of: "\n\n", with: ". ")
-                    .replacingOccurrences(of: "\n", with: ". ")
+                let speechText = step.speech
 
                 // Wait for real tutor audio to finish before walkthrough speaks
                 if canvasVM?.tutorEvalService.isTutorSpeaking == true {
