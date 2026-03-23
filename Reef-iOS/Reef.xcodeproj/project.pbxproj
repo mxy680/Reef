@@ -168,6 +168,8 @@
 		D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */; };
 		DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */; };
 		C2544AF066DC4E6185AEAEEC /* TutorDemoOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */; };
+		88368114FB2549AB95BE4FC5 /* CanvasWalkthrough.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B02A614D768401AA2184269 /* CanvasWalkthrough.swift */; };
+		F845158158DB4B5BAEA76324 /* WalkthroughPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1EE16A89B62411783295F80 /* WalkthroughPopup.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -336,6 +338,8 @@
 		CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
 		84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoProblemService.swift; sourceTree = "<group>"; };
 		21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorDemoOverlay.swift; sourceTree = "<group>"; };
+		1B02A614D768401AA2184269 /* CanvasWalkthrough.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasWalkthrough.swift; sourceTree = "<group>"; };
+		E1EE16A89B62411783295F80 /* WalkthroughPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughPopup.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -777,6 +781,8 @@
 		214602FE85D44D90A2C1841F /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				E1EE16A89B62411783295F80 /* WalkthroughPopup.swift */,
+				1B02A614D768401AA2184269 /* CanvasWalkthrough.swift */,
 				21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */,
 				39622361D80C4B58A2BE8C07 /* OnboardingProgressBar.swift */,
 				6041CD52A359487BB35EDE2B /* OnboardingStepShell.swift */,
@@ -924,6 +930,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F845158158DB4B5BAEA76324 /* WalkthroughPopup.swift in Sources */,
+				88368114FB2549AB95BE4FC5 /* CanvasWalkthrough.swift in Sources */,
 				C2544AF066DC4E6185AEAEEC /* TutorDemoOverlay.swift in Sources */,
 				D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */,
 				DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */,

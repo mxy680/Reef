@@ -1,4 +1,5 @@
 import SwiftUI
+import PencilKit
 
 struct TutorDemoStep: View {
     @Environment(ReefTheme.self) private var theme
@@ -7,7 +8,7 @@ struct TutorDemoStep: View {
     @Bindable var viewModel: OnboardingViewModel
     @State private var demoService = DemoProblemService()
     @State private var canvasVM: CanvasViewModel?
-    @State private var tutorialStep: TutorDemoOverlay.TutorialStep = .writeHere
+    @State private var walkthrough = CanvasWalkthroughState()
 
     var body: some View {
         ZStack {
@@ -17,15 +18,18 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
-                // Tutorial overlay
-                TutorDemoOverlay(
-                    tutorialStep: $tutorialStep,
-                    onDismiss: { tutorialStep = .done }
-                )
-                .zIndex(300)
+                // Walkthrough overlay
+                if let step = walkthrough.currentStep {
+                    WalkthroughPopup(
+                        step: step,
+                        onGotIt: { walkthrough.advance() },
+                        onSkip: { walkthrough.skip() }
+                    )
+                    .zIndex(300)
+                }
 
-                // Floating "Done" button — bottom-left overlay
-                if tutorialStep == .trySolving || tutorialStep == .done {
+                // Floating "Done" button — only after walkthrough
+                if walkthrough.isComplete {
                     VStack {
                         Spacer()
                         HStack {
@@ -58,14 +62,66 @@ struct TutorDemoStep: View {
                 }
             }
         }
-        // Detect first stroke → advance from step 1 to step 2
-        .onChange(of: canvasVM?.handwritingService.latexResult) { _, newLatex in
-            if let latex = newLatex, !latex.isEmpty, tutorialStep == .writeHere {
-                withAnimation(.spring(duration: 0.3)) {
-                    tutorialStep = .meetTutor
+        // MARK: - Walkthrough Detection
+        .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
+            guard let vm = canvasVM else { return }
+
+            switch walkthrough.currentStep {
+            case .drawSomething:
+                // Detect first pen stroke
+                if vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
+                    withAnimation { walkthrough.advance() }
                 }
-                // Open the sidebar so they can see the tutor
-                canvasVM?.showSidebar = true
+
+            case .tryHighlighter:
+                // Detect highlighter stroke (tool must be highlighter + drawing exists)
+                if vm.selectedTool == .highlighter && vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
+                    withAnimation { walkthrough.advance() }
+                }
+
+            case .eraseHighlight:
+                // Detect eraser use (tool is eraser and a drawing change happened)
+                if vm.selectedTool == .eraser {
+                    withAnimation { walkthrough.advance() }
+                }
+
+            default:
+                break
+            }
+        }
+        .onChange(of: canvasVM?.selectedTool) { _, newTool in
+            // Auto-advance when user selects the requested tool
+            switch walkthrough.currentStep {
+            case .tryHighlighter:
+                // Don't advance yet — wait for them to actually draw with it
+                break
+            case .eraseHighlight:
+                // Don't advance yet — wait for them to actually erase
+                break
+            default:
+                break
+            }
+        }
+        .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
+            if isOn == true && walkthrough.currentStep == .enableTutor {
+                withAnimation { walkthrough.advance() }
+            }
+        }
+        .onChange(of: canvasVM?.showHintPopover) { _, isShowing in
+            if isShowing == true && walkthrough.currentStep == .tapHint {
+                // Small delay so they can see the hint
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.5))
+                    withAnimation { walkthrough.advance() }
+                }
+            }
+        }
+        .onChange(of: canvasVM?.showRevealPopover) { _, isShowing in
+            if isShowing == true && walkthrough.currentStep == .tapAnswer {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.5))
+                    withAnimation { walkthrough.advance() }
+                }
             }
         }
     }
