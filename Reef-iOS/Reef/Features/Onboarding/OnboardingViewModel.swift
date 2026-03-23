@@ -24,6 +24,10 @@ final class OnboardingViewModel {
     // MARK: - Computed Steps (branching)
 
     var steps: [OnboardingStep] {
+        #if DEBUG
+        // Dev mode: just topic input → tutor demo
+        return [.favoriteTopic, .tutorDemo]
+        #else
         var result: [OnboardingStep] = [.welcome, .studentType]
 
         // College/grad get the major screen
@@ -48,6 +52,7 @@ final class OnboardingViewModel {
         ])
 
         return result
+        #endif
     }
 
     var currentStepIndex: Int {
