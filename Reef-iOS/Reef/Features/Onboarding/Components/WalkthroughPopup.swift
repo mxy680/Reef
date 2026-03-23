@@ -14,35 +14,25 @@ struct WalkthroughCard: View {
     @State private var typingTask: Task<Void, Never>?
     private let charDelay: UInt64 = 20_000_000 // 20ms per character
 
+    private var fullText: String {
+        let stepText = step?.text ?? ""
+        if let reaction = reactionPrefix, step == .tryHighlighter {
+            return reaction + "\n\n" + stepText
+        }
+        return stepText
+    }
+
     var body: some View {
         let colors = theme.colors
-        let stepText = step?.text ?? ""
-        let fullText: String = {
-            if let reaction = reactionPrefix, step == .tryHighlighter {
-                return reaction + "\n\n" + stepText
-            }
-            return stepText
-        }()
 
         VStack(alignment: .leading, spacing: 12) {
-            // ZStack: invisible full text reserves height, visible typed text on top
-            ZStack(alignment: .topLeading) {
-                // Invisible full text — reserves the final height
-                Text(fullText)
-                    .font(.epilogue(14, weight: .semiBold))
-                    .tracking(-0.04 * 14)
-                    .lineSpacing(3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .opacity(0)
-
-                // Visible typewriter text
-                Text(displayedText)
-                    .font(.epilogue(14, weight: .semiBold))
-                    .tracking(-0.04 * 14)
-                    .foregroundStyle(colors.text)
-                    .lineSpacing(3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            Text(displayedText)
+                .font(.epilogue(14, weight: .semiBold))
+                .tracking(-0.04 * 14)
+                .foregroundStyle(colors.text)
+                .lineSpacing(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
 
             if showButton, let step, !step.requiresAction {
                 ReefButton(step.buttonLabel, size: .compact, action: onGotIt)
@@ -63,12 +53,18 @@ struct WalkthroughCard: View {
                 .fill(colors.shadow)
                 .offset(x: 3, y: 3)
         )
-        .animation(.easeInOut(duration: 0.2), value: showButton)
-        .onChange(of: step) { _, newStep in
-            startTyping(newStep?.text ?? "")
+        .animation(.easeInOut(duration: 0.15), value: showButton)
+        .onChange(of: step) { _, _ in
+            startTyping(fullText)
+        }
+        .onChange(of: reactionPrefix) { _, _ in
+            // Re-type if reaction arrives while on tryHighlighter
+            if step == .tryHighlighter {
+                startTyping(fullText)
+            }
         }
         .onAppear {
-            startTyping(step?.text ?? "")
+            startTyping(fullText)
         }
     }
 
