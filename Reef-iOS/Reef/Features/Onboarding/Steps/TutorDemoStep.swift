@@ -50,7 +50,7 @@ struct TutorDemoStep: View {
                         }
                     }
                     .padding(.leading, 20)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 8)
                     .frame(maxWidth: .infinity, alignment: .bottomLeading)
                     .zIndex(300)
                     .transition(.opacity)
