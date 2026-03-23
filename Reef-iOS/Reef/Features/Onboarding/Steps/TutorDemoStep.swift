@@ -142,61 +142,59 @@ struct TutorDemoStep: View {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
-                Text("Before we start")
-                    .font(.epilogue(24, weight: .black))
-                    .tracking(-0.04 * 24)
-                    .foregroundStyle(colors.text)
+            VStack(spacing: 0) {
+                // Teal header
+                VStack(spacing: 10) {
+                    Text("🎧")
+                        .font(.system(size: 36))
 
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 14) {
-                        Image(systemName: "speaker.wave.2.fill")
-                            .font(.system(size: 22, weight: .medium))
-                            .foregroundStyle(ReefColors.primary)
-                            .frame(width: 32)
+                    Text("Before we start")
+                        .font(.epilogue(24, weight: .black))
+                        .tracking(-0.04 * 24)
+                        .foregroundStyle(ReefColors.white)
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Turn your sound on")
-                                .font(.epilogue(15, weight: .bold))
-                                .tracking(-0.04 * 15)
-                                .foregroundStyle(colors.text)
-
-                            Text("Your tutor talks out loud.")
-                                .font(.epilogue(12, weight: .medium))
-                                .tracking(-0.04 * 12)
-                                .foregroundStyle(colors.textMuted)
-                        }
-                    }
-
-                    HStack(spacing: 14) {
-                        Image(systemName: "applepencil.gen2")
-                            .font(.system(size: 22, weight: .medium))
-                            .foregroundStyle(ReefColors.primary)
-                            .frame(width: 32)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Grab your Apple Pencil")
-                                .font(.epilogue(15, weight: .bold))
-                                .tracking(-0.04 * 15)
-                                .foregroundStyle(colors.text)
-
-                            Text("You'll need it to write on the canvas.")
-                                .font(.epilogue(12, weight: .medium))
-                                .tracking(-0.04 * 12)
-                                .foregroundStyle(colors.textMuted)
-                        }
-                    }
+                    Text("Two quick things.")
+                        .font(.epilogue(14, weight: .medium))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(ReefColors.white.opacity(0.85))
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 24)
+                .background(ReefColors.primary)
 
+                // Checklist items
+                VStack(spacing: 0) {
+                    preDialogRow(
+                        icon: "speaker.wave.2.fill",
+                        title: "Sound on",
+                        subtitle: "Your tutor talks out loud."
+                    )
+
+                    Rectangle()
+                        .fill(colors.divider)
+                        .frame(height: 1)
+                        .padding(.horizontal, 20)
+
+                    preDialogRow(
+                        icon: "applepencil.gen2",
+                        title: "Apple Pencil ready",
+                        subtitle: "You'll write on the canvas."
+                    )
+                }
+                .padding(.vertical, 8)
+
+                // CTA
                 ReefButton("I'm ready", action: {
                     withAnimation(.easeOut(duration: 0.25)) {
                         showPreDialog = false
                     }
                 })
-                .frame(maxWidth: 200)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+                .padding(.top, 8)
             }
-            .padding(28)
-            .frame(maxWidth: 380)
+            .frame(maxWidth: 360)
             .background(colors.card)
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .overlay(
@@ -209,6 +207,42 @@ struct TutorDemoStep: View {
                     .offset(x: 5, y: 5)
             )
         }
+    }
+
+    private func preDialogRow(icon: String, title: String, subtitle: String) -> some View {
+        let colors = theme.colors
+
+        return HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(ReefColors.primary.opacity(0.1))
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(ReefColors.primary)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.epilogue(15, weight: .bold))
+                    .tracking(-0.04 * 15)
+                    .foregroundStyle(colors.text)
+
+                Text(subtitle)
+                    .font(.epilogue(12, weight: .medium))
+                    .tracking(-0.04 * 12)
+                    .foregroundStyle(colors.textMuted)
+            }
+
+            Spacer()
+
+            Image(systemName: "checkmark")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(ReefColors.primary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
     }
 
     // MARK: - Loading Card
