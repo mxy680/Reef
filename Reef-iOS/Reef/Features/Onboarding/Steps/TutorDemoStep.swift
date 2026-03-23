@@ -91,19 +91,71 @@ struct TutorDemoStep: View {
         }
     }
 
+    @State private var isPulsing = false
+    @State private var messageIndex = 0
+
+    private let loadingMessages = [
+        "Generating a problem just for you...",
+        "Compiling the math...",
+        "Teaching your tutor about \("")",  // placeholder, overridden below
+        "Almost ready...",
+    ]
+
+    private var currentLoadingMessage: String {
+        let topic = viewModel.answers.favoriteTopic
+        let messages = [
+            "Generating a problem just for you...",
+            "Compiling the math...",
+            topic.isEmpty ? "Training your tutor..." : "Teaching your tutor about \(topic)...",
+            "Almost ready...",
+        ]
+        return messages[min(messageIndex, messages.count - 1)]
+    }
+
     // MARK: - Subviews
 
     private var generatingView: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .tint(ReefColors.primary)
-            Text("Cooking up a problem...")
-                .font(.epilogue(14, weight: .medium))
-                .tracking(-0.04 * 14)
+        VStack(spacing: 24) {
+            // Pulsing icon
+            ZStack {
+                Circle()
+                    .fill(ReefColors.primary.opacity(isPulsing ? 0.15 : 0.1))
+                    .frame(width: 80, height: 80)
+
+                Image(systemName: "pencil.and.outline")
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundStyle(ReefColors.primary)
+                    .scaleEffect(isPulsing ? 1.08 : 1.0)
+            }
+
+            // Rotating message
+            Text(currentLoadingMessage)
+                .font(.epilogue(16, weight: .bold))
+                .tracking(-0.04 * 16)
+                .foregroundStyle(theme.colors.text)
+                .multilineTextAlignment(.center)
+                .id(messageIndex)
+                .transition(.opacity)
+
+            // Fun fact
+            Text("Fun fact: this problem didn't exist 10 seconds ago")
+                .font(.epilogue(12, weight: .medium))
+                .tracking(-0.04 * 12)
                 .foregroundStyle(theme.colors.textMuted)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 200)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                isPulsing = true
+            }
+            for i in 1...3 {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(Double(i) * 2.5))
+                    withAnimation(.easeInOut(duration: 0.3)) { messageIndex = i }
+                }
+            }
+        }
         .fadeUp(index: 1)
     }
 
