@@ -36,15 +36,23 @@ challenging enough to be worth solving but not so hard that a student would give
 """
 
 DEMO_PROBLEM_PROMPT = """\
-Generate a practice problem about: {topic}
+Generate a simple, straightforward practice problem about: {topic}
 Student level: {student_type}
 
 Requirements:
-- The problem should have 2-3 clear solution steps
-- Each step should involve meaningful work (not just "plug in values")
+- This is for an onboarding demo — the student should be able to solve it in under 2 minutes
+- Keep it SIMPLE. Think "first homework assignment" level, not exam level
+- 2 steps max. Each step should be one clear operation (not multi-part)
+- Use basic numbers and clean expressions — avoid fractions of fractions, nested radicals, or complex setups
 - Use $...$ for inline math and \\[...\\] for display math in the question text
 - The tutor_intro should be casual and friendly — like a TA saying "let's try this"
-- Keep the problem focused on a single concept
+- DO NOT generate word problems or story problems. Just a clean math/science problem.
+
+Examples of good difficulty:
+- "Find the derivative of $f(x) = 3x^2 + 5x - 2$"
+- "Solve for $x$: $2x + 7 = 15$"
+- "Find the integral of $\\int 4x^3 \\, dx$"
+- "A 5 kg object accelerates at $2 \\, m/s^2$. Find the net force."
 """
 
 DEMO_CHAT_SYSTEM = """\
