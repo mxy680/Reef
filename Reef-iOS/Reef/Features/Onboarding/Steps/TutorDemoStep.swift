@@ -18,19 +18,18 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
-                // Walkthrough popup — single card, fade in/out
-                VStack(alignment: .leading, spacing: 8) {
-                    Spacer()
+                // Walkthrough — persistent card with typewriter text
+                if !walkthrough.isComplete {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Spacer()
 
-                    if let step = walkthrough.currentStep {
-                        WalkthroughCard(step: step, showButtons: true) {
-                            walkthrough.advance()
-                        }
-                        .transition(.opacity)
-                        .id(step)
-                    }
+                        // Card — always present, text changes inside
+                        WalkthroughCard(
+                            step: walkthrough.currentStep,
+                            onGotIt: { walkthrough.advance() }
+                        )
 
-                    if walkthrough.currentStep != nil {
+                        // Skip — always visible, never animates
                         ReefButton(.primary, size: .compact, action: {
                             walkthrough.skip()
                         }) {
@@ -38,14 +37,13 @@ struct TutorDemoStep: View {
                                 .font(.epilogue(11, weight: .bold))
                                 .tracking(-0.04 * 11)
                         }
-                        .transition(.opacity)
                     }
+                    .padding(.leading, 20)
+                    .padding(.bottom, 20)
+                    .frame(maxWidth: .infinity, alignment: .bottomLeading)
+                    .zIndex(300)
+                    .transition(.opacity)
                 }
-                .padding(.leading, 20)
-                .padding(.bottom, 20)
-                .frame(maxWidth: .infinity, alignment: .bottomLeading)
-                .zIndex(300)
-                .allowsHitTesting(true)
 
                 // Floating "Done" button — only after walkthrough
                 if walkthrough.isComplete {
