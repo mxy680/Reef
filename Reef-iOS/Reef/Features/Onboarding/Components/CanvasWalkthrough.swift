@@ -55,25 +55,25 @@ enum WalkthroughStep: Int, CaseIterable {
             "Customize your workspace. Tap page settings and pick a background — every reef looks different, make this one yours."
         // Phase 2: Tutor Training
         case .enableTutor:
-            "Here's where it gets interesting. Tap the tutor button to wake up your AI."
+            "Here's what makes Reef different. Tap the tutor toggle — your AI reads your handwriting live, knows the answer key, and coaches you without giving it away."
         case .tutorHint:
-            "See the lightbulb on the top right? That's your lifeline. Tap it when you're stuck and it'll nudge you forward."
+            "That lightbulb is your hint button. Tap it when you're stuck — your tutor gives you a push without spoiling the answer. Training wheels, not a cheat code."
         case .tutorReveal:
-            "Want the full answer? Tap the eye icon. We won't tell anyone."
+            "Tap the eye icon to reveal the full solution for this step. Sometimes you just need to see how it's done — no judgment."
         // Phase 3: Solve It
         case .solveIt:
-            "Your turn. Solve the problem — your tutor's watching and will jump in if you need help."
+            "OK dive in. Work through the problem step by step — your tutor reads your handwriting in real time and jumps in when you need a hand."
         // Phase 4: Post-Solve
         case .voiceCommand:
-            "See the mic? Tap it and just talk. Ask your tutor anything — no typing required."
+            "Tap the mic to talk to your tutor. Ask a question about the problem, or just chat — it's like office hours but you don't have to leave your desk."
         case .sidebarToggle:
-            "Need more room to work? Click the sidebar icon on the right."
+            "Need more canvas space? Tap the sidebar icon to hide the tutor panel. Tap it again to bring it back when you want help."
         case .bugReport:
-            "Found a bug? Tap this icon to report it. We actually fix these."
+            "See the bug icon? That's your direct line to us. If something's off, let us know — we read every single report. Seriously."
         case .exportFeature:
-            "Tap export to save your work as a PDF. Perfect for submitting homework."
+            "Tap export to save your canvas as a PDF — drawings, annotations, everything. Perfect for submitting homework or saving your notes."
         case .ready:
-            "You're all set. Now go make your tutor proud."
+            "That's everything. You know the tools, you've met your tutor, and you crushed a problem. Now go dive in for real."
         }
     }
 
@@ -101,25 +101,25 @@ enum WalkthroughStep: Int, CaseIterable {
             "Customize your workspace. Tap page settings, and pick a background. Every reef looks different. Make this one yours."
         // Phase 2: Tutor Training
         case .enableTutor:
-            "Here's where it gets interesting. Tap the tutor button, to wake up your A I."
+            "Here's what makes Reef different. Tap the tutor toggle. Your A I reads your handwriting live, knows the answer key, and coaches you without giving it away."
         case .tutorHint:
-            "See the lightbulb on the top right? That's your lifeline. Tap it when you're stuck, and it'll nudge you forward."
+            "That lightbulb is your hint button. Tap it when you're stuck. Your tutor gives you a push, without spoiling the answer. Training wheels, not a cheat code."
         case .tutorReveal:
-            "Want the full answer? Tap the eye icon. We won't tell anyone."
+            "Tap the eye icon, to reveal the full solution for this step. Sometimes you just need to see how it's done. No judgment."
         // Phase 3: Solve It
         case .solveIt:
-            "Your turn. Solve the problem. Your tutor's watching, and will jump in if you need help."
+            "OK dive in. Work through the problem step by step. Your tutor reads your handwriting in real time, and jumps in when you need a hand."
         // Phase 4: Post-Solve
         case .voiceCommand:
-            "See the mic? Tap it and just talk. Ask your tutor anything. No typing required."
+            "Tap the mic to talk to your tutor. Ask a question about the problem, or just chat. It's like office hours, but you don't have to leave your desk."
         case .sidebarToggle:
-            "Need more room to work? Click the sidebar icon on the right."
+            "Need more canvas space? Tap the sidebar icon, to hide the tutor panel. Tap it again to bring it back, when you want help."
         case .bugReport:
-            "Found a bug? Tap this icon to report it. We actually fix these."
+            "See the bug icon? That's your direct line to us. If something's off, let us know. We read every single report. Seriously."
         case .exportFeature:
-            "Tap export to save your work as a P D F. Perfect for submitting homework."
+            "Tap export to save your canvas as a P D F. Drawings, annotations, everything. Perfect for submitting homework, or saving your notes."
         case .ready:
-            "You're all set. Now go make your tutor proud."
+            "That's everything. You know the tools, you've met your tutor, and you crushed a problem. Now go dive in for real."
         }
     }
 
