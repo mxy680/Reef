@@ -9,7 +9,9 @@ enum WalkthroughStep: Int, CaseIterable {
     case drawSomething = 0
     case tryHighlighter
     case eraseHighlight
-    case otherTools
+    case shapeTool
+    case lassoTool
+    case fingerDraw
     case utilityTools
 
     // Phase 2: Tutor Training
@@ -26,14 +28,18 @@ enum WalkthroughStep: Int, CaseIterable {
             "Now tap the highlighter and mark something up."
         case .eraseHighlight:
             "Now erase what you just highlighted."
-        case .otherTools:
-            "A few more tools:\n\n• Shape tool — draw a shape and Reef cleans it up. Great for diagrams.\n• Lasso — circle anything to select, move, or delete it.\n• Finger draw — lets you draw with your finger too."
+        case .shapeTool:
+            "This is the shape tool. Draw any shape and Reef automatically cleans it up. Perfect for free-body diagrams, circuits, and graphs."
+        case .lassoTool:
+            "This is the lasso tool. Circle any drawing to select it — then move it, resize it, or delete it."
+        case .fingerDraw:
+            "Finger draw mode. Turn this on if you want to draw with your finger instead of just your Pencil."
         case .utilityTools:
-            "And some handy extras:\n\n• Ruler — for straight lines.\n• Calculator — built-in, because who wants to switch apps.\n• Page settings — grid, dots, lines, or blank background."
+            "A few handy extras:\n\n• Ruler — for straight lines.\n• Calculator — built-in, because who wants to switch apps.\n• Page settings — grid, dots, lines, or blank background."
         case .enableTutor:
             "Now let's try the AI tutor. Tap the tutor button to turn it on."
         case .tutorFeatures:
-            "Your tutor gives you:\n\n• Step descriptions — what to do next.\n• 💡 Hints — tap the lightbulb when you're stuck.\n• 👁 Answers — tap to reveal the full solution."
+            "Your tutor gives you:\n\n• Step descriptions — what to do next.\n• Hints — tap the lightbulb when you're stuck.\n• Answers — tap to reveal the full solution."
         case .tutorUI:
             "A couple more things:\n\n• The progress bar shows how far you've solved.\n• The sidebar is where your tutor lives — steps, hints, and chat."
         case .ready:
@@ -74,6 +80,7 @@ final class CanvasWalkthroughState {
             return
         }
         pendingAdvanceTask?.cancel()
+        isSpeaking = false
         log("advance() from \(current)")
 
         let allSteps = WalkthroughStep.allCases
@@ -109,6 +116,7 @@ final class CanvasWalkthroughState {
 
     var drawingReaction: String?
     var waitingForReaction = false
+    var isSpeaking = false  // True once TTS audio starts playing for current step
     var debugLogs: [String] = []
     private var audioPlayer: AVAudioPlayer?
 
@@ -200,9 +208,14 @@ final class CanvasWalkthroughState {
 
     /// Generate TTS for a walkthrough step instruction.
     func speakInstruction(_ text: String) {
+        log("speakInstruction: \(text.prefix(60))...")
         Task { @MainActor in
             guard let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
-                  let token = try? await supabase.auth.session.accessToken else { return }
+                  let token = try? await supabase.auth.session.accessToken else {
+                log("speakInstruction: no URL/token, setting isSpeaking=true anyway")
+                isSpeaking = true
+                return
+            }
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
@@ -212,7 +225,11 @@ final class CanvasWalkthroughState {
             request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": text])
 
             guard let (data, response) = try? await URLSession.shared.data(for: request),
-                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                log("speakInstruction: TTS request failed")
+                isSpeaking = true
+                return
+            }
 
             struct TTSResponse: Decodable {
                 let speechAudio: String?
@@ -223,8 +240,14 @@ final class CanvasWalkthroughState {
 
             guard let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
                   let audioBase64 = result.speechAudio,
-                  let audioData = Data(base64Encoded: audioBase64) else { return }
+                  let audioData = Data(base64Encoded: audioBase64) else {
+                log("speakInstruction: decode failed")
+                isSpeaking = true
+                return
+            }
 
+            log("speakInstruction: playing audio, setting isSpeaking=true")
+            isSpeaking = true
             playAudio(audioData)
         }
     }

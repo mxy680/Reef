@@ -36,6 +36,7 @@ struct TutorDemoStep: View {
                         WalkthroughCard(
                             step: walkthrough.currentStep,
                             reactionPrefix: walkthrough.drawingReaction,
+                            readyToType: walkthrough.isSpeaking,
                             onGotIt: { walkthrough.advance() }
                         )
 

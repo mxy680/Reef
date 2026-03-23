@@ -7,6 +7,7 @@ struct WalkthroughCard: View {
 
     let step: WalkthroughStep?
     var reactionPrefix: String? = nil
+    var readyToType: Bool = true  // Set to false to wait for TTS before typing
     let onGotIt: () -> Void
 
     @State private var displayedText = ""
@@ -55,16 +56,27 @@ struct WalkthroughCard: View {
         )
         .animation(.easeInOut(duration: 0.15), value: showButton)
         .onChange(of: step) { _, _ in
-            startTyping(fullText)
+            if readyToType {
+                startTyping(fullText)
+            } else {
+                displayedText = ""
+                showButton = false
+            }
+        }
+        .onChange(of: readyToType) { _, ready in
+            if ready && displayedText.isEmpty {
+                startTyping(fullText)
+            }
         }
         .onChange(of: reactionPrefix) { _, _ in
-            // Re-type if reaction arrives while on tryHighlighter
-            if step == .tryHighlighter {
+            if step == .tryHighlighter && readyToType {
                 startTyping(fullText)
             }
         }
         .onAppear {
-            startTyping(fullText)
+            if readyToType {
+                startTyping(fullText)
+            }
         }
     }
 
