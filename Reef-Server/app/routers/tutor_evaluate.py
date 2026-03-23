@@ -139,6 +139,16 @@ async def tutor_evaluate(
     delimited_steps = f"<<<STEPS_START>>>\n{steps_overview}\n<<<STEPS_END>>>"
     delimited_step_work = f"<<<EXPECTED_WORK_START>>>\n{current_step.work}\n<<<EXPECTED_WORK_END>>>"
 
+    # Build remaining steps context (steps after the current one)
+    remaining = steps[body.step_index + 1:]
+    if remaining:
+        remaining_text = "\n".join(
+            f"Step {body.step_index + 2 + i}: {s.description} — {s.work}"
+            for i, s in enumerate(remaining)
+        )
+    else:
+        remaining_text = "(This is the final step.)"
+
     # Build prompt
     prompt = TUTOR_EVALUATE_PROMPT.format(
         question_text=f"Question {answer_key.question_number}",
@@ -146,6 +156,7 @@ async def tutor_evaluate(
         current_step_num=body.step_index + 1,
         current_step_description=current_step.description,
         current_step_work=delimited_step_work,
+        remaining_steps=remaining_text,
         student_work=delimited_student_work,
     )
 
@@ -188,10 +199,15 @@ async def tutor_evaluate(
         f"({result.input_tokens}in/{result.output_tokens}out)"
     )
 
+    # Cap steps_completed to not exceed remaining steps
+    max_steps = len(steps) - body.step_index
+    capped_steps = min(evaluation.steps_completed, max_steps)
+
     return TutorEvaluateResponse(
         progress=evaluation.progress,
         status=evaluation.status,
         mistake_explanation=evaluation.mistake_explanation,
+        steps_completed=capped_steps,
     )
 
 

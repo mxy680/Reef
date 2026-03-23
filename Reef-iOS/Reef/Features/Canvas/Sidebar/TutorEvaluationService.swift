@@ -30,8 +30,8 @@ final class TutorEvaluationService {
     var isEvaluating: Bool = false
     var chatMessages: [TutorChatMessage] = []
 
-    /// Fires when the model marks the current step as "completed".
-    var onStepCompleted: (() -> Void)?
+    /// Fires when the model marks steps as completed. Parameter = number of steps completed (1+).
+    var onStepCompleted: ((Int) -> Void)?
 
     /// Reinforcement text for the current step (from answer key).
     var pendingReinforcement: String?
@@ -116,7 +116,7 @@ final class TutorEvaluationService {
                             role: .reinforcement, latex: reinforcement, timestamp: Date()
                         ))
                     }
-                    self.onStepCompleted?()
+                    self.onStepCompleted?(response.stepsCompleted)
                 }
             } catch {
                 guard !Task.isCancelled, self.generation == myGeneration else { return }
@@ -151,10 +151,20 @@ final class TutorEvaluationService {
         let progress: Double
         let status: String
         let mistakeExplanation: String?
+        let stepsCompleted: Int
 
         enum CodingKeys: String, CodingKey {
             case progress, status
             case mistakeExplanation = "mistake_explanation"
+            case stepsCompleted = "steps_completed"
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            progress = try container.decode(Double.self, forKey: .progress)
+            status = try container.decode(String.self, forKey: .status)
+            mistakeExplanation = try container.decodeIfPresent(String.self, forKey: .mistakeExplanation)
+            stepsCompleted = try container.decodeIfPresent(Int.self, forKey: .stepsCompleted) ?? 1
         }
     }
 

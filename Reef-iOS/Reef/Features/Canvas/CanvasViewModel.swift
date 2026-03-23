@@ -299,9 +299,11 @@ final class CanvasViewModel {
         self.savedState = loaded
         self.savedTutorProgress = loaded?.tutorProgress
 
-        tutorEvalService.onStepCompleted = { [weak self] in
+        tutorEvalService.onStepCompleted = { [weak self] stepsCompleted in
             guard let self else { return }
-            self.advanceTutorStep()
+            for _ in 0..<stepsCompleted {
+                self.advanceTutorStep()
+            }
         }
 
         handwritingService.onLatexChanged = { [weak self] _ in

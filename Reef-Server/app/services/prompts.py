@@ -220,15 +220,26 @@ If an image is attached, it shows the student's drawing/diagram (e.g. free body 
 ## CRITICAL: Incomplete work is NOT a mistake
 The student is actively writing and thinking. Missing work simply means they haven't gotten there yet. ONLY mark "mistake" if the student has written something **mathematically incorrect** — a wrong number, wrong operation, wrong variable, wrong formula. Never flag missing or incomplete work as a mistake.
 
-- progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly). Base this on how much of the expected work the student has correctly written so far.
+## CRITICAL: Students can skip or combine steps
+Students don't always follow the expected steps in order. They might:
+- Write the final answer directly without showing intermediate steps
+- Combine two or three steps into a single line of work
+- Do steps out of the expected order
+- Use a different (but valid) approach than the expected steps
+
+This is FINE. If their work is mathematically correct and reaches the result of one or more steps, mark those steps as completed.
+
+## Output fields
+- progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly).
 - status:
   - "idle" — no work related to this step yet
   - "working" — partial work that is correct so far (even if far from complete)
   - "mistake" — the student wrote something **mathematically wrong** (NOT just incomplete)
-  - "completed" — step done correctly
-- mistake_explanation: ONLY when status is "mistake", provide a concise LaTeX explanation of what the student wrote incorrectly and what it should be. Use $...$ for inline math. Set to null for all other statuses.
+  - "completed" — the current step is done correctly (OR the student skipped past it with correct work)
+- mistake_explanation: ONLY when status is "mistake", provide a concise LaTeX explanation. Use $...$ for inline math. Set to null for all other statuses.
+- steps_completed: How many steps the student completed at once, starting from the current step. Default 1. If the student's work also covers subsequent steps, set to the total number of steps completed. Example: evaluating Step 1, student wrote work covering Steps 1 through 3 → steps_completed = 3.
 
-Only mark "completed" if the student has written the specific mathematical expression from the expected work. Partial but correct work toward the expression should be "working". If prior steps are completed, the student's work will contain their work too — don't penalize for that.
+Mark "completed" if the student's work achieves the mathematical result of the expected step — it does NOT need to match the exact format or notation. If prior steps are completed, the student's work will contain their prior work too — don't penalize for that.
 """
 
 TUTOR_EVALUATE_PROMPT = """\
@@ -244,11 +255,14 @@ Description: {current_step_description}
 Expected work (delimited by <<<EXPECTED_WORK_START>>> and <<<EXPECTED_WORK_END>>>):
 {current_step_work}
 
+## Remaining Steps After Current
+{remaining_steps}
+
 ## Student's Work (LaTeX)
 Content is delimited by <<<STUDENT_WORK_START>>> and <<<STUDENT_WORK_END>>> tags.
 {student_work}
 
-Evaluate ONLY Step {current_step_num}.
+Start by evaluating Step {current_step_num}. If the student's work also completes later steps, set steps_completed accordingly.
 """
 
 TUTOR_CHAT_SYSTEM = """\

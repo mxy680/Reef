@@ -26,7 +26,7 @@ class TutorEvaluation(BaseModel):
 
     progress: float = Field(
         ...,
-        description="Progress through this step: 0.0 (nothing) to 1.0 (complete)",
+        description="Progress through the current step: 0.0 (nothing) to 1.0 (complete)",
         ge=0.0,
         le=1.0,
     )
@@ -38,6 +38,11 @@ class TutorEvaluation(BaseModel):
         None,
         description="LaTeX explanation of the mistake (null unless status is mistake)",
     )
+    steps_completed: int = Field(
+        default=1,
+        description="How many steps the student completed at once. 1 = just the current step. 2+ = student skipped ahead or combined multiple steps into one.",
+        ge=1,
+    )
 
 
 class TutorEvaluateResponse(BaseModel):
@@ -46,6 +51,7 @@ class TutorEvaluateResponse(BaseModel):
     progress: float
     status: TutorStatus
     mistake_explanation: str | None = None
+    steps_completed: int = 1
 
 
 class ChatHistoryMessage(BaseModel):
