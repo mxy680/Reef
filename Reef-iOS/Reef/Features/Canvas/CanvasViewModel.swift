@@ -264,6 +264,12 @@ final class CanvasViewModel {
         guard tutorStepCount > 0 else { return 0 }
         let completedSteps = Double(currentTutorStepIndex)
         let intraStepProgress = tutorEvalService.stepProgress
+
+        // If we're on the last step and it's completed, show 100%
+        if currentTutorStepIndex == tutorStepCount - 1 && tutorEvalService.status == "completed" {
+            return 1.0
+        }
+
         return (completedSteps + intraStepProgress) / Double(tutorStepCount)
     }
 
