@@ -20,86 +20,105 @@ struct GeneratingPlanStep: View {
     var body: some View {
         let colors = theme.colors
 
-        VStack(spacing: 0) {
-            Spacer()
+        GeometryReader { geo in
+            ScrollView(showsIndicators: false) {
+                // Card
+                VStack(spacing: 28) {
+                    // Pulsing icon
+                    ZStack {
+                        Circle()
+                            .fill(ReefColors.primary.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                            .scaleEffect(isPulsing ? 1.15 : 1.0)
 
-            // Pulsing icon
-            ZStack {
-                Circle()
-                    .fill(ReefColors.primary.opacity(0.1))
-                    .frame(width: 120, height: 120)
-                    .scaleEffect(isPulsing ? 1.15 : 1.0)
+                        Circle()
+                            .fill(ReefColors.primary.opacity(0.2))
+                            .frame(width: 64, height: 64)
+                            .scaleEffect(isPulsing ? 1.1 : 1.0)
 
-                Circle()
-                    .fill(ReefColors.primary.opacity(0.2))
-                    .frame(width: 80, height: 80)
-                    .scaleEffect(isPulsing ? 1.1 : 1.0)
+                        Image(systemName: "waveform.circle.fill")
+                            .font(.system(size: 40, weight: .medium))
+                            .foregroundStyle(ReefColors.primary)
+                    }
+                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isPulsing)
 
-                Image(systemName: "waveform.circle.fill")
-                    .font(.system(size: 48, weight: .medium))
-                    .foregroundStyle(ReefColors.primary)
-            }
-            .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isPulsing)
-            .padding(.bottom, 40)
+                    // Rotating message
+                    Text(messages[messageIndex])
+                        .font(.epilogue(18, weight: .bold))
+                        .tracking(-0.04 * 18)
+                        .foregroundStyle(colors.text)
+                        .multilineTextAlignment(.center)
+                        .id(messageIndex)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .animation(.easeInOut(duration: 0.4), value: messageIndex)
 
-            // Rotating message
-            Text(messages[messageIndex])
-                .font(.epilogue(20, weight: .bold))
-                .tracking(-0.04 * 20)
-                .foregroundStyle(colors.text)
-                .multilineTextAlignment(.center)
-                .id(messageIndex)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-                .animation(.easeInOut(duration: 0.4), value: messageIndex)
-                .padding(.bottom, 32)
-
-            // Progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(colors.subtle)
-
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(
-                            LinearGradient(
-                                colors: [ReefColors.primary, ReefColors.accent],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                    // Progress bar (3D neobrutalist)
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 7)
+                            .fill(colors.subtle)
+                            .frame(height: 14)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 7)
+                                    .stroke(colors.border, lineWidth: 1.5)
                             )
-                        )
-                        .frame(width: max(10, geo.size.width * progress))
-                }
-            }
-            .frame(height: 10)
-            .frame(maxWidth: 340)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
-            .padding(.bottom, 32)
 
-            // Social proof (appears midway)
-            if progress > 0.5 {
-                HStack(spacing: 8) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(ReefColors.primary)
-                    Text("92% of Reef students say they study less and learn more")
-                        .font(.epilogue(13, weight: .semiBold))
-                        .tracking(-0.04 * 13)
-                        .foregroundStyle(theme.colors.textSecondary)
+                        GeometryReader { barGeo in
+                            RoundedRectangle(cornerRadius: 7)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [ReefColors.primary, ReefColors.accent],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: max(14, barGeo.size.width * progress))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 7)
+                                        .stroke(colors.border, lineWidth: 1.5)
+                                )
+                        }
+                        .frame(height: 14)
+                    }
+
+                    // Social proof (appears midway)
+                    if progress > 0.5 {
+                        HStack(spacing: 8) {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(ReefColors.primary)
+                            Text("92% of Reef students say they study less and learn more")
+                                .font(.epilogue(12, weight: .semiBold))
+                                .tracking(-0.04 * 12)
+                                .foregroundStyle(colors.textSecondary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(ReefColors.primary.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
-                .background(theme.colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 24)
+                .padding(.vertical, 32)
+                .frame(maxWidth: .infinity)
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(theme.colors.border, lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(colors.border, lineWidth: 2)
                 )
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(colors.shadow)
+                        .offset(x: 5, y: 5)
+                )
+                .frame(maxWidth: metrics.onboardingCardMaxWidth)
+                .padding(.horizontal, metrics.authHPadding)
+                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity)
             }
-
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(maxWidth: .infinity)
         .onAppear { startAnimation() }
     }
 
