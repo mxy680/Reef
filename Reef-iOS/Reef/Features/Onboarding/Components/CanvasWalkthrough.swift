@@ -52,7 +52,7 @@ enum WalkthroughStep: Int, CaseIterable {
         case .calculator:
             "Need to check your math? Tap the calculator — it floats right on your canvas so you never lose your place."
         case .pageSettings:
-            "Customize your workspace. Tap page settings and pick a background — every reef looks different, make this one yours."
+            "Tap page settings to change your canvas background. Graph paper for plotting, dot grid for diagrams, lined for notes — pick whatever helps you think."
         // Phase 2: Tutor Training
         case .enableTutor:
             "Here's what makes Reef different. Tap the tutor toggle — your AI reads your handwriting live, knows the answer key, and coaches you without giving it away."
@@ -98,7 +98,7 @@ enum WalkthroughStep: Int, CaseIterable {
         case .calculator:
             "Need to check your math? Tap the calculator. It floats RIGHT on your canvas, so you NEVER lose your place."
         case .pageSettings:
-            "Now let's customize your workspace. Tap page settings, and pick a background. Every reef looks different. Make THIS one yours."
+            "Tap page settings to change your canvas background. Graph paper for plotting. Dot grid for diagrams. Lined for notes. Pick whatever helps you think."
         // Phase 2: Tutor Training
         case .enableTutor:
             "HERE is what makes Reef different. Tap the tutor toggle. Your A.I. reads your handwriting LIVE, knows the answer key, and coaches you, without giving it away."
