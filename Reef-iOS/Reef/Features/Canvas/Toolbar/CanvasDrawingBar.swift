@@ -429,7 +429,7 @@ struct CanvasDrawingBar: View {
                 ) {
                     viewModel.addBlankPageAfterCurrent(drawingManager: drawingManager)
                 }
-                .scaleEffect(0.85)
+                .fixedSize()
 
                 SettingsPill(
                     label: "Add to End",
@@ -438,7 +438,7 @@ struct CanvasDrawingBar: View {
                 ) {
                     viewModel.addBlankPageAtEnd(drawingManager: drawingManager)
                 }
-                .scaleEffect(0.85)
+                .fixedSize()
             }
 
             divider
@@ -472,7 +472,7 @@ struct CanvasDrawingBar: View {
                 )
         }
         .buttonStyle(.plain)
-        .scaleEffect(0.85)
+        .fixedSize()
         .opacity(canDelete ? 1 : 0.4)
         .disabled(!canDelete)
     }
