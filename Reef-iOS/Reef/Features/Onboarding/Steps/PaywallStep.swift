@@ -7,108 +7,118 @@ struct PaywallStep: View {
 
     @Bindable var viewModel: OnboardingViewModel
 
-    @State private var selectedPlan = 1  // 0=hours, 1=unlimited monthly, 2=unlimited annual
-
-    private var greeting: String {
-        let name = auth.displayName
-        if name.isEmpty || name == "User" {
-            return "Pick your plan."
-        }
-        return "\(name), pick your plan."
-    }
+    @State private var selectedPlan = 0  // 0=free, 1=unlimited monthly, 2=unlimited annual
 
     var body: some View {
         let colors = theme.colors
 
         GeometryReader { geo in
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    // Greeting
-                    Text(greeting)
-                        .font(.epilogue(28, weight: .black))
-                        .tracking(-0.04 * 28)
-                        .foregroundStyle(colors.text)
-                        .multilineTextAlignment(.center)
-                        .fadeUp(index: 0)
-
-                    // Free hours callout
-                    HStack(spacing: 8) {
-                        Image(systemName: "gift.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(ReefColors.primary)
-                        Text("You get 3 free hours of tutoring. No card needed.")
-                            .font(.epilogue(13, weight: .semiBold))
-                            .tracking(-0.04 * 13)
-                            .foregroundStyle(colors.textSecondary)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(ReefColors.primary.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .fadeUp(index: 1)
-
-                    // Plan cards
+                // Card
+                VStack(spacing: 0) {
+                    // Header — free hours hero
                     VStack(spacing: 12) {
-                        // Hour packs
-                        planCard(
-                            title: "Pay as you go",
-                            price: "$1.99/hour",
-                            detail: "Buy hours when you need them. No commitment.",
+                        Text("🎉")
+                            .font(.system(size: 36))
+
+                        Text("3 free hours on us")
+                            .font(.epilogue(26, weight: .black))
+                            .tracking(-0.04 * 26)
+                            .foregroundStyle(ReefColors.white)
+
+                        Text("No credit card. No catch. Just start studying.")
+                            .font(.epilogue(14, weight: .medium))
+                            .tracking(-0.04 * 14)
+                            .foregroundStyle(ReefColors.white.opacity(0.85))
+                    }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 28)
+                    .frame(maxWidth: .infinity)
+                    .background(ReefColors.primary)
+
+                    // Plans
+                    VStack(spacing: 14) {
+                        // Free plan
+                        planRow(
+                            title: "Free",
+                            price: "3 hours",
+                            subtitle: "No expiry. Use them whenever.",
                             planIndex: 0,
-                            badge: nil
+                            isHighlighted: true
                         )
-                        .fadeUp(index: 2)
+
+                        // Divider with "or upgrade"
+                        HStack(spacing: 12) {
+                            Rectangle()
+                                .fill(colors.divider)
+                                .frame(height: 1)
+                            Text("or upgrade later")
+                                .font(.epilogue(11, weight: .semiBold))
+                                .tracking(-0.04 * 11)
+                                .foregroundStyle(colors.textMuted)
+                                .layoutPriority(1)
+                            Rectangle()
+                                .fill(colors.divider)
+                                .frame(height: 1)
+                        }
+                        .padding(.vertical, 4)
+
+                        // Pay as you go
+                        planRow(
+                            title: "Pay as you go",
+                            price: "$1.99/hr",
+                            subtitle: "Buy hours when you need them",
+                            planIndex: 1,
+                            isHighlighted: false
+                        )
 
                         // Unlimited monthly
-                        planCard(
+                        planRow(
                             title: "Unlimited",
                             price: "$29.99/mo",
-                            detail: "Unlimited tutoring, all courses, all features.",
-                            planIndex: 1,
-                            badge: "Most Popular"
+                            subtitle: "Everything. No limits.",
+                            planIndex: 2,
+                            isHighlighted: false
                         )
-                        .fadeUp(index: 3)
 
                         // Unlimited annual
-                        planCard(
+                        planRow(
                             title: "Unlimited Annual",
                             price: "$179.99/yr",
-                            detail: "$15/mo — save 50% vs monthly.",
-                            planIndex: 2,
-                            badge: "Best Value"
+                            subtitle: "$15/mo — save 50%",
+                            planIndex: 3,
+                            isHighlighted: false
                         )
-                        .fadeUp(index: 4)
                     }
-
-                    // Hour packs detail (shown when hours selected)
-                    if selectedPlan == 0 {
-                        VStack(spacing: 8) {
-                            hourRow(hours: "5 hours", price: "$7.99", perHour: "$1.60/hr", savings: "20% off")
-                            hourRow(hours: "10 hours", price: "$13.99", perHour: "$1.40/hr", savings: "30% off")
-                            hourRow(hours: "20 hours", price: "$24.99", perHour: "$1.25/hr", savings: "37% off")
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                        .background(colors.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(colors.border, lineWidth: 1.5)
-                        )
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
+                    .padding(20)
 
                     // CTA
-                    ReefButton("Continue with free hours", action: { viewModel.goNext() })
-                        .fadeUp(index: 5)
+                    VStack(spacing: 12) {
+                        ReefButton("Start with 3 free hours", action: { viewModel.goNext() })
 
-                    // Restore
-                    ReefButton(.ghost, action: { viewModel.goNext() }) {
-                        Text("Restore Purchases")
-                            .font(.epilogue(12, weight: .medium))
-                            .tracking(-0.04 * 12)
+                        Button(action: { viewModel.goNext() }) {
+                            Text("Restore Purchases")
+                                .font(.epilogue(12, weight: .medium))
+                                .tracking(-0.04 * 12)
+                                .foregroundStyle(colors.textMuted)
+                        }
+                        .buttonStyle(NoHighlightButtonStyle())
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
                 }
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(colors.border, lineWidth: 2)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(colors.shadow)
+                        .offset(x: 5, y: 5)
+                )
                 .frame(maxWidth: metrics.onboardingCardMaxWidth)
                 .padding(.horizontal, metrics.authHPadding)
                 .frame(minHeight: geo.size.height)
@@ -118,100 +128,77 @@ struct PaywallStep: View {
         }
     }
 
-    // MARK: - Plan Card
+    // MARK: - Plan Row
 
-    private func planCard(
+    private func planRow(
         title: String,
         price: String,
-        detail: String,
+        subtitle: String,
         planIndex: Int,
-        badge: String?
+        isHighlighted: Bool
     ) -> some View {
         let colors = theme.colors
         let isSelected = selectedPlan == planIndex
 
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title)
-                    .font(.epilogue(17, weight: .bold))
-                    .tracking(-0.04 * 17)
-                    .foregroundStyle(isSelected ? ReefColors.white : colors.text)
-
-                if let badge {
-                    Text(badge)
-                        .font(.epilogue(10, weight: .bold))
-                        .tracking(-0.02 * 10)
-                        .foregroundStyle(isSelected ? ReefColors.primary : ReefColors.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(isSelected ? ReefColors.white : ReefColors.primary)
-                        .clipShape(Capsule())
-                }
-
-                Spacer()
-
-                Text(price)
-                    .font(.epilogue(16, weight: .bold))
-                    .tracking(-0.04 * 16)
-                    .foregroundStyle(isSelected ? ReefColors.white : colors.text)
-            }
-
-            Text(detail)
-                .font(.epilogue(12, weight: .medium))
-                .tracking(-0.04 * 12)
-                .foregroundStyle(isSelected ? ReefColors.white.opacity(0.8) : colors.textMuted)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(isSelected ? ReefColors.primary : colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .reef3DPush(
-            cornerRadius: 14,
-            borderWidth: 2,
-            borderColor: colors.border,
-            shadowColor: colors.shadow,
-            action: {
-                withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                    selectedPlan = planIndex
-                }
-            }
-        )
-        .animation(.spring(duration: 0.3, bounce: 0.2), value: isSelected)
-    }
-
-    // MARK: - Hour Pack Row
-
-    private func hourRow(hours: String, price: String, perHour: String, savings: String) -> some View {
-        let colors = theme.colors
-
         return HStack {
-            Text(hours)
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(colors.text)
+            // Radio circle
+            ZStack {
+                Circle()
+                    .stroke(isSelected ? ReefColors.primary : colors.border, lineWidth: 2)
+                    .frame(width: 22, height: 22)
+
+                if isSelected {
+                    Circle()
+                        .fill(ReefColors.primary)
+                        .frame(width: 14, height: 14)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.epilogue(15, weight: .bold))
+                        .tracking(-0.04 * 15)
+                        .foregroundStyle(colors.text)
+
+                    if isHighlighted {
+                        Text("RECOMMENDED")
+                            .font(.epilogue(9, weight: .black))
+                            .tracking(0.5)
+                            .foregroundStyle(ReefColors.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(ReefColors.primary)
+                            .clipShape(Capsule())
+                    }
+                }
+
+                Text(subtitle)
+                    .font(.epilogue(12, weight: .medium))
+                    .tracking(-0.04 * 12)
+                    .foregroundStyle(colors.textMuted)
+            }
 
             Spacer()
 
-            Text(perHour)
-                .font(.epilogue(12, weight: .medium))
-                .tracking(-0.04 * 12)
-                .foregroundStyle(colors.textMuted)
-
             Text(price)
-                .font(.epilogue(14, weight: .bold))
-                .tracking(-0.04 * 14)
-                .foregroundStyle(colors.text)
-                .frame(width: 60, alignment: .trailing)
-
-            Text(savings)
-                .font(.epilogue(10, weight: .bold))
-                .tracking(-0.02 * 10)
-                .foregroundStyle(ReefColors.primary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(ReefColors.primary.opacity(0.1))
-                .clipShape(Capsule())
+                .font(.epilogue(15, weight: .bold))
+                .tracking(-0.04 * 15)
+                .foregroundStyle(isSelected ? ReefColors.primary : colors.text)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(isSelected ? ReefColors.primary.opacity(0.06) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isSelected ? ReefColors.primary : colors.divider, lineWidth: isSelected ? 2 : 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.spring(duration: 0.2)) {
+                selectedPlan = planIndex
+            }
         }
     }
 }
