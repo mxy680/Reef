@@ -55,6 +55,30 @@ struct TutorDemoStep: View {
                     .transition(.opacity)
                 }
 
+                // Debug log panel
+                #if DEBUG
+                VStack(alignment: .trailing, spacing: 0) {
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(Array(walkthrough.debugLogs.enumerated()), id: \.offset) { _, entry in
+                                Text(entry)
+                                    .font(.system(size: 9, design: .monospaced))
+                                    .foregroundStyle(.white.opacity(0.8))
+                            }
+                        }
+                        .padding(8)
+                    }
+                    .frame(width: 280, height: 200)
+                    .background(Color.black.opacity(0.75))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding(.top, 100)
+                .padding(.trailing, 8)
+                .zIndex(500)
+                .allowsHitTesting(false)
+                #endif
+
                 // Floating "Done" button — only after walkthrough
                 if walkthrough.isComplete {
                     VStack {
@@ -99,23 +123,30 @@ struct TutorDemoStep: View {
         }
         // MARK: - Walkthrough Detection (1000ms after pen lift)
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard let vm = canvasVM, !walkthrough.waitingForReaction else { return }
+            guard let vm = canvasVM else { return }
+            walkthrough.log("drawingVersion changed, step=\(String(describing: walkthrough.currentStep)), waiting=\(walkthrough.waitingForReaction)")
+            guard !walkthrough.waitingForReaction else { return }
 
             switch walkthrough.currentStep {
             case .drawSomething:
                 if vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
-                    // After 1000ms pen-lift, capture and react (which advances when done)
+                    walkthrough.log("hasDrawing=true, scheduling reaction in 1000ms")
                     walkthrough.cancelPendingAdvance()
                     pendingReactionTask?.cancel()
                     pendingReactionTask = Task { @MainActor in
                         try? await Task.sleep(for: .milliseconds(1000))
                         guard !Task.isCancelled else { return }
+                        walkthrough.log("1000ms elapsed, capturing image...")
                         if let image = vm.captureActiveQuestionImage() {
+                            walkthrough.log("image captured (\(image.count) chars), sending reaction")
                             walkthrough.reactToDrawing(imageBase64: image)
                         } else {
+                            walkthrough.log("captureActiveQuestionImage returned nil, advancing")
                             walkthrough.advance()
                         }
                     }
+                } else {
+                    walkthrough.log("hasDrawing=false")
                 }
 
             case .tryHighlighter:

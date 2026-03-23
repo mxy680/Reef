@@ -69,8 +69,12 @@ final class CanvasWalkthroughState {
     private var pendingAdvanceTask: Task<Void, Never>?
 
     func advance() {
-        guard let current = currentStep else { return }
+        guard let current = currentStep else {
+            log("advance() called but no current step")
+            return
+        }
         pendingAdvanceTask?.cancel()
+        log("advance() from \(current)")
 
         let allSteps = WalkthroughStep.allCases
         if let idx = allSteps.firstIndex(of: current), idx + 1 < allSteps.count {
@@ -83,6 +87,7 @@ final class CanvasWalkthroughState {
 
     func advanceAfterDelay(ms: Int) {
         pendingAdvanceTask?.cancel()
+        log("advanceAfterDelay(\(ms)ms) queued")
         pendingAdvanceTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(ms))
             guard !Task.isCancelled else { return }
@@ -104,7 +109,16 @@ final class CanvasWalkthroughState {
 
     var drawingReaction: String?
     var waitingForReaction = false
+    var debugLogs: [String] = []
     private var audioPlayer: AVAudioPlayer?
+
+    func log(_ message: String) {
+        let timestamp = Date().formatted(date: .omitted, time: .standard)
+        let entry = "[\(timestamp)] \(message)"
+        debugLogs.append(entry)
+        if debugLogs.count > 50 { debugLogs.removeFirst() }
+        print("[Walkthrough] \(message)")
+    }
 
     private var serverURL: String {
         Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String ?? ""
@@ -113,9 +127,11 @@ final class CanvasWalkthroughState {
     /// Send an image of what the user drew, get a funny reaction, then advance with combined text.
     func reactToDrawing(imageBase64: String) {
         waitingForReaction = true
+        log("reactToDrawing() — sending image (\(imageBase64.count) chars)")
         Task { @MainActor in
             guard let url = URL(string: "\(serverURL)/ai/walkthrough-react"),
                   let token = try? await supabase.auth.session.accessToken else {
+                log("reactToDrawing() — no URL or token, skipping")
                 waitingForReaction = false
                 advance()
                 return
@@ -128,8 +144,22 @@ final class CanvasWalkthroughState {
             request.timeoutInterval = 20
             request.httpBody = try? JSONSerialization.data(withJSONObject: ["image": imageBase64])
 
-            guard let (data, response) = try? await URLSession.shared.data(for: request),
-                  let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let result: (Data, URLResponse)
+            do {
+                result = try await URLSession.shared.data(for: request)
+            } catch {
+                log("reactToDrawing() — network error: \(error.localizedDescription)")
+                waitingForReaction = false
+                advance()
+                return
+            }
+            let (data, resp) = result
+            guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else {
+                let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                log("reactToDrawing() — server returned \(code)")
+                if let body = String(data: data, encoding: .utf8) {
+                    log("  body: \(body.prefix(200))")
+                }
                 waitingForReaction = false
                 advance()
                 return
@@ -144,17 +174,20 @@ final class CanvasWalkthroughState {
                 }
             }
 
-            if let result = try? JSONDecoder().decode(ReactResponse.self, from: data) {
-                drawingReaction = result.reaction
+            if let decoded = try? JSONDecoder().decode(ReactResponse.self, from: data) {
+                log("reactToDrawing() — got reaction: \(decoded.reaction)")
+                drawingReaction = decoded.reaction
 
                 // Speak reaction + next step together
                 if let nextStep = WalkthroughStep(rawValue: WalkthroughStep.drawSomething.rawValue + 1) {
-                    let combined = result.reaction + " " + nextStep.text
+                    let stepText = nextStep.text
                         .replacingOccurrences(of: "• ", with: "")
                         .replacingOccurrences(of: "\n\n", with: ". ")
                         .replacingOccurrences(of: "\n", with: ". ")
+                    let combined = decoded.reaction + " " + stepText
+                    log("Speaking combined: \(combined.prefix(80))...")
                     speakInstruction(combined)
-                } else if let audioBase64 = result.speechAudio,
+                } else if let audioBase64 = decoded.speechAudio,
                           let audioData = Data(base64Encoded: audioBase64) {
                     playAudio(audioData)
                 }
