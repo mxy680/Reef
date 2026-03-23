@@ -53,14 +53,6 @@ struct OnboardingStepShell<Content: View>: View {
                         }
 
                         ReefButton(forwardLabel, disabled: !canAdvance, action: onForward)
-
-                        #if DEBUG
-                        ReefButton(.ghost, action: onForward) {
-                            Text("Skip")
-                                .font(.epilogue(12, weight: .medium))
-                                .tracking(-0.04 * 12)
-                        }
-                        #endif
                     }
                     .padding(.top, 28)
                 }

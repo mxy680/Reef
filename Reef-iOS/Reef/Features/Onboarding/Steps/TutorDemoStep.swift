@@ -16,15 +16,15 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
-                // Floating "Done" button — bottom-right overlay
+                // Floating "Done" button — bottom-left overlay
                 VStack {
                     Spacer()
                     HStack {
-                        Spacer()
                         ReefButton("Done — show me my plan", size: .compact, action: {
                             viewModel.goNext()
                         })
                         .padding(20)
+                        Spacer()
                     }
                 }
                 .ignoresSafeArea(edges: .bottom)
