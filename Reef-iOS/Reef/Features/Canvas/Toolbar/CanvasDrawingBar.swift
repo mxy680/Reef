@@ -420,60 +420,50 @@ struct CanvasDrawingBar: View {
 
             divider
 
-            // Add page actions
-            HStack(spacing: 4) {
-                SettingsPill(
-                    label: "Add After",
-                    isSelected: false,
-                    horizontalPadding: 10
-                ) {
-                    viewModel.addBlankPageAfterCurrent(drawingManager: drawingManager)
-                }
-                .fixedSize()
-
-                SettingsPill(
-                    label: "Add to End",
-                    isSelected: false,
-                    horizontalPadding: 10
-                ) {
-                    viewModel.addBlankPageAtEnd(drawingManager: drawingManager)
-                }
-                .fixedSize()
+            // Add page after current
+            Button {
+                viewModel.addBlankPageAfterCurrent(drawingManager: drawingManager)
+            } label: {
+                Image(systemName: "plus.rectangle.on.rectangle")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 38, height: 48)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+
+            // Add page at end
+            Button {
+                viewModel.addBlankPageAtEnd(drawingManager: drawingManager)
+            } label: {
+                Image(systemName: "rectangle.stack.badge.plus")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 38, height: 48)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
             divider
 
-            // Delete page — red tinted label via overlay
-            deletePagePill
+            // Delete page
+            deletePageButton
         }
         .transition(.opacity)
     }
 
-    private var deletePagePill: some View {
+    private var deletePageButton: some View {
         let canDelete = viewModel.pageCount > 1
         return Button {
             viewModel.deleteCurrentPage(drawingManager: drawingManager)
         } label: {
-            Text("Delete Page")
-                .font(.epilogue(12, weight: .bold))
-                .tracking(-0.04 * 12)
-                .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(Color.white)
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule().stroke(Color(red: 0.85, green: 0.20, blue: 0.20), lineWidth: 1.5)
-                )
-                .background(
-                    Capsule()
-                        .fill(Color.black.opacity(0.25))
-                        .offset(x: 3, y: 3)
-                )
+            Image(systemName: "rectangle.badge.minus")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20).opacity(canDelete ? 1 : 0.4))
+                .frame(width: 38, height: 48)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .fixedSize()
-        .opacity(canDelete ? 1 : 0.4)
         .disabled(!canDelete)
     }
 
