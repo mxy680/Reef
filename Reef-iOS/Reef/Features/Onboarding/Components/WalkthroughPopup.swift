@@ -41,9 +41,9 @@ struct WalkthroughPopup: View {
                     .offset(x: 4, y: 4)
             )
 
-            // Skip button — teal primary
-            ReefButton("Skip tutorial", size: .compact, action: onSkip)
-                .frame(maxWidth: 160)
+            // Skip button — teal primary, same width as card
+            ReefButton("Skip tutorial", action: onSkip)
+                .frame(maxWidth: 340)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .padding(.leading, 20)
