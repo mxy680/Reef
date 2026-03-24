@@ -18,7 +18,7 @@ from app.models.tutor import (
 from app.services.llm_client import LLMClient
 from app.services.prompts import (
     TUTOR_CHAT_PROMPT, TUTOR_CHAT_SYSTEM,
-    TUTOR_EVALUATE_PROMPT, TUTOR_EVALUATE_SYSTEM,
+    TUTOR_EVALUATE_DYNAMIC, TUTOR_EVALUATE_STATIC, TUTOR_EVALUATE_SYSTEM,
 )
 
 log = logging.getLogger(__name__)
@@ -27,9 +27,27 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 TUTOR_MODEL = "google/gemini-3-flash-preview"
 
+# In-memory answer key cache: (doc_id, question_number) → (QuestionAnswer, timestamp)
+# Avoids hitting Supabase on every eval for the same question.
+# Entries expire after 10 minutes.
+_answer_key_cache: dict[tuple[str, int], tuple[QuestionAnswer, float]] = {}
+_AK_CACHE_TTL = 600  # 10 minutes
+
 
 async def _fetch_answer_key(document_id: str, question_number: int, user_id: str) -> QuestionAnswer:
-    """Fetch a single answer key row from Supabase, verifying ownership via the documents table."""
+    """Fetch a single answer key row from Supabase, with in-memory caching."""
+    import time as _time
+
+    cache_key = (document_id, question_number)
+
+    # Check cache
+    if cache_key in _answer_key_cache:
+        cached, ts = _answer_key_cache[cache_key]
+        if _time.time() - ts < _AK_CACHE_TTL:
+            return cached
+        else:
+            del _answer_key_cache[cache_key]
+
     headers = {
         "apikey": settings.supabase_service_role_key,
         "Authorization": f"Bearer {settings.supabase_service_role_key}",
@@ -62,7 +80,19 @@ async def _fetch_answer_key(document_id: str, question_number: int, user_id: str
     if not rows:
         raise HTTPException(status_code=404, detail="Answer key not found")
 
-    return QuestionAnswer.model_validate_json(rows[0]["answer_text"])
+    answer = QuestionAnswer.model_validate_json(rows[0]["answer_text"])
+
+    # Cache for future evals on the same question
+    _answer_key_cache[cache_key] = (answer, _time.time())
+
+    # Lazy cleanup: remove expired entries if cache grows
+    if len(_answer_key_cache) > 100:
+        now = _time.time()
+        expired = [k for k, (_, ts) in _answer_key_cache.items() if now - ts > _AK_CACHE_TTL]
+        for k in expired:
+            del _answer_key_cache[k]
+
+    return answer
 
 
 def _resolve_steps(answer_key: QuestionAnswer, part_label: str | None) -> list:
@@ -158,16 +188,22 @@ async def tutor_evaluate(
             lines.append(f"<<<{label}>>>\n{msg.text}\n<<</{label}>>>")
         history_text = "\n".join(lines)
 
-    # Build prompt
-    prompt = TUTOR_EVALUATE_PROMPT.format(
+    # Build prompts — static (cacheable) in system, dynamic in user
+    static_context = TUTOR_EVALUATE_STATIC.format(
         question_text=f"Question {answer_key.question_number}",
         steps_overview=delimited_steps,
         current_step_num=body.step_index + 1,
         current_step_description=current_step.description,
         current_step_work=delimited_step_work,
         remaining_steps=remaining_text,
+    )
+    # Combine system instructions + static question context for caching
+    full_system = TUTOR_EVALUATE_SYSTEM + "\n\n" + static_context
+
+    dynamic_prompt = TUTOR_EVALUATE_DYNAMIC.format(
         student_work=delimited_student_work,
         tutor_history=history_text,
+        current_step_num=body.step_index + 1,
     )
 
     # Collect images: figure URLs + student drawing
@@ -178,7 +214,7 @@ async def tutor_evaluate(
         except Exception:
             pass
 
-    # Call LLM
+    # Call LLM — static context in system message enables prompt caching
     llm = LLMClient(
         api_key=settings.openrouter_api_key,
         model=TUTOR_MODEL,
@@ -187,8 +223,8 @@ async def tutor_evaluate(
 
     result = await asyncio.to_thread(
         llm.generate,
-        prompt=prompt,
-        system_prompt=TUTOR_EVALUATE_SYSTEM,
+        prompt=dynamic_prompt,
+        system_prompt=full_system,
         images=images or None,
         response_schema=TutorEvaluation.model_json_schema(),
         timeout=30.0,
@@ -329,22 +365,7 @@ async def tutor_chat(
 
 
 async def _generate_tts(text: str) -> str | None:
-    """Generate TTS audio via Groq and return base64-encoded audio."""
-    import base64
-
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.post(
-            "https://api.groq.com/openai/v1/audio/speech",
-            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
-            json={
-                "model": "canopylabs/orpheus-v1-english",
-                "input": text,
-                "voice": "autumn",
-                "response_format": "wav",
-            },
-        )
-    if resp.status_code != 200:
-        log.warning(f"[tts] Groq TTS returned {resp.status_code}: {resp.text[:200]}")
-        return None
-
-    return base64.b64encode(resp.content).decode()
+    """Generate TTS audio via Groq with Supabase caching."""
+    # Reuse the cached TTS pipeline from demo_problem
+    from app.routers.demo_problem import _generate_tts as _cached_tts
+    return await _cached_tts(text)

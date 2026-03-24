@@ -244,7 +244,11 @@ This is FINE. If their work is mathematically correct and reaches the result of 
 Mark "completed" if the student's work achieves the mathematical result of the expected step — it does NOT need to match the exact format or notation. If prior steps are completed, the student's work will contain their prior work too — don't penalize for that.
 """
 
-TUTOR_EVALUATE_PROMPT = """\
+## Tutor evaluation prompt — split into STATIC (cacheable) and DYNAMIC parts.
+## Static context goes into the system message for prompt caching.
+## Dynamic content (student work, history) goes into the user message.
+
+TUTOR_EVALUATE_STATIC = """\
 ## Question
 {question_text}
 
@@ -259,7 +263,9 @@ Expected work (delimited by <<<EXPECTED_WORK_START>>> and <<<EXPECTED_WORK_END>>
 
 ## Remaining Steps After Current
 {remaining_steps}
+"""
 
+TUTOR_EVALUATE_DYNAMIC = """\
 ## Student's Work (LaTeX)
 Content is delimited by <<<STUDENT_WORK_START>>> and <<<STUDENT_WORK_END>>> tags.
 {student_work}
@@ -270,6 +276,9 @@ This is the conversation history so far — mistakes you flagged, encouragement 
 
 Start by evaluating Step {current_step_num}. If the student's work also completes later steps, set steps_completed accordingly. Do NOT repeat feedback that was already given in the history above.
 """
+
+# Legacy single-prompt format (for backward compat)
+TUTOR_EVALUATE_PROMPT = TUTOR_EVALUATE_STATIC + "\n" + TUTOR_EVALUATE_DYNAMIC
 
 TUTOR_CHAT_SYSTEM = """\
 You are a chill TA hanging out with a student during office hours. You're their friend who happens to know the subject well.
