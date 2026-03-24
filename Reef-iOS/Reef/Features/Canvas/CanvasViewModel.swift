@@ -323,6 +323,16 @@ final class CanvasViewModel {
             self.advanceTutorSteps(count: stepsCompleted)
         }
 
+        tutorEvalService.onAnswerKeyUpdated = { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                await self.loadAnswerKeys()
+                self.currentTutorStepIndex = 0
+                self.tutorEvalService.resetForNextStep()
+                self.updatePendingReinforcement()
+            }
+        }
+
         handwritingService.onLatexChanged = { [weak self] _ in
             guard let self else { return }
             self.triggerTutorEvaluation()

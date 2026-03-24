@@ -88,6 +88,7 @@ class TutorChatLLMOutput(BaseModel):
 
     reply: str = Field(..., description="Written response with $...$ math notation for display")
     speech: str = Field(..., max_length=500, description="Verbal response — no math notation, say numbers and formulas in words, 1-2 sentences max")
+    correction: str | None = Field(None, description="If the student corrected a misread value, wrong figure interpretation, or incorrect problem data, describe what was wrong and what the correct interpretation is. Null if no correction.")
 
 
 class TutorChatResponse(BaseModel):
@@ -95,3 +96,4 @@ class TutorChatResponse(BaseModel):
 
     reply: str
     speech_audio: str | None = None  # base64-encoded audio
+    answer_key_updated: bool = False  # If true, iOS should reload answer keys

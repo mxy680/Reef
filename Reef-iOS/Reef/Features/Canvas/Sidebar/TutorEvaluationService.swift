@@ -36,6 +36,9 @@ final class TutorEvaluationService {
     /// Reinforcement text for the current step (from answer key).
     var pendingReinforcement: String?
 
+    /// Fires when the tutor corrects its own answer key. CanvasViewModel should reload.
+    var onAnswerKeyUpdated: (() -> Void)?
+
     // MARK: - Private
 
     private var generation: Int = 0
@@ -303,6 +306,10 @@ final class TutorEvaluationService {
                    let audioData = Data(base64Encoded: audioBase64) {
                     self.playAudio(audioData)
                 }
+                // If the tutor corrected its answer key, notify CanvasViewModel to reload
+                if response.answerKeyUpdated {
+                    self.onAnswerKeyUpdated?()
+                }
             } catch {
                 self.chatMessages.append(TutorChatMessage(
                     role: .answer, latex: "Couldn't reach the tutor right now. Try again in a moment.", timestamp: Date()
@@ -342,10 +349,12 @@ final class TutorEvaluationService {
     private struct ChatResponse: Decodable {
         let reply: String
         let speechAudio: String?
+        let answerKeyUpdated: Bool
 
         enum CodingKeys: String, CodingKey {
             case reply
             case speechAudio = "speech_audio"
+            case answerKeyUpdated = "answer_key_updated"
         }
     }
 

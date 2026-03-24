@@ -268,6 +268,55 @@ async def tutor_evaluate(
     )
 
 
+async def _regenerate_answer_key(
+    document_id: str,
+    question_number: int,
+    user_id: str,
+    correction: str,
+    answer_key: QuestionAnswer,
+) -> None:
+    """Regenerate an answer key after a student correction, using the inference API."""
+    from app.services.inference_client import call_inference_api, extract_json
+    from app.services.answer_keys import _supabase_headers
+
+    prompt = (
+        f"The following answer key was generated for a homework question, but the student "
+        f"pointed out an error in the problem interpretation.\n\n"
+        f"## Original Answer Key\n```json\n{answer_key.model_dump_json(indent=2)}\n```\n\n"
+        f"## Student's Correction\n{correction}\n\n"
+        f"## Task\n"
+        f"Regenerate the COMPLETE answer key with the correction applied. Fix all affected steps, "
+        f"work, final answers, and reinforcement messages. Keep the same JSON structure.\n"
+        f"Return ONLY valid JSON — no markdown, no explanation, no code fences.\n"
+        f"```json\n{json.dumps(QuestionAnswer.model_json_schema(), indent=2)}\n```"
+    )
+
+    raw_content, _ = await call_inference_api(prompt)
+    content = extract_json(raw_content)
+    new_answer = QuestionAnswer.model_validate_json(content)
+
+    # Store updated answer key
+    headers = _supabase_headers()
+    headers["Prefer"] = "resolution=merge-duplicates,return=minimal"
+    async with httpx.AsyncClient(timeout=10) as client:
+        await client.post(
+            f"{settings.supabase_url}/rest/v1/answer_keys",
+            headers=headers,
+            json={
+                "document_id": document_id,
+                "question_number": question_number,
+                "answer_text": new_answer.model_dump_json(),
+                "model": "claude-opus-4-6-correction",
+                "input_tokens": 0,
+                "output_tokens": 0,
+            },
+        )
+
+    # Invalidate memory cache
+    cache_key = (document_id, question_number, user_id)
+    _answer_key_cache.pop(cache_key, None)
+
+
 @router.post("/tutor-chat", response_model=TutorChatResponse)
 async def tutor_chat(
     body: TutorChatRequest,
@@ -353,6 +402,23 @@ async def tutor_chat(
         f"({result.input_tokens}in/{result.output_tokens}out)"
     )
 
+    # If the LLM detected a problem data correction, regenerate the answer key
+    answer_key_updated = False
+    if output.correction:
+        log.info(f"[tutor-chat] Correction detected for Q{body.question_number}: {output.correction[:100]}")
+        try:
+            await _regenerate_answer_key(
+                document_id=body.document_id,
+                question_number=body.question_number,
+                user_id=user.id,
+                correction=output.correction,
+                answer_key=answer_key,
+            )
+            answer_key_updated = True
+            log.info(f"[tutor-chat] Answer key regenerated for Q{body.question_number}")
+        except Exception as e:
+            log.warning(f"[tutor-chat] Answer key regeneration failed: {e}")
+
     # Generate TTS audio via Groq
     speech_audio = None
     if settings.groq_api_key and output.speech:
@@ -361,7 +427,7 @@ async def tutor_chat(
         except Exception as e:
             log.warning(f"[tutor-chat] TTS failed: {e}")
 
-    return TutorChatResponse(reply=output.reply, speech_audio=speech_audio)
+    return TutorChatResponse(reply=output.reply, speech_audio=speech_audio, answer_key_updated=answer_key_updated)
 
 
 async def _generate_tts(text: str) -> str | None:
