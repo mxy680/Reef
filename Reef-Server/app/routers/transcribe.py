@@ -68,8 +68,14 @@ async def transcribe_strokes(
     if not settings.mathpix_app_id or not settings.mathpix_app_key:
         raise HTTPException(status_code=503, detail="Mathpix credentials not configured")
 
-    from app.services.mathpix_pool import acquire_session
-    token, sid, _ = await acquire_session()
+    # Use the client's session for temporal continuity, fall back to pool if not provided
+    if body.app_token and body.session_id:
+        token = body.app_token
+        sid = body.session_id
+    else:
+        from app.services.mathpix_pool import acquire_session
+        token, sid, _ = await acquire_session()
+
     headers = {"app_token": token, "Content-Type": "application/json"}
 
     payload: dict = {
