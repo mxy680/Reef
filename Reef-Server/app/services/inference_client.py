@@ -35,7 +35,9 @@ async def call_inference_api(prompt: str, images: list[bytes] | None = None) -> 
             for img in images
         ]
 
-    timeout = httpx.Timeout(connect=10.0, read=60.0, write=10.0, pool=5.0)
+    # Vision requests with large images need more time (Opus reasoning)
+    read_timeout = 120.0 if images else 60.0
+    timeout = httpx.Timeout(connect=10.0, read=read_timeout, write=10.0, pool=5.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
         async with client.stream(
             "POST",
@@ -56,9 +58,15 @@ async def call_inference_api(prompt: str, images: list[bytes] | None = None) -> 
                     break
                 try:
                     event = json.loads(payload)
-                    if event.get("type") == "done":
+                    event_type = event.get("type", "")
+                    if event_type == "done":
                         inner = event.get("data", {})
                         result_text = inner.get("result", "")
+                        if inner.get("is_error"):
+                            logger.warning(f"[inference] API returned error: {inner.get('result', '')[:200]}")
+                        break
+                    elif event_type == "error":
+                        logger.warning(f"[inference] Stream error event: {payload[:200]}")
                         break
                 except json.JSONDecodeError:
                     logger.debug(f"[inference] Malformed SSE line: {payload[:80]}")
