@@ -379,7 +379,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         ]
         if answer_questions:
             task = asyncio.create_task(
-                _generate_answer_keys_safe(document_id, answer_questions)
+                _generate_answer_keys_safe(document_id, answer_questions, mathpix_images)
             )
             _background_tasks.add(task)
             task.add_done_callback(_background_tasks.discard)
@@ -448,11 +448,13 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
 
 
 async def _generate_answer_keys_safe(
-    document_id: str, questions: list[tuple[int, dict]],
+    document_id: str,
+    questions: list[tuple[int, dict]],
+    mathpix_images: dict[str, bytes] | None = None,
 ) -> None:
     """Wrapper that catches all exceptions so fire-and-forget never leaks."""
     try:
-        await generate_answer_keys(document_id, questions)
+        await generate_answer_keys(document_id, questions, image_data=mathpix_images)
     except Exception as e:
         logger.error(f"  [v2-answer-key] Top-level failure for {document_id}: {e}")
 

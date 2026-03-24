@@ -77,12 +77,22 @@ async def _generate_single_answer(
     document_id: str,
     question_number: int,
     question_dict: dict,
+    figure_images: list[bytes] | None = None,
 ) -> None:
     """Generate and store the answer for one question. Never raises."""
     try:
         prompt = ANSWER_KEY_PROMPT.format(
             question_json=json.dumps(question_dict, indent=2),
         )
+
+        if figure_images:
+            prompt += (
+                "\n\n## Attached Figures\n"
+                f"{len(figure_images)} figure image(s) are attached. These are the diagrams "
+                "referenced in the question (e.g. free body diagrams, circuits, beam layouts, "
+                "geometric configurations). Examine them carefully — the values, angles, "
+                "dimensions, and labels in the figures are critical for generating correct solutions."
+            )
 
         # Add JSON schema instructions for non-structured-output APIs
         schema_instruction = (
@@ -98,7 +108,10 @@ async def _generate_single_answer(
         # Try Reef inference API first (Claude Opus 4.6)
         if settings.reef_inference_token:
             try:
-                raw_content, model_used = await call_inference_api(prompt + schema_instruction)
+                raw_content, model_used = await call_inference_api(
+                    prompt + schema_instruction,
+                    images=figure_images,
+                )
                 content = extract_json(raw_content)
                 answer = QuestionAnswer.model_validate_json(content)
                 logger.info(f"  [answer-key] Q{question_number}: using Reef inference (Opus 4.6)")
@@ -118,6 +131,7 @@ async def _generate_single_answer(
             result = await asyncio.to_thread(
                 llm_client.generate,
                 prompt=prompt,
+                images=figure_images,
                 response_schema=QuestionAnswer.model_json_schema(),
                 timeout=120.0,
             )
@@ -176,18 +190,32 @@ async def _generate_single_answer(
 async def generate_answer_keys(
     document_id: str,
     questions: list[tuple[int, dict]],
+    image_data: dict[str, bytes] | None = None,
 ) -> None:
     """Generate answer keys for all questions in parallel. Fire-and-forget.
 
     Args:
         document_id: Supabase document ID.
         questions: list of ``(question_number, question_dict)`` tuples.
+        image_data: dict of ``{filename: image_bytes}`` from Mathpix OCR.
     """
     if not questions or not settings.supabase_service_role_key:
         return
 
+    def _get_question_images(q_dict: dict) -> list[bytes] | None:
+        """Collect figure image bytes for a question and its parts."""
+        if not image_data:
+            return None
+        figures: set[str] = set(q_dict.get("figures", []))
+        for part in q_dict.get("parts", []):
+            figures.update(part.get("figures", []))
+            for sub in part.get("parts", []):
+                figures.update(sub.get("figures", []))
+        imgs = [image_data[f] for f in figures if f in image_data]
+        return imgs if imgs else None
+
     tasks = [
-        _generate_single_answer(document_id, q_num, q_dict)
+        _generate_single_answer(document_id, q_num, q_dict, figure_images=_get_question_images(q_dict))
         for q_num, q_dict in questions
     ]
 
