@@ -81,6 +81,16 @@ struct CanvasInfoStrip: View {
 
             Spacer(minLength: 8)
 
+            // "Generating tutor..." centered in toolbar while answer keys load
+            if viewModel.isReconstructed && viewModel.isLoadingAnswerKeys && viewModel.answerKeys.isEmpty {
+                Text("Generating tutor — hang tight...")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
+                    .transition(.opacity)
+
+                Spacer(minLength: 8)
+            }
+
             if viewModel.tutorModeOn {
                 // Tutor mode: progress bar | hint + reveal
                 HStack(spacing: 4) {
@@ -142,14 +152,6 @@ struct CanvasInfoStrip: View {
 
             // Tutor mode toggle
             HStack(spacing: 8) {
-                // "Generating tutor..." label when answer keys are loading
-                if viewModel.isReconstructed && viewModel.isLoadingAnswerKeys && viewModel.answerKeys.isEmpty {
-                    Text("Generating tutor...")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.white.opacity(0.5))
-                        .transition(.opacity)
-                }
-
                 Image(viewModel.tutorModeOn ? "canvas.tutor_on" : "canvas.tutor_off")
                     .renderingMode(.template)
                     .resizable()

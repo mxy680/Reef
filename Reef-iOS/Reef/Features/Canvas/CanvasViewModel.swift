@@ -291,16 +291,19 @@ final class CanvasViewModel {
 
         answerKeys = result.answers
         isLoadingAnswerKeys = false
-        if !deferTutorMode {
-            tutorModeOn = !answerKeys.isEmpty
-            if tutorModeOn {
-                showSidebar = true
-                if activeQuestionLabel == nil {
-                    activeQuestionLabel = "Q1a"
-                }
-                restoreTutorStateForLabel(activeQuestionLabel!)
-                updatePendingReinforcement()
+        if !deferTutorMode && !answerKeys.isEmpty {
+            // Set active question label first so currentSteps resolves correctly
+            if activeQuestionLabel == nil {
+                activeQuestionLabel = "Q1a"
             }
+            // Reset tutor step to 0 for clean start
+            currentTutorStepIndex = 0
+            tutorEvalService.resetForNextStep()
+            updatePendingReinforcement()
+            // Enable tutor mode and show sidebar
+            tutorModeOn = true
+            showSidebar = true
+            restoreTutorStateForLabel(activeQuestionLabel!)
         }
     }
 
