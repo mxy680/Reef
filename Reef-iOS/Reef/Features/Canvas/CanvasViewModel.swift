@@ -292,15 +292,12 @@ final class CanvasViewModel {
         answerKeys = result.answers
         isLoadingAnswerKeys = false
         if !deferTutorMode && !answerKeys.isEmpty {
-            // Set active question to the first available answer key
-            if activeQuestionLabel == nil || answerKeys[activeQuestionNumber] == nil {
-                // Find the first question number that has an answer key
-                if let firstQ = answerKeys.keys.sorted().first {
-                    let ak = answerKeys[firstQ]!
-                    let partLabel = ak.parts.first?.label ?? "a"
-                    activeQuestionLabel = "Q\(firstQ)\(partLabel)"
-                }
+            // Always start on Q1a
+            if activeQuestionLabel == nil {
+                activeQuestionLabel = "Q1a"
             }
+            // Only enable tutor mode once the current question's answer key exists
+            guard answerKeys[activeQuestionNumber] != nil else { return }
             // Reset tutor step to 0 for clean start
             currentTutorStepIndex = 0
             tutorEvalService.resetForNextStep()
@@ -308,9 +305,7 @@ final class CanvasViewModel {
             // Enable tutor mode and show sidebar
             tutorModeOn = true
             showSidebar = true
-            if let label = activeQuestionLabel {
-                restoreTutorStateForLabel(label)
-            }
+            restoreTutorStateForLabel(activeQuestionLabel!)
         }
     }
 
