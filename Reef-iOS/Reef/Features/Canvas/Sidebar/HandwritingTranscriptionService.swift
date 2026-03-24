@@ -3,7 +3,7 @@ import PencilKit
 @preconcurrency import Supabase
 
 /// Sends PKDrawing strokes to the server for Mathpix real-time transcription.
-/// Uses Mathpix session-based Strokes API — sends on every new stroke.
+/// Polls every 400ms for drawing changes instead of reacting to each stroke.
 /// Sessions last 5 minutes; a new session is created automatically when expired.
 /// Only sends strokes within the active question region.
 @Observable
@@ -22,9 +22,83 @@ final class HandwritingTranscriptionService {
     private(set) var appToken: String?
     private(set) var expiresAt: Date?
     private var generation: Int = 0
-    private var transcribeTask: Task<Void, Never>?
+    private var pollingTask: Task<Void, Never>?
+    private var lastStrokeCount: Int = 0
+    private var lastStrokeBoundsHash: Int = 0
 
     private static let sessionTTL: TimeInterval = 300
+    private static let pollInterval: Duration = .milliseconds(400)
+
+    // MARK: - Polling
+
+    /// The current drawing and region context, updated by CanvasView on every drawing change.
+    var currentDrawing: PKDrawing?
+    var currentRegions: [PartRegion]?
+    var screenScale: CGFloat = 2.0
+
+    /// Start polling for drawing changes every 400ms.
+    func startPolling() {
+        guard pollingTask == nil else { return }
+        pollingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.pollInterval)
+                guard let self, !Task.isCancelled else { return }
+                self.pollForChanges()
+            }
+        }
+    }
+
+    /// Stop polling.
+    func stopPolling() {
+        pollingTask?.cancel()
+        pollingTask = nil
+    }
+
+    /// Check if drawing changed since last poll and trigger transcription if so.
+    private func pollForChanges() {
+        guard let drawing = currentDrawing else { return }
+
+        // Filter strokes to active question region
+        let relevantStrokes: [PKStroke]
+        if let regions = currentRegions, !regions.isEmpty {
+            relevantStrokes = drawing.strokes.filter { stroke in
+                let midY = Double(stroke.renderBounds.midY) / Double(screenScale)
+                return regions.contains { region in
+                    midY >= region.yStart && midY <= region.yEnd
+                }
+            }
+        } else {
+            relevantStrokes = drawing.strokes
+        }
+
+        guard !relevantStrokes.isEmpty else {
+            if !latexResult.isEmpty {
+                latexResult = ""
+            }
+            lastStrokeCount = 0
+            lastStrokeBoundsHash = 0
+            return
+        }
+
+        // Quick change detection: stroke count + bounds hash
+        let boundsHash = relevantStrokes.reduce(0) { hash, stroke in
+            hash ^ stroke.renderBounds.origin.x.hashValue ^ stroke.renderBounds.origin.y.hashValue
+                 ^ stroke.renderBounds.size.width.hashValue ^ stroke.renderBounds.size.height.hashValue
+        }
+
+        guard relevantStrokes.count != lastStrokeCount || boundsHash != lastStrokeBoundsHash else {
+            return // No change
+        }
+
+        lastStrokeCount = relevantStrokes.count
+        lastStrokeBoundsHash = boundsHash
+
+        // Transcribe
+        generation += 1
+        Task { [weak self, relevantStrokes] in
+            await self?.performTranscription(strokes: relevantStrokes)
+        }
+    }
 
     // MARK: - Session Management
 
@@ -68,43 +142,6 @@ final class HandwritingTranscriptionService {
     }
 
     // MARK: - Transcription
-
-    /// Called on every drawing change. Filters strokes to the active question region.
-    /// - Parameters:
-    ///   - drawing: The full page drawing
-    ///   - activeRegions: The regions for the active question on the current local page (nil = send all strokes)
-    ///   - screenScale: The screen scale factor to convert renderBounds to PDF points
-    func onDrawingChanged(drawing: PKDrawing, activeRegions: [PartRegion]?, screenScale: CGFloat = 2.0) {
-        // Filter strokes to active question region
-        let relevantStrokes: [PKStroke]
-        if let regions = activeRegions, !regions.isEmpty {
-            relevantStrokes = drawing.strokes.filter { stroke in
-                let midY = Double(stroke.renderBounds.midY) / Double(screenScale)
-                return regions.contains { region in
-                    midY >= region.yStart && midY <= region.yEnd
-                }
-            }
-        } else {
-            relevantStrokes = drawing.strokes
-        }
-
-        guard !relevantStrokes.isEmpty else {
-            latexResult = ""
-            return
-        }
-
-        transcribeTask?.cancel()
-
-        // Debounce: only transcribe after 200ms of no new strokes (pencil lifted)
-        let debounceGeneration = generation + 1
-        generation = debounceGeneration
-
-        transcribeTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(200))
-            guard let self, self.generation == debounceGeneration, !Task.isCancelled else { return }
-            await self.performTranscription(strokes: relevantStrokes)
-        }
-    }
 
     private func performTranscription(strokes relevantStrokes: [PKStroke]) async {
         // Extract stroke coordinates and normalize to (0,0)
@@ -207,7 +244,6 @@ final class HandwritingTranscriptionService {
     /// Reset session only (on question change) — clears Mathpix session so new strokes
     /// aren't mixed with previous question's accumulated data.
     func resetSession() {
-        transcribeTask?.cancel()
         generation += 1
         sessionId = nil
         sessionStart = nil
@@ -216,12 +252,17 @@ final class HandwritingTranscriptionService {
         expiresAt = nil
         isTranscribing = false
         errorMessage = nil
+        lastStrokeCount = 0
+        lastStrokeBoundsHash = 0
     }
 
     /// Full reset (on sidebar close).
     func reset() {
+        stopPolling()
         resetSession()
         latexResult = ""
+        currentDrawing = nil
+        currentRegions = nil
     }
 }
 

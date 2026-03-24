@@ -11,8 +11,7 @@ from pydantic import BaseModel, Field
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
 from app.services.katex_sanitizer import sanitize_for_katex
-from app.services.katex_validator import KATEX_FIX_PROMPT, _validate_katex_expression
-from app.services.llm_client import LLMClient
+from app.services.katex_validator import _validate_katex_expression
 
 log = logging.getLogger(__name__)
 
@@ -146,48 +145,17 @@ async def transcribe_strokes(
     session_id = data.get("strokes_session_id", data.get("session_id"))
 
     # Sanitize for KaTeX compatibility before wrapping
-    katex_valid = False
     if latex:
         latex = sanitize_for_katex(latex)
 
-        # Validate — if KaTeX still fails, try LLM fix (once)
+        # Validate — if KaTeX fails, fall back to plain text (no slow LLM fix)
         error = await asyncio.to_thread(_validate_katex_expression, latex)
         if error:
-            log.warning(f"KaTeX validation failed after sanitize: {error[:80]}")
-            try:
-                llm = LLMClient(
-                    api_key=settings.openrouter_api_key,
-                    model="google/gemini-2.0-flash-001",
-                    base_url="https://openrouter.ai/api/v1",
-                )
-                fix_prompt = KATEX_FIX_PROMPT.format(expression=latex, error=error)
-                result = await asyncio.to_thread(
-                    llm.generate, prompt=fix_prompt, timeout=10.0,
-                )
-                fixed = result.content.strip()
-                if fixed.startswith("```"):
-                    fixed = _re.sub(r"^```\w*\n?", "", fixed)
-                    fixed = _re.sub(r"\n?```$", "", fixed)
-                # Only use fix if it validates
-                fix_error = await asyncio.to_thread(_validate_katex_expression, fixed)
-                if not fix_error:
-                    latex = fixed
-                    katex_valid = True
-                    log.info("KaTeX fix succeeded via LLM")
-                else:
-                    log.warning(f"KaTeX LLM fix also failed, falling back to plain text")
-            except Exception as e:
-                log.warning(f"KaTeX LLM fix failed: {e}")
-        else:
-            katex_valid = True
-
-    # If KaTeX validation failed entirely, fall back to readable plain text
-    # so the student at least sees their transcribed content
-    if latex and not katex_valid:
-        plain = _latex_to_plain(latex)
-        if plain.strip():
-            log.info(f"[transcribe] Falling back to plain text: {plain[:60]}")
-            return TranscribeStrokesResponse(latex=plain, session_id=session_id)
+            log.warning(f"KaTeX validation failed: {error[:80]}")
+            plain = _latex_to_plain(latex)
+            if plain.strip():
+                log.info(f"[transcribe] Falling back to plain text: {plain[:60]}")
+                return TranscribeStrokesResponse(latex=plain, session_id=session_id)
 
     # Wrap in display math delimiters if not already wrapped
     if latex and not latex.startswith("$") and not latex.startswith("\\[") and not latex.startswith("\\("):

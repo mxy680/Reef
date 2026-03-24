@@ -287,16 +287,28 @@ struct CanvasView: View {
                     viewModel.markShapeStrokes(in: drawing)
                 }
 
-                // Live transcription — send filtered drawing (no shape strokes)
+                // Update the polling service's drawing snapshot (polled every 400ms)
                 if viewModel.showSidebar || viewModel.tutorModeOn {
-                    let filtered = viewModel.drawingWithoutShapes(for: viewModel.currentPageIndex)
-                    let regions = viewModel.activeSubquestionRegions()
-                    viewModel.handwritingService.onDrawingChanged(
-                        drawing: filtered,
-                        activeRegions: regions
-                    )
+                    viewModel.handwritingService.currentDrawing = viewModel.drawingWithoutShapes(for: viewModel.currentPageIndex)
+                    viewModel.handwritingService.currentRegions = viewModel.activeSubquestionRegions()
                 }
             }
+
+            // Start transcription polling (400ms interval)
+            if viewModel.showSidebar || viewModel.tutorModeOn {
+                viewModel.handwritingService.startPolling()
+            }
+        }
+        .onChange(of: viewModel.tutorModeOn) { _, isOn in
+            if isOn {
+                viewModel.handwritingService.startPolling()
+            } else {
+                viewModel.handwritingService.stopPolling()
+            }
+        }
+        .onDisappear {
+            viewModel.handwritingService.stopPolling()
+            autoSaveTask?.cancel()
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             viewModel.tickStudyTimer()

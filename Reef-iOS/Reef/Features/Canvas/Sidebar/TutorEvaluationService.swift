@@ -18,7 +18,7 @@ struct TutorChatMessage: Identifiable {
 }
 
 /// Evaluates student handwriting against the answer key in real time.
-/// Debounces requests by 1.5s and discards stale responses via a generation counter.
+/// Debounces requests by 900ms and discards stale responses via a generation counter.
 @Observable
 @MainActor
 final class TutorEvaluationService {
@@ -42,11 +42,11 @@ final class TutorEvaluationService {
     private var evaluateTask: Task<Void, Never>?
     private var lastEvaluatedLatex: String = ""
 
-    private static let debounceInterval: Duration = .milliseconds(1500)
+    private static let debounceInterval: Duration = .milliseconds(900)
 
     // MARK: - Evaluate
 
-    /// Trigger an evaluation. Debounces by 1.5s. Skips if latex is unchanged.
+    /// Trigger an evaluation. Debounces by 900ms. Skips if latex is unchanged.
     func evaluate(
         latex: String,
         documentId: String,
