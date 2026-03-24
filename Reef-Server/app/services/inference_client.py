@@ -28,7 +28,9 @@ async def call_inference_api(prompt: str, images: list[bytes] | None = None) -> 
 
     model_name = "claude-opus-4-6"
 
-    body: dict = {"prompt": prompt, "max_turns": 1}
+    # Images require extra turns: 1 turn to Read the image file, 1+ to respond
+    max_turns = 3 if images else 1
+    body: dict = {"prompt": prompt, "max_turns": max_turns}
     if images:
         body["images"] = [
             {"data": _b64.b64encode(img).decode(), "media_type": "image/jpeg"}
