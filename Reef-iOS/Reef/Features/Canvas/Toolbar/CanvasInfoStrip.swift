@@ -142,15 +142,23 @@ struct CanvasInfoStrip: View {
 
             // Tutor mode toggle
             HStack(spacing: 8) {
+                // "Generating tutor..." label when answer keys are loading
+                if viewModel.isReconstructed && viewModel.isLoadingAnswerKeys && viewModel.answerKeys.isEmpty {
+                    Text("Generating tutor...")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .transition(.opacity)
+                }
+
                 Image(viewModel.tutorModeOn ? "canvas.tutor_on" : "canvas.tutor_off")
                     .renderingMode(.template)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 20, height: 20)
-                    .foregroundColor(.white.opacity(viewModel.isReconstructed ? 1 : 0.4))
+                    .foregroundColor(.white.opacity(viewModel.isReconstructed && !viewModel.answerKeys.isEmpty ? 1 : 0.4))
                     .walkthroughGlow(active: walkthroughStep?.targetButton == .tutorToggle)
 
-                if viewModel.isReconstructed {
+                if viewModel.isReconstructed && !viewModel.answerKeys.isEmpty {
                     ReefToggle(isOn: Binding(
                         get: { viewModel.tutorModeOn },
                         set: { newValue in
@@ -167,6 +175,7 @@ struct CanvasInfoStrip: View {
                 }
             }
             .padding(.trailing, 18)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.answerKeys.isEmpty)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)

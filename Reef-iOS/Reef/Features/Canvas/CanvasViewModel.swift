@@ -280,12 +280,12 @@ final class CanvasViewModel {
         isLoadingAnswerKeys = true
         let repo = SupabaseAnswerKeyRepository()
 
-        // Retry up to 10 times (every 3s) if answer keys are still generating
+        // Poll every 5s for up to 5 minutes waiting for answer keys to generate
         var attempts = 0
         var result = await repo.fetchAnswerKeys(documentId: document.id)
-        while result.answers.isEmpty && attempts < 10 {
+        while result.answers.isEmpty && attempts < 60 {
             attempts += 1
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(5))
             result = await repo.fetchAnswerKeys(documentId: document.id)
         }
 
