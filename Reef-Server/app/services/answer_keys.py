@@ -214,12 +214,11 @@ async def generate_answer_keys(
         imgs = [image_data[f] for f in figures if f in image_data]
         return imgs if imgs else None
 
-    tasks = [
-        _generate_single_answer(document_id, q_num, q_dict, figure_images=_get_question_images(q_dict))
-        for q_num, q_dict in questions
-    ]
+    # Serialize answer key generation to avoid overwhelming the inference API
+    # (concurrent vision requests can cause timeouts/rate limits)
+    for q_num, q_dict in questions:
+        await _generate_single_answer(document_id, q_num, q_dict, figure_images=_get_question_images(q_dict))
 
-    await asyncio.gather(*tasks)
     logger.info(
-        f"  [answer-key] Completed {len(tasks)} answer keys for {document_id}"
+        f"  [answer-key] Completed {len(questions)} answer keys for {document_id}"
     )
