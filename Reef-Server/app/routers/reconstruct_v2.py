@@ -30,6 +30,7 @@ from app.services.cancellation import (
 )
 from app.services.latex_compiler import LaTeXCompiler
 from app.services.llm_client import LLMClient, LLMResult
+from app.services.answer_keys import _call_inference_api, _extract_json
 from app.services.mathpix import MathpixClient, replace_urls_with_filenames
 from app.services.progress import update_document_status, update_progress
 from app.services.prompts import LATEX_FIX_PROMPT, PARSE_MMD_PROMPT
@@ -161,16 +162,8 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         )
 
         # ---------------------------------------------------------------
-        # Stage 3: LLM parse MMD -> Questions
+        # Stage 3: LLM parse MMD -> Questions (Opus via inference API, fallback to OpenRouter)
         # ---------------------------------------------------------------
-        llm_client = LLMClient(
-            api_key=settings.openrouter_api_key,
-            model="deepseek/deepseek-v3.2",
-            base_url="https://openrouter.ai/api/v1",
-        )
-        # DeepSeek doesn't support strict JSON schema via OpenRouter —
-        # skip straight to json_object mode to avoid schema echo bugs.
-        llm_client._strict_json_supported = False
 
         # Replace CDN URLs with local filenames so the LLM sees them inline
         cleaned_mmd = replace_urls_with_filenames(mmd_text, url_map)
@@ -179,16 +172,44 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         parse_prompt = PARSE_MMD_PROMPT
         parse_prompt += (
             f"\n\n## Output JSON Schema\n"
-            f"Return a JSON object matching this schema:\n```json\n{schema_json}\n```\n"
+            f"Return ONLY a valid JSON object matching this schema. No markdown, no explanation, no code fences.\n"
+            f"```json\n{schema_json}\n```\n"
             f"\n\n## MMD Content\n```\n{cleaned_mmd}\n```"
         )
 
-        parse_result = await asyncio.to_thread(
-            llm_client.generate,
-            prompt=parse_prompt,
-            response_schema=QuestionBatch.model_json_schema(),
+        parse_result = None
+        if settings.reef_inference_token:
+            try:
+                raw_content, _ = await _call_inference_api(parse_prompt)
+                content = _extract_json(raw_content)
+                # Validate it parses before accepting
+                QuestionBatch.model_validate_json(content)
+                parse_result = LLMResult(content=content)
+                logger.info(f"  [v2] {document_id}: question extraction via Reef inference (Opus 4.6)")
+            except Exception as e:
+                logger.warning(f"  [v2] {document_id}: inference API failed for question extraction ({e}), falling back to OpenRouter")
+
+        # Fallback: OpenRouter
+        if parse_result is None:
+            llm_fallback = LLMClient(
+                api_key=settings.openrouter_api_key,
+                model="deepseek/deepseek-v3.2",
+                base_url="https://openrouter.ai/api/v1",
+            )
+            llm_fallback._strict_json_supported = False
+            parse_result = await asyncio.to_thread(
+                llm_fallback.generate,
+                prompt=parse_prompt,
+                response_schema=QuestionBatch.model_json_schema(),
+            )
+            costs.add(parse_result, model=llm_fallback.model)
+
+        # LLM client for LaTeX fix loop (use inference API if available)
+        llm_client = LLMClient(
+            api_key=settings.openrouter_api_key,
+            model="google/gemini-3-flash-preview",
+            base_url="https://openrouter.ai/api/v1",
         )
-        costs.add(parse_result, model=llm_client.model)
 
         batch = QuestionBatch.model_validate_json(parse_result.content)
         questions = batch.questions
@@ -268,11 +289,21 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
                             fix_prompt = LATEX_FIX_PROMPT.format(
                                 latex_body=latex, error_message=str(e)[:2000]
                             )
-                            fix_llm = await asyncio.to_thread(
-                                llm_client.generate, prompt=fix_prompt
-                            )
-                            costs.add(fix_llm, model=llm_client.model)
-                            latex = _sanitize_text(fix_llm.content)
+                            # Try inference API for LaTeX fix
+                            fix_content = None
+                            if settings.reef_inference_token:
+                                try:
+                                    raw, _ = await _call_inference_api(fix_prompt)
+                                    fix_content = raw.strip()
+                                except Exception:
+                                    pass
+                            if fix_content is None:
+                                fix_llm = await asyncio.to_thread(
+                                    llm_client.generate, prompt=fix_prompt
+                                )
+                                costs.add(fix_llm, model=llm_client.model)
+                                fix_content = fix_llm.content
+                            latex = _sanitize_text(fix_content)
                             # Strip hallucinated figures from fix
                             latex = _strip_invalid_figures(latex, valid_figures)
                         except Exception as e2:
