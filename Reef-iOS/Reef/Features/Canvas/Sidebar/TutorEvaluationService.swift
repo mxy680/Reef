@@ -179,6 +179,11 @@ final class TutorEvaluationService {
         }
     }
 
+    private struct HistoryEntry: Encodable {
+        let role: String
+        let text: String
+    }
+
     private struct EvalRequest: Encodable {
         let documentId: String
         let questionNumber: Int
@@ -187,6 +192,7 @@ final class TutorEvaluationService {
         let studentLatex: String
         let figureUrls: [String]
         let studentImage: String?
+        let history: [HistoryEntry]
 
         enum CodingKeys: String, CodingKey {
             case documentId = "document_id"
@@ -196,6 +202,7 @@ final class TutorEvaluationService {
             case studentLatex = "student_latex"
             case figureUrls = "figure_urls"
             case studentImage = "student_image"
+            case history
         }
     }
 
@@ -215,6 +222,11 @@ final class TutorEvaluationService {
 
         let authSession = try await supabase.auth.session
 
+        // Send last 15 chat messages as context
+        let historyEntries = chatMessages.suffix(15).map { msg in
+            HistoryEntry(role: msg.role.rawValue, text: msg.latex)
+        }
+
         let body = EvalRequest(
             documentId: documentId,
             questionNumber: questionNumber,
@@ -222,7 +234,8 @@ final class TutorEvaluationService {
             stepIndex: stepIndex,
             studentLatex: latex,
             figureUrls: figureURLs,
-            studentImage: studentImage
+            studentImage: studentImage,
+            history: historyEntries
         )
 
         var request = URLRequest(url: url)

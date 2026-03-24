@@ -264,7 +264,11 @@ Expected work (delimited by <<<EXPECTED_WORK_START>>> and <<<EXPECTED_WORK_END>>
 Content is delimited by <<<STUDENT_WORK_START>>> and <<<STUDENT_WORK_END>>> tags.
 {student_work}
 
-Start by evaluating Step {current_step_num}. If the student's work also completes later steps, set steps_completed accordingly.
+## Previous Tutor Feedback
+This is the conversation history so far — mistakes you flagged, encouragement you gave, and any questions the student asked. Use this to avoid repeating the same feedback and to understand what guidance has already been given.
+{tutor_history}
+
+Start by evaluating Step {current_step_num}. If the student's work also completes later steps, set steps_completed accordingly. Do NOT repeat feedback that was already given in the history above.
 """
 
 TUTOR_CHAT_SYSTEM = """\

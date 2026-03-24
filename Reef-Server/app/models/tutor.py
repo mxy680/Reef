@@ -19,6 +19,7 @@ class TutorEvaluateRequest(BaseModel):
     student_latex: str = Field(..., max_length=5000, description="Transcribed LaTeX from student handwriting")
     figure_urls: list[str] = Field(default_factory=list, description="Signed URLs for question figures")
     student_image: str | None = Field(None, max_length=2_000_000, description="Base64-encoded JPEG of student's drawing")
+    history: list[ChatHistoryMessage] = Field(default_factory=list, description="Previous tutor feedback (errors, reinforcements, chat) for context")
 
 
 class TutorEvaluation(BaseModel):

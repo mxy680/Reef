@@ -149,6 +149,15 @@ async def tutor_evaluate(
     else:
         remaining_text = "(This is the final step.)"
 
+    # Build tutor feedback history
+    history_text = "(no prior feedback)"
+    if body.history:
+        lines = []
+        for msg in body.history[-15:]:
+            label = {"student": "Student", "error": "Tutor (mistake)", "reinforcement": "Tutor (encouragement)", "answer": "Tutor (chat)"}.get(msg.role, msg.role)
+            lines.append(f"<<<{label}>>>\n{msg.text}\n<<</{label}>>>")
+        history_text = "\n".join(lines)
+
     # Build prompt
     prompt = TUTOR_EVALUATE_PROMPT.format(
         question_text=f"Question {answer_key.question_number}",
@@ -158,6 +167,7 @@ async def tutor_evaluate(
         current_step_work=delimited_step_work,
         remaining_steps=remaining_text,
         student_work=delimited_student_work,
+        tutor_history=history_text,
     )
 
     # Collect images: figure URLs + student drawing
