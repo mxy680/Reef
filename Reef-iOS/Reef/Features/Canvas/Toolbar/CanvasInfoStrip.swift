@@ -83,7 +83,7 @@ struct CanvasInfoStrip: View {
 
             // "Generating tutor..." centered in toolbar while answer keys load
             if viewModel.isReconstructed && viewModel.isLoadingAnswerKeys && viewModel.answerKeys.isEmpty {
-                Text("Generating tutor — hang tight...")
+                Text("Generating answer key for tutor — hang tight...")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.white.opacity(0.5))
                     .transition(.opacity)
