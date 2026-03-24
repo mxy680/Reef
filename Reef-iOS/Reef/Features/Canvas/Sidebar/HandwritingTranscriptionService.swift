@@ -80,10 +80,14 @@ final class HandwritingTranscriptionService {
             return
         }
 
-        // Quick change detection: stroke count + bounds hash
-        let boundsHash = relevantStrokes.reduce(0) { hash, stroke in
-            hash ^ stroke.renderBounds.origin.x.hashValue ^ stroke.renderBounds.origin.y.hashValue
-                 ^ stroke.renderBounds.size.width.hashValue ^ stroke.renderBounds.size.height.hashValue
+        // Quick change detection: stroke count + order-sensitive bounds hash
+        let boundsHash = relevantStrokes.enumerated().reduce(0) { hash, pair in
+            let (i, stroke) = pair
+            let b = stroke.renderBounds
+            return hash &+ (b.origin.x.hashValue &* (i &+ 1))
+                        &+ (b.origin.y.hashValue &* (i &+ 2))
+                        &+ (b.size.width.hashValue &* (i &+ 3))
+                        &+ (b.size.height.hashValue &* (i &+ 4))
         }
 
         guard relevantStrokes.count != lastStrokeCount || boundsHash != lastStrokeBoundsHash else {
@@ -213,13 +217,13 @@ final class HandwritingTranscriptionService {
             if result.latex != oldLatex, !result.latex.isEmpty {
                 onLatexChanged?(result.latex)
             }
+            isTranscribing = false
         } catch {
             guard !Task.isCancelled, generation == myGeneration else { return }
             errorMessage = "Transcription failed"
             print("[Transcription] Error: \(error)")
+            isTranscribing = false
         }
-
-        isTranscribing = false
     }
 
     // MARK: - Timer

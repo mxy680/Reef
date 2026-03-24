@@ -27,10 +27,10 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 TUTOR_MODEL = "google/gemini-3-flash-preview"
 
-# In-memory answer key cache: (doc_id, question_number) → (QuestionAnswer, timestamp)
+# In-memory answer key cache: (doc_id, question_number, user_id) → (QuestionAnswer, timestamp)
 # Avoids hitting Supabase on every eval for the same question.
-# Entries expire after 10 minutes.
-_answer_key_cache: dict[tuple[str, int], tuple[QuestionAnswer, float]] = {}
+# Entries expire after 10 minutes. User-scoped to prevent cross-user leaks.
+_answer_key_cache: dict[tuple[str, int, str], tuple[QuestionAnswer, float]] = {}
 _AK_CACHE_TTL = 600  # 10 minutes
 
 
@@ -38,9 +38,9 @@ async def _fetch_answer_key(document_id: str, question_number: int, user_id: str
     """Fetch a single answer key row from Supabase, with in-memory caching."""
     import time as _time
 
-    cache_key = (document_id, question_number)
+    cache_key = (document_id, question_number, user_id)
 
-    # Check cache
+    # Check cache (user-scoped to prevent cross-user access)
     if cache_key in _answer_key_cache:
         cached, ts = _answer_key_cache[cache_key]
         if _time.time() - ts < _AK_CACHE_TTL:

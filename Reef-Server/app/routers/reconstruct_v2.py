@@ -30,7 +30,7 @@ from app.services.cancellation import (
 )
 from app.services.latex_compiler import LaTeXCompiler
 from app.services.llm_client import LLMClient, LLMResult
-from app.services.answer_keys import _call_inference_api, _extract_json
+from app.services.inference_client import call_inference_api, extract_json
 from app.services.mathpix import MathpixClient, replace_urls_with_filenames
 from app.services.progress import update_document_status, update_progress
 from app.services.prompts import LATEX_FIX_PROMPT, PARSE_MMD_PROMPT
@@ -180,8 +180,8 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         parse_result = None
         if settings.reef_inference_token:
             try:
-                raw_content, _ = await _call_inference_api(parse_prompt)
-                content = _extract_json(raw_content)
+                raw_content, _ = await call_inference_api(parse_prompt)
+                content = extract_json(raw_content)
                 # Validate it parses before accepting
                 QuestionBatch.model_validate_json(content)
                 parse_result = LLMResult(content=content)
@@ -293,7 +293,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
                             fix_content = None
                             if settings.reef_inference_token:
                                 try:
-                                    raw, _ = await _call_inference_api(fix_prompt)
+                                    raw, _ = await call_inference_api(fix_prompt)
                                     fix_content = raw.strip()
                                 except Exception:
                                     pass

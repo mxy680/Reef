@@ -150,6 +150,8 @@ final class TutorEvaluationService {
     /// Full reset (tutor mode toggled off or question changed).
     func reset() {
         resetForNextStep()
+        chatTask?.cancel()
+        chatTask = nil
         chatMessages.removeAll()
     }
 
@@ -257,6 +259,7 @@ final class TutorEvaluationService {
     // MARK: - Chat
 
     var isSendingChat: Bool = false
+    private var chatTask: Task<Void, Never>?
 
     /// Send a user question to the tutor and get a reply.
     func sendChat(
@@ -280,7 +283,7 @@ final class TutorEvaluationService {
 
         isSendingChat = true
 
-        Task { [weak self] in
+        chatTask = Task { [weak self] in
             guard let self else { return }
             do {
                 let response = try await self.callChatServer(
