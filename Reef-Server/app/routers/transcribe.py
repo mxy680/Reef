@@ -19,6 +19,45 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
+def _latex_to_plain(latex: str) -> str:
+    """Strip LaTeX commands to extract readable plain text as a last resort."""
+    s = latex
+    # Remove math delimiters
+    s = _re.sub(r"\$\$\s*|\s*\$\$", "", s)
+    s = _re.sub(r"\$", "", s)
+    s = _re.sub(r"\\\[|\\\]|\\\(|\\\)", "", s)
+    # \text{content} → content
+    s = _re.sub(r"\\text\{([^}]*)\}", r"\1", s)
+    s = _re.sub(r"\\mathrm\{([^}]*)\}", r"\1", s)
+    s = _re.sub(r"\\textbf\{([^}]*)\}", r"\1", s)
+    # \frac{a}{b} → (a)/(b)
+    s = _re.sub(r"\\frac\{([^}]*)\}\{([^}]*)\}", r"(\1)/(\2)", s)
+    # \sqrt{x} → sqrt(x)
+    s = _re.sub(r"\\sqrt\{([^}]*)\}", r"sqrt(\1)", s)
+    # Common symbols
+    s = s.replace("\\rightarrow", "→")
+    s = s.replace("\\leftarrow", "←")
+    s = s.replace("\\Rightarrow", "⇒")
+    s = s.replace("\\Leftarrow", "⇐")
+    s = s.replace("\\leq", "≤").replace("\\geq", "≥")
+    s = s.replace("\\neq", "≠").replace("\\approx", "≈")
+    s = s.replace("\\times", "×").replace("\\cdot", "·")
+    s = s.replace("\\pm", "±").replace("\\infty", "∞")
+    s = s.replace("\\alpha", "α").replace("\\beta", "β")
+    s = s.replace("\\gamma", "γ").replace("\\delta", "δ")
+    s = s.replace("\\theta", "θ").replace("\\pi", "π")
+    s = s.replace("\\sigma", "σ").replace("\\mu", "μ")
+    s = s.replace("\\lambda", "λ").replace("\\omega", "ω")
+    s = s.replace("\\Delta", "Δ").replace("\\Sigma", "Σ")
+    # Strip remaining \command patterns
+    s = _re.sub(r"\\[a-zA-Z]+\*?(?:\{[^}]*\})*", "", s)
+    # Clean up braces and extra whitespace
+    s = s.replace("{", "").replace("}", "")
+    s = _re.sub(r"[_^]", "", s)
+    s = _re.sub(r"\s+", " ", s).strip()
+    return s
+
+
 class StrokeData(BaseModel):
     x: list[float] = Field(..., max_length=2000)
     y: list[float] = Field(..., max_length=2000)
@@ -107,6 +146,7 @@ async def transcribe_strokes(
     session_id = data.get("strokes_session_id", data.get("session_id"))
 
     # Sanitize for KaTeX compatibility before wrapping
+    katex_valid = False
     if latex:
         latex = sanitize_for_katex(latex)
 
@@ -132,9 +172,22 @@ async def transcribe_strokes(
                 fix_error = await asyncio.to_thread(_validate_katex_expression, fixed)
                 if not fix_error:
                     latex = fixed
+                    katex_valid = True
                     log.info("KaTeX fix succeeded via LLM")
+                else:
+                    log.warning(f"KaTeX LLM fix also failed, falling back to plain text")
             except Exception as e:
                 log.warning(f"KaTeX LLM fix failed: {e}")
+        else:
+            katex_valid = True
+
+    # If KaTeX validation failed entirely, fall back to readable plain text
+    # so the student at least sees their transcribed content
+    if latex and not katex_valid:
+        plain = _latex_to_plain(latex)
+        if plain.strip():
+            log.info(f"[transcribe] Falling back to plain text: {plain[:60]}")
+            return TranscribeStrokesResponse(latex=plain, session_id=session_id)
 
     # Wrap in display math delimiters if not already wrapped
     if latex and not latex.startswith("$") and not latex.startswith("\\[") and not latex.startswith("\\("):
