@@ -221,8 +221,8 @@ export default function Home() {
             <div className="features-cards-row">
               <FeaturesCard
                 variant="Double"
-                headline="PROACTIVE AI TUTORING"
-                subline="Reef reads your handwriting and delivers feedback during natural pauses. No prompts needed."
+                headline="HOMEWORK RECONSTRUCTION"
+                subline="Snap a photo or upload a PDF. Reef reconstructs your homework digitally so you can annotate, solve, and get help — all in one place."
                 background="var(--color-surface)"
               />
               <FeaturesCard
@@ -242,8 +242,8 @@ export default function Home() {
               />
               <FeaturesCard
                 variant="Double"
-                headline="SMART EXAM GENERATION"
-                subline="Upload your course materials and Reef auto-generates practice exams. Multiple choice, free response, and more."
+                headline="PROACTIVE VOICE TUTORING"
+                subline="Talk through problems out loud. Reef listens, watches your work, and responds in real-time — like a tutor sitting next to you."
                 background="var(--color-accent)"
               />
             </div>
@@ -251,8 +251,8 @@ export default function Home() {
             <div className="features-cards-row">
               <FeaturesCard
                 variant="Double"
-                headline="GAMIFIED PROGRESS TRACKING"
-                subline="Master topics to unlock marine species and build a personal reef that grows with you."
+                headline="ANALYTICS DASHBOARD"
+                subline="Track study time, mastery by topic, and weekly streaks. See exactly where you're strong and where you need more practice."
                 background="var(--color-primary)"
               />
               <FeaturesCard
