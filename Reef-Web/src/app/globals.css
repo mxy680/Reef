@@ -753,9 +753,13 @@ html, body {
   line-height: 1;
 }
 
-/* Remove white background from feature card image areas */
-.features-cards-grid .framer-iyuun0 {
-  background: transparent !important;
+/* Hide image area on Double feature cards, let text fill full width */
+.features-cards-grid .framer-CAKEG.framer-v-1uq5497 .framer-iyuun0 {
+  display: none !important;
+}
+.features-cards-grid .framer-CAKEG.framer-v-1uq5497 .framer-9vsty4 {
+  flex: 1 0 0px !important;
+  width: 100% !important;
 }
 
 /* Responsive — mobile */

@@ -222,9 +222,8 @@ export default function Home() {
               <FeaturesCard
                 variant="Double"
                 headline="HOMEWORK FORMATTING"
-                subline="Snap a photo or upload a PDF. Reef formats your homework digitally so you can annotate, solve, and get help — all in one place."
+                subline="Snap a photo or upload a PDF. Reef formats your homework digitally — reconstructing problems, figures, and equations so you can annotate, solve, and get step-by-step help all in one place. No more squinting at blurry scans."
                 background="var(--color-surface)"
-                image={{ src: "/feature-formatting.png", alt: "Homework formatting screenshot" }}
               />
               <FeaturesCard
                 variant="Single"
@@ -244,7 +243,7 @@ export default function Home() {
               <FeaturesCard
                 variant="Double"
                 headline="PROACTIVE VOICE TUTORING"
-                subline="Talk through problems out loud. Reef listens, watches your work, and responds in real-time — like a tutor sitting next to you."
+                subline="Talk through problems out loud. Reef listens, watches your handwriting, and responds in real-time — like a tutor sitting next to you. It even jumps in during natural pauses to nudge you in the right direction. No prompts needed."
                 background="var(--color-accent)"
               />
             </div>
@@ -253,7 +252,7 @@ export default function Home() {
               <FeaturesCard
                 variant="Double"
                 headline="ANALYTICS DASHBOARD"
-                subline="Track study time, mastery by topic, and weekly streaks. See exactly where you're strong and where you need more practice."
+                subline="Track study time, mastery by topic, and weekly streaks. See exactly where you're strong and where you need more practice. Visualize your progress across courses and stay motivated with daily goals."
                 background="var(--color-primary)"
               />
               <FeaturesCard
