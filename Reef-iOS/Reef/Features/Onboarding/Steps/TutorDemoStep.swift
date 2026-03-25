@@ -9,7 +9,9 @@ struct TutorDemoStep: View {
     @State private var demoService = DemoProblemService()
     @State private var canvasVM: CanvasViewModel?
     @State private var walkthrough = CanvasWalkthroughState()
-    @State private var showPreDialog = true
+    @State private var showVoiceChoice = true
+    @State private var voiceMode = true
+    @State private var showPreDialog = false
     @State private var introReady = true
     @State private var introTask: Task<Void, Never>?
     @State private var pendingReactionTask: Task<Void, Never>?
@@ -26,15 +28,22 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
-                // Pre-walkthrough dialog — sound + pencil check
-                if showPreDialog {
+                // Voice choice dialog
+                if showVoiceChoice {
+                    voiceChoiceDialog
+                        .zIndex(500)
+                        .transition(.opacity)
+                }
+
+                // Pre-walkthrough dialog — tutor intro
+                if showPreDialog && !showVoiceChoice {
                     preDialog
                         .zIndex(400)
                         .transition(.opacity)
                 }
 
                 // Walkthrough — persistent card with typewriter text
-                if !walkthrough.isComplete && !showPreDialog {
+                if !walkthrough.isComplete && !showPreDialog && !showVoiceChoice {
                     VStack(alignment: .leading, spacing: 8) {
                         Spacer()
 
@@ -42,7 +51,7 @@ struct TutorDemoStep: View {
                         WalkthroughCard(
                             step: walkthrough.currentStep,
                             reactionPrefix: walkthrough.drawingReaction,
-                            readyToType: walkthrough.isSpeaking,
+                            readyToType: voiceMode ? walkthrough.isSpeaking : true,
                             onGotIt: { walkthrough.advance() }
                         )
 
@@ -108,15 +117,15 @@ struct TutorDemoStep: View {
                 }
             }
         }
-        // Speak first step when pre-dialog is dismissed
+        // Speak first step when pre-dialog is dismissed (voice mode only)
         .onChange(of: showPreDialog) { _, showing in
-            if !showing && walkthrough.currentStep == .drawSomething {
+            if !showing && walkthrough.currentStep == .drawSomething && voiceMode {
                 walkthrough.speakInstruction(WalkthroughStep.drawSomething.speech)
             }
         }
         // MARK: - Walkthrough Detection (1000ms after pen lift)
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard !showPreDialog else { return }  // Don't detect drawing while intro is showing
+            guard !showPreDialog && !showVoiceChoice else { return }  // Don't detect drawing while dialogs are showing
             guard let vm = canvasVM else { return }
             walkthrough.log("drawingVersion changed, step=\(String(describing: walkthrough.currentStep)), waiting=\(walkthrough.waitingForReaction)")
             guard !walkthrough.waitingForReaction else { return }
@@ -248,7 +257,7 @@ struct TutorDemoStep: View {
         // Speak step instructions + handle drawing reaction flow
         .onChange(of: walkthrough.currentStep) { oldStep, newStep in
             // Speak step instructions (skip if coming from drawSomething — reactToDrawing handles that)
-            if let step = newStep, oldStep != .drawSomething {
+            if let step = newStep, oldStep != .drawSomething, voiceMode {
                 let speechText = step.speech
 
                 // Wait for real tutor audio to finish before walkthrough speaks
@@ -284,6 +293,65 @@ struct TutorDemoStep: View {
                 withAnimation { walkthrough.advance() }
             }
         }
+    }
+
+    // MARK: - Voice Choice Dialog
+
+    private var voiceChoiceDialog: some View {
+        let colors = theme.colors
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Spacer()
+
+            Text("Before we start — do you want me to talk out loud, or keep it text-only?")
+                .font(.epilogue(14, weight: .semiBold))
+                .tracking(-0.04 * 14)
+                .lineSpacing(3)
+                .foregroundStyle(colors.text)
+                .padding(16)
+                .frame(maxWidth: 340, alignment: .leading)
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.border, lineWidth: 2))
+                .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
+
+            HStack(spacing: 8) {
+                ReefButton(.primary, size: .compact, action: {
+                    voiceMode = true
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        showVoiceChoice = false
+                        showPreDialog = true
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.system(size: 10))
+                        Text("Voice on")
+                            .font(.epilogue(11, weight: .bold))
+                            .tracking(-0.04 * 11)
+                    }
+                }
+
+                ReefButton(.secondary, size: .compact, action: {
+                    voiceMode = false
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        showVoiceChoice = false
+                        showPreDialog = true
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "speaker.slash.fill")
+                            .font(.system(size: 10))
+                        Text("Text only")
+                            .font(.epilogue(11, weight: .bold))
+                            .tracking(-0.04 * 11)
+                    }
+                }
+            }
+        }
+        .padding(.leading, 20)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .bottomLeading)
     }
 
     // MARK: - Audio Wait Helper
@@ -349,6 +417,7 @@ struct TutorDemoStep: View {
     }
 
     private func speakIntro() {
+        guard voiceMode else { return }
         introTask = Task { @MainActor in
             // Enable button after a short fallback delay in case TTS fails
             Task { @MainActor in
