@@ -191,7 +191,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
 
         parse_llm = LLMClient(
             api_key=settings.openrouter_api_key,
-            model="z-ai/glm-4.6v",
+            model="moonshotai/kimi-k2.5",
             base_url="https://openrouter.ai/api/v1",
         )
         parse_result = await asyncio.to_thread(
@@ -206,7 +206,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         # LLM client for LaTeX fix loop (use inference API if available)
         llm_client = LLMClient(
             api_key=settings.openrouter_api_key,
-            model="z-ai/glm-4.6v",
+            model="moonshotai/kimi-k2.5",
             base_url="https://openrouter.ai/api/v1",
         )
 
