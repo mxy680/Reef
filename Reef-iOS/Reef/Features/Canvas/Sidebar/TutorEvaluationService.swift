@@ -34,6 +34,9 @@ final class TutorEvaluationService {
     /// Fires when the model marks steps as completed. Parameter = number of steps completed (1+).
     var onStepCompleted: ((Int) -> Void)?
 
+    /// Fires after a mistake's Socratic question is spoken — auto-enable mic for response.
+    var onMistakeSpoken: (() -> Void)?
+
     /// Reinforcement text for the current step (from answer key).
     var pendingReinforcement: String?
 
@@ -119,6 +122,21 @@ final class TutorEvaluationService {
                    let audioBase64 = response.speechAudio,
                    let audioData = Data(base64Encoded: audioBase64) {
                     self.playAudio(audioData)
+
+                    // After Socratic mistake question finishes, auto-enable mic
+                    if response.status == "mistake" {
+                        Task { @MainActor [weak self] in
+                            guard let self else { return }
+                            // Wait for audio to finish
+                            var waited = 0
+                            while self.isTutorSpeaking && waited < 75 {
+                                try? await Task.sleep(for: .milliseconds(200))
+                                waited += 1
+                            }
+                            try? await Task.sleep(for: .milliseconds(300))
+                            self.onMistakeSpoken?()
+                        }
+                    }
                 }
 
                 // Step completed — show ONLY the most recent reinforcement, then advance
