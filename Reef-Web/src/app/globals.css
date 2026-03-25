@@ -725,7 +725,7 @@ html, body {
   width: 35px !important;
   aspect-ratio: unset !important;
   height: 35px !important;
-  background-image: url("https://framerusercontent.com/images/VULGMuxuEsrUntAhBaeYTbweq3I.png") !important;
+  background-image: url("/manta-logo.png") !important;
   background-size: contain !important;
   background-repeat: no-repeat !important;
 }
