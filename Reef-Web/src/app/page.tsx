@@ -213,7 +213,7 @@ export default function Home() {
             <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "var(--color-accent)" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
             <p className="section-subtitle">
-              Notes, documents, AI tutoring, quizzes, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.
+              Notes, documents, AI tutoring, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.
             </p>
           </div>
           <div className="features-cards-grid">
