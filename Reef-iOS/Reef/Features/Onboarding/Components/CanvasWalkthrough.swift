@@ -183,7 +183,10 @@ final class CanvasWalkthroughState {
             return
         }
         pendingAdvanceTask?.cancel()
-        isSpeaking = false
+        // Don't reset isSpeaking if audio is actively playing (e.g. reaction + next step combined)
+        if !isPlayingAudio {
+            isSpeaking = false
+        }
         log("advance() from \(current)")
 
         let allSteps = WalkthroughStep.allCases
