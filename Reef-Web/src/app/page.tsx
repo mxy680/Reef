@@ -318,9 +318,7 @@ export default function Home() {
                   Drop in your syllabus, lecture slides, homework PDFs, or photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. Answer keys are extracted automatically so the AI can check your work.
                 </p>
               </div>
-              <div className="step-card step-card-surface" style={{ padding: 16 }}>
-                <img src="/step-upload.png" alt="Upload materials dashboard" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }} />
-              </div>
+              <div className="step-card step-card-surface" style={{ backgroundImage: "url('/step-upload.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
             </div>
 
             {/* Decorative arrow 1 → 2 */}
@@ -362,7 +360,7 @@ export default function Home() {
                   After working through problems, see exactly which concepts you've mastered and which need more practice. Your analytics dashboard tracks progress across every course so you always know where to focus next.
                 </p>
               </div>
-              <div className="step-card step-card-blue" />
+              <div className="step-card step-card-blue" style={{ backgroundImage: "url('/step-mastery.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
             </div>
           </div>
         </div>
