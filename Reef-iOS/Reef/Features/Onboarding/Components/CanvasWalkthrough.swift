@@ -339,13 +339,19 @@ final class CanvasWalkthroughState {
                     var waited = 0
                     while !isPlayingAudio && waited < 25 {
                         try? await Task.sleep(for: .milliseconds(200))
-                        waited += 1
                     }
 
-                    // Wait for combined audio to finish
+                    // Advance NOW while audio is playing — isSpeaking stays true
+                    // so the popup starts typing the reaction + next step text
+                    waitingForReaction = false
+                    isSpeaking = true
+                    advance()
+
+                    // Wait for audio to finish (popup is already typing)
                     while isPlayingAudio {
                         try? await Task.sleep(for: .milliseconds(200))
                     }
+                    return
                 }
             }
 
