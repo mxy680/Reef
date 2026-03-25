@@ -446,6 +446,7 @@ struct DashboardView: View {
                     dontAskAgain.toggle()
                 } label: {
                     HStack(spacing: 10) {
+                        Spacer()
                         ZStack {
                             RoundedRectangle(cornerRadius: 5)
                                 .fill(dontAskAgain ? ReefColors.primary : colors.card)
