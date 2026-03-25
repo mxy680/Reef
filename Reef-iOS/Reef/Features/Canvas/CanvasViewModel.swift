@@ -212,11 +212,9 @@ final class CanvasViewModel {
         document.problemCount != nil && (document.problemCount ?? 0) > 0
     }
 
-    /// True when PDF is loaded and answer keys are ready (or not a reconstructed doc)
+    /// True when PDF is loaded (answer keys load in background — tutor enables when ready)
     var isReady: Bool {
-        if isLoadingPDF { return false }
-        if isReconstructed && isLoadingAnswerKeys { return false }
-        return true
+        !isLoadingPDF
     }
 
     /// Derives question number and part label from activeQuestionLabel.
