@@ -8,6 +8,13 @@ struct CanvasSidebarView: View {
 
     @State private var chatInput: String = ""
 
+    private var tutorStatus: String {
+        if viewModel.tutorEvalService.isSendingChat { return "writing" }
+        if viewModel.tutorEvalService.isEvaluating { return "thinking" }
+        if viewModel.handwritingService.isTranscribing { return "reading" }
+        return "idle"
+    }
+
     var body: some View {
         let colors = ReefThemeColors(isDarkMode: isDarkMode)
 
@@ -159,18 +166,14 @@ struct CanvasSidebarView: View {
 
                 Spacer()
 
-                if viewModel.tutorEvalService.isEvaluating {
-                    HStack(spacing: 4) {
+                HStack(spacing: 4) {
+                    if tutorStatus != "idle" {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .scaleEffect(0.6)
                             .tint(ReefColors.primary)
-                        Text("thinking")
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(colors.textMuted)
                     }
-                } else {
-                    Text("idle")
+                    Text(tutorStatus)
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
                         .foregroundStyle(colors.textMuted)
                 }
