@@ -36,7 +36,7 @@ enum WalkthroughStep: Int, CaseIterable {
         switch self {
         // Phase 1: Tool Training
         case .drawSomething:
-            "Grab your Apple Pencil and draw something fun. Literally anything — a cat, a stick figure, whatever comes to mind."
+            "Don't worry about the question on your screen yet — we'll get to that. First, grab your Apple Pencil and draw something fun. Literally anything — a cat, a stick figure, whatever comes to mind."
         case .tryHighlighter:
             "Tap the highlighter tool up top. It's transparent, so it layers over your ink — great for annotating."
         case .eraseHighlight:
@@ -82,7 +82,7 @@ enum WalkthroughStep: Int, CaseIterable {
         switch self {
         // Phase 1: Tool Training
         case .drawSomething:
-            "Grab your Apple Pencil, and draw something fun. LITERALLY anything. A cat, a stick figure, whatever comes to mind."
+            "Don't worry about the question on your screen yet. We'll get to that. First, grab your Apple Pencil, and draw something fun. LITERALLY anything. A cat, a stick figure, whatever comes to mind."
         case .tryHighlighter:
             "Now tap the highlighter tool, up at the top. It's transparent, so it layers RIGHT over your ink. It's great for annotating your work."
         case .eraseHighlight:
