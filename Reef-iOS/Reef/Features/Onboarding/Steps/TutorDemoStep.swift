@@ -80,7 +80,7 @@ struct TutorDemoStep: View {
             if !demoService.isReady && !demoService.isGenerating {
                 Task {
                     await demoService.generateDocument(
-                        topic: viewModel.answers.favoriteTopics.joined(separator: ", "),
+                        topic: viewModel.answers.favoriteTopic,
                         studentType: viewModel.answers.studentType?.rawValue ?? "college"
                     )
                     if let doc = demoService.demoDocument {
@@ -400,7 +400,7 @@ struct TutorDemoStep: View {
     @State private var loadingTasks: [Task<Void, Never>] = []
 
     private var currentLoadingMessage: String {
-        let topic = viewModel.answers.favoriteTopics.joined(separator: ", ")
+        let topic = viewModel.answers.favoriteTopic
         let messages = [
             "Generating a problem just for you...",
             "Compiling the math...",
@@ -517,7 +517,7 @@ struct TutorDemoStep: View {
             ReefButton("Try again", size: .compact, action: {
                 Task {
                     await demoService.generateDocument(
-                        topic: viewModel.answers.favoriteTopics.joined(separator: ", "),
+                        topic: viewModel.answers.favoriteTopic,
                         studentType: viewModel.answers.studentType?.rawValue ?? "college"
                     )
                     if let doc = demoService.demoDocument {

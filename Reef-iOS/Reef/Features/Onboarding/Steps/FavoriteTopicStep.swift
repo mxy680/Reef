@@ -4,6 +4,10 @@ struct FavoriteTopicStep: View {
     @Environment(ReefTheme.self) private var theme
     @Bindable var viewModel: OnboardingViewModel
 
+    private var placeholder: String {
+        CourseCatalog.topicPlaceholder(for: viewModel.answers.courses)
+    }
+
     private var suggestions: [String] {
         CourseCatalog.topicSuggestions(for: viewModel.answers.courses)
     }
@@ -11,25 +15,39 @@ struct FavoriteTopicStep: View {
     var body: some View {
         OnboardingStepShell(
             title: "What kind of problems do you want help with?",
-            subtitle: "Pick as many as you want — we'll tailor your experience.",
+            subtitle: "We'll tailor your experience around this.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
         ) {
-            OnboardingFlowLayout(spacing: 10) {
-                ForEach(suggestions, id: \.self) { topic in
-                    let selected = viewModel.answers.favoriteTopics.contains(topic)
-                    OnboardingPill(
-                        label: topic,
-                        isSelected: selected,
-                        action: {
-                            if selected {
-                                viewModel.answers.favoriteTopics.remove(topic)
-                            } else {
-                                viewModel.answers.favoriteTopics.insert(topic)
+            VStack(alignment: .leading, spacing: 16) {
+                ReefTextField(
+                    placeholder: placeholder,
+                    text: $viewModel.answers.favoriteTopic,
+                    capitalization: .sentences,
+                    autocorrection: true
+                )
+
+                // Suggestion pills — tap to fill in
+                if !suggestions.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("or pick one")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(theme.colors.textMuted)
+
+                        OnboardingFlowLayout(spacing: 8) {
+                            ForEach(suggestions, id: \.self) { topic in
+                                let isActive = viewModel.answers.favoriteTopic.lowercased() == topic.lowercased()
+                                OnboardingPill(
+                                    label: topic,
+                                    isSelected: isActive,
+                                    action: {
+                                        viewModel.answers.favoriteTopic = topic
+                                    }
+                                )
                             }
                         }
-                    )
+                    }
                 }
             }
         }
