@@ -14,9 +14,9 @@ struct TutorDemoStep: View {
     @State private var introTask: Task<Void, Never>?
     @State private var pendingReactionTask: Task<Void, Never>?
 
-    private let introDisplay = "Hey — I'm your AI tutor. I read your handwriting in real time, check your work step by step, and speak up when you need help. Think of me as the TA who actually shows up to office hours. Let me show you around."
+    private let introDisplay = "Alright, quick intro. I'm your AI tutor. I read everything you write in real time — yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line, no awkward eye contact. Dive in — the reef's got you."
 
-    private let introSpeech = "Hey. I'm your A.I. tutor. I read your handwriting in REAL time, check your work step by step, and speak up when you need help. Think of me as the T.A. who actually shows up to office hours. Let me show you around."
+    private let introSpeech = "Alright, quick intro. I'm your A.I. tutor. I read EVERYTHING you write in real time. Yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line. No awkward eye contact. Dive in. The reef's got you."
 
     var body: some View {
         ZStack {
@@ -292,92 +292,67 @@ struct TutorDemoStep: View {
     private var preDialog: some View {
         let colors = theme.colors
 
-        return ZStack {
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
+        return VStack(alignment: .leading, spacing: 8) {
+            Spacer()
 
-            VStack(spacing: 0) {
-                // Tutor avatar header
-                VStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(ReefColors.primary.opacity(0.15))
-                            .frame(width: 64, height: 64)
-
-                        Image(systemName: "brain.head.profile")
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundStyle(ReefColors.primary)
-                    }
-
-                    Text("Meet your tutor")
-                        .font(.epilogue(22, weight: .black))
-                        .tracking(-0.04 * 22)
-                        .foregroundStyle(colors.text)
-                }
-                .padding(.top, 28)
-                .padding(.bottom, 16)
-
-                // Intro message
+            VStack(alignment: .leading, spacing: 12) {
                 Text(introDisplay)
-                    .font(.epilogue(14, weight: .medium))
+                    .font(.epilogue(14, weight: .semiBold))
                     .tracking(-0.04 * 14)
-                    .lineSpacing(4)
-                    .foregroundStyle(colors.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 28)
+                    .lineSpacing(3)
+                    .foregroundStyle(colors.text)
 
                 // Sound + Pencil reminders
-                HStack(spacing: 20) {
-                    HStack(spacing: 6) {
+                HStack(spacing: 16) {
+                    HStack(spacing: 5) {
                         Image(systemName: "speaker.wave.2.fill")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(ReefColors.primary)
                         Text("Sound on")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(colors.textMuted)
                     }
 
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Image(systemName: "applepencil.gen2")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(ReefColors.primary)
                         Text("Pencil ready")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(colors.textMuted)
                     }
                 }
-                .padding(.top, 20)
 
-                // CTA
-                ReefButton("Let's go", action: {
+                ReefButton("Let's go", size: .compact, action: {
                     withAnimation(.easeOut(duration: 0.25)) {
                         showPreDialog = false
                     }
                 })
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                .padding(.bottom, 28)
                 .opacity(introReady ? 1 : 0.4)
                 .disabled(!introReady)
             }
-            .frame(maxWidth: 380)
+            .padding(16)
+            .frame(maxWidth: 340, alignment: .leading)
             .background(colors.card)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 14)
                     .stroke(colors.border, lineWidth: 2)
             )
             .background(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 14)
                     .fill(colors.shadow)
-                    .offset(x: 5, y: 5)
+                    .offset(x: 3, y: 3)
             )
-            .onAppear {
-                speakIntro()
-            }
-            .onDisappear {
-                introTask?.cancel()
-            }
+        }
+        .padding(.leading, 20)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .bottomLeading)
+        .onAppear {
+            speakIntro()
+        }
+        .onDisappear {
+            introTask?.cancel()
         }
     }
 
