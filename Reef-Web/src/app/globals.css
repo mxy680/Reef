@@ -720,9 +720,18 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Brand logo — replace SVG with DynaPuff text */
+/* Brand logo — replace text portion with DynaPuff, keep manta icon */
 .framer-NHxYE.framer-1tamot2 .framer-s0p6wi {
-  visibility: hidden;
+  width: 35px !important;
+  aspect-ratio: unset !important;
+  height: 35px !important;
+  background-image: url("https://framerusercontent.com/images/VULGMuxuEsrUntAhBaeYTbweq3I.png") !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+}
+.framer-NHxYE.framer-1tamot2 {
+  flex-direction: row !important;
+  gap: 8px !important;
 }
 .framer-NHxYE.framer-1tamot2::after {
   content: "Reef";
@@ -730,10 +739,7 @@ html, body {
   font-weight: 600;
   font-size: 28px;
   color: var(--color-black);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  line-height: 1;
 }
 
 /* Responsive — mobile */
