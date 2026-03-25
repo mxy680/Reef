@@ -155,6 +155,21 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         if is_cancelled(document_id):
             return
 
+        # Upload Mathpix figure images to Supabase storage for later use in eval
+        figure_url_map: dict[str, str] = {}
+        if mathpix_images:
+            from app.services.storage import upload_question_figure
+            upload_tasks = [
+                upload_question_figure(document_id, fname, img_bytes)
+                for fname, img_bytes in mathpix_images.items()
+            ]
+            results = await asyncio.gather(*upload_tasks, return_exceptions=True)
+            for fname, result in zip(mathpix_images.keys(), results):
+                if isinstance(result, str):
+                    figure_url_map[fname] = result
+                else:
+                    logger.warning(f"  [v2] Failed to upload figure {fname}: {result}")
+
         await update_progress(
             document_id,
             f"Mathpix OCR complete ({len(mmd_text)} chars, "
@@ -256,6 +271,19 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             label = f"Problem {question.number}"
             latex = question_to_latex(question)
             question_dict = question.model_dump()
+
+            # Inject figure storage URLs into question_dict for eval endpoint
+            q_fig_storage = {}
+            all_q_figs = set(question.figures)
+            for part in question.parts:
+                all_q_figs.update(part.figures)
+                for sub in part.parts:
+                    all_q_figs.update(sub.figures)
+            for fig in all_q_figs:
+                if fig in figure_url_map:
+                    q_fig_storage[fig] = figure_url_map[fig]
+            if q_fig_storage:
+                question_dict["figure_storage_urls"] = q_fig_storage
 
             # Only include images actually referenced by this question
             q_figures = set(question.figures)

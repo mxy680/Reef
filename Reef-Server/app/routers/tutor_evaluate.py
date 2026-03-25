@@ -28,14 +28,14 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 TUTOR_MODEL = "google/gemini-3-flash-preview"
 
-# In-memory answer key cache: (doc_id, question_number, user_id) → (QuestionAnswer, timestamp)
+# In-memory answer key cache: (doc_id, question_number, user_id) → (QuestionAnswer, question_json, timestamp)
 # Avoids hitting Supabase on every eval for the same question.
 # Entries expire after 10 minutes. User-scoped to prevent cross-user leaks.
-_answer_key_cache: dict[tuple[str, int, str], tuple[QuestionAnswer, float]] = {}
+_answer_key_cache: dict[tuple[str, int, str], tuple[QuestionAnswer, dict, float]] = {}
 _AK_CACHE_TTL = 600  # 10 minutes
 
 
-async def _fetch_answer_key(document_id: str, question_number: int, user_id: str) -> QuestionAnswer:
+async def _fetch_answer_key(document_id: str, question_number: int, user_id: str) -> tuple[QuestionAnswer, dict]:
     """Fetch a single answer key row from Supabase, with in-memory caching."""
     import time as _time
 
@@ -43,9 +43,9 @@ async def _fetch_answer_key(document_id: str, question_number: int, user_id: str
 
     # Check cache (user-scoped to prevent cross-user access)
     if cache_key in _answer_key_cache:
-        cached, ts = _answer_key_cache[cache_key]
+        cached_answer, cached_qjson, ts = _answer_key_cache[cache_key]
         if _time.time() - ts < _AK_CACHE_TTL:
-            return cached
+            return cached_answer, cached_qjson
         else:
             del _answer_key_cache[cache_key]
 
@@ -82,18 +82,19 @@ async def _fetch_answer_key(document_id: str, question_number: int, user_id: str
         raise HTTPException(status_code=404, detail="Answer key not found")
 
     answer = QuestionAnswer.model_validate_json(rows[0]["answer_text"])
+    question_json = rows[0].get("question_json") or {}
 
     # Cache for future evals on the same question
-    _answer_key_cache[cache_key] = (answer, _time.time())
+    _answer_key_cache[cache_key] = (answer, question_json, _time.time())
 
     # Lazy cleanup: remove expired entries if cache grows
     if len(_answer_key_cache) > 100:
         now = _time.time()
-        expired = [k for k, (_, ts) in _answer_key_cache.items() if now - ts > _AK_CACHE_TTL]
+        expired = [k for k, (_, _, ts) in _answer_key_cache.items() if now - ts > _AK_CACHE_TTL]
         for k in expired:
             del _answer_key_cache[k]
 
-    return answer
+    return answer, question_json
 
 
 def _resolve_steps(answer_key: QuestionAnswer, part_label: str | None) -> list:
@@ -146,7 +147,10 @@ async def tutor_evaluate(
         raise HTTPException(status_code=503, detail="OpenRouter not configured")
 
     # Fetch answer key (ownership verified inside)
-    answer_key = await _fetch_answer_key(body.document_id, body.question_number, user.id)
+    answer_key, question_json = await _fetch_answer_key(body.document_id, body.question_number, user.id)
+
+    # Resolve figure URLs from question_json (uploaded during reconstruction)
+    figure_storage_urls = question_json.get("figure_storage_urls", {})
 
     # Resolve steps for the target part
     steps = _resolve_steps(answer_key, body.part_label)
@@ -236,18 +240,21 @@ async def tutor_evaluate(
                 "the prior encounter to build continuity. One sentence max."
             )
 
+    # Collect images: server-resolved figures from question_json + client-sent + student drawing
+    all_figure_urls = list(figure_storage_urls.values()) + body.figure_urls
+    images = await _download_images(all_figure_urls)
+
     # Build debug prompt (always included, stripped by iOS if not needed)
     debug_prompt_text = (
         "=== SYSTEM MESSAGE ===\n\n"
         + full_system
         + "\n\n=== USER MESSAGE ===\n\n"
         + dynamic_prompt
-        + f"\n\n=== IMAGES: {len(body.figure_urls)} figure URLs, "
-        + f"student_image={'yes' if body.student_image else 'no'} ==="
+        + f"\n\n=== IMAGES: {len(all_figure_urls)} figure URLs "
+        + f"({len(figure_storage_urls)} from question_json, {len(body.figure_urls)} from client), "
+        + f"student_image={'yes' if body.student_image else 'no'}, "
+        + f"{len(images)} images downloaded ==="
     )
-
-    # Collect images: figure URLs + student drawing
-    images = await _download_images(body.figure_urls)
     if body.student_image:
         try:
             images.append(base64.b64decode(body.student_image))
@@ -393,7 +400,7 @@ async def tutor_chat(
         raise HTTPException(status_code=503, detail="OpenRouter not configured")
 
     # Fetch answer key (ownership verified inside)
-    answer_key = await _fetch_answer_key(body.document_id, body.question_number, user.id)
+    answer_key, _ = await _fetch_answer_key(body.document_id, body.question_number, user.id)
     steps = _resolve_steps(answer_key, body.part_label)
 
     current_step_desc = ""

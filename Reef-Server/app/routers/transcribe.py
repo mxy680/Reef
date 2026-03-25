@@ -70,6 +70,7 @@ class TranscribeStrokesRequest(BaseModel):
 
 class TranscribeStrokesResponse(BaseModel):
     latex: str
+    raw_latex: str = ""  # Unsanitized Mathpix output for LLM eval
     session_id: str | None = None
 
 
@@ -141,8 +142,11 @@ async def transcribe_strokes(
     if "error" in data:
         raise HTTPException(status_code=502, detail=f"Mathpix error: {data.get('error')}")
 
-    latex = data.get("latex", data.get("text", ""))
+    raw_latex = data.get("latex", data.get("text", ""))
     session_id = data.get("strokes_session_id", data.get("session_id"))
+
+    # Keep the raw Mathpix output for LLM eval
+    latex = raw_latex
 
     # Sanitize for KaTeX compatibility before wrapping
     if latex:
@@ -155,9 +159,9 @@ async def transcribe_strokes(
             plain = _latex_to_plain(latex)
             if plain.strip():
                 log.info(f"[transcribe] Falling back to plain text: {plain[:60]}")
-                return TranscribeStrokesResponse(latex=plain, session_id=session_id)
+                return TranscribeStrokesResponse(latex=plain, raw_latex=raw_latex, session_id=session_id)
 
     # Wrap in display math delimiters if not already wrapped
     if latex and not latex.startswith("$") and not latex.startswith("\\[") and not latex.startswith("\\("):
         latex = f"$$ {latex} $$"
-    return TranscribeStrokesResponse(latex=latex, session_id=session_id)
+    return TranscribeStrokesResponse(latex=latex, raw_latex=raw_latex, session_id=session_id)

@@ -1209,7 +1209,7 @@ final class CanvasViewModel {
         guard let qNum = Int(numStr) else { return }
 
         tutorEvalService.evaluate(
-            latex: handwritingService.latexResult,
+            latex: handwritingService.rawLatexResult.isEmpty ? handwritingService.latexResult : handwritingService.rawLatexResult,
             documentId: document.id,
             questionNumber: qNum,
             partLabel: partLabel.isEmpty ? nil : partLabel,

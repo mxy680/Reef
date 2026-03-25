@@ -8,7 +8,8 @@ import PencilKit
 @Observable
 @MainActor
 final class HandwritingTranscriptionService {
-    var latexResult: String = ""
+    var latexResult: String = ""      // KaTeX-sanitized display version
+    var rawLatexResult: String = ""    // Raw Mathpix output for LLM eval
     var isTranscribing: Bool = false
     var errorMessage: String?
 
@@ -25,8 +26,8 @@ final class HandwritingTranscriptionService {
     private var lastStrokeCount: Int = 0
     private var lastStrokeBoundsHash: Int = 0
 
-    /// Per-cluster transcription cache: cluster hash → LaTeX result
-    private var clusterCache: [Int: String] = [:]
+    /// Per-cluster transcription cache: cluster hash → (display, raw) LaTeX
+    private var clusterCache: [Int: (display: String, raw: String)] = [:]
 
     private static let sessionTTL: TimeInterval = 300
     private static let pollInterval: Duration = .milliseconds(400)
@@ -73,6 +74,7 @@ final class HandwritingTranscriptionService {
         guard !relevantStrokes.isEmpty else {
             if !latexResult.isEmpty {
                 latexResult = ""
+                rawLatexResult = ""
                 clusterCache.removeAll()
             }
             lastStrokeCount = 0
@@ -189,7 +191,7 @@ final class HandwritingTranscriptionService {
 
         // Transcribe only changed clusters in parallel
         if !changedIndices.isEmpty {
-            await withTaskGroup(of: (Int, String?).self) { group in
+            await withTaskGroup(of: (Int, (display: String, raw: String)?).self) { group in
                 for idx in changedIndices {
                     let payloads = clusterPayloads[idx]!
                     let capturedIdx = idx
@@ -202,8 +204,8 @@ final class HandwritingTranscriptionService {
 
                 for await (idx, result) in group {
                     guard generation == myGeneration else { return }
-                    if let latex = result {
-                        clusterCache[clusters[idx].hash] = latex
+                    if let pair = result {
+                        clusterCache[clusters[idx].hash] = pair
                     }
                 }
             }
@@ -212,14 +214,15 @@ final class HandwritingTranscriptionService {
         guard generation == myGeneration else { return }
 
         // Combine results in order, using cache for unchanged clusters
-        let combined = clusters.compactMap { cluster in
-            clusterCache[cluster.hash]
-        }.filter { !$0.isEmpty }.joined(separator: "\n\n")
+        let cachedResults = clusters.compactMap { clusterCache[$0.hash] }
+        let combinedDisplay = cachedResults.map(\.display).filter { !$0.isEmpty }.joined(separator: "\n\n")
+        let combinedRaw = cachedResults.map(\.raw).filter { !$0.isEmpty }.joined(separator: "\n\n")
 
         let oldLatex = latexResult
-        latexResult = combined
-        if combined != oldLatex, !combined.isEmpty {
-            onLatexChanged?(combined)
+        latexResult = combinedDisplay
+        rawLatexResult = combinedRaw
+        if combinedDisplay != oldLatex, !combinedDisplay.isEmpty {
+            onLatexChanged?(combinedDisplay)
         }
 
         // Prune stale cache entries not in current clusters
@@ -254,8 +257,8 @@ final class HandwritingTranscriptionService {
         }
     }
 
-    /// Transcribe pre-extracted payloads (≤30 strokes). Sendable-safe.
-    private func transcribePayloads(_ normalized: [StrokePayload]) async -> String? {
+    /// Transcribe pre-extracted payloads (≤30 strokes). Returns (display, raw).
+    private func transcribePayloads(_ normalized: [StrokePayload]) async -> (display: String, raw: String)? {
         do {
             let (token, sid) = try await ensureSession()
 
@@ -286,7 +289,7 @@ final class HandwritingTranscriptionService {
             }
 
             let result = try JSONDecoder().decode(TranscribeStrokesResponse.self, from: data)
-            return result.latex
+            return (display: result.latex, raw: result.raw_latex ?? result.latex)
         } catch {
             print("[Transcription] Cluster error: \(error)")
             return nil
@@ -371,6 +374,7 @@ final class HandwritingTranscriptionService {
         stopPolling()
         resetSession()
         latexResult = ""
+        rawLatexResult = ""
         currentDrawing = nil
         currentRegions = nil
     }
@@ -391,5 +395,6 @@ private struct TranscribeStrokesRequest: Encodable {
 
 private struct TranscribeStrokesResponse: Decodable {
     let latex: String
+    let raw_latex: String?
     let session_id: String?
 }
