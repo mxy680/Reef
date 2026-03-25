@@ -134,13 +134,6 @@ struct AuthView: View {
         .accessibilityIdentifier("auth.continueButton")
         .fadeUp(index: 5)
 
-        #if DEBUG
-        ReefButton("Dev Login", variant: .link) {
-            auth.devLogin()
-        }
-        .accessibilityIdentifier("auth.devLoginButton")
-        .padding(.top, 16)
-        #endif
     }
 
     // MARK: - OAuth Buttons
