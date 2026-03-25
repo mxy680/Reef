@@ -418,14 +418,19 @@ async def walkthrough_tts(
     return WalkthroughTTSResponse(speech_audio=speech_audio)
 
 
+# Cartesia (primary)
+CARTESIA_VOICE_ID = "f786b574-daa5-4673-aa0c-cbe3e8534c02"  # Katie - Friendly Fixer
+CARTESIA_MODEL = "sonic"
+
+# Groq (fallback)
 TTS_VOICE = "autumn"
 TTS_MODEL = "canopylabs/orpheus-v1-english"
 TTS_SPEED = 1.15
 
 
-def _tts_cache_key(text: str) -> str:
-    """SHA-256 hash of text+voice+speed+model for cache lookup."""
-    raw = f"{text}|{TTS_VOICE}|{TTS_SPEED}|{TTS_MODEL}"
+def _tts_cache_key(text: str, provider: str = "cartesia") -> str:
+    """SHA-256 hash of text+provider+voice for cache lookup."""
+    raw = f"{text}|{provider}|{CARTESIA_VOICE_ID if provider == 'cartesia' else TTS_VOICE}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
@@ -486,34 +491,74 @@ async def _set_tts_cache(cache_key: str, text: str, audio_base64: str) -> None:
 
 
 async def _generate_tts(text: str) -> str | None:
-    """Generate TTS audio via Groq with Supabase caching."""
+    """Generate TTS audio via Cartesia (primary) with Groq fallback. Supabase-cached."""
     import base64
 
-    cache_key = _tts_cache_key(text)
+    provider = "cartesia" if settings.cartesia_api_key else "groq"
+    cache_key = _tts_cache_key(text, provider)
 
     # Check cache first
     cached = await _get_tts_cache(cache_key)
     if cached:
         return cached
 
-    # Generate fresh via Groq
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.post(
-            "https://api.groq.com/openai/v1/audio/speech",
-            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
-            json={
-                "model": TTS_MODEL,
-                "input": text,
-                "voice": TTS_VOICE,
-                "response_format": "wav",
-                "speed": TTS_SPEED,
-            },
-        )
-    if resp.status_code != 200:
-        log.warning(f"[tts] Groq TTS returned {resp.status_code}: {resp.text[:200]}")
-        return None
+    audio_base64 = None
 
-    audio_base64 = base64.b64encode(resp.content).decode()
+    # Primary: Cartesia
+    if settings.cartesia_api_key:
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    "https://api.cartesia.ai/tts/bytes",
+                    headers={
+                        "X-API-Key": settings.cartesia_api_key,
+                        "Cartesia-Version": "2024-06-10",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model_id": CARTESIA_MODEL,
+                        "transcript": text,
+                        "voice": {"mode": "id", "id": CARTESIA_VOICE_ID},
+                        "output_format": {
+                            "container": "wav",
+                            "encoding": "pcm_s16le",
+                            "sample_rate": 24000,
+                        },
+                    },
+                )
+            if resp.status_code == 200:
+                audio_base64 = base64.b64encode(resp.content).decode()
+                log.info(f"[tts] Cartesia OK ({len(resp.content)} bytes)")
+            else:
+                log.warning(f"[tts] Cartesia returned {resp.status_code}: {resp.text[:200]}")
+        except Exception as e:
+            log.warning(f"[tts] Cartesia failed: {e}")
+
+    # Fallback: Groq
+    if audio_base64 is None and settings.groq_api_key:
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    "https://api.groq.com/openai/v1/audio/speech",
+                    headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                    json={
+                        "model": TTS_MODEL,
+                        "input": text,
+                        "voice": TTS_VOICE,
+                        "response_format": "wav",
+                        "speed": TTS_SPEED,
+                    },
+                )
+            if resp.status_code == 200:
+                audio_base64 = base64.b64encode(resp.content).decode()
+                log.info(f"[tts] Groq fallback OK ({len(resp.content)} bytes)")
+            else:
+                log.warning(f"[tts] Groq TTS returned {resp.status_code}: {resp.text[:200]}")
+        except Exception as e:
+            log.warning(f"[tts] Groq fallback failed: {e}")
+
+    if audio_base64 is None:
+        return None
 
     # Cache for future requests
     await _set_tts_cache(cache_key, text, audio_base64)
