@@ -445,18 +445,40 @@ struct DashboardView: View {
                 Button {
                     dontAskAgain.toggle()
                 } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: dontAskAgain ? "checkmark.square.fill" : "square")
-                            .font(.system(size: 16))
-                            .foregroundStyle(dontAskAgain ? ReefColors.primary : colors.textMuted)
+                    HStack(spacing: 10) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(dontAskAgain ? ReefColors.primary : colors.card)
+                                .frame(width: 22, height: 22)
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(dontAskAgain ? ReefColors.primary : colors.border, lineWidth: 2)
+                                .frame(width: 22, height: 22)
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(colors.shadow)
+                                .frame(width: 22, height: 22)
+                                .offset(x: 2, y: 2)
+                                .zIndex(-1)
+
+                            if dontAskAgain {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(.white)
+                            }
+                        }
+
                         Text("Don't ask me again")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.epilogue(12, weight: .bold))
+                            .tracking(-0.04 * 12)
                             .foregroundStyle(colors.textMuted)
+
+                        Spacer()
                     }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 12)
-                .padding(.bottom, 24)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 28)
             }
             .frame(maxWidth: 380)
             .background(colors.card)
