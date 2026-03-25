@@ -686,8 +686,18 @@ final class CanvasViewModel {
             tutorEvalService.stepProgress = 1.0
             tutorEvalService.status = "completed"
         } else {
-            // Speak the new step description (eval-driven advancement only)
-            speakCurrentStepDescription()
+            // Wait for reinforcement audio to finish, pause, then speak next step
+            Task { @MainActor in
+                // Wait for reinforcement TTS to finish (max 15s)
+                var waited = 0
+                while tutorEvalService.isTutorSpeaking && waited < 75 {
+                    try? await Task.sleep(for: .milliseconds(200))
+                    waited += 1
+                }
+                // Brief pause between reinforcement and next step
+                try? await Task.sleep(for: .milliseconds(800))
+                speakCurrentStepDescription()
+            }
 
             if !handwritingService.latexResult.isEmpty {
                 // Re-evaluate existing work against the new step
