@@ -105,8 +105,13 @@ struct CanvasInfoStrip: View {
                     divider
 
                     Button {
-                        viewModel.showHintPopover.toggle()
-                        if viewModel.showHintPopover { viewModel.showRevealPopover = false }
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showHintPopover.toggle()
+                            if viewModel.showHintPopover {
+                                viewModel.showRevealPopover = false
+                                viewModel.showSidebar = true
+                            }
+                        }
                     } label: {
                         Image(systemName: "lightbulb.fill")
                             .font(.system(size: 14, weight: .semibold))
@@ -118,8 +123,13 @@ struct CanvasInfoStrip: View {
                     .buttonStyle(.plain)
 
                     Button {
-                        viewModel.showRevealPopover.toggle()
-                        if viewModel.showRevealPopover { viewModel.showHintPopover = false }
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showRevealPopover.toggle()
+                            if viewModel.showRevealPopover {
+                                viewModel.showHintPopover = false
+                                viewModel.showSidebar = true
+                            }
+                        }
                     } label: {
                         Image(systemName: "eye.fill")
                             .font(.system(size: 14, weight: .semibold))

@@ -3,132 +3,146 @@ import SwiftUI
 struct CanvasSidebarView: View {
     @Environment(ReefTheme.self) private var theme
     var isDarkMode: Bool
-    var transcriptionService: HandwritingTranscriptionService
-    var tutorEvalService: TutorEvaluationService
-    var tutorModeOn: Bool
-    var activeQuestionLabel: String?
+    @Bindable var viewModel: CanvasViewModel
     var onSendChat: ((String) -> Void)?
 
     @State private var chatInput: String = ""
 
     var body: some View {
-        // Use canvas isDarkMode, not the global theme — canvas has its own toggle
         let colors = ReefThemeColors(isDarkMode: isDarkMode)
 
         HStack(spacing: 0) {
-            // Leading separator
             Rectangle()
                 .fill(isDarkMode ? Color.white.opacity(0.15) : Color.black.opacity(0.2))
                 .frame(width: 1)
 
-            GeometryReader { geo in
-                VStack(alignment: .leading, spacing: 0) {
-                    // === Top 1/3: Transcription ===
-                    VStack(alignment: .leading, spacing: 0) {
-                        transcriptionHeader(colors: colors)
+            VStack(alignment: .leading, spacing: 0) {
+                // === Collapsible Hint/Answer Panels ===
+                if viewModel.tutorModeOn, viewModel.currentHintStep != nil {
+                    hintAnswerSection(colors: colors)
+                }
 
-                        Rectangle()
-                            .fill(colors.divider)
-                            .frame(height: 0.5)
+                // === Tutor Chat (takes remaining space) ===
+                if viewModel.tutorModeOn {
+                    Rectangle()
+                        .fill(colors.divider)
+                        .frame(height: 1)
 
-                        transcriptionContent(colors: colors)
-                    }
-                    .frame(height: tutorModeOn ? geo.size.height / 3 : geo.size.height)
-
-                    // === Bottom 2/3: Tutor Chat ===
-                    if tutorModeOn {
-                        Rectangle()
-                            .fill(colors.divider)
-                            .frame(height: 1)
-
-                        tutorChatSection(colors: colors)
-                            .frame(maxHeight: .infinity)
-                    }
+                    tutorChatSection(colors: colors)
+                        .frame(maxHeight: .infinity)
                 }
             }
             .background(isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
         }
-        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            transcriptionService.tickTimer()
-        }
     }
 
-    // MARK: - Transcription Header
+    // MARK: - Hint / Answer Section
 
     @ViewBuilder
-    private func transcriptionHeader(colors: ReefThemeColors) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "text.viewfinder")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(colors.textSecondary)
-            Text("Transcription")
-                .font(.epilogue(13, weight: .black))
-                .tracking(-0.04 * 13)
-                .foregroundStyle(colors.text)
-
-            if let label = activeQuestionLabel {
-                Text("·")
-                    .font(.epilogue(13, weight: .black))
-                    .foregroundStyle(colors.textMuted)
-                Text(label)
-                    .font(.epilogue(13, weight: .black))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.primary)
+    private func hintAnswerSection(colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Hint panel
+            collapsiblePanel(
+                title: "Hint",
+                icon: "lightbulb.fill",
+                isExpanded: viewModel.showHintPopover,
+                accentColor: Color(hex: 0xF5A623),
+                colors: colors
+            ) {
+                withAnimation(.spring(duration: 0.2)) {
+                    viewModel.showHintPopover.toggle()
+                    if viewModel.showHintPopover { viewModel.showRevealPopover = false }
+                }
+            } content: {
+                if let step = viewModel.currentHintStep {
+                    MathText(
+                        text: step.explanation,
+                        fontSize: 13,
+                        color: colors.text
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                }
             }
 
-            Spacer()
+            Rectangle()
+                .fill(colors.divider)
+                .frame(height: 0.5)
 
-            if transcriptionService.isTranscribing {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .scaleEffect(0.7)
-                    .tint(ReefColors.primary)
+            // Answer panel
+            collapsiblePanel(
+                title: "Full Solution",
+                icon: "eye.fill",
+                isExpanded: viewModel.showRevealPopover,
+                accentColor: ReefColors.primary,
+                colors: colors
+            ) {
+                withAnimation(.spring(duration: 0.2)) {
+                    viewModel.showRevealPopover.toggle()
+                    if viewModel.showRevealPopover { viewModel.showHintPopover = false }
+                }
+            } content: {
+                if let step = viewModel.currentHintStep {
+                    ScrollView {
+                        MathText(
+                            text: step.work,
+                            fontSize: 13,
+                            color: colors.text
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 12)
+                    }
+                    .frame(maxHeight: 200)
+                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .animation(.spring(duration: 0.25), value: viewModel.showHintPopover)
+        .animation(.spring(duration: 0.25), value: viewModel.showRevealPopover)
     }
 
-    // MARK: - Transcription Content
-
     @ViewBuilder
-    private func transcriptionContent(colors: ReefThemeColors) -> some View {
-        if !transcriptionService.latexResult.isEmpty {
-            ScrollView {
-                MathText(
-                    text: transcriptionService.latexResult,
-                    fontSize: 14,
-                    color: colors.text
-                )
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private func collapsiblePanel(
+        title: String,
+        icon: String,
+        isExpanded: Bool,
+        accentColor: Color,
+        colors: ReefThemeColors,
+        toggle: @escaping () -> Void,
+        @ViewBuilder content: () -> some View
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header — tappable
+            Button(action: toggle) {
+                HStack(spacing: 6) {
+                    Image(systemName: icon)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(accentColor)
+
+                    Text(title)
+                        .font(.epilogue(12, weight: .bold))
+                        .tracking(-0.04 * 12)
+                        .foregroundStyle(colors.text)
+
+                    Text("Step \(viewModel.currentTutorStepIndex + 1)")
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundStyle(colors.textMuted)
+
+                    Spacer()
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(colors.textMuted)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if transcriptionService.isTranscribing {
-            VStack(spacing: 8) {
-                ProgressView()
-                    .tint(ReefColors.primary)
-                Text("Transcribing...")
-                    .font(.epilogue(12, weight: .medium))
-                    .foregroundStyle(colors.textMuted)
+            .buttonStyle(.plain)
+
+            // Content — collapsible
+            if isExpanded {
+                content()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let error = transcriptionService.errorMessage {
-            Text(error)
-                .font(.epilogue(12, weight: .medium))
-                .foregroundStyle(Color(hex: 0xE57373))
-                .padding(12)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        } else {
-            VStack(spacing: 6) {
-                Image(systemName: "pencil.tip")
-                    .font(.system(size: 20))
-                    .foregroundStyle(colors.textMuted)
-                Text("Start writing")
-                    .font(.epilogue(12, weight: .medium))
-                    .foregroundStyle(colors.textMuted)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -149,7 +163,7 @@ struct CanvasSidebarView: View {
 
                 Spacer()
 
-                if tutorEvalService.isEvaluating {
+                if viewModel.tutorEvalService.isEvaluating {
                     HStack(spacing: 4) {
                         ProgressView()
                             .progressViewStyle(.circular)
@@ -176,8 +190,7 @@ struct CanvasSidebarView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
-                        if tutorEvalService.chatMessages.isEmpty {
-                            // Empty state
+                        if viewModel.tutorEvalService.chatMessages.isEmpty {
                             VStack(spacing: 8) {
                                 Text("Your work and feedback will appear here")
                                     .font(.epilogue(12, weight: .medium))
@@ -187,7 +200,7 @@ struct CanvasSidebarView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.top, 24)
                         } else {
-                            ForEach(tutorEvalService.chatMessages) { message in
+                            ForEach(viewModel.tutorEvalService.chatMessages) { message in
                                 chatBubble(message: message, colors: colors)
                                     .id(message.id)
                             }
@@ -197,12 +210,12 @@ struct CanvasSidebarView: View {
                     .padding(.vertical, 10)
                 }
                 .onAppear {
-                    if let last = tutorEvalService.chatMessages.last {
+                    if let last = viewModel.tutorEvalService.chatMessages.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
-                .onChange(of: tutorEvalService.chatMessages.count) { _, _ in
-                    if let last = tutorEvalService.chatMessages.last {
+                .onChange(of: viewModel.tutorEvalService.chatMessages.count) { _, _ in
+                    if let last = viewModel.tutorEvalService.chatMessages.last {
                         withAnimation(.easeOut(duration: 0.2)) {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
@@ -233,7 +246,7 @@ struct CanvasSidebarView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .disabled(chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || tutorEvalService.isSendingChat)
+                .disabled(chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.tutorEvalService.isSendingChat)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

@@ -96,10 +96,7 @@ struct CanvasView: View {
                     if viewModel.showSidebar {
                         CanvasSidebarView(
                             isDarkMode: viewModel.isDarkMode,
-                            transcriptionService: viewModel.handwritingService,
-                            tutorEvalService: viewModel.tutorEvalService,
-                            tutorModeOn: viewModel.tutorModeOn,
-                            activeQuestionLabel: viewModel.activeQuestionLabel,
+                            viewModel: viewModel,
                             onSendChat: { message in
                                 viewModel.sendTutorChat(message)
                             }
@@ -133,42 +130,7 @@ struct CanvasView: View {
                 .zIndex(50)
             }
 
-            // Tutor overlays — kept alive to cache KaTeX WKWebView content
-            if let step = viewModel.currentHintStep {
-                TutorHintCard(
-                    hintText: step.explanation,
-                    stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
-                    isDarkMode: viewModel.isDarkMode,
-                    onClose: {
-                        withAnimation(.spring(duration: 0.2)) {
-                            viewModel.showHintPopover = false
-                        }
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 100)
-                .padding(.trailing, 16)
-                .opacity(viewModel.showHintPopover ? 1 : 0)
-                .allowsHitTesting(viewModel.showHintPopover)
-                .zIndex(51)
-
-                TutorRevealCard(
-                    workText: step.work,
-                    stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
-                    isDarkMode: viewModel.isDarkMode,
-                    onClose: {
-                        withAnimation(.spring(duration: 0.2)) {
-                            viewModel.showRevealPopover = false
-                        }
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 100)
-                .padding(.trailing, 16)
-                .opacity(viewModel.showRevealPopover ? 1 : 0)
-                .allowsHitTesting(viewModel.showRevealPopover)
-                .zIndex(52)
-            }
+            // Hint/reveal now shown inline in sidebar — popovers removed
 
             // Bug report popup
             if viewModel.showBugReport {
@@ -252,8 +214,7 @@ struct CanvasView: View {
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
         .animation(.spring(duration: 0.25), value: viewModel.showExportPreview)
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
-        .animation(.spring(duration: 0.2), value: viewModel.showHintPopover)
-        .animation(.spring(duration: 0.2), value: viewModel.showRevealPopover)
+        // Hint/reveal animations handled in sidebar
         .alert("Clear Everything?", isPresented: $viewModel.showClearConfirmation) {
             Button("Clear All", role: .destructive) {
                 viewModel.clearAllStrokes()
