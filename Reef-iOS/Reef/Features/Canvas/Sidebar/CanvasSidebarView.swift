@@ -114,7 +114,8 @@ struct CanvasSidebarView: View {
                 HStack(spacing: 6) {
                     Image(systemName: icon)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(accentColor)
+                        .foregroundStyle(ReefColors.primary)
+                        .frame(width: 16, alignment: .center)
 
                     Text(title)
                         .font(.epilogue(13, weight: .black))
@@ -153,7 +154,8 @@ struct CanvasSidebarView: View {
             HStack(spacing: 6) {
                 Image(systemName: "brain.head.profile")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(colors.textSecondary)
+                    .foregroundStyle(ReefColors.primary)
+                    .frame(width: 16, alignment: .center)
                 Text("Tutor")
                     .font(.epilogue(13, weight: .black))
                     .tracking(-0.04 * 13)
