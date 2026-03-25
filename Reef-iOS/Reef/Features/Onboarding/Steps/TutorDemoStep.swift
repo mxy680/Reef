@@ -442,7 +442,9 @@ struct TutorDemoStep: View {
             HStack(spacing: 8) {
                 ReefButton(.primary, size: .compact, action: {
                     // Skip to Phase 2 (enableTutor)
+                    walkthrough.isSpeaking = true  // Ensure popup types immediately
                     walkthrough.currentStep = .enableTutor
+                    canvasVM?.deferTutorMode = false  // Allow tutor toggle
                     withAnimation(.easeOut(duration: 0.25)) {
                         showSkipToolsChoice = false
                     }
