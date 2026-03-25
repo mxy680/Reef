@@ -221,9 +221,10 @@ export default function Home() {
             <div className="features-cards-row">
               <FeaturesCard
                 variant="Double"
-                headline="HOMEWORK RECONSTRUCTION"
-                subline="Snap a photo or upload a PDF. Reef reconstructs your homework digitally so you can annotate, solve, and get help — all in one place."
+                headline="HOMEWORK FORMATTING"
+                subline="Snap a photo or upload a PDF. Reef formats your homework digitally so you can annotate, solve, and get help — all in one place."
                 background="var(--color-surface)"
+                image={{ src: "/feature-formatting.png", alt: "Homework formatting screenshot" }}
               />
               <FeaturesCard
                 variant="Single"
