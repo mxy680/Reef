@@ -79,9 +79,6 @@ struct CanvasView: View {
                         overlayOpacity: viewModel.overlaySettings.opacity,
                         pageVersion: viewModel.pageVersion,
                         rulerActive: viewModel.showRuler,
-                        rulerCenter: viewModel.rulerCenter,
-                        rulerAngle: viewModel.rulerAngle,
-                        rulerScale: viewModel.rulerScale,
                         scrollToPageIndex: scrollToPageIndex,
                         onCanvasTouchBegan: {
                             viewModel.dismissAllPopovers()
@@ -121,18 +118,7 @@ struct CanvasView: View {
                 .ignoresSafeArea(edges: [.bottom, .horizontal])
             }
 
-            // Ruler overlay
-            if viewModel.showRuler {
-                CanvasRulerOverlayView(
-                    isDarkMode: viewModel.isDarkMode,
-                    onGeometryChanged: { center, angle, scale in
-                        viewModel.rulerCenter = center
-                        viewModel.rulerAngle = angle
-                        viewModel.rulerScale = scale
-                    }
-                )
-                .transition(.opacity)
-            }
+            // Ruler is handled natively by PKCanvasView.isRulerActive
 
             // Calculator overlay (floating, no backdrop)
             if viewModel.showCalculator {
