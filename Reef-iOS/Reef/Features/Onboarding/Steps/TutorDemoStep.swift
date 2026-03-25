@@ -10,7 +10,7 @@ struct TutorDemoStep: View {
     @State private var canvasVM: CanvasViewModel?
     @State private var walkthrough = CanvasWalkthroughState()
     @State private var showPreDialog = true
-    @State private var introReady = false
+    @State private var introReady = true
     @State private var introTask: Task<Void, Never>?
     @State private var pendingReactionTask: Task<Void, Never>?
 
