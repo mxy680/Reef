@@ -209,7 +209,7 @@ struct OnboardingAnswers: Sendable {
     var studentType: StudentType?
     var major: MajorField?
     var courses: Set<String> = []
-    var favoriteTopic: String = ""
+    var favoriteTopics: Set<String> = []
     var studyGoal: StudyGoal?
     var painPoints: Set<PainPoint> = []
     var learningStyle: LearningStyle?

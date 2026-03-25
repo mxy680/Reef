@@ -4,32 +4,33 @@ struct FavoriteTopicStep: View {
     @Environment(ReefTheme.self) private var theme
     @Bindable var viewModel: OnboardingViewModel
 
-    private var placeholder: String {
-        CourseCatalog.topicPlaceholder(for: viewModel.answers.courses)
-    }
-
     private var suggestions: [String] {
         CourseCatalog.topicSuggestions(for: viewModel.answers.courses)
     }
 
     var body: some View {
-        let colors = theme.colors
-
         OnboardingStepShell(
-            title: "What's the one thing you don't hate studying?",
-            subtitle: "We're gonna use this to show you something cool.",
+            title: "What kind of problems do you want help with?",
+            subtitle: "Pick as many as you want — we'll tailor your experience.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
         ) {
-            VStack(alignment: .leading, spacing: 16) {
-                ReefTextField(
-                    placeholder: placeholder,
-                    text: $viewModel.answers.favoriteTopic,
-                    capitalization: .sentences,
-                    autocorrection: true
-                )
-
+            OnboardingFlowLayout(spacing: 10) {
+                ForEach(suggestions, id: \.self) { topic in
+                    let selected = viewModel.answers.favoriteTopics.contains(topic)
+                    OnboardingPill(
+                        label: topic,
+                        isSelected: selected,
+                        action: {
+                            if selected {
+                                viewModel.answers.favoriteTopics.remove(topic)
+                            } else {
+                                viewModel.answers.favoriteTopics.insert(topic)
+                            }
+                        }
+                    )
+                }
             }
         }
     }

@@ -78,7 +78,7 @@ final class OnboardingViewModel {
         case .courses:
             return !answers.courses.isEmpty
         case .favoriteTopic:
-            return !answers.favoriteTopic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return !answers.favoriteTopics.isEmpty
         case .studyGoal:
             return answers.studyGoal != nil
         case .painPoints:
@@ -189,7 +189,7 @@ final class OnboardingViewModel {
             studyGoal: answers.studyGoal?.rawValue,
             painPoints: answers.painPoints.map(\.rawValue),
             learningStyle: answers.learningStyle?.rawValue,
-            favoriteTopic: answers.favoriteTopic,
+            favoriteTopic: answers.favoriteTopics.sorted().joined(separator: ", "),
             referralCode: referralCode,
             referredBy: referredBy,
             onboardingCompleted: true,
