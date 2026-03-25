@@ -124,10 +124,6 @@ struct CanvasSidebarView: View {
 
                     Spacer()
 
-                    Text("Step \(viewModel.currentTutorStepIndex + 1)")
-                        .font(.system(size: 11, weight: .medium, design: .monospaced))
-                        .foregroundStyle(colors.textMuted)
-
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(colors.textMuted)
