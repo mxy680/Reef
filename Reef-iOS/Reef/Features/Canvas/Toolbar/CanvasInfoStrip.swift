@@ -92,13 +92,37 @@ struct CanvasInfoStrip: View {
             }
 
             if viewModel.tutorModeOn {
-                // Tutor mode: progress bar only (hint/reveal moved to sidebar)
-                HStack(spacing: 4) {
+                // Tutor mode: back | progress bar | skip
+                HStack(spacing: 6) {
+                    Button {
+                        viewModel.goToPreviousStep()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(viewModel.canGoBackStep ? 0.8 : 0.25))
+                            .frame(width: 20, height: 20)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!viewModel.canGoBackStep)
+
                     progressBar(progress: viewModel.tutorProgress)
 
                     Text("\(Int(viewModel.tutorProgress * 100))%")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundColor(.white.opacity(0.55))
+
+                    Button {
+                        viewModel.skipCurrentStep()
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(viewModel.canSkipStep ? 0.8 : 0.25))
+                            .frame(width: 20, height: 20)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!viewModel.canSkipStep)
                 }
                 .transition(.opacity)
             } else {

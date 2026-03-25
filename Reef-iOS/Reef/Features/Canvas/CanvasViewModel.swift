@@ -275,6 +275,23 @@ final class CanvasViewModel {
         return (completedSteps + intraStepProgress) / Double(tutorStepCount)
     }
 
+    var canSkipStep: Bool { currentTutorStepIndex < tutorStepCount - 1 }
+    var canGoBackStep: Bool { currentTutorStepIndex > 0 }
+
+    func skipCurrentStep() {
+        guard canSkipStep else { return }
+        tutorEvalService.resetForNextStep()
+        currentTutorStepIndex += 1
+        updatePendingReinforcement()
+    }
+
+    func goToPreviousStep() {
+        guard canGoBackStep else { return }
+        tutorEvalService.resetForNextStep()
+        currentTutorStepIndex -= 1
+        updatePendingReinforcement()
+    }
+
     func loadAnswerKeys() async {
         guard isReconstructed else { return }
         isLoadingAnswerKeys = true
