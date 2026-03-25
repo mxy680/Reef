@@ -205,7 +205,7 @@ final class CanvasViewModel {
 
     // Answer key data
     var answerKeys: [Int: QuestionAnswer] = [:]
-    var isLoadingAnswerKeys: Bool = false
+    var isLoadingAnswerKeys: Bool = true
     private var savedTutorProgress: [String: TutorStepState]?
 
     /// Whether this document has been reconstructed (has answer keys available)
@@ -213,9 +213,9 @@ final class CanvasViewModel {
         document.problemCount != nil && (document.problemCount ?? 0) > 0
     }
 
-    /// True when PDF is loaded (answer keys load in background — tutor enables when ready)
+    /// True when both PDF and answer keys are loaded
     var isReady: Bool {
-        !isLoadingPDF
+        !isLoadingPDF && !isLoadingAnswerKeys
     }
 
     /// Derives question number and part label from activeQuestionLabel.
@@ -313,7 +313,11 @@ final class CanvasViewModel {
     }
 
     func loadAnswerKeys(forceLoad: Bool = false) async {
-        guard isReconstructed || forceLoad else { return }
+        guard isReconstructed || forceLoad else {
+            // Don't clear isLoadingAnswerKeys — loadPDF will call us again with forceLoad
+            // once reconstruction completes
+            return
+        }
         isLoadingAnswerKeys = true
         let repo = SupabaseAnswerKeyRepository()
 
@@ -469,7 +473,7 @@ final class CanvasViewModel {
 
             // If document finished reconstruction, kick off answer key loading
             // (the initial loadAnswerKeys() may have skipped because isReconstructed was false at init)
-            if isReconstructedDoc && answerKeys.isEmpty && !isLoadingAnswerKeys {
+            if isReconstructedDoc && answerKeys.isEmpty {
                 loadAnswerKeysTask?.cancel()
                 loadAnswerKeysTask = Task { await loadAnswerKeys(forceLoad: true) }
             }
