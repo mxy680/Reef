@@ -292,7 +292,7 @@ export default function Home() {
                 <span className="step-badge">Step 1</span>
                 <h3 className="step-heading">UPLOAD YOUR MATERIALS</h3>
                 <p className="step-body">
-                  Drop in your syllabus, lecture slides, homework PDFs, or even photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. If a document has an answer key, it&rsquo;s extracted automatically so the AI can check your work in real time.
+                  Drop in your syllabus, lecture slides, homework PDFs, or photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. Answer keys are extracted automatically so the AI can check your work.
                 </p>
               </div>
               <div className="step-card step-card-surface" />
