@@ -3,6 +3,7 @@ import SwiftUI
 struct CanvasLoadingView: View {
     let isLoadingAnswerKeys: Bool
     let documentName: String
+    var onClose: (() -> Void)?
 
     @State private var isPulsing = false
     @State private var dotCount = 0
@@ -31,6 +32,22 @@ struct CanvasLoadingView: View {
     }
 
     var body: some View {
+        ZStack(alignment: .topLeading) {
+            // Close button
+            if let onClose {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.primary.opacity(0.4))
+                        .frame(width: 36, height: 36)
+                        .background(Color.primary.opacity(0.06))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .padding(20)
+                .zIndex(1)
+            }
+
         VStack(spacing: 28) {
             // Animated icon
             ZStack {
@@ -67,6 +84,8 @@ struct CanvasLoadingView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } // end ZStack
         .onAppear {
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
                 isPulsing = true

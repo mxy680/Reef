@@ -24,7 +24,12 @@ struct CanvasView: View {
                 // Loading screen — wait for PDF + answer keys
                 CanvasLoadingView(
                     isLoadingAnswerKeys: viewModel.isLoadingAnswerKeys,
-                    documentName: viewModel.document.displayName
+                    documentName: viewModel.document.displayName,
+                    onClose: {
+                        viewModel.stopAllAudio()
+                        viewModel.cancelAllTasks()
+                        onDismiss()
+                    }
                 )
             } else {
 
