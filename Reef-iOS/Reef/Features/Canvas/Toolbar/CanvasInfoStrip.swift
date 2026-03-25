@@ -65,6 +65,7 @@ struct CanvasInfoStrip: View {
             if viewModel.tutorModeOn {
                 divider
 
+                if viewModel.tutorStepCount > 0 {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -77,6 +78,7 @@ struct CanvasInfoStrip: View {
                         .lineLimit(1)
                 }
                 .transition(.opacity)
+                } // end tutorStepCount > 0
             }
 
             Spacer(minLength: 8)
