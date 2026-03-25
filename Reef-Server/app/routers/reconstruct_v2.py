@@ -303,6 +303,18 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
                                 )
                                 costs.add(fix_llm, model=llm_client.model)
                                 fix_content = fix_llm.content
+                            # Strip code fences and explanatory preamble from LLM response
+                            fix_content = re.sub(r"^```(?:latex|tex)?\s*\n?", "", fix_content.strip())
+                            fix_content = re.sub(r"\n?```\s*$", "", fix_content)
+                            # Remove any lines before the first LaTeX command or content
+                            lines = fix_content.split("\n")
+                            start = 0
+                            for j, line in enumerate(lines):
+                                stripped = line.strip()
+                                if stripped and (stripped.startswith("\\") or stripped[0].isalpha() and not stripped.startswith(("The ", "This ", "Here ", "Note", "I "))):
+                                    start = j
+                                    break
+                            fix_content = "\n".join(lines[start:])
                             latex = _sanitize_text(fix_content)
                             # Strip hallucinated figures from fix
                             latex = _strip_invalid_figures(latex, valid_figures)
