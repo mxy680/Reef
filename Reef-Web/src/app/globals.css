@@ -720,24 +720,35 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Brand logo — replace text portion with DynaPuff, keep manta icon */
+/* Brand logo — manta icon + REEF text */
 .framer-NHxYE.framer-1tamot2 .framer-s0p6wi {
   width: 35px !important;
   aspect-ratio: unset !important;
   height: 35px !important;
-  background-image: url("/manta-logo.png") !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
+}
+.framer-NHxYE.framer-1tamot2 .framer-s0p6wi img,
+.framer-NHxYE.framer-1tamot2 .framer-s0p6wi [data-framer-background-image-wrapper] {
+  visibility: hidden !important;
+}
+.framer-NHxYE.framer-1tamot2 .framer-s0p6wi::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/manta-logo.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 .framer-NHxYE.framer-1tamot2 {
   flex-direction: row !important;
   gap: 8px !important;
 }
 .framer-NHxYE.framer-1tamot2::after {
-  content: "Reef";
-  font-family: "DynaPuff", cursive;
-  font-weight: 600;
-  font-size: 28px;
+  content: "REEF";
+  font-family: "Epilogue", sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: 0.02em;
   color: var(--color-black);
   line-height: 1;
 }
