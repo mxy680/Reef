@@ -114,7 +114,7 @@ struct CanvasView: View {
                     }
                 }
                 .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.showSidebar)
-                .ignoresSafeArea(edges: .bottom)
+                .ignoresSafeArea(edges: [.bottom, .horizontal])
             }
 
             // Ruler overlay

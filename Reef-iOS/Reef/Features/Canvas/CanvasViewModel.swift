@@ -1102,6 +1102,23 @@ final class CanvasViewModel {
         )
     }
 
+    /// Normalize LaTeX for comparison: strip delimiters, whitespace, common wrappers.
+    private func normalizeLatex(_ latex: String) -> String {
+        var s = latex
+        // Strip display math delimiters
+        s = s.replacingOccurrences(of: "$$", with: "")
+        s = s.replacingOccurrences(of: "\\[", with: "")
+        s = s.replacingOccurrences(of: "\\]", with: "")
+        s = s.replacingOccurrences(of: "\\(", with: "")
+        s = s.replacingOccurrences(of: "\\)", with: "")
+        s = s.replacingOccurrences(of: "$", with: "")
+        // Strip whitespace
+        s = s.replacingOccurrences(of: " ", with: "")
+        s = s.replacingOccurrences(of: "\n", with: "")
+        s = s.replacingOccurrences(of: "\t", with: "")
+        return s.lowercased()
+    }
+
     /// Trigger AI evaluation of the current student work.
     func triggerTutorEvaluation() {
         guard tutorModeOn,
@@ -1111,6 +1128,25 @@ final class CanvasViewModel {
               !(currentTutorStepIndex >= tutorStepCount - 1 && tutorEvalService.status == "completed")
         else {
             return
+        }
+
+        // Quick check: does student's LaTeX contain the expected answer?
+        // If so, mark as completed immediately without server round-trip
+        if let step = currentHintStep {
+            let studentNorm = normalizeLatex(handwritingService.latexResult)
+            let workNorm = normalizeLatex(step.work)
+            if !workNorm.isEmpty && studentNorm.contains(workNorm) {
+                tutorEvalService.stepProgress = 1.0
+                tutorEvalService.status = "completed"
+                if let reinforcement = tutorEvalService.pendingReinforcement, !reinforcement.isEmpty {
+                    tutorEvalService.chatMessages.removeAll { $0.role == .reinforcement }
+                    tutorEvalService.chatMessages.append(TutorChatMessage(
+                        role: .reinforcement, latex: reinforcement, timestamp: Date()
+                    ))
+                }
+                tutorEvalService.onStepCompleted?(1)
+                return
+            }
         }
 
         // If no active question label, use Q1a as default for reconstructed docs

@@ -46,7 +46,7 @@ enum CanvasToolType: String, CaseIterable {
         case .pen:
             return PKInkingTool(.pen, color: color, width: width)
         case .highlighter:
-            return PKInkingTool(.marker, color: color.withAlphaComponent(0.3), width: width * 4)
+            return PKInkingTool(.marker, color: color.withAlphaComponent(0.3), width: width * 6)
         case .shapes, .handDraw:
             return PKInkingTool(.pen, color: color, width: width)
         case .diagram:
@@ -77,6 +77,6 @@ enum CanvasOverlayType: String, CaseIterable, Codable {
 struct CanvasOverlaySettings: Equatable, Codable {
     var type: CanvasOverlayType = .none
     var spacing: CGFloat = 20
-    var opacity: CGFloat = 0.35
+    var opacity: CGFloat = 0.525
     var showInExport: Bool = false
 }

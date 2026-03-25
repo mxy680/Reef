@@ -159,9 +159,7 @@ struct CanvasInfoStrip: View {
                         get: { viewModel.tutorModeOn },
                         set: { newValue in
                             viewModel.tutorModeOn = newValue
-                            if !newValue {
-                                viewModel.showSidebar = false
-                            }
+                            viewModel.showSidebar = newValue
                         }
                     ), size: .compact)
                 } else {
