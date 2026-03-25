@@ -753,6 +753,11 @@ html, body {
   line-height: 1;
 }
 
+/* Remove white background from feature card image areas */
+.features-cards-grid .framer-iyuun0 {
+  background: transparent !important;
+}
+
 /* Responsive — mobile */
 @media (max-width: 768px) {
   .section-inner {
