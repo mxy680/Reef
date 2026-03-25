@@ -16,6 +16,7 @@ from app.models.tutor import (
     TutorEvaluateRequest, TutorEvaluateResponse, TutorEvaluation,
 )
 from app.services.llm_client import LLMClient
+from app.services.concept_tracker import get_prior_struggles, record_struggle, resolve_struggles
 from app.services.prompts import (
     TUTOR_CHAT_PROMPT, TUTOR_CHAT_SYSTEM,
     TUTOR_EVALUATE_DYNAMIC, TUTOR_EVALUATE_STATIC, TUTOR_EVALUATE_SYSTEM,
@@ -206,6 +207,35 @@ async def tutor_evaluate(
         current_step_num=body.step_index + 1,
     )
 
+    # Query prior concept struggles for cross-question threading
+    current_concepts = current_step.concepts or []
+    if current_concepts:
+        try:
+            prior_struggles = await get_prior_struggles(
+                user_id=user.id,
+                document_id=body.document_id,
+                concepts=current_concepts,
+                current_question_number=body.question_number,
+            )
+        except Exception as e:
+            log.warning(f"[tutor-eval] concept struggle query failed: {e}")
+            prior_struggles = []
+
+        if prior_struggles:
+            struggle_lines = []
+            for s in prior_struggles:
+                struggle_lines.append(
+                    f"- Concept '{s['concept']}': struggled in Q{s['question_number']} "
+                    f"step {s['step_index'] + 1} ({s.get('mistake_count', 1)} mistake(s))"
+                )
+            dynamic_prompt += (
+                "\n\n## Prior Concept Struggles\n"
+                "The student has struggled with these concepts before in this session:\n"
+                + "\n".join(struggle_lines)
+                + "\nIf the current step involves any of these concepts, BRIEFLY reference "
+                "the prior encounter to build continuity. One sentence max."
+            )
+
     # Collect images: figure URLs + student drawing
     images = await _download_images(body.figure_urls)
     if body.student_image:
@@ -245,6 +275,32 @@ async def tutor_evaluate(
         f"steps_completed={evaluation.steps_completed} "
         f"({result.input_tokens}in/{result.output_tokens}out)"
     )
+
+    # Fire-and-forget concept struggle tracking
+    if current_concepts:
+        async def _safe_concept_track(coro):
+            try:
+                await coro
+            except Exception as e:
+                log.warning(f"[concept-tracker] {e}")
+
+        if evaluation.status == "mistake":
+            asyncio.create_task(_safe_concept_track(record_struggle(
+                user_id=user.id,
+                document_id=body.document_id,
+                concepts=current_concepts,
+                question_number=body.question_number,
+                step_index=body.step_index,
+                part_label=body.part_label,
+            )))
+        elif evaluation.status == "completed":
+            asyncio.create_task(_safe_concept_track(resolve_struggles(
+                user_id=user.id,
+                document_id=body.document_id,
+                concepts=current_concepts,
+                question_number=body.question_number,
+                step_index=body.step_index,
+            )))
 
     # Cap steps_completed to not exceed remaining steps
     max_steps = len(steps) - body.step_index

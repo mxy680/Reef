@@ -256,6 +256,12 @@ This is FINE. If their work is mathematically correct and reaches the result of 
 - steps_completed: How many steps the student completed at once, starting from the current step. Default 1. If the student's work also covers subsequent steps, set to the total number of steps completed. Example: evaluating Step 1, student wrote work covering Steps 1 through 3 → steps_completed = 3.
 
 Mark "completed" if the student's work achieves the mathematical result of the expected step — it does NOT need to match the exact format or notation. If prior steps are completed, the student's work will contain their prior work too — don't penalize for that.
+
+## Cross-question concept threading
+If "Prior Concept Struggles" context is provided below, and the current step involves a concept the student struggled with before, weave a BRIEF reference into your feedback:
+- For mistakes (mistake_speech): "This is the same [concept] situation from Q[N] — [Socratic question connecting to the prior mistake]"
+- For completions (reinforcement_speech): "Remember struggling with [concept] back in Q[N]? Look at you now."
+Keep references natural and concise — one clause, not a paragraph. Only reference prior struggles when the concept genuinely overlaps. Never fabricate prior struggles that aren't listed.
 """
 
 ## Tutor evaluation prompt — split into STATIC (cacheable) and DYNAMIC parts.
@@ -367,6 +373,11 @@ Break every solution into discrete **steps**. Each step has four fields:
   - Good: "Almost there — just plug in the numbers and simplify."
   - Bad: "Apply $F=ma$" (contains LaTeX — must say "F equals m a")
   - Bad: "Step 3" (not a sentence, not helpful)
+- `concepts` — A list of 1-3 short, reusable concept labels for this step. Use lowercase snake_case. These labels connect struggles across different questions, so use CONSISTENT naming:
+  - Good: ["chain_rule"], ["product_rule", "simplification"], ["newtons_second_law"]
+  - Bad: ["Step 3 concept"], ["math"], ["use the formula"] (too vague or not reusable)
+  - Think: "If a student struggled with this concept in Q2, what label would help me recognize it in Q7?"
+  - Common labels: chain_rule, product_rule, quotient_rule, integration_by_parts, u_substitution, trig_identities, completing_the_square, factoring, quadratic_formula, newtons_second_law, conservation_of_energy, free_body_diagram, unit_conversion, implicit_differentiation, related_rates, lhopitals_rule, cross_product, dot_product, equilibrium, moment_balance, kinematics, work_energy_theorem
 
 ## Tone
 

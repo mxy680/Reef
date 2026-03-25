@@ -6,9 +6,10 @@ struct AnswerKeyStep: Codable, Sendable {
     let work: String
     let reinforcement: String?
     let tutorSpeech: String?
+    let concepts: [String]?
 
     enum CodingKeys: String, CodingKey {
-        case description, explanation, work, reinforcement
+        case description, explanation, work, reinforcement, concepts
         case tutorSpeech = "tutor_speech"
     }
 }

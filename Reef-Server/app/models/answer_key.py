@@ -34,6 +34,10 @@ class Step(BaseModel):
         default="",
         description="Spoken instruction for this step — a full natural sentence the tutor says OUT LOUD to guide the student. NO math notation, NO LaTeX, say formulas in plain English. Vary the phrasing: 'Your first step is...', 'Next up,...', 'Now try...', 'For the last step,...'. One sentence max.",
     )
+    concepts: list[str] = Field(
+        default_factory=list,
+        description="1-3 short snake_case concept labels for cross-question tracking (e.g. 'chain_rule', 'u_substitution').",
+    )
 
 
 class PartAnswer(BaseModel):
