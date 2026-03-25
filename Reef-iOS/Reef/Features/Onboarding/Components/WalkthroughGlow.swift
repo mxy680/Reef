@@ -15,7 +15,7 @@ struct WalkthroughGlow: ViewModifier {
                         .frame(width: 8, height: 8)
                         .scaleEffect(isPulsing ? 1.4 : 1.0)
                         .opacity(isPulsing ? 0.8 : 1.0)
-                        .offset(x: 2, y: 4)
+                        .offset(x: -2, y: 8)
                         .allowsHitTesting(false)
                 }
             }
