@@ -322,19 +322,35 @@ final class CanvasWalkthroughState {
                 log("reactToDrawing() — got reaction: \(decoded.reaction)")
                 drawingReaction = decoded.reaction
 
-                // Speak reaction + next step together, then advance after TTS completes
+                // Wait for any current audio to finish first
+                while isPlayingAudio {
+                    try? await Task.sleep(for: .milliseconds(200))
+                }
+
+                // Speak reaction + next step together
                 let allSteps = WalkthroughStep.allCases
                 if let idx = allSteps.firstIndex(of: .drawSomething), idx + 1 < allSteps.count {
                     let nextStep = allSteps[idx + 1]
                     let combined = decoded.reaction + " " + nextStep.speech
                     log("Speaking combined: \(combined.prefix(80))...")
                     speakInstruction(combined)
+
+                    // Wait for TTS to start playing
+                    var waited = 0
+                    while !isPlayingAudio && waited < 25 {
+                        try? await Task.sleep(for: .milliseconds(200))
+                        waited += 1
+                    }
+
+                    // Wait for combined audio to finish
+                    while isPlayingAudio {
+                        try? await Task.sleep(for: .milliseconds(200))
+                    }
                 }
             }
 
             waitingForReaction = false
-            // Advance after a delay to let TTS start (advance resets isSpeaking)
-            advanceAfterDelay(ms: 500)
+            advance()
         }
     }
 
