@@ -295,34 +295,36 @@ struct TutorDemoStep: View {
         return VStack(alignment: .leading, spacing: 8) {
             Spacer()
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text(introDisplay)
-                    .font(.epilogue(14, weight: .semiBold))
-                    .tracking(-0.04 * 14)
-                    .lineSpacing(3)
-                    .foregroundStyle(colors.text)
+            Text(introDisplay)
+                .font(.epilogue(14, weight: .semiBold))
+                .tracking(-0.04 * 14)
+                .lineSpacing(3)
+                .foregroundStyle(colors.text)
+                .padding(16)
+                .frame(maxWidth: 340, alignment: .leading)
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(colors.border, lineWidth: 2)
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(colors.shadow)
+                        .offset(x: 3, y: 3)
+                )
 
-                ReefButton("Let's go", size: .compact, action: {
-                    withAnimation(.easeOut(duration: 0.25)) {
-                        showPreDialog = false
-                    }
-                })
-                .opacity(introReady ? 1 : 0.4)
-                .disabled(!introReady)
+            ReefButton(.primary, size: .compact, action: {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    showPreDialog = false
+                }
+            }) {
+                Text("Let's go")
+                    .font(.epilogue(11, weight: .bold))
+                    .tracking(-0.04 * 11)
             }
-            .padding(16)
-            .frame(maxWidth: 340, alignment: .leading)
-            .background(colors.card)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(colors.border, lineWidth: 2)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(colors.shadow)
-                    .offset(x: 3, y: 3)
-            )
+            .opacity(introReady ? 1 : 0.4)
+            .disabled(!introReady)
         }
         .padding(.leading, 20)
         .padding(.bottom, 8)
