@@ -367,7 +367,7 @@ async def _regenerate_answer_key(
 
     llm = LLMClient(
         api_key=settings.openrouter_api_key,
-        model="deepseek/deepseek-r1",
+        model="z-ai/glm-4.6v",
         base_url="https://openrouter.ai/api/v1",
     )
     result = await asyncio.to_thread(

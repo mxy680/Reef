@@ -206,7 +206,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         # LLM client for LaTeX fix loop (use inference API if available)
         llm_client = LLMClient(
             api_key=settings.openrouter_api_key,
-            model="google/gemini-3-flash-preview",
+            model="z-ai/glm-4.6v",
             base_url="https://openrouter.ai/api/v1",
         )
 
