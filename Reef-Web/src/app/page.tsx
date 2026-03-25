@@ -402,7 +402,31 @@ export default function Home() {
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
-          <AccordionResponsive />
+          <div className="faq-list">
+            {[
+              { q: "IS THIS JUST CHATGPT WITH FISH?", a: "Rude. But no. ChatGPT waits for you to ask it something. Reef watches you work and jumps in when you\u2019re stuck, like a tutor who can read the room. Also, yes, there are fish." },
+              { q: "IS THIS CHEATING?", a: "Reef doesn\u2019t give you answers\u2014it helps you find them. Think of it like office hours that never close. It watches your work, spots mistakes, and nudges you in the right direction." },
+              { q: "WILL I ACE ALL MY CLASSES?", a: "Our lawyers said we can\u2019t guarantee that. But your 2am panic sessions will be significantly more productive." },
+              { q: "CAN IT HELP ME WITH ROCKET SCIENCE??", a: "Yes. Orbital mechanics, propulsion, the whole thing. We weren\u2019t kidding about STEM." },
+              { q: "WHAT IF I WANT A TUTOR WITH A BRITISH ACCENT?", a: "Yes. We have that. You\u2019re welcome." },
+              { q: "DO I NEED AN APPLE PENCIL?", a: "You don\u2019t need one, but Reef is built around handwriting. An Apple Pencil unlocks the full experience\u2014pressure sensitivity, palm rejection, and real-time recognition as you write." },
+              { q: "WILL THIS BRING MY GPA BACK FROM THE DEAD?", a: "We\u2019re an app, not a necromancer. But we\u2019ll do what we can." },
+              { q: "IS IT GLUTEN FREE?", a: "It\u2019s an app. Yes." },
+              { q: "IS MY DATA PRIVATE?", a: "Your notes and documents stay on your device and in your private iCloud. We never use your work to train AI models." },
+              { q: "I SHOWED MY REEF TO MY MOM.", a: "That\u2019s also not a question but we\u2019re proud of you." },
+              { q: "WHAT IF I KNOW MORE THAN THE AI?", a: "Sure you do." },
+              { q: "WHAT IF I\u2019M A VISUAL LEARNER?", a: "There are fish. You\u2019ll be fine." },
+              { q: "DOES IT WORK IN THE BATHROOM?", a: "We\u2019re not asking where you study." },
+              { q: "WHAT IF I CRY WHILE STUDYING?", a: "The iPad is water resistant. You\u2019ll be fine." },
+              { q: "CAN MY DOG STILL EAT MY HOMEWORK?", a: "Your notes sync to iCloud. Your dog would need your Apple ID." },
+              { q: "OKAY BUT SERIOUSLY, SHOULD I DOWNLOAD THIS?", a: "You read this entire FAQ instead of studying. Yes. Immediately." },
+            ].map((item, i) => (
+              <details key={i} className="faq-item">
+                <summary className="faq-question">{item.q}</summary>
+                <p className="faq-answer">{item.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
