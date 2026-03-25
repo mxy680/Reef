@@ -22,7 +22,7 @@ from app.services.prompts import ANSWER_KEY_PROMPT
 
 logger = logging.getLogger(__name__)
 
-ANSWER_KEY_MODEL = "deepseek/deepseek-r1"
+ANSWER_KEY_MODEL = "google/gemini-2.5-flash"
 
 
 # ---------------------------------------------------------------------------
