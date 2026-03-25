@@ -22,6 +22,10 @@ class Step(BaseModel):
         ...,
         description="Short, punchy hint for a stuck student — one sentence max, e.g. 'What does F=ma solve for here?'",
     )
+    worked_example: str = Field(
+        default="",
+        description="A fully worked-out solution to a SIMILAR but DIFFERENT problem using the same technique. Change numbers/variables so the student can't copy directly. Use LaTeX ($...$ inline, \\[...\\] display). End with a bridge sentence.",
+    )
     work: str = Field(
         ...,
         description="Just the math or key reasoning — no narration (LaTeX with $...$ inline, \\[...\\] display, or plain text)",
