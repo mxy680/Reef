@@ -377,7 +377,7 @@ footer.framer-1fiw38h {
 
 /* Override Framer's fixed widths — use flex sizing for responsive 2:1 ratio */
 .features-cards-row > .framer-1f6l56w {
-  height: 280px !important;
+  height: 220px !important;
   width: auto !important;
   flex: 1 1 0 !important;
   min-width: 0;

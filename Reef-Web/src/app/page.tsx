@@ -243,7 +243,7 @@ export default function Home() {
               <FeaturesCard
                 variant="Double"
                 headline="ANALYTICS DASHBOARD"
-                subline="Track study time, mastery by topic, and weekly streaks. See exactly where you're strong and where you need more practice. Visualize your progress across courses and stay motivated with daily goals."
+                subline="Track study time, mastery by topic, and weekly streaks. See exactly where you're strong and where you need more practice. Visualize your progress across courses, set daily study goals, and watch your streaks grow. Reef turns your effort into data so you always know where to focus next."
                 background="var(--color-accent)"
               />
             </div>
