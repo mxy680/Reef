@@ -113,19 +113,19 @@ struct CanvasSidebarView: View {
             Button(action: toggle) {
                 HStack(spacing: 6) {
                     Image(systemName: icon)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(accentColor)
 
                     Text(title)
-                        .font(.epilogue(12, weight: .bold))
-                        .tracking(-0.04 * 12)
+                        .font(.epilogue(13, weight: .black))
+                        .tracking(-0.04 * 13)
                         .foregroundStyle(colors.text)
 
-                    Text("Step \(viewModel.currentTutorStepIndex + 1)")
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundStyle(colors.textMuted)
-
                     Spacer()
+
+                    Text("Step \(viewModel.currentTutorStepIndex + 1)")
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(colors.textMuted)
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 10, weight: .bold))
