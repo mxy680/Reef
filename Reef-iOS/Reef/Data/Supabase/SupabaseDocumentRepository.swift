@@ -257,13 +257,19 @@ struct SupabaseDocumentRepository: DocumentRepository {
 
     // MARK: - URLs
 
-    func getDownloadURL(_ id: String) async throws -> URL {
+    func getDownloadURL(_ id: String, preferOutput: Bool = true) async throws -> URL {
         let userId = try await getUserId()
-        // Try output.pdf first (reconstructed), fall back to original.pdf
-        do {
-            return try await supabase.storage.from("documents")
-                .createSignedURL(path: "\(userId)/\(id)/output.pdf", expiresIn: 3600)
-        } catch {
+        if preferOutput {
+            // Try output.pdf first (reconstructed), fall back to original.pdf
+            do {
+                return try await supabase.storage.from("documents")
+                    .createSignedURL(path: "\(userId)/\(id)/output.pdf", expiresIn: 3600)
+            } catch {
+                return try await supabase.storage.from("documents")
+                    .createSignedURL(path: "\(userId)/\(id)/original.pdf", expiresIn: 3600)
+            }
+        } else {
+            // Document not reconstructed — go directly to original
             return try await supabase.storage.from("documents")
                 .createSignedURL(path: "\(userId)/\(id)/original.pdf", expiresIn: 3600)
         }

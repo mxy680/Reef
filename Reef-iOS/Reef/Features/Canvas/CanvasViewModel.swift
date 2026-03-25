@@ -15,7 +15,7 @@ final class CanvasViewModel {
     // MARK: - PDF
 
     var pdfDocument: PDFDocument
-    var isLoadingPDF: Bool = false
+    var isLoadingPDF: Bool = true  // Set true synchronously — loadPDF task clears it
     var pdfError: String?
     private var loadPDFTask: Task<Void, Never>?
     private var loadAnswerKeysTask: Task<Void, Never>?
@@ -307,8 +307,8 @@ final class CanvasViewModel {
         stepSpeechTask?.cancel()
     }
 
-    func loadAnswerKeys() async {
-        guard isReconstructed else { return }
+    func loadAnswerKeys(forceLoad: Bool = false) async {
+        guard isReconstructed || forceLoad else { return }
         isLoadingAnswerKeys = true
         let repo = SupabaseAnswerKeyRepository()
 
@@ -369,9 +369,7 @@ final class CanvasViewModel {
             self.loadAnswerKeysTask?.cancel()
             self.loadAnswerKeysTask = Task { @MainActor in
                 await self.loadAnswerKeys()
-                self.currentTutorStepIndex = 0
-                self.tutorEvalService.resetForNextStep()
-                self.updatePendingReinforcement()
+                // loadAnswerKeys handles state restoration internally
             }
         }
 
@@ -398,6 +396,7 @@ final class CanvasViewModel {
             let repo = SupabaseDocumentRepository()
 
             // If document is still processing, poll until completed (up to 5 min)
+            var isReconstructedDoc = document.status == .completed && (document.problemCount ?? 0) > 0
             if document.status == .processing {
                 var attempts = 0
                 while attempts < 60 && !Task.isCancelled {
@@ -405,12 +404,14 @@ final class CanvasViewModel {
                     try? await Task.sleep(for: .seconds(5))
                     if let updated = try? await repo.getDocument(document.id),
                        updated.status != .processing {
+                        isReconstructedDoc = updated.status == .completed && (updated.problemCount ?? 0) > 0
                         break
                     }
                 }
             }
 
-            let signedURL = try await repo.getDownloadURL(document.id)
+            // Only fetch output.pdf if reconstruction completed successfully
+            let signedURL = try await repo.getDownloadURL(document.id, preferOutput: isReconstructedDoc)
             let (data, _) = try await Self.pdfSession.data(from: signedURL)
             guard let pdf = PDFDocument(data: data) else {
                 pdfError = "Unable to open PDF"
@@ -455,6 +456,13 @@ final class CanvasViewModel {
             // Single pageVersion bump AFTER all state is restored
             // so setupPages reads the restored drawings
             pageVersion += 1
+
+            // If document finished reconstruction, kick off answer key loading
+            // (the initial loadAnswerKeys() may have skipped because isReconstructed was false at init)
+            if isReconstructedDoc && answerKeys.isEmpty && !isLoadingAnswerKeys {
+                loadAnswerKeysTask?.cancel()
+                loadAnswerKeysTask = Task { await loadAnswerKeys(forceLoad: true) }
+            }
         } catch {
             pdfError = "Failed to download document"
         }
