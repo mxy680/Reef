@@ -166,8 +166,8 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 									variant: matchVariant("uvksLtanA"),
 									width: "100%",
 									WPHRcrcmt:
-										"Rude. But no. ChatGPT waits for you to ask it something. Reef watches you work and jumps in when you\u2019re stuck, like a tutor who can read the room. Also, yes, there are fish.",
-									zcvQcwmWp: "IS THIS JUST CHATGPT WITH FISH?",
+										"Reef doesn\u2019t give you answers\u2014it helps you find them. Think of it like office hours that never close.",
+									zcvQcwmWp: "IS THIS CHEATING?",
 								})}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
@@ -200,8 +200,8 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 									variant: matchVariant("uvksLtanA"),
 									width: "100%",
 									WPHRcrcmt:
-										"Our lawyers said we can\u2019t guarantee that. But your 2am panic sessions will be significantly more productive.",
-									zcvQcwmWp: "WILL I ACE ALL MY CLASSES?",
+										"Your notes and documents stay on your device and in your private iCloud. We never use your work to train AI models.",
+									zcvQcwmWp: "IS MY DATA PRIVATE?",
 								})}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
@@ -234,8 +234,8 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 									variant: matchVariant("uvksLtanA"),
 									width: "100%",
 									WPHRcrcmt:
-										"Yes. Orbital mechanics, propulsion, the whole thing. We weren\u2019t kidding about STEM.",
-									zcvQcwmWp: "CAN IT HELP ME WITH ROCKET SCIENCE??",
+										"You don\u2019t need one, but Reef is built around handwriting. An Apple Pencil unlocks the full experience.",
+									zcvQcwmWp: "DO I NEED AN APPLE PENCIL?",
 								})}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
@@ -268,8 +268,8 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 									variant: matchVariant("uvksLtanA"),
 									width: "100%",
 									WPHRcrcmt:
-										"Yes. We have that. You\u2019re welcome.",
-									zcvQcwmWp: "WHAT IF I WANT A TUTOR WITH A BRITISH ACCENT?",
+										"Yes. Orbital mechanics, propulsion, the whole thing. We weren\u2019t kidding about STEM.",
+									zcvQcwmWp: "CAN IT HELP ME WITH ROCKET SCIENCE??",
 								})}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
@@ -302,8 +302,8 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 									variant: matchVariant("uvksLtanA"),
 									width: "100%",
 									WPHRcrcmt:
-										"We\u2019re an app, not a necromancer. But we\u2019ll do what we can.",
-									zcvQcwmWp: "WILL THIS BRING MY GPA BACK FROM THE DEAD?",
+										"Rude. But no. ChatGPT waits for you to ask it something. Reef watches you work and jumps in when you\u2019re stuck, like a tutor who can read the room. Also, yes, there are fish.",
+									zcvQcwmWp: "IS THIS JUST CHATGPT WITH FISH?",
 								})}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
@@ -335,8 +335,8 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 									},
 									variant: matchVariant("uvksLtanA"),
 									width: "100%",
-									WPHRcrcmt: "It\u2019s an app. Yes.",
-									zcvQcwmWp: "IS IT GLUTEN FREE?",
+									WPHRcrcmt: "Our lawyers said we can\u2019t guarantee that. But your 2am panic sessions will be significantly more productive.",
+									zcvQcwmWp: "WILL I ACE ALL MY CLASSES?",
 								})}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
@@ -369,8 +369,8 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 									variant: matchVariant("uvksLtanA"),
 									width: "100%",
 									WPHRcrcmt:
-										"That\u2019s also not a question but we\u2019re proud of you.",
-									zcvQcwmWp: "I SHOWED MY REEF TO MY MOM.",
+										"We\u2019re an app, not a necromancer. But we\u2019ll do what we can.",
+									zcvQcwmWp: "WILL THIS BRING MY GPA BACK FROM THE DEAD?",
 								})}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
@@ -403,19 +403,19 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 									variant: matchVariant("uvksLtanA"),
 									width: "100%",
 									WPHRcrcmt:
-										"Sure you do.",
-									zcvQcwmWp: "WHAT IF I KNOW MORE THAN THE AI?",
+										"Yes. We have that. You\u2019re welcome.",
+									zcvQcwmWp: "WHAT IF I WANT A TUTOR WITH A BRITISH ACCENT?",
 								})}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
 						<ComponentViewportProvider height={80} width={componentViewport?.width || "100vw"} y={(componentViewport?.y || 0)}>
 							<SmartComponentScopedContainer className={"framer-faq-9-container"} layoutDependency={layoutDependency} layoutId={"faq9-container"} nodeId={"faq9"} rendersWithMotion={true} scopeId={"drljal8QL"}>
-								{_jsx(stdin_default, { height: "100%", id: "faq9", layoutId: "faq9", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "There are fish. You\u2019ll be fine.", zcvQcwmWp: "WHAT IF I\u2019M A VISUAL LEARNER?" })}
+								{_jsx(stdin_default, { height: "100%", id: "faq9", layoutId: "faq9", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "Sure you do.", zcvQcwmWp: "WHAT IF I KNOW MORE THAN THE AI?" })}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
 						<ComponentViewportProvider height={80} width={componentViewport?.width || "100vw"} y={(componentViewport?.y || 0)}>
 							<SmartComponentScopedContainer className={"framer-faq-10-container"} layoutDependency={layoutDependency} layoutId={"faq10-container"} nodeId={"faq10"} rendersWithMotion={true} scopeId={"drljal8QL"}>
-								{_jsx(stdin_default, { height: "100%", id: "faq10", layoutId: "faq10", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "We\u2019re not asking where you study.", zcvQcwmWp: "DOES IT WORK IN THE BATHROOM?" })}
+								{_jsx(stdin_default, { height: "100%", id: "faq10", layoutId: "faq10", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "There are fish. You\u2019ll be fine.", zcvQcwmWp: "WHAT IF I\u2019M A VISUAL LEARNER?" })}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
 						<ComponentViewportProvider height={80} width={componentViewport?.width || "100vw"} y={(componentViewport?.y || 0)}>
@@ -430,17 +430,17 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 						</ComponentViewportProvider>
 						<ComponentViewportProvider height={80} width={componentViewport?.width || "100vw"} y={(componentViewport?.y || 0)}>
 							<SmartComponentScopedContainer className={"framer-faq-13-container"} layoutDependency={layoutDependency} layoutId={"faq13-container"} nodeId={"faq13"} rendersWithMotion={true} scopeId={"drljal8QL"}>
-								{_jsx(stdin_default, { height: "100%", id: "faq13", layoutId: "faq13", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "Your notes and documents stay on your device and in your private iCloud. We never use your work to train AI models.", zcvQcwmWp: "IS MY DATA PRIVATE?" })}
+								{_jsx(stdin_default, { height: "100%", id: "faq13", layoutId: "faq13", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "We\u2019re not asking where you study.", zcvQcwmWp: "DOES IT WORK IN THE BATHROOM?" })}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
 						<ComponentViewportProvider height={80} width={componentViewport?.width || "100vw"} y={(componentViewport?.y || 0)}>
 							<SmartComponentScopedContainer className={"framer-faq-14-container"} layoutDependency={layoutDependency} layoutId={"faq14-container"} nodeId={"faq14"} rendersWithMotion={true} scopeId={"drljal8QL"}>
-								{_jsx(stdin_default, { height: "100%", id: "faq14", layoutId: "faq14", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "Reef doesn\u2019t give you answers\u2014it helps you find them. Think of it like office hours that never close.", zcvQcwmWp: "IS THIS CHEATING?" })}
+								{_jsx(stdin_default, { height: "100%", id: "faq14", layoutId: "faq14", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "It\u2019s an app. Yes.", zcvQcwmWp: "IS IT GLUTEN FREE?" })}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
 						<ComponentViewportProvider height={80} width={componentViewport?.width || "100vw"} y={(componentViewport?.y || 0)}>
 							<SmartComponentScopedContainer className={"framer-faq-15-container"} layoutDependency={layoutDependency} layoutId={"faq15-container"} nodeId={"faq15"} rendersWithMotion={true} scopeId={"drljal8QL"}>
-								{_jsx(stdin_default, { height: "100%", id: "faq15", layoutId: "faq15", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "You don\u2019t need one, but Reef is built around handwriting. An Apple Pencil unlocks the full experience.", zcvQcwmWp: "DO I NEED AN APPLE PENCIL?" })}
+								{_jsx(stdin_default, { height: "100%", id: "faq15", layoutId: "faq15", style: { width: "100%" }, variant: matchVariant("uvksLtanA"), width: "100%", WPHRcrcmt: "That\u2019s also not a question but we\u2019re proud of you.", zcvQcwmWp: "I SHOWED MY REEF TO MY MOM." })}
 							</SmartComponentScopedContainer>
 						</ComponentViewportProvider>
 						<ComponentViewportProvider height={80} width={componentViewport?.width || "100vw"} y={(componentViewport?.y || 0)}>
