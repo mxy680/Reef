@@ -418,9 +418,9 @@ async def walkthrough_tts(
     return WalkthroughTTSResponse(speech_audio=speech_audio)
 
 
-# Cartesia (primary)
-CARTESIA_VOICE_ID = "f786b574-daa5-4673-aa0c-cbe3e8534c02"  # Katie - Friendly Fixer
-CARTESIA_MODEL = "sonic"
+# ElevenLabs (primary)
+ELEVEN_VOICE_ID = "NNl6r8mD7vthiJatiJt1"  # Bradford
+ELEVEN_MODEL = "eleven_flash_v2_5"
 
 # Groq (fallback)
 TTS_VOICE = "autumn"
@@ -428,9 +428,9 @@ TTS_MODEL = "canopylabs/orpheus-v1-english"
 TTS_SPEED = 1.15
 
 
-def _tts_cache_key(text: str, provider: str = "cartesia") -> str:
+def _tts_cache_key(text: str, provider: str = "elevenlabs") -> str:
     """SHA-256 hash of text+provider+voice for cache lookup."""
-    raw = f"{text}|{provider}|{CARTESIA_VOICE_ID if provider == 'cartesia' else TTS_VOICE}"
+    raw = f"{text}|{provider}|{ELEVEN_VOICE_ID if provider == 'elevenlabs' else TTS_VOICE}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
@@ -491,10 +491,10 @@ async def _set_tts_cache(cache_key: str, text: str, audio_base64: str) -> None:
 
 
 async def _generate_tts(text: str) -> str | None:
-    """Generate TTS audio via Cartesia (primary) with Groq fallback. Supabase-cached."""
+    """Generate TTS audio via ElevenLabs (primary) with Groq fallback. Supabase-cached."""
     import base64
 
-    provider = "cartesia" if settings.cartesia_api_key else "groq"
+    provider = "elevenlabs" if settings.elevenlabs_api_key else "groq"
     cache_key = _tts_cache_key(text, provider)
 
     # Check cache first
@@ -504,35 +504,31 @@ async def _generate_tts(text: str) -> str | None:
 
     audio_base64 = None
 
-    # Primary: Cartesia
-    if settings.cartesia_api_key:
+    # Primary: ElevenLabs
+    if settings.elevenlabs_api_key:
         try:
             async with httpx.AsyncClient(timeout=15) as client:
                 resp = await client.post(
-                    "https://api.cartesia.ai/tts/bytes",
+                    f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVEN_VOICE_ID}",
                     headers={
-                        "X-API-Key": settings.cartesia_api_key,
-                        "Cartesia-Version": "2024-06-10",
+                        "xi-api-key": settings.elevenlabs_api_key,
                         "Content-Type": "application/json",
                     },
                     json={
-                        "model_id": CARTESIA_MODEL,
-                        "transcript": text,
-                        "voice": {"mode": "id", "id": CARTESIA_VOICE_ID},
-                        "output_format": {
-                            "container": "wav",
-                            "encoding": "pcm_s16le",
-                            "sample_rate": 24000,
-                        },
+                        "text": text,
+                        "model_id": ELEVEN_MODEL,
+                        "output_format": "pcm_24000",
                     },
                 )
             if resp.status_code == 200:
-                audio_base64 = base64.b64encode(resp.content).decode()
-                log.info(f"[tts] Cartesia OK ({len(resp.content)} bytes)")
+                # ElevenLabs returns raw PCM — wrap in WAV header for iOS playback
+                pcm_data = resp.content
+                audio_base64 = base64.b64encode(_pcm_to_wav(pcm_data, 24000)).decode()
+                log.info(f"[tts] ElevenLabs OK ({len(pcm_data)} bytes PCM)")
             else:
-                log.warning(f"[tts] Cartesia returned {resp.status_code}: {resp.text[:200]}")
+                log.warning(f"[tts] ElevenLabs returned {resp.status_code}: {resp.text[:200]}")
         except Exception as e:
-            log.warning(f"[tts] Cartesia failed: {e}")
+            log.warning(f"[tts] ElevenLabs failed: {e}")
 
     # Fallback: Groq
     if audio_base64 is None and settings.groq_api_key:
@@ -564,3 +560,26 @@ async def _generate_tts(text: str) -> str | None:
     await _set_tts_cache(cache_key, text, audio_base64)
 
     return audio_base64
+
+
+def _pcm_to_wav(pcm_data: bytes, sample_rate: int = 24000, channels: int = 1, bits: int = 16) -> bytes:
+    """Wrap raw PCM bytes in a WAV header."""
+    import struct
+    data_size = len(pcm_data)
+    header = struct.pack(
+        "<4sI4s4sIHHIIHH4sI",
+        b"RIFF",
+        36 + data_size,
+        b"WAVE",
+        b"fmt ",
+        16,  # chunk size
+        1,   # PCM format
+        channels,
+        sample_rate,
+        sample_rate * channels * bits // 8,  # byte rate
+        channels * bits // 8,  # block align
+        bits,
+        b"data",
+        data_size,
+    )
+    return header + pcm_data
