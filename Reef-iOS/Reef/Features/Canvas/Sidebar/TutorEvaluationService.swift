@@ -8,12 +8,14 @@ struct TutorChatMessage: Identifiable {
     let role: Role
     let latex: String
     let timestamp: Date
+    var confidenceResponse: String? = nil  // "shaky", "okay", "solid" — set when user responds
 
     enum Role: String {
         case student        // student's transcribed work or typed question
         case error          // tutor detected a mistake
         case reinforcement  // tutor celebrates step completion
         case answer         // tutor responds to a user question
+        case confidenceCheck // "How confident are you?"
     }
 }
 
@@ -181,7 +183,7 @@ final class TutorEvaluationService {
                     }
                 }
 
-                // Step completed — show ONLY the most recent reinforcement, then advance
+                // Step completed — show reinforcement, confidence check, then advance
                 if response.status == "completed" {
                     if let reinforcement = self.pendingReinforcement, !reinforcement.isEmpty {
                         self.chatMessages.removeAll { $0.role == .reinforcement }
@@ -189,6 +191,12 @@ final class TutorEvaluationService {
                             role: .reinforcement, latex: reinforcement, timestamp: Date()
                         ))
                     }
+                    // Add confidence check
+                    self.chatMessages.append(TutorChatMessage(
+                        role: .confidenceCheck,
+                        latex: "How confident are you in that step?",
+                        timestamp: Date()
+                    ))
                     self.onStepCompleted?(response.stepsCompleted)
                 }
             } catch {

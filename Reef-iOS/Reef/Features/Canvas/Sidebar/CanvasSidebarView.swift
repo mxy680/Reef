@@ -270,11 +270,17 @@ struct CanvasSidebarView: View {
             return ("checkmark.circle.fill", "Nice", Color(hex: 0x81C784))
         case .answer:
             return ("brain.head.profile", "Tutor", ReefColors.primary)
+        case .confidenceCheck:
+            return ("gauge.with.needle.fill", "Check-in", ReefColors.primary)
         }
     }
 
     @ViewBuilder
     private func chatBubble(message: TutorChatMessage, colors: ReefThemeColors) -> some View {
+        if message.role == .confidenceCheck {
+            confidenceCheckBubble(message: message, colors: colors)
+        } else {
+
         let isStudent = message.role == .student
         let config = bubbleConfig(for: message.role)
 
@@ -310,6 +316,74 @@ struct CanvasSidebarView: View {
             )
 
             if !isStudent { Spacer(minLength: 24) }
+        }
+        } // end else (not confidenceCheck)
+    }
+
+    // MARK: - Confidence Check Bubble
+
+    @ViewBuilder
+    private func confidenceCheckBubble(message: TutorChatMessage, colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 4) {
+                Image(systemName: "gauge.with.needle.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                Text("Check-in")
+                    .font(.system(size: 10, weight: .bold))
+            }
+            .foregroundStyle(ReefColors.primary)
+
+            Text(message.latex)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(colors.text)
+
+            if let response = message.confidenceResponse {
+                // Already answered
+                HStack(spacing: 6) {
+                    Image(systemName: response == "solid" ? "checkmark.circle.fill" : response == "okay" ? "minus.circle.fill" : "exclamationmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(response == "solid" ? Color(hex: 0x81C784) : response == "okay" ? ReefColors.primary : Color(hex: 0xF5A623))
+                    Text(response.capitalized)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(colors.textMuted)
+                }
+            } else {
+                // Show pills
+                HStack(spacing: 8) {
+                    ForEach(["shaky", "okay", "solid"], id: \.self) { level in
+                        Button {
+                            respondToConfidence(messageId: message.id, response: level)
+                        } label: {
+                            Text(level.capitalized)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(colors.text)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(colors.card)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(colors.border, lineWidth: 1.5))
+                                .background(Capsule().fill(colors.shadow).offset(x: 2, y: 2))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(ReefColors.primary.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(ReefColors.primary.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    private func respondToConfidence(messageId: UUID, response: String) {
+        if let idx = viewModel.tutorEvalService.chatMessages.firstIndex(where: { $0.id == messageId }) {
+            viewModel.tutorEvalService.chatMessages[idx].confidenceResponse = response
         }
     }
 }
