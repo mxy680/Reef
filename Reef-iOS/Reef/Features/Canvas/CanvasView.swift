@@ -20,6 +20,27 @@ struct CanvasView: View {
             (viewModel.isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
                 .ignoresSafeArea()
 
+            if !viewModel.isReady {
+                // Loading screen — wait for PDF + answer keys
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .tint(ReefColors.primary)
+                        .scaleEffect(1.2)
+
+                    if viewModel.isLoadingAnswerKeys {
+                        Text("Generating answer key for tutor...")
+                            .font(.epilogue(14, weight: .bold))
+                            .tracking(-0.04 * 14)
+                            .foregroundStyle(viewModel.isDarkMode ? .white.opacity(0.7) : .black.opacity(0.5))
+                    } else {
+                        Text("Loading document...")
+                            .font(.epilogue(14, weight: .bold))
+                            .tracking(-0.04 * 14)
+                            .foregroundStyle(viewModel.isDarkMode ? .white.opacity(0.7) : .black.opacity(0.5))
+                    }
+                }
+            } else {
+
             VStack(spacing: 0) {
                 // Toolbar — always full width
                 VStack(spacing: 0) {
@@ -206,6 +227,7 @@ struct CanvasView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
                 .zIndex(200)
             }
+        } // end else (isReady)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
