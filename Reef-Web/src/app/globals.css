@@ -722,9 +722,9 @@ html, body {
 
 /* Brand logo — manta icon + REEF text */
 .framer-NHxYE.framer-1tamot2 .framer-s0p6wi {
-  width: 35px !important;
+  width: 48px !important;
   aspect-ratio: unset !important;
-  height: 35px !important;
+  height: 48px !important;
 }
 .framer-NHxYE.framer-1tamot2 .framer-s0p6wi img,
 .framer-NHxYE.framer-1tamot2 .framer-s0p6wi [data-framer-background-image-wrapper] {
@@ -747,7 +747,7 @@ html, body {
   content: "REEF";
   font-family: "Epilogue", sans-serif;
   font-weight: 800;
-  font-size: 24px;
+  font-size: 32px;
   letter-spacing: 0.02em;
   color: var(--color-black);
   line-height: 1;
