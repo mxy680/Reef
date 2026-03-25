@@ -22,23 +22,10 @@ struct CanvasView: View {
 
             if !viewModel.isReady {
                 // Loading screen — wait for PDF + answer keys
-                VStack(spacing: 16) {
-                    ProgressView()
-                        .tint(ReefColors.primary)
-                        .scaleEffect(1.2)
-
-                    if viewModel.isLoadingAnswerKeys {
-                        Text("Generating answer key for tutor...")
-                            .font(.epilogue(14, weight: .bold))
-                            .tracking(-0.04 * 14)
-                            .foregroundStyle(viewModel.isDarkMode ? .white.opacity(0.7) : .black.opacity(0.5))
-                    } else {
-                        Text("Loading document...")
-                            .font(.epilogue(14, weight: .bold))
-                            .tracking(-0.04 * 14)
-                            .foregroundStyle(viewModel.isDarkMode ? .white.opacity(0.7) : .black.opacity(0.5))
-                    }
-                }
+                CanvasLoadingView(
+                    isLoadingAnswerKeys: viewModel.isLoadingAnswerKeys,
+                    documentName: viewModel.document.displayName
+                )
             } else {
 
             VStack(spacing: 0) {
