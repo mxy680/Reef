@@ -113,23 +113,23 @@ final class TutorEvaluationService {
                     ))
                 }
 
+                // Play TTS audio BEFORE step advancement so isTutorSpeaking is true
+                // when advanceTutorSteps polls for it
+                if self.voiceEnabled,
+                   let audioBase64 = response.speechAudio,
+                   let audioData = Data(base64Encoded: audioBase64) {
+                    self.playAudio(audioData)
+                }
+
                 // Step completed — show ONLY the most recent reinforcement, then advance
                 if response.status == "completed" {
                     if let reinforcement = self.pendingReinforcement, !reinforcement.isEmpty {
-                        // Remove any previous reinforcement messages to avoid stacking
                         self.chatMessages.removeAll { $0.role == .reinforcement }
                         self.chatMessages.append(TutorChatMessage(
                             role: .reinforcement, latex: reinforcement, timestamp: Date()
                         ))
                     }
                     self.onStepCompleted?(response.stepsCompleted)
-                }
-
-                // Play TTS audio for mistakes or reinforcements (if voice enabled)
-                if self.voiceEnabled,
-                   let audioBase64 = response.speechAudio,
-                   let audioData = Data(base64Encoded: audioBase64) {
-                    self.playAudio(audioData)
                 }
             } catch {
                 guard !Task.isCancelled, self.generation == myGeneration else { return }

@@ -7,6 +7,8 @@ struct CanvasLoadingView: View {
     @State private var isPulsing = false
     @State private var dotCount = 0
     @State private var messageIndex = 0
+    @State private var dotTask: Task<Void, Never>?
+    @State private var messageTask: Task<Void, Never>?
 
     private var dots: String {
         String(repeating: ".", count: dotCount + 1)
@@ -70,23 +72,27 @@ struct CanvasLoadingView: View {
                 isPulsing = true
             }
 
-            // Animate dots via Task
-            Task { @MainActor in
+            dotTask = Task { @MainActor in
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .milliseconds(500))
+                    guard !Task.isCancelled else { return }
                     dotCount = (dotCount + 1) % 3
                 }
             }
 
-            // Cycle messages for answer key loading
             if isLoadingAnswerKeys {
-                Task { @MainActor in
+                messageTask = Task { @MainActor in
                     for i in 1..<answerKeyMessages.count {
                         try? await Task.sleep(for: .seconds(8))
+                        guard !Task.isCancelled else { return }
                         withAnimation { messageIndex = i }
                     }
                 }
             }
+        }
+        .onDisappear {
+            dotTask?.cancel()
+            messageTask?.cancel()
         }
     }
 }

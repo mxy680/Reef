@@ -278,6 +278,7 @@ struct CanvasView: View {
         }
         .onDisappear {
             viewModel.handwritingService.stopPolling()
+            viewModel.cancelAllTasks()
             autoSaveTask?.cancel()
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in

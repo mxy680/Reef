@@ -17,6 +17,9 @@ final class CanvasViewModel {
     var pdfDocument: PDFDocument
     var isLoadingPDF: Bool = false
     var pdfError: String?
+    private var loadPDFTask: Task<Void, Never>?
+    private var loadAnswerKeysTask: Task<Void, Never>?
+    private var stepSpeechTask: Task<Void, Never>?
 
     // MARK: - Tool State
 
@@ -300,6 +303,12 @@ final class CanvasViewModel {
         updatePendingReinforcement()
     }
 
+    func cancelAllTasks() {
+        loadPDFTask?.cancel()
+        loadAnswerKeysTask?.cancel()
+        stepSpeechTask?.cancel()
+    }
+
     func loadAnswerKeys() async {
         guard isReconstructed else { return }
         isLoadingAnswerKeys = true
@@ -314,11 +323,11 @@ final class CanvasViewModel {
         // Poll every 5s for up to 5 minutes — wait until Q1's key specifically exists
         var attempts = 0
         var result = await repo.fetchAnswerKeys(documentId: document.id)
-        while result.answers[targetQuestion] == nil && attempts < 60 {
+        while result.answers[targetQuestion] == nil && attempts < 60 && !Task.isCancelled {
             attempts += 1
-            // Update answerKeys as they trickle in (for other questions)
             answerKeys = result.answers
             try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
             result = await repo.fetchAnswerKeys(documentId: document.id)
         }
 
@@ -359,7 +368,8 @@ final class CanvasViewModel {
 
         tutorEvalService.onAnswerKeyUpdated = { [weak self] in
             guard let self else { return }
-            Task { @MainActor in
+            self.loadAnswerKeysTask?.cancel()
+            self.loadAnswerKeysTask = Task { @MainActor in
                 await self.loadAnswerKeys()
                 self.currentTutorStepIndex = 0
                 self.tutorEvalService.resetForNextStep()
@@ -372,8 +382,8 @@ final class CanvasViewModel {
             self.triggerTutorEvaluation()
         }
 
-        Task { await loadPDF() }
-        Task { await loadAnswerKeys() }
+        loadPDFTask = Task { await loadPDF() }
+        loadAnswerKeysTask = Task { await loadAnswerKeys() }
     }
 
     private static let pdfSession: URLSession = {
@@ -687,15 +697,19 @@ final class CanvasViewModel {
             tutorEvalService.status = "completed"
         } else {
             // Wait for reinforcement audio to finish, pause, then speak next step
-            Task { @MainActor in
+            stepSpeechTask?.cancel()
+            stepSpeechTask = Task { @MainActor in
                 // Wait for reinforcement TTS to finish (max 15s)
                 var waited = 0
                 while tutorEvalService.isTutorSpeaking && waited < 75 {
                     try? await Task.sleep(for: .milliseconds(200))
+                    guard !Task.isCancelled else { return }
                     waited += 1
                 }
+                guard !Task.isCancelled else { return }
                 // Brief pause between reinforcement and next step
                 try? await Task.sleep(for: .milliseconds(800))
+                guard !Task.isCancelled else { return }
                 speakCurrentStepDescription()
             }
 
