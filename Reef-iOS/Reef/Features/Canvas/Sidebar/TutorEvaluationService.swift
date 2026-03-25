@@ -48,6 +48,16 @@ final class TutorEvaluationService {
     private var generation: Int = 0
     private var evaluateTask: Task<Void, Never>?
     private var lastEvaluatedLatex: String = ""
+    private var previousStatus: String = "idle"
+
+    private let recoveryPhrases = [
+        "There you go.",
+        "That's it, keep going.",
+        "Nice fix.",
+        "You got it.",
+        "That's the one.",
+        "Good catch.",
+    ]
 
     private static let debounceInterval: Duration = .milliseconds(900)
 
@@ -100,10 +110,42 @@ final class TutorEvaluationService {
 
                 guard self.generation == myGeneration else { return }
 
+                let wasInMistake = self.previousStatus == "mistake"
                 self.stepProgress = response.progress
                 self.status = response.status
+                self.previousStatus = response.status
                 self.mistakeExplanation = response.mistakeExplanation
                 self.lastEvaluatedLatex = latex
+
+                // Mistake recovery — student fixed the error and is back on track
+                if wasInMistake && response.status == "working" {
+                    let phrase = self.recoveryPhrases.randomElement() ?? "There you go."
+                    self.chatMessages.append(TutorChatMessage(
+                        role: .reinforcement, latex: phrase, timestamp: Date()
+                    ))
+                    if self.voiceEnabled {
+                        // Speak recovery phrase via TTS
+                        Task { @MainActor [weak self] in
+                            guard let self else { return }
+                            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+                                  let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+                                  let token = try? await supabase.auth.session.accessToken else { return }
+                            var request = URLRequest(url: url)
+                            request.httpMethod = "POST"
+                            request.timeoutInterval = 10
+                            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                            request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": phrase])
+                            guard let (data, resp) = try? await URLSession.shared.data(for: request),
+                                  let http = resp as? HTTPURLResponse, http.statusCode == 200 else { return }
+                            struct TTSResp: Decodable { let speechAudio: String?; enum CodingKeys: String, CodingKey { case speechAudio = "speech_audio" } }
+                            guard let result = try? JSONDecoder().decode(TTSResp.self, from: data),
+                                  let b64 = result.speechAudio,
+                                  let audioData = Data(base64Encoded: b64) else { return }
+                            self.playAudio(audioData)
+                        }
+                    }
+                }
 
                 // Add chat messages for mistakes
                 if let mistake = response.mistakeExplanation, response.status == "mistake" {
@@ -165,6 +207,7 @@ final class TutorEvaluationService {
         generation += 1
         stepProgress = 0.0
         status = "idle"
+        previousStatus = "idle"
         mistakeExplanation = nil
         isEvaluating = false
         lastEvaluatedLatex = ""
