@@ -116,7 +116,12 @@ async def _generate_single_answer(
             timeout=180.0,
         )
         content = extract_json(result.content)
-        answer = QuestionAnswer.model_validate_json(content)
+        try:
+            answer = QuestionAnswer.model_validate_json(content)
+        except Exception as parse_err:
+            logger.warning(f"  [answer-key] Q{question_number}: JSON parse failed: {parse_err}")
+            logger.warning(f"  [answer-key] Q{question_number}: raw content (first 500 chars): {content[:500]}")
+            raise
         input_tokens = result.input_tokens
         output_tokens = result.output_tokens
 
