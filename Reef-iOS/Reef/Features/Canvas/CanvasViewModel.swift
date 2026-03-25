@@ -307,6 +307,10 @@ final class CanvasViewModel {
         stepSpeechTask?.cancel()
     }
 
+    func stopAllAudio() {
+        tutorEvalService.stopAudio()
+    }
+
     func loadAnswerKeys(forceLoad: Bool = false) async {
         guard isReconstructed || forceLoad else { return }
         isLoadingAnswerKeys = true

@@ -414,6 +414,13 @@ final class TutorEvaluationService {
     private var audioPlayer: AVAudioPlayer?
     private var audioDelegate: AudioFinishDelegate?
 
+    func stopAudio() {
+        audioPlayer?.stop()
+        audioPlayer = nil
+        isTutorSpeaking = false
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
     func playAudio(_ data: Data) {
         do {
             let session = AVAudioSession.sharedInstance()

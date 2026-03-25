@@ -35,6 +35,7 @@ struct CanvasView: View {
                         viewModel: viewModel,
                         walkthroughStep: walkthroughStep,
                         onClose: {
+                            viewModel.stopAllAudio()
                             viewModel.saveCanvasState()
                             onDismiss()
                         }
@@ -274,6 +275,7 @@ struct CanvasView: View {
             }
         }
         .onDisappear {
+            viewModel.stopAllAudio()
             viewModel.handwritingService.stopPolling()
             viewModel.cancelAllTasks()
             autoSaveTask?.cancel()
