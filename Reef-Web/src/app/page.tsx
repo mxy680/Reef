@@ -348,47 +348,47 @@ export default function Home() {
         <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "var(--color-accent)" }} />
-            <h2 className="section-heading">Study smarter, no matter how deep you go.</h2>
+            <h2 className="section-heading">Free while we&rsquo;re in beta.</h2>
             <p className="section-subtitle">
-              Whether you&rsquo;re testing the waters with one class or going all in across your entire course load, Reef has a plan that fits your semester.
+              Everything is free right now. When we launch, you&rsquo;ll be able to choose a plan that fits how you study.
             </p>
           </div>
           <div className="pricing-cards-row">
             <PricingCard
-              title="SHORE"
-              description="Dip your toes in with one course and core study tools."
-              price="$0"
+              title="BETA"
+              description="Full access to everything while we're in beta. No credit card needed."
+              price="Free"
               background="var(--color-surface)"
-              buttonLabel="Step In"
-              feature1="1 course"
-              feature2="5 homeworks"
-              feature3="5 quizzes"
-              feature4="2 hours of tutoring"
-              feature5="Basic analytics"
-            />
-            <PricingCard
-              title="Reef"
-              description="Plenty of power for most students, all semester long."
-              price="$9.99"
-              background="var(--color-accent)"
-              buttonLabel="Dive In"
-              feature1="5 courses"
-              feature2="50 homeworks"
-              feature3="50 quizzes"
-              feature4="20 hours of tutoring"
-              feature5="Study analytics"
-            />
-            <PricingCard
-              title="Abyss"
-              description="No limits. For students who never want to hit a wall."
-              price="$29.99"
-              background="var(--color-primary)"
-              buttonLabel="Go Deep"
+              buttonLabel="Get Started"
               feature1="Unlimited courses"
               feature2="Unlimited homeworks"
-              feature3="Unlimited quizzes"
-              feature4="Unlimited tutoring"
-              feature5="Advanced analytics"
+              feature3="Voice tutoring"
+              feature4="Analytics dashboard"
+              feature5="All features included"
+            />
+            <PricingCard
+              title="Hourly"
+              description="Pay for tutoring hours as you need them. Perfect for lighter course loads."
+              price="TBD"
+              background="var(--color-accent)"
+              buttonLabel="Coming Soon"
+              feature1="Unlimited courses"
+              feature2="Unlimited homeworks"
+              feature3="Pay-per-hour tutoring"
+              feature4="Analytics dashboard"
+              feature5="All core features"
+            />
+            <PricingCard
+              title="Unlimited"
+              description="No limits on tutoring. For students who never want to hit a wall."
+              price="TBD"
+              background="var(--color-primary)"
+              buttonLabel="Coming Soon"
+              feature1="Unlimited courses"
+              feature2="Unlimited homeworks"
+              feature3="Unlimited tutoring"
+              feature4="Advanced analytics"
+              feature5="Priority support"
             />
           </div>
         </div>
