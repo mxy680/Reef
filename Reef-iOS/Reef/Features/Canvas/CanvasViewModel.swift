@@ -218,7 +218,7 @@ final class CanvasViewModel {
     }
 
     /// Derives question number and part label from activeQuestionLabel.
-    private var activeQuestionNumber: Int {
+    var activeQuestionNumber: Int {
         guard let label = activeQuestionLabel, label.hasPrefix("Q") else { return 1 }
         var numStr = ""
         for ch in label.dropFirst() {

@@ -384,6 +384,33 @@ struct CanvasSidebarView: View {
     private func respondToConfidence(messageId: UUID, response: String) {
         if let idx = viewModel.tutorEvalService.chatMessages.firstIndex(where: { $0.id == messageId }) {
             viewModel.tutorEvalService.chatMessages[idx].confidenceResponse = response
+
+            // Store in Supabase
+            let hadMistake = viewModel.tutorEvalService.chatMessages[0..<idx].contains { $0.role == .error }
+            Task {
+                await storeConfidenceLog(
+                    documentId: viewModel.document.id,
+                    questionNumber: viewModel.activeQuestionNumber,
+                    stepIndex: viewModel.currentTutorStepIndex,
+                    confidence: response,
+                    hadMistake: hadMistake
+                )
+            }
         }
+    }
+
+    private nonisolated func storeConfidenceLog(documentId: String, questionNumber: Int, stepIndex: Int, confidence: String, hadMistake: Bool) async {
+        guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
+        _ = try? await supabase
+            .from("confidence_logs")
+            .insert([
+                "user_id": userId,
+                "document_id": documentId,
+                "question_number": "\(questionNumber)",
+                "step_index": "\(stepIndex)",
+                "confidence": confidence,
+                "had_mistake": hadMistake ? "true" : "false",
+            ] as [String: String])
+            .execute()
     }
 }
