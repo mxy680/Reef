@@ -22,7 +22,7 @@ from app.services.prompts import ANSWER_KEY_PROMPT
 
 logger = logging.getLogger(__name__)
 
-ANSWER_KEY_MODEL = "moonshotai/kimi-k2.5"
+ANSWER_KEY_MODEL = "google/gemini-3-flash-preview"
 
 
 # ---------------------------------------------------------------------------

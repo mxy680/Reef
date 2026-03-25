@@ -367,7 +367,7 @@ async def _regenerate_answer_key(
 
     llm = LLMClient(
         api_key=settings.openrouter_api_key,
-        model="moonshotai/kimi-k2.5",
+        model="google/gemini-3-flash-preview",
         base_url="https://openrouter.ai/api/v1",
     )
     result = await asyncio.to_thread(
