@@ -14,7 +14,7 @@ struct TutorDemoStep: View {
     @State private var introTask: Task<Void, Never>?
     @State private var pendingReactionTask: Task<Void, Never>?
 
-    private let introDisplay = "Alright, quick intro. I'm your AI tutor. I read everything you write in real time — yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line, no awkward eye contact. Dive in — the reef's got you."
+    private let introDisplay = "Alright, quick intro. I'm your AI tutor. I read everything you write in real time — yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line, no awkward eye contact. Dive in — the reef's got you covered."
 
     private let introSpeech = "Alright, quick intro. I'm your A.I. tutor. I read EVERYTHING you write in real time. Yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line. No awkward eye contact. Dive in. The reef's got you."
 
@@ -301,27 +301,6 @@ struct TutorDemoStep: View {
                     .tracking(-0.04 * 14)
                     .lineSpacing(3)
                     .foregroundStyle(colors.text)
-
-                // Sound + Pencil reminders
-                HStack(spacing: 16) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "speaker.wave.2.fill")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(ReefColors.primary)
-                        Text("Sound on")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(colors.textMuted)
-                    }
-
-                    HStack(spacing: 5) {
-                        Image(systemName: "applepencil.gen2")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(ReefColors.primary)
-                        Text("Pencil ready")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(colors.textMuted)
-                    }
-                }
 
                 ReefButton("Let's go", size: .compact, action: {
                     withAnimation(.easeOut(duration: 0.25)) {
