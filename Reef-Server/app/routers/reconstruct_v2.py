@@ -191,7 +191,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
 
         parse_llm = LLMClient(
             api_key=settings.openrouter_api_key,
-            model="google/gemini-2.5-flash",
+            model="z-ai/glm-4.6v",
             base_url="https://openrouter.ai/api/v1",
         )
         parse_result = await asyncio.to_thread(
