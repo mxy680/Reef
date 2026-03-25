@@ -170,7 +170,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
                 else:
                     logger.warning(f"  [v2] Failed to upload figure {fname}: {result}")
 
-        await update_progress(document_id, "Found the problems, breaking them apart...")
+        await update_progress(document_id, "Breaking apart problems...")
 
         # ---------------------------------------------------------------
         # Stage 3: LLM parse MMD -> Questions (DeepSeek R1 via OpenRouter)
