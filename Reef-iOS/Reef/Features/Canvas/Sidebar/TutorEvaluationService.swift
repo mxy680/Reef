@@ -29,6 +29,7 @@ final class TutorEvaluationService {
     var mistakeExplanation: String?
     var isEvaluating: Bool = false
     var chatMessages: [TutorChatMessage] = []
+    var voiceEnabled: Bool = true  // Set by CanvasViewModel based on user preference
 
     /// Fires when the model marks steps as completed. Parameter = number of steps completed (1+).
     var onStepCompleted: ((Int) -> Void)?
@@ -124,8 +125,9 @@ final class TutorEvaluationService {
                     self.onStepCompleted?(response.stepsCompleted)
                 }
 
-                // Play TTS audio for mistakes or reinforcements
-                if let audioBase64 = response.speechAudio,
+                // Play TTS audio for mistakes or reinforcements (if voice enabled)
+                if self.voiceEnabled,
+                   let audioBase64 = response.speechAudio,
                    let audioData = Data(base64Encoded: audioBase64) {
                     self.playAudio(audioData)
                 }
@@ -301,8 +303,9 @@ final class TutorEvaluationService {
                 self.chatMessages.append(TutorChatMessage(
                     role: .answer, latex: response.reply, timestamp: Date()
                 ))
-                // Play TTS audio if available
-                if let audioBase64 = response.speechAudio,
+                // Play TTS audio if voice enabled
+                if self.voiceEnabled,
+                   let audioBase64 = response.speechAudio,
                    let audioData = Data(base64Encoded: audioBase64) {
                     self.playAudio(audioData)
                 }

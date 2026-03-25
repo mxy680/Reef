@@ -9,6 +9,7 @@ struct DashboardView: View {
     @State private var coursesVM = CoursesViewModel()
     @State private var canvasDocument: Document?
     @State private var canvasVM: CanvasViewModel?
+    @State private var pendingDocument: Document?  // Shows tutor mode dialog before opening
 
     var body: some View {
         ZStack {
@@ -203,7 +204,15 @@ struct DashboardView: View {
                     .zIndex(100)
                 }
             }
+            // MARK: - Tutor Mode Dialog
+
+            if pendingDocument != nil {
+                tutorModeDialog
+                    .zIndex(200)
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.2), value: pendingDocument?.id)
         .task { await coursesVM.fetchCourses() }
         .onChange(of: viewModel.selectedCourseId) { _, newId in
             viewModel.selectedCourseName = coursesVM.courses.first(where: { $0.id == newId })?.name
@@ -235,10 +244,7 @@ struct DashboardView: View {
             switch tab {
             case .documents:
                 DocumentsContentView(viewModel: documentsVM, onOpenCanvas: { doc in
-                    canvasVM = CanvasViewModel(document: doc)
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        canvasDocument = doc
-                    }
+                    pendingDocument = doc
                 })
             case .analytics:
                 AnalyticsView()
@@ -270,10 +276,7 @@ struct DashboardView: View {
             CourseContentView(
                 course: course,
                 onOpenCanvas: { doc in
-                    canvasVM = CanvasViewModel(document: doc)
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        canvasDocument = doc
-                    }
+                    pendingDocument = doc
                 },
                 onEditTapped: {
                     coursesVM.editCourseTarget = course
@@ -306,5 +309,153 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(metrics.contentPadding)
         .dashboardCard()
+    }
+
+    // MARK: - Tutor Mode Dialog
+
+    private func openDocument(_ doc: Document, tutorMode: Bool, voiceEnabled: Bool) {
+        let vm = CanvasViewModel(document: doc)
+        if !tutorMode {
+            vm.deferTutorMode = true  // Prevents auto-enabling tutor
+        }
+        vm.tutorVoiceEnabled = voiceEnabled
+        vm.tutorEvalService.voiceEnabled = voiceEnabled
+        canvasVM = vm
+        withAnimation(.easeInOut(duration: 0.3)) {
+            canvasDocument = doc
+            pendingDocument = nil
+        }
+    }
+
+    private var tutorModeDialog: some View {
+        let colors = theme.colors
+
+        return ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation { pendingDocument = nil }
+                }
+
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 8) {
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 28))
+                        .foregroundStyle(ReefColors.primary)
+
+                    Text("How do you want to study?")
+                        .font(.epilogue(20, weight: .black))
+                        .tracking(-0.04 * 20)
+                        .foregroundStyle(colors.text)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, 28)
+                .padding(.bottom, 20)
+
+                // Options
+                VStack(spacing: 12) {
+                    // Tutor + Voice
+                    Button {
+                        if let doc = pendingDocument {
+                            openDocument(doc, tutorMode: true, voiceEnabled: true)
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "speaker.wave.2.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(ReefColors.primary)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Tutor with voice")
+                                    .font(.epilogue(14, weight: .bold))
+                                    .tracking(-0.04 * 14)
+                                    .foregroundStyle(colors.text)
+                                Text("AI tutor speaks out loud as you work")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(colors.textMuted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(colors.textMuted)
+                        }
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(colors.card))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+
+                    // Tutor, no voice
+                    Button {
+                        if let doc = pendingDocument {
+                            openDocument(doc, tutorMode: true, voiceEnabled: false)
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "text.bubble")
+                                .font(.system(size: 16))
+                                .foregroundStyle(ReefColors.primary)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Tutor, text only")
+                                    .font(.epilogue(14, weight: .bold))
+                                    .tracking(-0.04 * 14)
+                                    .foregroundStyle(colors.text)
+                                Text("AI tutor guides you through the chat sidebar")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(colors.textMuted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(colors.textMuted)
+                        }
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(colors.card))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+
+                    // No tutor
+                    Button {
+                        if let doc = pendingDocument {
+                            openDocument(doc, tutorMode: false, voiceEnabled: false)
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "pencil.tip")
+                                .font(.system(size: 16))
+                                .foregroundStyle(colors.textMuted)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Just the canvas")
+                                    .font(.epilogue(14, weight: .bold))
+                                    .tracking(-0.04 * 14)
+                                    .foregroundStyle(colors.text)
+                                Text("No tutor — just draw and annotate")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(colors.textMuted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(colors.textMuted)
+                        }
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(colors.card))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+            }
+            .frame(maxWidth: 380)
+            .background(colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(colors.border, lineWidth: 2))
+            .background(RoundedRectangle(cornerRadius: 20).fill(colors.shadow).offset(x: 4, y: 4))
+        }
     }
 }

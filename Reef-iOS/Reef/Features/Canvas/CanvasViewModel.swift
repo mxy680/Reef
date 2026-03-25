@@ -195,6 +195,7 @@ final class CanvasViewModel {
     var currentQuestionIndex: Int = 0
     var showHintPopover: Bool = false
     var showRevealPopover: Bool = false
+    var tutorVoiceEnabled: Bool = true  // Whether tutor speaks out loud (vs chat-only)
     var hintMidX: CGFloat = 0
     var revealMidX: CGFloat = 0
 
@@ -348,6 +349,8 @@ final class CanvasViewModel {
         let loaded = CanvasStorageService.load(documentId: document.id)
         self.savedState = loaded
         self.savedTutorProgress = loaded?.tutorProgress
+
+        tutorEvalService.voiceEnabled = tutorVoiceEnabled
 
         tutorEvalService.onStepCompleted = { [weak self] stepsCompleted in
             guard let self, stepsCompleted >= 1 else { return }
@@ -624,8 +627,9 @@ final class CanvasViewModel {
         }
     }
 
-    /// Speak the current step description via TTS.
+    /// Speak the current step description via TTS (only if voice enabled).
     func speakCurrentStepDescription() {
+        guard tutorVoiceEnabled else { return }
         guard currentTutorStepIndex < currentSteps.count else { return }
         let step = currentSteps[currentTutorStepIndex]
         // Use tutor_speech if available (LLM-generated, plain English), fall back to description
