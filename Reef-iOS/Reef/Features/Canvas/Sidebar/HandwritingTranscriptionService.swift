@@ -3,9 +3,8 @@ import PencilKit
 @preconcurrency import Supabase
 
 /// Sends PKDrawing strokes to the server for Mathpix real-time transcription.
-/// Polls every 400ms for drawing changes instead of reacting to each stroke.
-/// Sessions last 5 minutes; a new session is created automatically when expired.
-/// Only sends strokes within the active question region.
+/// Clusters strokes by Y-position (≤30 per cluster) and transcribes in parallel.
+/// Only re-transcribes clusters that changed since the last poll.
 @Observable
 @MainActor
 final class HandwritingTranscriptionService {
@@ -26,17 +25,20 @@ final class HandwritingTranscriptionService {
     private var lastStrokeCount: Int = 0
     private var lastStrokeBoundsHash: Int = 0
 
+    /// Per-cluster transcription cache: cluster hash → LaTeX result
+    private var clusterCache: [Int: String] = [:]
+
     private static let sessionTTL: TimeInterval = 300
     private static let pollInterval: Duration = .milliseconds(400)
+    private static let maxStrokesPerCluster = 30
+    private static let clusterYGap: CGFloat = 40  // pt gap to split clusters
 
     // MARK: - Polling
 
-    /// The current drawing and region context, updated by CanvasView on every drawing change.
     var currentDrawing: PKDrawing?
     var currentRegions: [PartRegion]?
     var screenScale: CGFloat = 2.0
 
-    /// Start polling for drawing changes every 400ms.
     func startPolling() {
         guard pollingTask == nil else { return }
         pollingTask = Task { [weak self] in
@@ -48,17 +50,14 @@ final class HandwritingTranscriptionService {
         }
     }
 
-    /// Stop polling.
     func stopPolling() {
         pollingTask?.cancel()
         pollingTask = nil
     }
 
-    /// Check if drawing changed since last poll and trigger transcription if so.
     private func pollForChanges() {
         guard let drawing = currentDrawing else { return }
 
-        // Filter strokes to active question region
         let relevantStrokes: [PKStroke]
         if let regions = currentRegions, !regions.isEmpty {
             relevantStrokes = drawing.strokes.filter { stroke in
@@ -74,13 +73,13 @@ final class HandwritingTranscriptionService {
         guard !relevantStrokes.isEmpty else {
             if !latexResult.isEmpty {
                 latexResult = ""
+                clusterCache.removeAll()
             }
             lastStrokeCount = 0
             lastStrokeBoundsHash = 0
             return
         }
 
-        // Quick change detection: stroke count + order-sensitive bounds hash
         let boundsHash = relevantStrokes.enumerated().reduce(0) { hash, pair in
             let (i, stroke) = pair
             let b = stroke.renderBounds
@@ -91,16 +90,206 @@ final class HandwritingTranscriptionService {
         }
 
         guard relevantStrokes.count != lastStrokeCount || boundsHash != lastStrokeBoundsHash else {
-            return // No change
+            return
         }
 
         lastStrokeCount = relevantStrokes.count
         lastStrokeBoundsHash = boundsHash
 
-        // Transcribe
         generation += 1
         Task { [weak self, relevantStrokes] in
-            await self?.performTranscription(strokes: relevantStrokes)
+            await self?.performClusteredTranscription(strokes: relevantStrokes)
+        }
+    }
+
+    // MARK: - Clustering
+
+    private struct StrokeCluster {
+        let strokes: [PKStroke]
+        let hash: Int
+
+        init(strokes: [PKStroke]) {
+            self.strokes = strokes
+            self.hash = strokes.enumerated().reduce(0) { h, pair in
+                let (i, s) = pair
+                let b = s.renderBounds
+                return h &+ (b.origin.x.hashValue &* (i &+ 1))
+                         &+ (b.midY.hashValue &* (i &+ 2))
+                         &+ (b.size.width.hashValue &* (i &+ 3))
+            }
+        }
+    }
+
+    /// Cluster strokes by Y-position. Each cluster ≤ maxStrokesPerCluster.
+    private func clusterStrokes(_ strokes: [PKStroke]) -> [StrokeCluster] {
+        guard !strokes.isEmpty else { return [] }
+
+        // Sort by vertical midpoint
+        let sorted = strokes.sorted { $0.renderBounds.midY < $1.renderBounds.midY }
+
+        var clusters: [[PKStroke]] = [[sorted[0]]]
+
+        for i in 1..<sorted.count {
+            let stroke = sorted[i]
+            let prevMidY = sorted[i - 1].renderBounds.midY
+            let curMidY = stroke.renderBounds.midY
+            let gap = curMidY - prevMidY
+
+            // Start new cluster if Y-gap exceeds threshold or current cluster is full
+            if gap > Self.clusterYGap || clusters[clusters.count - 1].count >= Self.maxStrokesPerCluster {
+                clusters.append([stroke])
+            } else {
+                clusters[clusters.count - 1].append(stroke)
+            }
+        }
+
+        // Split any remaining oversized clusters
+        var result: [StrokeCluster] = []
+        for group in clusters {
+            if group.count <= Self.maxStrokesPerCluster {
+                result.append(StrokeCluster(strokes: group))
+            } else {
+                for chunk in stride(from: 0, to: group.count, by: Self.maxStrokesPerCluster) {
+                    let end = min(chunk + Self.maxStrokesPerCluster, group.count)
+                    result.append(StrokeCluster(strokes: Array(group[chunk..<end])))
+                }
+            }
+        }
+
+        return result
+    }
+
+    // MARK: - Clustered Transcription
+
+    private func performClusteredTranscription(strokes: [PKStroke]) async {
+        let myGeneration = generation
+        let clusters = clusterStrokes(strokes)
+
+        guard !clusters.isEmpty else { return }
+
+        isTranscribing = true
+        errorMessage = nil
+
+        // Identify which clusters changed
+        var changedIndices: [Int] = []
+        var clusterHashes: [Int] = []
+
+        for (i, cluster) in clusters.enumerated() {
+            clusterHashes.append(cluster.hash)
+            if clusterCache[cluster.hash] == nil {
+                changedIndices.append(i)
+            }
+        }
+
+        // Pre-extract payloads on main actor (PKStroke is not Sendable)
+        var clusterPayloads: [Int: [StrokePayload]] = [:]
+        for idx in changedIndices {
+            clusterPayloads[idx] = extractPayloads(from: clusters[idx].strokes)
+        }
+
+        // Transcribe only changed clusters in parallel
+        if !changedIndices.isEmpty {
+            await withTaskGroup(of: (Int, String?).self) { group in
+                for idx in changedIndices {
+                    let payloads = clusterPayloads[idx]!
+                    let capturedIdx = idx
+                    group.addTask { [weak self] in
+                        guard let self else { return (capturedIdx, nil) }
+                        let result = await self.transcribePayloads(payloads)
+                        return (capturedIdx, result)
+                    }
+                }
+
+                for await (idx, result) in group {
+                    guard generation == myGeneration else { return }
+                    if let latex = result {
+                        clusterCache[clusters[idx].hash] = latex
+                    }
+                }
+            }
+        }
+
+        guard generation == myGeneration else { return }
+
+        // Combine results in order, using cache for unchanged clusters
+        let combined = clusters.compactMap { cluster in
+            clusterCache[cluster.hash]
+        }.filter { !$0.isEmpty }.joined(separator: "\n\n")
+
+        let oldLatex = latexResult
+        latexResult = combined
+        if combined != oldLatex, !combined.isEmpty {
+            onLatexChanged?(combined)
+        }
+
+        // Prune stale cache entries not in current clusters
+        let activeHashes = Set(clusterHashes)
+        clusterCache = clusterCache.filter { activeHashes.contains($0.key) }
+
+        isTranscribing = false
+    }
+
+    /// Extract and normalize stroke payloads on the main actor (PKStroke is not Sendable).
+    private func extractPayloads(from strokes: [PKStroke]) -> [StrokePayload] {
+        var allPoints: [(x: Double, y: Double)] = []
+        let payloads: [StrokePayload] = strokes.map { stroke in
+            var xs: [Double] = []
+            var ys: [Double] = []
+            for i in 0..<stroke.path.count {
+                let pt = stroke.path[i].location
+                xs.append(Double(pt.x))
+                ys.append(Double(pt.y))
+                allPoints.append((Double(pt.x), Double(pt.y)))
+            }
+            return StrokePayload(x: xs, y: ys)
+        }
+
+        let minX = allPoints.map(\.x).min() ?? 0
+        let minY = allPoints.map(\.y).min() ?? 0
+        return payloads.map { payload in
+            StrokePayload(
+                x: payload.x.map { $0 - minX },
+                y: payload.y.map { $0 - minY }
+            )
+        }
+    }
+
+    /// Transcribe pre-extracted payloads (≤30 strokes). Sendable-safe.
+    private func transcribePayloads(_ normalized: [StrokePayload]) async -> String? {
+        do {
+            let (token, sid) = try await ensureSession()
+
+            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+                  let url = URL(string: "\(serverURL)/ai/transcribe-strokes") else {
+                return nil
+            }
+
+            let authSession = try await supabase.auth.session
+
+            let body = TranscribeStrokesRequest(
+                strokes: normalized,
+                session_id: sid,
+                app_token: token
+            )
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 10
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONEncoder().encode(body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                return nil
+            }
+
+            let result = try JSONDecoder().decode(TranscribeStrokesResponse.self, from: data)
+            return result.latex
+        } catch {
+            print("[Transcription] Cluster error: \(error)")
+            return nil
         }
     }
 
@@ -145,87 +334,6 @@ final class HandwritingTranscriptionService {
         return (result.app_token, result.strokes_session_id)
     }
 
-    // MARK: - Transcription
-
-    private func performTranscription(strokes relevantStrokes: [PKStroke]) async {
-        // Extract stroke coordinates and normalize to (0,0)
-        var allPoints: [(x: Double, y: Double)] = []
-        let strokePayloads: [StrokePayload] = relevantStrokes.map { stroke in
-            var xs: [Double] = []
-            var ys: [Double] = []
-            for i in 0..<stroke.path.count {
-                let pt = stroke.path[i].location
-                xs.append(Double(pt.x))
-                ys.append(Double(pt.y))
-                allPoints.append((Double(pt.x), Double(pt.y)))
-            }
-            return StrokePayload(x: xs, y: ys)
-        }
-
-        // Normalize: translate so bounding box starts at (0,0)
-        let minX = allPoints.map(\.x).min() ?? 0
-        let minY = allPoints.map(\.y).min() ?? 0
-        let normalizedPayloads = strokePayloads.map { payload in
-            StrokePayload(
-                x: payload.x.map { $0 - minX },
-                y: payload.y.map { $0 - minY }
-            )
-        }
-
-        let myGeneration = generation
-
-        isTranscribing = true
-        errorMessage = nil
-
-        do {
-            let (token, sid) = try await ensureSession()
-
-            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
-                  let url = URL(string: "\(serverURL)/ai/transcribe-strokes") else {
-                errorMessage = "Server not configured"
-                isTranscribing = false
-                return
-            }
-
-            let authSession = try await supabase.auth.session
-
-            let body = TranscribeStrokesRequest(
-                strokes: normalizedPayloads,
-                session_id: sid,
-                app_token: token
-            )
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.timeoutInterval = 10
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
-            request.httpBody = try JSONEncoder().encode(body)
-
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard !Task.isCancelled else { return }
-            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                throw URLError(.badServerResponse)
-            }
-
-            let result = try JSONDecoder().decode(TranscribeStrokesResponse.self, from: data)
-
-            guard generation == myGeneration else { return }
-            let oldLatex = latexResult
-            latexResult = result.latex
-            if result.latex != oldLatex, !result.latex.isEmpty {
-                onLatexChanged?(result.latex)
-            }
-            isTranscribing = false
-        } catch {
-            guard !Task.isCancelled, generation == myGeneration else { return }
-            errorMessage = "Transcription failed"
-            print("[Transcription] Error: \(error)")
-            isTranscribing = false
-        }
-    }
-
     // MARK: - Timer
 
     func tickTimer() {
@@ -245,8 +353,6 @@ final class HandwritingTranscriptionService {
 
     // MARK: - Reset
 
-    /// Reset session only (on question change) — clears Mathpix session so new strokes
-    /// aren't mixed with previous question's accumulated data.
     func resetSession() {
         generation += 1
         sessionId = nil
@@ -258,9 +364,9 @@ final class HandwritingTranscriptionService {
         errorMessage = nil
         lastStrokeCount = 0
         lastStrokeBoundsHash = 0
+        clusterCache.removeAll()
     }
 
-    /// Full reset (on sidebar close).
     func reset() {
         stopPolling()
         resetSession()
