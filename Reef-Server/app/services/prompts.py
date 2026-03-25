@@ -67,7 +67,9 @@ Estimate answer_space_cm at the most specific level (deepest part > parent part 
 - 6.0: long proof, graph to sketch, or multi-part calculation
 """
 
-LATEX_FIX_PROMPT = """You are a LaTeX expert. The following LaTeX body content failed to compile. Fix it and return ONLY the corrected LaTeX body content — no preamble, no \\documentclass, no \\begin{{document}}.
+LATEX_FIX_PROMPT = """Fix this LaTeX body content and return ONLY the fixed LaTeX. No explanation. No commentary. No preamble. Just the LaTeX body.
+
+CRITICAL: Your ENTIRE response must be valid LaTeX body content. Do NOT write any English sentences explaining what you did. Do NOT say "The error is..." or "Here is the fix...". Just output the fixed LaTeX and nothing else.
 
 ## Failed LaTeX
 ```
@@ -80,7 +82,8 @@ LATEX_FIX_PROMPT = """You are a LaTeX expert. The following LaTeX body content f
 ```
 
 ## Rules
-- Return ONLY the fixed LaTeX body content, nothing else
+- Your response = ONLY the fixed LaTeX body content
+- Do NOT explain the error or your fix
 - Do NOT wrap in code fences or markdown
 - Do NOT add \\documentclass, \\usepackage, \\begin{{document}}, or \\end{{document}}
 - Fix the specific error shown above
