@@ -5,6 +5,12 @@ struct AnswerKeyStep: Codable, Sendable {
     let explanation: String
     let work: String
     let reinforcement: String?
+    let tutorSpeech: String?
+
+    enum CodingKeys: String, CodingKey {
+        case description, explanation, work, reinforcement
+        case tutorSpeech = "tutor_speech"
+    }
 }
 
 struct PartAnswer: Codable, Sendable {

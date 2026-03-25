@@ -620,16 +620,11 @@ final class CanvasViewModel {
     /// Speak the current step description via TTS.
     func speakCurrentStepDescription() {
         guard currentTutorStepIndex < currentSteps.count else { return }
-        let description = currentSteps[currentTutorStepIndex].description
-        // Strip LaTeX for TTS: $F=ma$ → F equals m a
-        let speech = "Next up: " + description
-            .replacingOccurrences(of: "\\$([^$]+)\\$", with: "$1", options: .regularExpression)
-            .replacingOccurrences(of: "\\\\frac\\{([^}]*)\\}\\{([^}]*)\\}", with: "$1 over $2", options: .regularExpression)
-            .replacingOccurrences(of: "\\\\", with: "")
-            .replacingOccurrences(of: "{", with: "")
-            .replacingOccurrences(of: "}", with: "")
-            .replacingOccurrences(of: "_", with: " ")
-            .replacingOccurrences(of: "^", with: " to the power of ")
+        let step = currentSteps[currentTutorStepIndex]
+        // Use tutor_speech if available (LLM-generated, plain English), fall back to description
+        let speech = step.tutorSpeech?.isEmpty == false
+            ? step.tutorSpeech!
+            : "Next up: " + step.description
 
         Task {
             guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
