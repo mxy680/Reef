@@ -74,7 +74,7 @@ final class OnboardingViewModel {
         case .studentType:
             return answers.studentType != nil
         case .major:
-            return answers.major != nil
+            return !answers.majors.isEmpty
         case .courses:
             return !answers.courses.isEmpty
         case .favoriteTopic:
@@ -185,7 +185,7 @@ final class OnboardingViewModel {
             grade: answers.studentType?.rawValue,
             subjects: Array(answers.courses),
             referralSource: answers.referralSource?.rawValue,
-            major: answers.major?.rawValue,
+            major: answers.majors.map(\.rawValue).sorted().joined(separator: ", "),
             studyGoal: answers.studyGoal?.rawValue,
             painPoints: answers.painPoints.map(\.rawValue),
             learningStyle: answers.learningStyle?.rawValue,

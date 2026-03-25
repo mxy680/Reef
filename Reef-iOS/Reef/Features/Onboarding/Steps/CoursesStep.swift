@@ -4,7 +4,7 @@ struct CoursesStep: View {
     @Bindable var viewModel: OnboardingViewModel
 
     private var courseList: [String] {
-        CourseCatalog.courses(for: viewModel.answers.studentType, major: viewModel.answers.major)
+        CourseCatalog.courses(for: viewModel.answers.studentType, majors: viewModel.answers.majors)
     }
 
     var body: some View {

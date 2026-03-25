@@ -6,17 +6,24 @@ struct MajorStep: View {
     var body: some View {
         OnboardingStepShell(
             title: "What flavor of homework?",
-            subtitle: "Close enough counts here.",
+            subtitle: "Pick all that apply — we won't judge your schedule.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
         ) {
             VStack(spacing: 10) {
                 ForEach(MajorField.allCases, id: \.self) { field in
+                    let selected = viewModel.answers.majors.contains(field)
                     OnboardingOption(
                         label: field.displayLabel,
-                        isSelected: viewModel.answers.major == field,
-                        action: { viewModel.answers.major = field }
+                        isSelected: selected,
+                        action: {
+                            if selected {
+                                viewModel.answers.majors.remove(field)
+                            } else {
+                                viewModel.answers.majors.insert(field)
+                            }
+                        }
                     )
                 }
             }

@@ -207,7 +207,7 @@ enum ReferralSource: String, Codable, Sendable, CaseIterable {
 
 struct OnboardingAnswers: Sendable {
     var studentType: StudentType?
-    var major: MajorField?
+    var majors: Set<MajorField> = []
     var courses: Set<String> = []
     var favoriteTopics: Set<String> = []
     var studyGoal: StudyGoal?
@@ -221,23 +221,8 @@ struct OnboardingAnswers: Sendable {
 // MARK: - Course Lists
 
 enum CourseCatalog {
-    static func courses(for studentType: StudentType?, major: MajorField?) -> [String] {
-        switch major {
-        case .engineering:
-            return ["Calculus", "Physics", "Linear Algebra", "Differential Equations",
-                    "Chemistry", "Statistics", "Computer Science", "Engineering",
-                    "Data Science", "Economics"]
-        case .premed:
-            return ["Biology", "Chemistry", "Organic Chemistry", "Anatomy",
-                    "Biochemistry", "Physics", "Statistics", "Economics"]
-        case .cs:
-            return ["Computer Science", "Calculus", "Linear Algebra", "Statistics",
-                    "Data Science", "Discrete Math", "Physics", "Economics"]
-        case .science:
-            return ["Calculus", "Physics", "Chemistry", "Biology", "Statistics",
-                    "Linear Algebra", "Differential Equations", "Organic Chemistry",
-                    "Economics"]
-        case .other, nil:
+    static func courses(for studentType: StudentType?, majors: Set<MajorField>) -> [String] {
+        if majors.isEmpty {
             switch studentType {
             case .highSchool:
                 return ["Algebra", "Geometry", "Precalculus", "Calculus", "Physics",
@@ -248,6 +233,34 @@ enum CourseCatalog {
                         "Statistics", "Physics", "Chemistry", "Biology"]
             }
         }
+
+        var combined: [String] = []
+        for major in majors {
+            let majorCourses: [String]
+            switch major {
+            case .engineering:
+                majorCourses = ["Calculus", "Physics", "Linear Algebra", "Differential Equations",
+                        "Chemistry", "Statistics", "Computer Science", "Engineering",
+                        "Data Science", "Economics"]
+            case .premed:
+                majorCourses = ["Biology", "Chemistry", "Organic Chemistry", "Anatomy",
+                        "Biochemistry", "Physics", "Statistics", "Economics"]
+            case .cs:
+                majorCourses = ["Computer Science", "Calculus", "Linear Algebra", "Statistics",
+                        "Data Science", "Discrete Math", "Physics", "Economics"]
+            case .science:
+                majorCourses = ["Calculus", "Physics", "Chemistry", "Biology", "Statistics",
+                        "Linear Algebra", "Differential Equations", "Organic Chemistry",
+                        "Economics"]
+            case .other:
+                majorCourses = ["Math", "Science", "Economics", "Computer Science",
+                        "Statistics", "Physics", "Chemistry", "Biology"]
+            }
+            for c in majorCourses where !combined.contains(c) {
+                combined.append(c)
+            }
+        }
+        return combined
     }
 
     static func topicPlaceholder(for courses: Set<String>) -> String {
