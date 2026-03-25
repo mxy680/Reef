@@ -31,6 +31,10 @@ struct CanvasPageView: UIViewRepresentable {
         container.currentTool = currentTool
         container.drawingPolicy = drawingPolicy
         container.selectedToolType = selectedToolType
+        container.rulerActive = rulerActive
+        container.rulerCenter = rulerCenter
+        container.rulerAngle = rulerAngle
+        container.rulerScale = rulerScale
         container.onCanvasTouchBegan = onCanvasTouchBegan
         container.onZoomChanged = onZoomChanged
         container.onStrokePositionChanged = onStrokePositionChanged

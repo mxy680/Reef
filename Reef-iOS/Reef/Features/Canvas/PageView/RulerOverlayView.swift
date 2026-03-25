@@ -36,10 +36,12 @@ struct CanvasRulerOverlayView: View {
                     if initialPosition == nil {
                         position = center
                         initialPosition = center
+                        reportGeometry()
                     }
                 }
         }
-        .allowsHitTesting(true)
+        // Only the ruler body itself accepts touches (via .contentShape on rulerBody)
+        // The rest of the GeometryReader is transparent to all touches
     }
 
     // MARK: - Theme Colors
