@@ -67,6 +67,16 @@ struct CanvasInfoStrip: View {
 
                 if viewModel.tutorStepCount > 0 {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        if let label = viewModel.activeQuestionLabel {
+                            Text(label)
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.9))
+
+                            Text("·")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white.opacity(0.35))
+                        }
+
                         Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(.white.opacity(0.7))
