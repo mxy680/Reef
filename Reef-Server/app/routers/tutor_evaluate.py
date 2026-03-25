@@ -236,17 +236,15 @@ async def tutor_evaluate(
                 "the prior encounter to build continuity. One sentence max."
             )
 
-    # Build debug prompt for development mode
-    debug_prompt_text = None
-    if settings.environment == "development":
-        debug_prompt_text = (
-            "=== SYSTEM MESSAGE ===\n\n"
-            + full_system
-            + "\n\n=== USER MESSAGE ===\n\n"
-            + dynamic_prompt
-            + f"\n\n=== IMAGES: {len(body.figure_urls)} figure URLs, "
-            + f"student_image={'yes' if body.student_image else 'no'} ==="
-        )
+    # Build debug prompt (always included, stripped by iOS if not needed)
+    debug_prompt_text = (
+        "=== SYSTEM MESSAGE ===\n\n"
+        + full_system
+        + "\n\n=== USER MESSAGE ===\n\n"
+        + dynamic_prompt
+        + f"\n\n=== IMAGES: {len(body.figure_urls)} figure URLs, "
+        + f"student_image={'yes' if body.student_image else 'no'} ==="
+    )
 
     # Collect images: figure URLs + student drawing
     images = await _download_images(body.figure_urls)

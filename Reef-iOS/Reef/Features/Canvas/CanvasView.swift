@@ -141,8 +141,8 @@ struct CanvasView: View {
                 .zIndex(50)
             }
 
-            // Debug prompt panel (development only)
-            if viewModel.showDebugPrompt, let prompt = viewModel.tutorEvalService.lastDebugPrompt {
+            // Debug prompt panel
+            if viewModel.showDebugPrompt {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
                         Text("LLM Prompt Debug")
@@ -165,7 +165,7 @@ struct CanvasView: View {
                     .background(Color.black.opacity(0.8))
 
                     ScrollView {
-                        Text(prompt)
+                        Text(viewModel.tutorEvalService.lastDebugPrompt ?? "No eval yet — write something and wait for the tutor to evaluate.")
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(.green)
                             .padding(8)
