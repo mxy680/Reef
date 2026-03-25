@@ -272,8 +272,9 @@ struct TutorDemoStep: View {
         }
         // Speak step instructions + handle drawing reaction flow
         .onChange(of: walkthrough.currentStep) { oldStep, newStep in
-            // Speak step instructions (skip if coming from drawSomething — reactToDrawing handles that)
-            if let step = newStep, oldStep != .drawSomething, voiceMode {
+            // Speak step instructions (skip if drawSomething→tryHighlighter — reactToDrawing handles that)
+            let isDrawReaction = oldStep == .drawSomething && newStep == .tryHighlighter
+            if let step = newStep, !isDrawReaction, voiceMode {
                 let speechText = step.speech
 
                 // Wait for real tutor audio to finish before walkthrough speaks
