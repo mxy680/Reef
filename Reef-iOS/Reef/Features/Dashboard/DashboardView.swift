@@ -10,6 +10,8 @@ struct DashboardView: View {
     @State private var canvasDocument: Document?
     @State private var canvasVM: CanvasViewModel?
     @State private var pendingDocument: Document?  // Shows tutor mode dialog before opening
+    @State private var dontAskAgain = false
+    @AppStorage("tutorModePreference") private var savedPreference: String = ""  // "", "voice", "text", "none"
 
     var body: some View {
         ZStack {
@@ -244,7 +246,7 @@ struct DashboardView: View {
             switch tab {
             case .documents:
                 DocumentsContentView(viewModel: documentsVM, onOpenCanvas: { doc in
-                    pendingDocument = doc
+                    openOrAskTutorMode(doc)
                 })
             case .analytics:
                 AnalyticsView()
@@ -276,7 +278,7 @@ struct DashboardView: View {
             CourseContentView(
                 course: course,
                 onOpenCanvas: { doc in
-                    pendingDocument = doc
+                    openOrAskTutorMode(doc)
                 },
                 onEditTapped: {
                     coursesVM.editCourseTarget = course
@@ -313,6 +315,24 @@ struct DashboardView: View {
 
     // MARK: - Tutor Mode Dialog
 
+    private func openOrAskTutorMode(_ doc: Document) {
+        switch savedPreference {
+        case "voice": openDocument(doc, tutorMode: true, voiceEnabled: true)
+        case "text":  openDocument(doc, tutorMode: true, voiceEnabled: false)
+        case "none":  openDocument(doc, tutorMode: false, voiceEnabled: false)
+        default:      pendingDocument = doc; dontAskAgain = false
+        }
+    }
+
+    private func selectTutorMode(_ preference: String, doc: Document) {
+        if dontAskAgain { savedPreference = preference }
+        switch preference {
+        case "voice": openDocument(doc, tutorMode: true, voiceEnabled: true)
+        case "text":  openDocument(doc, tutorMode: true, voiceEnabled: false)
+        default:      openDocument(doc, tutorMode: false, voiceEnabled: false)
+        }
+    }
+
     private func openDocument(_ doc: Document, tutorMode: Bool, voiceEnabled: Bool) {
         let vm = CanvasViewModel(document: doc)
         if !tutorMode {
@@ -325,6 +345,43 @@ struct DashboardView: View {
             canvasDocument = doc
             pendingDocument = nil
         }
+    }
+
+    private func tutorOption(
+        icon: String, title: String, subtitle: String,
+        colors: ReefThemeColors, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(ReefColors.primary)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.epilogue(14, weight: .bold))
+                        .tracking(-0.04 * 14)
+                        .foregroundStyle(colors.text)
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundStyle(colors.textMuted)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(colors.textMuted)
+            }
+            .padding(14)
+            .background(colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 2))
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(colors.shadow)
+                    .offset(x: 3, y: 3)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var tutorModeDialog: some View {
@@ -355,100 +412,50 @@ struct DashboardView: View {
 
                 // Options
                 VStack(spacing: 12) {
-                    // Tutor + Voice
-                    Button {
-                        if let doc = pendingDocument {
-                            openDocument(doc, tutorMode: true, voiceEnabled: true)
-                        }
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "speaker.wave.2.fill")
-                                .font(.system(size: 16))
-                                .foregroundStyle(ReefColors.primary)
-                                .frame(width: 24)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Tutor with voice")
-                                    .font(.epilogue(14, weight: .bold))
-                                    .tracking(-0.04 * 14)
-                                    .foregroundStyle(colors.text)
-                                Text("AI tutor speaks out loud as you work")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(colors.textMuted)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(colors.textMuted)
-                        }
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(colors.card))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 1))
+                    tutorOption(
+                        icon: "speaker.wave.2.fill",
+                        title: "Tutor with voice",
+                        subtitle: "AI tutor speaks out loud as you work",
+                        colors: colors
+                    ) {
+                        if let doc = pendingDocument { selectTutorMode("voice", doc: doc) }
                     }
-                    .buttonStyle(.plain)
 
-                    // Tutor, no voice
-                    Button {
-                        if let doc = pendingDocument {
-                            openDocument(doc, tutorMode: true, voiceEnabled: false)
-                        }
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "text.bubble")
-                                .font(.system(size: 16))
-                                .foregroundStyle(ReefColors.primary)
-                                .frame(width: 24)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Tutor, text only")
-                                    .font(.epilogue(14, weight: .bold))
-                                    .tracking(-0.04 * 14)
-                                    .foregroundStyle(colors.text)
-                                Text("AI tutor guides you through the chat sidebar")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(colors.textMuted)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(colors.textMuted)
-                        }
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(colors.card))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 1))
+                    tutorOption(
+                        icon: "text.bubble",
+                        title: "Tutor, text only",
+                        subtitle: "AI tutor guides you through the chat sidebar",
+                        colors: colors
+                    ) {
+                        if let doc = pendingDocument { selectTutorMode("text", doc: doc) }
                     }
-                    .buttonStyle(.plain)
 
-                    // No tutor
-                    Button {
-                        if let doc = pendingDocument {
-                            openDocument(doc, tutorMode: false, voiceEnabled: false)
-                        }
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "pencil.tip")
-                                .font(.system(size: 16))
-                                .foregroundStyle(colors.textMuted)
-                                .frame(width: 24)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Just the canvas")
-                                    .font(.epilogue(14, weight: .bold))
-                                    .tracking(-0.04 * 14)
-                                    .foregroundStyle(colors.text)
-                                Text("No tutor — just draw and annotate")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(colors.textMuted)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(colors.textMuted)
-                        }
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(colors.card))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(colors.border, lineWidth: 1))
+                    tutorOption(
+                        icon: "pencil.tip",
+                        title: "Just the canvas",
+                        subtitle: "No tutor — just draw and annotate",
+                        colors: colors
+                    ) {
+                        if let doc = pendingDocument { selectTutorMode("none", doc: doc) }
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 24)
+
+                // Don't ask again checkbox
+                Button {
+                    dontAskAgain.toggle()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: dontAskAgain ? "checkmark.square.fill" : "square")
+                            .font(.system(size: 16))
+                            .foregroundStyle(dontAskAgain ? ReefColors.primary : colors.textMuted)
+                        Text("Don't ask me again")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(colors.textMuted)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 12)
                 .padding(.bottom, 24)
             }
             .frame(maxWidth: 380)
