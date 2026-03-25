@@ -220,6 +220,16 @@ final class CanvasWalkthroughState {
         isComplete = true
     }
 
+    func restart() {
+        pendingAdvanceTask?.cancel()
+        isSpeaking = false
+        isPlayingAudio = false
+        isComplete = false
+        drawingReaction = nil
+        waitingForReaction = false
+        currentStep = .drawSomething
+    }
+
     // MARK: - Drawing Reaction
 
     var drawingReaction: String?

@@ -46,13 +46,23 @@ struct TutorDemoStep: View {
                             onGotIt: { walkthrough.advance() }
                         )
 
-                        // Skip — always visible, never animates
-                        ReefButton(.primary, size: .compact, action: {
-                            walkthrough.skip()
-                        }) {
-                            Text("Skip tutorial")
-                                .font(.epilogue(11, weight: .bold))
-                                .tracking(-0.04 * 11)
+                        // Skip + Restart — always visible
+                        HStack(spacing: 8) {
+                            ReefButton(.primary, size: .compact, action: {
+                                walkthrough.skip()
+                            }) {
+                                Text("Skip tutorial")
+                                    .font(.epilogue(11, weight: .bold))
+                                    .tracking(-0.04 * 11)
+                            }
+
+                            ReefButton(.secondary, size: .compact, action: {
+                                walkthrough.restart()
+                            }) {
+                                Text("Restart")
+                                    .font(.epilogue(11, weight: .bold))
+                                    .tracking(-0.04 * 11)
+                            }
                         }
                     }
                     .padding(.leading, 20)
