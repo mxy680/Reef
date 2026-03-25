@@ -280,29 +280,29 @@ final class CanvasViewModel {
         isLoadingAnswerKeys = true
         let repo = SupabaseAnswerKeyRepository()
 
-        // Poll every 5s for up to 5 minutes waiting for answer keys to generate
+        // Always start on Q1a
+        if activeQuestionLabel == nil {
+            activeQuestionLabel = "Q1a"
+        }
+        let targetQuestion = activeQuestionNumber
+
+        // Poll every 5s for up to 5 minutes — wait until Q1's key specifically exists
         var attempts = 0
         var result = await repo.fetchAnswerKeys(documentId: document.id)
-        while result.answers.isEmpty && attempts < 60 {
+        while result.answers[targetQuestion] == nil && attempts < 60 {
             attempts += 1
+            // Update answerKeys as they trickle in (for other questions)
+            answerKeys = result.answers
             try? await Task.sleep(for: .seconds(5))
             result = await repo.fetchAnswerKeys(documentId: document.id)
         }
 
         answerKeys = result.answers
         isLoadingAnswerKeys = false
-        if !deferTutorMode && !answerKeys.isEmpty {
-            // Always start on Q1a
-            if activeQuestionLabel == nil {
-                activeQuestionLabel = "Q1a"
-            }
-            // Only enable tutor mode once the current question's answer key exists
-            guard answerKeys[activeQuestionNumber] != nil else { return }
-            // Reset tutor step to 0 for clean start
+        if !deferTutorMode && answerKeys[targetQuestion] != nil {
             currentTutorStepIndex = 0
             tutorEvalService.resetForNextStep()
             updatePendingReinforcement()
-            // Enable tutor mode and show sidebar
             tutorModeOn = true
             showSidebar = true
             restoreTutorStateForLabel(activeQuestionLabel!)
