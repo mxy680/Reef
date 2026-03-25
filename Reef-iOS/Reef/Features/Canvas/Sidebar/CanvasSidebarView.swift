@@ -97,7 +97,6 @@ struct CanvasSidebarView: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, 12)
                     }
-                    .frame(maxHeight: 200)
                 }
             }
         }
