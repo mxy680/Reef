@@ -82,7 +82,7 @@ struct CanvasInfoStrip: View {
             Spacer(minLength: 8)
 
             // "Generating tutor..." centered in toolbar while answer keys load
-            if viewModel.isReconstructed && viewModel.isLoadingAnswerKeys && viewModel.answerKeys.isEmpty {
+            if viewModel.isLoadingAnswerKeys && viewModel.answerKeys.isEmpty {
                 Text("Generating answer key for tutor — hang tight...")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.white.opacity(0.5))
@@ -151,10 +151,10 @@ struct CanvasInfoStrip: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 20, height: 20)
-                    .foregroundColor(.white.opacity(viewModel.isReconstructed && !viewModel.answerKeys.isEmpty ? 1 : 0.4))
+                    .foregroundColor(.white.opacity(!viewModel.answerKeys.isEmpty ? 1 : 0.4))
                     .walkthroughGlow(active: walkthroughStep?.targetButton == .tutorToggle)
 
-                if viewModel.isReconstructed && !viewModel.answerKeys.isEmpty {
+                if !viewModel.answerKeys.isEmpty {
                     ReefToggle(isOn: Binding(
                         get: { viewModel.tutorModeOn },
                         set: { newValue in
