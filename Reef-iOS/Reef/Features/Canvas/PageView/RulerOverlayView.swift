@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CanvasRulerOverlayView: View {
     var isDarkMode: Bool = false
+    var onGeometryChanged: ((_ center: CGPoint, _ angle: CGFloat, _ scale: CGFloat) -> Void)?
 
     private let baseWidth: CGFloat = 600
     private let baseHeight: CGFloat = 56
@@ -134,6 +135,10 @@ struct CanvasRulerOverlayView: View {
 
     // MARK: - Gestures
 
+    private func reportGeometry() {
+        onGeometryChanged?(position, rotation.radians, scale)
+    }
+
     private var dragGesture: some Gesture {
         DragGesture()
             .onChanged { value in dragOffset = value.translation }
@@ -141,6 +146,7 @@ struct CanvasRulerOverlayView: View {
                 position.x += value.translation.width
                 position.y += value.translation.height
                 dragOffset = .zero
+                reportGeometry()
             }
     }
 
@@ -150,6 +156,7 @@ struct CanvasRulerOverlayView: View {
             .onEnded { angle in
                 rotation = rotation + angle
                 rotationDelta = .zero
+                reportGeometry()
             }
     }
 
@@ -159,6 +166,7 @@ struct CanvasRulerOverlayView: View {
             .onEnded { value in
                 scale = max(0.5, min(scale * value.magnification, 3.0))
                 scaleDelta = 1.0
+                reportGeometry()
             }
     }
 }

@@ -78,6 +78,10 @@ struct CanvasView: View {
                         overlaySpacing: viewModel.overlaySettings.spacing,
                         overlayOpacity: viewModel.overlaySettings.opacity,
                         pageVersion: viewModel.pageVersion,
+                        rulerActive: viewModel.showRuler,
+                        rulerCenter: viewModel.rulerCenter,
+                        rulerAngle: viewModel.rulerAngle,
+                        rulerScale: viewModel.rulerScale,
                         scrollToPageIndex: scrollToPageIndex,
                         onCanvasTouchBegan: {
                             viewModel.dismissAllPopovers()
@@ -119,8 +123,15 @@ struct CanvasView: View {
 
             // Ruler overlay
             if viewModel.showRuler {
-                CanvasRulerOverlayView(isDarkMode: viewModel.isDarkMode)
-                    .transition(.opacity)
+                CanvasRulerOverlayView(
+                    isDarkMode: viewModel.isDarkMode,
+                    onGeometryChanged: { center, angle, scale in
+                        viewModel.rulerCenter = center
+                        viewModel.rulerAngle = angle
+                        viewModel.rulerScale = scale
+                    }
+                )
+                .transition(.opacity)
             }
 
             // Calculator overlay (floating, no backdrop)

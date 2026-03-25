@@ -15,6 +15,10 @@ struct CanvasPageView: UIViewRepresentable {
     var overlaySpacing: CGFloat = 20
     var overlayOpacity: CGFloat = 0.35
     var pageVersion: Int = 0
+    var rulerActive: Bool = false
+    var rulerCenter: CGPoint = .zero
+    var rulerAngle: CGFloat = 0
+    var rulerScale: CGFloat = 1.0
     var scrollToPageIndex: Int? = nil
     var onCanvasTouchBegan: (() -> Void)?
     var onZoomChanged: ((CGFloat) -> Void)?
@@ -44,6 +48,10 @@ struct CanvasPageView: UIViewRepresentable {
         uiView.onCanvasTouchBegan = onCanvasTouchBegan
         uiView.onZoomChanged = onZoomChanged
         uiView.onStrokePositionChanged = onStrokePositionChanged
+        uiView.rulerActive = rulerActive
+        uiView.rulerCenter = rulerCenter
+        uiView.rulerAngle = rulerAngle
+        uiView.rulerScale = rulerScale
 
         // Re-render pages when the PDF document or page structure changes
         if uiView.currentPageVersion != pageVersion {

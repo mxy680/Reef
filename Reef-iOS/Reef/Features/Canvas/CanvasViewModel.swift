@@ -138,6 +138,9 @@ final class CanvasViewModel {
 
     var showPageControls: Bool = false
     var showRuler: Bool = false
+    var rulerCenter: CGPoint = .zero
+    var rulerAngle: CGFloat = 0
+    var rulerScale: CGFloat = 1.0
     var isDarkMode: Bool = false
     var showSidebar: Bool = false
     var activeQuestionLabel: String?

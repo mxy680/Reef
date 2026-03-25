@@ -53,6 +53,13 @@ final class CanvasContainerView: UIView {
     /// Selected tool type — used to gate shape auto-snap
     var selectedToolType: CanvasToolType = .pen
 
+    /// Ruler state for snap-to-edge drawing
+    var rulerActive: Bool = false
+    var rulerCenter: CGPoint = .zero
+    var rulerAngle: CGFloat = 0  // radians
+    var rulerWidth: CGFloat = 600
+    var rulerScale: CGFloat = 1.0
+
     /// Prevents re-entrant delegate calls while replacing a stroke
     private var isReplacingStroke = false
 
@@ -482,6 +489,96 @@ extension CanvasContainerView: UIScrollViewDelegate {
 
 // MARK: - PKCanvasViewDelegate
 
+// MARK: - Ruler Snap
+
+extension CanvasContainerView {
+    /// Compute the ruler's bottom edge line in canvas coordinates.
+    private func rulerEdgeLine() -> (start: CGPoint, end: CGPoint) {
+        let halfWidth = (rulerWidth * rulerScale) / 2
+        let bottomOffset: CGFloat = 28 * rulerScale  // half of ruler height (56/2)
+        let cos = CoreGraphics.cos(rulerAngle)
+        let sin = CoreGraphics.sin(rulerAngle)
+        // Bottom edge: center + bottomOffset perpendicular, then ±halfWidth along angle
+        let cx = rulerCenter.x + sin * bottomOffset
+        let cy = rulerCenter.y + cos * bottomOffset  // note: SwiftUI y is down, rotation is clockwise
+        let start = CGPoint(x: cx - cos * halfWidth, y: cy + sin * halfWidth)
+        let end = CGPoint(x: cx + cos * halfWidth, y: cy - sin * halfWidth)
+        return (start, end)
+    }
+
+    /// Project a point onto a line segment, returning the projected point and distance.
+    private func projectOntoLine(_ point: CGPoint, lineStart: CGPoint, lineEnd: CGPoint) -> (projected: CGPoint, distance: CGFloat) {
+        let dx = lineEnd.x - lineStart.x
+        let dy = lineEnd.y - lineStart.y
+        let lenSq = dx * dx + dy * dy
+        guard lenSq > 0 else { return (lineStart, hypot(point.x - lineStart.x, point.y - lineStart.y)) }
+
+        var t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lenSq
+        t = max(0, min(1, t))
+        let proj = CGPoint(x: lineStart.x + t * dx, y: lineStart.y + t * dy)
+        let dist = hypot(point.x - proj.x, point.y - proj.y)
+        return (proj, dist)
+    }
+
+    /// If the stroke is drawn near the ruler's bottom edge, snap it to a straight line.
+    func snapStrokeToRuler(_ stroke: PKStroke) -> PKStroke? {
+        guard stroke.path.count >= 2 else { return nil }
+        let (lineStart, lineEnd) = rulerEdgeLine()
+        let snapTolerance: CGFloat = 30 * rulerScale
+
+        // Check how many points are near the ruler edge
+        var nearCount = 0
+        for i in 0..<stroke.path.count {
+            let pt = stroke.path[i].location
+            let (_, dist) = projectOntoLine(pt, lineStart: lineStart, lineEnd: lineEnd)
+            if dist < snapTolerance { nearCount += 1 }
+        }
+
+        // Require >60% of points near the ruler
+        let ratio = CGFloat(nearCount) / CGFloat(stroke.path.count)
+        guard ratio > 0.6 else { return nil }
+
+        // Project first and last points onto the ruler line
+        let firstPt = stroke.path[0].location
+        let lastPt = stroke.path[stroke.path.count - 1].location
+        let (projStart, _) = projectOntoLine(firstPt, lineStart: lineStart, lineEnd: lineEnd)
+        let (projEnd, _) = projectOntoLine(lastPt, lineStart: lineStart, lineEnd: lineEnd)
+
+        // Build a straight-line stroke from projStart to projEnd
+        let pointCount = max(stroke.path.count, 10)
+        var avgForce: CGFloat = 0
+        var avgSize = CGSize.zero
+        for i in 0..<stroke.path.count {
+            avgForce += stroke.path[i].force
+            avgSize.width += stroke.path[i].size.width
+            avgSize.height += stroke.path[i].size.height
+        }
+        avgForce /= CGFloat(stroke.path.count)
+        avgSize.width /= CGFloat(stroke.path.count)
+        avgSize.height /= CGFloat(stroke.path.count)
+
+        let strokePoints = (0..<pointCount).map { i in
+            let t = CGFloat(i) / CGFloat(max(pointCount - 1, 1))
+            let loc = CGPoint(
+                x: projStart.x + t * (projEnd.x - projStart.x),
+                y: projStart.y + t * (projEnd.y - projStart.y)
+            )
+            return PKStrokePoint(
+                location: loc,
+                timeOffset: Double(i) / Double(max(pointCount - 1, 1)),
+                size: avgSize,
+                opacity: 1,
+                force: avgForce,
+                azimuth: 0,
+                altitude: .pi / 4
+            )
+        }
+
+        let path = PKStrokePath(controlPoints: strokePoints, creationDate: Date())
+        return PKStroke(ink: stroke.ink, path: path, transform: .identity, mask: stroke.mask)
+    }
+}
+
 extension CanvasContainerView: PKCanvasViewDelegate {
     func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         guard let index = canvasViews.firstIndex(of: canvasView) else { return }
@@ -497,6 +594,28 @@ extension CanvasContainerView: PKCanvasViewDelegate {
         // 2. THEN update drawing — this triggers onDrawingChanged which reads
         //    the now-current activeQuestionLabel for region filtering
         drawingManager?.setDrawing(canvasView.drawing, for: index)
+
+        // Ruler snap — straighten strokes drawn along the ruler's bottom edge
+        if !isReplacingStroke && rulerActive && selectedToolType != .eraser && selectedToolType != .lasso {
+            let currentCount = canvasView.drawing.strokes.count
+            let viewId = ObjectIdentifier(canvasView)
+            let prevCount = previousStrokeCounts[viewId] ?? 0
+            if currentCount == prevCount + 1, let lastStroke = canvasView.drawing.strokes.last {
+                if let snapped = snapStrokeToRuler(lastStroke) {
+                    let strokeIndex = currentCount - 1
+                    isReplacingStroke = true
+                    var newDrawing = canvasView.drawing
+                    newDrawing.strokes[strokeIndex] = snapped
+                    canvasView.drawing = newDrawing
+                    isReplacingStroke = false
+                    drawingManager?.setDrawing(canvasView.drawing, for: index)
+                    previousStrokeCounts[viewId] = currentCount
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    return
+                }
+            }
+        }
 
         // Shape auto-snap via server
         guard !isReplacingStroke else { return }
