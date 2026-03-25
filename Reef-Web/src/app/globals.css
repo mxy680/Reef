@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DynaPuff:wght@400;500;600;700&display=swap');
+
 /* Landing page layout styles */
 
 /* Semantic color tokens — edit these three to re-theme the site */
@@ -716,6 +718,22 @@ footer.framer-1fiw38h {
 /* Prevent horizontal overflow on mobile */
 html, body {
   overflow-x: hidden;
+}
+
+/* Brand logo — replace SVG with DynaPuff text */
+.framer-NHxYE.framer-1tamot2 .framer-s0p6wi {
+  visibility: hidden;
+}
+.framer-NHxYE.framer-1tamot2::after {
+  content: "Reef";
+  font-family: "DynaPuff", cursive;
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--color-black);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 /* Responsive — mobile */
