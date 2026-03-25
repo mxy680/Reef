@@ -116,6 +116,7 @@ struct TutorDemoStep: View {
         }
         // MARK: - Walkthrough Detection (1000ms after pen lift)
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
+            guard !showPreDialog else { return }  // Don't detect drawing while intro is showing
             guard let vm = canvasVM else { return }
             walkthrough.log("drawingVersion changed, step=\(String(describing: walkthrough.currentStep)), waiting=\(walkthrough.waitingForReaction)")
             guard !walkthrough.waitingForReaction else { return }
