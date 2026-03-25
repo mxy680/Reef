@@ -323,6 +323,8 @@ final class CanvasViewModel {
             tutorModeOn = true
             showSidebar = true
             restoreTutorStateForLabel(activeQuestionLabel!)
+            // Speak the first step description
+            speakCurrentStepDescription()
         }
     }
 
@@ -615,6 +617,48 @@ final class CanvasViewModel {
         }
     }
 
+    /// Speak the current step description via TTS.
+    func speakCurrentStepDescription() {
+        guard currentTutorStepIndex < currentSteps.count else { return }
+        let description = currentSteps[currentTutorStepIndex].description
+        // Strip LaTeX for TTS: $F=ma$ → F equals m a
+        let speech = "Next up: " + description
+            .replacingOccurrences(of: "\\$([^$]+)\\$", with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: "\\\\frac\\{([^}]*)\\}\\{([^}]*)\\}", with: "$1 over $2", options: .regularExpression)
+            .replacingOccurrences(of: "\\\\", with: "")
+            .replacingOccurrences(of: "{", with: "")
+            .replacingOccurrences(of: "}", with: "")
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "^", with: " to the power of ")
+
+        Task {
+            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+                  let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+                  let token = try? await supabase.auth.session.accessToken else { return }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 15
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": speech])
+
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+
+            struct TTSResponse: Decodable {
+                let speechAudio: String?
+                enum CodingKeys: String, CodingKey { case speechAudio = "speech_audio" }
+            }
+
+            guard let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
+                  let audioBase64 = result.speechAudio,
+                  let audioData = Data(base64Encoded: audioBase64) else { return }
+
+            tutorEvalService.playAudio(audioData)
+        }
+    }
+
     /// Advance by multiple steps at once (handles step skipping).
     /// Shows reinforcement for each skipped step before advancing.
     func advanceTutorSteps(count: Int) {
@@ -635,10 +679,14 @@ final class CanvasViewModel {
         if currentTutorStepIndex >= tutorStepCount - 1 && stepsToAdvance >= remaining {
             tutorEvalService.stepProgress = 1.0
             tutorEvalService.status = "completed"
-        } else if !handwritingService.latexResult.isEmpty {
-            // Re-evaluate existing work against the new step — the student's work
-            // may already cover this step but no new transcription will fire
-            triggerTutorEvaluation()
+        } else {
+            // Speak the new step description (eval-driven advancement only)
+            speakCurrentStepDescription()
+
+            if !handwritingService.latexResult.isEmpty {
+                // Re-evaluate existing work against the new step
+                triggerTutorEvaluation()
+            }
         }
     }
 
