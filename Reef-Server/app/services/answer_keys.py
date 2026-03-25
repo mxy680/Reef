@@ -158,7 +158,7 @@ async def _generate_single_answer(
         )
     except Exception as e:
         logger.error(
-            f"  [answer-key] Q{question_number} for {document_id} failed: {e}"
+            f"  [answer-key] Q{question_number} for {document_id} failed: {type(e).__name__}: {e!r}"
         )
 
 
