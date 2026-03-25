@@ -42,7 +42,7 @@ enum WalkthroughStep: Int, CaseIterable {
         case .eraseHighlight:
             "Made a mess? Good. Tap the eraser and clean it up — it removes anything you draw over."
         case .shapeTool:
-            "Tap the shape tool and draw a shape freehand. Reef auto-snaps it into a clean version — circles, rectangles, triangles."
+            "The shape tool turns your rough sketches into clean geometry — draw it ugly, Reef makes it pretty. Always use this for diagrams though. Your tutor needs to know what's math and what's art, and honestly? It can't always tell."
         case .lassoTool:
             "Try the lasso. Draw a loop around something — now you can drag it, scale it, or send it to the abyss."
         case .fingerDraw:
@@ -88,7 +88,7 @@ enum WalkthroughStep: Int, CaseIterable {
         case .eraseHighlight:
             "Made a mess? GOOD. Now tap the eraser, and clean it up. It removes ANYTHING you draw over."
         case .shapeTool:
-            "Tap the shape tool, and draw a shape freehand. Reef will AUTO-SNAP it into a clean version. Circles, rectangles, and triangles."
+            "The shape tool turns your rough sketches into clean geometry. Draw it ugly, Reef makes it pretty. ALWAYS use this for diagrams though. Your tutor needs to know what's math, and what's art. And honestly? It can't always tell."
         case .lassoTool:
             "Now try the lasso tool. Draw a loop around something you drew. Now you can DRAG it, SCALE it, or send it straight to the abyss."
         case .fingerDraw:

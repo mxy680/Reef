@@ -11,7 +11,7 @@ struct WalkthroughGlow: ViewModifier {
             .overlay(alignment: .topTrailing) {
                 if isActive {
                     Circle()
-                        .fill(Color(hex: 0x4CAF50))
+                        .fill(Color(hex: 0xF5C28A))
                         .frame(width: 8, height: 8)
                         .scaleEffect(isPulsing ? 1.4 : 1.0)
                         .opacity(isPulsing ? 0.8 : 1.0)
