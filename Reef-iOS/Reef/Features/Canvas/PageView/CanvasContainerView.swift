@@ -492,18 +492,24 @@ extension CanvasContainerView: UIScrollViewDelegate {
 // MARK: - Ruler Snap
 
 extension CanvasContainerView {
-    /// Compute the ruler's bottom edge line in canvas coordinates.
-    private func rulerEdgeLine() -> (start: CGPoint, end: CGPoint) {
+    /// Compute the ruler's bottom edge line converted into the given PKCanvasView's coordinate space.
+    private func rulerEdgeLine(in canvasView: PKCanvasView) -> (start: CGPoint, end: CGPoint)? {
         let halfWidth = (rulerWidth * rulerScale) / 2
         let bottomOffset: CGFloat = 28 * rulerScale  // half of ruler height (56/2)
-        let cos = CoreGraphics.cos(rulerAngle)
-        let sin = CoreGraphics.sin(rulerAngle)
-        // Bottom edge: center + bottomOffset perpendicular, then ±halfWidth along angle
-        let cx = rulerCenter.x + sin * bottomOffset
-        let cy = rulerCenter.y + cos * bottomOffset  // note: SwiftUI y is down, rotation is clockwise
-        let start = CGPoint(x: cx - cos * halfWidth, y: cy + sin * halfWidth)
-        let end = CGPoint(x: cx + cos * halfWidth, y: cy - sin * halfWidth)
-        return (start, end)
+        let cosA = CoreGraphics.cos(rulerAngle)
+        let sinA = CoreGraphics.sin(rulerAngle)
+
+        // Bottom edge in screen coordinates (perpendicular direction: +sin, -cos for bottom)
+        let cx = rulerCenter.x + sinA * bottomOffset
+        let cy = rulerCenter.y - cosA * bottomOffset
+        let screenStart = CGPoint(x: cx - cosA * halfWidth, y: cy - sinA * halfWidth)
+        let screenEnd = CGPoint(x: cx + cosA * halfWidth, y: cy + sinA * halfWidth)
+
+        // Convert from screen (window) coordinates to the PKCanvasView's coordinate space
+        guard let window = canvasView.window else { return nil }
+        let startInCanvas = canvasView.convert(screenStart, from: window.rootViewController?.view)
+        let endInCanvas = canvasView.convert(screenEnd, from: window.rootViewController?.view)
+        return (startInCanvas, endInCanvas)
     }
 
     /// Project a point onto a line segment, returning the projected point and distance.
@@ -521,10 +527,10 @@ extension CanvasContainerView {
     }
 
     /// If the stroke is drawn near the ruler's bottom edge, snap it to a straight line.
-    func snapStrokeToRuler(_ stroke: PKStroke) -> PKStroke? {
+    func snapStrokeToRuler(_ stroke: PKStroke, in canvasView: PKCanvasView) -> PKStroke? {
         guard stroke.path.count >= 2 else { return nil }
-        let (lineStart, lineEnd) = rulerEdgeLine()
-        let snapTolerance: CGFloat = 30 * rulerScale
+        guard let (lineStart, lineEnd) = rulerEdgeLine(in: canvasView) else { return nil }
+        let snapTolerance: CGFloat = 30
 
         // Check how many points are near the ruler edge
         var nearCount = 0
@@ -600,8 +606,9 @@ extension CanvasContainerView: PKCanvasViewDelegate {
             let currentCount = canvasView.drawing.strokes.count
             let viewId = ObjectIdentifier(canvasView)
             let prevCount = previousStrokeCounts[viewId] ?? 0
+            previousStrokeCounts[viewId] = currentCount  // Always update to prevent stale count
             if currentCount == prevCount + 1, let lastStroke = canvasView.drawing.strokes.last {
-                if let snapped = snapStrokeToRuler(lastStroke) {
+                if let snapped = snapStrokeToRuler(lastStroke, in: canvasView) {
                     let strokeIndex = currentCount - 1
                     isReplacingStroke = true
                     var newDrawing = canvasView.drawing
@@ -609,7 +616,6 @@ extension CanvasContainerView: PKCanvasViewDelegate {
                     canvasView.drawing = newDrawing
                     isReplacingStroke = false
                     drawingManager?.setDrawing(canvasView.drawing, for: index)
-                    previousStrokeCounts[viewId] = currentCount
                     let generator = UIImpactFeedbackGenerator(style: .light)
                     generator.impactOccurred()
                     return
