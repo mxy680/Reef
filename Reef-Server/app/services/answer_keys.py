@@ -157,8 +157,10 @@ async def _generate_single_answer(
             f"model={model_used} {input_tokens}in/{output_tokens}out tokens"
         )
     except Exception as e:
+        import traceback
         logger.error(
-            f"  [answer-key] Q{question_number} for {document_id} failed: {type(e).__name__}: {e!r}"
+            f"  [answer-key] Q{question_number} for {document_id} failed: {type(e).__name__}: {e!r}\n"
+            + traceback.format_exc()
         )
 
 
