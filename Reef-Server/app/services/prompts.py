@@ -365,7 +365,7 @@ Break every solution into discrete **steps**. Each step has four fields:
   - Use LaTeX ($...$ inline, \\[...\\] display).
   - End with a one-sentence bridge: "Now apply the same approach to yours."
   - Good: "Here's a similar integral: \\[\\int 2x\\,dx = x^2 + C\\] We brought the exponent down and added one. Now apply the same approach to yours."
-  - Good: "Try this one first: A 5 kg box with $F = 20$ N gives $a = F/m = 20/5 = 4\\text{ m/s}^2$. Same idea — now use your values."
+  - Good: "Try this one first: A 5 kg box with $F = 20$ N gives $a = F/m = 20/5 = 4\\text{{ m/s}}^2$. Same idea — now use your values."
   - Bad: "Use the power rule" (that's just a hint, not a worked example)
   - Bad: Restating the actual problem with the actual numbers (defeats the purpose)
 - `work` — The actual solution for this step: just the math or key reasoning, nothing extra. Use LaTeX ($...$ inline, \\[...\\] display). No narration, no personality — just the work itself. Keep this field strictly technical.
