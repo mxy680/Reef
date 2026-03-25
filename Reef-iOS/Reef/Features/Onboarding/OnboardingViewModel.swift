@@ -204,9 +204,7 @@ final class OnboardingViewModel {
             try await profileRepo.upsertProfile(update)
 
             // Clean up demo document
-            if let docId = demoDocumentId {
-                await deleteDemoDocument(docId)
-            }
+            await deleteDemoDocument()
 
             onComplete?()
         } catch {
@@ -216,9 +214,12 @@ final class OnboardingViewModel {
         isSubmitting = false
     }
 
-    /// Delete the demo document, answer key, and PDF from Supabase.
-    private func deleteDemoDocument(_ documentId: String) async {
-        // Delete answer key
+    /// Delete the demo document, answer key, and all storage files from Supabase.
+    func deleteDemoDocument() async {
+        guard let documentId = demoDocumentId else { return }
+        demoDocumentId = nil
+
+        // Delete answer keys
         try? await supabase
             .from("answer_keys")
             .delete()
@@ -232,13 +233,17 @@ final class OnboardingViewModel {
             .eq("id", value: documentId)
             .execute()
 
-        // Delete PDF from storage (fire and forget)
+        // Delete all storage files
         guard let userId = try? await supabase.auth.session.user.id.uuidString,
               !userId.isEmpty else { return }
         let path = "\(userId)/\(documentId)"
         try? await supabase.storage
             .from("documents")
-            .remove(paths: ["\(path)/original.pdf"])
+            .remove(paths: [
+                "\(path)/original.pdf",
+                "\(path)/output.pdf",
+                "\(path)/thumbnail.png",
+            ])
     }
 
     /// Look up a referral code and return the referrer's user ID, or nil if invalid.

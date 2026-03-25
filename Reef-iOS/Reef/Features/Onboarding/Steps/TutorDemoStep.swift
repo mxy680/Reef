@@ -27,6 +27,7 @@ struct TutorDemoStep: View {
             if let canvasVM {
                 // Full canvas experience
                 CanvasView(viewModel: canvasVM, walkthroughStep: walkthrough.currentStep, onDismiss: {
+                    Task { await viewModel.deleteDemoDocument() }
                     viewModel.goNext()
                 })
 
@@ -103,6 +104,7 @@ struct TutorDemoStep: View {
                         Spacer()
                         HStack {
                             ReefButton("Done — show me my plan", size: .compact, action: {
+                                Task { await viewModel.deleteDemoDocument() }
                                 viewModel.goNext()
                             })
                             .padding(20)
