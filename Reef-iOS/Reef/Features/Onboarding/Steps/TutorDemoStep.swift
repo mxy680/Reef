@@ -11,6 +11,8 @@ struct TutorDemoStep: View {
     @State private var walkthrough = CanvasWalkthroughState()
     @State private var showVoiceChoice = true
     @State private var voiceMode = true
+    @State private var showExpChoice = false
+    @State private var showSkipToolsChoice = false
     @State private var showPreDialog = false
     @State private var introReady = true
     @State private var introTask: Task<Void, Never>?
@@ -35,15 +37,29 @@ struct TutorDemoStep: View {
                         .transition(.opacity)
                 }
 
+                // Experience question
+                if showExpChoice {
+                    experienceChoiceDialog
+                        .zIndex(450)
+                        .transition(.opacity)
+                }
+
+                // Skip tools question
+                if showSkipToolsChoice {
+                    skipToolsChoiceDialog
+                        .zIndex(450)
+                        .transition(.opacity)
+                }
+
                 // Pre-walkthrough dialog — tutor intro
-                if showPreDialog && !showVoiceChoice {
+                if showPreDialog && !showVoiceChoice && !showExpChoice && !showSkipToolsChoice {
                     preDialog
                         .zIndex(400)
                         .transition(.opacity)
                 }
 
                 // Walkthrough — persistent card with typewriter text
-                if !walkthrough.isComplete && !showPreDialog && !showVoiceChoice {
+                if !walkthrough.isComplete && !showPreDialog && !showVoiceChoice && !showExpChoice && !showSkipToolsChoice {
                     VStack(alignment: .leading, spacing: 8) {
                         Spacer()
 
@@ -125,7 +141,7 @@ struct TutorDemoStep: View {
         }
         // MARK: - Walkthrough Detection (1000ms after pen lift)
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard !showPreDialog && !showVoiceChoice else { return }  // Don't detect drawing while dialogs are showing
+            guard !showPreDialog && !showVoiceChoice && !showExpChoice && !showSkipToolsChoice else { return }
             guard let vm = canvasVM else { return }
             walkthrough.log("drawingVersion changed, step=\(String(describing: walkthrough.currentStep)), waiting=\(walkthrough.waitingForReaction)")
             guard !walkthrough.waitingForReaction else { return }
@@ -320,7 +336,7 @@ struct TutorDemoStep: View {
                     voiceMode = true
                     withAnimation(.easeOut(duration: 0.25)) {
                         showVoiceChoice = false
-                        showPreDialog = true
+                        showExpChoice = true
                     }
                 }) {
                     HStack(spacing: 4) {
@@ -336,7 +352,7 @@ struct TutorDemoStep: View {
                     voiceMode = false
                     withAnimation(.easeOut(duration: 0.25)) {
                         showVoiceChoice = false
-                        showPreDialog = true
+                        showExpChoice = true
                     }
                 }) {
                     HStack(spacing: 4) {
@@ -346,6 +362,105 @@ struct TutorDemoStep: View {
                             .font(.epilogue(11, weight: .bold))
                             .tracking(-0.04 * 11)
                     }
+                }
+            }
+        }
+        .padding(.leading, 20)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .bottomLeading)
+    }
+
+    // MARK: - Experience Choice Dialog
+
+    private var experienceChoiceDialog: some View {
+        let colors = theme.colors
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Spacer()
+
+            Text("Have you used a note-taking app before? GoodNotes, Notability, OneNote — anything like that?")
+                .font(.epilogue(14, weight: .semiBold))
+                .tracking(-0.04 * 14)
+                .lineSpacing(3)
+                .foregroundStyle(colors.text)
+                .padding(16)
+                .frame(maxWidth: 340, alignment: .leading)
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.border, lineWidth: 2))
+                .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
+
+            HStack(spacing: 8) {
+                ReefButton(.primary, size: .compact, action: {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        showExpChoice = false
+                        showSkipToolsChoice = true
+                    }
+                }) {
+                    Text("Yeah")
+                        .font(.epilogue(11, weight: .bold))
+                        .tracking(-0.04 * 11)
+                }
+
+                ReefButton(.secondary, size: .compact, action: {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        showExpChoice = false
+                        showPreDialog = true
+                    }
+                }) {
+                    Text("Nope, first time")
+                        .font(.epilogue(11, weight: .bold))
+                        .tracking(-0.04 * 11)
+                }
+            }
+        }
+        .padding(.leading, 20)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .bottomLeading)
+    }
+
+    // MARK: - Skip Tools Choice Dialog
+
+    private var skipToolsChoiceDialog: some View {
+        let colors = theme.colors
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Spacer()
+
+            Text("Nice — then you already know the basics. Want to skip the drawing tools tutorial and jump straight to the AI tutor?")
+                .font(.epilogue(14, weight: .semiBold))
+                .tracking(-0.04 * 14)
+                .lineSpacing(3)
+                .foregroundStyle(colors.text)
+                .padding(16)
+                .frame(maxWidth: 340, alignment: .leading)
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.border, lineWidth: 2))
+                .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
+
+            HStack(spacing: 8) {
+                ReefButton(.primary, size: .compact, action: {
+                    // Skip to Phase 2 (enableTutor)
+                    walkthrough.currentStep = .enableTutor
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        showSkipToolsChoice = false
+                    }
+                }) {
+                    Text("Skip to tutor")
+                        .font(.epilogue(11, weight: .bold))
+                        .tracking(-0.04 * 11)
+                }
+
+                ReefButton(.secondary, size: .compact, action: {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        showSkipToolsChoice = false
+                        showPreDialog = true
+                    }
+                }) {
+                    Text("Show me everything")
+                        .font(.epilogue(11, weight: .bold))
+                        .tracking(-0.04 * 11)
                 }
             }
         }
