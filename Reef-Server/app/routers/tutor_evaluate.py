@@ -236,6 +236,18 @@ async def tutor_evaluate(
                 "the prior encounter to build continuity. One sentence max."
             )
 
+    # Build debug prompt for development mode
+    debug_prompt_text = None
+    if settings.environment == "development":
+        debug_prompt_text = (
+            "=== SYSTEM MESSAGE ===\n\n"
+            + full_system
+            + "\n\n=== USER MESSAGE ===\n\n"
+            + dynamic_prompt
+            + f"\n\n=== IMAGES: {len(body.figure_urls)} figure URLs, "
+            + f"student_image={'yes' if body.student_image else 'no'} ==="
+        )
+
     # Collect images: figure URLs + student drawing
     images = await _download_images(body.figure_urls)
     if body.student_image:
@@ -321,6 +333,7 @@ async def tutor_evaluate(
         mistake_explanation=evaluation.mistake_explanation,
         steps_completed=capped_steps,
         speech_audio=speech_audio,
+        debug_prompt=debug_prompt_text,
     )
 
 

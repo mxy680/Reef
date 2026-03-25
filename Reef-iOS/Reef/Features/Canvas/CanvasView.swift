@@ -141,6 +141,48 @@ struct CanvasView: View {
                 .zIndex(50)
             }
 
+            // Debug prompt panel (development only)
+            if viewModel.showDebugPrompt, let prompt = viewModel.tutorEvalService.lastDebugPrompt {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Text("LLM Prompt Debug")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Button {
+                            withAnimation(.spring(duration: 0.2)) {
+                                viewModel.showDebugPrompt = false
+                            }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.8))
+
+                    ScrollView {
+                        Text(prompt)
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(.green)
+                            .padding(8)
+                            .textSelection(.enabled)
+                    }
+                    .background(Color.black.opacity(0.9))
+                }
+                .frame(width: 420, height: 500)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green.opacity(0.3), lineWidth: 1))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.top, 100)
+                .padding(.leading, 8)
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .zIndex(60)
+            }
+
             // Hint/reveal now shown inline in sidebar — popovers removed
 
             // Bug report popup
@@ -226,6 +268,7 @@ struct CanvasView: View {
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
         .animation(.spring(duration: 0.25), value: viewModel.showExportPreview)
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
+        .animation(.spring(duration: 0.2), value: viewModel.showDebugPrompt)
         // Hint/reveal animations handled in sidebar
         .alert("Clear Everything?", isPresented: $viewModel.showClearConfirmation) {
             Button("Clear All", role: .destructive) {

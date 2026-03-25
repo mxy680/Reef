@@ -200,6 +200,7 @@ final class CanvasViewModel {
     var showWorkedExample: Bool = false
     var showRevealPopover: Bool = false
     var tutorVoiceEnabled: Bool = true  // Whether tutor speaks out loud (vs chat-only)
+    var showDebugPrompt: Bool = false
     var hintMidX: CGFloat = 0
     var revealMidX: CGFloat = 0
 

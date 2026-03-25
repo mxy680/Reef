@@ -45,6 +45,9 @@ final class TutorEvaluationService {
     /// Fires when the tutor corrects its own answer key. CanvasViewModel should reload.
     var onAnswerKeyUpdated: (() -> Void)?
 
+    /// Last debug prompt from the server (development only).
+    var lastDebugPrompt: String?
+
     // MARK: - Private
 
     private var generation: Int = 0
@@ -117,6 +120,7 @@ final class TutorEvaluationService {
                 self.status = response.status
                 self.previousStatus = response.status
                 self.mistakeExplanation = response.mistakeExplanation
+                self.lastDebugPrompt = response.debugPrompt
                 self.lastEvaluatedLatex = latex
 
                 // Mistake recovery — student fixed the error and is back on track
@@ -237,12 +241,14 @@ final class TutorEvaluationService {
         let mistakeExplanation: String?
         let stepsCompleted: Int
         let speechAudio: String?
+        let debugPrompt: String?
 
         enum CodingKeys: String, CodingKey {
             case progress, status
             case mistakeExplanation = "mistake_explanation"
             case stepsCompleted = "steps_completed"
             case speechAudio = "speech_audio"
+            case debugPrompt = "debug_prompt"
         }
 
         init(from decoder: Decoder) throws {
@@ -252,6 +258,7 @@ final class TutorEvaluationService {
             mistakeExplanation = try container.decodeIfPresent(String.self, forKey: .mistakeExplanation)
             stepsCompleted = try container.decodeIfPresent(Int.self, forKey: .stepsCompleted) ?? 1
             speechAudio = try container.decodeIfPresent(String.self, forKey: .speechAudio)
+            debugPrompt = try container.decodeIfPresent(String.self, forKey: .debugPrompt)
         }
     }
 

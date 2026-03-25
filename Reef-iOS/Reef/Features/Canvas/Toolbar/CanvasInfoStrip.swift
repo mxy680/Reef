@@ -49,6 +49,11 @@ struct CanvasInfoStrip: View {
                     .tracking(-0.04 * 13)
                     .foregroundColor(.white)
                     .lineLimit(1)
+                    .onTapGesture(count: 3) {
+                        withAnimation(.spring(duration: 0.2)) {
+                            viewModel.showDebugPrompt.toggle()
+                        }
+                    }
 
                 HStack(spacing: 4) {
                     Image(systemName: "clock.fill")
