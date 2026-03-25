@@ -241,6 +241,20 @@ struct SupabaseDocumentRepository: DocumentRepository {
             .execute()
     }
 
+    // MARK: - Single Document
+
+    func getDocument(_ id: String) async throws -> Document {
+        let userId = try await getUserId()
+        let dto: DocumentDTO = try await supabase.from("documents")
+            .select()
+            .eq("id", value: id)
+            .eq("user_id", value: userId)
+            .single()
+            .execute()
+            .value
+        return dto.toDomain()
+    }
+
     // MARK: - URLs
 
     func getDownloadURL(_ id: String) async throws -> URL {

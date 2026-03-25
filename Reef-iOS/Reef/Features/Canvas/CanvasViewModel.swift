@@ -396,6 +396,20 @@ final class CanvasViewModel {
         pdfError = nil
         do {
             let repo = SupabaseDocumentRepository()
+
+            // If document is still processing, poll until completed (up to 5 min)
+            if document.status == .processing {
+                var attempts = 0
+                while attempts < 60 && !Task.isCancelled {
+                    attempts += 1
+                    try? await Task.sleep(for: .seconds(5))
+                    if let updated = try? await repo.getDocument(document.id),
+                       updated.status != .processing {
+                        break
+                    }
+                }
+            }
+
             let signedURL = try await repo.getDownloadURL(document.id)
             let (data, _) = try await Self.pdfSession.data(from: signedURL)
             guard let pdf = PDFDocument(data: data) else {
