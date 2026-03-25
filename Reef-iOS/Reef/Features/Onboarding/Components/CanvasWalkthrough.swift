@@ -229,6 +229,24 @@ final class CanvasWalkthroughState {
     private var audioPlayer: AVAudioPlayer?
     private var audioDelegate: WalkthroughAudioDelegate?
 
+    /// Play intro audio with a completion callback (for enabling the "Let's go" button).
+    func playIntroAudio(_ data: Data, onFinish: @escaping () -> Void) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+            try AVAudioSession.sharedInstance().setActive(true)
+            let player = try AVAudioPlayer(data: data)
+            let delegate = WalkthroughAudioDelegate {
+                Task { @MainActor in onFinish() }
+            }
+            player.delegate = delegate
+            audioDelegate = delegate
+            audioPlayer = player
+            player.play()
+        } catch {
+            onFinish()
+        }
+    }
+
     func log(_ message: String) {
         print("[Walkthrough] \(message)")
     }

@@ -10,7 +10,13 @@ struct TutorDemoStep: View {
     @State private var canvasVM: CanvasViewModel?
     @State private var walkthrough = CanvasWalkthroughState()
     @State private var showPreDialog = true
+    @State private var introReady = false
+    @State private var introTask: Task<Void, Never>?
     @State private var pendingReactionTask: Task<Void, Never>?
+
+    private let introDisplay = "Hey — I'm your AI tutor. I read your handwriting in real time, check your work step by step, and speak up when you need help. Think of me as the TA who actually shows up to office hours. Let me show you around."
+
+    private let introSpeech = "Hey. I'm your A.I. tutor. I read your handwriting in REAL time, check your work step by step, and speak up when you need help. Think of me as the T.A. who actually shows up to office hours. Let me show you around."
 
     var body: some View {
         ZStack {
@@ -281,7 +287,7 @@ struct TutorDemoStep: View {
         try? await Task.sleep(for: .milliseconds(500))
     }
 
-    // MARK: - Pre-Dialog
+    // MARK: - Pre-Dialog (Tutor Introduction)
 
     private var preDialog: some View {
         let colors = theme.colors
@@ -291,58 +297,70 @@ struct TutorDemoStep: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Teal header
-                VStack(spacing: 10) {
-                    Text("🎧")
-                        .font(.system(size: 36))
+                // Tutor avatar header
+                VStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(ReefColors.primary.opacity(0.15))
+                            .frame(width: 64, height: 64)
 
-                    Text("Before we start")
-                        .font(.epilogue(24, weight: .black))
-                        .tracking(-0.04 * 24)
-                        .foregroundStyle(ReefColors.white)
+                        Image(systemName: "brain.head.profile")
+                            .font(.system(size: 28, weight: .medium))
+                            .foregroundStyle(ReefColors.primary)
+                    }
 
-                    Text("Two quick things.")
-                        .font(.epilogue(14, weight: .medium))
-                        .tracking(-0.04 * 14)
-                        .foregroundStyle(ReefColors.white.opacity(0.85))
+                    Text("Meet your tutor")
+                        .font(.epilogue(22, weight: .black))
+                        .tracking(-0.04 * 22)
+                        .foregroundStyle(colors.text)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 24)
-                .background(ReefColors.primary)
+                .padding(.top, 28)
+                .padding(.bottom, 16)
 
-                // Checklist items
-                VStack(spacing: 0) {
-                    preDialogRow(
-                        icon: "speaker.wave.2.fill",
-                        title: "Sound on",
-                        subtitle: "Your tutor talks out loud."
-                    )
+                // Intro message
+                Text(introDisplay)
+                    .font(.epilogue(14, weight: .medium))
+                    .tracking(-0.04 * 14)
+                    .lineSpacing(4)
+                    .foregroundStyle(colors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
 
-                    Rectangle()
-                        .fill(colors.divider)
-                        .frame(height: 1)
-                        .padding(.horizontal, 20)
+                // Sound + Pencil reminders
+                HStack(spacing: 20) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(ReefColors.primary)
+                        Text("Sound on")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(colors.textMuted)
+                    }
 
-                    preDialogRow(
-                        icon: "applepencil.gen2",
-                        title: "Apple Pencil ready",
-                        subtitle: "You'll write on the canvas."
-                    )
+                    HStack(spacing: 6) {
+                        Image(systemName: "applepencil.gen2")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(ReefColors.primary)
+                        Text("Pencil ready")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(colors.textMuted)
+                    }
                 }
-                .padding(.vertical, 8)
+                .padding(.top, 20)
 
                 // CTA
-                ReefButton("I'm ready", action: {
+                ReefButton("Let's go", action: {
                     withAnimation(.easeOut(duration: 0.25)) {
                         showPreDialog = false
                     }
                 })
                 .padding(.horizontal, 24)
-                .padding(.bottom, 24)
-                .padding(.top, 8)
+                .padding(.top, 20)
+                .padding(.bottom, 28)
+                .opacity(introReady ? 1 : 0.4)
+                .disabled(!introReady)
             }
-            .frame(maxWidth: 360)
+            .frame(maxWidth: 380)
             .background(colors.card)
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .overlay(
@@ -354,43 +372,60 @@ struct TutorDemoStep: View {
                     .fill(colors.shadow)
                     .offset(x: 5, y: 5)
             )
+            .onAppear {
+                speakIntro()
+            }
+            .onDisappear {
+                introTask?.cancel()
+            }
         }
     }
 
-    private func preDialogRow(icon: String, title: String, subtitle: String) -> some View {
-        let colors = theme.colors
-
-        return HStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(ReefColors.primary.opacity(0.1))
-                    .frame(width: 44, height: 44)
-
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(ReefColors.primary)
+    private func speakIntro() {
+        introTask = Task { @MainActor in
+            // Enable button after a short fallback delay in case TTS fails
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(3))
+                if !introReady { introReady = true }
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.epilogue(15, weight: .bold))
-                    .tracking(-0.04 * 15)
-                    .foregroundStyle(colors.text)
-
-                Text(subtitle)
-                    .font(.epilogue(12, weight: .medium))
-                    .tracking(-0.04 * 12)
-                    .foregroundStyle(colors.textMuted)
+            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+                  let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+                  let token = try? await supabase.auth.session.accessToken else {
+                introReady = true
+                return
             }
 
-            Spacer()
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 15
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": introSpeech])
 
-            Image(systemName: "checkmark")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(ReefColors.primary)
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                introReady = true
+                return
+            }
+
+            struct TTSResponse: Decodable {
+                let speechAudio: String?
+                enum CodingKeys: String, CodingKey { case speechAudio = "speech_audio" }
+            }
+
+            guard let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
+                  let audioBase64 = result.speechAudio,
+                  let audioData = Data(base64Encoded: audioBase64) else {
+                introReady = true
+                return
+            }
+
+            // Play intro and enable button after playback
+            walkthrough.playIntroAudio(audioData) {
+                introReady = true
+            }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
     }
 
     // MARK: - Loading Card
