@@ -479,9 +479,13 @@ final class CanvasViewModel {
             if isReconstructedDoc && answerKeys.isEmpty {
                 loadAnswerKeysTask?.cancel()
                 loadAnswerKeysTask = Task { await loadAnswerKeys(forceLoad: true) }
+            } else if !isReconstructedDoc {
+                // No reconstruction = no answer keys to wait for — unblock the canvas
+                isLoadingAnswerKeys = false
             }
         } catch {
             pdfError = "Failed to download document"
+            isLoadingAnswerKeys = false  // Unblock canvas to show error
         }
         isLoadingPDF = false
     }
