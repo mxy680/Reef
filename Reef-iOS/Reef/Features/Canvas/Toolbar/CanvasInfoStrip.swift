@@ -92,53 +92,13 @@ struct CanvasInfoStrip: View {
             }
 
             if viewModel.tutorModeOn {
-                // Tutor mode: progress bar | hint + reveal
+                // Tutor mode: progress bar only (hint/reveal moved to sidebar)
                 HStack(spacing: 4) {
-                    HStack(spacing: 4) {
-                        progressBar(progress: viewModel.tutorProgress)
+                    progressBar(progress: viewModel.tutorProgress)
 
-                        Text("\(Int(viewModel.tutorProgress * 100))%")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.55))
-                    }
-
-                    divider
-
-                    Button {
-                        withAnimation(.spring(duration: 0.2)) {
-                            viewModel.showHintPopover.toggle()
-                            if viewModel.showHintPopover {
-                                viewModel.showRevealPopover = false
-                                viewModel.showSidebar = true
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(viewModel.showHintPopover ? 1 : 0.8))
-                            .frame(width: 24, height: 24)
-                            .contentShape(Rectangle())
-                            .walkthroughGlow(active: walkthroughStep?.targetButton == .hint)
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        withAnimation(.spring(duration: 0.2)) {
-                            viewModel.showRevealPopover.toggle()
-                            if viewModel.showRevealPopover {
-                                viewModel.showHintPopover = false
-                                viewModel.showSidebar = true
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "eye.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.8))
-                            .frame(width: 24, height: 24)
-                            .contentShape(Rectangle())
-                            .walkthroughGlow(active: walkthroughStep?.targetButton == .reveal)
-                    }
-                    .buttonStyle(.plain)
+                    Text("\(Int(viewModel.tutorProgress * 100))%")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.55))
                 }
                 .transition(.opacity)
             } else {

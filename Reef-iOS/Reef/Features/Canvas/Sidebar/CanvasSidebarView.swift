@@ -51,7 +51,6 @@ struct CanvasSidebarView: View {
             ) {
                 withAnimation(.spring(duration: 0.2)) {
                     viewModel.showHintPopover.toggle()
-                    if viewModel.showHintPopover { viewModel.showRevealPopover = false }
                 }
             } content: {
                 if let step = viewModel.currentHintStep {
@@ -79,7 +78,6 @@ struct CanvasSidebarView: View {
             ) {
                 withAnimation(.spring(duration: 0.2)) {
                     viewModel.showRevealPopover.toggle()
-                    if viewModel.showRevealPopover { viewModel.showHintPopover = false }
                 }
             } content: {
                 if let step = viewModel.currentHintStep {
