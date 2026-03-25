@@ -3,7 +3,6 @@ import Foundation
 struct AnswerKeyStep: Codable, Sendable {
     let description: String
     let explanation: String
-    let workedExample: String?
     let work: String
     let reinforcement: String?
     let tutorSpeech: String?
@@ -11,7 +10,6 @@ struct AnswerKeyStep: Codable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case description, explanation, work, reinforcement, concepts
-        case workedExample = "worked_example"
         case tutorSpeech = "tutor_speech"
     }
 }

@@ -197,7 +197,6 @@ final class CanvasViewModel {
     var currentTutorStepIndex: Int = 0
     var currentQuestionIndex: Int = 0
     var showHintPopover: Bool = false
-    var showWorkedExample: Bool = false
     var showRevealPopover: Bool = false
     var tutorVoiceEnabled: Bool = true  // Whether tutor speaks out loud (vs chat-only)
     var showDebugPrompt: Bool = false
@@ -768,7 +767,6 @@ final class CanvasViewModel {
     func resetTutorSteps() {
         currentTutorStepIndex = 0
         showHintPopover = false
-        showWorkedExample = false
         showRevealPopover = false
         tutorEvalService.reset()
     }

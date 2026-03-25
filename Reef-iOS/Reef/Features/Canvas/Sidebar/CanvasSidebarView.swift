@@ -75,36 +75,6 @@ struct CanvasSidebarView: View {
                 .fill(colors.divider)
                 .frame(height: 0.5)
 
-            // Worked Example panel (only if example exists)
-            if let step = viewModel.currentHintStep,
-               let example = step.workedExample, !example.isEmpty {
-                collapsiblePanel(
-                    title: "Worked Example",
-                    icon: "pencil.and.list.clipboard",
-                    isExpanded: viewModel.showWorkedExample,
-                    accentColor: Color(hex: 0x7B61FF),
-                    colors: colors
-                ) {
-                    withAnimation(.spring(duration: 0.2)) {
-                        viewModel.showWorkedExample.toggle()
-                    }
-                } content: {
-                    ScrollView {
-                        MathText(
-                            text: example,
-                            fontSize: 13,
-                            color: colors.text
-                        )
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 12)
-                    }
-                }
-
-                Rectangle()
-                    .fill(colors.divider)
-                    .frame(height: 0.5)
-            }
-
             // Answer panel
             collapsiblePanel(
                 title: "Full Solution",
@@ -131,7 +101,6 @@ struct CanvasSidebarView: View {
             }
         }
         .animation(.spring(duration: 0.25), value: viewModel.showHintPopover)
-        .animation(.spring(duration: 0.25), value: viewModel.showWorkedExample)
         .animation(.spring(duration: 0.25), value: viewModel.showRevealPopover)
     }
 
