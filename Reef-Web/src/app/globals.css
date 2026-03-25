@@ -683,6 +683,20 @@ footer.framer-1fiw38h {
   filter: brightness(0.8);
 }
 
+.newsletter-success {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 16px;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.newsletter-error {
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  color: #d32f2f;
+  margin-top: 8px;
+}
+
 /* FAQ — recolor arrow icons to match newsletter button */
 .framer-B8Htz .framer-1bfywue {
   position: relative;

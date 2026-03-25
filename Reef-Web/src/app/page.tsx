@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import "./globals.css"
 import Badge from "../framer/badge"
@@ -94,6 +94,29 @@ export default function Home() {
       window.history.pushState = originalPushState
     }
   }, [])
+
+  const [newsletterEmail, setNewsletterEmail] = useState("")
+  const [newsletterStatus, setNewsletterStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+
+  async function handleNewsletterSubmit() {
+    if (!newsletterEmail || !newsletterEmail.includes("@")) return
+    setNewsletterStatus("loading")
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newsletterEmail }),
+      })
+      if (res.ok) {
+        setNewsletterStatus("success")
+        setNewsletterEmail("")
+      } else {
+        setNewsletterStatus("error")
+      }
+    } catch {
+      setNewsletterStatus("error")
+    }
+  }
 
   const heroRef = useRef<HTMLDivElement>(null)
 
@@ -415,19 +438,36 @@ export default function Home() {
             <p className="cta-subtitle">
               Get early access, product updates, and study tips delivered straight to your inbox.
             </p>
-            <div className="newsletter-input-wrapper">
-              <input
-                type="email"
-                placeholder="example@mail.com"
-                className="newsletter-input"
-              />
-              <button type="button" className="newsletter-btn" aria-label="Subscribe">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </button>
-            </div>
+            {newsletterStatus === "success" ? (
+              <p className="newsletter-success">You&rsquo;re in! We&rsquo;ll keep you posted.</p>
+            ) : (
+              <div className="newsletter-input-wrapper">
+                <input
+                  type="email"
+                  placeholder="example@mail.com"
+                  className="newsletter-input"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleNewsletterSubmit()}
+                  disabled={newsletterStatus === "loading"}
+                />
+                <button
+                  type="button"
+                  className="newsletter-btn"
+                  aria-label="Subscribe"
+                  onClick={handleNewsletterSubmit}
+                  disabled={newsletterStatus === "loading"}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            {newsletterStatus === "error" && (
+              <p className="newsletter-error">Something went wrong. Try again.</p>
+            )}
           </div>
         </div>
       </section>
