@@ -69,6 +69,7 @@ class PipelineCosts:
     MODEL_RATES: dict = field(default_factory=lambda: {
         "deepseek/deepseek-r1": (0.55 / 1_000_000, 2.19 / 1_000_000),
         "deepseek/deepseek-v3.2": (0.25 / 1_000_000, 0.40 / 1_000_000),
+        "google/gemini-2.5-flash-preview": (0.15 / 1_000_000, 0.60 / 1_000_000),
         "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
         "google/gemini-3.1-pro-preview": (1.25 / 1_000_000, 10.00 / 1_000_000),
     })
@@ -173,7 +174,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         await update_progress(document_id, "Breaking apart problems...")
 
         # ---------------------------------------------------------------
-        # Stage 3: LLM parse MMD -> Questions (DeepSeek R1 via OpenRouter)
+        # Stage 3: LLM parse MMD -> Questions (Gemini 2.5 Flash via OpenRouter)
         # ---------------------------------------------------------------
 
         # Replace CDN URLs with local filenames so the LLM sees them inline
@@ -190,18 +191,17 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
 
         parse_llm = LLMClient(
             api_key=settings.openrouter_api_key,
-            model="deepseek/deepseek-r1",
+            model="google/gemini-2.5-flash-preview",
             base_url="https://openrouter.ai/api/v1",
         )
-        parse_llm._strict_json_supported = False
         parse_result = await asyncio.to_thread(
             parse_llm.generate,
             prompt=parse_prompt,
             response_schema=QuestionBatch.model_json_schema(),
-            timeout=180.0,
+            timeout=120.0,
         )
         costs.add(parse_result, model=parse_llm.model)
-        logger.info(f"  [v2] {document_id}: question extraction via DeepSeek R1")
+        logger.info(f"  [v2] {document_id}: question extraction via Gemini 2.5 Flash")
 
         # LLM client for LaTeX fix loop (use inference API if available)
         llm_client = LLMClient(
