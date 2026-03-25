@@ -126,7 +126,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
 
     try:
         await update_document_status(document_id, status="processing")
-        await update_progress(document_id, "Starting Mathpix pipeline...")
+        await update_progress(document_id, "Reading your homework...")
 
         # ---------------------------------------------------------------
         # Stage 1: Download source PDF
@@ -141,7 +141,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         doc.close()
         costs.mathpix_pages = num_pages
 
-        await update_progress(document_id, "PDF downloaded, sending to Mathpix...")
+        await update_progress(document_id, "Scanning for math...")
 
         # ---------------------------------------------------------------
         # Stage 2: Mathpix OCR
@@ -170,14 +170,10 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
                 else:
                     logger.warning(f"  [v2] Failed to upload figure {fname}: {result}")
 
-        await update_progress(
-            document_id,
-            f"Mathpix OCR complete ({len(mmd_text)} chars, "
-            f"{len(mathpix_images)} images). Parsing questions...",
-        )
+        await update_progress(document_id, "Found the problems, breaking them apart...")
 
         # ---------------------------------------------------------------
-        # Stage 3: LLM parse MMD -> Questions (Opus via inference API, fallback to OpenRouter)
+        # Stage 3: LLM parse MMD -> Questions (DeepSeek R1 via OpenRouter)
         # ---------------------------------------------------------------
 
         # Replace CDN URLs with local filenames so the LLM sees them inline
@@ -237,10 +233,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         if is_cancelled(document_id):
             return
 
-        await update_progress(
-            document_id,
-            f"Compiling {len(questions)} questions to LaTeX...",
-        )
+        await update_progress(document_id, f"Typesetting {len(questions)} questions...")
 
         # ---------------------------------------------------------------
         # Stage 4: Compile LaTeX for each question (parallelized)
@@ -348,7 +341,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         # ---------------------------------------------------------------
         # Stage 5: Merge PDFs, extract regions, and upload
         # ---------------------------------------------------------------
-        await update_progress(document_id, "Merging and uploading PDF...")
+        await update_progress(document_id, "Almost there, wrapping up...")
 
         merged = fitz.open()
         question_pages: list[list[int]] = []
