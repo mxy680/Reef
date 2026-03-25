@@ -273,13 +273,11 @@ footer.framer-1fiw38h {
 
 .hero-image-wrapper {
   width: 100%;
-  max-width: 1320px;
+  max-width: 900px;
   margin: 40px auto 0;
-  padding-bottom: 14px;
-  padding-right: 14px;
   position: relative;
   z-index: 1;
-  aspect-ratio: 2960 / 2290;
+  aspect-ratio: 2610 / 1890;
   perspective: 1200px;
 }
 
@@ -763,8 +761,6 @@ html, body {
 
   .hero-image-wrapper {
     margin-top: 24px;
-    padding-bottom: 10px;
-    padding-right: 10px;
   }
 
   .hero-image {
