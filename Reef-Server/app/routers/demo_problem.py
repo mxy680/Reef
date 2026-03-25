@@ -419,7 +419,7 @@ async def walkthrough_tts(
 
 
 # ElevenLabs (primary)
-ELEVEN_VOICE_ID = "NNl6r8mD7vthiJatiJt1"  # Bradford
+ELEVEN_VOICE_ID = "qSeXEcewz7tA0Q0qk9fH"  # Victoria
 ELEVEN_MODEL = "eleven_flash_v2_5"
 
 # Groq (fallback)
