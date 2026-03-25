@@ -66,19 +66,24 @@ struct CanvasInfoStrip: View {
                 divider
 
                 if viewModel.tutorStepCount > 0 {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.7))
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.7))
 
-                    Text(LaTeXToUnicode.convert(viewModel.currentTutorStepLabel))
-                        .font(.epilogue(11, weight: .medium))
-                        .tracking(-0.04 * 11)
-                        .foregroundColor(.white.opacity(0.85))
-                        .lineLimit(1)
+                        Text(LaTeXToUnicode.convert(viewModel.currentTutorStepLabel))
+                            .font(.epilogue(11, weight: .medium))
+                            .tracking(-0.04 * 11)
+                            .foregroundColor(.white.opacity(0.85))
+                            .lineLimit(1)
+                    }
+                    .transition(.opacity)
+                } else {
+                    Text("Generating answer key for tutor...")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .transition(.opacity)
                 }
-                .transition(.opacity)
-                } // end tutorStepCount > 0
             }
 
             Spacer(minLength: 8)
