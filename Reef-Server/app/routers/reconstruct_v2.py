@@ -30,7 +30,6 @@ from app.services.cancellation import (
 )
 from app.services.latex_compiler import LaTeXCompiler
 from app.services.llm_client import LLMClient, LLMResult
-from app.services.inference_client import call_inference_api, extract_json
 from app.services.mathpix import MathpixClient, replace_urls_with_filenames
 from app.services.progress import update_document_status, update_progress
 from app.services.prompts import LATEX_FIX_PROMPT, PARSE_MMD_PROMPT
@@ -68,6 +67,7 @@ class PipelineCosts:
     _llm_cost_dollars: float = 0.0
 
     MODEL_RATES: dict = field(default_factory=lambda: {
+        "deepseek/deepseek-r1": (0.55 / 1_000_000, 2.19 / 1_000_000),
         "deepseek/deepseek-v3.2": (0.25 / 1_000_000, 0.40 / 1_000_000),
         "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
         "google/gemini-3.1-pro-preview": (1.25 / 1_000_000, 10.00 / 1_000_000),
@@ -192,32 +192,20 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             f"\n\n## MMD Content\n```\n{cleaned_mmd}\n```"
         )
 
-        parse_result = None
-        if settings.reef_inference_token:
-            try:
-                raw_content, _ = await call_inference_api(parse_prompt)
-                content = extract_json(raw_content)
-                # Validate it parses before accepting
-                QuestionBatch.model_validate_json(content)
-                parse_result = LLMResult(content=content)
-                logger.info(f"  [v2] {document_id}: question extraction via Reef inference (Opus 4.6)")
-            except Exception as e:
-                logger.warning(f"  [v2] {document_id}: inference API failed for question extraction ({e}), falling back to OpenRouter")
-
-        # Fallback: OpenRouter
-        if parse_result is None:
-            llm_fallback = LLMClient(
-                api_key=settings.openrouter_api_key,
-                model="deepseek/deepseek-v3.2",
-                base_url="https://openrouter.ai/api/v1",
-            )
-            llm_fallback._strict_json_supported = False
-            parse_result = await asyncio.to_thread(
-                llm_fallback.generate,
-                prompt=parse_prompt,
-                response_schema=QuestionBatch.model_json_schema(),
-            )
-            costs.add(parse_result, model=llm_fallback.model)
+        parse_llm = LLMClient(
+            api_key=settings.openrouter_api_key,
+            model="deepseek/deepseek-r1",
+            base_url="https://openrouter.ai/api/v1",
+        )
+        parse_llm._strict_json_supported = False
+        parse_result = await asyncio.to_thread(
+            parse_llm.generate,
+            prompt=parse_prompt,
+            response_schema=QuestionBatch.model_json_schema(),
+            timeout=180.0,
+        )
+        costs.add(parse_result, model=parse_llm.model)
+        logger.info(f"  [v2] {document_id}: question extraction via DeepSeek R1")
 
         # LLM client for LaTeX fix loop (use inference API if available)
         llm_client = LLMClient(
@@ -317,20 +305,11 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
                             fix_prompt = LATEX_FIX_PROMPT.format(
                                 latex_body=latex, error_message=str(e)[:2000]
                             )
-                            # Try inference API for LaTeX fix
-                            fix_content = None
-                            if settings.reef_inference_token:
-                                try:
-                                    raw, _ = await call_inference_api(fix_prompt)
-                                    fix_content = raw.strip()
-                                except Exception:
-                                    pass
-                            if fix_content is None:
-                                fix_llm = await asyncio.to_thread(
-                                    llm_client.generate, prompt=fix_prompt
-                                )
-                                costs.add(fix_llm, model=llm_client.model)
-                                fix_content = fix_llm.content
+                            fix_llm = await asyncio.to_thread(
+                                llm_client.generate, prompt=fix_prompt
+                            )
+                            costs.add(fix_llm, model=llm_client.model)
+                            fix_content = fix_llm.content
                             # Strip code fences if present
                             fix_content = re.sub(r"^```(?:latex|tex)?\s*\n?", "", fix_content.strip())
                             fix_content = re.sub(r"\n?```\s*$", "", fix_content)

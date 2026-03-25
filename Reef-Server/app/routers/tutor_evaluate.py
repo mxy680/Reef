@@ -349,8 +349,8 @@ async def _regenerate_answer_key(
     correction: str,
     answer_key: QuestionAnswer,
 ) -> None:
-    """Regenerate an answer key after a student correction, using the inference API."""
-    from app.services.inference_client import call_inference_api, extract_json
+    """Regenerate an answer key after a student correction, using DeepSeek R1."""
+    from app.services.inference_client import extract_json
     from app.services.answer_keys import _supabase_headers
 
     prompt = (
@@ -365,8 +365,18 @@ async def _regenerate_answer_key(
         f"```json\n{json.dumps(QuestionAnswer.model_json_schema(), indent=2)}\n```"
     )
 
-    raw_content, _ = await call_inference_api(prompt)
-    content = extract_json(raw_content)
+    llm = LLMClient(
+        api_key=settings.openrouter_api_key,
+        model="deepseek/deepseek-r1",
+        base_url="https://openrouter.ai/api/v1",
+    )
+    result = await asyncio.to_thread(
+        llm.generate,
+        prompt=prompt,
+        response_schema=QuestionAnswer.model_json_schema(),
+        timeout=120.0,
+    )
+    content = extract_json(result.content)
     new_answer = QuestionAnswer.model_validate_json(content)
 
     # Store updated answer key
@@ -380,9 +390,9 @@ async def _regenerate_answer_key(
                 "document_id": document_id,
                 "question_number": question_number,
                 "answer_text": new_answer.model_dump_json(),
-                "model": "claude-opus-4-6-correction",
-                "input_tokens": 0,
-                "output_tokens": 0,
+                "model": "deepseek-r1-correction",
+                "input_tokens": result.input_tokens,
+                "output_tokens": result.output_tokens,
             },
         )
 
