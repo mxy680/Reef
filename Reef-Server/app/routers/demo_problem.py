@@ -517,14 +517,12 @@ async def _generate_tts(text: str) -> str | None:
                     json={
                         "text": text,
                         "model_id": ELEVEN_MODEL,
-                        "output_format": "pcm_24000",
                     },
                 )
             if resp.status_code == 200:
-                # ElevenLabs returns raw PCM — wrap in WAV header for iOS playback
-                pcm_data = resp.content
-                audio_base64 = base64.b64encode(_pcm_to_wav(pcm_data, 24000)).decode()
-                log.info(f"[tts] ElevenLabs OK ({len(pcm_data)} bytes PCM)")
+                # ElevenLabs returns MP3 — iOS AVAudioPlayer handles it natively
+                audio_base64 = base64.b64encode(resp.content).decode()
+                log.info(f"[tts] ElevenLabs OK ({len(resp.content)} bytes)")
             else:
                 log.warning(f"[tts] ElevenLabs returned {resp.status_code}: {resp.text[:200]}")
         except Exception as e:
@@ -562,24 +560,3 @@ async def _generate_tts(text: str) -> str | None:
     return audio_base64
 
 
-def _pcm_to_wav(pcm_data: bytes, sample_rate: int = 24000, channels: int = 1, bits: int = 16) -> bytes:
-    """Wrap raw PCM bytes in a WAV header."""
-    import struct
-    data_size = len(pcm_data)
-    header = struct.pack(
-        "<4sI4s4sIHHIIHH4sI",
-        b"RIFF",
-        36 + data_size,
-        b"WAVE",
-        b"fmt ",
-        16,  # chunk size
-        1,   # PCM format
-        channels,
-        sample_rate,
-        sample_rate * channels * bits // 8,  # byte rate
-        channels * bits // 8,  # block align
-        bits,
-        b"data",
-        data_size,
-    )
-    return header + pcm_data
