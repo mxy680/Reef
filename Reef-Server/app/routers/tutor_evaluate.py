@@ -17,6 +17,7 @@ from app.models.tutor import (
 )
 from app.services.llm_client import LLMClient
 from app.services.concept_tracker import get_prior_struggles, record_struggle, resolve_struggles
+from app.services.cost_tracker import fire_cost, record_llm_cost
 from app.services.prompts import (
     TUTOR_CHAT_PROMPT, TUTOR_CHAT_SYSTEM,
     TUTOR_EVALUATE_DYNAMIC, TUTOR_EVALUATE_STATIC, TUTOR_EVALUATE_SYSTEM,
@@ -292,6 +293,8 @@ async def tutor_evaluate(
         f"steps_completed={evaluation.steps_completed} "
         f"({result.input_tokens}in/{result.output_tokens}out)"
     )
+    fire_cost(record_llm_cost(user.id, "tutor_eval", TUTOR_MODEL, result.input_tokens, result.output_tokens,
+              metadata={"document_id": body.document_id, "question": body.question_number, "step": body.step_index}))
 
     # Fire-and-forget concept struggle tracking
     if current_concepts:
@@ -378,6 +381,9 @@ async def _regenerate_answer_key(
     )
     content = extract_json(result.content)
     new_answer = QuestionAnswer.model_validate_json(content)
+    fire_cost(record_llm_cost(user_id, "answer_key", "google/gemini-3-flash-preview",
+              result.input_tokens, result.output_tokens,
+              metadata={"document_id": document_id, "question": question_number, "stage": "correction"}))
 
     # Store updated answer key
     headers = _supabase_headers()
@@ -485,6 +491,8 @@ async def tutor_chat(
         f"[tutor-chat] Q{body.question_number} step {body.step_index + 1}: "
         f"({result.input_tokens}in/{result.output_tokens}out)"
     )
+    fire_cost(record_llm_cost(user.id, "tutor_chat", TUTOR_MODEL, result.input_tokens, result.output_tokens,
+              metadata={"document_id": body.document_id, "question": body.question_number}))
 
     # If the LLM detected a problem data correction, regenerate the answer key
     answer_key_updated = False

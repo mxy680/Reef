@@ -15,6 +15,7 @@ import httpx
 
 from app.config import settings
 from app.models.answer_key import PartAnswer, QuestionAnswer
+from app.services.cost_tracker import fire_cost, record_llm_cost
 from app.services.inference_client import extract_json
 from app.services.katex_validator import validate_and_fix_answer_key
 from app.services.llm_client import LLMClient
@@ -76,6 +77,7 @@ async def _generate_single_answer(
     question_number: int,
     question_dict: dict,
     figure_images: list[bytes] | None = None,
+    user_id: str | None = None,
 ) -> None:
     """Generate and store the answer for one question. Never raises."""
     try:
@@ -124,6 +126,9 @@ async def _generate_single_answer(
             raise
         input_tokens = result.input_tokens
         output_tokens = result.output_tokens
+        if user_id:
+            fire_cost(record_llm_cost(user_id, "answer_key", ANSWER_KEY_MODEL, input_tokens, output_tokens,
+                      metadata={"document_id": document_id, "question": question_number}))
 
         # Normalize: every question must have parts. If the LLM put steps
         # at the top level (no parts), wrap them into a single part "a".
@@ -173,6 +178,7 @@ async def generate_answer_keys(
     document_id: str,
     questions: list[tuple[int, dict]],
     image_data: dict[str, bytes] | None = None,
+    user_id: str | None = None,
 ) -> None:
     """Generate answer keys for all questions in parallel. Fire-and-forget.
 
@@ -180,6 +186,7 @@ async def generate_answer_keys(
         document_id: Supabase document ID.
         questions: list of ``(question_number, question_dict)`` tuples.
         image_data: dict of ``{filename: image_bytes}`` from Mathpix OCR.
+        user_id: Optional user ID for cost tracking.
     """
     if not questions or not settings.supabase_service_role_key:
         return
@@ -198,7 +205,7 @@ async def generate_answer_keys(
 
     # Run answer key generation in parallel (inference API supports concurrent agents)
     tasks = [
-        _generate_single_answer(document_id, q_num, q_dict, figure_images=_get_question_images(q_dict))
+        _generate_single_answer(document_id, q_num, q_dict, figure_images=_get_question_images(q_dict), user_id=user_id)
         for q_num, q_dict in questions
     ]
 

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
+from app.services.cost_tracker import fire_cost, record_cost, MATHPIX_STROKES_PER_REQUEST
 from app.services.katex_sanitizer import sanitize_for_katex
 from app.services.katex_validator import _validate_katex_expression
 
@@ -144,6 +145,7 @@ async def transcribe_strokes(
 
     raw_latex = data.get("latex", data.get("text", ""))
     session_id = data.get("strokes_session_id", data.get("session_id"))
+    fire_cost(record_cost(user.id, "transcribe", "mathpix_strokes", MATHPIX_STROKES_PER_REQUEST))
 
     # Keep the raw Mathpix output for LLM eval
     latex = raw_latex
