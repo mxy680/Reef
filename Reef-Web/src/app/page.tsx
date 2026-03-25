@@ -318,7 +318,7 @@ export default function Home() {
                   Drop in your syllabus, lecture slides, homework PDFs, or photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. Answer keys are extracted automatically so the AI can check your work.
                 </p>
               </div>
-              <div className="step-card step-card-surface" />
+              <div className="step-card step-card-surface" style={{ backgroundImage: "url('/step-upload.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
             </div>
 
             {/* Decorative arrow 1 → 2 */}
