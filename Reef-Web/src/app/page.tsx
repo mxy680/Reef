@@ -275,7 +275,7 @@ export default function Home() {
               <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "var(--color-surface)" }} />
               <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
               <p className="section-subtitle">
-                From calculus problem sets to organic chemistry mechanisms to circuit analysis, Reef understands the notation and concepts across your STEM courses.
+                From calculus to organic chemistry to circuit analysis, Reef understands the notation and concepts across your STEM courses.
               </p>
             </div>
           </div>
