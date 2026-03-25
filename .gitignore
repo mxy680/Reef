@@ -8,6 +8,7 @@ mathpix/
 ios-old/
 *.png
 !Reef-iOS/Reef/Assets.xcassets/**/*.png
+!Reef-Web/public/**/*.png
 xcuserdata/
 .vercel
 *.xcuserstate
