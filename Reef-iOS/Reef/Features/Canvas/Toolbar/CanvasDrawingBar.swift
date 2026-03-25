@@ -526,6 +526,22 @@ struct CanvasDrawingBar: View {
         let isSelected = viewModel.selectedTool == tool
         let glowActive = walkthroughStep?.targetDrawingTool == tool
         return Button {
+            // Hidden debug toggle: tap pen 5 times rapidly while already selected
+            if tool == .pen && isSelected {
+                viewModel.debugTapCount += 1
+                viewModel.debugTapResetTask?.cancel()
+                viewModel.debugTapResetTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    viewModel.debugTapCount = 0
+                }
+                if viewModel.debugTapCount >= 5 {
+                    viewModel.debugTapCount = 0
+                    withAnimation(.spring(duration: 0.2)) {
+                        viewModel.showDebugPrompt.toggle()
+                    }
+                }
+            }
             viewModel.selectedTool = tool
             viewModel.showPageControls = false
             viewModel.showPageSettings = false
