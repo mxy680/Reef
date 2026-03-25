@@ -57,9 +57,9 @@ enum WalkthroughStep: Int, CaseIterable {
         case .enableTutor:
             "Here's what makes Reef different. Tap the tutor toggle — your AI reads your handwriting live, knows the answer key, and coaches you without giving it away."
         case .tutorHint:
-            "That lightbulb is your hint button. Tap it when you're stuck — your tutor gives you a push without spoiling the answer. Training wheels, not a cheat code."
+            "See the Hint section in the sidebar? Tap it to expand — your tutor gives you a nudge without spoiling the answer. Training wheels, not a cheat code."
         case .tutorReveal:
-            "Tap the eye icon to reveal the full solution for this step. Sometimes you just need to see how it's done — no judgment."
+            "Now tap Full Solution in the sidebar. It shows you the complete work for this step — sometimes you just need to see how it's done. No judgment."
         // Phase 3: Solve It
         case .solveIt:
             "OK dive in. Work through the problem step by step — your tutor reads your handwriting in real time and jumps in when you need a hand."
@@ -103,9 +103,9 @@ enum WalkthroughStep: Int, CaseIterable {
         case .enableTutor:
             "HERE is what makes Reef different. Tap the tutor toggle. Your A.I. reads your handwriting LIVE, knows the answer key, and coaches you, without giving it away."
         case .tutorHint:
-            "THAT lightbulb, is your hint button. Tap it when you're stuck. Your tutor will give you a push, WITHOUT spoiling the answer. Training wheels, NOT a cheat code."
+            "See the Hint section in the sidebar? Tap it to expand. Your tutor gives you a nudge, WITHOUT spoiling the answer. Training wheels. NOT a cheat code."
         case .tutorReveal:
-            "Tap the eye icon, to reveal the FULL solution for this step. Sometimes, you just need to see how it's done. No judgment."
+            "Now tap Full Solution in the sidebar. It shows you the COMPLETE work for this step. Sometimes, you just need to see how it's done. No judgment."
         // Phase 3: Solve It
         case .solveIt:
             "OK, DIVE IN. Work through the problem, step by step. Your tutor reads your handwriting in REAL time, and will jump in when you need a hand."
