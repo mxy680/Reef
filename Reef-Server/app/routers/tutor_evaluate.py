@@ -91,7 +91,7 @@ async def _fetch_answer_key(document_id: str, question_number: int, user_id: str
     # Lazy cleanup: remove expired entries if cache grows
     if len(_answer_key_cache) > 100:
         now = _time.time()
-        expired = [k for k, (_, _, ts) in _answer_key_cache.items() if now - ts > _AK_CACHE_TTL]
+        expired = [k for k, (_, _, ts) in list(_answer_key_cache.items()) if now - ts > _AK_CACHE_TTL]
         for k in expired:
             del _answer_key_cache[k]
 
@@ -104,9 +104,15 @@ def _resolve_steps(answer_key: QuestionAnswer, part_label: str | None) -> list:
     Fallback order matches iOS ``currentSteps``: parts first, then top-level steps.
     """
     if part_label is None:
-        # No part — try first part's steps, then top-level (matches iOS priority)
-        if answer_key.parts and answer_key.parts[0].steps:
-            return answer_key.parts[0].steps
+        # No part — try first part's steps, then top-level
+        # Must match iOS CanvasViewModel.currentSteps exactly
+        if answer_key.parts:
+            first = answer_key.parts[0]
+            if first.steps:
+                return first.steps
+            # First part has no steps — check sub-parts
+            if first.parts and first.parts[0].steps:
+                return first.parts[0].steps
         return answer_key.steps
 
     # Search for matching part label (supports one level of nesting)

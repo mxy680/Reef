@@ -30,13 +30,8 @@ final class HandwritingTranscriptionService {
     private var lastStrokeCount: Int = 0
     private var lastStrokeBoundsHash: Int = 0
 
-    /// Per-cluster transcription cache: cluster hash → (display, raw) LaTeX
-    private var clusterCache: [Int: (display: String, raw: String)] = [:]
-
     private static let sessionTTL: TimeInterval = 300
     private static let pollInterval: Duration = .milliseconds(400)
-    private static let maxStrokesPerCluster = 30
-    private static let clusterYGap: CGFloat = 40  // pt gap to split clusters
 
     // MARK: - Polling
 
@@ -75,7 +70,6 @@ final class HandwritingTranscriptionService {
             if !latexResult.isEmpty {
                 latexResult = ""
                 rawLatexResult = ""
-                clusterCache.removeAll()
             }
             lastStrokeCount = 0
             lastStrokeBoundsHash = 0
@@ -106,62 +100,6 @@ final class HandwritingTranscriptionService {
         }
     }
 
-    // MARK: - Clustering
-
-    private struct StrokeCluster {
-        let strokes: [PKStroke]
-        let hash: Int
-
-        init(strokes: [PKStroke]) {
-            self.strokes = strokes
-            self.hash = strokes.enumerated().reduce(0) { h, pair in
-                let (i, s) = pair
-                let b = s.renderBounds
-                return h &+ (b.origin.x.hashValue &* (i &+ 1))
-                         &+ (b.midY.hashValue &* (i &+ 2))
-                         &+ (b.size.width.hashValue &* (i &+ 3))
-            }
-        }
-    }
-
-    /// Cluster strokes by Y-position. Each cluster ≤ maxStrokesPerCluster.
-    private func clusterStrokes(_ strokes: [PKStroke]) -> [StrokeCluster] {
-        guard !strokes.isEmpty else { return [] }
-
-        // Sort by vertical midpoint
-        let sorted = strokes.sorted { $0.renderBounds.midY < $1.renderBounds.midY }
-
-        var clusters: [[PKStroke]] = [[sorted[0]]]
-
-        for i in 1..<sorted.count {
-            let stroke = sorted[i]
-            let prevMidY = sorted[i - 1].renderBounds.midY
-            let curMidY = stroke.renderBounds.midY
-            let gap = curMidY - prevMidY
-
-            // Start new cluster if Y-gap exceeds threshold or current cluster is full
-            if gap > Self.clusterYGap || clusters[clusters.count - 1].count >= Self.maxStrokesPerCluster {
-                clusters.append([stroke])
-            } else {
-                clusters[clusters.count - 1].append(stroke)
-            }
-        }
-
-        // Split any remaining oversized clusters
-        var result: [StrokeCluster] = []
-        for group in clusters {
-            if group.count <= Self.maxStrokesPerCluster {
-                result.append(StrokeCluster(strokes: group))
-            } else {
-                for chunk in stride(from: 0, to: group.count, by: Self.maxStrokesPerCluster) {
-                    let end = min(chunk + Self.maxStrokesPerCluster, group.count)
-                    result.append(StrokeCluster(strokes: Array(group[chunk..<end])))
-                }
-            }
-        }
-
-        return result
-    }
 
     // MARK: - Clustered Transcription
 
@@ -349,7 +287,6 @@ final class HandwritingTranscriptionService {
         errorMessage = nil
         lastStrokeCount = 0
         lastStrokeBoundsHash = 0
-        clusterCache.removeAll()
     }
 
     func reset() {

@@ -401,7 +401,8 @@ final class CanvasViewModel {
             self.evalDebounceTask?.cancel()
             self.evalDebounceTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(1))
-                guard let self, !Task.isCancelled else { return }
+                guard let self, !Task.isCancelled,
+                      !self.tutorEvalService.isEvaluating else { return }
                 let (qNum, partLabel) = self.parseQuestionLabel()
                 guard qNum > 0 else { return }
                 await self.tutorEvalService.runEval(
@@ -761,6 +762,7 @@ final class CanvasViewModel {
 
         // If we completed all steps, mark as done (don't reset — let status stay "completed")
         if currentTutorStepIndex >= tutorStepCount - 1 && stepsToAdvance >= remaining {
+            stepSpeechTask?.cancel()
             tutorEvalService.stepProgress = 1.0
             tutorEvalService.status = "completed"
         } else {
@@ -1226,8 +1228,7 @@ final class CanvasViewModel {
 
     /// Parse activeQuestionLabel "Q2a" → (questionNumber: 2, partLabel: "a")
     func parseQuestionLabel() -> (Int, String?) {
-        let label = activeQuestionLabel ?? "Q1a"
-        guard label.hasPrefix("Q"), label.count >= 2 else { return (0, nil) }
+        guard let label = activeQuestionLabel, label.hasPrefix("Q"), label.count >= 2 else { return (0, nil) }
         let numAndLabel = label.dropFirst()
         var numStr = ""
         var partStr = ""
