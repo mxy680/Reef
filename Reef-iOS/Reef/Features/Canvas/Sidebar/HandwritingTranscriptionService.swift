@@ -23,7 +23,7 @@ final class HandwritingTranscriptionService {
     private var appToken: String?
     private(set) var expiresAt: Date?
     private var generation: Int = 0
-    private var pollingTask: Task<Void, Never>?
+    private(set) var pollingTask: Task<Void, Never>?
     private var lastStrokeCount: Int = 0
     private var lastStrokeBoundsHash: Int = 0
 
@@ -57,8 +57,13 @@ final class HandwritingTranscriptionService {
         pollingTask = nil
     }
 
+    private var pollLogCounter = 0
     private func pollForChanges() {
-        guard let drawing = currentDrawing else { return }
+        pollLogCounter += 1
+        guard let drawing = currentDrawing else {
+            if pollLogCounter % 25 == 0 { print("[hw-poll] no drawing set") }
+            return
+        }
 
         let relevantStrokes: [PKStroke]
         if let regions = currentRegions, !regions.isEmpty {
@@ -93,8 +98,10 @@ final class HandwritingTranscriptionService {
         }
 
         guard relevantStrokes.count != lastStrokeCount || boundsHash != lastStrokeBoundsHash else {
+            if pollLogCounter % 25 == 0 { print("[hw-poll] no change: \(relevantStrokes.count) strokes") }
             return
         }
+        print("[hw-poll] CHANGED: \(lastStrokeCount)→\(relevantStrokes.count) strokes, transcribing...")
 
         lastStrokeCount = relevantStrokes.count
         lastStrokeBoundsHash = boundsHash
@@ -182,9 +189,10 @@ final class HandwritingTranscriptionService {
         let raw = result?.raw ?? ""
 
         let oldLatex = latexResult
+        let oldRaw = rawLatexResult
         latexResult = display
         rawLatexResult = raw
-        if display != oldLatex, !display.isEmpty {
+        if (display != oldLatex || raw != oldRaw), !display.isEmpty {
             onLatexChanged?(display)
         }
 

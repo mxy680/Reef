@@ -98,9 +98,13 @@ final class TutorEvaluationService {
             }
 
             self.isEvaluating = true
+            let genAtStart = self.generation
             defer {
                 self.isEvaluating = false
-                self.evaluateTask = nil
+                // Only nil if no new eval was started (e.g. by onStepCompleted → evaluate)
+                if self.generation == genAtStart {
+                    self.evaluateTask = nil
+                }
             }
 
             do {
