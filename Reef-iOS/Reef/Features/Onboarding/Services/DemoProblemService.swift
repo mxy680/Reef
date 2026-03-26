@@ -53,10 +53,16 @@ final class DemoProblemService {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                // Stale session — sign out so user can re-authenticate
+                if statusCode == 401 {
+                    try? await supabase.auth.signOut()
+                }
                 throw NSError(
                     domain: "DemoError",
                     code: statusCode,
-                    userInfo: [NSLocalizedDescriptionKey: "Server returned \(statusCode)"]
+                    userInfo: [NSLocalizedDescriptionKey: statusCode == 401
+                        ? "Session expired. Please restart the app and sign in again."
+                        : "Couldn't generate a problem. Try again."]
                 )
             }
 
