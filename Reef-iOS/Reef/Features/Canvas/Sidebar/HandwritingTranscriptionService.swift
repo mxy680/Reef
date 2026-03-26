@@ -13,6 +13,9 @@ final class HandwritingTranscriptionService {
     var isTranscribing: Bool = false
     var errorMessage: String?
 
+    /// Current cluster bounding boxes for debug visualization (in canvas points).
+    var debugClusterBounds: [CGRect] = []
+
     /// Called when latexResult changes to a new non-empty value.
     var onLatexChanged: ((String) -> Void)?
 
@@ -167,7 +170,15 @@ final class HandwritingTranscriptionService {
         let myGeneration = generation
         let clusters = clusterStrokes(strokes)
 
-        guard !clusters.isEmpty else { return }
+        guard !clusters.isEmpty else {
+            debugClusterBounds = []
+            return
+        }
+
+        // Compute bounding boxes for debug overlay
+        debugClusterBounds = clusters.map { cluster in
+            cluster.strokes.reduce(CGRect.null) { $0.union($1.renderBounds) }
+        }
 
         isTranscribing = true
         errorMessage = nil
@@ -375,6 +386,7 @@ final class HandwritingTranscriptionService {
         resetSession()
         latexResult = ""
         rawLatexResult = ""
+        debugClusterBounds = []
         currentDrawing = nil
         currentRegions = nil
     }
