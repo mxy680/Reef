@@ -100,7 +100,6 @@ final class TutorEvaluationService {
             // Debounce
             try? await Task.sleep(for: Self.debounceInterval)
             guard let self, !Task.isCancelled, self.generation == myGeneration else {
-                await MainActor.run { self?.evaluateTask = nil }
                 return
             }
 

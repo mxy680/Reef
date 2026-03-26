@@ -1216,24 +1216,8 @@ final class CanvasViewModel {
             return
         }
 
-        // Quick check: does student's LaTeX contain the expected answer?
-        // If so, mark as completed immediately without server round-trip
-        if let step = currentHintStep {
-            let studentNorm = normalizeLatex(handwritingService.latexResult)
-            let workNorm = normalizeLatex(step.work)
-            if !workNorm.isEmpty && studentNorm.contains(workNorm) {
-                tutorEvalService.stepProgress = 1.0
-                tutorEvalService.status = "completed"
-                if let reinforcement = tutorEvalService.pendingReinforcement, !reinforcement.isEmpty {
-                    tutorEvalService.chatMessages.removeAll { $0.role == .reinforcement }
-                    tutorEvalService.chatMessages.append(TutorChatMessage(
-                        role: .reinforcement, latex: reinforcement, timestamp: Date()
-                    ))
-                }
-                tutorEvalService.onStepCompleted?(1)
-                return
-            }
-        }
+        // Always go through the server for evaluation — no client-side shortcuts
+        // (substring matching on cumulative LaTeX causes false completions)
 
         // If no active question label, use Q1a as default for reconstructed docs
         let label = activeQuestionLabel ?? "Q1a"
