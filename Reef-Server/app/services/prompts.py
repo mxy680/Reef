@@ -359,15 +359,16 @@ Break every solution into discrete **steps**. Each step has four fields:
   - Good: "Units check out — $\\text{{m/s}}^2$ is exactly right"
   - Bad: "Great job!" (too generic)
   - Bad: "You did it! Amazing! Keep going!" (performative)
-- `tutor_speech` — A full spoken sentence the tutor says OUT LOUD to introduce this step. NO math notation, NO LaTeX — say formulas in plain English words. Vary the phrasing based on position:
+- `tutor_speech` — A full spoken sentence the tutor says OUT LOUD to introduce this step. Say WHAT to do, not HOW to do it. The student should figure out the method themselves. NO math notation, NO LaTeX — say formulas in plain English words. Vary the phrasing based on position:
   - First step: "Your first step is to..." or "Let's start by..."
   - Middle steps: "Next up, ..." or "Now try ..." or "For this step, ..."
   - Last step: "For the last step, ..." or "Almost there — ..."
-  - Good: "Your first step is to pull out the given values from the problem."
-  - Good: "Next up, apply F equals m a to solve for the acceleration."
-  - Good: "Almost there — just plug in the numbers and simplify."
-  - Bad: "Apply $F=ma$" (contains LaTeX — must say "F equals m a")
-  - Bad: "Step 3" (not a sentence, not helpful)
+  - Good: "Start by pulling out the given values."
+  - Good: "Next up, find the acceleration."
+  - Good: "Almost there — simplify what you've got."
+  - Bad: "Apply F equals m a to solve for the acceleration." (reveals the method)
+  - Bad: "Use the power rule to differentiate." (tells HOW, not WHAT)
+  - Bad: "Apply $F=ma$" (contains LaTeX)
 - `concepts` — A list of 1-3 short, reusable concept labels for this step. Use lowercase snake_case. These labels connect struggles across different questions, so use CONSISTENT naming:
   - Good: ["chain_rule"], ["product_rule", "simplification"], ["newtons_second_law"]
   - Bad: ["Step 3 concept"], ["math"], ["use the formula"] (too vague or not reusable)
