@@ -1079,9 +1079,10 @@ final class CanvasViewModel {
             micSilenceTimer = Task { [weak self] in
                 var speechDetected = false
                 var silenceStart: Date?
-                let speechThreshold: Float = -35  // dB — above this = speech
+                let speechThreshold: Float = -25  // dB — above this = speech
                 let noSpeechTimeout: TimeInterval = 2.0
                 let endOfSpeechTimeout: TimeInterval = 1.5
+                var logCounter = 0
 
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .milliseconds(100))
@@ -1090,6 +1091,12 @@ final class CanvasViewModel {
 
                     rec.updateMeters()
                     let level = rec.averagePower(forChannel: 0)
+
+                    // Log every 500ms for debugging
+                    logCounter += 1
+                    if logCounter % 5 == 0 {
+                        print("[mic-vad] level=\(String(format: "%.1f", level))dB speech=\(speechDetected) silence=\(silenceStart != nil)")
+                    }
 
                     if level > speechThreshold {
                         // Speech detected
@@ -1205,6 +1212,7 @@ final class CanvasViewModel {
               // Don't evaluate if all steps are already complete
               !(currentTutorStepIndex >= tutorStepCount - 1 && tutorEvalService.status == "completed")
         else {
+            print("[eval-trigger] SKIPPED: tutorMode=\(tutorModeOn) steps=\(tutorStepCount) latex=\(handwritingService.latexResult.prefix(30)) step=\(currentTutorStepIndex) status=\(tutorEvalService.status)")
             return
         }
 
@@ -1244,8 +1252,10 @@ final class CanvasViewModel {
         }
         guard let qNum = Int(numStr) else { return }
 
+        let evalLatex = handwritingService.rawLatexResult.isEmpty ? handwritingService.latexResult : handwritingService.rawLatexResult
+        print("[eval-trigger] FIRING: step=\(currentTutorStepIndex) Q\(qNum)\(partLabel) latex=\(evalLatex.prefix(50))")
         tutorEvalService.evaluate(
-            latex: handwritingService.rawLatexResult.isEmpty ? handwritingService.latexResult : handwritingService.rawLatexResult,
+            latex: evalLatex,
             documentId: document.id,
             questionNumber: qNum,
             partLabel: partLabel.isEmpty ? nil : partLabel,

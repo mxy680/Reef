@@ -165,6 +165,25 @@ struct CanvasView: View {
                     .background(Color.black.opacity(0.8))
 
                     ScrollView {
+                        // Live transcription debug info
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("STEP: \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount)  STATUS: \(viewModel.tutorEvalService.status)  EVAL: \(viewModel.tutorEvalService.isEvaluating ? "⏳" : "—")")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.yellow)
+                            Text("PROGRESS: \(String(format: "%.0f%%", viewModel.tutorEvalService.stepProgress * 100))  POLLING: \(viewModel.handwritingService.pollingTask != nil ? "ON" : "OFF")")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.yellow)
+                            Text("LATEX: \(viewModel.handwritingService.latexResult.prefix(80))")
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(.cyan)
+                            Text("RAW: \(viewModel.handwritingService.rawLatexResult.prefix(80))")
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(.cyan)
+                            Rectangle().fill(Color.green.opacity(0.3)).frame(height: 1)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.top, 6)
+
                         Text(viewModel.tutorEvalService.lastDebugPrompt ?? "No eval yet — write something and wait for the tutor to evaluate.")
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(.green)
