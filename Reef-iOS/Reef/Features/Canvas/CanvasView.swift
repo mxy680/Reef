@@ -170,7 +170,7 @@ struct CanvasView: View {
                             Text("STEP: \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount)  STATUS: \(viewModel.tutorEvalService.status)  EVAL: \(viewModel.tutorEvalService.isEvaluating ? "⏳" : "—")")
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                                 .foregroundStyle(.yellow)
-                            Text("EVALS: \(viewModel.tutorEvalService.evalCount)  GEN: \(viewModel.tutorEvalService.generation)")
+                            Text("EVALS: \(viewModel.tutorEvalService.evalCount)")
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                                 .foregroundStyle(.yellow)
                             Text("LATEX: \(viewModel.handwritingService.latexResult.prefix(60))")

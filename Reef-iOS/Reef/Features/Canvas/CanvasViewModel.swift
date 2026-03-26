@@ -150,7 +150,7 @@ final class CanvasViewModel {
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
     let tutorEvalService = TutorEvaluationService()
-    private var lastSentLatex: String = ""
+    var lastSentLatex: String = ""
     private var evalPollTask: Task<Void, Never>?
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
@@ -392,18 +392,33 @@ final class CanvasViewModel {
             }
         }
 
-        // Poll every 2s: if latex changed since last eval, fire eval
+        // Poll every 2s: if latex changed, await eval (serial, one at a time)
         evalPollTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(2))
-                guard let self, !Task.isCancelled else { return }
-                let current = self.handwritingService.rawLatexResult.isEmpty
+                guard let self, !Task.isCancelled, self.tutorModeOn,
+                      self.tutorStepCount > 0,
+                      !(self.currentTutorStepIndex >= self.tutorStepCount - 1 && self.tutorEvalService.status == "completed")
+                else { continue }
+
+                let latex = self.handwritingService.rawLatexResult.isEmpty
                     ? self.handwritingService.latexResult
                     : self.handwritingService.rawLatexResult
-                if !current.isEmpty && current != self.lastSentLatex && self.tutorModeOn {
-                    self.lastSentLatex = current
-                    self.triggerTutorEvaluation()
-                }
+                guard !latex.isEmpty, latex != self.lastSentLatex else { continue }
+
+                self.lastSentLatex = latex
+
+                let (qNum, partLabel) = self.parseQuestionLabel()
+                guard qNum > 0 else { continue }
+
+                await self.tutorEvalService.runEval(
+                    latex: latex,
+                    documentId: self.document.id,
+                    questionNumber: qNum,
+                    partLabel: partLabel,
+                    stepIndex: self.currentTutorStepIndex,
+                    studentImage: self.captureActiveQuestionImage()
+                )
             }
         }
 
@@ -1219,48 +1234,40 @@ final class CanvasViewModel {
         return s.lowercased()
     }
 
-    /// Trigger AI evaluation of the current student work.
-    func triggerTutorEvaluation() {
-        guard tutorModeOn,
-              tutorStepCount > 0,
-              !handwritingService.latexResult.isEmpty,
-              // Don't evaluate if all steps are already complete
-              !(currentTutorStepIndex >= tutorStepCount - 1 && tutorEvalService.status == "completed")
-        else {
-            print("[eval-trigger] SKIPPED: tutorMode=\(tutorModeOn) steps=\(tutorStepCount) latex=\(handwritingService.latexResult.prefix(30)) step=\(currentTutorStepIndex) status=\(tutorEvalService.status)")
-            return
-        }
-
-        // Always go through the server for evaluation — no client-side shortcuts
-        // (substring matching on cumulative LaTeX causes false completions)
-
-        // If no active question label, use Q1a as default for reconstructed docs
+    /// Parse activeQuestionLabel "Q2a" → (questionNumber: 2, partLabel: "a")
+    func parseQuestionLabel() -> (Int, String?) {
         let label = activeQuestionLabel ?? "Q1a"
-
-        // Parse "Q2a" → questionNumber=2, partLabel="a"
-        guard label.hasPrefix("Q"), label.count >= 2 else { return }
+        guard label.hasPrefix("Q"), label.count >= 2 else { return (0, nil) }
         let numAndLabel = label.dropFirst()
         var numStr = ""
-        var partLabel = ""
+        var partStr = ""
         for ch in numAndLabel {
-            if ch.isNumber {
-                numStr.append(ch)
-            } else {
-                partLabel.append(ch)
-            }
+            if ch.isNumber { numStr.append(ch) } else { partStr.append(ch) }
         }
-        guard let qNum = Int(numStr) else { return }
+        return (Int(numStr) ?? 0, partStr.isEmpty ? nil : partStr)
+    }
 
-        let evalLatex = handwritingService.rawLatexResult.isEmpty ? handwritingService.latexResult : handwritingService.rawLatexResult
-        print("[eval-trigger] FIRING: step=\(currentTutorStepIndex) Q\(qNum)\(partLabel) latex=\(evalLatex.prefix(50))")
-        tutorEvalService.evaluate(
-            latex: evalLatex,
-            documentId: document.id,
-            questionNumber: qNum,
-            partLabel: partLabel.isEmpty ? nil : partLabel,
-            stepIndex: currentTutorStepIndex,
-            studentImage: captureActiveQuestionImage()
-        )
+    /// Trigger eval immediately (for FORCE EVAL button and step advance)
+    func triggerTutorEvaluation() {
+        let latex = handwritingService.rawLatexResult.isEmpty
+            ? handwritingService.latexResult
+            : handwritingService.rawLatexResult
+        guard !latex.isEmpty, tutorModeOn, tutorStepCount > 0 else { return }
+
+        let (qNum, partLabel) = parseQuestionLabel()
+        guard qNum > 0 else { return }
+
+        lastSentLatex = latex
+        Task {
+            await tutorEvalService.runEval(
+                latex: latex,
+                documentId: document.id,
+                questionNumber: qNum,
+                partLabel: partLabel,
+                stepIndex: currentTutorStepIndex,
+                studentImage: captureActiveQuestionImage()
+            )
+        }
     }
 
     // MARK: - Page Mutations
