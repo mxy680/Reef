@@ -54,6 +54,7 @@ final class TutorEvaluationService {
     private var generation: Int = 0
     private var evaluateTask: Task<Void, Never>?
     private var lastEvaluatedLatex: String = ""
+    private var pendingEvalLatex: String = ""  // latex currently in debounce
     private var previousStatus: String = "idle"
 
     private let recoveryPhrases = [
@@ -84,8 +85,14 @@ final class TutorEvaluationService {
             return
         }
 
+        // Don't restart debounce if same latex is already pending
+        if latex == pendingEvalLatex && evaluateTask != nil {
+            return
+        }
+
         // Cancel any pending debounce and restart with new latex
         evaluateTask?.cancel()
+        pendingEvalLatex = latex
         generation += 1
         let myGeneration = generation
 
@@ -230,6 +237,7 @@ final class TutorEvaluationService {
         mistakeExplanation = nil
         isEvaluating = false
         lastEvaluatedLatex = ""
+        pendingEvalLatex = ""
     }
 
     /// Full reset (tutor mode toggled off or question changed).
