@@ -165,19 +165,9 @@ struct CanvasView: View {
                     .background(Color.black.opacity(0.8))
 
                     ScrollView {
-                        // Live transcription debug info
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("STEP: \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount)")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.yellow)
-                            Text("LATEX: \(viewModel.handwritingService.latexResult.prefix(100))")
-                                .font(.system(size: 9, design: .monospaced))
-                                .foregroundStyle(.cyan)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.top, 6)
-
-                        Text("Transcription + answer key only. Eval disabled.")
+                        Text(viewModel.handwritingService.rawLatexResult.isEmpty
+                             ? (viewModel.handwritingService.latexResult.isEmpty ? "No strokes yet." : viewModel.handwritingService.latexResult)
+                             : viewModel.handwritingService.rawLatexResult)
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(.green)
                             .padding(8)
