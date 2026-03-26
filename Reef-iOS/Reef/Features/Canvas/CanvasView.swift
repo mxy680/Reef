@@ -100,16 +100,6 @@ struct CanvasView: View {
                             viewModel.containerView = container
                         }
                     )
-                    .overlay {
-                        // Debug cluster bounding boxes
-                        if viewModel.showDebugPrompt {
-                            ClusterDebugOverlay(
-                                bounds: viewModel.handwritingService.debugClusterBounds,
-                                containerView: viewModel.containerView
-                            )
-                            .allowsHitTesting(false)
-                        }
-                    }
                     .onChange(of: scrollToPageIndex) { _, newValue in
                         if newValue != nil {
                             DispatchQueue.main.async {
@@ -370,68 +360,3 @@ private struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
 
-// MARK: - Cluster Debug Overlay
-
-private struct ClusterDebugOverlay: UIViewRepresentable {
-    let bounds: [CGRect]
-    weak var containerView: CanvasContainerView?
-
-    private static let colors: [UIColor] = [
-        .systemRed, .systemBlue, .systemGreen, .systemOrange,
-        .systemPurple, .systemTeal, .systemYellow, .systemPink,
-    ]
-
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        view.isUserInteractionEnabled = false
-        view.backgroundColor = .clear
-        return view
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) {
-        // Remove old boxes
-        uiView.subviews.forEach { $0.removeFromSuperview() }
-
-        guard let container = containerView else { return }
-        let scrollView = container.scrollView
-        let zoom = scrollView.zoomScale
-        let offset = scrollView.contentOffset
-
-        // Convert from toolbar height — the overlay sits below the toolbar
-        // so we need the scroll view's frame origin in the overlay's coordinate space
-        let scrollFrameInContainer = container.convert(scrollView.frame, to: nil)
-        let overlayFrameInWindow = uiView.convert(uiView.bounds, to: nil)
-        let dy = scrollFrameInContainer.minY - overlayFrameInWindow.minY
-        let dx = scrollFrameInContainer.minX - overlayFrameInWindow.minX
-
-        for (i, rect) in bounds.enumerated() {
-            let color = Self.colors[i % Self.colors.count]
-
-            // Transform from canvas content coords to screen coords
-            let screenRect = CGRect(
-                x: rect.minX * zoom - offset.x + dx,
-                y: rect.minY * zoom - offset.y + dy,
-                width: rect.width * zoom,
-                height: rect.height * zoom
-            ).insetBy(dx: -4, dy: -4)  // padding around cluster
-
-            let box = UIView(frame: screenRect)
-            box.backgroundColor = color.withAlphaComponent(0.08)
-            box.layer.borderColor = color.withAlphaComponent(0.6).cgColor
-            box.layer.borderWidth = 2
-            box.layer.cornerRadius = 4
-            box.isUserInteractionEnabled = false
-
-            // Label
-            let label = UILabel()
-            label.text = "C\(i + 1)"
-            label.font = .monospacedSystemFont(ofSize: 9, weight: .bold)
-            label.textColor = color
-            label.sizeToFit()
-            label.frame.origin = CGPoint(x: 4, y: 2)
-            box.addSubview(label)
-
-            uiView.addSubview(box)
-        }
-    }
-}

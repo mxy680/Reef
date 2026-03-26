@@ -13,8 +13,6 @@ final class HandwritingTranscriptionService {
     var isTranscribing: Bool = false
     var errorMessage: String?
 
-    /// Current cluster bounding boxes for debug visualization (in canvas points).
-    var debugClusterBounds: [CGRect] = []
 
     /// Called when latexResult changes to a new non-empty value.
     var onLatexChanged: ((String) -> Void)?
@@ -171,9 +169,6 @@ final class HandwritingTranscriptionService {
 
         isTranscribing = true
         errorMessage = nil
-
-        // Debug: single bounding box for all strokes
-        debugClusterBounds = [strokes.reduce(CGRect.null) { $0.union($1.renderBounds) }]
 
         // Extract payloads on main actor (PKStroke is not Sendable)
         let payloads = extractPayloads(from: strokes)
@@ -339,7 +334,6 @@ final class HandwritingTranscriptionService {
         resetSession()
         latexResult = ""
         rawLatexResult = ""
-        debugClusterBounds = []
         currentDrawing = nil
         currentRegions = nil
     }
