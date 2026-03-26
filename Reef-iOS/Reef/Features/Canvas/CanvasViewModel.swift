@@ -150,6 +150,7 @@ final class CanvasViewModel {
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
     let tutorEvalService = TutorEvaluationService()
+    private var evalDebounceTask: Task<Void, Never>?
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -308,6 +309,7 @@ final class CanvasViewModel {
         loadPDFTask?.cancel()
         loadAnswerKeysTask?.cancel()
         stepSpeechTask?.cancel()
+        evalDebounceTask?.cancel()
     }
 
     func stopAllAudio() {
@@ -380,6 +382,26 @@ final class CanvasViewModel {
             self.loadAnswerKeysTask = Task { @MainActor in
                 await self.loadAnswerKeys()
                 // loadAnswerKeys handles state restoration internally
+            }
+        }
+
+        // When transcription changes, wait 1s of quiet then fire eval
+        handwritingService.onLatexChanged = { [weak self] _ in
+            guard let self, self.tutorModeOn, self.tutorStepCount > 0 else { return }
+            self.evalDebounceTask?.cancel()
+            self.evalDebounceTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, !Task.isCancelled else { return }
+                let (qNum, partLabel) = self.parseQuestionLabel()
+                guard qNum > 0 else { return }
+                await self.tutorEvalService.runEval(
+                    latex: self.handwritingService.rawLatexResult,
+                    documentId: self.document.id,
+                    questionNumber: qNum,
+                    partLabel: partLabel,
+                    stepIndex: self.currentTutorStepIndex,
+                    studentImage: self.captureActiveQuestionImage()
+                )
             }
         }
 
