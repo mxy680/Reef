@@ -300,6 +300,8 @@ async def _demo_document_impl(body: DemoDocumentRequest, user: AuthenticatedUser
         )
         if resp.status_code not in (200, 201):
             log.error(f"[demo-document] Failed to insert document: {resp.status_code} {resp.text[:200]}")
+            if "foreign key" in resp.text.lower() or "23503" in resp.text:
+                raise HTTPException(status_code=401, detail="User account not found. Please sign out and sign back in.")
             raise HTTPException(status_code=500, detail="Failed to create document record")
 
         # Upload PDF to storage
