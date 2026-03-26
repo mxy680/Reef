@@ -167,31 +167,17 @@ struct CanvasView: View {
                     ScrollView {
                         // Live transcription debug info
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("STEP: \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount)  STATUS: \(viewModel.tutorEvalService.status)  EVAL: \(viewModel.tutorEvalService.isEvaluating ? "⏳" : "—")")
+                            Text("STEP: \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount)")
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                                 .foregroundStyle(.yellow)
-                            Text("EVALS: \(viewModel.tutorEvalService.evalCount)")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.yellow)
-                            Text("LATEX: \(viewModel.handwritingService.latexResult.prefix(80))")
+                            Text("LATEX: \(viewModel.handwritingService.latexResult.prefix(100))")
                                 .font(.system(size: 9, design: .monospaced))
                                 .foregroundStyle(.cyan)
-                            Rectangle().fill(Color.green.opacity(0.3)).frame(height: 1)
-
-                            Button("FORCE EVAL NOW") {
-                                viewModel.triggerTutorEvaluation()
-                            }
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.black)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.yellow)
-                            .cornerRadius(4)
                         }
                         .padding(.horizontal, 8)
                         .padding(.top, 6)
 
-                        Text(viewModel.tutorEvalService.lastDebugPrompt ?? "No eval yet — write something and wait for the tutor to evaluate.")
+                        Text("Transcription + answer key only. Eval disabled.")
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(.green)
                             .padding(8)

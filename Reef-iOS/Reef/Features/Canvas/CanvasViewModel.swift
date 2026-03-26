@@ -150,7 +150,6 @@ final class CanvasViewModel {
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
     let tutorEvalService = TutorEvaluationService()
-    private var evalPollTask: Task<Void, Never>?
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -309,7 +308,6 @@ final class CanvasViewModel {
         loadPDFTask?.cancel()
         loadAnswerKeysTask?.cancel()
         stepSpeechTask?.cancel()
-        evalPollTask?.cancel()
     }
 
     func stopAllAudio() {
@@ -376,48 +374,12 @@ final class CanvasViewModel {
 
         tutorEvalService.voiceEnabled = tutorVoiceEnabled
 
-        tutorEvalService.onStepCompleted = { [weak self] stepsCompleted in
-            guard let self, stepsCompleted >= 1 else { return }
-            self.advanceTutorSteps(count: stepsCompleted)
-        }
-
-        tutorEvalService.onMistakeSpoken = { [weak self] in
-            guard let self, self.tutorVoiceEnabled, !self.isMicOn else { return }
-            self.toggleMic()
-        }
-
         tutorEvalService.onAnswerKeyUpdated = { [weak self] in
             guard let self else { return }
             self.loadAnswerKeysTask?.cancel()
             self.loadAnswerKeysTask = Task { @MainActor in
                 await self.loadAnswerKeys()
                 // loadAnswerKeys handles state restoration internally
-            }
-        }
-
-        // Poll every 2s: fire eval if tutor mode on and student has work.
-        // Server reads latest transcription from student_work table.
-        evalPollTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(2))
-                guard let self, !Task.isCancelled, self.tutorModeOn,
-                      self.tutorStepCount > 0,
-                      !self.handwritingService.latexResult.isEmpty,
-                      !self.tutorEvalService.isEvaluating,
-                      !(self.currentTutorStepIndex >= self.tutorStepCount - 1 && self.tutorEvalService.status == "completed")
-                else { continue }
-
-                let (qNum, partLabel) = self.parseQuestionLabel()
-                guard qNum > 0 else { continue }
-
-                await self.tutorEvalService.runEval(
-                    latex: self.handwritingService.rawLatexResult,
-                    documentId: self.document.id,
-                    questionNumber: qNum,
-                    partLabel: partLabel,
-                    stepIndex: self.currentTutorStepIndex,
-                    studentImage: self.captureActiveQuestionImage()
-                )
             }
         }
 
@@ -787,10 +749,6 @@ final class CanvasViewModel {
                 speakCurrentStepDescription()
             }
 
-            if !handwritingService.latexResult.isEmpty {
-                // Re-evaluate existing work against the new step
-                triggerTutorEvaluation()
-            }
         }
     }
 
@@ -1245,28 +1203,6 @@ final class CanvasViewModel {
             if ch.isNumber { numStr.append(ch) } else { partStr.append(ch) }
         }
         return (Int(numStr) ?? 0, partStr.isEmpty ? nil : partStr)
-    }
-
-    /// Trigger eval immediately (for FORCE EVAL button and step advance)
-    func triggerTutorEvaluation() {
-        let latex = handwritingService.rawLatexResult.isEmpty
-            ? handwritingService.latexResult
-            : handwritingService.rawLatexResult
-        guard !latex.isEmpty, tutorModeOn, tutorStepCount > 0 else { return }
-
-        let (qNum, partLabel) = parseQuestionLabel()
-        guard qNum > 0 else { return }
-
-        Task {
-            await tutorEvalService.runEval(
-                latex: latex,
-                documentId: document.id,
-                questionNumber: qNum,
-                partLabel: partLabel,
-                stepIndex: currentTutorStepIndex,
-                studentImage: captureActiveQuestionImage()
-            )
-        }
     }
 
     // MARK: - Page Mutations
