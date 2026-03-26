@@ -120,6 +120,51 @@ def _resolve_steps(answer_key: QuestionAnswer, part_label: str | None) -> list:
     return []
 
 
+def _supabase_headers() -> dict[str, str]:
+    return {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        "Content-Type": "application/json",
+    }
+
+
+async def _fetch_chat_history(document_id: str, question_label: str, user_id: str) -> list[dict]:
+    """Fetch last 15 chat messages from chat_history table."""
+    url = f"{settings.supabase_url}/rest/v1/chat_history"
+    params = {
+        "user_id": f"eq.{user_id}",
+        "document_id": f"eq.{document_id}",
+        "question_label": f"eq.{question_label}",
+        "select": "role,text",
+        "order": "created_at.desc",
+        "limit": "15",
+    }
+    async with httpx.AsyncClient(timeout=5) as client:
+        resp = await client.get(url, params=params, headers=_supabase_headers())
+        if resp.status_code != 200:
+            return []
+    rows = resp.json()
+    rows.reverse()  # oldest first
+    return rows
+
+
+async def _append_chat(user_id: str, document_id: str, question_label: str, role: str, text: str) -> None:
+    """Insert a chat message. Fire-and-forget safe."""
+    url = f"{settings.supabase_url}/rest/v1/chat_history"
+    row = {
+        "user_id": user_id,
+        "document_id": document_id,
+        "question_label": question_label,
+        "role": role,
+        "text": text,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.post(url, json=row, headers=_supabase_headers())
+    except Exception as e:
+        log.warning(f"[chat-history] Failed to write: {e}")
+
+
 async def _fetch_student_work(document_id: str, question_label: str, user_id: str) -> tuple[str, str]:
     """Fetch latest student transcription from student_work table. Returns (display, raw)."""
     headers = {
@@ -217,13 +262,15 @@ async def tutor_evaluate(
     else:
         remaining_text = "(This is the final step.)"
 
-    # Build tutor feedback history
+    # Build tutor feedback history from DB (fall back to body.history)
+    db_history = await _fetch_chat_history(body.document_id, question_label, user.id)
     history_text = "(no prior feedback)"
-    if body.history:
+    history_source = db_history if db_history else [{"role": m.role, "text": m.text} for m in (body.history or [])]
+    if history_source:
         lines = []
-        for msg in body.history[-15:]:
-            label = {"student": "Student", "error": "Tutor (mistake)", "reinforcement": "Tutor (encouragement)", "answer": "Tutor (chat)"}.get(msg.role, msg.role)
-            lines.append(f"<<<{label}>>>\n{msg.text}\n<<</{label}>>>")
+        for msg in history_source[-15:]:
+            label = {"student": "Student", "error": "Tutor (mistake)", "reinforcement": "Tutor (encouragement)", "answer": "Tutor (chat)"}.get(msg["role"], msg["role"])
+            lines.append(f"<<<{label}>>>\n{msg['text']}\n<<</{label}>>>")
         history_text = "\n".join(lines)
 
     # Build actual question text from question_json
@@ -375,6 +422,12 @@ async def tutor_evaluate(
                 step_index=body.step_index,
             )))
 
+    # Write eval results to chat history (fire-and-forget)
+    if evaluation.status == "mistake" and evaluation.mistake_explanation:
+        asyncio.create_task(_append_chat(user.id, body.document_id, question_label, "error", evaluation.mistake_explanation))
+    elif evaluation.status == "completed" and evaluation.reinforcement_speech:
+        asyncio.create_task(_append_chat(user.id, body.document_id, question_label, "reinforcement", evaluation.reinforcement_speech))
+
     # Cap steps_completed to not exceed remaining steps
     max_steps = len(steps) - body.step_index
     capped_steps = min(evaluation.steps_completed, max_steps)
@@ -498,13 +551,15 @@ async def tutor_chat(
         + "\n<<<USER_MESSAGE_END>>>"
     )
 
-    # Build conversation history (last 10 messages max)
+    # Build conversation history from DB (fall back to body.history)
+    chat_db_history = await _fetch_chat_history(body.document_id, chat_question_label, user.id)
+    chat_history_source = chat_db_history if chat_db_history else [{"role": m.role, "text": m.text} for m in (body.history or [])]
     history_text = ""
-    if body.history:
+    if chat_history_source:
         lines = []
-        for msg in body.history[-10:]:
-            label = "Student" if msg.role == "student" else "Tutor"
-            lines.append(f"<<<{label.upper()}_MSG>>>\n{msg.text}\n<<</{label.upper()}_MSG>>>")
+        for msg in chat_history_source[-10:]:
+            label = "Student" if msg["role"] == "student" else "Tutor"
+            lines.append(f"<<<{label.upper()}_MSG>>>\n{msg['text']}\n<<</{label.upper()}_MSG>>>")
         history_text = "\n".join(lines)
 
     prompt = TUTOR_CHAT_PROMPT.format(
@@ -551,6 +606,10 @@ async def tutor_chat(
     )
     fire_cost(record_llm_cost(user.id, "tutor_chat", TUTOR_MODEL, result.input_tokens, result.output_tokens,
               metadata={"document_id": body.document_id, "question": body.question_number}))
+
+    # Write chat messages to DB (fire-and-forget)
+    asyncio.create_task(_append_chat(user.id, body.document_id, chat_question_label, "student", body.user_message))
+    asyncio.create_task(_append_chat(user.id, body.document_id, chat_question_label, "answer", output.reply))
 
     # If the LLM detected a problem data correction, regenerate the answer key
     answer_key_updated = False
