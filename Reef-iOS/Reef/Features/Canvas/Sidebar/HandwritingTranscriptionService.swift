@@ -65,17 +65,8 @@ final class HandwritingTranscriptionService {
             return
         }
 
-        let relevantStrokes: [PKStroke]
-        if let regions = currentRegions, !regions.isEmpty {
-            relevantStrokes = drawing.strokes.filter { stroke in
-                let midY = Double(stroke.renderBounds.midY) / Double(screenScale)
-                return regions.contains { region in
-                    midY >= region.yStart && midY <= region.yEnd
-                }
-            }
-        } else {
-            relevantStrokes = drawing.strokes
-        }
+        // Send all strokes on the page — the LLM handles cumulative work across steps
+        let relevantStrokes = drawing.strokes
 
         guard !relevantStrokes.isEmpty else {
             if !latexResult.isEmpty {
