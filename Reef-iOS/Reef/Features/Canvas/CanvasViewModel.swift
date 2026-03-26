@@ -342,13 +342,13 @@ final class CanvasViewModel {
 
         answerKeys = result.answers
         isLoadingAnswerKeys = false
-        if !deferTutorMode && answerKeys[targetQuestion] != nil {
+        if !deferTutorMode && answerKeys[targetQuestion] != nil, let label = activeQuestionLabel {
             currentTutorStepIndex = 0
             tutorEvalService.resetForNextStep()
             updatePendingReinforcement()
             tutorModeOn = true
             showSidebar = true
-            restoreTutorStateForLabel(activeQuestionLabel!)
+            restoreTutorStateForLabel(label)
             // Speak the first step description
             speakCurrentStepDescription()
         }
@@ -687,8 +687,10 @@ final class CanvasViewModel {
             ? step.tutorSpeech!
             : "Next up: " + step.description
 
-        Task {
-            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+        stepSpeechTask?.cancel()
+        stepSpeechTask = Task { [weak self] in
+            guard let self,
+                  let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
                   let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
                   let token = try? await supabase.auth.session.accessToken else { return }
 
@@ -699,8 +701,12 @@ final class CanvasViewModel {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": speech])
 
+            guard !Task.isCancelled else { return }
+
             guard let (data, response) = try? await URLSession.shared.data(for: request),
                   let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+
+            guard !Task.isCancelled else { return }
 
             struct TTSResponse: Decodable {
                 let speechAudio: String?
@@ -711,7 +717,7 @@ final class CanvasViewModel {
                   let audioBase64 = result.speechAudio,
                   let audioData = Data(base64Encoded: audioBase64) else { return }
 
-            tutorEvalService.playAudio(audioData)
+            self.tutorEvalService.playAudio(audioData)
         }
     }
 
@@ -1347,7 +1353,9 @@ final class CanvasViewModel {
             return PDFPage()
         }
 
-        let page = PDFPage(image: UIImage(cgImage: cgImage))!
+        guard let page = PDFPage(image: UIImage(cgImage: cgImage)) else {
+            return PDFPage()
+        }
         page.setBounds(CGRect(origin: .zero, size: size), for: .mediaBox)
         return page
     }

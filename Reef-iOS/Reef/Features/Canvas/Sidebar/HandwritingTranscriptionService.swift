@@ -20,7 +20,7 @@ final class HandwritingTranscriptionService {
     private(set) var sessionId: String?
     private(set) var sessionStart: Date?
     var sessionSecondsRemaining: Int = 0
-    private(set) var appToken: String?
+    private var appToken: String?
     private(set) var expiresAt: Date?
     private var generation: Int = 0
     private var pollingTask: Task<Void, Never>?

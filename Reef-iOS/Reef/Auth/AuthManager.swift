@@ -208,7 +208,7 @@ final class AuthManager {
         profile = Profile(
             id: "dev-user",
             displayName: "Dev User",
-            email: "markshteyn1@gmail.com",
+            email: "dev@example.com",
             subjects: [],
             onboardingCompleted: true
         )
