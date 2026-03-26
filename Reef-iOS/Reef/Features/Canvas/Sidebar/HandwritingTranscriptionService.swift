@@ -103,7 +103,7 @@ final class HandwritingTranscriptionService {
 
         generation += 1
         Task { [weak self, relevantStrokes] in
-            await self?.performClusteredTranscription(strokes: relevantStrokes)
+            await self?.performTranscription(strokes: relevantStrokes)
         }
     }
 
@@ -166,79 +166,32 @@ final class HandwritingTranscriptionService {
 
     // MARK: - Clustered Transcription
 
-    private func performClusteredTranscription(strokes: [PKStroke]) async {
+    private func performTranscription(strokes: [PKStroke]) async {
         let myGeneration = generation
-        let clusters = clusterStrokes(strokes)
-
-        guard !clusters.isEmpty else {
-            debugClusterBounds = []
-            return
-        }
-
-        // Compute bounding boxes for debug overlay
-        debugClusterBounds = clusters.map { cluster in
-            cluster.strokes.reduce(CGRect.null) { $0.union($1.renderBounds) }
-        }
 
         isTranscribing = true
         errorMessage = nil
 
-        // Identify which clusters changed
-        var changedIndices: [Int] = []
-        var clusterHashes: [Int] = []
+        // Debug: single bounding box for all strokes
+        debugClusterBounds = [strokes.reduce(CGRect.null) { $0.union($1.renderBounds) }]
 
-        for (i, cluster) in clusters.enumerated() {
-            clusterHashes.append(cluster.hash)
-            if clusterCache[cluster.hash] == nil {
-                changedIndices.append(i)
-            }
-        }
+        // Extract payloads on main actor (PKStroke is not Sendable)
+        let payloads = extractPayloads(from: strokes)
 
-        // Pre-extract payloads on main actor (PKStroke is not Sendable)
-        var clusterPayloads: [Int: [StrokePayload]] = [:]
-        for idx in changedIndices {
-            clusterPayloads[idx] = extractPayloads(from: clusters[idx].strokes)
-        }
-
-        // Transcribe only changed clusters in parallel
-        if !changedIndices.isEmpty {
-            await withTaskGroup(of: (Int, (display: String, raw: String)?).self) { group in
-                for idx in changedIndices {
-                    let payloads = clusterPayloads[idx]!
-                    let capturedIdx = idx
-                    group.addTask { [weak self] in
-                        guard let self else { return (capturedIdx, nil) }
-                        let result = await self.transcribePayloads(payloads)
-                        return (capturedIdx, result)
-                    }
-                }
-
-                for await (idx, result) in group {
-                    guard generation == myGeneration else { return }
-                    if let pair = result {
-                        clusterCache[clusters[idx].hash] = pair
-                    }
-                }
-            }
-        }
+        // Transcribe all strokes in one call
+        let result = await transcribePayloads(payloads)
 
         guard generation == myGeneration else { return }
 
-        // Combine results in order, using cache for unchanged clusters
-        let cachedResults = clusters.compactMap { clusterCache[$0.hash] }
-        let combinedDisplay = cachedResults.map(\.display).filter { !$0.isEmpty }.joined(separator: "\n\n")
-        let combinedRaw = cachedResults.map(\.raw).filter { !$0.isEmpty }.joined(separator: "\n\n")
+        let display = result?.display ?? ""
+        let raw = result?.raw ?? ""
 
         let oldLatex = latexResult
-        latexResult = combinedDisplay
-        rawLatexResult = combinedRaw
-        if combinedDisplay != oldLatex, !combinedDisplay.isEmpty {
-            onLatexChanged?(combinedDisplay)
+        latexResult = display
+        rawLatexResult = raw
+        if display != oldLatex, !display.isEmpty {
+            onLatexChanged?(display)
         }
-
-        // Prune stale cache entries not in current clusters
-        let activeHashes = Set(clusterHashes)
-        clusterCache = clusterCache.filter { activeHashes.contains($0.key) }
 
         isTranscribing = false
     }
