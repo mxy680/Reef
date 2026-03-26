@@ -1070,15 +1070,47 @@ final class CanvasViewModel {
                 AVNumberOfChannelsKey: 1,
                 AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue,
             ])
+            recorder.isMeteringEnabled = true
             recorder.record()
             audioRecorder = recorder
             isMicOn = true
 
-            // Auto-stop after 10s silence
+            // Voice activity detection: poll audio levels to auto-stop
             micSilenceTimer = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(10))
-                guard let self, !Task.isCancelled, self.isMicOn else { return }
-                self.toggleMic()
+                var speechDetected = false
+                var silenceStart: Date?
+                let speechThreshold: Float = -35  // dB — above this = speech
+                let noSpeechTimeout: TimeInterval = 2.0
+                let endOfSpeechTimeout: TimeInterval = 1.5
+
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    guard let self, !Task.isCancelled, self.isMicOn,
+                          let rec = self.audioRecorder else { return }
+
+                    rec.updateMeters()
+                    let level = rec.averagePower(forChannel: 0)
+
+                    if level > speechThreshold {
+                        // Speech detected
+                        speechDetected = true
+                        silenceStart = nil
+                    } else if speechDetected {
+                        // Had speech, now silent — start counting
+                        if silenceStart == nil { silenceStart = Date() }
+                        if Date().timeIntervalSince(silenceStart!) >= endOfSpeechTimeout {
+                            self.toggleMic()
+                            return
+                        }
+                    } else {
+                        // Never detected speech — timeout after 2s
+                        if silenceStart == nil { silenceStart = Date() }
+                        if Date().timeIntervalSince(silenceStart!) >= noSpeechTimeout {
+                            self.toggleMic()
+                            return
+                        }
+                    }
+                }
             }
         } catch {
             isMicOn = false
