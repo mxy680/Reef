@@ -29,6 +29,7 @@ final class TutorEvaluationService {
     var status: String = "idle"
     var mistakeExplanation: String?
     var isEvaluating: Bool = false
+    private var madeMistakeOnCurrentStep: Bool = false
     var chatMessages: [TutorChatMessage] = []
     var voiceEnabled: Bool = true
     var isDemo: Bool = false
@@ -96,6 +97,9 @@ final class TutorEvaluationService {
             }
 
             // Mistake feedback
+            if response.status == "mistake" {
+                madeMistakeOnCurrentStep = true
+            }
             if let mistake = response.mistakeExplanation, response.status == "mistake" {
                 let now = Date()
                 chatMessages.append(TutorChatMessage(role: .student, latex: latex, timestamp: now))
@@ -128,7 +132,8 @@ final class TutorEvaluationService {
                     chatMessages.removeAll { $0.role == .reinforcement }
                     chatMessages.append(TutorChatMessage(role: .reinforcement, latex: reinforcement, timestamp: Date()))
                 }
-                if !isDemo {
+                // Only ask confidence when the student struggled
+                if !isDemo && madeMistakeOnCurrentStep {
                     chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
                 }
                 onStepCompleted?(response.stepsCompleted)
@@ -146,6 +151,7 @@ final class TutorEvaluationService {
         previousStatus = "idle"
         mistakeExplanation = nil
         isEvaluating = false
+        madeMistakeOnCurrentStep = false
     }
 
     func reset() {

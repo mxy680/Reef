@@ -376,6 +376,16 @@ final class CanvasViewModel {
 
         tutorEvalService.voiceEnabled = tutorVoiceEnabled
 
+        tutorEvalService.onStepCompleted = { [weak self] stepsCompleted in
+            guard let self, stepsCompleted >= 1 else { return }
+            self.advanceTutorSteps(count: stepsCompleted)
+        }
+
+        tutorEvalService.onMistakeSpoken = { [weak self] in
+            guard let self, self.tutorVoiceEnabled, !self.isMicOn else { return }
+            self.toggleMic()
+        }
+
         tutorEvalService.onAnswerKeyUpdated = { [weak self] in
             guard let self else { return }
             self.loadAnswerKeysTask?.cancel()
