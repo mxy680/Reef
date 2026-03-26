@@ -120,6 +120,30 @@ def _resolve_steps(answer_key: QuestionAnswer, part_label: str | None) -> list:
     return []
 
 
+async def _fetch_student_work(document_id: str, question_label: str, user_id: str) -> tuple[str, str]:
+    """Fetch latest student transcription from student_work table. Returns (display, raw)."""
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+    }
+    url = f"{settings.supabase_url}/rest/v1/student_work"
+    params = {
+        "document_id": f"eq.{document_id}",
+        "question_label": f"eq.{question_label}",
+        "user_id": f"eq.{user_id}",
+        "select": "latex_display,latex_raw",
+    }
+    async with httpx.AsyncClient(timeout=5) as client:
+        resp = await client.get(url, params=params, headers=headers)
+        if resp.status_code != 200:
+            log.warning(f"[student-work] Failed to fetch: {resp.status_code}")
+            return ("", "")
+    rows = resp.json()
+    if not rows:
+        return ("", "")
+    return (rows[0].get("latex_display", ""), rows[0].get("latex_raw", ""))
+
+
 async def _download_images(urls: list[str]) -> list[bytes]:
     """Download figure images from signed Supabase storage URLs."""
     if not urls:
@@ -150,6 +174,14 @@ async def tutor_evaluate(
     # Fetch answer key (ownership verified inside)
     answer_key, question_json = await _fetch_answer_key(body.document_id, body.question_number, user.id)
 
+    # Fetch student work from database (iOS writes here on every transcription)
+    question_label = f"Q{body.question_number}{body.part_label or ''}"
+    db_display, db_raw = await _fetch_student_work(body.document_id, question_label, user.id)
+    # Use DB value, fall back to request body for backward compat
+    student_latex = db_raw or db_display or body.student_latex
+    if not student_latex:
+        return TutorEvaluateResponse(progress=0.0, status="idle")
+
     # Resolve figure URLs from question_json (uploaded during reconstruction)
     figure_storage_urls = question_json.get("figure_storage_urls", {})
 
@@ -169,7 +201,7 @@ async def tutor_evaluate(
     # Wrap student input in delimiters to prevent prompt injection
     delimited_student_work = (
         "<<<STUDENT_WORK_START>>>\n"
-        + body.student_latex
+        + student_latex
         + "\n<<<STUDENT_WORK_END>>>"
     )
     delimited_steps = f"<<<STEPS_START>>>\n{steps_overview}\n<<<STEPS_END>>>"
@@ -256,12 +288,15 @@ async def tutor_evaluate(
 
     # Build debug prompt (always included, stripped by iOS if not needed)
     debug_prompt_text = (
+        f"=== STUDENT WORK SOURCE ===\n"
+        f"question_label: {question_label}\n"
+        f"from_db: {bool(db_raw or db_display)} | from_body: {bool(body.student_latex)}\n"
+        f"latex_raw ({len(db_raw)} chars): {db_raw[:200]}\n\n"
         "=== SYSTEM MESSAGE ===\n\n"
         + full_system
         + "\n\n=== USER MESSAGE ===\n\n"
         + dynamic_prompt
-        + f"\n\n=== IMAGES: {len(all_figure_urls)} figure URLs "
-        + f"({len(figure_storage_urls)} from question_json, {len(body.figure_urls)} from client), "
+        + f"\n\n=== IMAGES: {len(all_figure_urls)} figure URLs, "
         + f"student_image={'yes' if body.student_image else 'no'}, "
         + f"{len(images)} images downloaded ==="
     )
@@ -438,9 +473,14 @@ async def tutor_chat(
         f"Step {i + 1}: {s.description}" for i, s in enumerate(steps)
     )
 
+    # Fetch student work from DB (same as eval endpoint)
+    chat_question_label = f"Q{body.question_number}{body.part_label or ''}"
+    chat_db_display, chat_db_raw = await _fetch_student_work(body.document_id, chat_question_label, user.id)
+    chat_student_latex = chat_db_raw or chat_db_display or body.student_latex or "(no work yet)"
+
     delimited_student_work = (
         "<<<STUDENT_WORK_START>>>\n"
-        + (body.student_latex or "(no work yet)")
+        + chat_student_latex
         + "\n<<<STUDENT_WORK_END>>>"
     )
     delimited_user_message = (

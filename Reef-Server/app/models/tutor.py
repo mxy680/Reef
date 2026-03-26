@@ -16,7 +16,7 @@ class TutorEvaluateRequest(BaseModel):
     question_number: int = Field(..., description="1-based question number")
     part_label: str | None = Field(None, description="Part label (a, b, i, ii) or null for top-level")
     step_index: int = Field(..., description="0-based step index within the part")
-    student_latex: str = Field(..., max_length=5000, description="Transcribed LaTeX from student handwriting")
+    student_latex: str = Field(default="", max_length=5000, description="Transcribed LaTeX (fallback — server reads from student_work table)")
     figure_urls: list[str] = Field(default_factory=list, description="Signed URLs for question figures")
     student_image: str | None = Field(None, max_length=2_000_000, description="Base64-encoded JPEG of student's drawing")
     history: list[ChatHistoryMessage] = Field(default_factory=list, description="Previous tutor feedback (errors, reinforcements, chat) for context")

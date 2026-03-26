@@ -8,11 +8,14 @@ import PencilKit
 @Observable
 @MainActor
 final class HandwritingTranscriptionService {
-    var latexResult: String = ""      // KaTeX-sanitized display version
-    var rawLatexResult: String = ""    // Raw Mathpix output for LLM eval
+    var latexResult: String = ""
+    var rawLatexResult: String = ""
     var isTranscribing: Bool = false
     var errorMessage: String?
 
+    /// Set by CanvasViewModel — used to write transcription to Supabase
+    var documentId: String?
+    var questionLabel: String?
 
     /// Called when latexResult changes to a new non-empty value.
     var onLatexChanged: ((String) -> Void)?
@@ -185,9 +188,30 @@ final class HandwritingTranscriptionService {
         rawLatexResult = raw
         if (display != oldLatex || raw != oldRaw), !display.isEmpty {
             onLatexChanged?(display)
+            // Write to Supabase (fire-and-forget)
+            writeToSupabase(display: display, raw: raw)
         }
 
         isTranscribing = false
+    }
+
+    /// Fire-and-forget upsert of transcription to Supabase student_work table.
+    private func writeToSupabase(display: String, raw: String) {
+        guard let docId = documentId, let qLabel = questionLabel else { return }
+        Task {
+            guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
+            let row: [String: String] = [
+                "user_id": userId,
+                "document_id": docId,
+                "question_label": qLabel,
+                "latex_display": display,
+                "latex_raw": raw,
+            ]
+            try? await supabase
+                .from("student_work")
+                .upsert(row, onConflict: "user_id,document_id,question_label")
+                .execute()
+        }
     }
 
     /// Extract and normalize stroke payloads on the main actor (PKStroke is not Sendable).

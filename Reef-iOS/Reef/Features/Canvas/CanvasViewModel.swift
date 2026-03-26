@@ -369,6 +369,10 @@ final class CanvasViewModel {
         self.pdfDocument = MockCanvasData.blankPDF()
         let loaded = CanvasStorageService.load(documentId: document.id)
         self.savedState = loaded
+
+        // Wire transcription service to write to Supabase
+        handwritingService.documentId = document.id
+        handwritingService.questionLabel = "Q1a"  // default, updated when question changes
         self.savedTutorProgress = loaded?.tutorProgress
 
         tutorEvalService.voiceEnabled = tutorVoiceEnabled
@@ -543,6 +547,7 @@ final class CanvasViewModel {
 
             handwritingService.latexResult = ""
             activeQuestionLabel = newLabel
+            handwritingService.questionLabel = newLabel
 
             // Restore incoming question's tutor state
             if let label = newLabel {
@@ -879,6 +884,7 @@ final class CanvasViewModel {
 
         // Reset tutor state for the new question
         activeQuestionLabel = nextLabel
+        handwritingService.questionLabel = nextLabel
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
         handwritingService.latexResult = ""
@@ -901,6 +907,7 @@ final class CanvasViewModel {
         }
 
         activeQuestionLabel = prevLabel
+        handwritingService.questionLabel = prevLabel
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
         handwritingService.latexResult = ""
