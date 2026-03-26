@@ -24,8 +24,8 @@ MODEL_RATES: dict[str, tuple[float, float]] = {
 _DEFAULT_RATE = (0.50 / 1_000_000, 3.00 / 1_000_000)
 
 # Fixed costs per external API call
-MATHPIX_PDF_PER_PAGE = 0.01
-MATHPIX_STROKES_PER_REQUEST = 0.004
+MATHPIX_PDF_PER_PAGE = 0.005
+MATHPIX_STROKES_PER_SESSION = 0.01
 ELEVENLABS_PER_CHAR = 0.0003  # ~$0.30/1K chars for Flash v2.5
 
 

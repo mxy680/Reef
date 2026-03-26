@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
-from app.services.cost_tracker import fire_cost, record_cost, MATHPIX_STROKES_PER_REQUEST
+from app.services.cost_tracker import fire_cost, record_cost, MATHPIX_STROKES_PER_SESSION
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +48,7 @@ async def create_strokes_session(
     try:
         from app.services.mathpix_pool import acquire_session
         token, session_id, expires_at = await acquire_session()
+        fire_cost(record_cost(user.id, "transcribe", "mathpix_strokes", MATHPIX_STROKES_PER_SESSION))
         return CreateSessionResponse(
             app_token=token,
             strokes_session_id=session_id,
@@ -102,7 +103,6 @@ async def transcribe_strokes(
 
     raw_latex = data.get("latex", data.get("text", ""))
     session_id = data.get("strokes_session_id", data.get("session_id"))
-    fire_cost(record_cost(user.id, "transcribe", "mathpix_strokes", MATHPIX_STROKES_PER_REQUEST))
 
     # Return raw Mathpix output directly — no sanitization, no wrapping
     return TranscribeStrokesResponse(latex=raw_latex, raw_latex=raw_latex, session_id=session_id)
