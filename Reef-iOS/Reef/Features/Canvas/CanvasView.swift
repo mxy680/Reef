@@ -180,6 +180,16 @@ struct CanvasView: View {
                                 .font(.system(size: 9, design: .monospaced))
                                 .foregroundStyle(viewModel.lastSentLatex == viewModel.handwritingService.latexResult ? .green : .red)
                             Rectangle().fill(Color.green.opacity(0.3)).frame(height: 1)
+
+                            Button("FORCE EVAL NOW") {
+                                viewModel.triggerTutorEvaluation()
+                            }
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.yellow)
+                            .cornerRadius(4)
                         }
                         .padding(.horizontal, 8)
                         .padding(.top, 6)

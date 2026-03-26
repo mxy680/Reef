@@ -54,7 +54,6 @@ final class TutorEvaluationService {
     // MARK: - Private
 
     var generation: Int = 0
-    private var evaluateTask: Task<Void, Never>?
     private var previousStatus: String = "idle"
 
     private let recoveryPhrases = [
@@ -82,18 +81,13 @@ final class TutorEvaluationService {
     ) {
         guard !latex.isEmpty else { return }
 
-        // Cancel any in-flight eval
-        evaluateTask?.cancel()
         generation += 1
 
-        evaluateTask = Task { [weak self] in
+        Task { [weak self] in
             guard let self else { return }
 
             self.isEvaluating = true
-            defer {
-                self.isEvaluating = false
-                self.evaluateTask = nil
-            }
+            defer { self.isEvaluating = false }
 
             do {
                 let response = try await self.callServer(
@@ -105,8 +99,6 @@ final class TutorEvaluationService {
                     figureURLs: figureURLs,
                     studentImage: studentImage
                 )
-
-                guard !Task.isCancelled else { return }
 
                 let wasInMistake = self.previousStatus == "mistake"
                 self.stepProgress = response.progress
@@ -209,8 +201,6 @@ final class TutorEvaluationService {
 
     /// Reset for a new step (keeps chat history).
     func resetForNextStep() {
-        evaluateTask?.cancel()
-        evaluateTask = nil
         generation += 1
         stepProgress = 0.0
         status = "idle"
