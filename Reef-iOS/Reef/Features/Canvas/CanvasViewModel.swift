@@ -150,7 +150,6 @@ final class CanvasViewModel {
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
     let tutorEvalService = TutorEvaluationService()
-    var lastSentLatex: String = ""
     private var evalPollTask: Task<Void, Never>?
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
@@ -396,27 +395,23 @@ final class CanvasViewModel {
             }
         }
 
-        // Poll every 2s: if latex changed, await eval (serial, one at a time)
+        // Poll every 2s: fire eval if tutor mode on and student has work.
+        // Server reads latest transcription from student_work table.
         evalPollTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(2))
                 guard let self, !Task.isCancelled, self.tutorModeOn,
                       self.tutorStepCount > 0,
+                      !self.handwritingService.latexResult.isEmpty,
+                      !self.tutorEvalService.isEvaluating,
                       !(self.currentTutorStepIndex >= self.tutorStepCount - 1 && self.tutorEvalService.status == "completed")
                 else { continue }
-
-                let latex = self.handwritingService.rawLatexResult.isEmpty
-                    ? self.handwritingService.latexResult
-                    : self.handwritingService.rawLatexResult
-                guard !latex.isEmpty, latex != self.lastSentLatex else { continue }
-
-                self.lastSentLatex = latex
 
                 let (qNum, partLabel) = self.parseQuestionLabel()
                 guard qNum > 0 else { continue }
 
                 await self.tutorEvalService.runEval(
-                    latex: latex,
+                    latex: self.handwritingService.rawLatexResult,
                     documentId: self.document.id,
                     questionNumber: qNum,
                     partLabel: partLabel,
@@ -765,7 +760,6 @@ final class CanvasViewModel {
             // (shows only the most recent one, not stacked)
             if currentTutorStepIndex < tutorStepCount - 1 {
                 currentTutorStepIndex += 1
-                lastSentLatex = ""  // force re-eval with existing work against new step
                 tutorEvalService.resetForNextStep()
                 updatePendingReinforcement()
             }
@@ -808,7 +802,6 @@ final class CanvasViewModel {
         currentTutorStepIndex = 0
         showHintPopover = false
         showRevealPopover = false
-        lastSentLatex = ""
         tutorEvalService.reset()
     }
 
@@ -1264,7 +1257,6 @@ final class CanvasViewModel {
         let (qNum, partLabel) = parseQuestionLabel()
         guard qNum > 0 else { return }
 
-        lastSentLatex = latex
         Task {
             await tutorEvalService.runEval(
                 latex: latex,

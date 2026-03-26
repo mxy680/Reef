@@ -173,12 +173,9 @@ struct CanvasView: View {
                             Text("EVALS: \(viewModel.tutorEvalService.evalCount)")
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                                 .foregroundStyle(.yellow)
-                            Text("LATEX: \(viewModel.handwritingService.latexResult.prefix(60))")
+                            Text("LATEX: \(viewModel.handwritingService.latexResult.prefix(80))")
                                 .font(.system(size: 9, design: .monospaced))
                                 .foregroundStyle(.cyan)
-                            Text("SENT:  \(viewModel.lastSentLatex.prefix(60))")
-                                .font(.system(size: 9, design: .monospaced))
-                                .foregroundStyle(viewModel.lastSentLatex == viewModel.handwritingService.latexResult ? .green : .red)
                             Rectangle().fill(Color.green.opacity(0.3)).frame(height: 1)
 
                             Button("FORCE EVAL NOW") {
