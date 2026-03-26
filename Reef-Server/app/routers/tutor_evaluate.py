@@ -226,12 +226,25 @@ async def tutor_evaluate(
             lines.append(f"<<<{label}>>>\n{msg.text}\n<<</{label}>>>")
         history_text = "\n".join(lines)
 
+    # Build actual question text from question_json
+    q_text = question_json.get("text", "")
+    if body.part_label:
+        # Find the matching part's text
+        for part in question_json.get("parts", []):
+            if part.get("label") == body.part_label:
+                part_text = part.get("text", "")
+                if part_text:
+                    q_text = f"{q_text}\n\nPart ({body.part_label}): {part_text}" if q_text else part_text
+                break
+    full_question_text = f"Question {answer_key.question_number}: {q_text}" if q_text else f"Question {answer_key.question_number}"
+
     # Build prompts — static (cacheable) in system, dynamic in user
     static_context = TUTOR_EVALUATE_STATIC.format(
-        question_text=f"Question {answer_key.question_number}",
+        question_text=full_question_text,
         steps_overview=delimited_steps,
         current_step_num=body.step_index + 1,
         current_step_description=current_step.description,
+        current_step_hint=current_step.explanation,
         current_step_work=delimited_step_work,
         remaining_steps=remaining_text,
     )
@@ -286,19 +299,15 @@ async def tutor_evaluate(
     all_figure_urls = list(figure_storage_urls.values()) + body.figure_urls
     images = await _download_images(all_figure_urls)
 
-    # Build debug prompt (always included, stripped by iOS if not needed)
+    # Build debug prompt (always included)
     debug_prompt_text = (
-        f"=== STUDENT WORK SOURCE ===\n"
-        f"question_label: {question_label}\n"
-        f"from_db: {bool(db_raw or db_display)} | from_body: {bool(body.student_latex)}\n"
-        f"latex_raw ({len(db_raw)} chars): {db_raw[:200]}\n\n"
-        "=== SYSTEM MESSAGE ===\n\n"
+        f"=== STUDENT WORK (from {'DB' if (db_raw or db_display) else 'body'}, {question_label}) ===\n"
+        f"{student_latex[:300]}\n\n"
+        f"=== SYSTEM (cached) ===\n\n"
         + full_system
-        + "\n\n=== USER MESSAGE ===\n\n"
+        + f"\n\n=== USER (dynamic) ===\n\n"
         + dynamic_prompt
-        + f"\n\n=== IMAGES: {len(all_figure_urls)} figure URLs, "
-        + f"student_image={'yes' if body.student_image else 'no'}, "
-        + f"{len(images)} images downloaded ==="
+        + f"\n\n=== IMAGES: {len(images)} figures, student_image={'yes' if body.student_image else 'no'} ==="
     )
     if body.student_image:
         try:

@@ -272,6 +272,7 @@ Content is delimited by <<<STEPS_START>>> and <<<STEPS_END>>> tags.
 
 ## Current Step to Evaluate (Step {current_step_num})
 Description: {current_step_description}
+Hint: {current_step_hint}
 Expected work (delimited by <<<EXPECTED_WORK_START>>> and <<<EXPECTED_WORK_END>>>):
 {current_step_work}
 
