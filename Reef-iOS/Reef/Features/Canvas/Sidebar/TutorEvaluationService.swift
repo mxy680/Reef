@@ -53,8 +53,6 @@ final class TutorEvaluationService {
 
     private var generation: Int = 0
     private var evaluateTask: Task<Void, Never>?
-    private var lastEvaluatedLatex: String = ""
-    private var pendingEvalLatex: String = ""  // latex currently in debounce
     private var previousStatus: String = "idle"
 
     private let recoveryPhrases = [
@@ -70,7 +68,7 @@ final class TutorEvaluationService {
 
     // MARK: - Evaluate
 
-    /// Trigger an evaluation. Debounces by 900ms. Skips if latex is unchanged.
+    /// Trigger an evaluation. Debounces by 900ms.
     func evaluate(
         latex: String,
         documentId: String,
@@ -80,24 +78,15 @@ final class TutorEvaluationService {
         figureURLs: [String] = [],
         studentImage: String? = nil
     ) {
-        // Skip if latex hasn't changed since last eval
-        guard !latex.isEmpty, latex != lastEvaluatedLatex else {
-            return
-        }
+        guard !latex.isEmpty else { return }
 
-        // Don't restart debounce if same latex is already pending
-        if latex == pendingEvalLatex && evaluateTask != nil {
-            return
-        }
-
-        // Cancel any pending debounce and restart with new latex
+        // Cancel any pending eval and restart debounce
         evaluateTask?.cancel()
-        pendingEvalLatex = latex
         generation += 1
         let myGeneration = generation
 
         evaluateTask = Task { [weak self] in
-            // Debounce
+            // Debounce — wait for student to stop writing
             try? await Task.sleep(for: Self.debounceInterval)
             guard let self, !Task.isCancelled, self.generation == myGeneration else {
                 return
@@ -132,7 +121,6 @@ final class TutorEvaluationService {
                 self.previousStatus = response.status
                 self.mistakeExplanation = response.mistakeExplanation
                 self.lastDebugPrompt = response.debugPrompt
-                self.lastEvaluatedLatex = latex
 
                 // Mistake recovery — student fixed the error and is back on track
                 if wasInMistake && response.status == "working" {
@@ -235,8 +223,6 @@ final class TutorEvaluationService {
         previousStatus = "idle"
         mistakeExplanation = nil
         isEvaluating = false
-        lastEvaluatedLatex = ""
-        pendingEvalLatex = ""
     }
 
     /// Full reset (tutor mode toggled off or question changed).
