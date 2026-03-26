@@ -49,9 +49,11 @@ final class TutorEvaluationService {
     /// Last debug prompt from the server (development only).
     var lastDebugPrompt: String?
 
+    var evalCount: Int = 0  // how many server calls completed
+
     // MARK: - Private
 
-    private var generation: Int = 0
+    var generation: Int = 0
     private var evaluateTask: Task<Void, Never>?
     private var previousStatus: String = "idle"
 
@@ -68,7 +70,7 @@ final class TutorEvaluationService {
 
     // MARK: - Evaluate
 
-    /// Trigger an evaluation. Debounces by 900ms.
+    /// Trigger an evaluation — calls server immediately. Debouncing is handled by the poll timer.
     func evaluate(
         latex: String,
         documentId: String,
@@ -80,26 +82,17 @@ final class TutorEvaluationService {
     ) {
         guard !latex.isEmpty else { return }
 
-        // Cancel any pending eval and restart debounce
+        // Cancel any in-flight eval
         evaluateTask?.cancel()
         generation += 1
-        let myGeneration = generation
 
         evaluateTask = Task { [weak self] in
-            // Debounce — wait for student to stop writing
-            try? await Task.sleep(for: Self.debounceInterval)
-            guard let self, !Task.isCancelled, self.generation == myGeneration else {
-                return
-            }
+            guard let self else { return }
 
             self.isEvaluating = true
-            let genAtStart = self.generation
             defer {
                 self.isEvaluating = false
-                // Only nil if no new eval was started (e.g. by onStepCompleted → evaluate)
-                if self.generation == genAtStart {
-                    self.evaluateTask = nil
-                }
+                self.evaluateTask = nil
             }
 
             do {
@@ -113,7 +106,7 @@ final class TutorEvaluationService {
                     studentImage: studentImage
                 )
 
-                guard self.generation == myGeneration else { return }
+                guard !Task.isCancelled else { return }
 
                 let wasInMistake = self.previousStatus == "mistake"
                 self.stepProgress = response.progress
@@ -121,6 +114,7 @@ final class TutorEvaluationService {
                 self.previousStatus = response.status
                 self.mistakeExplanation = response.mistakeExplanation
                 self.lastDebugPrompt = response.debugPrompt
+                self.evalCount += 1
 
                 // Mistake recovery — student fixed the error and is back on track
                 if wasInMistake && response.status == "working" {
@@ -205,7 +199,7 @@ final class TutorEvaluationService {
                     self.onStepCompleted?(response.stepsCompleted)
                 }
             } catch {
-                guard !Task.isCancelled, self.generation == myGeneration else { return }
+                guard !Task.isCancelled else { return }
                 print("[TutorEvalSvc] Evaluation failed: \(error)")
             }
         }
