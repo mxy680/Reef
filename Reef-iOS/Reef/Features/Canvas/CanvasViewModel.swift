@@ -150,6 +150,8 @@ final class CanvasViewModel {
     let calculatorViewModel = CalculatorViewModel()
     let handwritingService = HandwritingTranscriptionService()
     let tutorEvalService = TutorEvaluationService()
+    private var lastSentLatex: String = ""
+    private var evalPollTask: Task<Void, Never>?
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -308,6 +310,7 @@ final class CanvasViewModel {
         loadPDFTask?.cancel()
         loadAnswerKeysTask?.cancel()
         stepSpeechTask?.cancel()
+        evalPollTask?.cancel()
     }
 
     func stopAllAudio() {
@@ -389,9 +392,19 @@ final class CanvasViewModel {
             }
         }
 
-        handwritingService.onLatexChanged = { [weak self] _ in
-            guard let self else { return }
-            self.triggerTutorEvaluation()
+        // Poll every 2s: if latex changed since last eval, fire eval
+        evalPollTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(2))
+                guard let self, !Task.isCancelled else { return }
+                let current = self.handwritingService.rawLatexResult.isEmpty
+                    ? self.handwritingService.latexResult
+                    : self.handwritingService.rawLatexResult
+                if !current.isEmpty && current != self.lastSentLatex && self.tutorModeOn {
+                    self.lastSentLatex = current
+                    self.triggerTutorEvaluation()
+                }
+            }
         }
 
         loadPDFTask = Task { await loadPDF() }
@@ -732,6 +745,7 @@ final class CanvasViewModel {
             // (shows only the most recent one, not stacked)
             if currentTutorStepIndex < tutorStepCount - 1 {
                 currentTutorStepIndex += 1
+                lastSentLatex = ""  // force re-eval with existing work against new step
                 tutorEvalService.resetForNextStep()
                 updatePendingReinforcement()
             }
@@ -774,6 +788,7 @@ final class CanvasViewModel {
         currentTutorStepIndex = 0
         showHintPopover = false
         showRevealPopover = false
+        lastSentLatex = ""
         tutorEvalService.reset()
     }
 
