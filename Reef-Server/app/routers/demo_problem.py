@@ -210,6 +210,18 @@ async def demo_document(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     """Generate a demo problem, compile to PDF, and store in Supabase."""
+    log.info(f"[demo-document] Starting: topic='{body.topic}' user={user.id}")
+    try:
+        return await _demo_document_impl(body, user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        log.error(f"[demo-document] Unhandled error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Demo document generation failed: {e}")
+
+
+async def _demo_document_impl(body: DemoDocumentRequest, user: AuthenticatedUser):
     if not settings.openrouter_api_key:
         raise HTTPException(status_code=503, detail="OpenRouter not configured")
     if not settings.supabase_url or not settings.supabase_service_role_key:
@@ -336,6 +348,7 @@ async def demo_document(
             raise HTTPException(status_code=500, detail="Failed to create answer key record")
 
     # 8. Return summary
+    log.info(f"[demo-document] Success: doc_id={doc_id} topic='{body.topic}'")
     return DemoDocumentResponse(
         document_id=doc_id,
         filename=filename,
