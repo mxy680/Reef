@@ -130,6 +130,7 @@ struct TutorDemoStep: View {
                         viewModel.demoDocumentId = doc.id
                         let vm = CanvasViewModel(document: doc)
                         vm.deferTutorMode = true  // Walkthrough controls when tutor enables
+                        vm.tutorEvalService.isDemo = true  // Simpler feedback during onboarding
                         canvasVM = vm
                     }
                 }

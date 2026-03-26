@@ -204,7 +204,16 @@ async def tutor_evaluate(
         remaining_steps=remaining_text,
     )
     # Combine system instructions + static question context for caching
-    full_system = TUTOR_EVALUATE_SYSTEM + "\n\n" + static_context
+    system_prompt = TUTOR_EVALUATE_SYSTEM
+    if body.is_demo:
+        system_prompt += (
+            "\n\n## DEMO MODE OVERRIDE\n"
+            "This is an onboarding demo. Keep feedback extremely simple:\n"
+            "- For mistakes: give a SHORT direct hint, not a Socratic question. One sentence.\n"
+            "- For completions: say something encouraging. One sentence. Do NOT ask 'why did that work?' questions.\n"
+            "- NEVER ask the student any questions. Just guide them.\n"
+        )
+    full_system = system_prompt + "\n\n" + static_context
 
     dynamic_prompt = TUTOR_EVALUATE_DYNAMIC.format(
         student_work=delimited_student_work,

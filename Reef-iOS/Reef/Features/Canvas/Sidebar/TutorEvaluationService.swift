@@ -32,6 +32,7 @@ final class TutorEvaluationService {
     var isEvaluating: Bool = false
     var chatMessages: [TutorChatMessage] = []
     var voiceEnabled: Bool = true  // Set by CanvasViewModel based on user preference
+    var isDemo: Bool = false       // During onboarding demo — no questions, no mic, no confidence check
 
     /// Fires when the model marks steps as completed. Parameter = number of steps completed (1+).
     var onStepCompleted: ((Int) -> Void)?
@@ -182,7 +183,7 @@ final class TutorEvaluationService {
                                 waited += 1
                             }
                             try? await Task.sleep(for: .milliseconds(300))
-                            self.onMistakeSpoken?()
+                            if !self.isDemo { self.onMistakeSpoken?() }
                         }
                     }
                 }
@@ -195,12 +196,14 @@ final class TutorEvaluationService {
                             role: .reinforcement, latex: reinforcement, timestamp: Date()
                         ))
                     }
-                    // Add confidence check
-                    self.chatMessages.append(TutorChatMessage(
-                        role: .confidenceCheck,
-                        latex: "How confident are you in that step?",
-                        timestamp: Date()
-                    ))
+                    // Add confidence check (skip during demo)
+                    if !isDemo {
+                        self.chatMessages.append(TutorChatMessage(
+                            role: .confidenceCheck,
+                            latex: "How confident are you in that step?",
+                            timestamp: Date()
+                        ))
+                    }
                     self.onStepCompleted?(response.stepsCompleted)
                 }
             } catch {
@@ -276,6 +279,7 @@ final class TutorEvaluationService {
         let figureUrls: [String]
         let studentImage: String?
         let history: [HistoryEntry]
+        let isDemo: Bool
 
         enum CodingKeys: String, CodingKey {
             case documentId = "document_id"
@@ -286,6 +290,7 @@ final class TutorEvaluationService {
             case figureUrls = "figure_urls"
             case studentImage = "student_image"
             case history
+            case isDemo = "is_demo"
         }
     }
 
@@ -318,7 +323,8 @@ final class TutorEvaluationService {
             studentLatex: latex,
             figureUrls: figureURLs,
             studentImage: studentImage,
-            history: historyEntries
+            history: historyEntries,
+            isDemo: isDemo
         )
 
         var request = URLRequest(url: url)

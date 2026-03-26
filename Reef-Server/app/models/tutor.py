@@ -20,6 +20,7 @@ class TutorEvaluateRequest(BaseModel):
     figure_urls: list[str] = Field(default_factory=list, description="Signed URLs for question figures")
     student_image: str | None = Field(None, max_length=2_000_000, description="Base64-encoded JPEG of student's drawing")
     history: list[ChatHistoryMessage] = Field(default_factory=list, description="Previous tutor feedback (errors, reinforcements, chat) for context")
+    is_demo: bool = Field(default=False, description="True during onboarding demo — simpler feedback, no questions")
 
 
 class TutorEvaluation(BaseModel):
