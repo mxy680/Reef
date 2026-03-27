@@ -96,7 +96,18 @@ final class TutorEvaluationService {
                 }
             }
 
-            // Mistake feedback
+            // Play TTS first, wait for it to finish, THEN show text
+            if voiceEnabled, let audioBase64 = response.speechAudio,
+               let audioData = Data(base64Encoded: audioBase64) {
+                playAudio(audioData)
+                // Wait for audio to finish before showing text
+                while isTutorSpeaking {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+
+            // Mistake feedback (shown after TTS finishes)
             if response.status == "mistake" {
                 madeMistakeOnCurrentStep = true
             }
@@ -104,35 +115,15 @@ final class TutorEvaluationService {
                 let now = Date()
                 chatMessages.append(TutorChatMessage(role: .student, latex: latex, timestamp: now))
                 chatMessages.append(TutorChatMessage(role: .error, latex: mistake, timestamp: now))
+                if !isDemo { onMistakeSpoken?() }
             }
 
-            // TTS
-            if voiceEnabled, let audioBase64 = response.speechAudio,
-               let audioData = Data(base64Encoded: audioBase64) {
-                playAudio(audioData)
-
-                if response.status == "mistake" && !isDemo {
-                    // Wait for audio to finish, then enable mic
-                    Task { @MainActor [weak self] in
-                        guard let self else { return }
-                        var waited = 0
-                        while self.isTutorSpeaking && waited < 75 {
-                            try? await Task.sleep(for: .milliseconds(200))
-                            waited += 1
-                        }
-                        try? await Task.sleep(for: .milliseconds(300))
-                        self.onMistakeSpoken?()
-                    }
-                }
-            }
-
-            // Step completed
+            // Step completed (shown after TTS finishes)
             if response.status == "completed" {
                 if let reinforcement = pendingReinforcement, !reinforcement.isEmpty {
                     chatMessages.removeAll { $0.role == .reinforcement }
                     chatMessages.append(TutorChatMessage(role: .reinforcement, latex: reinforcement, timestamp: Date()))
                 }
-                // Only ask confidence when the student struggled
                 if !isDemo && madeMistakeOnCurrentStep {
                     chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
                 }
