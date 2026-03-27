@@ -44,10 +44,6 @@ struct TutorDemoStep: View {
 
                 // Voice choice overlay
                 if showVoiceChoice {
-                    Color.black.opacity(0.4)
-                        .ignoresSafeArea()
-                        .transition(.opacity)
-
                     voiceChoiceView
                         .transition(.opacity)
                         .zIndex(600)
@@ -55,10 +51,6 @@ struct TutorDemoStep: View {
 
                 // Intro dialog overlay
                 if showIntro {
-                    Color.black.opacity(0.4)
-                        .ignoresSafeArea()
-                        .transition(.opacity)
-
                     introDialogView
                         .transition(.opacity)
                         .zIndex(500)
