@@ -191,19 +191,6 @@ struct TutorDemoStep: View {
 
             default:
                 break
-
-            }
-
-            // Also check if the user did a later action early (tool selection)
-            if let step = walkthrough.currentStep, step.rawValue < WalkthroughStep.enableTutor.rawValue {
-                switch vm.selectedTool {
-                case .highlighter: walkthrough.skipToAndAdvance(.tryHighlighter)
-                case .eraser: walkthrough.skipToAndAdvance(.eraseHighlight)
-                case .shapes: walkthrough.skipToAndAdvance(.shapeTool)
-                case .lasso: walkthrough.skipToAndAdvance(.lassoTool)
-                case .handDraw: walkthrough.skipToAndAdvance(.fingerDraw)
-                default: break
-                }
             }
         }
         // Detect tool/feature usage — skip ahead if done early
