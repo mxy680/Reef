@@ -90,22 +90,25 @@ struct TutorDemoStep: View {
         .animation(.easeOut(duration: 0.25), value: showWalkthrough)
         .animation(.easeOut(duration: 0.25), value: currentStep)
         .onAppear { generateDemo() }
-        // Auto-advance after pen lift — step 0 (draw) and step 1 (highlighter)
+        // Auto-advance after pen lift on tool steps
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
             guard showWalkthrough, !isThinkingReaction,
                   let vm = canvasVM,
                   vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
 
+            // Map step index → expected tool for drawing-based steps
+            let toolForStep: [Int: CanvasToolType] = [
+                1: .highlighter, 2: .eraser, 3: .shapes, 4: .lasso, 5: .handDraw
+            ]
+
             if currentStep == 0 {
-                // Draw step: 2.5s debounce → reaction
                 drawingReactionTask?.cancel()
                 drawingReactionTask = Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(2500))
                     guard !Task.isCancelled else { return }
                     triggerDrawingReaction()
                 }
-            } else if currentStep == 1 && vm.selectedTool == .highlighter {
-                // Highlighter step: 1.5s after drawing with highlighter
+            } else if let expected = toolForStep[currentStep], vm.selectedTool == expected {
                 drawingReactionTask?.cancel()
                 drawingReactionTask = Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(1500))
@@ -114,6 +117,19 @@ struct TutorDemoStep: View {
                     advanceStep()
                 }
             }
+        }
+        // Auto-advance for toggle-based tool steps (ruler, calculator, page settings)
+        .onChange(of: canvasVM?.showRuler) { _, isOn in
+            guard isOn == true, showWalkthrough, currentStep == 6 else { return }
+            scheduleAutoAdvance(delayMs: 1500)
+        }
+        .onChange(of: canvasVM?.showCalculator) { _, isOn in
+            guard isOn == true, showWalkthrough, currentStep == 7 else { return }
+            scheduleAutoAdvance(delayMs: 1500)
+        }
+        .onChange(of: canvasVM?.showPageSettings) { _, isOn in
+            guard isOn == true, showWalkthrough, currentStep == 8 else { return }
+            scheduleAutoAdvance(delayMs: 1500)
         }
     }
 
@@ -299,6 +315,16 @@ struct TutorDemoStep: View {
             } else {
                 withAnimation { isThinkingReaction = false; currentStep = 1 }
             }
+        }
+    }
+
+    private func scheduleAutoAdvance(delayMs: Int) {
+        drawingReactionTask?.cancel()
+        drawingReactionTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(delayMs))
+            guard !Task.isCancelled else { return }
+            stopTTS()
+            advanceStep()
         }
     }
 
