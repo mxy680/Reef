@@ -6,14 +6,15 @@ struct TutorDemoStep: View {
     @Environment(\.reefLayoutMetrics) private var metrics
 
     @Bindable var viewModel: OnboardingViewModel
+
+    @State private var machine = WalkthroughStateMachine()
+    @State private var audio = WalkthroughAudioService()
     @State private var demoService = DemoProblemService()
     @State private var canvasVM: CanvasViewModel?
-    @State private var walkthrough = CanvasWalkthroughState()
-    @State private var showVoiceChoice = true
+
     @State private var voiceMode = true
-    @State private var showExpChoice = false
-    @State private var showSkipToolsChoice = false
-    @State private var showPreDialog = false
+    @State private var dialogPhase: DialogPhase = .voiceChoice
+
     @State private var introReady = true
     @State private var introTask: Task<Void, Never>?
     @State private var pendingReactionTask: Task<Void, Never>?
@@ -22,218 +23,120 @@ struct TutorDemoStep: View {
 
     private let introSpeech = "Alright, quick intro. I'm your A.I. tutor. I watch EVERYTHING you write in real time. Yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line. No awkward eye contact. Dive in. The reef's got you covered."
 
+    // MARK: - Dialog Phase
+
+    enum DialogPhase {
+        case voiceChoice, experience, skipTools, intro, none
+    }
+
+    // MARK: - Body
+
     var body: some View {
         ZStack {
             if let canvasVM {
-                // Full canvas experience
-                CanvasView(viewModel: canvasVM, walkthroughStep: walkthrough.currentStep, onDismiss: {
-                    Task { await viewModel.deleteDemoDocument() }
-                    viewModel.goNext()
-                })
-
-                // Voice choice dialog
-                if showVoiceChoice {
-                    voiceChoiceDialog
-                        .zIndex(500)
-                        .transition(.opacity)
-                }
-
-                // Experience question
-                if showExpChoice {
-                    experienceChoiceDialog
-                        .zIndex(450)
-                        .transition(.opacity)
-                }
-
-                // Skip tools question
-                if showSkipToolsChoice {
-                    skipToolsChoiceDialog
-                        .zIndex(450)
-                        .transition(.opacity)
-                }
-
-                // Pre-walkthrough dialog — tutor intro
-                if showPreDialog && !showVoiceChoice && !showExpChoice && !showSkipToolsChoice {
-                    preDialog
-                        .zIndex(400)
-                        .transition(.opacity)
-                }
-
-                // Walkthrough — persistent card with typewriter text
-                if !walkthrough.isComplete && !showPreDialog && !showVoiceChoice && !showExpChoice && !showSkipToolsChoice {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Spacer()
-
-                        // Card — always present, text changes inside
-                        WalkthroughCard(
-                            step: walkthrough.currentStep,
-                            reactionPrefix: walkthrough.drawingReaction,
-                            readyToType: voiceMode ? walkthrough.isSpeaking : true,
-                            onGotIt: { walkthrough.advance() }
-                        )
-
-                        // Skip + Next Step — always visible
-                        HStack(spacing: 8) {
-                            ReefButton(.primary, size: .compact, action: {
-                                walkthrough.skip()
-                            }) {
-                                Text("Skip tutorial")
-                                    .font(.epilogue(11, weight: .bold))
-                                    .tracking(-0.04 * 11)
-                            }
-
-                            ReefButton(.secondary, size: .compact, action: {
-                                walkthrough.advance()
-                            }) {
-                                Text("Next step →")
-                                    .font(.epilogue(11, weight: .bold))
-                                    .tracking(-0.04 * 11)
-                            }
-                        }
+                CanvasView(
+                    viewModel: canvasVM,
+                    walkthroughStep: machine.currentStep,
+                    onDismiss: {
+                        Task { await viewModel.deleteDemoDocument() }
+                        viewModel.goNext()
                     }
-                    .padding(.leading, 20)
-                    .padding(.bottom, 8)
-                    .frame(maxWidth: .infinity, alignment: .bottomLeading)
-                    .zIndex(300)
-                    .transition(.opacity)
+                )
+
+                // Pre-dialogs (layered in display order)
+                dialogOverlay
+                    .animation(.easeOut(duration: 0.25), value: dialogPhase)
+
+                // Walkthrough card
+                if dialogPhase == .none && !machine.isComplete {
+                    walkthroughCardOverlay
+                        .zIndex(300)
+                        .transition(.opacity)
                 }
 
-                // Floating "Done" button — only after walkthrough
-                if walkthrough.isComplete {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            ReefButton("Done — show me my plan", size: .compact, action: {
-                                Task { await viewModel.deleteDemoDocument() }
-                                viewModel.goNext()
-                            })
-                            .padding(20)
-                            Spacer()
-                        }
-                    }
-                    .ignoresSafeArea(edges: .bottom)
-                    .zIndex(200)
-                    .transition(.opacity)
+                // Done button after walkthrough completes
+                if machine.isComplete {
+                    doneButton
+                        .zIndex(200)
+                        .transition(.opacity)
                 }
             } else {
                 loadingCard
             }
         }
-        .onAppear {
-            if !demoService.isReady && !demoService.isGenerating {
-                Task {
-                    let topic = viewModel.answers.favoriteTopic.isEmpty
-                        ? "derivatives"
-                        : viewModel.answers.favoriteTopic
-                    await demoService.generateDocument(
-                        topic: topic,
-                        studentType: viewModel.answers.studentType?.rawValue ?? "college"
-                    )
-                    if let doc = demoService.demoDocument {
-                        viewModel.demoDocumentId = doc.id
-                        let vm = CanvasViewModel(document: doc)
-                        vm.deferTutorMode = true
-                        vm.tutorEvalService.isDemo = true
-                        canvasVM = vm
-                    }
-                }
-            }
-        }
-        // Speak first step when pre-dialog is dismissed (voice mode only)
-        .onChange(of: showPreDialog) { _, showing in
-            if !showing && walkthrough.currentStep == .drawSomething && voiceMode {
-                walkthrough.speakInstruction(WalkthroughStep.drawSomething.speech)
-            }
-        }
-        // MARK: - Walkthrough Detection (1000ms after pen lift)
+        .onAppear { generateDemo() }
+        // Drawing detection — 1s after pen lift
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard !showPreDialog && !showVoiceChoice && !showExpChoice && !showSkipToolsChoice else { return }
+            guard dialogPhase == .none else { return }
             guard let vm = canvasVM else { return }
-            walkthrough.log("drawingVersion changed, step=\(String(describing: walkthrough.currentStep)), waiting=\(walkthrough.waitingForReaction)")
-            guard !walkthrough.waitingForReaction else { return }
+            guard machine.currentStep == .drawSomething else { return }
+            guard vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
 
-            switch walkthrough.currentStep {
-            case .drawSomething:
-                if vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
-                    walkthrough.log("hasDrawing=true, scheduling reaction in 1000ms")
-                    walkthrough.cancelPendingAdvance()
-                    pendingReactionTask?.cancel()
-                    pendingReactionTask = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(1000))
-                        guard !Task.isCancelled else { return }
-                        walkthrough.log("1000ms elapsed, capturing image...")
-                        if let image = vm.captureActiveQuestionImage() {
-                            walkthrough.log("image captured (\(image.count) chars), sending reaction")
-                            walkthrough.reactToDrawing(imageBase64: image)
-                        } else {
-                            walkthrough.log("captureActiveQuestionImage returned nil, advancing")
-                            walkthrough.advance()
-                        }
-                    }
-                } else {
-                    walkthrough.log("hasDrawing=false")
+            machine.cancelPendingAdvance()
+            pendingReactionTask?.cancel()
+            pendingReactionTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(1000))
+                guard !Task.isCancelled else { return }
+                if let image = vm.captureActiveQuestionImage() {
+                    let reaction = await audio.speakReaction(imageBase64: image)
+                    machine.drawingReaction = reaction
                 }
-
-            case .tryHighlighter:
-                if vm.selectedTool == .highlighter { walkthrough.advanceAfterDelay(ms: 1000) }
-
-            case .eraseHighlight:
-                if vm.selectedTool == .eraser { walkthrough.advanceAfterDelay(ms: 1000) }
-
-            case .shapeTool:
-                if vm.selectedTool == .shapes { walkthrough.advanceAfterDelay(ms: 1000) }
-
-            case .lassoTool:
-                if vm.selectedTool == .lasso { walkthrough.advanceAfterDelay(ms: 1000) }
-
-            case .fingerDraw:
-                if vm.selectedTool == .handDraw { walkthrough.advanceAfterDelay(ms: 1000) }
-
-            default:
-                break
+                machine.unlockNextPhase()
+                machine.advance()
             }
         }
-        // Detect tool/feature usage — skip ahead if done early
+        // Tool / feature detection — skip-ahead style
         .onChange(of: canvasVM?.showRuler) { _, isOn in
-            if isOn == true { walkthrough.skipToAndAdvance(.ruler) }
+            if isOn == true { machine.skipToAndAdvance(.ruler) }
         }
         .onChange(of: canvasVM?.showCalculator) { _, isOn in
-            if isOn == true { walkthrough.skipToAndAdvance(.calculator) }
+            if isOn == true { machine.skipToAndAdvance(.calculator) }
         }
         .onChange(of: canvasVM?.showPageSettings) { _, isOn in
-            if isOn == true { walkthrough.skipToAndAdvance(.pageSettings) }
+            if isOn == true { machine.skipToAndAdvance(.pageSettings) }
         }
-        .onChange(of: canvasVM?.showSidebar) { _, isOn in
-            // Only detect manual sidebar toggle after solving (not when tutor enables it)
-            if let step = walkthrough.currentStep, step.rawValue >= WalkthroughStep.sidebarToggle.rawValue {
-                walkthrough.skipToAndAdvance(.sidebarToggle)
+        .onChange(of: canvasVM?.showSidebar) { _, _ in
+            if let step = machine.currentStep, step.rawValue >= WalkthroughStep.sidebarToggle.rawValue {
+                machine.skipToAndAdvance(.sidebarToggle)
             }
         }
         .onChange(of: canvasVM?.showBugReport) { _, isOn in
-            if isOn == true { walkthrough.skipToAndAdvance(.bugReport) }
+            if isOn == true { machine.skipToAndAdvance(.bugReport) }
         }
         .onChange(of: canvasVM?.showExportPreview) { _, isOn in
-            if isOn == true { walkthrough.skipToAndAdvance(.exportFeature) }
+            if isOn == true { machine.skipToAndAdvance(.exportFeature) }
         }
         .onChange(of: canvasVM?.showHintPopover) { _, isOn in
-            if isOn == true, let step = walkthrough.currentStep, step.rawValue <= WalkthroughStep.tutorReveal.rawValue {
-                walkthrough.skipToAndAdvance(.tutorHint)
+            if isOn == true, let step = machine.currentStep, step.rawValue <= WalkthroughStep.tutorReveal.rawValue {
+                machine.skipToAndAdvance(.tutorHint)
             }
         }
         .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
-            if isOn == true, let step = walkthrough.currentStep, step.rawValue <= WalkthroughStep.tutorReveal.rawValue {
-                walkthrough.skipToAndAdvance(.tutorReveal)
+            if isOn == true, let step = machine.currentStep, step.rawValue <= WalkthroughStep.tutorReveal.rawValue {
+                machine.skipToAndAdvance(.tutorReveal)
             }
         }
         .onChange(of: canvasVM?.isMicOn) { _, isOn in
-            if isOn == true { walkthrough.skipToAndAdvance(.voiceCommand, delayMs: 3000) }
+            if isOn == true { machine.skipToAndAdvance(.voiceCommand, delayMs: 3000) }
         }
-        // Detect problem solved — auto-continue to next onboarding step
+        // Tutor toggle — finish deferred setup
+        .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
+            if isOn == true, machine.currentStep == .enableTutor {
+                if let vm = canvasVM {
+                    vm.showSidebar = true
+                    if vm.activeQuestionLabel == nil {
+                        vm.activeQuestionLabel = "Q1a"
+                    }
+                }
+                withAnimation { machine.advance() }
+            }
+        }
+        // Problem solved — auto-continue to next onboarding step
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
             if status == "completed" {
                 if let vm = canvasVM, vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
                     Task { @MainActor in
-                        await waitForTutorAudio()
+                        await audio.waitForTutorAudio(vm.tutorEvalService)
                         try? await Task.sleep(for: .seconds(2))
                         Task { await viewModel.deleteDemoDocument() }
                         viewModel.goNext()
@@ -241,146 +144,136 @@ struct TutorDemoStep: View {
                 }
             }
         }
-        // Speak step instructions + handle drawing reaction flow
-        .onChange(of: walkthrough.currentStep) { oldStep, newStep in
-            // Speak step instructions (skip if drawSomething→tryHighlighter — reactToDrawing handles that)
+        // Step changes → speak instruction + setup
+        .onChange(of: machine.currentStep) { oldStep, newStep in
+            guard let step = newStep else { return }
+
+            // Speak step instruction (skip drawSomething→tryHighlighter: reaction flow handles it)
             let isDrawReaction = oldStep == .drawSomething && newStep == .tryHighlighter
-            if let step = newStep, !isDrawReaction, voiceMode {
+            if !isDrawReaction && voiceMode {
                 let speechText = step.speech
-
-                // Wait for real tutor audio to finish before walkthrough speaks
-                if canvasVM?.tutorEvalService.isTutorSpeaking == true {
-                    Task { @MainActor in
-                        await waitForTutorAudio()
-                        walkthrough.speakInstruction(speechText)
+                Task { @MainActor in
+                    if let vm = canvasVM {
+                        await audio.waitForTutorAudio(vm.tutorEvalService)
                     }
-                } else {
-                    walkthrough.speakInstruction(speechText)
-                }
-
-                // Auto-complete ready step after speaking
-                if step == .ready {
-                    walkthrough.advanceAfterDelay(ms: 4000)
+                    await audio.speakInstruction(speechText)
                 }
             }
 
-            // When walkthrough reaches enableTutor, allow the toggle
-            if newStep == .enableTutor {
+            // Allow tutor toggle when reaching enableTutor
+            if step == .enableTutor {
                 canvasVM?.deferTutorMode = false
             }
-        }
-        .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .enableTutor {
-                // User toggled tutor on — finish setup that was deferred
-                if let vm = canvasVM {
-                    vm.showSidebar = true
-                    if vm.activeQuestionLabel == nil {
-                        vm.activeQuestionLabel = "Q1a"
-                    }
+
+            // Auto-complete ready step after delay
+            if step == .ready {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(4))
+                    machine.skipTutorial()
                 }
-                withAnimation { walkthrough.advance() }
+            }
+        }
+        // Speak first step when intro dialog is dismissed
+        .onChange(of: dialogPhase) { _, phase in
+            if phase == .none, machine.currentStep == .drawSomething, voiceMode {
+                Task { @MainActor in
+                    await audio.speakInstruction(WalkthroughStep.drawSomething.speech)
+                }
             }
         }
     }
 
-    // MARK: - Voice Choice Dialog
+    // MARK: - Dialog Overlay
 
-    private var voiceChoiceDialog: some View {
-        let colors = theme.colors
-
-        return VStack(alignment: .leading, spacing: 8) {
-            Spacer()
-
-            Text("Before we start — do you want me to talk out loud, or keep it text-only?")
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .lineSpacing(3)
-                .foregroundStyle(colors.text)
-                .padding(16)
-                .frame(maxWidth: 340, alignment: .leading)
-                .background(colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.border, lineWidth: 2))
-                .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
-
-            HStack(spacing: 8) {
-                ReefButton(.primary, size: .compact, action: {
+    @ViewBuilder
+    private var dialogOverlay: some View {
+        switch dialogPhase {
+        case .voiceChoice:
+            WalkthroughVoiceChoiceDialog(
+                onVoiceOn: {
                     voiceMode = true
-                    withAnimation(.easeOut(duration: 0.25)) {
-                        showVoiceChoice = false
-                        showExpChoice = true
-                    }
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "speaker.wave.2.fill")
-                            .font(.system(size: 10))
-                        Text("Voice on")
-                            .font(.epilogue(11, weight: .bold))
-                            .tracking(-0.04 * 11)
-                    }
-                }
-
-                ReefButton(.secondary, size: .compact, action: {
+                    withAnimation(.easeOut(duration: 0.25)) { dialogPhase = .experience }
+                },
+                onVoiceOff: {
                     voiceMode = false
-                    withAnimation(.easeOut(duration: 0.25)) {
-                        showVoiceChoice = false
-                        showExpChoice = true
-                    }
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "speaker.slash.fill")
-                            .font(.system(size: 10))
-                        Text("Text only")
-                            .font(.epilogue(11, weight: .bold))
-                            .tracking(-0.04 * 11)
-                    }
+                    withAnimation(.easeOut(duration: 0.25)) { dialogPhase = .experience }
                 }
-            }
+            )
+            .zIndex(500)
+            .transition(.opacity)
+
+        case .experience:
+            WalkthroughExperienceDialog(
+                onYes: {
+                    withAnimation(.easeOut(duration: 0.25)) { dialogPhase = .skipTools }
+                },
+                onNo: {
+                    withAnimation(.easeOut(duration: 0.25)) { dialogPhase = .intro }
+                }
+            )
+            .zIndex(450)
+            .transition(.opacity)
+
+        case .skipTools:
+            WalkthroughSkipToolsDialog(
+                onSkip: {
+                    // Skip to Phase 2 (tutor training)
+                    audio.isSpeaking = true  // Ensure popup types immediately
+                    machine.jumpToPhase(.tutorTraining)
+                    canvasVM?.deferTutorMode = false
+                    withAnimation(.easeOut(duration: 0.25)) { dialogPhase = .none }
+                },
+                onShowAll: {
+                    withAnimation(.easeOut(duration: 0.25)) { dialogPhase = .intro }
+                }
+            )
+            .zIndex(450)
+            .transition(.opacity)
+
+        case .intro:
+            WalkthroughIntroDialog(
+                introText: introDisplay,
+                introReady: introReady,
+                onLetsGo: {
+                    withAnimation(.easeOut(duration: 0.25)) { dialogPhase = .none }
+                }
+            )
+            .zIndex(400)
+            .transition(.opacity)
+            .onAppear { speakIntro() }
+            .onDisappear { introTask?.cancel() }
+
+        case .none:
+            EmptyView()
         }
-        .padding(.leading, 20)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, alignment: .bottomLeading)
     }
 
-    // MARK: - Experience Choice Dialog
+    // MARK: - Walkthrough Card Overlay
 
-    private var experienceChoiceDialog: some View {
-        let colors = theme.colors
-
-        return VStack(alignment: .leading, spacing: 8) {
+    private var walkthroughCardOverlay: some View {
+        VStack(alignment: .leading, spacing: 8) {
             Spacer()
 
-            Text("Have you used a note-taking app before? GoodNotes, Notability, OneNote — anything like that?")
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .lineSpacing(3)
-                .foregroundStyle(colors.text)
-                .padding(16)
-                .frame(maxWidth: 340, alignment: .leading)
-                .background(colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.border, lineWidth: 2))
-                .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
+            WalkthroughCard(
+                step: machine.currentStep,
+                reactionPrefix: machine.drawingReaction,
+                readyToType: voiceMode ? audio.isSpeaking : true,
+                onGotIt: { machine.advance() }
+            )
 
             HStack(spacing: 8) {
                 ReefButton(.primary, size: .compact, action: {
-                    withAnimation(.easeOut(duration: 0.25)) {
-                        showExpChoice = false
-                        showSkipToolsChoice = true
-                    }
+                    machine.skipTutorial()
                 }) {
-                    Text("Yeah")
+                    Text("Skip tutorial")
                         .font(.epilogue(11, weight: .bold))
                         .tracking(-0.04 * 11)
                 }
 
                 ReefButton(.secondary, size: .compact, action: {
-                    withAnimation(.easeOut(duration: 0.25)) {
-                        showExpChoice = false
-                        showPreDialog = true
-                    }
+                    machine.advance()
                 }) {
-                    Text("Nope, first time")
+                    Text("Next step →")
                         .font(.epilogue(11, weight: .bold))
                         .tracking(-0.04 * 11)
                 }
@@ -391,124 +284,30 @@ struct TutorDemoStep: View {
         .frame(maxWidth: .infinity, alignment: .bottomLeading)
     }
 
-    // MARK: - Skip Tools Choice Dialog
+    // MARK: - Done Button
 
-    private var skipToolsChoiceDialog: some View {
-        let colors = theme.colors
-
-        return VStack(alignment: .leading, spacing: 8) {
+    private var doneButton: some View {
+        VStack {
             Spacer()
-
-            Text("Nice — then you already know the basics. Want to skip the drawing tools tutorial and jump straight to the AI tutor?")
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .lineSpacing(3)
-                .foregroundStyle(colors.text)
-                .padding(16)
-                .frame(maxWidth: 340, alignment: .leading)
-                .background(colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.border, lineWidth: 2))
-                .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
-
-            HStack(spacing: 8) {
-                ReefButton(.primary, size: .compact, action: {
-                    // Skip to Phase 2 (enableTutor)
-                    walkthrough.isSpeaking = true  // Ensure popup types immediately
-                    walkthrough.currentStep = .enableTutor
-                    canvasVM?.deferTutorMode = false  // Allow tutor toggle
-                    withAnimation(.easeOut(duration: 0.25)) {
-                        showSkipToolsChoice = false
-                    }
-                }) {
-                    Text("Skip to tutor")
-                        .font(.epilogue(11, weight: .bold))
-                        .tracking(-0.04 * 11)
-                }
-
-                ReefButton(.secondary, size: .compact, action: {
-                    withAnimation(.easeOut(duration: 0.25)) {
-                        showSkipToolsChoice = false
-                        showPreDialog = true
-                    }
-                }) {
-                    Text("Show me everything")
-                        .font(.epilogue(11, weight: .bold))
-                        .tracking(-0.04 * 11)
-                }
+            HStack {
+                ReefButton("Done — show me my plan", size: .compact, action: {
+                    Task { await viewModel.deleteDemoDocument() }
+                    viewModel.goNext()
+                })
+                .padding(20)
+                Spacer()
             }
         }
-        .padding(.leading, 20)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, alignment: .bottomLeading)
+        .ignoresSafeArea(edges: .bottom)
     }
 
-    // MARK: - Audio Wait Helper
-
-    /// Wait for tutor audio to finish with a 15-second timeout to prevent infinite loops.
-    private func waitForTutorAudio() async {
-        var waited = 0
-        while canvasVM?.tutorEvalService.isTutorSpeaking == true, waited < 75 {
-            try? await Task.sleep(for: .milliseconds(200))
-            waited += 1
-        }
-        try? await Task.sleep(for: .milliseconds(500))
-    }
-
-    // MARK: - Pre-Dialog (Tutor Introduction)
-
-    private var preDialog: some View {
-        let colors = theme.colors
-
-        return VStack(alignment: .leading, spacing: 8) {
-            Spacer()
-
-            Text(introDisplay)
-                .font(.epilogue(14, weight: .semiBold))
-                .tracking(-0.04 * 14)
-                .lineSpacing(3)
-                .foregroundStyle(colors.text)
-                .padding(16)
-                .frame(maxWidth: 340, alignment: .leading)
-                .background(colors.card)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(colors.border, lineWidth: 2)
-                )
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(colors.shadow)
-                        .offset(x: 3, y: 3)
-                )
-
-            ReefButton(.primary, size: .compact, action: {
-                withAnimation(.easeOut(duration: 0.25)) {
-                    showPreDialog = false
-                }
-            }) {
-                Text("Let's go")
-                    .font(.epilogue(11, weight: .bold))
-                    .tracking(-0.04 * 11)
-            }
-            .opacity(introReady ? 1 : 0.4)
-            .disabled(!introReady)
-        }
-        .padding(.leading, 20)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, alignment: .bottomLeading)
-        .onAppear {
-            speakIntro()
-        }
-        .onDisappear {
-            introTask?.cancel()
-        }
-    }
+    // MARK: - Intro Audio
 
     private func speakIntro() {
         guard voiceMode else { return }
+        introReady = false
         introTask = Task { @MainActor in
-            // Enable button after a short fallback delay in case TTS fails
+            // Enable button after fallback delay in case TTS fails
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(3))
                 if !introReady { introReady = true }
@@ -546,9 +345,30 @@ struct TutorDemoStep: View {
                 return
             }
 
-            // Play intro and enable button after playback
-            walkthrough.playIntroAudio(audioData) {
+            audio.playIntroAudio(audioData) {
                 introReady = true
+            }
+        }
+    }
+
+    // MARK: - Demo Generation
+
+    private func generateDemo() {
+        guard !demoService.isReady && !demoService.isGenerating else { return }
+        Task {
+            let topic = viewModel.answers.favoriteTopic.isEmpty
+                ? "derivatives"
+                : viewModel.answers.favoriteTopic
+            await demoService.generateDocument(
+                topic: topic,
+                studentType: viewModel.answers.studentType?.rawValue ?? "college"
+            )
+            if let doc = demoService.demoDocument {
+                viewModel.demoDocumentId = doc.id
+                let vm = CanvasViewModel(document: doc)
+                vm.deferTutorMode = true
+                vm.tutorEvalService.isDemo = true
+                canvasVM = vm
             }
         }
     }
@@ -691,5 +511,4 @@ struct TutorDemoStep: View {
         .padding(20)
         .fadeUp(index: 1)
     }
-
 }
