@@ -189,6 +189,9 @@ struct TutorDemoStep: View {
                 // Set the demo problem text as the page title
                 vm.demoQuestionText = "Find the derivative of  f(x) = 3x² + 5x - 2"
 
+                // Write demo doc + answer key to Supabase so server eval works
+                Task { await writeDemoToSupabase(docId: doc.id, answerKey: demoAnswerKey) }
+
                 canvasVM = vm
             }
         }
@@ -778,5 +781,51 @@ struct TutorDemoStep: View {
         .frame(maxWidth: .infinity)
         .padding(20)
         .fadeUp(index: 1)
+    }
+
+    // MARK: - Supabase Demo Write
+
+    private func writeDemoToSupabase(docId: String, answerKey: QuestionAnswer) async {
+        guard let session = try? await supabase.auth.session,
+              let baseURL = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
+              let anonKey = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String
+        else { return }
+        let userId = session.user.id.uuidString
+        let token = session.accessToken
+
+        func post(path: String, body: [String: Any]) async {
+            guard let url = URL(string: "\(baseURL)/rest/v1/\(path)") else { return }
+            var req = URLRequest(url: url)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.setValue(anonKey, forHTTPHeaderField: "apikey")
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            req.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+            req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+            _ = try? await URLSession.shared.data(for: req)
+        }
+
+        // Document row
+        await post(path: "documents", body: [
+            "id": docId, "user_id": userId, "filename": "demo.pdf",
+            "status": "completed", "page_count": 1, "problem_count": 1,
+            "question_pages": [[0, 0]],
+        ])
+
+        // Answer key row
+        let answerJSON = String(
+            data: (try? JSONEncoder().encode(answerKey)) ?? Data(),
+            encoding: .utf8
+        ) ?? "{}"
+        await post(path: "answer_keys", body: [
+            "document_id": docId, "question_number": 1,
+            "answer_text": answerJSON,
+            "question_json": [
+                "number": 1,
+                "text": "Find the derivative of $f(x) = 3x^2 + 5x - 2$",
+                "parts": [["label": "a", "text": "", "parts": [] as [[String: Any]]]],
+            ] as [String: Any],
+            "model": "demo", "input_tokens": 0, "output_tokens": 0,
+        ])
     }
 }
