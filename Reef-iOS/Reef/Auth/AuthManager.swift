@@ -63,12 +63,7 @@ final class AuthManager {
             session = try await supabase.auth.session
             await checkOnboarding()
         } catch {
-            #if DEBUG
-            // No saved session — auto-bypass in debug builds
-            devLogin()
-            #else
             session = nil
-            #endif
         }
     }
 
