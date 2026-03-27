@@ -203,8 +203,11 @@ struct TutorDemoStep: View {
         .onChange(of: canvasVM?.showPageSettings) { _, isOn in
             if isOn == true { walkthrough.skipToAndAdvance(.pageSettings) }
         }
-        .onChange(of: canvasVM?.showSidebar) { _, _ in
-            walkthrough.skipToAndAdvance(.sidebarToggle)
+        .onChange(of: canvasVM?.showSidebar) { _, isOn in
+            // Only detect manual sidebar toggle after solving (not when tutor enables it)
+            if let step = walkthrough.currentStep, step.rawValue >= WalkthroughStep.sidebarToggle.rawValue {
+                walkthrough.skipToAndAdvance(.sidebarToggle)
+            }
         }
         .onChange(of: canvasVM?.showBugReport) { _, isOn in
             if isOn == true { walkthrough.skipToAndAdvance(.bugReport) }
@@ -213,10 +216,14 @@ struct TutorDemoStep: View {
             if isOn == true { walkthrough.skipToAndAdvance(.exportFeature) }
         }
         .onChange(of: canvasVM?.showHintPopover) { _, isOn in
-            if isOn == true { walkthrough.skipToAndAdvance(.tutorHint) }
+            if isOn == true, let step = walkthrough.currentStep, step.rawValue <= WalkthroughStep.tutorReveal.rawValue {
+                walkthrough.skipToAndAdvance(.tutorHint)
+            }
         }
         .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
-            if isOn == true { walkthrough.skipToAndAdvance(.tutorReveal) }
+            if isOn == true, let step = walkthrough.currentStep, step.rawValue <= WalkthroughStep.tutorReveal.rawValue {
+                walkthrough.skipToAndAdvance(.tutorReveal)
+            }
         }
         .onChange(of: canvasVM?.isMicOn) { _, isOn in
             if isOn == true { walkthrough.skipToAndAdvance(.voiceCommand, delayMs: 3000) }
