@@ -11,6 +11,8 @@ struct TutorDemoStep: View {
     @State private var showIntro = false
     @State private var introTask: Task<Void, Never>?
     @State private var stepSpeechTask: Task<Void, Never>?
+    @State private var drawingReactionTask: Task<Void, Never>?
+    @State private var drawingReaction: String?  // LLM reaction to the user's drawing
     @State private var currentStep: Int = 0
     @State private var showWalkthrough = false
 
@@ -87,6 +89,35 @@ struct TutorDemoStep: View {
         .animation(.easeOut(duration: 0.25), value: showWalkthrough)
         .animation(.easeOut(duration: 0.25), value: currentStep)
         .onAppear { generateDemo() }
+        // Drawing detection — 2.5s after pen lift on step 0
+        .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
+            guard showWalkthrough, currentStep == 0,
+                  let vm = canvasVM,
+                  vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
+            drawingReactionTask?.cancel()
+            drawingReactionTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(2500))
+                guard !Task.isCancelled else { return }
+                guard let image = vm.captureActiveQuestionImage() else {
+                    // No image — just advance
+                    stopTTS()
+                    withAnimation { currentStep = 1 }
+                    speakStep(1)
+                    return
+                }
+                // Call LLM for reaction
+                let reaction = await fetchDrawingReaction(imageBase64: image)
+                drawingReaction = reaction
+                // Advance to step 1 with reaction prepended
+                stopTTS()
+                withAnimation { currentStep = 1 }
+                if let reaction {
+                    speakCombined(reaction: reaction, stepIndex: 1)
+                } else {
+                    speakStep(1)
+                }
+            }
+        }
     }
 
     // MARK: - Voice Choice
@@ -184,8 +215,11 @@ struct TutorDemoStep: View {
         return VStack(alignment: .leading, spacing: 8) {
             Spacer()
 
-            // Step text card
-            Text(walkthroughSteps[currentStep])
+            // Step text card (prepend drawing reaction on step 1)
+            let stepText = (currentStep == 1 && drawingReaction != nil)
+                ? "\(drawingReaction!) \(walkthroughSteps[currentStep])"
+                : walkthroughSteps[currentStep]
+            Text(stepText)
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
                 .lineSpacing(3)
@@ -232,11 +266,88 @@ struct TutorDemoStep: View {
         .frame(maxWidth: .infinity, alignment: .bottomLeading)
     }
 
+    // MARK: - Drawing Reaction
+
+    private func fetchDrawingReaction(imageBase64: String) async -> String? {
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/walkthrough-react"),
+              let token = try? await supabase.auth.session.accessToken else { return nil }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 20
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: ["image": imageBase64])
+
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+
+        struct ReactResponse: Decodable {
+            let reaction: String
+            let speechAudio: String?
+            enum CodingKeys: String, CodingKey {
+                case reaction
+                case speechAudio = "speech_audio"
+            }
+        }
+
+        guard let decoded = try? JSONDecoder().decode(ReactResponse.self, from: data) else { return nil }
+
+        // Play the reaction audio immediately if available
+        if let audioBase64 = decoded.speechAudio,
+           let audioData = Data(base64Encoded: audioBase64) {
+            canvasVM?.tutorEvalService.playAudio(audioData)
+            // Wait for reaction audio to finish before returning
+            while canvasVM?.tutorEvalService.isTutorSpeaking == true {
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+
+        return decoded.reaction
+    }
+
+    /// Speak reaction + next step text as one combined TTS
+    private func speakCombined(reaction: String, stepIndex: Int) {
+        guard voiceMode, stepIndex < walkthroughSpeech.count else { return }
+        let combined = "\(reaction) \(walkthroughSpeech[stepIndex])"
+        stepSpeechTask?.cancel()
+        stepSpeechTask = Task { @MainActor in
+            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+                  let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+                  let token = try? await supabase.auth.session.accessToken else { return }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 15
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": combined])
+
+            guard !Task.isCancelled,
+                  let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+
+            struct TTSResponse: Decodable {
+                let speechAudio: String?
+                enum CodingKeys: String, CodingKey { case speechAudio = "speech_audio" }
+            }
+
+            guard !Task.isCancelled,
+                  let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
+                  let audioBase64 = result.speechAudio,
+                  let audioData = Data(base64Encoded: audioBase64) else { return }
+
+            canvasVM?.tutorEvalService.playAudio(audioData)
+        }
+    }
+
     // MARK: - TTS
 
     private func stopTTS() {
         introTask?.cancel()
         stepSpeechTask?.cancel()
+        drawingReactionTask?.cancel()
         canvasVM?.tutorEvalService.stopAudio()
     }
 
