@@ -6,10 +6,12 @@ struct TutorDemoStep: View {
     @Bindable var viewModel: OnboardingViewModel
     @State private var demoService = DemoProblemService()
     @State private var canvasVM: CanvasViewModel?
-    @State private var showIntro = true
+    @State private var showVoiceChoice = true
+    @State private var voiceMode = true
+    @State private var showIntro = false
     @State private var introReady = true
     @State private var introTask: Task<Void, Never>?
-    @State private var currentStep: Int = 0  // 0 = drawSomething, indexes into walkthroughSteps
+    @State private var currentStep: Int = 0
     @State private var showWalkthrough = false
 
     private let introDisplay = "Alright, quick intro. I'm your AI tutor. I watch everything you write in real time — yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line, no awkward eye contact. Dive in — the reef's got you covered."
@@ -40,6 +42,17 @@ struct TutorDemoStep: View {
                     viewModel.goNext()
                 })
 
+                // Voice choice overlay
+                if showVoiceChoice {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+
+                    voiceChoiceView
+                        .transition(.opacity)
+                        .zIndex(600)
+                }
+
                 // Intro dialog overlay
                 if showIntro {
                     Color.black.opacity(0.4)
@@ -61,10 +74,61 @@ struct TutorDemoStep: View {
                 loadingView
             }
         }
+        .animation(.easeOut(duration: 0.25), value: showVoiceChoice)
         .animation(.easeOut(duration: 0.25), value: showIntro)
         .animation(.easeOut(duration: 0.25), value: showWalkthrough)
         .animation(.easeOut(duration: 0.25), value: currentStep)
         .onAppear { generateDemo() }
+    }
+
+    // MARK: - Voice Choice
+
+    private var voiceChoiceView: some View {
+        let colors = theme.colors
+        return VStack(alignment: .leading, spacing: 8) {
+            Spacer()
+
+            Text("How would you like your tutor to communicate?")
+                .font(.epilogue(14, weight: .semiBold))
+                .tracking(-0.04 * 14)
+                .lineSpacing(3)
+                .foregroundStyle(colors.text)
+                .padding(16)
+                .frame(maxWidth: 340, alignment: .leading)
+                .background(colors.card)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.border, lineWidth: 2))
+                .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
+
+            HStack(spacing: 8) {
+                ReefButton(.primary, size: .compact, action: {
+                    voiceMode = true
+                    withAnimation {
+                        showVoiceChoice = false
+                        showIntro = true
+                    }
+                }) {
+                    Text("🔊 Voice mode")
+                        .font(.epilogue(11, weight: .bold))
+                        .tracking(-0.04 * 11)
+                }
+
+                ReefButton(.secondary, size: .compact, action: {
+                    voiceMode = false
+                    withAnimation {
+                        showVoiceChoice = false
+                        showIntro = true
+                    }
+                }) {
+                    Text("📝 Text only")
+                        .font(.epilogue(11, weight: .bold))
+                        .tracking(-0.04 * 11)
+                }
+            }
+        }
+        .padding(.leading, 20)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .bottomLeading)
     }
 
     // MARK: - Intro Dialog
@@ -161,6 +225,7 @@ struct TutorDemoStep: View {
     // MARK: - Intro TTS
 
     private func speakIntro() {
+        guard voiceMode else { introReady = true; return }
         introReady = false
         introTask = Task { @MainActor in
             // Fallback: enable button after 3s in case TTS fails
