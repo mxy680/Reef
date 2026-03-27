@@ -135,6 +135,19 @@ struct TutorDemoStep: View {
             guard isOn == true, showWalkthrough, currentStep == 8 else { return }
             scheduleAutoAdvance(delayMs: 1500)
         }
+        // Enable tutor toggle when reaching step 9, auto-advance when toggled on
+        .onChange(of: currentStep) { _, step in
+            if step == 9 {
+                canvasVM?.deferTutorMode = false
+            }
+        }
+        .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
+            guard isOn == true, showWalkthrough, currentStep == 9,
+                  let vm = canvasVM else { return }
+            vm.showSidebar = true
+            if vm.activeQuestionLabel == nil { vm.activeQuestionLabel = "Q1a" }
+            scheduleAutoAdvance(delayMs: 1500)
+        }
     }
 
     // MARK: - Voice Choice
