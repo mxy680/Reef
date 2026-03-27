@@ -256,12 +256,27 @@ struct TutorDemoStep: View {
 
                 ReefButton(.secondary, size: .compact, action: {
                     stopTTS()
-                    withAnimation {
-                        if currentStep < walkthroughSteps.count - 1 {
-                            currentStep += 1
-                            speakStep(currentStep)
-                        } else {
-                            showWalkthrough = false
+                    // On step 0 with a drawing: trigger reaction immediately
+                    if currentStep == 0,
+                       let vm = canvasVM,
+                       vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
+                        drawingReactionTask?.cancel()
+                        withAnimation { isThinkingReaction = true }
+                        drawingReactionTask = Task { @MainActor in
+                            let image = vm.captureActiveQuestionImage()
+                            let reaction: String? = if let image { await fetchDrawingReaction(imageBase64: image) } else { nil }
+                            drawingReaction = reaction
+                            withAnimation { isThinkingReaction = false; currentStep = 1 }
+                            if let reaction { speakCombined(reaction: reaction, stepIndex: 1) } else { speakStep(1) }
+                        }
+                    } else {
+                        withAnimation {
+                            if currentStep < walkthroughSteps.count - 1 {
+                                currentStep += 1
+                                speakStep(currentStep)
+                            } else {
+                                showWalkthrough = false
+                            }
                         }
                     }
                 }) {
