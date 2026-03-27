@@ -434,8 +434,9 @@ final class CanvasViewModel {
     }()
 
     private func loadPDF() async {
-        // Demo mode: answer keys already injected, just use blank page
+        // Demo mode: answer keys already injected, single blank page
         if demoQuestionText != nil {
+            pdfDocument = MockCanvasData.blankPDF(pageCount: 1)
             isLoadingPDF = false
             return
         }
