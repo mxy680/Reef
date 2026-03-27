@@ -198,14 +198,20 @@ final class CanvasWalkthroughState {
         }
     }
 
-    /// Skip ahead to a step (if it's after the current one) and advance past it.
+    /// Skip ahead to a step (or advance if already on it) and move past it.
     /// Only works after the user has started (past drawSomething).
     func skipToAndAdvance(_ target: WalkthroughStep, delayMs: Int = 1000) {
         guard let current = currentStep,
-              current != .drawSomething,  // don't skip during initial load
-              target.rawValue > current.rawValue else { return }
-        currentStep = target
-        advanceAfterDelay(ms: delayMs)
+              current != .drawSomething  // don't skip during initial load
+        else { return }
+        if target.rawValue == current.rawValue {
+            // Already on this step — just advance
+            advanceAfterDelay(ms: delayMs)
+        } else if target.rawValue > current.rawValue {
+            // Skip ahead
+            currentStep = target
+            advanceAfterDelay(ms: delayMs)
+        }
     }
 
     func advanceAfterDelay(ms: Int) {
