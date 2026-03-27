@@ -118,11 +118,12 @@ struct TutorDemoStep: View {
                 }
             }
         }
-        // Auto-advance when user selects the expected tool (covers eraser, lasso, etc.)
+        // Auto-advance when user selects the expected tool (not lasso — needs drawing)
         .onChange(of: canvasVM?.selectedTool) { _, newTool in
             guard showWalkthrough, !isThinkingReaction, let tool = newTool else { return }
+            // Lasso (step 4) requires actually using it, not just tapping
             let toolForStep: [Int: CanvasToolType] = [
-                1: .highlighter, 2: .eraser, 3: .shapes, 4: .lasso, 5: .handDraw
+                1: .highlighter, 2: .eraser, 3: .shapes, 5: .handDraw
             ]
             if let expected = toolForStep[currentStep], tool == expected {
                 scheduleAutoAdvance(delayMs: 1500)
