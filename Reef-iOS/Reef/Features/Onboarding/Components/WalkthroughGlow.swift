@@ -1,24 +1,16 @@
 import SwiftUI
 
-/// Pulsing green dot on the top-right of toolbar icons during the walkthrough tutorial.
+/// Slowly pulses toolbar icon color between tan and white during walkthrough.
 struct WalkthroughGlow: ViewModifier {
     let isActive: Bool
 
     @State private var isPulsing = false
 
+    private let tanColor = Color(hex: 0xF5C28A)
+
     func body(content: Content) -> some View {
         content
-            .overlay(alignment: .topTrailing) {
-                if isActive {
-                    Circle()
-                        .fill(Color(hex: 0xF5C28A))
-                        .frame(width: 8, height: 8)
-                        .scaleEffect(isPulsing ? 1.4 : 1.0)
-                        .opacity(isPulsing ? 0.8 : 1.0)
-                        .offset(x: -2, y: 8)
-                        .allowsHitTesting(false)
-                }
-            }
+            .foregroundColor(isActive ? (isPulsing ? tanColor : .white) : nil)
             .onAppear {
                 if isActive { startPulse() }
             }
@@ -35,7 +27,7 @@ struct WalkthroughGlow: ViewModifier {
 
     private func startPulse() {
         isPulsing = false
-        withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+        withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
             isPulsing = true
         }
     }
