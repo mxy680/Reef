@@ -132,7 +132,7 @@ export default function LoginPage() {
               textAlign: "center",
             }}
           >
-            Welcome Back
+            Welcome to Reef
           </h2>
         </FadeUp>
 
@@ -149,7 +149,7 @@ export default function LoginPage() {
               textAlign: "center",
             }}
           >
-            Sign in to continue learning
+            Dive in. Stay afloat. Ace finals.
           </p>
         </FadeUp>
 
@@ -245,38 +245,50 @@ export default function LoginPage() {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Sending link..." : "Continue"}
+            {loading ? "Sending link..." : "Continue with Email"}
           </motion.button>
         </motion.div>
 
-        {/* Signup link */}
-        <FadeUp index={6}>
-          <p
+      </motion.div>
+
+      {/* Value props below card */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.8 }}
+        style={{
+          display: "flex",
+          gap: 24,
+          marginTop: 28,
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
+        {["Free during beta", "Works with any subject", "No credit card required"].map((text, i) => (
+          <div
+            key={i}
             style={{
-              fontFamily,
-              fontWeight: 500,
-              fontSize: 14,
-              lineHeight: "1.5em",
-              letterSpacing: "-0.04em",
-              color: colors.gray600,
-              textAlign: "center",
-              margin: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
             }}
           >
-            Don't have an account?{" "}
-            <a
-              href="/signup"
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span
               style={{
-                color: colors.primary,
-                textDecoration: "none",
-                cursor: "pointer",
-                fontWeight: 700,
+                fontFamily,
+                fontWeight: 500,
+                fontSize: 13,
+                letterSpacing: "-0.02em",
+                color: colors.gray600,
               }}
             >
-              Sign up
-            </a>
-          </p>
-        </FadeUp>
+              {text}
+            </span>
+          </div>
+        ))}
       </motion.div>
     </div>
   )

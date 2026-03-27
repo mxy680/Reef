@@ -1,7 +1,5 @@
-"use client"
-
-import SignupPage from "../../components/signup/SignupPage"
+import { redirect } from "next/navigation"
 
 export default function Signup() {
-  return <SignupPage />
+  redirect("/auth")
 }
