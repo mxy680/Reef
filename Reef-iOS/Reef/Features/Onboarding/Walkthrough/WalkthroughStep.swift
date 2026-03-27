@@ -197,4 +197,20 @@ enum WalkthroughStep: Int, CaseIterable {
         default: nil
         }
     }
+
+    /// Delay in ms after the user completes the action before auto-advancing.
+    var autoAdvanceDelayMs: Int {
+        switch self {
+        case .drawSomething: 1000
+        case .tryHighlighter, .eraseHighlight, .shapeTool, .lassoTool, .fingerDraw: 1000
+        case .ruler, .calculator, .pageSettings: 1500
+        case .enableTutor: 0
+        case .tutorHint, .tutorReveal: 1500
+        case .solveIt: 0
+        case .voiceCommand: 3000
+        case .sidebarToggle: 1000
+        case .bugReport, .exportFeature: 1500
+        case .ready: 4000
+        }
+    }
 }

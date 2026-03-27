@@ -58,16 +58,23 @@ final class WalkthroughStateMachine {
 
     /// Skip ahead to a step (or advance if already on it), then advance past it after a delay.
     /// Only works after the user has started (past drawSomething).
-    func skipToAndAdvance(_ target: WalkthroughStep, delayMs: Int = 1000) {
+    func skipToAndAdvance(_ target: WalkthroughStep, delayMs: Int? = nil) {
         guard let current = currentStep,
               current != .drawSomething
         else { return }
 
+        // Don't skip into a locked phase
+        if target.phase != current.phase && !unlockedPhases.contains(target.phase) {
+            return
+        }
+
+        let delay = delayMs ?? target.autoAdvanceDelayMs
+
         if target.rawValue == current.rawValue {
-            scheduleAdvance(ms: delayMs)
+            scheduleAdvance(ms: delay)
         } else if target.rawValue > current.rawValue {
             currentStep = target
-            scheduleAdvance(ms: delayMs)
+            scheduleAdvance(ms: delay)
         }
     }
 

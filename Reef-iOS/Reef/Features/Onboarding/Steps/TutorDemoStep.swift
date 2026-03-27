@@ -15,10 +15,17 @@ struct TutorDemoStep: View {
     @State private var voiceMode = true
     @State private var dialogPhase: DialogPhase = .voiceChoice
     @State private var problemSolved = false
+    @State private var hasNavigated = false
+    @State private var autoContinueTask: Task<Void, Never>?
 
     @State private var introReady = true
     @State private var introTask: Task<Void, Never>?
     @State private var pendingReactionTask: Task<Void, Never>?
+
+    // Loading card state
+    @State private var isPulsing = false
+    @State private var messageIndex = 0
+    @State private var loadingTasks: [Task<Void, Never>] = []
 
     private let introDisplay = "Alright, quick intro. I'm your AI tutor. I watch everything you write in real time — yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line, no awkward eye contact. Dive in — the reef's got you covered."
 
@@ -33,49 +40,26 @@ struct TutorDemoStep: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            if let canvasVM {
-                CanvasView(
-                    viewModel: canvasVM,
-                    walkthroughStep: machine.currentStep,
-                    onDismiss: {
-                        Task { await viewModel.deleteDemoDocument() }
-                        viewModel.goNext()
-                    }
-                )
+        mainContent
+            .onAppear { generateDemo() }
+            .onDrawingChanged(canvasVM: canvasVM, machine: machine, audio: audio, dialogPhase: dialogPhase, reactionTask: $pendingReactionTask)
+            .onToolChanged(canvasVM: canvasVM, machine: machine, dialogPhase: dialogPhase)
+            .onFeatureToggled(canvasVM: canvasVM, machine: machine)
+            .onTutorEvents(canvasVM: canvasVM, machine: machine, audio: audio, voiceMode: voiceMode, dialogPhase: dialogPhase, problemSolved: $problemSolved, hasNavigated: $hasNavigated, autoContinueTask: $autoContinueTask, navigateNext: navigateNext)
+    }
+}
 
-                // Pre-dialogs (layered in display order)
-                dialogOverlay
-                    .animation(.easeOut(duration: 0.25), value: dialogPhase)
+// MARK: - Detection Modifiers (split for type-checker)
 
-                // Walkthrough card
-                if dialogPhase == .none && !machine.isComplete {
-                    walkthroughCardOverlay
-                        .zIndex(300)
-                        .transition(.opacity)
-                }
-
-                // Done button after walkthrough completes
-                if machine.isComplete {
-                    doneButton
-                        .zIndex(200)
-                        .transition(.opacity)
-                }
-            } else {
-                loadingCard
-            }
-        }
-        .onAppear { generateDemo() }
-        // Drawing detection — 1s after pen lift
-        .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
+private extension View {
+    func onDrawingChanged(canvasVM: CanvasViewModel?, machine: WalkthroughStateMachine, audio: WalkthroughAudioService, dialogPhase: TutorDemoStep.DialogPhase, reactionTask: Binding<Task<Void, Never>?>) -> some View {
+        self.onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
             guard dialogPhase == .none else { return }
-            guard let vm = canvasVM else { return }
-            guard machine.currentStep == .drawSomething else { return }
+            guard let vm = canvasVM, machine.currentStep == .drawSomething else { return }
             guard vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
-
             machine.cancelPendingAdvance()
-            pendingReactionTask?.cancel()
-            pendingReactionTask = Task { @MainActor in
+            reactionTask.wrappedValue?.cancel()
+            reactionTask.wrappedValue = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(1000))
                 guard !Task.isCancelled else { return }
                 if let image = vm.captureActiveQuestionImage() {
@@ -86,7 +70,25 @@ struct TutorDemoStep: View {
                 machine.advance()
             }
         }
-        // Tool / feature detection — skip-ahead style
+    }
+
+    func onToolChanged(canvasVM: CanvasViewModel?, machine: WalkthroughStateMachine, dialogPhase: TutorDemoStep.DialogPhase) -> some View {
+        self
+        .onChange(of: canvasVM?.selectedTool) { _, newTool in
+            guard dialogPhase == .none, let tool = newTool else { return }
+            switch tool {
+            case .highlighter: machine.skipToAndAdvance(.tryHighlighter)
+            case .eraser: machine.skipToAndAdvance(.eraseHighlight)
+            case .shapes: machine.skipToAndAdvance(.shapeTool)
+            case .lasso: machine.skipToAndAdvance(.lassoTool)
+            case .handDraw: machine.skipToAndAdvance(.fingerDraw)
+            default: break
+            }
+        }
+    }
+
+    func onFeatureToggled(canvasVM: CanvasViewModel?, machine: WalkthroughStateMachine) -> some View {
+        self
         .onChange(of: canvasVM?.showRuler) { _, isOn in
             if isOn == true { machine.skipToAndAdvance(.ruler) }
         }
@@ -96,8 +98,14 @@ struct TutorDemoStep: View {
         .onChange(of: canvasVM?.showPageSettings) { _, isOn in
             if isOn == true { machine.skipToAndAdvance(.pageSettings) }
         }
+        .onChange(of: canvasVM?.showHintPopover) { _, isOn in
+            if isOn == true { machine.skipToAndAdvance(.tutorHint) }
+        }
+        .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
+            if isOn == true { machine.skipToAndAdvance(.tutorReveal) }
+        }
         .onChange(of: canvasVM?.showSidebar) { _, _ in
-            if let step = machine.currentStep, step.rawValue >= WalkthroughStep.sidebarToggle.rawValue {
+            if let step = machine.currentStep, step.phase == .postSolve {
                 machine.skipToAndAdvance(.sidebarToggle)
             }
         }
@@ -107,77 +115,99 @@ struct TutorDemoStep: View {
         .onChange(of: canvasVM?.showExportPreview) { _, isOn in
             if isOn == true { machine.skipToAndAdvance(.exportFeature) }
         }
-        .onChange(of: canvasVM?.showHintPopover) { _, isOn in
-            if isOn == true, let step = machine.currentStep, step.rawValue <= WalkthroughStep.tutorReveal.rawValue {
-                machine.skipToAndAdvance(.tutorHint)
-            }
-        }
-        .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
-            if isOn == true, let step = machine.currentStep, step.rawValue <= WalkthroughStep.tutorReveal.rawValue {
-                machine.skipToAndAdvance(.tutorReveal)
-            }
-        }
         .onChange(of: canvasVM?.isMicOn) { _, isOn in
-            if isOn == true { machine.skipToAndAdvance(.voiceCommand, delayMs: 3000) }
+            if isOn == true { machine.skipToAndAdvance(.voiceCommand) }
         }
-        // Tutor toggle — finish deferred setup
+    }
+
+    func onTutorEvents(canvasVM: CanvasViewModel?, machine: WalkthroughStateMachine, audio: WalkthroughAudioService, voiceMode: Bool, dialogPhase: TutorDemoStep.DialogPhase, problemSolved: Binding<Bool>, hasNavigated: Binding<Bool>, autoContinueTask: Binding<Task<Void, Never>?>, navigateNext: @escaping () -> Void) -> some View {
+        self
         .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
             if isOn == true, machine.currentStep == .enableTutor {
                 if let vm = canvasVM {
                     vm.showSidebar = true
-                    if vm.activeQuestionLabel == nil {
-                        vm.activeQuestionLabel = "Q1a"
-                    }
+                    if vm.activeQuestionLabel == nil { vm.activeQuestionLabel = "Q1a" }
                 }
                 withAnimation { machine.advance() }
             }
         }
-        // Problem solved — show "Continue" button
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
-            guard !problemSolved else { return }
+            guard !problemSolved.wrappedValue else { return }
             if status == "completed",
-               let vm = canvasVM,
-               vm.tutorStepCount > 0,
+               let vm = canvasVM, vm.tutorStepCount > 0,
                vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
-                problemSolved = true
+                problemSolved.wrappedValue = true
                 machine.skipTutorial()
             }
         }
-        // Step changes → speak instruction + setup
+        .onChange(of: machine.isComplete) { _, complete in
+            guard complete, !hasNavigated.wrappedValue else { return }
+            autoContinueTask.wrappedValue = Task { @MainActor in
+                if voiceMode {
+                    while audio.isPlayingAudio { try? await Task.sleep(for: .milliseconds(200)) }
+                }
+                try? await Task.sleep(for: .seconds(2))
+                guard !Task.isCancelled, !hasNavigated.wrappedValue else { return }
+                navigateNext()
+            }
+        }
         .onChange(of: machine.currentStep) { oldStep, newStep in
             guard let step = newStep else { return }
-
-            // Speak step instruction (skip drawSomething→tryHighlighter: reaction flow handles it)
             let isDrawReaction = oldStep == .drawSomething && newStep == .tryHighlighter
             if !isDrawReaction && voiceMode {
                 let speechText = step.speech
                 Task { @MainActor in
-                    if let vm = canvasVM {
-                        await audio.waitForTutorAudio(vm.tutorEvalService)
-                    }
+                    if let vm = canvasVM { await audio.waitForTutorAudio(vm.tutorEvalService) }
                     await audio.speakInstruction(speechText)
                 }
             }
-
-            // Allow tutor toggle when reaching enableTutor
-            if step == .enableTutor {
-                canvasVM?.deferTutorMode = false
-            }
-
-            // Auto-complete ready step after delay
-            if step == .ready {
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(4))
-                    machine.skipTutorial()
-                }
-            }
+            if step == .pageSettings { machine.unlockNextPhase() }
+            if step == .tutorReveal { machine.unlockNextPhase() }
+            if step == .solveIt { machine.unlockNextPhase() }
+            if step == .enableTutor { canvasVM?.deferTutorMode = false }
+            if step == .ready { machine.scheduleAdvance(ms: step.autoAdvanceDelayMs) }
         }
-        // Speak first step when intro dialog is dismissed
         .onChange(of: dialogPhase) { _, phase in
             if phase == .none, machine.currentStep == .drawSomething, voiceMode {
                 Task { @MainActor in
                     await audio.speakInstruction(WalkthroughStep.drawSomething.speech)
                 }
+            }
+        }
+    }
+}
+
+// MARK: - TutorDemoStep (continued)
+
+extension TutorDemoStep {
+
+    // MARK: - Main Content
+
+    private var mainContent: some View {
+        ZStack {
+            if let canvasVM {
+                CanvasView(
+                    viewModel: canvasVM,
+                    walkthroughStep: machine.currentStep,
+                    onDismiss: { navigateNext() }
+                )
+
+                dialogOverlay
+                    .animation(.easeOut(duration: 0.25), value: dialogPhase)
+
+                if dialogPhase == .none && !machine.isComplete {
+                    walkthroughCardOverlay
+                        .zIndex(300)
+                        .transition(.opacity)
+                }
+
+                if machine.isComplete {
+                    doneButton
+                        .zIndex(200)
+                        .transition(.opacity)
+                }
+            } else {
+                loadingCard
             }
         }
     }
@@ -285,13 +315,20 @@ struct TutorDemoStep: View {
 
     // MARK: - Done Button
 
+    private func navigateNext() {
+        guard !hasNavigated else { return }
+        hasNavigated = true
+        autoContinueTask?.cancel()
+        Task { await viewModel.deleteDemoDocument() }
+        viewModel.goNext()
+    }
+
     private var doneButton: some View {
         VStack {
             Spacer()
             HStack {
                 ReefButton(problemSolved ? "Continue →" : "Done — show me my plan", size: .compact, action: {
-                    Task { await viewModel.deleteDemoDocument() }
-                    viewModel.goNext()
+                    navigateNext()
                 })
                 .padding(20)
                 Spacer()
@@ -374,11 +411,7 @@ struct TutorDemoStep: View {
 
     // MARK: - Loading Card
 
-    @State private var isPulsing = false
-    @State private var messageIndex = 0
-    @State private var loadingTasks: [Task<Void, Never>] = []
-
-    private var currentLoadingMessage: String {
+    var currentLoadingMessage: String {
         let topic = viewModel.answers.favoriteTopic
         let messages = [
             "Generating a problem just for you...",
