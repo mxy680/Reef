@@ -120,20 +120,76 @@ struct TutorDemoStep: View {
             }
         }
         .onAppear {
-            if !demoService.isReady && !demoService.isGenerating {
-                Task {
-                    await demoService.generateDocument(
-                        topic: viewModel.answers.favoriteTopic,
-                        studentType: viewModel.answers.studentType?.rawValue ?? "college"
-                    )
-                    if let doc = demoService.demoDocument {
-                        viewModel.demoDocumentId = doc.id
-                        let vm = CanvasViewModel(document: doc)
-                        vm.deferTutorMode = true  // Walkthrough controls when tutor enables
-                        vm.tutorEvalService.isDemo = true  // Simpler feedback during onboarding
-                        canvasVM = vm
-                    }
-                }
+            if canvasVM == nil {
+                let doc = Document(
+                    id: "demo-\(UUID().uuidString)",
+                    userId: "",
+                    filename: "demo.pdf",
+                    status: .completed,
+                    pageCount: 1,
+                    problemCount: 1,
+                    questionPages: [[0, 0]],
+                    questionRegions: nil,
+                    errorMessage: nil,
+                    statusMessage: nil,
+                    costCents: nil,
+                    courseId: nil,
+                    createdAt: ISO8601DateFormatter().string(from: Date())
+                )
+                viewModel.demoDocumentId = doc.id
+                let vm = CanvasViewModel(document: doc)
+                vm.deferTutorMode = true
+                vm.tutorEvalService.isDemo = true
+
+                // Inject demo answer key — skip server entirely
+                let demoAnswerKey = QuestionAnswer(
+                    questionNumber: 1,
+                    steps: [
+                        AnswerKeyStep(
+                            description: "Apply the power rule to each term",
+                            explanation: "What happens to the exponent when you differentiate?",
+                            work: "f'(x) = 6x + 5",
+                            reinforcement: "Nice — power rule applied cleanly.",
+                            tutorSpeech: "Find the derivative of each term.",
+                            concepts: ["power_rule"]
+                        ),
+                        AnswerKeyStep(
+                            description: "Simplify the result",
+                            explanation: "Is there anything left to simplify?",
+                            work: "f'(x) = 6x + 5",
+                            reinforcement: "That's the final answer.",
+                            tutorSpeech: "Simplify what you've got.",
+                            concepts: ["simplification"]
+                        ),
+                    ],
+                    finalAnswer: "f'(x) = 6x + 5",
+                    parts: [PartAnswer(label: "a", steps: [
+                        AnswerKeyStep(
+                            description: "Apply the power rule to each term",
+                            explanation: "What happens to the exponent when you differentiate?",
+                            work: "f'(x) = 6x + 5",
+                            reinforcement: "Nice — power rule applied cleanly.",
+                            tutorSpeech: "Find the derivative of each term.",
+                            concepts: ["power_rule"]
+                        ),
+                        AnswerKeyStep(
+                            description: "Simplify the result",
+                            explanation: "Is there anything left to simplify?",
+                            work: "f'(x) = 6x + 5",
+                            reinforcement: "That's the final answer.",
+                            tutorSpeech: "Simplify what you've got.",
+                            concepts: ["simplification"]
+                        ),
+                    ], finalAnswer: "f'(x) = 6x + 5", parts: [])]
+                )
+                vm.answerKeys = [1: demoAnswerKey]
+                vm.isLoadingAnswerKeys = false
+                vm.activeQuestionLabel = "Q1a"
+
+                // Set the demo problem text as the page title
+                vm.demoQuestionText = "Find the derivative of  f(x) = 3x² + 5x - 2"
+
+                canvasVM = vm
             }
         }
         // Speak first step when pre-dialog is dismissed (voice mode only)
