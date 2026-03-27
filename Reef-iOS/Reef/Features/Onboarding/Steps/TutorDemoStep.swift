@@ -90,16 +90,29 @@ struct TutorDemoStep: View {
         .animation(.easeOut(duration: 0.25), value: showWalkthrough)
         .animation(.easeOut(duration: 0.25), value: currentStep)
         .onAppear { generateDemo() }
-        // Auto-advance 2.5s after pen lift on draw step
+        // Auto-advance after pen lift — step 0 (draw) and step 1 (highlighter)
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard showWalkthrough, currentStep == 0, !isThinkingReaction,
+            guard showWalkthrough, !isThinkingReaction,
                   let vm = canvasVM,
                   vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
-            drawingReactionTask?.cancel()
-            drawingReactionTask = Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(2500))
-                guard !Task.isCancelled else { return }
-                triggerDrawingReaction()
+
+            if currentStep == 0 {
+                // Draw step: 2.5s debounce → reaction
+                drawingReactionTask?.cancel()
+                drawingReactionTask = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(2500))
+                    guard !Task.isCancelled else { return }
+                    triggerDrawingReaction()
+                }
+            } else if currentStep == 1 && vm.selectedTool == .highlighter {
+                // Highlighter step: 1.5s after drawing with highlighter
+                drawingReactionTask?.cancel()
+                drawingReactionTask = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(1500))
+                    guard !Task.isCancelled else { return }
+                    stopTTS()
+                    advanceStep()
+                }
             }
         }
     }
