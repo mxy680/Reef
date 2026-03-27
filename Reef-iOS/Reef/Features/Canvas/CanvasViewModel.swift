@@ -151,7 +151,6 @@ final class CanvasViewModel {
     let handwritingService = HandwritingTranscriptionService()
     let tutorEvalService = TutorEvaluationService()
     private var evalDebounceTask: Task<Void, Never>?
-    var demoQuestionText: String?  // Set for onboarding demo — shown on blank canvas
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -318,11 +317,6 @@ final class CanvasViewModel {
     }
 
     func loadAnswerKeys(forceLoad: Bool = false) async {
-        // Demo mode: answer keys already injected
-        if demoQuestionText != nil && !answerKeys.isEmpty {
-            isLoadingAnswerKeys = false
-            return
-        }
         guard isReconstructed || forceLoad else {
             // Don't clear isLoadingAnswerKeys — loadPDF will call us again with forceLoad
             // once reconstruction completes
@@ -434,12 +428,6 @@ final class CanvasViewModel {
     }()
 
     private func loadPDF() async {
-        // Demo mode: render question on a single page
-        if let question = demoQuestionText {
-            pdfDocument = MockCanvasData.demoPDF(question: question)
-            isLoadingPDF = false
-            return
-        }
 
         isLoadingPDF = true
         pdfError = nil
