@@ -118,6 +118,16 @@ struct TutorDemoStep: View {
                 }
             }
         }
+        // Auto-advance when user selects the expected tool (covers eraser, lasso, etc.)
+        .onChange(of: canvasVM?.selectedTool) { _, newTool in
+            guard showWalkthrough, !isThinkingReaction, let tool = newTool else { return }
+            let toolForStep: [Int: CanvasToolType] = [
+                1: .highlighter, 2: .eraser, 3: .shapes, 4: .lasso, 5: .handDraw
+            ]
+            if let expected = toolForStep[currentStep], tool == expected {
+                scheduleAutoAdvance(delayMs: 1500)
+            }
+        }
         // Auto-advance for toggle-based tool steps (ruler, calculator, page settings)
         .onChange(of: canvasVM?.showRuler) { _, isOn in
             guard isOn == true, showWalkthrough, currentStep == 6 else { return }
