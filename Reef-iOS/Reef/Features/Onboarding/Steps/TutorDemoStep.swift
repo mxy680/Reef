@@ -93,42 +93,35 @@ struct TutorDemoStep: View {
         // Auto-advance after pen lift on tool steps
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
             guard showWalkthrough, !isThinkingReaction,
-                  let vm = canvasVM,
-                  vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
-
-            // Map step index → expected tool for drawing-based steps
-            let toolForStep: [Int: CanvasToolType] = [
-                1: .highlighter, 2: .eraser, 3: .shapes, 4: .lasso, 5: .handDraw
-            ]
+                  let vm = canvasVM else { return }
 
             if currentStep == 0 {
+                // Draw step: need actual strokes
+                guard vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
                 drawingReactionTask?.cancel()
                 drawingReactionTask = Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(2500))
                     guard !Task.isCancelled else { return }
                     triggerDrawingReaction()
                 }
-            } else if let expected = toolForStep[currentStep], vm.selectedTool == expected {
-                drawingReactionTask?.cancel()
-                drawingReactionTask = Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(1500))
-                    guard !Task.isCancelled else { return }
-                    stopTTS()
-                    advanceStep()
+            } else {
+                // Tool steps: any drawing change with the right tool selected
+                let toolForStep: [Int: CanvasToolType] = [
+                    1: .highlighter, 2: .eraser, 3: .shapes, 4: .lasso, 5: .handDraw
+                ]
+                if let expected = toolForStep[currentStep], vm.selectedTool == expected {
+                    drawingReactionTask?.cancel()
+                    drawingReactionTask = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(1500))
+                        guard !Task.isCancelled else { return }
+                        stopTTS()
+                        advanceStep()
+                    }
                 }
             }
         }
-        // Auto-advance when user selects the expected tool (not lasso — needs drawing)
-        .onChange(of: canvasVM?.selectedTool) { _, newTool in
-            guard showWalkthrough, !isThinkingReaction, let tool = newTool else { return }
-            // Lasso (step 4) requires actually using it, not just tapping
-            let toolForStep: [Int: CanvasToolType] = [
-                1: .highlighter, 2: .eraser, 3: .shapes, 5: .handDraw
-            ]
-            if let expected = toolForStep[currentStep], tool == expected {
-                scheduleAutoAdvance(delayMs: 1500)
-            }
-        }
+        // No auto-advance on tool tap — only on actual use (drawing/erasing)
+        // drawingVersion onChange above handles steps 1-5 via pen lift detection
         // Auto-advance for toggle-based tool steps (ruler, calculator, page settings)
         .onChange(of: canvasVM?.showRuler) { _, isOn in
             guard isOn == true, showWalkthrough, currentStep == 6 else { return }
