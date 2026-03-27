@@ -156,6 +156,25 @@ struct TutorDemoStep: View {
             guard isOn == true, showWalkthrough, currentStep == 11 else { return }
             scheduleAutoAdvance(delayMs: 1500)
         }
+        // Problem solved — auto-advance walkthrough and continue onboarding
+        .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
+            guard status == "completed", showWalkthrough, currentStep == 12,
+                  let vm = canvasVM,
+                  vm.tutorStepCount > 0,
+                  vm.currentTutorStepIndex >= vm.tutorStepCount - 1 else { return }
+            // Wait for TTS to finish, then exit
+            drawingReactionTask?.cancel()
+            drawingReactionTask = Task { @MainActor in
+                // Wait for tutor reinforcement TTS
+                while vm.tutorEvalService.isTutorSpeaking {
+                    try? await Task.sleep(for: .milliseconds(200))
+                }
+                try? await Task.sleep(for: .seconds(2))
+                guard !Task.isCancelled else { return }
+                Task { await viewModel.deleteDemoDocument() }
+                viewModel.goNext()
+            }
+        }
     }
 
     // MARK: - Voice Choice
