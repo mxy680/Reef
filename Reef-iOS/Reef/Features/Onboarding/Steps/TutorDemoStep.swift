@@ -152,8 +152,6 @@ struct TutorDemoStep: View {
                     .font(.epilogue(11, weight: .bold))
                     .tracking(-0.04 * 11)
             }
-            .opacity(introReady ? 1 : 0.4)
-            .disabled(!introReady)
         }
         .padding(.leading, 20)
         .padding(.bottom, 8)
