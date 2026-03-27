@@ -7,7 +7,7 @@ struct CanvasDrawingBar: View {
     @Bindable var viewModel: CanvasViewModel
     var drawingManager: CanvasDrawingManager
     var onScrollToPage: ((Int) -> Void)?
-    var walkthroughStep: WalkthroughStep? = nil
+    // walkthroughStep removed — glow always false
 
     /// The single toolbar teal.
     static let barColor = Color(hex: 0x4E8A97)
@@ -63,7 +63,7 @@ struct CanvasDrawingBar: View {
 
             // Canvas tools: ruler, calculator, page settings
             HStack(alignment: .center, spacing: 0) {
-                toolbarButton(icon: "canvas.ruler_new", active: viewModel.showRuler, glow: walkthroughStep?.targetButton == .ruler) {
+                toolbarButton(icon: "canvas.ruler_new", active: viewModel.showRuler, glow: false) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         let wasOn = viewModel.showRuler
                         viewModel.showCalculator = false
@@ -72,7 +72,7 @@ struct CanvasDrawingBar: View {
                     }
                 }
 
-                toolbarButton(icon: "canvas.calculator", active: viewModel.showCalculator, glow: walkthroughStep?.targetButton == .calculator) {
+                toolbarButton(icon: "canvas.calculator", active: viewModel.showCalculator, glow: false) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         let wasOn = viewModel.showCalculator
                         viewModel.showRuler = false
@@ -81,7 +81,7 @@ struct CanvasDrawingBar: View {
                     }
                 }
 
-                toolbarButton(icon: "canvas.page_settings_new", active: viewModel.showPageSettings, glow: walkthroughStep?.targetButton == .pageSettings) {
+                toolbarButton(icon: "canvas.page_settings_new", active: viewModel.showPageSettings, glow: false) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         let wasOn = viewModel.showPageSettings
                         viewModel.showRuler = false
@@ -115,7 +115,7 @@ struct CanvasDrawingBar: View {
                 toolbarButton(
                     icon: viewModel.isMicOn ? "canvas.mic_on" : "canvas.mic_off",
                     active: viewModel.isMicOn,
-                    glow: walkthroughStep?.targetButton == .mic
+                    glow: false
                 ) {
                     viewModel.toggleMic()
                 }
@@ -184,11 +184,10 @@ struct CanvasDrawingBar: View {
                         .foregroundColor(.white.opacity(0.8))
                         .frame(width: 38, height: 48)
                         .contentShape(Rectangle())
-                        .walkthroughGlow(active: walkthroughStep?.targetButton == .bugReport)
-                }
+                                        }
                 .buttonStyle(.plain)
 
-                toolbarButton(icon: "canvas.export", yOffset: -1, glow: walkthroughStep?.targetButton == .export) {
+                toolbarButton(icon: "canvas.export", yOffset: -1, glow: false) {
                     viewModel.exportDocument()
                 }
                 .opacity(viewModel.isExporting ? 0.3 : 1.0)
@@ -197,7 +196,7 @@ struct CanvasDrawingBar: View {
                 toolbarButton(
                     icon: viewModel.showSidebar ? "canvas.sidebar_close" : "canvas.sidebar_open",
                     active: viewModel.showSidebar,
-                    glow: walkthroughStep?.targetButton == .sidebar
+                    glow: false
                 ) {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         viewModel.showSidebar.toggle()
@@ -524,7 +523,7 @@ struct CanvasDrawingBar: View {
 
     private func drawingToolButton(_ tool: CanvasToolType) -> some View {
         let isSelected = viewModel.selectedTool == tool
-        let glowActive = walkthroughStep?.targetDrawingTool == tool
+        let glowActive = false
         return Button {
             // Hidden debug toggle: tap pen 5 times rapidly while already selected
             if tool == .pen && isSelected {
@@ -554,8 +553,7 @@ struct CanvasDrawingBar: View {
                 .foregroundColor(.white.opacity(isSelected ? 1 : 0.5))
                 .frame(width: 38, height: 48)
                 .contentShape(Rectangle())
-                .walkthroughGlow(active: glowActive)
-        }
+                        }
         .buttonStyle(.plain)
     }
 
@@ -585,8 +583,7 @@ struct CanvasDrawingBar: View {
                 .foregroundColor(.white.opacity(active ? 1 : 0.8))
                 .frame(width: 38, height: 48)
                 .contentShape(Rectangle())
-                .walkthroughGlow(active: glow)
-        }
+                        }
         .buttonStyle(.plain)
     }
 

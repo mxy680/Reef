@@ -4,7 +4,7 @@ import SwiftUI
 
 struct CanvasInfoStrip: View {
     @Bindable var viewModel: CanvasViewModel
-    var walkthroughStep: WalkthroughStep? = nil
+    // walkthroughStep removed
 
     let onClose: () -> Void
 
@@ -169,7 +169,6 @@ struct CanvasInfoStrip: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 20, height: 20)
                     .foregroundColor(.white.opacity(!viewModel.answerKeys.isEmpty ? 1 : 0.4))
-                    .walkthroughGlow(active: walkthroughStep?.targetButton == .tutorToggle)
 
                 if !viewModel.answerKeys.isEmpty {
                     ReefToggle(isOn: Binding(

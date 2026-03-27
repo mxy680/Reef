@@ -169,12 +169,6 @@
 		D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */; };
 		DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */; };
 		C2544AF066DC4E6185AEAEEC /* TutorDemoOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */; };
-		F845158158DB4B5BAEA76324 /* WalkthroughPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1EE16A89B62411783295F80 /* WalkthroughPopup.swift */; };
-		A1B2C3D4E5F647890ABC1234 /* WalkthroughGlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C940D1E2F30ABC /* WalkthroughGlow.swift */; };
-		AA01BB02CC03DD04EE05FF06 /* WalkthroughStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB12CC13DD14EE15FF16 /* WalkthroughStep.swift */; };
-		AA21BB22CC23DD24EE25FF26 /* WalkthroughStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA31BB32CC33DD34EE35FF36 /* WalkthroughStateMachine.swift */; };
-		AA41BB42CC43DD44EE45FF46 /* WalkthroughAudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA51BB52CC53DD54EE55FF56 /* WalkthroughAudioService.swift */; };
-		AA61BB62CC63DD64EE65FF66 /* WalkthroughPreDialogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA71BB72CC73DD74EE75FF76 /* WalkthroughPreDialogs.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -344,12 +338,6 @@
 		CED289FC211B4BDF8C779DBD /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
 		84F2DDD292AF4AD8A36C16EC /* DemoProblemService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoProblemService.swift; sourceTree = "<group>"; };
 		21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorDemoOverlay.swift; sourceTree = "<group>"; };
-		E1EE16A89B62411783295F80 /* WalkthroughPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughPopup.swift; sourceTree = "<group>"; };
-		D4E5F6A7B8C940D1E2F30ABC /* WalkthroughGlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughGlow.swift; sourceTree = "<group>"; };
-		AA11BB12CC13DD14EE15FF16 /* WalkthroughStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughStep.swift; sourceTree = "<group>"; };
-		AA31BB32CC33DD34EE35FF36 /* WalkthroughStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughStateMachine.swift; sourceTree = "<group>"; };
-		AA51BB52CC53DD54EE55FF56 /* WalkthroughAudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughAudioService.swift; sourceTree = "<group>"; };
-		AA71BB72CC73DD74EE75FF76 /* WalkthroughPreDialogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughPreDialogs.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -793,10 +781,6 @@
 		AAWW0001AAWW0001AAWW0001 /* Walkthrough */ = {
 			isa = PBXGroup;
 			children = (
-				AA11BB12CC13DD14EE15FF16 /* WalkthroughStep.swift */,
-				AA31BB32CC33DD34EE35FF36 /* WalkthroughStateMachine.swift */,
-				AA51BB52CC53DD54EE55FF56 /* WalkthroughAudioService.swift */,
-				AA71BB72CC73DD74EE75FF76 /* WalkthroughPreDialogs.swift */,
 			);
 			path = Walkthrough;
 			sourceTree = "<group>";
@@ -804,8 +788,6 @@
 		214602FE85D44D90A2C1841F /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				E1EE16A89B62411783295F80 /* WalkthroughPopup.swift */,
-				D4E5F6A7B8C940D1E2F30ABC /* WalkthroughGlow.swift */,
 				21E2B7DF2A5A4A0497A379D7 /* TutorDemoOverlay.swift */,
 				39622361D80C4B58A2BE8C07 /* OnboardingProgressBar.swift */,
 				6041CD52A359487BB35EDE2B /* OnboardingStepShell.swift */,
@@ -953,12 +935,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F845158158DB4B5BAEA76324 /* WalkthroughPopup.swift in Sources */,
-				A1B2C3D4E5F647890ABC1234 /* WalkthroughGlow.swift in Sources */,
-				AA01BB02CC03DD04EE05FF06 /* WalkthroughStep.swift in Sources */,
-				AA21BB22CC23DD24EE25FF26 /* WalkthroughStateMachine.swift in Sources */,
-				AA41BB42CC43DD44EE45FF46 /* WalkthroughAudioService.swift in Sources */,
-				AA61BB62CC63DD64EE65FF66 /* WalkthroughPreDialogs.swift in Sources */,
 				C2544AF066DC4E6185AEAEEC /* TutorDemoOverlay.swift in Sources */,
 				D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */,
 				DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */,

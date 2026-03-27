@@ -6,7 +6,7 @@ import Combine
 
 struct CanvasView: View {
     @Bindable var viewModel: CanvasViewModel
-    var walkthroughStep: WalkthroughStep? = nil
+    // walkthroughStep removed
     let onDismiss: () -> Void
 
     @State private var scrollToPageIndex: Int? = nil
@@ -38,7 +38,6 @@ struct CanvasView: View {
                 VStack(spacing: 0) {
                     CanvasInfoStrip(
                         viewModel: viewModel,
-                        walkthroughStep: walkthroughStep,
                         onClose: {
                             viewModel.stopAllAudio()
                             viewModel.saveCanvasState()
@@ -51,8 +50,7 @@ struct CanvasView: View {
                         drawingManager: viewModel.drawingManager,
                         onScrollToPage: { index in
                             scrollToPageIndex = index
-                        },
-                        walkthroughStep: walkthroughStep
+                        }
                     )
 
                     // Bottom separator
