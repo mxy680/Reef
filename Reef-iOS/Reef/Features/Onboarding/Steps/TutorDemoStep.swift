@@ -9,8 +9,8 @@ struct TutorDemoStep: View {
     @State private var showVoiceChoice = true
     @State private var voiceMode = true
     @State private var showIntro = false
-    @State private var introReady = true
     @State private var introTask: Task<Void, Never>?
+    @State private var stepSpeechTask: Task<Void, Never>?
     @State private var currentStep: Int = 0
     @State private var showWalkthrough = false
 
@@ -32,6 +32,22 @@ struct TutorDemoStep: View {
         "See the Hint section in the sidebar? Tap it to expand — your tutor gives you a nudge without spoiling the answer. Training wheels, not a cheat code.",
         "Now tap Full Solution in the sidebar — it shows the complete work for this step. Sometimes you just need to see how it's done. No judgment.",
         "Now try solving the problem on your own. Work through it step by step — your tutor is watching and will help if you get stuck.",
+    ]
+
+    private let walkthroughSpeech = [
+        "Don't worry about the question on your screen yet. We'll get to that. First, grab your Apple Pencil, and draw something fun. LITERALLY anything. A cat, a stick figure, whatever comes to mind.",
+        "Now tap the highlighter tool, up at the top. It's transparent, so it layers RIGHT over your ink. It's great for annotating your work.",
+        "Made a mess? GOOD. Now tap the eraser, and clean it up. It removes ANYTHING you draw over.",
+        "The shape tool turns your rough sketches into clean geometry. Draw it ugly, Reef makes it pretty. ALWAYS use this for diagrams though. Your tutor needs to know what's math, and what's art. And honestly? It can't always tell.",
+        "Now try the lasso tool. Draw a loop around something you drew. Now you can DRAG it, SCALE it, or send it straight to the abyss.",
+        "Don't have your Pencil handy? Tap the finger draw tool, and sketch with your finger instead. Same canvas, just your fingertip.",
+        "Tap the ruler tool. A straight edge will appear on the canvas. You can rotate it, position it, and draw along it. No more diagrams that look like they survived a TSUNAMI.",
+        "Need to check your math? Tap the calculator. It floats RIGHT on your canvas, so you NEVER lose your place.",
+        "Tap page settings to change your canvas background. Graph paper for plotting. Dot grid for diagrams. Lined for notes. Pick whatever helps you think.",
+        "HERE is what makes Reef different. Tap the tutor toggle. Your A.I. reads your handwriting LIVE, knows the answer key, and coaches you, without giving it away.",
+        "See the Hint section in the sidebar? Tap it to expand. Your tutor gives you a nudge, WITHOUT spoiling the answer. Training wheels. NOT a cheat code.",
+        "Now tap Full Solution in the sidebar. It shows you the COMPLETE work for this step. Sometimes, you just need to see how it's done. No judgment.",
+        "OK, DIVE IN. Work through the problem, step by step. Your tutor reads your handwriting in REAL time, and will jump in when you need a hand.",
     ]
 
     var body: some View {
@@ -142,11 +158,12 @@ struct TutorDemoStep: View {
                 .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
 
             ReefButton(.primary, size: .compact, action: {
-                introTask?.cancel()
+                stopTTS()
                 withAnimation {
                     showIntro = false
                     showWalkthrough = true
                 }
+                speakStep(0)
             }) {
                 Text("Let's go")
                     .font(.epilogue(11, weight: .bold))
@@ -184,6 +201,7 @@ struct TutorDemoStep: View {
             // Buttons
             HStack(spacing: 8) {
                 ReefButton(.primary, size: .compact, action: {
+                    stopTTS()
                     Task { await viewModel.deleteDemoDocument() }
                     viewModel.goNext()
                 }) {
@@ -193,9 +211,11 @@ struct TutorDemoStep: View {
                 }
 
                 ReefButton(.secondary, size: .compact, action: {
+                    stopTTS()
                     withAnimation {
                         if currentStep < walkthroughSteps.count - 1 {
                             currentStep += 1
+                            speakStep(currentStep)
                         } else {
                             showWalkthrough = false
                         }
@@ -212,24 +232,54 @@ struct TutorDemoStep: View {
         .frame(maxWidth: .infinity, alignment: .bottomLeading)
     }
 
+    // MARK: - TTS
+
+    private func stopTTS() {
+        introTask?.cancel()
+        stepSpeechTask?.cancel()
+        canvasVM?.tutorEvalService.stopAudio()
+    }
+
+    private func speakStep(_ index: Int) {
+        guard voiceMode, index < walkthroughSpeech.count else { return }
+        stepSpeechTask?.cancel()
+        stepSpeechTask = Task { @MainActor in
+            guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+                  let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+                  let token = try? await supabase.auth.session.accessToken else { return }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 15
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": walkthroughSpeech[index]])
+
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+
+            struct TTSResponse: Decodable {
+                let speechAudio: String?
+                enum CodingKeys: String, CodingKey { case speechAudio = "speech_audio" }
+            }
+
+            guard !Task.isCancelled,
+                  let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
+                  let audioBase64 = result.speechAudio,
+                  let audioData = Data(base64Encoded: audioBase64) else { return }
+
+            canvasVM?.tutorEvalService.playAudio(audioData)
+        }
+    }
+
     // MARK: - Intro TTS
 
     private func speakIntro() {
-        guard voiceMode else { introReady = true; return }
-        introReady = false
+        guard voiceMode else { return }
         introTask = Task { @MainActor in
-            // Fallback: enable button after 3s in case TTS fails
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(3))
-                if !introReady { introReady = true }
-            }
-
             guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
                   let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
-                  let token = try? await supabase.auth.session.accessToken else {
-                introReady = true
-                return
-            }
+                  let token = try? await supabase.auth.session.accessToken else { return }
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
@@ -238,31 +288,21 @@ struct TutorDemoStep: View {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": introSpeech])
 
-            guard let (data, response) = try? await URLSession.shared.data(for: request),
-                  let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                introReady = true
-                return
-            }
+            guard !Task.isCancelled,
+                  let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
 
             struct TTSResponse: Decodable {
                 let speechAudio: String?
                 enum CodingKeys: String, CodingKey { case speechAudio = "speech_audio" }
             }
 
-            guard let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
+            guard !Task.isCancelled,
+                  let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
                   let audioBase64 = result.speechAudio,
-                  let audioData = Data(base64Encoded: audioBase64) else {
-                introReady = true
-                return
-            }
+                  let audioData = Data(base64Encoded: audioBase64) else { return }
 
-            // Play audio, enable button when done
             canvasVM?.tutorEvalService.playAudio(audioData)
-            // Wait for audio to finish
-            while canvasVM?.tutorEvalService.isTutorSpeaking == true {
-                try? await Task.sleep(for: .milliseconds(200))
-            }
-            introReady = true
         }
     }
 
