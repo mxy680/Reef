@@ -1,21 +1,20 @@
 import SwiftUI
 
-/// Slowly pulses toolbar icon tint between tan and white during walkthrough.
+/// Slowly pulses toolbar icon brightness during walkthrough.
 struct WalkthroughGlow: ViewModifier {
     let isActive: Bool
 
     @State private var pulse = false
 
-    private let tan = Color(hex: 0xF5C28A)
-
     func body(content: Content) -> some View {
         content
-            .colorMultiply(isActive ? (pulse ? tan : .white) : .white)
+            .brightness(isActive && pulse ? 0.3 : 0)
+            .shadow(color: isActive && pulse ? Color(hex: 0xF5C28A).opacity(0.6) : .clear, radius: 4)
             .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: pulse)
-            .onAppear { if isActive { pulse = true } }
             .onChange(of: isActive) { _, active in
                 pulse = active
             }
+            .onAppear { if isActive { pulse = true } }
     }
 }
 
