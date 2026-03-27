@@ -75,14 +75,24 @@ private extension View {
     func onToolChanged(canvasVM: CanvasViewModel?, machine: WalkthroughStateMachine, dialogPhase: TutorDemoStep.DialogPhase) -> some View {
         self
         .onChange(of: canvasVM?.selectedTool) { _, newTool in
-            guard dialogPhase == .none, let tool = newTool else { return }
-            switch tool {
-            case .highlighter: machine.skipToAndAdvance(.tryHighlighter)
-            case .eraser: machine.skipToAndAdvance(.eraseHighlight)
-            case .shapes: machine.skipToAndAdvance(.shapeTool)
-            case .lasso: machine.skipToAndAdvance(.lassoTool)
-            case .handDraw: machine.skipToAndAdvance(.fingerDraw)
-            default: break
+            guard dialogPhase == .none, let tool = newTool, let current = machine.currentStep else { return }
+            // Map tool to its walkthrough step
+            let target: WalkthroughStep? = switch tool {
+            case .highlighter: .tryHighlighter
+            case .eraser: .eraseHighlight
+            case .shapes: .shapeTool
+            case .lasso: .lassoTool
+            case .handDraw: .fingerDraw
+            default: nil
+            }
+            guard let step = target else { return }
+
+            if step == current {
+                // User did the action they were told to — advance
+                machine.scheduleAdvance(ms: step.autoAdvanceDelayMs)
+            } else if step.rawValue > current.rawValue {
+                // User skipped ahead — jump to that step (don't auto-advance, let them read)
+                machine.skipToStep(step)
             }
         }
     }
