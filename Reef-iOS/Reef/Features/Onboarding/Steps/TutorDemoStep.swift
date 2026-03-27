@@ -94,61 +94,31 @@ struct TutorDemoStep: View {
         .animation(.easeOut(duration: 0.25), value: showWalkthrough)
         .animation(.easeOut(duration: 0.25), value: currentStep)
         .onAppear { generateDemo() }
-        // Auto-advance after pen lift on tool steps
+        // Draw step: 2.5s after pen lift → trigger reaction
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard showWalkthrough, !isThinkingReaction,
-                  let vm = canvasVM else { return }
-
-            if currentStep == 0 {
-                // Draw step: need actual strokes
-                guard vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
-                drawingReactionTask?.cancel()
-                drawingReactionTask = Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(2500))
-                    guard !Task.isCancelled else { return }
-                    triggerDrawingReaction()
-                }
-            } else {
-                // Tool steps: any drawing change with the right tool selected
-                let toolForStep: [Int: CanvasToolType] = [
-                    1: .highlighter, 2: .eraser, 3: .shapes, 4: .lasso, 5: .handDraw
-                ]
-                if let expected = toolForStep[currentStep], vm.selectedTool == expected {
-                    drawingReactionTask?.cancel()
-                    drawingReactionTask = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(1500))
-                        guard !Task.isCancelled else { return }
-                        stopTTS()
-                        advanceStep()
-                    }
-                }
+            guard showWalkthrough, currentStep == 0, !isThinkingReaction,
+                  let vm = canvasVM,
+                  vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
+            drawingReactionTask?.cancel()
+            drawingReactionTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(2500))
+                guard !Task.isCancelled else { return }
+                triggerDrawingReaction()
             }
         }
-        // No auto-advance on tool tap — only on actual use (drawing/erasing)
-        // drawingVersion onChange above handles steps 1-5 via pen lift detection
-        // Auto-advance for toggle-based tool steps (ruler, calculator, page settings)
-        .onChange(of: canvasVM?.showRuler) { _, isOn in
-            guard isOn == true, showWalkthrough, currentStep == 6 else { return }
-            scheduleAutoAdvance(delayMs: 1500)
-        }
-        .onChange(of: canvasVM?.showCalculator) { _, isOn in
-            guard isOn == true, showWalkthrough, currentStep == 7 else { return }
-            scheduleAutoAdvance(delayMs: 1500)
-        }
-        .onChange(of: canvasVM?.showPageSettings) { _, isOn in
-            guard isOn == true, showWalkthrough, currentStep == 8 else { return }
-            scheduleAutoAdvance(delayMs: 1500)
-        }
-        // Enable tutor toggle when reaching step 9, auto-advance when toggled on
+        // Step-specific setup + TTS-only auto-continue
         .onChange(of: currentStep) { _, step in
-            if step == 9 {
-                canvasVM?.deferTutorMode = false
+            // Enable tutor toggle when reaching step 9
+            if step == 9 { canvasVM?.deferTutorMode = false }
+            // Enable sidebar when tutor is toggled on via Next Step on step 9
+            if step == 10, let vm = canvasVM, vm.tutorModeOn {
+                vm.showSidebar = true
+                if vm.activeQuestionLabel == nil { vm.activeQuestionLabel = "Q1a" }
             }
-            // Steps 10 (step description) and 11 (progress bar) auto-continue after TTS
+            // Steps 10 (step description) and 11 (progress bar): auto-continue after TTS
             if step == 10 || step == 11 {
                 drawingReactionTask?.cancel()
                 drawingReactionTask = Task { @MainActor in
-                    // Wait for TTS to finish playing
                     while canvasVM?.tutorEvalService.isTutorSpeaking == true {
                         try? await Task.sleep(for: .milliseconds(200))
                     }
@@ -159,20 +129,12 @@ struct TutorDemoStep: View {
                 }
             }
         }
+        // Tutor toggle tapped on step 9 — setup sidebar
         .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
             guard isOn == true, showWalkthrough, currentStep == 9,
                   let vm = canvasVM else { return }
             vm.showSidebar = true
             if vm.activeQuestionLabel == nil { vm.activeQuestionLabel = "Q1a" }
-            scheduleAutoAdvance(delayMs: 1500)
-        }
-        .onChange(of: canvasVM?.showHintPopover) { _, isOn in
-            guard isOn == true, showWalkthrough, currentStep == 12 else { return }
-            scheduleAutoAdvance(delayMs: 1500)
-        }
-        .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
-            guard isOn == true, showWalkthrough, currentStep == 13 else { return }
-            scheduleAutoAdvance(delayMs: 1500)
         }
         // Problem solved — auto-advance walkthrough and continue onboarding
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
@@ -380,15 +342,6 @@ struct TutorDemoStep: View {
         }
     }
 
-    private func scheduleAutoAdvance(delayMs: Int) {
-        drawingReactionTask?.cancel()
-        drawingReactionTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(delayMs))
-            guard !Task.isCancelled else { return }
-            stopTTS()
-            advanceStep()
-        }
-    }
 
     private func advanceStep() {
         guard currentStep < walkthroughSteps.count - 1 else {
