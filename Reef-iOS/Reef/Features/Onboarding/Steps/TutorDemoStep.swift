@@ -289,16 +289,6 @@ struct TutorDemoStep: View {
 
         guard let decoded = try? JSONDecoder().decode(ReactResponse.self, from: data) else { return nil }
 
-        // Play the reaction audio immediately if available
-        if let audioBase64 = decoded.speechAudio,
-           let audioData = Data(base64Encoded: audioBase64) {
-            canvasVM?.tutorEvalService.playAudio(audioData)
-            // Wait for reaction audio to finish before returning
-            while canvasVM?.tutorEvalService.isTutorSpeaking == true {
-                try? await Task.sleep(for: .milliseconds(100))
-            }
-        }
-
         return decoded.reaction
     }
 
