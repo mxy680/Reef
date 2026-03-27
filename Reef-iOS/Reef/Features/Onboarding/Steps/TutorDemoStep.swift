@@ -32,6 +32,8 @@ struct TutorDemoStep: View {
         "Need to check your math? Tap the calculator — it floats right on your canvas so you never lose your place.",
         "Tap page settings to change your canvas background. Graph paper for plotting, dot grid for diagrams, lined for notes — pick whatever helps you think.",
         "Here's what makes Reef different. Tap the tutor toggle — your AI reads your handwriting live, knows the answer key, and coaches you without giving it away.",
+        "See that step description in the toolbar? That's your tutor telling you what to work on next — one step at a time.",
+        "And that progress bar? It fills up as your tutor reads your work. When it hits 100%, you've nailed the step.",
         "See the Hint section in the sidebar? Tap it to expand — your tutor gives you a nudge without spoiling the answer. Training wheels, not a cheat code.",
         "Now tap Full Solution in the sidebar — it shows the complete work for this step. Sometimes you just need to see how it's done. No judgment.",
         "Now try solving the problem on your own. Work through it step by step — your tutor is watching and will help if you get stuck.",
@@ -48,6 +50,8 @@ struct TutorDemoStep: View {
         "Need to check your math? Tap the calculator. It floats RIGHT on your canvas, so you NEVER lose your place.",
         "Tap page settings to change your canvas background. Graph paper for plotting. Dot grid for diagrams. Lined for notes. Pick whatever helps you think.",
         "HERE is what makes Reef different. Tap the tutor toggle. Your A.I. reads your handwriting LIVE, knows the answer key, and coaches you, without giving it away.",
+        "See that step description in the toolbar? That's your tutor telling you what to work on next. One step at a time.",
+        "And that progress bar? It fills up as your tutor reads your work. When it hits one hundred percent, you've NAILED the step.",
         "See the Hint section in the sidebar? Tap it to expand. Your tutor gives you a nudge, WITHOUT spoiling the answer. Training wheels. NOT a cheat code.",
         "Now tap Full Solution in the sidebar. It shows you the COMPLETE work for this step. Sometimes, you just need to see how it's done. No judgment.",
         "OK, DIVE IN. Work through the problem, step by step. Your tutor reads your handwriting in REAL time, and will jump in when you need a hand.",
@@ -140,6 +144,20 @@ struct TutorDemoStep: View {
             if step == 9 {
                 canvasVM?.deferTutorMode = false
             }
+            // Steps 10 (step description) and 11 (progress bar) auto-continue after TTS
+            if step == 10 || step == 11 {
+                drawingReactionTask?.cancel()
+                drawingReactionTask = Task { @MainActor in
+                    // Wait for TTS to finish playing
+                    while canvasVM?.tutorEvalService.isTutorSpeaking == true {
+                        try? await Task.sleep(for: .milliseconds(200))
+                    }
+                    try? await Task.sleep(for: .milliseconds(500))
+                    guard !Task.isCancelled else { return }
+                    stopTTS()
+                    advanceStep()
+                }
+            }
         }
         .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
             guard isOn == true, showWalkthrough, currentStep == 9,
@@ -149,16 +167,16 @@ struct TutorDemoStep: View {
             scheduleAutoAdvance(delayMs: 1500)
         }
         .onChange(of: canvasVM?.showHintPopover) { _, isOn in
-            guard isOn == true, showWalkthrough, currentStep == 10 else { return }
+            guard isOn == true, showWalkthrough, currentStep == 12 else { return }
             scheduleAutoAdvance(delayMs: 1500)
         }
         .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
-            guard isOn == true, showWalkthrough, currentStep == 11 else { return }
+            guard isOn == true, showWalkthrough, currentStep == 13 else { return }
             scheduleAutoAdvance(delayMs: 1500)
         }
         // Problem solved — auto-advance walkthrough and continue onboarding
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
-            guard status == "completed", showWalkthrough, currentStep == 12,
+            guard status == "completed", showWalkthrough, currentStep == 14,
                   let vm = canvasVM,
                   vm.tutorStepCount > 0,
                   vm.currentTutorStepIndex >= vm.tutorStepCount - 1 else { return }
