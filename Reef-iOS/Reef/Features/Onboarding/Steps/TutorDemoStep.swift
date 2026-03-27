@@ -72,7 +72,7 @@ struct TutorDemoStep: View {
                             onGotIt: { walkthrough.advance() }
                         )
 
-                        // Skip + Restart — always visible
+                        // Skip + Next Step — always visible
                         HStack(spacing: 8) {
                             ReefButton(.primary, size: .compact, action: {
                                 walkthrough.skip()
@@ -83,9 +83,9 @@ struct TutorDemoStep: View {
                             }
 
                             ReefButton(.secondary, size: .compact, action: {
-                                walkthrough.restart()
+                                walkthrough.advance()
                             }) {
-                                Text("Restart")
+                                Text("Next step →")
                                     .font(.epilogue(11, weight: .bold))
                                     .tracking(-0.04 * 11)
                             }
