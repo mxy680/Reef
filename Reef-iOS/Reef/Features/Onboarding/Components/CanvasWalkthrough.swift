@@ -198,6 +198,13 @@ final class CanvasWalkthroughState {
         }
     }
 
+    /// Skip ahead to a step (if it's after the current one) and advance past it.
+    func skipToAndAdvance(_ target: WalkthroughStep, delayMs: Int = 1000) {
+        guard let current = currentStep, target.rawValue >= current.rawValue else { return }
+        currentStep = target
+        advanceAfterDelay(ms: delayMs)
+    }
+
     func advanceAfterDelay(ms: Int) {
         pendingAdvanceTask?.cancel()
         log("advanceAfterDelay(\(ms)ms) queued")

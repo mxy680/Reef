@@ -175,103 +175,74 @@ struct TutorDemoStep: View {
                 }
 
             case .tryHighlighter:
-                if vm.selectedTool == .highlighter && vm.drawingManager.hasDrawing(for: vm.currentPageIndex) {
-                    walkthrough.advanceAfterDelay(ms: 1000)
-                }
+                if vm.selectedTool == .highlighter { walkthrough.advanceAfterDelay(ms: 1000) }
 
             case .eraseHighlight:
-                if vm.selectedTool == .eraser {
-                    walkthrough.advanceAfterDelay(ms: 1000)
-                }
+                if vm.selectedTool == .eraser { walkthrough.advanceAfterDelay(ms: 1000) }
 
             case .shapeTool:
-                if vm.selectedTool == .shapes {
-                    walkthrough.advanceAfterDelay(ms: 1000)
-                }
+                if vm.selectedTool == .shapes { walkthrough.advanceAfterDelay(ms: 1000) }
 
             case .lassoTool:
-                if vm.selectedTool == .lasso {
-                    walkthrough.advanceAfterDelay(ms: 1000)
-                }
+                if vm.selectedTool == .lasso { walkthrough.advanceAfterDelay(ms: 1000) }
 
             case .fingerDraw:
-                if vm.selectedTool == .handDraw {
-                    walkthrough.advanceAfterDelay(ms: 1000)
-                }
+                if vm.selectedTool == .handDraw { walkthrough.advanceAfterDelay(ms: 1000) }
 
             default:
                 break
+
             }
-        }
-        // Detect ruler/calculator/page settings individually
-        .onChange(of: canvasVM?.showRuler) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .ruler {
-                walkthrough.advanceAfterDelay(ms: 1500)
-            }
-        }
-        .onChange(of: canvasVM?.showCalculator) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .calculator {
-                walkthrough.advanceAfterDelay(ms: 1500)
-            }
-        }
-        .onChange(of: canvasVM?.showPageSettings) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .pageSettings {
-                walkthrough.advanceAfterDelay(ms: 1500)
-            }
-        }
-        // Detect voice command (mic) — wait for tutor to finish responding
-        .onChange(of: canvasVM?.isMicOn) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .voiceCommand {
-                walkthrough.log("Mic activated during voiceCommand step, waiting for tutor response...")
-            }
-        }
-        .onChange(of: canvasVM?.tutorEvalService.isSendingChat) { _, isSending in
-            if isSending == false && walkthrough.currentStep == .voiceCommand {
-                // Tutor finished responding — wait for audio, then advance
-                if canvasVM?.tutorEvalService.chatMessages.contains(where: { $0.role == .answer }) == true {
-                    Task { @MainActor in
-                        await waitForTutorAudio()
-                        walkthrough.advance()
-                    }
+
+            // Also check if the user did a later action early (tool selection)
+            if let step = walkthrough.currentStep, step.rawValue < WalkthroughStep.enableTutor.rawValue {
+                switch vm.selectedTool {
+                case .highlighter: walkthrough.skipToAndAdvance(.tryHighlighter)
+                case .eraser: walkthrough.skipToAndAdvance(.eraseHighlight)
+                case .shapes: walkthrough.skipToAndAdvance(.shapeTool)
+                case .lasso: walkthrough.skipToAndAdvance(.lassoTool)
+                case .handDraw: walkthrough.skipToAndAdvance(.fingerDraw)
+                default: break
                 }
             }
         }
-        // Detect sidebar toggle
-        .onChange(of: canvasVM?.showSidebar) { _, isOn in
-            if walkthrough.currentStep == .sidebarToggle {
-                walkthrough.advanceAfterDelay(ms: 1000)
-            }
+        // Detect tool/feature usage — skip ahead if done early
+        .onChange(of: canvasVM?.showRuler) { _, isOn in
+            if isOn == true { walkthrough.skipToAndAdvance(.ruler) }
         }
-        // Detect bug report
+        .onChange(of: canvasVM?.showCalculator) { _, isOn in
+            if isOn == true { walkthrough.skipToAndAdvance(.calculator) }
+        }
+        .onChange(of: canvasVM?.showPageSettings) { _, isOn in
+            if isOn == true { walkthrough.skipToAndAdvance(.pageSettings) }
+        }
+        .onChange(of: canvasVM?.showSidebar) { _, _ in
+            walkthrough.skipToAndAdvance(.sidebarToggle)
+        }
         .onChange(of: canvasVM?.showBugReport) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .bugReport {
-                walkthrough.advanceAfterDelay(ms: 1500)
-            }
+            if isOn == true { walkthrough.skipToAndAdvance(.bugReport) }
         }
-        // Detect export
         .onChange(of: canvasVM?.showExportPreview) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .exportFeature {
-                walkthrough.advanceAfterDelay(ms: 1500)
-            }
+            if isOn == true { walkthrough.skipToAndAdvance(.exportFeature) }
         }
-        // Detect hint and reveal
         .onChange(of: canvasVM?.showHintPopover) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .tutorHint {
-                walkthrough.advanceAfterDelay(ms: 1500)
-            }
+            if isOn == true { walkthrough.skipToAndAdvance(.tutorHint) }
         }
         .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
-            if isOn == true && walkthrough.currentStep == .tutorReveal {
-                walkthrough.advanceAfterDelay(ms: 1500)
-            }
+            if isOn == true { walkthrough.skipToAndAdvance(.tutorReveal) }
         }
-        // Detect problem solved — tutor progress reaches 100%
+        .onChange(of: canvasVM?.isMicOn) { _, isOn in
+            if isOn == true { walkthrough.skipToAndAdvance(.voiceCommand, delayMs: 3000) }
+        }
+        // Detect problem solved — auto-continue to next onboarding step
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
-            if status == "completed" && walkthrough.currentStep == .solveIt {
+            if status == "completed" {
                 if let vm = canvasVM, vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
                     Task { @MainActor in
                         await waitForTutorAudio()
-                        walkthrough.advance()
+                        try? await Task.sleep(for: .seconds(2))
+                        Task { await viewModel.deleteDemoDocument() }
+                        viewModel.goNext()
                     }
                 }
             }
