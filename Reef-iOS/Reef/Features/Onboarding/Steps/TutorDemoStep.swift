@@ -90,39 +90,8 @@ struct TutorDemoStep: View {
         .animation(.easeOut(duration: 0.25), value: showWalkthrough)
         .animation(.easeOut(duration: 0.25), value: currentStep)
         .onAppear { generateDemo() }
-        // Drawing detection — 2.5s after pen lift on step 0
-        .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard showWalkthrough, currentStep == 0, !isThinkingReaction,
-                  let vm = canvasVM,
-                  vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
-            drawingReactionTask?.cancel()
-            drawingReactionTask = Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(2500))
-                guard !Task.isCancelled else { return }
-
-                // Show thinking state
-                stopTTS()
-                withAnimation { isThinkingReaction = true }
-
-                guard let image = vm.captureActiveQuestionImage() else {
-                    withAnimation { isThinkingReaction = false; currentStep = 1 }
-                    speakStep(1)
-                    return
-                }
-
-                // Call LLM for reaction (this also plays reaction audio and waits)
-                let reaction = await fetchDrawingReaction(imageBase64: image)
-                drawingReaction = reaction
-
-                // Advance to step 1 with reaction prepended
-                withAnimation { isThinkingReaction = false; currentStep = 1 }
-                if let reaction {
-                    speakCombined(reaction: reaction, stepIndex: 1)
-                } else {
-                    speakStep(1)
-                }
-            }
-        }
+        // No auto-advance from drawing. User must tap "Next step"
+        // which triggers the reaction if they drew something.
     }
 
     // MARK: - Voice Choice
