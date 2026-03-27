@@ -12,7 +12,8 @@ struct TutorDemoStep: View {
     @State private var introTask: Task<Void, Never>?
     @State private var stepSpeechTask: Task<Void, Never>?
     @State private var drawingReactionTask: Task<Void, Never>?
-    @State private var drawingReaction: String?  // LLM reaction to the user's drawing
+    @State private var drawingReaction: String?
+    @State private var isThinkingReaction = false
     @State private var currentStep: Int = 0
     @State private var showWalkthrough = false
 
@@ -75,7 +76,7 @@ struct TutorDemoStep: View {
                 }
 
                 // Walkthrough step popup
-                if showWalkthrough && !showIntro && currentStep < walkthroughSteps.count {
+                if showWalkthrough && !showIntro && (currentStep < walkthroughSteps.count || isThinkingReaction) {
                     walkthroughPopup
                         .zIndex(400)
                         .transition(.opacity)
@@ -91,26 +92,30 @@ struct TutorDemoStep: View {
         .onAppear { generateDemo() }
         // Drawing detection — 2.5s after pen lift on step 0
         .onChange(of: canvasVM?.drawingManager.drawingVersion) { _, _ in
-            guard showWalkthrough, currentStep == 0,
+            guard showWalkthrough, currentStep == 0, !isThinkingReaction,
                   let vm = canvasVM,
                   vm.drawingManager.hasDrawing(for: vm.currentPageIndex) else { return }
             drawingReactionTask?.cancel()
             drawingReactionTask = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(2500))
                 guard !Task.isCancelled else { return }
+
+                // Show thinking state
+                stopTTS()
+                withAnimation { isThinkingReaction = true }
+
                 guard let image = vm.captureActiveQuestionImage() else {
-                    // No image — just advance
-                    stopTTS()
-                    withAnimation { currentStep = 1 }
+                    withAnimation { isThinkingReaction = false; currentStep = 1 }
                     speakStep(1)
                     return
                 }
-                // Call LLM for reaction
+
+                // Call LLM for reaction (this also plays reaction audio and waits)
                 let reaction = await fetchDrawingReaction(imageBase64: image)
                 drawingReaction = reaction
+
                 // Advance to step 1 with reaction prepended
-                stopTTS()
-                withAnimation { currentStep = 1 }
+                withAnimation { isThinkingReaction = false; currentStep = 1 }
                 if let reaction {
                     speakCombined(reaction: reaction, stepIndex: 1)
                 } else {
@@ -215,10 +220,14 @@ struct TutorDemoStep: View {
         return VStack(alignment: .leading, spacing: 8) {
             Spacer()
 
-            // Step text card (prepend drawing reaction on step 1)
-            let stepText = (currentStep == 1 && drawingReaction != nil)
-                ? "\(drawingReaction!) \(walkthroughSteps[currentStep])"
-                : walkthroughSteps[currentStep]
+            // Step text card
+            let stepText: String = if isThinkingReaction {
+                "Thinking..."
+            } else if currentStep == 1, let reaction = drawingReaction {
+                "\(reaction) \(walkthroughSteps[currentStep])"
+            } else {
+                walkthroughSteps[currentStep]
+            }
             Text(stepText)
                 .font(.epilogue(14, weight: .semiBold))
                 .tracking(-0.04 * 14)
@@ -232,7 +241,8 @@ struct TutorDemoStep: View {
                 .background(RoundedRectangle(cornerRadius: 14).fill(colors.shadow).offset(x: 3, y: 3))
                 .id(currentStep)  // force re-render on step change
 
-            // Buttons
+            // Buttons (hidden while thinking)
+            if !isThinkingReaction {
             HStack(spacing: 8) {
                 ReefButton(.primary, size: .compact, action: {
                     stopTTS()
@@ -260,6 +270,7 @@ struct TutorDemoStep: View {
                         .tracking(-0.04 * 11)
                 }
             }
+            } // end if !isThinkingReaction
         }
         .padding(.leading, 20)
         .padding(.bottom, 8)
