@@ -14,6 +14,7 @@ struct TutorDemoStep: View {
 
     @State private var voiceMode = true
     @State private var dialogPhase: DialogPhase = .voiceChoice
+    @State private var problemSolved = false
 
     @State private var introReady = true
     @State private var introTask: Task<Void, Never>?
@@ -131,16 +132,12 @@ struct TutorDemoStep: View {
                 withAnimation { machine.advance() }
             }
         }
-        // Problem solved — auto-continue to next onboarding step
+        // Problem solved — show "Continue" button
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
             if status == "completed" {
                 if let vm = canvasVM, vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
-                    Task { @MainActor in
-                        await audio.waitForTutorAudio(vm.tutorEvalService)
-                        try? await Task.sleep(for: .seconds(2))
-                        Task { await viewModel.deleteDemoDocument() }
-                        viewModel.goNext()
-                    }
+                    problemSolved = true
+                    machine.skipTutorial()
                 }
             }
         }
@@ -290,7 +287,7 @@ struct TutorDemoStep: View {
         VStack {
             Spacer()
             HStack {
-                ReefButton("Done — show me my plan", size: .compact, action: {
+                ReefButton(problemSolved ? "Continue →" : "Done — show me my plan", size: .compact, action: {
                     Task { await viewModel.deleteDemoDocument() }
                     viewModel.goNext()
                 })
