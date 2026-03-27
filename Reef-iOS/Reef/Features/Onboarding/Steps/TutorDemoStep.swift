@@ -148,6 +148,14 @@ struct TutorDemoStep: View {
             if vm.activeQuestionLabel == nil { vm.activeQuestionLabel = "Q1a" }
             scheduleAutoAdvance(delayMs: 1500)
         }
+        .onChange(of: canvasVM?.showHintPopover) { _, isOn in
+            guard isOn == true, showWalkthrough, currentStep == 10 else { return }
+            scheduleAutoAdvance(delayMs: 1500)
+        }
+        .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
+            guard isOn == true, showWalkthrough, currentStep == 11 else { return }
+            scheduleAutoAdvance(delayMs: 1500)
+        }
     }
 
     // MARK: - Voice Choice
