@@ -134,11 +134,13 @@ struct TutorDemoStep: View {
         }
         // Problem solved — show "Continue" button
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
-            if status == "completed" {
-                if let vm = canvasVM, vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
-                    problemSolved = true
-                    machine.skipTutorial()
-                }
+            guard !problemSolved else { return }
+            if status == "completed",
+               let vm = canvasVM,
+               vm.tutorStepCount > 0,
+               vm.currentTutorStepIndex >= vm.tutorStepCount - 1 {
+                problemSolved = true
+                machine.skipTutorial()
             }
         }
         // Step changes → speak instruction + setup
