@@ -25,6 +25,12 @@ from typing import Any
 
 import httpx
 
+# Ensure Reef-Server root is on sys.path for latex2strokes import
+_here = os.path.dirname(os.path.abspath(__file__))
+_server_root = os.path.dirname(_here)
+if _server_root not in sys.path:
+    sys.path.insert(0, _server_root)
+
 # ---------------------------------------------------------------------------
 # Load env from shared config
 # ---------------------------------------------------------------------------
@@ -628,6 +634,44 @@ def handle_command(
     return step_index, True
 
 
+# ---------------------------------------------------------------------------
+# Stroke pipeline helpers
+# ---------------------------------------------------------------------------
+
+def acquire_mathpix_session(server: str, token: str) -> tuple[str, str]:
+    """Get a Mathpix strokes session from the server."""
+    resp = httpx.post(
+        f"{server}/ai/strokes-session",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data["app_token"], data["strokes_session_id"]
+
+
+def latex_to_strokes_and_transcribe(
+    latex: str,
+    server: str,
+    token: str,
+    app_token: str,
+    session_id: str,
+) -> str:
+    """Convert LaTeX to strokes via latex2strokes, send to Mathpix, return transcribed LaTeX."""
+    from app.services.latex2strokes import latex_to_strokes
+
+    strokes = latex_to_strokes(latex, jitter=False)
+    resp = httpx.post(
+        f"{server}/ai/transcribe-strokes",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        json={"strokes": strokes, "app_token": app_token, "session_id": session_id},
+        timeout=20,
+    )
+    if resp.status_code != 200:
+        return f"[MATHPIX ERROR {resp.status_code}]"
+    return resp.json().get("latex", resp.json().get("raw_latex", ""))
+
+
 def run_interactive_loop(
     server: str,
     token: str,
@@ -639,6 +683,7 @@ def run_interactive_loop(
     verbose: bool,
     auto_inputs: list[dict] | None = None,
     no_cleanup: bool = False,
+    mathpix_session: tuple[str, str] | None = None,
 ) -> None:
     """Main simulation loop."""
     total_steps = len(steps_list)
@@ -698,8 +743,19 @@ def run_interactive_loop(
                     break
                 continue
 
-            # Accumulate and write to DB
-            accumulated_latex.append(latex_input)
+            # Stroke pipeline: convert LaTeX → strokes → Mathpix → use transcribed output
+            if mathpix_session:
+                print(f"  Converting to strokes...")
+                transcribed = latex_to_strokes_and_transcribe(
+                    latex_input, server, token, mathpix_session[0], mathpix_session[1]
+                )
+                match = "✓" if transcribed.strip() and not transcribed.startswith("[MATHPIX") else "✗"
+                print(f"  Wrote:   {latex_input}")
+                print(f"  Mathpix: {transcribed}  {match}")
+                accumulated_latex.append(transcribed)
+            else:
+                accumulated_latex.append(latex_input)
+
             latex_so_far = "\n".join(accumulated_latex)
             upsert_student_work(doc_id, question_label, user_id, latex_so_far)
 
@@ -867,6 +923,7 @@ def main() -> None:
     parser.add_argument("--auto", action="store_true", help="Run test_inputs non-interactively")
     parser.add_argument("--no-cleanup", action="store_true", help="Skip cleanup on exit")
     parser.add_argument("--verbose", action="store_true", help="Show full debug prompt from server")
+    parser.add_argument("--strokes", action="store_true", help="Convert LaTeX to strokes → Mathpix → tutor (full pipeline)")
     args = parser.parse_args()
 
     if not args.topic and not args.scenario:
@@ -898,6 +955,17 @@ def main() -> None:
             print("  [warn] --auto specified but scenario has no test_inputs. Running interactively.")
             auto_inputs = None
 
+    # Acquire Mathpix session for --strokes mode
+    mathpix_session: tuple[str, str] | None = None
+    if args.strokes:
+        print("  Acquiring Mathpix session for stroke mode...")
+        try:
+            mathpix_session = acquire_mathpix_session(args.server, token)
+            print(f"  Stroke mode: ON (session {mathpix_session[1][:12]}...)")
+        except Exception as e:
+            print(f"  [error] Failed to acquire Mathpix session: {e}")
+            print("  Falling back to direct LaTeX mode.")
+
     run_interactive_loop(
         server=args.server,
         token=token,
@@ -909,6 +977,7 @@ def main() -> None:
         verbose=args.verbose,
         auto_inputs=auto_inputs,
         no_cleanup=args.no_cleanup,
+        mathpix_session=mathpix_session,
     )
 
 
