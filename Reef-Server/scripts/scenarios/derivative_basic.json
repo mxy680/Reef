@@ -1,0 +1,34 @@
+{
+  "question_text": "Find the derivative of $f(x) = 3x^2 + 5x - 2$",
+  "question_number": 1,
+  "part_label": "a",
+  "steps": [
+    {
+      "description": "Apply the power rule to each term",
+      "explanation": "The power rule says $\\frac{d}{dx}[x^n] = nx^{n-1}$. Apply it to each term separately.",
+      "work": "f'(x) = 6x + 5",
+      "reinforcement": "Exactly right — power rule applied cleanly to all three terms!",
+      "tutor_speech": "Your first step is to apply the power rule to each term in the polynomial.",
+      "concepts": ["power_rule", "polynomial_differentiation"]
+    },
+    {
+      "description": "Confirm the constant term vanishes",
+      "explanation": "The derivative of any constant is zero — does $-2$ appear in your answer?",
+      "work": "f'(x) = 6x + 5",
+      "reinforcement": "Correct — the constant disappeared, leaving the final derivative.",
+      "tutor_speech": "Now confirm that the constant term minus 2 has vanished from your derivative.",
+      "concepts": ["constant_rule"]
+    }
+  ],
+  "final_answer": "$f'(x) = 6x + 5$",
+  "test_inputs": [
+    {
+      "latex": "f'(x) = 6x + 5",
+      "expect_status": "completed"
+    },
+    {
+      "latex": "f'(x) = 6x",
+      "expect_status": "mistake"
+    }
+  ]
+}
