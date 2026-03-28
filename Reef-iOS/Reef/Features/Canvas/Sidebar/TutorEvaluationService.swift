@@ -106,7 +106,6 @@ final class TutorEvaluationService {
             // Step completed — show reinforcement immediately
             if response.status == "completed" {
                 if let reinforcement = pendingReinforcement, !reinforcement.isEmpty {
-                    chatMessages.removeAll { $0.role == .reinforcement }
                     chatMessages.append(TutorChatMessage(role: .reinforcement, latex: reinforcement, timestamp: Date()))
                 }
                 if !isDemo && madeMistakeOnCurrentStep {
