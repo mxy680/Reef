@@ -107,6 +107,7 @@ final class TutorEvaluationService {
             if response.status == "completed" {
                 if let reinforcement = pendingReinforcement, !reinforcement.isEmpty {
                     chatMessages.append(TutorChatMessage(role: .reinforcement, latex: reinforcement, timestamp: Date()))
+                    pendingReinforcement = nil  // prevent duplicate on re-eval
                 }
                 if !isDemo && madeMistakeOnCurrentStep {
                     chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
