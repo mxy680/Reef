@@ -80,8 +80,38 @@ def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
         return False
 
 
-def show_doc_context(doc_id: str) -> tuple[str, list[dict]]:
-    """Fetch and display question + answer key for a document. Returns (question_label, steps)."""
+def get_question_region(doc_id: str, question_number: int, part_label: str | None) -> tuple[float, float]:
+    """Get the y_start and y_end for a specific subquestion. Returns (y_start, y_end) in PDF points."""
+    url = ENV.get("SUPABASE_URL", "")
+    resp = httpx.get(
+        f"{url}/rest/v1/documents?id=eq.{doc_id}&select=question_regions,question_pages",
+        headers=supabase_headers(), timeout=5,
+    )
+    if resp.status_code != 200 or not resp.json():
+        return 150.0, 400.0  # fallback
+
+    doc = resp.json()[0]
+    regions = doc.get("question_regions", [])
+    if not regions or question_number - 1 >= len(regions):
+        return 150.0, 400.0
+
+    q_regions = regions[question_number - 1]
+    if not q_regions:
+        return 150.0, 400.0
+
+    for r in q_regions.get("regions", []):
+        if r.get("label") == part_label:
+            return r.get("y_start", 150.0), r.get("y_end", 400.0)
+
+    # Fallback: use last region
+    all_regions = q_regions.get("regions", [])
+    if all_regions:
+        return all_regions[-1].get("y_start", 150.0), all_regions[-1].get("y_end", 400.0)
+    return 150.0, 400.0
+
+
+def show_doc_context(doc_id: str) -> tuple[str, list[dict], float]:
+    """Fetch and display question + answer key. Returns (question_label, steps, y_start)."""
     url = ENV.get("SUPABASE_URL", "")
     resp = httpx.get(
         f"{url}/rest/v1/answer_keys?document_id=eq.{doc_id}&select=answer_text,question_json",
@@ -89,7 +119,7 @@ def show_doc_context(doc_id: str) -> tuple[str, list[dict]]:
     )
     if resp.status_code != 200 or not resp.json():
         print(f"  No answer key found for {doc_id}")
-        return "Q1a", []
+        return "Q1a", [], 150.0
 
     row = resp.json()[0]
     q_json = row.get("question_json", {})
@@ -105,15 +135,19 @@ def show_doc_context(doc_id: str) -> tuple[str, list[dict]]:
     question_label = f"Q{q_num}{part_label}"
     steps = parts[0].get("steps", []) if parts else ak.get("steps", [])
 
+    # Get the Y position for this subquestion
+    y_start, y_end = get_question_region(doc_id, q_num, part_label if part_label else None)
+
     print(f"\n  Document: {doc_id}")
     print(f"  Question: {q_json.get('text', '?')[:80]}")
     print(f"  Label: {question_label}  Steps: {len(steps)}")
+    print(f"  Region: y={y_start:.0f}-{y_end:.0f} (PDF points)")
     for i, s in enumerate(steps):
         print(f"    Step {i+1}: {s.get('description', '')[:55]}")
         print(f"      Work: {s.get('work', '')[:55]}")
     print()
 
-    return question_label, steps
+    return question_label, steps, y_start + 10  # 10pt below region start
 
 
 def main():
@@ -128,9 +162,12 @@ def main():
 
     question_label = args.question_label
     steps: list[dict] = []
+    y_pos = args.y
 
     if args.doc_id:
-        question_label, steps = show_doc_context(args.doc_id)
+        question_label, steps, y_pos = show_doc_context(args.doc_id)
+        if args.y == 150.0:  # user didn't override
+            args.y = y_pos
 
     if args.latex:
         print(f"  Injecting: {args.latex}")

@@ -1450,7 +1450,7 @@ final class CanvasViewModel {
                         print("[sim-poll] activeCanvasView: \(self.drawingManager.activeCanvasView != nil ? "YES" : "NIL")")
                         print("[sim-poll] drawing strokes before: \(self.drawingManager.drawing(for: self.currentPageIndex).strokes.count)")
 
-                        let scale: Double = 2.0
+                        let scale: Double = 1.0
                         let ink = PKInk(.pen, color: .black)
 
                         for (i, strokeDict) in row.strokes.enumerated() {
