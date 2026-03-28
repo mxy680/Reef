@@ -1,0 +1,40 @@
+{
+  "question_text": "For the reaction $\\text{N}_2(g) + 3\\text{H}_2(g) \\rightleftharpoons 2\\text{NH}_3(g)$, the equilibrium concentrations are $[\\text{N}_2] = 0.50\\,\\text{M}$, $[\\text{H}_2] = 0.30\\,\\text{M}$, and $[\\text{NH}_3] = 0.20\\,\\text{M}$. Calculate $K_c$ and determine which direction the reaction shifts if $[\\text{H}_2]$ is increased to $0.60\\,\\text{M}$.",
+  "question_number": 1,
+  "part_label": "a",
+  "steps": [
+    {
+      "description": "Write the equilibrium expression for Kc",
+      "explanation": "Products over reactants — what are the exponents?",
+      "work": "K_c = \\frac{[\\text{NH}_3]^2}{[\\text{N}_2][\\text{H}_2]^3}",
+      "reinforcement": "Good — products over reactants with stoichiometric coefficients as exponents.",
+      "tutor_speech": "Write the equilibrium expression.",
+      "concepts": ["equilibrium_expression"]
+    },
+    {
+      "description": "Substitute the equilibrium concentrations and calculate Kc",
+      "explanation": "Plug in the values — what's 0.30 cubed?",
+      "work": "K_c = \\frac{(0.20)^2}{(0.50)(0.30)^3} = \\frac{0.04}{0.0135} = 2.96",
+      "reinforcement": "Kc = 2.96 — careful arithmetic pays off.",
+      "tutor_speech": "Plug in the concentrations and calculate.",
+      "concepts": ["substitution", "arithmetic"]
+    },
+    {
+      "description": "Calculate the reaction quotient Q with the new H2 concentration",
+      "explanation": "Same formula as Kc, but with the new concentrations. What changes?",
+      "work": "Q = \\frac{(0.20)^2}{(0.50)(0.60)^3} = \\frac{0.04}{0.108} = 0.370",
+      "reinforcement": "Q = 0.370 — now you can compare it to Kc.",
+      "tutor_speech": "Calculate Q with the new hydrogen concentration.",
+      "concepts": ["reaction_quotient"]
+    },
+    {
+      "description": "Compare Q to Kc and determine the direction of shift",
+      "explanation": "Is Q less than, equal to, or greater than Kc? What does Le Chatelier's principle say?",
+      "work": "Q < K_c \\implies \\text{reaction shifts right (toward products)}",
+      "reinforcement": "Exactly — Q < Kc means too few products, so the reaction shifts right to make more NH3.",
+      "tutor_speech": "Compare Q to Kc and state the shift direction.",
+      "concepts": ["le_chateliers_principle", "equilibrium_shift"]
+    }
+  ],
+  "final_answer": "K_c = 2.96; reaction shifts right (toward products)"
+}
