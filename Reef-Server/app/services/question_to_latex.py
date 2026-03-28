@@ -89,7 +89,8 @@ def question_to_latex(question: Question) -> str:
                 lines.append("\\vspace{3em}")
                 lines.append("")
     else:
-        lines.append(f"\\vspace{{{question.answer_space_cm:.1f}cm}}")
+        space = max(question.answer_space_cm, 10.0)
+        lines.append(f"\\vspace{{{space:.1f}cm}}")
         lines.append("")
 
     return "\n".join(lines).rstrip()
@@ -116,7 +117,8 @@ def _render_part(part: Part, depth: int) -> str:
                 lines.append("")
     else:
         lines.append("")
-        lines.append(f"\\vspace{{{part.answer_space_cm:.1f}cm}}")
+        space = max(part.answer_space_cm, 10.0)
+        lines.append(f"\\vspace{{{space:.1f}cm}}")
 
     body = "\n".join(lines)
 
