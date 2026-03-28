@@ -218,16 +218,25 @@ struct CanvasDrawingBar: View {
                     }
                     .buttonStyle(.plain)
                 } else {
-                    Button(action: { viewModel.startSimulation() }) {
-                        Text("SIM")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Color.orange)
-                            .cornerRadius(4)
+                    VStack(spacing: 2) {
+                        Button(action: { viewModel.startSimulation() }) {
+                            Text("SIM")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(Color.orange)
+                                .cornerRadius(4)
+                        }
+                        .buttonStyle(.plain)
+                        if !viewModel.simulationService.lastError.isEmpty {
+                            Text(viewModel.simulationService.lastError)
+                                .font(.system(size: 7))
+                                .foregroundColor(.red)
+                                .lineLimit(2)
+                                .frame(maxWidth: 80)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
 #endif
             }

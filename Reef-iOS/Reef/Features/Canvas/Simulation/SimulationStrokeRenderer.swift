@@ -80,6 +80,8 @@ final class SimulationStrokeRenderer {
             var drawing = drawingManager.drawing(for: pageIndex)
             drawing.strokes.append(stroke)
             drawingManager.setDrawing(drawing, for: pageIndex)
+            // Push the drawing to the actual PKCanvasView so it renders on screen
+            drawingManager.activeCanvasView?.drawing = drawing
             try? await Task.sleep(for: delayPerStroke)
         }
     }

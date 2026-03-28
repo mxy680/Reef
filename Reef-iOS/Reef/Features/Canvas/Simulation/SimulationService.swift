@@ -21,6 +21,7 @@ final class SimulationService {
     var currentStep = 0
     var totalSteps = 0
     var lastReasoning = ""
+    var lastError = ""
 
     // MARK: - Private
 
@@ -46,12 +47,14 @@ final class SimulationService {
         lastReasoning = ""
 
         guard let token = try? await supabase.auth.session.accessToken else {
+            print("[simulation] No auth token")
             isSimulating = false
             return
         }
+        print("[simulation] Token acquired, calling \(serverURL)/ai/simulation/start")
 
         let body: [String: Any] = [
-            "document_id": documentId,
+            "doc_id": documentId,
             "question_number": questionNumber,
             "part_label": partLabel ?? "a",
             "personality": personality,
@@ -74,29 +77,33 @@ final class SimulationService {
         do {
             (data, response) = try await URLSession.shared.data(for: request)
         } catch {
+            lastError = "Network: \(error.localizedDescription)"
             print("[simulation] Network error: \(error)")
             isSimulating = false
             return
         }
 
         guard let http = response as? HTTPURLResponse else {
-            print("[simulation] Not HTTP response")
+            lastError = "Not HTTP response"
             isSimulating = false
             return
         }
 
         guard http.statusCode == 200 else {
             let body = String(data: data, encoding: .utf8) ?? ""
+            lastError = "HTTP \(http.statusCode): \(String(body.prefix(100)))"
             print("[simulation] Server returned \(http.statusCode): \(body.prefix(200))")
             isSimulating = false
             return
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            lastError = "JSON parse failed"
             print("[simulation] Failed to parse JSON: \(String(data: data, encoding: .utf8) ?? "")")
             isSimulating = false
             return
         }
+        lastError = ""
 
         await handleStrokesMessage(
             json,
@@ -126,7 +133,7 @@ final class SimulationService {
         guard let token = try? await supabase.auth.session.accessToken else { return }
 
         let body: [String: Any] = [
-            "document_id": documentId,
+            "doc_id": documentId,
             "tutor_status": tutorStatus,
             "tutor_feedback": tutorFeedback ?? "",
             "step_index": stepIndex,
