@@ -23,9 +23,6 @@ class Settings(BaseSettings):
     reef_inference_url: str = "https://inference.studyreef.com"
     reef_inference_token: str = ""
 
-    # Feature flags
-    simulation_enabled: bool = False
-
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

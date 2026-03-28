@@ -161,6 +161,20 @@ struct CanvasInfoStrip: View {
 
             divider
 
+            #if DEBUG
+            // Simulation play button — opens WebSocket for Claude to inject strokes
+            Button {
+                Task { await viewModel.toggleSimulationWebSocket() }
+            } label: {
+                Image(systemName: viewModel.isSimWsConnected ? "stop.circle.fill" : "play.circle.fill")
+                    .resizable()
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(viewModel.isSimWsConnected ? .red : .green)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 4)
+            #endif
+
             // Tutor mode toggle
             HStack(spacing: 8) {
                 Image(viewModel.tutorModeOn ? "canvas.tutor_on" : "canvas.tutor_off")

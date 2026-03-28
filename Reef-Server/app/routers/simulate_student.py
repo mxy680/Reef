@@ -74,22 +74,27 @@ class SimulationStartResponse(BaseModel):
     status: str
     step_index: int
     total_steps: int
-    strokes: list[dict] | None = None
-    latex: str | None = None
-    reasoning: str | None = None
 
 
 class SimulationContinueResponse(BaseModel):
     status: str
     step_index: int
     total_steps: int
-    strokes: list[dict] | None = None
-    latex: str | None = None
-    reasoning: str | None = None
 
 
 class SimulationStopResponse(BaseModel):
     status: str
+
+
+class InjectStrokesRequest(BaseModel):
+    latex: str
+    origin_x: float = 50.0
+    origin_y: float = 100.0
+
+
+class InjectStrokesResponse(BaseModel):
+    status: str
+    strokes_count: int
 
 
 # ---------------------------------------------------------------------------
@@ -191,10 +196,10 @@ async def _generate_and_send_strokes(
     user_id: str,
     state: SimulationState,
     tutor_feedback: str | None = None,
-) -> tuple[list[dict], str, str]:
-    """Generate student work for the current step, convert to strokes.
+) -> bool:
+    """Generate student work for the current step and send strokes via WebSocket.
 
-    Returns (strokes, latex, reasoning) for inclusion in the REST response.
+    Returns True when all steps are complete (simulation done).
     """
     steps = state.answer_key_steps
     step = steps[state.step_index]
@@ -249,7 +254,7 @@ async def _generate_and_send_strokes(
     state.accumulated_work.append(latex)
     state.current_y += _LINE_HEIGHT
 
-    return strokes, latex, reasoning  # caller includes in REST response
+    return False  # not complete yet; caller advances step_index if tutor confirms
 
 
 # ---------------------------------------------------------------------------
@@ -287,16 +292,12 @@ async def simulation_start(
         f"part={body.part_label} steps={len(steps)} personality={body.personality}"
     )
 
-    result = await _generate_and_send_strokes(user.id, state)
-    strokes, latex, reasoning = result if result else (None, None, None)
+    await _generate_and_send_strokes(user.id, state)
 
     return SimulationStartResponse(
         status="running",
         step_index=0,
         total_steps=len(steps),
-        strokes=strokes,
-        latex=latex,
-        reasoning=reasoning,
     )
 
 
@@ -321,14 +322,16 @@ async def simulation_continue(
             f"[simulate] Retry {state.retry_count}/{_MAX_RETRIES} for {user.id} "
             f"step {state.step_index} with feedback: {body.tutor_feedback[:80]}"
         )
-        result = await _generate_and_send_strokes(user.id, state, tutor_feedback=body.tutor_feedback)
+        await _generate_and_send_strokes(user.id, state, tutor_feedback=body.tutor_feedback)
     else:
         # Tutor confirmed step correct — advance to next step
         state.step_index += 1
         state.retry_count = 0
 
         if state.step_index >= len(steps):
+            # All steps done
             log.info(f"[simulate] Simulation complete for {user.id}")
+            await ws_manager.send_to_user(user.id, {"type": "simulation_complete"})
             _simulations.pop(user.id, None)
             return SimulationContinueResponse(
                 status="complete",
@@ -339,16 +342,12 @@ async def simulation_continue(
         log.info(
             f"[simulate] Advancing to step {state.step_index + 1}/{len(steps)} for {user.id}"
         )
-        result = await _generate_and_send_strokes(user.id, state)
+        await _generate_and_send_strokes(user.id, state)
 
-    strokes, latex, reasoning = result if result else (None, None, None)
     return SimulationContinueResponse(
         status="running",
         step_index=state.step_index,
         total_steps=len(steps),
-        strokes=strokes,
-        latex=latex,
-        reasoning=reasoning,
     )
 
 
@@ -366,3 +365,35 @@ async def simulation_stop(
         log.info(f"[simulate] Stop called but no active simulation for {user.id}")
 
     return SimulationStopResponse(status="stopped")
+
+
+@router.post("/inject", response_model=InjectStrokesResponse)
+async def simulation_inject(
+    body: InjectStrokesRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> InjectStrokesResponse:
+    """Inject LaTeX as strokes onto the user's canvas via WebSocket.
+
+    No simulation state needed — just converts LaTeX to strokes and pushes.
+    Used by Claude Code to send handwriting to the iPad in real time.
+    """
+    strokes = latex_to_strokes(
+        body.latex,
+        origin_x=body.origin_x,
+        origin_y=body.origin_y,
+        jitter=False,
+    )
+
+    sent = await ws_manager.send_to_user(user.id, {
+        "type": "simulation_strokes",
+        "strokes": strokes,
+        "latex": body.latex,
+        "step_index": 0,
+        "reasoning": "",
+    })
+
+    if not sent:
+        raise HTTPException(status_code=404, detail="No WebSocket connection. Tap the play button on the iPad first.")
+
+    log.info(f"[inject] Sent {len(strokes)} strokes to {user.id}: {body.latex[:50]}")
+    return InjectStrokesResponse(status="sent", strokes_count=len(strokes))

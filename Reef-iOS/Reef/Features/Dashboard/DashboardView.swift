@@ -48,7 +48,7 @@ struct DashboardView: View {
 
             if documentsVM.deleteTarget != nil || documentsVM.renameTarget != nil
                 || documentsVM.detailsTarget != nil || documentsVM.moveToCourseTarget != nil
-                || documentsVM.pendingUploadURL != nil || documentsVM.showGenerateQuestion
+                || documentsVM.pendingUploadURL != nil
                 || coursesVM.addCourseTarget || coursesVM.editCourseTarget != nil
                 || coursesVM.deleteCourseTarget != nil {
                 Color.black.opacity(0.3)
@@ -60,7 +60,6 @@ struct DashboardView: View {
                             documentsVM.detailsTarget = nil
                             documentsVM.moveToCourseTarget = nil
                             documentsVM.pendingUploadURL = nil
-                            documentsVM.showGenerateQuestion = false
                             coursesVM.addCourseTarget = false
                             coursesVM.editCourseTarget = nil
                             coursesVM.deleteCourseTarget = nil
@@ -116,24 +115,6 @@ struct DashboardView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
                 .animation(.spring(duration: 0.2), value: documentsVM.pendingUploadURL != nil)
             }
-            if documentsVM.showGenerateQuestion {
-                GenerateQuestionPopup(
-                    onGenerate: { doc in
-                        withAnimation(.spring(duration: 0.2)) {
-                            documentsVM.showGenerateQuestion = false
-                        }
-                        documentsVM.insertGeneratedDocument(doc)
-                    },
-                    onClose: {
-                        withAnimation(.spring(duration: 0.2)) {
-                            documentsVM.showGenerateQuestion = false
-                        }
-                    }
-                )
-                .transition(.scale(scale: 0.95).combined(with: .opacity))
-                .animation(.spring(duration: 0.2), value: documentsVM.showGenerateQuestion)
-            }
-
             // MARK: - Course Modal Overlays
 
             if coursesVM.addCourseTarget {

@@ -21,7 +21,6 @@ final class SimulationService {
     var currentStep = 0
     var totalSteps = 0
     var lastReasoning = ""
-    var lastError = ""
 
     // MARK: - Private
 
@@ -47,14 +46,12 @@ final class SimulationService {
         lastReasoning = ""
 
         guard let token = try? await supabase.auth.session.accessToken else {
-            print("[simulation] No auth token")
             isSimulating = false
             return
         }
-        print("[simulation] Token acquired, calling \(serverURL)/ai/simulation/start")
 
         let body: [String: Any] = [
-            "doc_id": documentId,
+            "document_id": documentId,
             "question_number": questionNumber,
             "part_label": partLabel ?? "a",
             "personality": personality,
@@ -72,38 +69,16 @@ final class SimulationService {
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         request.timeoutInterval = 30
 
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await URLSession.shared.data(for: request)
-        } catch {
-            lastError = "Network: \(error.localizedDescription)"
-            print("[simulation] Network error: \(error)")
-            isSimulating = false
-            return
-        }
-
-        guard let http = response as? HTTPURLResponse else {
-            lastError = "Not HTTP response"
-            isSimulating = false
-            return
-        }
-
-        guard http.statusCode == 200 else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            lastError = "HTTP \(http.statusCode): \(String(body.prefix(100)))"
-            print("[simulation] Server returned \(http.statusCode): \(body.prefix(200))")
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             isSimulating = false
             return
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            lastError = "JSON parse failed"
-            print("[simulation] Failed to parse JSON: \(String(data: data, encoding: .utf8) ?? "")")
             isSimulating = false
             return
         }
-        lastError = ""
 
         await handleStrokesMessage(
             json,
@@ -133,7 +108,7 @@ final class SimulationService {
         guard let token = try? await supabase.auth.session.accessToken else { return }
 
         let body: [String: Any] = [
-            "doc_id": documentId,
+            "document_id": documentId,
             "tutor_status": tutorStatus,
             "tutor_feedback": tutorFeedback ?? "",
             "step_index": stepIndex,
@@ -195,33 +170,15 @@ final class SimulationService {
         pageIndex: Int,
         targetRect: CGRect
     ) async {
-        // Parse strokes — handle NSNumber arrays from JSONSerialization
-        guard let strokesArray = json["strokes"] as? [[String: Any]] else {
-            print("[simulation] No strokes in response: \(json.keys)")
-            return
-        }
-        let strokesRaw: [[String: [Double]]] = strokesArray.compactMap { dict in
-            guard let xAny = dict["x"], let yAny = dict["y"] else { return nil }
-            let xs: [Double]
-            let ys: [Double]
-            if let xd = xAny as? [Double] { xs = xd }
-            else if let xn = xAny as? [NSNumber] { xs = xn.map { $0.doubleValue } }
-            else { return nil }
-            if let yd = yAny as? [Double] { ys = yd }
-            else if let yn = yAny as? [NSNumber] { ys = yn.map { $0.doubleValue } }
-            else { return nil }
-            return ["x": xs, "y": ys]
-        }
+        guard let strokesRaw = json["strokes"] as? [[String: [Double]]] else { return }
 
         if let step = json["step_index"] as? Int { currentStep = step }
         if let reasoning = json["reasoning"] as? String { lastReasoning = reasoning }
         if let latex = json["latex"] as? String {
             print("[simulation] Step \(currentStep): \(latex)")
         }
-        print("[simulation] Got \(strokesRaw.count) strokes, rendering in rect \(targetRect)")
 
         let pkStrokes = SimulationStrokeRenderer.buildStrokes(from: strokesRaw, targetRect: targetRect)
-        print("[simulation] Built \(pkStrokes.count) PKStrokes")
         await SimulationStrokeRenderer.animateStrokes(
             pkStrokes,
             onto: drawingManager,

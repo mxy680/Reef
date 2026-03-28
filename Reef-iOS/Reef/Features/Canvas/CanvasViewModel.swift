@@ -25,9 +25,6 @@ final class CanvasViewModel {
 
     let drawingManager = CanvasDrawingManager()
     var selectedTool: CanvasToolType = .pen
-#if DEBUG
-    let simulationService = SimulationService()
-#endif
     var penColor: UIColor = .black
     var penWidth: CGFloat = 2.0
     var highlighterColor: UIColor = UIColor(red: 1.0, green: 0.95, blue: 0.3, alpha: 1)
@@ -162,6 +159,10 @@ final class CanvasViewModel {
     var exportedPDFURL: URL?
     var showExportPreview: Bool = false
     weak var containerView: CanvasContainerView?
+
+    // Simulation WebSocket
+    var isSimWsConnected: Bool = false
+    private var simWsTask: Task<Void, Never>?
 
     // MARK: - Popover State
 
@@ -382,28 +383,6 @@ final class CanvasViewModel {
         tutorEvalService.onStepCompleted = { [weak self] stepsCompleted in
             guard let self, stepsCompleted >= 1 else { return }
             self.advanceTutorSteps(count: stepsCompleted)
-#if DEBUG
-            if self.simulationService.isSimulating {
-                let docId = self.document.id
-                let stepIdx = self.currentTutorStepIndex
-                let status = self.tutorEvalService.status
-                let feedback = self.tutorEvalService.mistakeExplanation
-                let dm = self.drawingManager
-                let page = self.currentPageIndex
-                let rect = self.activeQuestionTargetRect()
-                Task {
-                    await self.simulationService.continueAfterEval(
-                        documentId: docId,
-                        tutorStatus: status,
-                        tutorFeedback: feedback,
-                        stepIndex: stepIdx,
-                        drawingManager: dm,
-                        pageIndex: page,
-                        targetRect: rect
-                    )
-                }
-            }
-#endif
         }
 
         tutorEvalService.onMistakeSpoken = { [weak self] in
@@ -665,73 +644,6 @@ final class CanvasViewModel {
         let addedBefore = addedPageIndices.filter { $0 <= currentIndex }.count
         return currentIndex - addedBefore
     }
-
-    // MARK: - Simulation (DEBUG only)
-
-#if DEBUG
-    func startSimulation(personality: String = "mistake_prone") {
-        // Ensure tutor mode is on
-        if !tutorModeOn {
-            deferTutorMode = false
-            tutorModeOn = true
-            showSidebar = true
-            if activeQuestionLabel == nil { activeQuestionLabel = "Q1a" }
-        }
-        let docId = document.id
-        let qNum = activeQuestionNumber
-        let part = activePartLabel
-        let dm = drawingManager
-        let page = currentPageIndex
-        let rect = activeQuestionTargetRect()
-        print("[simulation] Starting: doc=\(docId) Q\(qNum)\(part ?? "") page=\(page) rect=\(rect)")
-        Task {
-            await simulationService.start(
-                documentId: docId,
-                questionNumber: qNum,
-                partLabel: part,
-                drawingManager: dm,
-                pageIndex: page,
-                targetRect: rect,
-                personality: personality
-            )
-        }
-    }
-
-    func stopSimulation() {
-        let docId = document.id
-        Task {
-            await simulationService.stop(documentId: docId)
-        }
-    }
-
-    /// Returns a CGRect in PDF-point space where simulation strokes should be placed.
-    /// Uses the active question's region if available; falls back to a default area on the page.
-    func activeQuestionTargetRect() -> CGRect {
-        // US Letter page in PDF points: 612 × 792
-        let pageWidth: CGFloat = 612
-        let pageHeight: CGFloat = 792
-
-        if let regions = activeSubquestionRegions(), !regions.isEmpty {
-            let minY = CGFloat(regions.map(\.yStart).min() ?? 0)
-            let maxY = CGFloat(regions.map(\.yEnd).max() ?? Double(pageHeight))
-            let height = max(maxY - minY, 40)
-            return CGRect(
-                x: pageWidth * 0.1,
-                y: minY + height * 0.05,
-                width: pageWidth * 0.8,
-                height: height * 0.85
-            )
-        }
-
-        // Fallback: lower-center third of the page
-        return CGRect(
-            x: pageWidth * 0.1,
-            y: pageHeight * 0.4,
-            width: pageWidth * 0.8,
-            height: pageHeight * 0.3
-        )
-    }
-#endif
 
     // MARK: - Actions
 
@@ -1487,4 +1399,92 @@ final class CanvasViewModel {
     var hasActiveOverlay: Bool {
         overlaySettings.type != .none
     }
+
+    // MARK: - Simulation WebSocket
+
+    #if DEBUG
+    func toggleSimulationWebSocket() async {
+        if isSimWsConnected {
+            simWsTask?.cancel()
+            simWsTask = nil
+            isSimWsConnected = false
+            print("[sim-ws] Disconnected")
+            return
+        }
+
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let token = try? await supabase.auth.session.accessToken else {
+            print("[sim-ws] No server URL or token")
+            return
+        }
+
+        let wsURL = serverURL
+            .replacingOccurrences(of: "https://", with: "wss://")
+            .replacingOccurrences(of: "http://", with: "ws://")
+        guard let url = URL(string: "\(wsURL)/ws?token=\(token)") else { return }
+
+        isSimWsConnected = true
+        print("[sim-ws] Connecting to \(wsURL)/ws...")
+
+        simWsTask = Task { [weak self] in
+            let session = URLSession(configuration: .default)
+            let wsTask = session.webSocketTask(with: url)
+            wsTask.resume()
+
+            defer {
+                wsTask.cancel(with: .normalClosure, reason: nil)
+                Task { @MainActor in self?.isSimWsConnected = false }
+            }
+
+            while !Task.isCancelled {
+                do {
+                    let message = try await wsTask.receive()
+                    guard let self else { return }
+                    switch message {
+                    case .string(let text):
+                        guard let data = text.data(using: .utf8),
+                              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                              let type = json["type"] as? String else { continue }
+
+                        if type == "simulation_strokes" {
+                            guard let strokesRaw = json["strokes"] as? [[String: [Double]]] else { continue }
+                            let latex = json["latex"] as? String ?? ""
+                            print("[sim-ws] Received \(strokesRaw.count) strokes: \(latex.prefix(50))")
+
+                            // Build PKStrokes from raw coordinate data
+                            let ink = PKInk(.pen, color: .black)
+                            for strokeDict in strokesRaw {
+                                guard let xs = strokeDict["x"], let ys = strokeDict["y"],
+                                      !xs.isEmpty, xs.count == ys.count else { continue }
+                                let points = zip(xs, ys).enumerated().map { idx, pair in
+                                    PKStrokePoint(
+                                        location: CGPoint(x: pair.0, y: pair.1),
+                                        timeOffset: TimeInterval(idx) * 0.01,
+                                        size: CGSize(width: 2, height: 2),
+                                        opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
+                                    )
+                                }
+                                let path = PKStrokePath(controlPoints: points, creationDate: Date())
+                                let pkStroke = PKStroke(ink: ink, path: path)
+                                var drawing = self.drawingManager.drawing(for: self.currentPageIndex)
+                                drawing.strokes.append(pkStroke)
+                                self.drawingManager.setDrawing(drawing, for: self.currentPageIndex)
+                                try? await Task.sleep(for: .milliseconds(120))
+                            }
+                        }
+                    case .data:
+                        break
+                    @unknown default:
+                        break
+                    }
+                } catch {
+                    if !Task.isCancelled {
+                        print("[sim-ws] Error: \(error)")
+                    }
+                    break
+                }
+            }
+        }
+    }
+    #endif
 }

@@ -9,13 +9,13 @@ final class DocumentsViewModel {
     var loadError: String?
     var toastMessage: String?
 
+    var showGenerateQuestion = false
     var deleteTarget: Document?
     var renameTarget: Document?
     var detailsTarget: Document?
     var moveToCourseTarget: Document?
 
     var showFilePicker = false
-    var showGenerateQuestion = false
     var pendingUploadURL: URL?
     var maxDocuments: Int? = nil
 
@@ -81,12 +81,6 @@ final class DocumentsViewModel {
     private func stopPolling() {
         pollTask?.cancel()
         pollTask = nil
-    }
-
-    // MARK: - Generated Documents
-
-    func insertGeneratedDocument(_ doc: Document) {
-        documents.insert(doc, at: 0)
     }
 
     // MARK: - Upload

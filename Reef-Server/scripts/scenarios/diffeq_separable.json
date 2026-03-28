@@ -1,0 +1,40 @@
+{
+  "question_text": "Solve the differential equation $\\frac{dy}{dx} = \\frac{2x}{y}$ with initial condition $y(0) = 3$.",
+  "question_number": 1,
+  "part_label": "a",
+  "steps": [
+    {
+      "description": "Separate the variables — get all y terms on one side and all x terms on the other",
+      "explanation": "Can you rearrange so y is multiplied by dy and x is multiplied by dx?",
+      "work": "y \\, dy = 2x \\, dx",
+      "reinforcement": "Clean separation — y's on the left, x's on the right.",
+      "tutor_speech": "Separate the variables.",
+      "concepts": ["separation_of_variables"]
+    },
+    {
+      "description": "Integrate both sides",
+      "explanation": "What's the integral of y with respect to y? And 2x with respect to x?",
+      "work": "\\frac{y^2}{2} = x^2 + C",
+      "reinforcement": "Both integrals look solid.",
+      "tutor_speech": "Integrate both sides.",
+      "concepts": ["integration"]
+    },
+    {
+      "description": "Apply the initial condition y(0) = 3 to find C",
+      "explanation": "Plug in x=0 and y=3 — what does C equal?",
+      "work": "\\frac{9}{2} = 0 + C \\implies C = \\frac{9}{2}",
+      "reinforcement": "Got it — C = 9/2.",
+      "tutor_speech": "Apply the initial condition to find C.",
+      "concepts": ["initial_conditions"]
+    },
+    {
+      "description": "Solve for y explicitly",
+      "explanation": "You have y²/2 = x² + 9/2. Can you isolate y?",
+      "work": "y = \\sqrt{2x^2 + 9}",
+      "reinforcement": "That's the solution — well done on a multi-step problem.",
+      "tutor_speech": "Solve for y.",
+      "concepts": ["algebraic_manipulation"]
+    }
+  ],
+  "final_answer": "y = \\sqrt{2x^2 + 9}"
+}

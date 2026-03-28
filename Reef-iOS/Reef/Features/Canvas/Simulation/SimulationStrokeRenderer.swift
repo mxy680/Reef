@@ -76,23 +76,9 @@ final class SimulationStrokeRenderer {
         pageIndex: Int,
         delayPerStroke: Duration = .milliseconds(200)
     ) async {
-        guard let canvasView = drawingManager.activeCanvasView else {
-            print("[simulation] ERROR: activeCanvasView is nil, cannot render strokes")
-            // Still store in drawing manager so transcription can pick them up
-            var drawing = drawingManager.drawing(for: pageIndex)
-            for stroke in strokes { drawing.strokes.append(stroke) }
-            drawingManager.setDrawing(drawing, for: pageIndex)
-            return
-        }
-
-        print("[simulation] Animating \(strokes.count) strokes on canvasView (frame: \(canvasView.frame))")
-
         for stroke in strokes {
-            // Get current drawing from the canvas view directly
-            var drawing = canvasView.drawing
+            var drawing = drawingManager.drawing(for: pageIndex)
             drawing.strokes.append(stroke)
-            canvasView.drawing = drawing
-            // Also sync to drawing manager
             drawingManager.setDrawing(drawing, for: pageIndex)
             try? await Task.sleep(for: delayPerStroke)
         }
