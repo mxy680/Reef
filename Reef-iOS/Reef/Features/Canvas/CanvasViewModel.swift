@@ -775,6 +775,27 @@ final class CanvasViewModel {
             stepSpeechTask?.cancel()
             tutorEvalService.stepProgress = 1.0
             tutorEvalService.status = "completed"
+        } else if stepsToAdvance > 0 {
+            // Fire eval for the new step — the student's work is already on canvas
+            // but transcription won't change, so onLatexChanged won't trigger
+            let latex = handwritingService.rawLatexResult
+            guard !latex.isEmpty else { return }
+            evalDebounceTask?.cancel()
+            evalDebounceTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, !Task.isCancelled else { return }
+                let (qNum, partLabel) = self.parseQuestionLabel()
+                guard qNum > 0 else { return }
+                print("[step-advance] FIRING eval for new step \(self.currentTutorStepIndex)")
+                await self.tutorEvalService.runEval(
+                    latex: latex,
+                    documentId: self.document.id,
+                    questionNumber: qNum,
+                    partLabel: partLabel,
+                    stepIndex: self.currentTutorStepIndex,
+                    studentImage: self.captureActiveQuestionImage()
+                )
+            }
         }
     }
 
