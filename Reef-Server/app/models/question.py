@@ -17,8 +17,8 @@ class Part(BaseModel):
     figures: list[str] = Field(default_factory=list, description="Figure filenames for this part")
     parts: list[Part] = Field(default_factory=list, description="Recursive subparts")
     answer_space_cm: float = Field(
-        default=8.0,
-        description="Vertical answer space in cm. Ignored if subparts present.",
+        default=10.0,
+        description="Vertical answer space in cm (default 10). Ignored if subparts present.",
         ge=0,
         le=25,
     )
