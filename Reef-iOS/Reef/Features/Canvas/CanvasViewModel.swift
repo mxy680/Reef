@@ -163,7 +163,7 @@ final class CanvasViewModel {
     // Simulation polling
     var isSimWsConnected: Bool = false
     private var simPollTask: Task<Void, Never>?
-    private var lastSimStrokeId: String = ""
+    private var lastSimStrokeTimestamp: String = ""
 
     // MARK: - Popover State
 
@@ -1419,49 +1419,51 @@ final class CanvasViewModel {
         }
 
         isSimWsConnected = true
-        lastSimStrokeId = ""
-        print("[sim-poll] Polling simulation_strokes for \(userId)...")
+        // Set timestamp to NOW so we only pick up new inserts
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        lastSimStrokeTimestamp = isoFormatter.string(from: Date())
+        print("[sim-poll] Polling simulation_strokes for \(userId) since \(lastSimStrokeTimestamp)")
 
         simPollTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(500))
                 guard let self, !Task.isCancelled else { return }
 
-                // Query for new rows since last seen ID
                 do {
-                    let rows: [SimulationStrokeRow]
-                    if self.lastSimStrokeId.isEmpty {
-                        // First poll — get latest to set cursor
-                        rows = try await supabase
-                            .from("simulation_strokes")
-                            .select()
-                            .eq("user_id", value: userId)
-                            .order("created_at", ascending: false)
-                            .limit(1)
-                            .execute().value
-                        if let last = rows.first {
-                            self.lastSimStrokeId = last.id
-                        }
-                        continue
-                    } else {
-                        rows = try await supabase
-                            .from("simulation_strokes")
-                            .select()
-                            .eq("user_id", value: userId)
-                            .greaterThan("id", value: self.lastSimStrokeId)
-                            .order("created_at", ascending: true)
-                            .execute().value
-                    }
+                    let rows: [SimulationStrokeRow] = try await supabase
+                        .from("simulation_strokes")
+                        .select()
+                        .eq("user_id", value: userId)
+                        .greaterThan("created_at", value: self.lastSimStrokeTimestamp)
+                        .order("created_at", ascending: true)
+                        .execute().value
 
                     for row in rows {
-                        self.lastSimStrokeId = row.id
-                        print("[sim-poll] New strokes: \(row.latex.prefix(40)) (\(row.strokes.count) strokes)")
+                        self.lastSimStrokeTimestamp = row.createdAt
+                        let strokeCount = row.strokes.count
+                        let pointCount = row.strokes.reduce(0) { $0 + $1.x.count }
+                        print("[sim-poll] ===== NEW ROW =====")
+                        print("[sim-poll] latex: \(row.latex.prefix(50))")
+                        print("[sim-poll] strokes: \(strokeCount), points: \(pointCount)")
+                        print("[sim-poll] pageIndex: \(self.currentPageIndex)")
+                        print("[sim-poll] activeCanvasView: \(self.drawingManager.activeCanvasView != nil ? "YES" : "NIL")")
+                        print("[sim-poll] drawing strokes before: \(self.drawingManager.drawing(for: self.currentPageIndex).strokes.count)")
 
                         let scale: Double = 2.0
                         let ink = PKInk(.pen, color: .black)
 
-                        for strokeDict in row.strokes {
-                            guard !strokeDict.x.isEmpty, strokeDict.x.count == strokeDict.y.count else { continue }
+                        for (i, strokeDict) in row.strokes.enumerated() {
+                            guard !strokeDict.x.isEmpty, strokeDict.x.count == strokeDict.y.count else {
+                                print("[sim-poll] Skipping stroke \(i): empty or mismatched")
+                                continue
+                            }
+                            let minX = strokeDict.x.min() ?? 0
+                            let maxX = strokeDict.x.max() ?? 0
+                            let minY = strokeDict.y.min() ?? 0
+                            let maxY = strokeDict.y.max() ?? 0
+                            print("[sim-poll] Stroke \(i): \(strokeDict.x.count) pts, x[\(String(format: "%.0f", minX*scale))-\(String(format: "%.0f", maxX*scale))], y[\(String(format: "%.0f", minY*scale))-\(String(format: "%.0f", maxY*scale))]")
+
                             let points = zip(strokeDict.x, strokeDict.y).enumerated().map { idx, pair in
                                 PKStrokePoint(
                                     location: CGPoint(x: pair.0 * scale, y: pair.1 * scale),
@@ -1472,12 +1474,27 @@ final class CanvasViewModel {
                             }
                             let path = PKStrokePath(controlPoints: points, creationDate: Date())
                             let pkStroke = PKStroke(ink: ink, path: path)
+
                             var drawing = self.drawingManager.drawing(for: self.currentPageIndex)
                             drawing.strokes.append(pkStroke)
                             self.drawingManager.setDrawing(drawing, for: self.currentPageIndex)
-                            self.drawingManager.activeCanvasView?.drawing = drawing
+
+                            // Force the PKCanvasView to update — use containerView's canvas array
+                            // (activeCanvasView is nil until user draws manually)
+                            let pageIdx = self.currentPageIndex
+                            if let container = self.containerView,
+                               pageIdx < container.canvasViews.count {
+                                container.canvasViews[pageIdx].drawing = drawing
+                                print("[sim-poll] Updated canvasView[\(pageIdx)] (now \(drawing.strokes.count) strokes)")
+                            } else {
+                                print("[sim-poll] WARNING: no canvasView for page \(pageIdx) — container=\(self.containerView != nil), views=\(self.containerView?.canvasViews.count ?? 0)")
+                            }
+
                             try? await Task.sleep(for: .milliseconds(100))
                         }
+
+                        print("[sim-poll] drawing strokes after: \(self.drawingManager.drawing(for: self.currentPageIndex).strokes.count)")
+                        print("[sim-poll] ===== DONE =====")
                     }
                 } catch {
                     print("[sim-poll] Error: \(error)")
@@ -1492,10 +1509,16 @@ final class CanvasViewModel {
         let id: String
         let latex: String
         let strokes: [StrokeData]
+        let createdAt: String
 
         struct StrokeData: Decodable {
             let x: [Double]
             let y: [Double]
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case id, latex, strokes
+            case createdAt = "created_at"
         }
     }
     #endif
