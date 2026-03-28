@@ -32,33 +32,16 @@ final class HandwritingTranscriptionService {
     private static let sessionTTL: TimeInterval = 300
     private static let pollInterval: Duration = .milliseconds(400)
 
-    // MARK: - Polling
+    // MARK: - Drawing State
 
     var currentDrawing: PKDrawing?
     var currentRegions: [PartRegion]?
     var screenScale: CGFloat = 2.0
 
-    func startPolling() {
-        guard pollingTask == nil else { return }
-        pollingTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: Self.pollInterval)
-                guard let self, !Task.isCancelled else { return }
-                self.pollForChanges()
-            }
-        }
-    }
-
-    func stopPolling() {
-        pollingTask?.cancel()
-        pollingTask = nil
-    }
-
-    private var pollLogCounter = 0
-    private func pollForChanges() {
-        pollLogCounter += 1
+    /// Called on-demand (after 500ms writing pause) instead of polling.
+    func transcribeCurrentDrawing() {
         guard let drawing = currentDrawing else {
-            if pollLogCounter % 25 == 0 { print("[hw-poll] no drawing set") }
+            print("[hw-transcribe] no drawing set")
             return
         }
 
@@ -75,7 +58,7 @@ final class HandwritingTranscriptionService {
 
         // If session expired, reset chunk cache so all chunks are re-transcribed
         if let expires = expiresAt, Date() >= expires {
-            print("[hw-poll] Session expired, resetting chunk cache for re-transcription")
+            print("[hw-transcribe] Session expired, resetting chunk cache")
             chunkCache.reset()
             appToken = nil
             sessionId = nil
@@ -85,10 +68,10 @@ final class HandwritingTranscriptionService {
         let (dirty, totalChunks) = chunkCache.computeDirtyChunks(strokes: relevantStrokes)
         chunkCache.pruneChunksAbove(totalChunks - 1)
         guard !dirty.isEmpty else {
-            if pollLogCounter % 25 == 0 { print("[hw-poll] no change: \(relevantStrokes.count) strokes") }
+            print("[hw-transcribe] no dirty chunks (\(relevantStrokes.count) strokes)")
             return
         }
-        print("[hw-poll] CHANGED: dirty chunks \(dirty.sorted()), totalChunks=\(totalChunks), transcribing...")
+        print("[hw-transcribe] dirty chunks \(dirty.sorted()), totalChunks=\(totalChunks), transcribing...")
 
         generation += 1
         Task { [weak self, generation] in
@@ -100,6 +83,10 @@ final class HandwritingTranscriptionService {
             )
         }
     }
+
+    // Legacy polling support (kept for backward compatibility, no longer auto-started)
+    func startPolling() { }
+    func stopPolling() { pollingTask?.cancel(); pollingTask = nil }
 
 
     // MARK: - Chunked Transcription

@@ -151,6 +151,7 @@ final class CanvasViewModel {
     let handwritingService = HandwritingTranscriptionService()
     let tutorEvalService = TutorEvaluationService()
     private var evalDebounceTask: Task<Void, Never>?
+    private var transcriptionDebounceTask: Task<Void, Never>?
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -310,11 +311,49 @@ final class CanvasViewModel {
         updatePendingReinforcement()
     }
 
+    /// Called when the user stops drawing. Debounces transcription (500ms) and eval (1500ms).
+    func onDrawingChanged() {
+        guard showSidebar || tutorModeOn else { return }
+
+        // Update the drawing snapshot for transcription
+        handwritingService.currentDrawing = drawingWithoutShapes(for: currentPageIndex)
+        handwritingService.currentRegions = activeSubquestionRegions()
+
+        // 500ms after last stroke: transcribe
+        transcriptionDebounceTask?.cancel()
+        transcriptionDebounceTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard let self, !Task.isCancelled else { return }
+            print("[debounce] Transcription triggered (500ms)")
+            self.handwritingService.transcribeCurrentDrawing()
+        }
+
+        // 1500ms after last stroke: fire eval (if tutor mode)
+        guard tutorModeOn, tutorStepCount > 0 else { return }
+        evalDebounceTask?.cancel()
+        evalDebounceTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(1500))
+            guard let self, !Task.isCancelled else { return }
+            let (qNum, partLabel) = self.parseQuestionLabel()
+            guard qNum > 0 else { return }
+            print("[debounce] Eval triggered (1500ms): step=\(self.currentTutorStepIndex)/\(self.tutorStepCount)")
+            await self.tutorEvalService.runEval(
+                latex: self.handwritingService.rawLatexResult,
+                documentId: self.document.id,
+                questionNumber: qNum,
+                partLabel: partLabel,
+                stepIndex: self.currentTutorStepIndex,
+                studentImage: self.captureActiveQuestionImage()
+            )
+        }
+    }
+
     func cancelAllTasks() {
         loadPDFTask?.cancel()
         loadAnswerKeysTask?.cancel()
         stepSpeechTask?.cancel()
         evalDebounceTask?.cancel()
+        transcriptionDebounceTask?.cancel()
     }
 
     func stopAllAudio() {
@@ -398,32 +437,8 @@ final class CanvasViewModel {
             }
         }
 
-        // When transcription changes, wait 1s of quiet then fire eval
-        handwritingService.onLatexChanged = { [weak self] _ in
-            guard let self, self.tutorModeOn, self.tutorStepCount > 0 else {
-                print("[eval-debounce] SKIPPED: tutorModeOn=\(self?.tutorModeOn ?? false) stepCount=\(self?.tutorStepCount ?? 0)")
-                return
-            }
-            self.evalDebounceTask?.cancel()
-            self.evalDebounceTask = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(1))
-                guard let self, !Task.isCancelled else { return }
-                let (qNum, partLabel) = self.parseQuestionLabel()
-                guard qNum > 0 else {
-                    print("[eval-debounce] SKIPPED: qNum=0")
-                    return
-                }
-                print("[eval-debounce] FIRING: step=\(self.currentTutorStepIndex)/\(self.tutorStepCount) status=\(self.tutorEvalService.status)")
-                await self.tutorEvalService.runEval(
-                    latex: self.handwritingService.rawLatexResult,
-                    documentId: self.document.id,
-                    questionNumber: qNum,
-                    partLabel: partLabel,
-                    stepIndex: self.currentTutorStepIndex,
-                    studentImage: self.captureActiveQuestionImage()
-                )
-            }
-        }
+        // onLatexChanged is still used for Supabase writes (handled inside the service)
+        // Eval is now triggered by drawing changes, not transcription changes
 
         loadPDFTask = Task { await loadPDF() }
         loadAnswerKeysTask = Task { await loadAnswerKeys() }
@@ -1448,8 +1463,6 @@ final class CanvasViewModel {
         isSimWsConnected = true
         // Reset transcription session so chunk cache is cleared and all strokes get re-processed
         handwritingService.resetSession()
-        // Ensure transcription polling is running (may not be if sidebar isn't visible)
-        handwritingService.startPolling()
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         lastSimStrokeTimestamp = isoFormatter.string(from: Date())
@@ -1546,10 +1559,8 @@ final class CanvasViewModel {
 
                         print("[sim-poll] drawing strokes after: \(self.drawingManager.drawing(for: self.currentPageIndex).strokes.count)")
 
-                        // Update handwriting service so transcription polling sees the new strokes
-                        self.handwritingService.currentDrawing = self.drawingWithoutShapes(for: self.currentPageIndex)
-                        self.handwritingService.currentRegions = self.activeSubquestionRegions()
-                        print("[sim-poll] Updated handwritingService.currentDrawing")
+                        // Trigger transcription + eval debounce (same as user drawing)
+                        self.onDrawingChanged()
 
                         print("[sim-poll] ===== DONE =====")
                     }

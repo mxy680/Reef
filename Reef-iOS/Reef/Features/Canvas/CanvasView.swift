@@ -303,24 +303,12 @@ struct CanvasView: View {
                     viewModel.markShapeStrokes(in: drawing)
                 }
 
-                // Update the polling service's drawing snapshot (polled every 400ms)
-                if viewModel.showSidebar || viewModel.tutorModeOn {
-                    viewModel.handwritingService.currentDrawing = viewModel.drawingWithoutShapes(for: viewModel.currentPageIndex)
-                    viewModel.handwritingService.currentRegions = viewModel.activeSubquestionRegions()
-                }
-            }
-
-            // Start transcription polling (400ms interval)
-            if viewModel.showSidebar || viewModel.tutorModeOn {
-                viewModel.handwritingService.startPolling()
+                // Debounce transcription (500ms) and eval (1500ms) from drawing changes
+                viewModel.onDrawingChanged()
             }
         }
-        .onChange(of: viewModel.tutorModeOn) { _, isOn in
-            if isOn {
-                viewModel.handwritingService.startPolling()
-            } else {
-                viewModel.handwritingService.stopPolling()
-            }
+        .onChange(of: viewModel.tutorModeOn) { _, _ in
+            // Transcription/eval now triggered by drawing changes, not polling
         }
         .onDisappear {
             viewModel.stopAllAudio()
