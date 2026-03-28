@@ -1425,6 +1425,8 @@ final class CanvasViewModel {
         print("[sim-poll] Wrote state: doc=\(document.id) label=\(activeQuestionLabel ?? "Q1a") step=\(currentTutorStepIndex)/\(tutorStepCount)")
 
         isSimWsConnected = true
+        // Reset transcription session so chunk cache is cleared and all strokes get re-processed
+        handwritingService.resetSession()
         // Ensure transcription polling is running (may not be if sidebar isn't visible)
         handwritingService.startPolling()
         let isoFormatter = ISO8601DateFormatter()
