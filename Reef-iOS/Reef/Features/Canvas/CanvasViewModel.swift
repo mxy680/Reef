@@ -670,12 +670,20 @@ final class CanvasViewModel {
 
 #if DEBUG
     func startSimulation(personality: String = "mistake_prone") {
+        // Ensure tutor mode is on
+        if !tutorModeOn {
+            deferTutorMode = false
+            tutorModeOn = true
+            showSidebar = true
+            if activeQuestionLabel == nil { activeQuestionLabel = "Q1a" }
+        }
         let docId = document.id
         let qNum = activeQuestionNumber
         let part = activePartLabel
         let dm = drawingManager
         let page = currentPageIndex
         let rect = activeQuestionTargetRect()
+        print("[simulation] Starting: doc=\(docId) Q\(qNum)\(part ?? "") page=\(page) rect=\(rect)")
         Task {
             await simulationService.start(
                 documentId: docId,

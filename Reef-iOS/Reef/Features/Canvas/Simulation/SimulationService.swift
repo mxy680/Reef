@@ -69,13 +69,31 @@ final class SimulationService {
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         request.timeoutInterval = 30
 
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
-              let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            print("[simulation] Network error: \(error)")
+            isSimulating = false
+            return
+        }
+
+        guard let http = response as? HTTPURLResponse else {
+            print("[simulation] Not HTTP response")
+            isSimulating = false
+            return
+        }
+
+        guard http.statusCode == 200 else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            print("[simulation] Server returned \(http.statusCode): \(body.prefix(200))")
             isSimulating = false
             return
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            print("[simulation] Failed to parse JSON: \(String(data: data, encoding: .utf8) ?? "")")
             isSimulating = false
             return
         }
