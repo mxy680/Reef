@@ -51,6 +51,47 @@ def supabase_headers() -> dict[str, str]:
     }
 
 
+SERVER_URL = "https://api.studyreef.com"
+
+
+def send_chat(message: str, doc_id: str, question_label: str, step_index: int) -> str | None:
+    """Send a chat message to the tutor and return the reply."""
+    # Parse question_label like "Q1a" into question_number=1, part_label="a"
+    label = question_label
+    if label.startswith("Q"):
+        label = label[1:]
+    num_str = ""
+    for ch in label:
+        if ch.isdigit():
+            num_str += ch
+        else:
+            break
+    question_number = int(num_str) if num_str else 1
+    part_label = label[len(num_str):] or None
+
+    resp = httpx.post(
+        f"{SERVER_URL}/ai/tutor-chat",
+        headers={"Authorization": "Bearer dev", "Content-Type": "application/json"},
+        json={
+            "document_id": doc_id,
+            "question_number": question_number,
+            "part_label": part_label,
+            "step_index": step_index,
+            "student_latex": "",
+            "user_message": message,
+            "history": [],
+        },
+        timeout=30,
+    )
+
+    if resp.status_code == 200:
+        data = resp.json()
+        return data.get("reply", "(no reply)")
+    else:
+        print(f"  ✗ Chat error {resp.status_code}: {resp.text[:200]}")
+        return None
+
+
 def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
                   origin_x: float, origin_y: float, font_size: float = 14.0) -> bool:
     """Convert LaTeX to strokes and insert into simulation_strokes table."""
@@ -244,6 +285,28 @@ def main():
                     print(f"  Label: {state.get('question_label', '?')}")
                 else:
                     print("  No simulation state found")
+                continue
+            if latex.startswith("/chat "):
+                message = latex[6:].strip()
+                if not message:
+                    print("  Usage: /chat <question for tutor>")
+                    continue
+                state = get_simulation_state(args.user_id)
+                step_idx = int(state["step_index"]) if state else 0
+                print(f"  Asking tutor (step {step_idx})...")
+                reply = send_chat(message, args.doc_id or (state["document_id"] if state else ""),
+                                  question_label, step_idx)
+                if reply:
+                    print(f"  Tutor: {reply}")
+                continue
+            if latex == "/help":
+                print("  Commands:")
+                print("    /status         — show tutor eval state")
+                print("    /chat <msg>     — ask the tutor a question")
+                print("    /correct <N>    — inject correct work for step N")
+                print("    /help           — show this help")
+                print("    /quit           — exit")
+                print("    <latex>         — inject LaTeX as strokes")
                 continue
             if latex.startswith("/correct") and steps:
                 # Auto-inject correct work for current step
