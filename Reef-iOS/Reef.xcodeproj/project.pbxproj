@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7F165FE8E37F4DFFAE416AAE /* GenerateQuestionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431E668D412E4142B4E1D6B6 /* GenerateQuestionService.swift */; };
+		40A2AD2B8458409D951356DA /* GenerateQuestionPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432F12C27DEA42CE88EC2DD0 /* GenerateQuestionPopup.swift */; };
 		00D8E6935299726B8B32D780 /* PopupShellModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3205E3BD9FC3234A4F37231A /* PopupShellModifier.swift */; };
 		019E86842A2685EB9B40CAAF /* ShapeRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF6F897609CDB22C4ABE252 /* ShapeRecognizer.swift */; };
 		028D2AA91435370D8B584B53 /* ReefTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF7ECE3CE5AFD4A1E43FEA24 /* ReefTextField.swift */; };
@@ -181,6 +183,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		431E668D412E4142B4E1D6B6 /* GenerateQuestionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerateQuestionService.swift; sourceTree = "<group>"; };
+		432F12C27DEA42CE88EC2DD0 /* GenerateQuestionPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerateQuestionPopup.swift; sourceTree = "<group>"; };
 		00057DD4F29743959369E2AB /* OnboardingOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingOption.swift; sourceTree = "<group>"; };
 		0017740C4265A5FFE7E4A242 /* CalculatorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorViewModel.swift; sourceTree = "<group>"; };
 		00BCE4900CD1562F72FAC77A /* ReefTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefTheme.swift; sourceTree = "<group>"; };
@@ -503,9 +507,19 @@
 				34C3C2B8C72361B2E60E2E7C /* Analytics */,
 				FDE46A853354698E0A200502 /* Courses */,
 				5360BC21939A4569E5CC24CC /* Documents */,
+				5B64563B3A1D47E18EA5B9D8 /* GenerateQuestion */,
 				472A791F8CA237ADCF990F24 /* Settings */,
 			);
 			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		5B64563B3A1D47E18EA5B9D8 /* GenerateQuestion */ = {
+			isa = PBXGroup;
+			children = (
+				431E668D412E4142B4E1D6B6 /* GenerateQuestionService.swift */,
+				432F12C27DEA42CE88EC2DD0 /* GenerateQuestionPopup.swift */,
+			);
+			path = GenerateQuestion;
 			sourceTree = "<group>";
 		};
 		472A791F8CA237ADCF990F24 /* Settings */ = {
@@ -947,6 +961,8 @@
 				C2544AF066DC4E6185AEAEEC /* TutorDemoOverlay.swift in Sources */,
 				D9A808B48FB248C789A57472 /* OnboardingBackground.swift in Sources */,
 				DEB0470796C7434C9A023B13 /* DemoProblemService.swift in Sources */,
+				7F165FE8E37F4DFFAE416AAE /* GenerateQuestionService.swift in Sources */,
+				40A2AD2B8458409D951356DA /* GenerateQuestionPopup.swift in Sources */,
 				ED3D7199323CA782DA71B5A2 /* AddColorPopup.swift in Sources */,
 				CFDAF646BDC14E8F9404FE60 /* BugReportPopup.swift in Sources */,
 				E604A66F4CD6A3BCF6F53BC8 /* AddCoursePopup.swift in Sources */,

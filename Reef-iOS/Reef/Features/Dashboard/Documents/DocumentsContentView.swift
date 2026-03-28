@@ -86,7 +86,10 @@ struct DocumentsContentView: View {
             Spacer()
 
             if !viewModel.isLoading && !viewModel.documents.isEmpty {
-                uploadButton
+                HStack(spacing: 10) {
+                    generateButton
+                    uploadButton
+                }
             }
         }
     }
@@ -113,6 +116,31 @@ struct DocumentsContentView: View {
             shadowColor: colors.shadow
         ) {
             viewModel.showFilePicker = true
+        }
+    }
+
+    // MARK: - Generate Button
+
+    private var generateButton: some View {
+        let colors = theme.colors
+        return HStack(spacing: 8) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 14, weight: .bold))
+            Text("Generate")
+                .font(.epilogue(14, weight: .bold))
+                .tracking(-0.04 * 14)
+        }
+        .foregroundStyle(colors.text)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(colors.card)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .reef3DPush(
+            cornerRadius: 10,
+            borderColor: colors.border,
+            shadowColor: colors.shadow
+        ) {
+            viewModel.showGenerateQuestion = true
         }
     }
 
@@ -151,6 +179,30 @@ struct DocumentsContentView: View {
                     }
                     .accessibilityAddTraits(.isButton)
                     .fadeUp(index: 0)
+
+                    // Generate placeholder card — dashed border, no 3D
+                    VStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Generate")
+                            .font(.epilogue(14, weight: .semiBold))
+                            .tracking(-0.04 * 14)
+                    }
+                    .foregroundStyle(colors.textMuted)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(height: cardHeight)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                            .foregroundStyle(colors.textDisabled)
+                    )
+                    .compositingGroup()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        viewModel.showGenerateQuestion = true
+                    }
+                    .accessibilityAddTraits(.isButton)
+                    .fadeUp(index: 1)
 
                     // Document cards
                     ForEach(Array(viewModel.documents.enumerated()), id: \.element.id) { index, doc in

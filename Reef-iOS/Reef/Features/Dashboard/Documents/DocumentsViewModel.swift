@@ -15,6 +15,7 @@ final class DocumentsViewModel {
     var moveToCourseTarget: Document?
 
     var showFilePicker = false
+    var showGenerateQuestion = false
     var pendingUploadURL: URL?
     var maxDocuments: Int? = nil
 
@@ -80,6 +81,12 @@ final class DocumentsViewModel {
     private func stopPolling() {
         pollTask?.cancel()
         pollTask = nil
+    }
+
+    // MARK: - Generated Documents
+
+    func insertGeneratedDocument(_ doc: Document) {
+        documents.insert(doc, at: 0)
     }
 
     // MARK: - Upload

@@ -11,6 +11,7 @@ from app.routers import bug_report
 from app.routers import transcribe_audio
 from app.routers import tutor_evaluate
 from app.routers import demo_problem
+from app.routers import generate_question
 from app.routers import websocket
 from app.config import settings
 from app.services.cancellation import get_in_flight_ids
@@ -88,6 +89,7 @@ app.include_router(transcribe.router)
 app.include_router(transcribe_audio.router)
 app.include_router(tutor_evaluate.router)
 app.include_router(demo_problem.router)
+app.include_router(generate_question.router)
 app.include_router(websocket.router)
 
 if settings.simulation_enabled:
