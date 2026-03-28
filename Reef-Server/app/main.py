@@ -11,6 +11,8 @@ from app.routers import bug_report
 from app.routers import transcribe_audio
 from app.routers import tutor_evaluate
 from app.routers import demo_problem
+from app.routers import websocket
+from app.config import settings
 from app.services.cancellation import get_in_flight_ids
 from app.services.progress import update_document_status
 
@@ -23,7 +25,6 @@ _background_tasks: set[asyncio.Task] = set()
 
 async def _recover_stale_documents():
     """Mark any documents stuck in 'processing' as failed on startup."""
-    from app.config import settings
     try:
         import httpx
         async with httpx.AsyncClient() as client:
@@ -87,3 +88,8 @@ app.include_router(transcribe.router)
 app.include_router(transcribe_audio.router)
 app.include_router(tutor_evaluate.router)
 app.include_router(demo_problem.router)
+app.include_router(websocket.router)
+
+if settings.simulation_enabled:
+    from app.routers import simulate_student
+    app.include_router(simulate_student.router)
