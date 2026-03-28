@@ -93,20 +93,15 @@ final class TutorEvaluationService {
                 if voiceEnabled { await speakPhrase(phrase) }
             }
 
-            // Mistake feedback — show text immediately
+            // Track mistakes for confidence check
             if response.status == "mistake" {
                 madeMistakeOnCurrentStep = true
-                if let mistake = response.mistakeExplanation {
-                    let now = Date()
-                    chatMessages.append(TutorChatMessage(role: .student, latex: latex, timestamp: now))
-                    chatMessages.append(TutorChatMessage(role: .error, latex: mistake, timestamp: now))
-                }
             }
 
-            // Show speech text in chat — this is exactly what the tutor says verbally
+            // Show speech text in chat — exactly what the tutor says verbally
+            // This is the single source of truth for all tutor feedback display
             if let speechText = response.speechText, !speechText.isEmpty {
                 let role: TutorChatMessage.Role = response.status == "mistake" ? .error : .reinforcement
-                // Don't duplicate if the same text is already the last message
                 if chatMessages.last?.latex != speechText {
                     chatMessages.append(TutorChatMessage(role: role, latex: speechText, timestamp: Date()))
                 }
