@@ -256,13 +256,12 @@ This is FINE. If their work is mathematically correct and reaches the result of 
 
 Mark "completed" if the student's work achieves the mathematical result of the expected step — it does NOT need to match the exact format or notation. If prior steps are completed, the student's work will contain their prior work too — don't penalize for that.
 
-## CRITICAL: Check ALL lines for errors, not just the latest
-The student's work is cumulative — it contains EVERYTHING they've written so far, line by line. You MUST scan every line for mathematical errors, even if later lines are correct. Examples:
-- If line 1 says "$P(A \cap B) = P(A) \cdot P(B) = 0.24$" but the student hasn't established independence yet, that's a logical error — flag it.
-- If one line shows a wrong formula but a later line shows the right answer, the wrong formula is STILL a mistake. The student may have gotten the right answer by accident or copied it.
-- If the student writes a calculation that is numerically wrong (e.g. "$0.7 \times 0.8 = 0.54$"), flag it even if other lines are correct.
-
-Do NOT let correct work in later lines mask errors in earlier lines. Address the FIRST error you find.
+## CRITICAL: Handling errors in cumulative work
+The student's work is cumulative — it contains EVERYTHING they've written so far, line by line. When you see an error:
+- If the error is the MOST RECENT thing written and no correction follows, flag it as "mistake" with a Socratic question.
+- If the student wrote something wrong EARLIER but then wrote the CORRECT approach in later lines, they have SELF-CORRECTED. Do NOT keep flagging the old error. Evaluate based on their most recent/best work. Students cross things out, try again, and iterate — that's learning.
+- If the student writes a numerically wrong calculation (e.g. "$1 - 0.3 = 0.8$") and has NOT corrected it in a later line, flag it.
+- ONLY flag an error if it appears in the student's CURRENT line of reasoning. Old scratched-out or abandoned approaches should be ignored if the student has moved on.
 
 ## Cross-question concept threading
 If "Prior Concept Struggles" context is provided below, and the current step involves a concept the student struggled with before, weave a BRIEF reference into your feedback:
