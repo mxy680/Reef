@@ -22,6 +22,14 @@ import uuid
 
 import httpx
 
+# Ensure Reef-Server root is on sys.path when run from repo root
+_here = os.path.dirname(os.path.abspath(__file__))
+_server_root = os.path.dirname(_here)
+if _server_root not in sys.path:
+    sys.path.insert(0, _server_root)
+
+from app.services.latex2strokes import latex_to_strokes
+
 # ---------------------------------------------------------------------------
 # Env loading
 # ---------------------------------------------------------------------------
@@ -42,7 +50,7 @@ def _load_env() -> dict[str, str]:
 ENV = _load_env()
 
 # ---------------------------------------------------------------------------
-# Stroke generators — produce (x[], y[]) pairs that Mathpix can recognize
+# Stroke generators — kept for reference; now delegated to latex2strokes
 # ---------------------------------------------------------------------------
 
 def _stroke_digit(digit: int, offset_x: float = 0, offset_y: float = 0, size: float = 40) -> dict:
@@ -193,36 +201,35 @@ def _stroke_minus(offset_x: float, offset_y: float, size: float = 40) -> list[di
     return [{"x": xs, "y": ys}]
 
 
+_STRESS_EXPRESSIONS = [
+    "3x",
+    "3x + 5",
+    "3x^2 + 5x - 2",
+    "2x + 4x + 6x",
+    "x^2 + 2x + 1",
+    "5x^3 + 3x^2 - x + 7",
+    "\\frac{y^2}{2} = x^2 + C",
+    "f'(x) = 6x + 5",
+    "a^2 + b^2 = c^2",
+    "\\sqrt{x^2 + y^2}",
+    "\\frac{x + 1}{x - 1}",
+    "3x^2 + 5x - 2 = 0",
+    "(x + 1)(x - 1) = x^2 - 1",
+    "y = mx + b",
+    "e = mc^2",
+]
+
+
 def generate_expression_strokes(num_terms: int) -> list[dict]:
-    """Generate strokes for a polynomial: 3x + 5x + 2x + ... with `num_terms` terms.
+    """Generate strokes using latex2strokes for increasing complexity.
 
-    Returns a list of stroke dicts, each with 'x' and 'y' arrays.
-    More terms = more strokes = bigger stress test.
+    `num_terms` selects which expression from _STRESS_EXPRESSIONS to use
+    (cycling through the list). More terms = more strokes = bigger stress test.
     """
-    strokes: list[dict] = []
-    cursor_x = 50.0
-    spacing = 100.0
-
-    for i in range(num_terms):
-        coeff = (i * 3 + 2) % 10  # varying coefficients
-        # Coefficient digit
-        strokes.append(_stroke_digit(coeff, offset_x=cursor_x, offset_y=100))
-        cursor_x += 30
-        # Variable x
-        strokes.extend(_stroke_x_var(cursor_x, 100))
-        cursor_x += 40
-
-        # Plus or equals before next term (skip after last)
-        if i < num_terms - 1:
-            strokes.extend(_stroke_plus(cursor_x, 100))
-            cursor_x += spacing * 0.5
-        elif i == num_terms - 1:
-            # Add = 0 at the end
-            strokes.extend(_stroke_equals(cursor_x, 100))
-            cursor_x += 40
-            strokes.append(_stroke_digit(0, offset_x=cursor_x, offset_y=100))
-
-    return strokes
+    idx = min(num_terms - 1, len(_STRESS_EXPRESSIONS) - 1)
+    latex = _STRESS_EXPRESSIONS[idx]
+    # Use a fixed seed per expression for reproducibility
+    return latex_to_strokes(latex, origin_x=50.0, origin_y=100.0, font_size=40.0, seed=42)
 
 
 # ---------------------------------------------------------------------------
@@ -403,7 +410,7 @@ def run_stress_test(server: str, token: str, user_id: str, max_strokes: int, run
         print(f"  Document: {doc_id}")
 
     # Test rounds: increasing stroke counts
-    rounds = [5, 10, 25, 50, 100, 150, 200, 300, 500, 750, 1000]
+    rounds = [1, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100]
     rounds = [r for r in rounds if r <= max_strokes]
 
     results: list[dict] = []
