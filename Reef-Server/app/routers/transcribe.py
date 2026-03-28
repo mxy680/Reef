@@ -21,7 +21,7 @@ class StrokeData(BaseModel):
 
 
 class TranscribeStrokesRequest(BaseModel):
-    strokes: list[StrokeData] = Field(..., max_length=100)
+    strokes: list[StrokeData] = Field(..., max_length=1000)
     session_id: str | None = None
     app_token: str | None = None
 

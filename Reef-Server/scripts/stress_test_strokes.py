@@ -403,7 +403,7 @@ def run_stress_test(server: str, token: str, user_id: str, max_strokes: int, run
         print(f"  Document: {doc_id}")
 
     # Test rounds: increasing stroke counts
-    rounds = [1, 2, 5, 10, 15, 20, 30, 50, 75, 100]
+    rounds = [5, 10, 25, 50, 100, 150, 200, 300, 500, 750, 1000]
     rounds = [r for r in rounds if r <= max_strokes]
 
     results: list[dict] = []
@@ -419,10 +419,10 @@ def run_stress_test(server: str, token: str, user_id: str, max_strokes: int, run
         stroke_count = len(strokes)
         point_count = sum(len(s["x"]) for s in strokes)
 
-        # Cap at 100 strokes (server limit)
-        if stroke_count > 100:
-            strokes = strokes[:100]
-            stroke_count = 100
+        # Cap at max_strokes
+        if stroke_count > max_strokes:
+            strokes = strokes[:max_strokes]
+            stroke_count = max_strokes
             point_count = sum(len(s["x"]) for s in strokes)
 
         # Transcribe
