@@ -74,12 +74,18 @@ class SimulationStartResponse(BaseModel):
     status: str
     step_index: int
     total_steps: int
+    strokes: list[dict] | None = None
+    latex: str | None = None
+    reasoning: str | None = None
 
 
 class SimulationContinueResponse(BaseModel):
     status: str
     step_index: int
     total_steps: int
+    strokes: list[dict] | None = None
+    latex: str | None = None
+    reasoning: str | None = None
 
 
 class SimulationStopResponse(BaseModel):
@@ -185,10 +191,10 @@ async def _generate_and_send_strokes(
     user_id: str,
     state: SimulationState,
     tutor_feedback: str | None = None,
-) -> bool:
-    """Generate student work for the current step and send strokes via WebSocket.
+) -> tuple[list[dict], str, str]:
+    """Generate student work for the current step, convert to strokes.
 
-    Returns True when all steps are complete (simulation done).
+    Returns (strokes, latex, reasoning) for inclusion in the REST response.
     """
     steps = state.answer_key_steps
     step = steps[state.step_index]
@@ -243,7 +249,7 @@ async def _generate_and_send_strokes(
     state.accumulated_work.append(latex)
     state.current_y += _LINE_HEIGHT
 
-    return False  # not complete yet; caller advances step_index if tutor confirms
+    return strokes, latex, reasoning  # caller includes in REST response
 
 
 # ---------------------------------------------------------------------------
@@ -281,12 +287,16 @@ async def simulation_start(
         f"part={body.part_label} steps={len(steps)} personality={body.personality}"
     )
 
-    await _generate_and_send_strokes(user.id, state)
+    result = await _generate_and_send_strokes(user.id, state)
+    strokes, latex, reasoning = result if result else (None, None, None)
 
     return SimulationStartResponse(
         status="running",
         step_index=0,
         total_steps=len(steps),
+        strokes=strokes,
+        latex=latex,
+        reasoning=reasoning,
     )
 
 
@@ -311,16 +321,14 @@ async def simulation_continue(
             f"[simulate] Retry {state.retry_count}/{_MAX_RETRIES} for {user.id} "
             f"step {state.step_index} with feedback: {body.tutor_feedback[:80]}"
         )
-        await _generate_and_send_strokes(user.id, state, tutor_feedback=body.tutor_feedback)
+        result = await _generate_and_send_strokes(user.id, state, tutor_feedback=body.tutor_feedback)
     else:
         # Tutor confirmed step correct — advance to next step
         state.step_index += 1
         state.retry_count = 0
 
         if state.step_index >= len(steps):
-            # All steps done
             log.info(f"[simulate] Simulation complete for {user.id}")
-            await ws_manager.send_to_user(user.id, {"type": "simulation_complete"})
             _simulations.pop(user.id, None)
             return SimulationContinueResponse(
                 status="complete",
@@ -331,12 +339,16 @@ async def simulation_continue(
         log.info(
             f"[simulate] Advancing to step {state.step_index + 1}/{len(steps)} for {user.id}"
         )
-        await _generate_and_send_strokes(user.id, state)
+        result = await _generate_and_send_strokes(user.id, state)
 
+    strokes, latex, reasoning = result if result else (None, None, None)
     return SimulationContinueResponse(
         status="running",
         step_index=state.step_index,
         total_steps=len(steps),
+        strokes=strokes,
+        latex=latex,
+        reasoning=reasoning,
     )
 
 

@@ -195,15 +195,33 @@ final class SimulationService {
         pageIndex: Int,
         targetRect: CGRect
     ) async {
-        guard let strokesRaw = json["strokes"] as? [[String: [Double]]] else { return }
+        // Parse strokes — handle NSNumber arrays from JSONSerialization
+        guard let strokesArray = json["strokes"] as? [[String: Any]] else {
+            print("[simulation] No strokes in response: \(json.keys)")
+            return
+        }
+        let strokesRaw: [[String: [Double]]] = strokesArray.compactMap { dict in
+            guard let xAny = dict["x"], let yAny = dict["y"] else { return nil }
+            let xs: [Double]
+            let ys: [Double]
+            if let xd = xAny as? [Double] { xs = xd }
+            else if let xn = xAny as? [NSNumber] { xs = xn.map { $0.doubleValue } }
+            else { return nil }
+            if let yd = yAny as? [Double] { ys = yd }
+            else if let yn = yAny as? [NSNumber] { ys = yn.map { $0.doubleValue } }
+            else { return nil }
+            return ["x": xs, "y": ys]
+        }
 
         if let step = json["step_index"] as? Int { currentStep = step }
         if let reasoning = json["reasoning"] as? String { lastReasoning = reasoning }
         if let latex = json["latex"] as? String {
             print("[simulation] Step \(currentStep): \(latex)")
         }
+        print("[simulation] Got \(strokesRaw.count) strokes, rendering in rect \(targetRect)")
 
         let pkStrokes = SimulationStrokeRenderer.buildStrokes(from: strokesRaw, targetRect: targetRect)
+        print("[simulation] Built \(pkStrokes.count) PKStrokes")
         await SimulationStrokeRenderer.animateStrokes(
             pkStrokes,
             onto: drawingManager,
