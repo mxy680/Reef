@@ -93,33 +93,58 @@ def get_simulation_state(user_id: str) -> dict | None:
 
 
 def get_question_region(doc_id: str, question_number: int, part_label: str | None) -> tuple[float, float]:
-    """Get the y_start and y_end for a specific subquestion. Returns (y_start, y_end) in PDF points."""
+    """Get the y_start and y_end for a specific subquestion's ANSWER SPACE.
+
+    The answer space starts after the question text (stem). If the part region
+    covers the whole page, we look for the stem's y_end to find where the
+    question text ends and the answer space begins.
+    """
     url = ENV.get("SUPABASE_URL", "")
     resp = httpx.get(
-        f"{url}/rest/v1/documents?id=eq.{doc_id}&select=question_regions,question_pages",
+        f"{url}/rest/v1/documents?id=eq.{doc_id}&select=question_regions",
         headers=supabase_headers(), timeout=5,
     )
     if resp.status_code != 200 or not resp.json():
-        return 150.0, 400.0  # fallback
+        return 60.0, 400.0
 
     doc = resp.json()[0]
     regions = doc.get("question_regions", [])
     if not regions or question_number - 1 >= len(regions):
-        return 150.0, 400.0
+        return 60.0, 400.0
 
     q_regions = regions[question_number - 1]
     if not q_regions:
-        return 150.0, 400.0
+        return 60.0, 400.0
 
-    for r in q_regions.get("regions", []):
+    all_r = q_regions.get("regions", [])
+
+    # Find the stem (label=null) — this is the question text area
+    stem_y_end = 0.0
+    for r in all_r:
+        if r.get("label") is None:
+            stem_y_end = r.get("y_end", 0.0)
+            break
+
+    # Find the target part
+    for r in all_r:
         if r.get("label") == part_label:
-            return r.get("y_start", 150.0), r.get("y_end", 400.0)
+            y_start = r.get("y_start", 0.0)
+            y_end = r.get("y_end", 792.0)
 
-    # Fallback: use last region
-    all_regions = q_regions.get("regions", [])
-    if all_regions:
-        return all_regions[-1].get("y_start", 150.0), all_regions[-1].get("y_end", 400.0)
-    return 150.0, 400.0
+            # If the part covers the whole page (no dedicated region),
+            # use stem end as the answer start
+            if y_start < 10 and y_end > 700:
+                if stem_y_end > 10:
+                    return stem_y_end, y_end
+                else:
+                    return 60.0, y_end  # no stem either, guess
+
+            return y_start, y_end
+
+    # Fallback
+    if all_r:
+        return all_r[-1].get("y_start", 60.0), all_r[-1].get("y_end", 400.0)
+    return 60.0, 400.0
 
 
 def show_doc_context(doc_id: str) -> tuple[str, list[dict], float]:
@@ -159,12 +184,9 @@ def show_doc_context(doc_id: str) -> tuple[str, list[dict], float]:
         print(f"      Work: {s.get('work', '')[:55]}")
     print()
 
-    # Position strokes below the question text
-    # If region covers the whole page (y_start near 0), use a reasonable default
-    origin_y = y_start + 15
-    if y_start < 10:
-        origin_y = 60  # question text is at the top, start writing below it
-    print(f"  Stroke origin Y: {origin_y:.0f} (region y_start={y_start:.0f})")
+    # Position strokes at the answer space start (after question text)
+    origin_y = y_start + 10
+    print(f"  Answer space: y={y_start:.0f} to {y_end:.0f} → stroke origin Y: {origin_y:.0f}")
     return question_label, steps, origin_y
 
 
