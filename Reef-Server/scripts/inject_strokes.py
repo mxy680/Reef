@@ -147,7 +147,10 @@ def show_doc_context(doc_id: str) -> tuple[str, list[dict], float]:
         print(f"      Work: {s.get('work', '')[:55]}")
     print()
 
-    return question_label, steps, y_start + 10  # 10pt below region start
+    # iOS renders strokes at 2x scale, so PDF y_start maps directly
+    # (y_start=371 → strokes at 371 → iOS renders at 371*2=742 on screen)
+    print(f"  Stroke origin Y: {y_start + 10:.0f} (region y_start={y_start:.0f}, +10 offset)")
+    return question_label, steps, y_start + 10
 
 
 def main():
