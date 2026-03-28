@@ -127,25 +127,25 @@ def _digit_4(cx: float, cy: float, size: float) -> list[Stroke]:
 
 
 def _digit_5(cx: float, cy: float, size: float) -> list[Stroke]:
-    """Flat top going left, vertical down, then curved bottom-right."""
-    n = 35
+    """Two strokes: (1) flat top line + sharp corner + belly curve, (2) none.
+    Key difference from 6: flat horizontal top, sharp 90° corner, belly doesn't close."""
     xs, ys = [], []
-    # Horizontal top from right to left
+    # Flat top: horizontal from right to left
     for i in range(8):
         t = i / 7
-        xs.append(cx + size * 0.2 - size * 0.4 * t)
-        ys.append(cy - size * 0.38)
-    # Vertical down on left side
-    for i in range(8):
-        t = i / 7
+        xs.append(cx + size * 0.22 - size * 0.42 * t)
+        ys.append(cy - size * 0.4)
+    # Sharp corner: straight down from left end
+    for i in range(6):
+        t = i / 5
         xs.append(cx - size * 0.2)
-        ys.append(cy - size * 0.38 + size * 0.35 * t)
-    # Bottom curve (like bottom of S)
-    for i in range(19):
-        t = i / 18
-        a = math.pi * 0.5 - math.pi * 1.1 * t
-        xs.append(cx + size * 0.18 * math.cos(a))
-        ys.append(cy + size * 0.18 + size * 0.2 * math.sin(a))
+        ys.append(cy - size * 0.4 + size * 0.4 * t)
+    # Belly: arc going right and down, NOT closing back (open at bottom-right)
+    for i in range(12):
+        t = i / 11
+        a = math.pi * 0.5 - math.pi * 0.85 * t
+        xs.append(cx - size * 0.05 + size * 0.22 * math.cos(a))
+        ys.append(cy + size * 0.12 - size * 0.22 * math.sin(a))
     return [{"x": xs, "y": ys}]
 
 
@@ -421,17 +421,22 @@ def _letter_d(cx: float, cy: float, size: float) -> list[Stroke]:
 
 
 def _letter_e(cx: float, cy: float, size: float) -> list[Stroke]:
-    """e: horizontal mid-bar + arc."""
-    pts = 15
-    # Mid bar
-    bar_xs = [cx - size * 0.2 + size * 0.4 * i / (pts - 1) for i in range(pts)]
-    bar_ys = [cy + size * 0.12] * pts
-    # Arc from right of bar going up and around
-    arc_xs = [cx + size * 0.2 * math.cos(t)
-              for t in [0.0 + math.pi * 1.7 * i / (pts - 1) for i in range(pts)]]
-    arc_ys = [cy + size * 0.12 + size * 0.2 * math.sin(t)
-              for t in [0.0 + math.pi * 1.7 * i / (pts - 1) for i in range(pts)]]
-    return [{"x": bar_xs, "y": bar_ys}, {"x": arc_xs, "y": arc_ys}]
+    """e: start with horizontal mid-line going right, then loop up-left-down, open bottom-right.
+    Two strokes: (1) the loop from mid-right, up over, down to bottom-left, (2) none needed."""
+    n = 25
+    xs, ys = [], []
+    # Start at center-left, go right (the crossbar of the e)
+    for i in range(5):
+        t = i / 4
+        xs.append(cx - size * 0.12 + size * 0.28 * t)
+        ys.append(cy + size * 0.02)
+    # From right, curve up over the top and around counter-clockwise
+    for i in range(20):
+        t = i / 19
+        a = 0 - math.pi * 1.4 * t  # go counter-clockwise from right
+        xs.append(cx + size * 0.02 + size * 0.16 * math.cos(a))
+        ys.append(cy - size * 0.05 + size * 0.2 * math.sin(a))
+    return [{"x": xs, "y": ys}]
 
 
 def _letter_f(cx: float, cy: float, size: float) -> list[Stroke]:
@@ -539,17 +544,27 @@ def _letter_l(cx: float, cy: float, size: float) -> list[Stroke]:
 
 
 def _letter_m(cx: float, cy: float, size: float) -> list[Stroke]:
-    """m: three humps."""
-    pts = 25
+    """m: vertical stem + two arches (like handwritten m)."""
+    n = 30
     xs, ys = [], []
-    for i in range(pts):
-        t = i / (pts - 1)
-        xs.append(cx - size * 0.3 + size * 0.6 * t)
-        ys.append(cy + size * 0.15 + size * 0.25 * abs(math.sin(math.pi * 2 * t)))
-    # Start from top
-    xs2 = [cx - size * 0.3] + xs
-    ys2 = [cy - size * 0.15] + ys
-    return [{"x": xs2, "y": ys2}]
+    # Left vertical down
+    for i in range(8):
+        t = i / 7
+        xs.append(cx - size * 0.25)
+        ys.append(cy - size * 0.15 + size * 0.5 * t)
+    # First arch up and down
+    for i in range(10):
+        t = i / 9
+        a = math.pi * t
+        xs.append(cx - size * 0.25 + size * 0.2 * t)
+        ys.append(cy + size * 0.35 - size * 0.25 * math.sin(a))
+    # Second arch up and down
+    for i in range(10):
+        t = i / 9
+        a = math.pi * t
+        xs.append(cx - size * 0.05 + size * 0.2 * t)
+        ys.append(cy + size * 0.35 - size * 0.25 * math.sin(a))
+    return [{"x": xs, "y": ys}]
 
 
 def _letter_n(cx: float, cy: float, size: float) -> list[Stroke]:
@@ -601,17 +616,20 @@ def _letter_q(cx: float, cy: float, size: float) -> list[Stroke]:
 
 
 def _letter_r(cx: float, cy: float, size: float) -> list[Stroke]:
-    """r: vertical + short shoulder."""
-    pts = 12
-    vert_xs = [cx - size * 0.1] * pts
-    vert_ys = [cy - size * 0.15 + size * 0.5 * i / (pts - 1) for i in range(pts)]
-    shoulder_xs, shoulder_ys = [], []
-    for i in range(pts // 2):
-        t = i / (pts // 2 - 1)
-        a = math.pi - math.pi * 0.5 * t
-        shoulder_xs.append(cx - size * 0.1 + size * 0.15 * (1 - math.cos(a)))
-        shoulder_ys.append(cy - size * 0.15 - size * 0.1 * math.sin(a))
-    return [{"x": vert_xs, "y": vert_ys}, {"x": shoulder_xs, "y": shoulder_ys}]
+    """r: single stroke — vertical down then kick up-right at top."""
+    n = 20
+    xs, ys = [], []
+    # Vertical stem
+    for i in range(12):
+        t = i / 11
+        xs.append(cx - size * 0.08)
+        ys.append(cy - size * 0.1 + size * 0.45 * t)
+    # Kick: arc from top of stem going right
+    for i in range(8):
+        t = i / 7
+        xs.append(cx - size * 0.08 + size * 0.2 * t)
+        ys.append(cy - size * 0.1 + size * 0.08 * math.sin(math.pi * t))
+    return [{"x": xs, "y": ys}]
 
 
 def _letter_s(cx: float, cy: float, size: float) -> list[Stroke]:
