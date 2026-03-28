@@ -1451,16 +1451,18 @@ final class CanvasViewModel {
                             let latex = json["latex"] as? String ?? ""
                             print("[sim-ws] Received \(strokesRaw.count) strokes: \(latex.prefix(50))")
 
-                            // Build PKStrokes from raw coordinate data
+                            // Scale strokes to canvas — server coords are ~50-400 range,
+                            // canvas is PDF-sized. Scale 2x to be visible.
+                            let scale: Double = 2.0
                             let ink = PKInk(.pen, color: .black)
                             for strokeDict in strokesRaw {
                                 guard let xs = strokeDict["x"], let ys = strokeDict["y"],
                                       !xs.isEmpty, xs.count == ys.count else { continue }
                                 let points = zip(xs, ys).enumerated().map { idx, pair in
                                     PKStrokePoint(
-                                        location: CGPoint(x: pair.0, y: pair.1),
+                                        location: CGPoint(x: pair.0 * scale, y: pair.1 * scale),
                                         timeOffset: TimeInterval(idx) * 0.01,
-                                        size: CGSize(width: 2, height: 2),
+                                        size: CGSize(width: 3, height: 3),
                                         opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
                                     )
                                 }

@@ -367,16 +367,25 @@ async def simulation_stop(
     return SimulationStopResponse(status="stopped")
 
 
+class InjectStrokesServiceRequest(BaseModel):
+    latex: str
+    user_id: str
+    origin_x: float = 50.0
+    origin_y: float = 100.0
+
+
 @router.post("/inject", response_model=InjectStrokesResponse)
 async def simulation_inject(
-    body: InjectStrokesRequest,
-    user: AuthenticatedUser = Depends(get_current_user),
+    body: InjectStrokesServiceRequest,
 ) -> InjectStrokesResponse:
-    """Inject LaTeX as strokes onto the user's canvas via WebSocket.
+    """Inject LaTeX as strokes onto a user's canvas via WebSocket.
 
-    No simulation state needed — just converts LaTeX to strokes and pushes.
-    Used by Claude Code to send handwriting to the iPad in real time.
+    No auth required — used by Claude Code scripts with a known user_id.
+    Only active when SIMULATION_ENABLED=true.
     """
+    if not settings.simulation_enabled:
+        raise HTTPException(status_code=404, detail="Not found")
+
     strokes = latex_to_strokes(
         body.latex,
         origin_x=body.origin_x,
@@ -384,7 +393,7 @@ async def simulation_inject(
         jitter=False,
     )
 
-    sent = await ws_manager.send_to_user(user.id, {
+    sent = await ws_manager.send_to_user(body.user_id, {
         "type": "simulation_strokes",
         "strokes": strokes,
         "latex": body.latex,
@@ -395,5 +404,5 @@ async def simulation_inject(
     if not sent:
         raise HTTPException(status_code=404, detail="No WebSocket connection. Tap the play button on the iPad first.")
 
-    log.info(f"[inject] Sent {len(strokes)} strokes to {user.id}: {body.latex[:50]}")
+    log.info(f"[inject] Sent {len(strokes)} strokes to {body.user_id}: {body.latex[:50]}")
     return InjectStrokesResponse(status="sent", strokes_count=len(strokes))

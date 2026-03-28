@@ -125,10 +125,7 @@ final class TutorEvaluationService {
                 try? await Task.sleep(for: .milliseconds(200))
             }
 
-            // After TTS: enable mic for mistakes, advance for completions
-            if response.status == "mistake" && !isDemo {
-                onMistakeSpoken?()
-            }
+            // Auto-mic removed — user taps mic manually if they want to respond
 
             // Set status and fire step advancement AFTER TTS finishes
             // This ensures .onChange observers see the final state

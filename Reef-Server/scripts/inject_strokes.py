@@ -47,22 +47,23 @@ def main():
     parser = argparse.ArgumentParser(description="Inject LaTeX as strokes onto connected iPad")
     parser.add_argument("latex", help="LaTeX expression to inject")
     parser.add_argument("--server", default="https://api.studyreef.com", help="API base URL")
-    parser.add_argument("--token", help="JWT token (auto-generated if omitted)")
+    parser.add_argument("--user-id", help="Target user ID (auto-detected from server logs if omitted)")
     parser.add_argument("--x", type=float, default=50.0, help="X origin (default 50)")
     parser.add_argument("--y", type=float, default=100.0, help="Y origin (default 100)")
     args = parser.parse_args()
 
     env = _load_env()
-    token = args.token or get_token(env)
+    user_id = args.user_id or "a24e261a-313b-450a-88c5-7653e2ece357"  # default: Mark's account
 
     print(f"  Injecting: {args.latex}")
     print(f"  Server: {args.server}")
+    print(f"  User: {user_id}")
     print(f"  Position: ({args.x}, {args.y})")
 
     resp = httpx.post(
         f"{args.server}/ai/simulation/inject",
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-        json={"latex": args.latex, "origin_x": args.x, "origin_y": args.y},
+        headers={"Content-Type": "application/json"},
+        json={"latex": args.latex, "user_id": user_id, "origin_x": args.x, "origin_y": args.y},
         timeout=15,
     )
 
