@@ -400,13 +400,20 @@ final class CanvasViewModel {
 
         // When transcription changes, wait 1s of quiet then fire eval
         handwritingService.onLatexChanged = { [weak self] _ in
-            guard let self, self.tutorModeOn, self.tutorStepCount > 0 else { return }
+            guard let self, self.tutorModeOn, self.tutorStepCount > 0 else {
+                print("[eval-debounce] SKIPPED: tutorModeOn=\(self?.tutorModeOn ?? false) stepCount=\(self?.tutorStepCount ?? 0)")
+                return
+            }
             self.evalDebounceTask?.cancel()
             self.evalDebounceTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(1))
                 guard let self, !Task.isCancelled else { return }
                 let (qNum, partLabel) = self.parseQuestionLabel()
-                guard qNum > 0 else { return }
+                guard qNum > 0 else {
+                    print("[eval-debounce] SKIPPED: qNum=0")
+                    return
+                }
+                print("[eval-debounce] FIRING: step=\(self.currentTutorStepIndex)/\(self.tutorStepCount) status=\(self.tutorEvalService.status)")
                 await self.tutorEvalService.runEval(
                     latex: self.handwritingService.rawLatexResult,
                     documentId: self.document.id,
@@ -1418,15 +1425,38 @@ final class CanvasViewModel {
         print("[sim-poll] Wrote state: doc=\(document.id) label=\(activeQuestionLabel ?? "Q1a") step=\(currentTutorStepIndex)/\(tutorStepCount)")
 
         isSimWsConnected = true
+        // Ensure transcription polling is running (may not be if sidebar isn't visible)
+        handwritingService.startPolling()
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         lastSimStrokeTimestamp = isoFormatter.string(from: Date())
         print("[sim-poll] Polling simulation_strokes for \(userId) since \(lastSimStrokeTimestamp)")
 
         simPollTask = Task { [weak self] in
+            var pollCount = 0
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(500))
                 guard let self, !Task.isCancelled else { return }
+
+                // Every 2s, write tutor state back to simulation_state for CLI monitoring
+                pollCount += 1
+                if pollCount % 4 == 0 {
+                    let stateUpdate: [String: String] = [
+                        "user_id": userId,
+                        "document_id": self.document.id,
+                        "question_label": self.activeQuestionLabel ?? "Q1a",
+                        "step_index": "\(self.currentTutorStepIndex)",
+                        "total_steps": "\(self.tutorStepCount)",
+                        "eval_status": self.tutorEvalService.status,
+                        "eval_progress": String(format: "%.2f", self.tutorEvalService.stepProgress),
+                        "is_evaluating": "\(self.tutorEvalService.isEvaluating)",
+                        "eval_count": "\(self.tutorEvalService.evalCount)",
+                    ]
+                    try? await supabase
+                        .from("simulation_state")
+                        .upsert(stateUpdate, onConflict: "user_id")
+                        .execute()
+                }
 
                 do {
                     let rows: [SimulationStrokeRow] = try await supabase
@@ -1492,6 +1522,12 @@ final class CanvasViewModel {
                         }
 
                         print("[sim-poll] drawing strokes after: \(self.drawingManager.drawing(for: self.currentPageIndex).strokes.count)")
+
+                        // Update handwriting service so transcription polling sees the new strokes
+                        self.handwritingService.currentDrawing = self.drawingWithoutShapes(for: self.currentPageIndex)
+                        self.handwritingService.currentRegions = self.activeSubquestionRegions()
+                        print("[sim-poll] Updated handwritingService.currentDrawing")
+
                         print("[sim-poll] ===== DONE =====")
                     }
                 } catch {

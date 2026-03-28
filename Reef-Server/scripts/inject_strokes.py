@@ -235,6 +235,16 @@ def main():
                 break
             if not latex or latex == "/quit":
                 break
+            if latex == "/status":
+                state = get_simulation_state(args.user_id)
+                if state:
+                    print(f"  Step: {state.get('step_index', '?')}/{state.get('total_steps', '?')}")
+                    print(f"  Status: {state.get('eval_status', '?')}  Progress: {state.get('eval_progress', '?')}")
+                    print(f"  Evaluating: {state.get('is_evaluating', '?')}  Eval count: {state.get('eval_count', '?')}")
+                    print(f"  Label: {state.get('question_label', '?')}")
+                else:
+                    print("  No simulation state found")
+                continue
             if latex.startswith("/correct") and steps:
                 # Auto-inject correct work for current step
                 parts = latex.split()

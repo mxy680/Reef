@@ -63,10 +63,17 @@ final class TutorEvaluationService {
         figureURLs: [String] = [],
         studentImage: String? = nil
     ) async {
-        guard !latex.isEmpty else { return }
+        guard !latex.isEmpty else {
+            print("[runEval] SKIPPED: empty latex")
+            return
+        }
 
+        print("[runEval] START: step=\(stepIndex) latex=\(latex.prefix(50))")
         isEvaluating = true
-        defer { isEvaluating = false }
+        defer {
+            isEvaluating = false
+            print("[runEval] END")
+        }
 
         do {
             let response = try await callServer(
@@ -79,6 +86,7 @@ final class TutorEvaluationService {
                 studentImage: studentImage
             )
 
+            print("[runEval] RESPONSE: status=\(response.status) progress=\(response.progress) steps=\(response.stepsCompleted) speech=\(response.speechText?.prefix(40) ?? "nil")")
             let wasInMistake = previousStatus == "mistake"
             stepProgress = response.progress
             previousStatus = response.status
