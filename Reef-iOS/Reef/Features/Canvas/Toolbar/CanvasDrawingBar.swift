@@ -204,6 +204,32 @@ struct CanvasDrawingBar: View {
                 }
                 .opacity(viewModel.tutorModeOn ? 1.0 : 0.3)
                 .disabled(!viewModel.tutorModeOn)
+
+#if DEBUG
+                if viewModel.simulationService.isSimulating {
+                    Button(action: { viewModel.stopSimulation() }) {
+                        Text("STOP SIM")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.red)
+                            .cornerRadius(4)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Button(action: { viewModel.startSimulation() }) {
+                        Text("SIM")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.orange)
+                            .cornerRadius(4)
+                    }
+                    .buttonStyle(.plain)
+                }
+#endif
             }
             .padding(.trailing, 14)
         }

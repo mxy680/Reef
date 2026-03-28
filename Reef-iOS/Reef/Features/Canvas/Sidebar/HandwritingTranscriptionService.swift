@@ -54,8 +54,14 @@ final class HandwritingTranscriptionService {
         pollingTask = nil
     }
 
+    private var isPaused = false
+
+    func pausePolling() { isPaused = true }
+    func resumePolling() { isPaused = false }
+
     private var pollLogCounter = 0
     private func pollForChanges() {
+        guard !isPaused else { return }
         pollLogCounter += 1
         guard let drawing = currentDrawing else {
             if pollLogCounter % 25 == 0 { print("[hw-poll] no drawing set") }
