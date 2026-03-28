@@ -1,0 +1,48 @@
+{
+  "question_text": "Evaluate the integral $\\int x^2 e^x \\, dx$ using integration by parts (apply twice).",
+  "question_number": 1,
+  "part_label": "a",
+  "steps": [
+    {
+      "description": "Set up the first integration by parts: choose u = x^2 and dv = e^x dx",
+      "explanation": "Which part gets simpler when you differentiate?",
+      "work": "u = x^2, \\quad du = 2x \\, dx, \\quad dv = e^x dx, \\quad v = e^x",
+      "reinforcement": "Good choice — x^2 simplifies when differentiated.",
+      "tutor_speech": "Set up integration by parts. Choose u and dv.",
+      "concepts": ["integration_by_parts"]
+    },
+    {
+      "description": "Apply the formula uv - integral of v du for the first application",
+      "explanation": "Plug into uv - integral(v du). What do you get?",
+      "work": "x^2 e^x - \\int 2x e^x \\, dx",
+      "reinforcement": "First application of IBP done — now you have a simpler integral.",
+      "tutor_speech": "Apply the integration by parts formula.",
+      "concepts": ["integration_by_parts"]
+    },
+    {
+      "description": "Set up the second integration by parts on the remaining integral: u = 2x, dv = e^x dx",
+      "explanation": "The remaining integral still has a polynomial times e^x. Apply IBP again.",
+      "work": "u = 2x, \\quad du = 2 \\, dx, \\quad dv = e^x dx, \\quad v = e^x",
+      "reinforcement": "Second IBP setup — one more application and you're done.",
+      "tutor_speech": "Set up integration by parts again on the remaining integral.",
+      "concepts": ["integration_by_parts"]
+    },
+    {
+      "description": "Apply the formula again and combine with the first result",
+      "explanation": "Substitute the second IBP result back into the first expression.",
+      "work": "x^2 e^x - (2x e^x - \\int 2 e^x \\, dx) = x^2 e^x - 2x e^x + 2e^x",
+      "reinforcement": "Nice — substitution back into the first expression is the tricky part.",
+      "tutor_speech": "Apply the formula again and substitute back.",
+      "concepts": ["integration_by_parts", "algebraic_manipulation"]
+    },
+    {
+      "description": "Simplify and add the constant of integration",
+      "explanation": "Factor out e^x if you can. Don't forget +C.",
+      "work": "e^x(x^2 - 2x + 2) + C",
+      "reinforcement": "Perfect — factored form with the constant. That's a complete answer.",
+      "tutor_speech": "Simplify and add the constant of integration.",
+      "concepts": ["simplification"]
+    }
+  ],
+  "final_answer": "e^x(x^2 - 2x + 2) + C"
+}
