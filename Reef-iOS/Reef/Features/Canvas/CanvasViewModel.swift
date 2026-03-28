@@ -404,8 +404,7 @@ final class CanvasViewModel {
             self.evalDebounceTask?.cancel()
             self.evalDebounceTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(1))
-                guard let self, !Task.isCancelled,
-                      !self.tutorEvalService.isEvaluating else { return }
+                guard let self, !Task.isCancelled else { return }
                 let (qNum, partLabel) = self.parseQuestionLabel()
                 guard qNum > 0 else { return }
                 await self.tutorEvalService.runEval(
