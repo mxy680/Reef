@@ -453,6 +453,7 @@ async def tutor_evaluate(
         mistake_explanation=evaluation.mistake_explanation,
         steps_completed=capped_steps,
         speech_audio=speech_audio,
+        speech_text=speech_text,
         debug_prompt=debug_prompt_text,
     )
 

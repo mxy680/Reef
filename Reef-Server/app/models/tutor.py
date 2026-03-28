@@ -62,7 +62,8 @@ class TutorEvaluateResponse(BaseModel):
     status: TutorStatus
     mistake_explanation: str | None = None
     steps_completed: int = 1
-    speech_audio: str | None = None  # base64-encoded WAV
+    speech_audio: str | None = None  # base64-encoded audio
+    speech_text: str | None = None   # the text that was spoken (for chat display)
     debug_prompt: str | None = None  # Full LLM prompt (only in development)
 
 

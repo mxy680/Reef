@@ -103,15 +103,18 @@ final class TutorEvaluationService {
                 }
             }
 
-            // Step completed — show reinforcement immediately
-            if response.status == "completed" {
-                if let reinforcement = pendingReinforcement, !reinforcement.isEmpty {
-                    chatMessages.append(TutorChatMessage(role: .reinforcement, latex: reinforcement, timestamp: Date()))
-                    pendingReinforcement = nil  // prevent duplicate on re-eval
+            // Show speech text in chat — this is exactly what the tutor says verbally
+            if let speechText = response.speechText, !speechText.isEmpty {
+                let role: TutorChatMessage.Role = response.status == "mistake" ? .error : .reinforcement
+                // Don't duplicate if the same text is already the last message
+                if chatMessages.last?.latex != speechText {
+                    chatMessages.append(TutorChatMessage(role: role, latex: speechText, timestamp: Date()))
                 }
-                if !isDemo && madeMistakeOnCurrentStep {
-                    chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
-                }
+            }
+
+            // Confidence check after struggled step completion
+            if response.status == "completed" && !isDemo && madeMistakeOnCurrentStep {
+                chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
             }
 
             // Play TTS audio
@@ -164,6 +167,7 @@ final class TutorEvaluationService {
         let mistakeExplanation: String?
         let stepsCompleted: Int
         let speechAudio: String?
+        let speechText: String?
         let debugPrompt: String?
 
         enum CodingKeys: String, CodingKey {
@@ -171,6 +175,7 @@ final class TutorEvaluationService {
             case mistakeExplanation = "mistake_explanation"
             case stepsCompleted = "steps_completed"
             case speechAudio = "speech_audio"
+            case speechText = "speech_text"
             case debugPrompt = "debug_prompt"
         }
 
@@ -181,6 +186,7 @@ final class TutorEvaluationService {
             mistakeExplanation = try container.decodeIfPresent(String.self, forKey: .mistakeExplanation)
             stepsCompleted = try container.decodeIfPresent(Int.self, forKey: .stepsCompleted) ?? 1
             speechAudio = try container.decodeIfPresent(String.self, forKey: .speechAudio)
+            speechText = try container.decodeIfPresent(String.self, forKey: .speechText)
             debugPrompt = try container.decodeIfPresent(String.self, forKey: .debugPrompt)
         }
     }
