@@ -356,8 +356,6 @@ final class CanvasViewModel {
             tutorModeOn = true
             showSidebar = true
             restoreTutorStateForLabel(label)
-            // Speak the first step description
-            speakCurrentStepDescription()
         }
     }
 
@@ -771,24 +769,6 @@ final class CanvasViewModel {
             stepSpeechTask?.cancel()
             tutorEvalService.stepProgress = 1.0
             tutorEvalService.status = "completed"
-        } else {
-            // Wait for reinforcement audio to finish, pause, then speak next step
-            stepSpeechTask?.cancel()
-            stepSpeechTask = Task { @MainActor in
-                // Wait for reinforcement TTS to finish (max 15s)
-                var waited = 0
-                while tutorEvalService.isTutorSpeaking && waited < 75 {
-                    try? await Task.sleep(for: .milliseconds(200))
-                    guard !Task.isCancelled else { return }
-                    waited += 1
-                }
-                guard !Task.isCancelled else { return }
-                // Brief pause between reinforcement and next step
-                try? await Task.sleep(for: .milliseconds(800))
-                guard !Task.isCancelled else { return }
-                speakCurrentStepDescription()
-            }
-
         }
     }
 
