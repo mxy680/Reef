@@ -305,18 +305,13 @@ def print_eval_result(
     total_steps: int,
     accumulated_latex: str,
     verbose: bool = False,
+    steps_list: list[dict] | None = None,
 ) -> None:
     status = response.get("status", "unknown")
     progress = response.get("progress", 0.0)
     steps_completed = response.get("steps_completed", 1)
     mistake = response.get("mistake_explanation") or ""
-    # tutor-evaluate doesn't return speech_text directly; use mistake or reinforcement via debug
-    speech_hint = ""
-    if status == "mistake":
-        speech_hint = mistake
-    elif status == "completed":
-        # No reinforcement_speech in the response model, but mistake_explanation is None
-        speech_hint = "Step completed!"
+    mistake_speech = response.get("mistake_speech") or ""
 
     progress_pct = int(progress * 100)
     inner_w = BOX_WIDTH - 2
@@ -333,10 +328,50 @@ def print_eval_result(
     print(mid)
 
     if status == "mistake" and mistake:
-        print(f"{row} {'Mistake: ' + mistake[:inner_w - 9]:<{inner_w}} {row}")
-        print(f"{row} {'Speech:  ' + mistake[:inner_w - 9]:<{inner_w}} {row}")
+        # Print full mistake_explanation without truncation, word-wrapping into box rows
+        print(f"{row} {'Mistake explanation:':<{inner_w}} {row}")
+        words = mistake.split()
+        line = ""
+        for word in words:
+            if len(line) + len(word) + 1 > inner_w - 2:
+                print(f"{row}   {line:<{inner_w - 2}} {row}")
+                line = word
+            else:
+                line = f"{line} {word}".strip()
+        if line:
+            print(f"{row}   {line:<{inner_w - 2}} {row}")
+        if mistake_speech:
+            print(f"{row} {'':<{inner_w}} {row}")
+            print(f"{row} {'Speech (TTS):':<{inner_w}} {row}")
+            words_s = mistake_speech.split()
+            line = ""
+            for word in words_s:
+                if len(line) + len(word) + 1 > inner_w - 2:
+                    print(f"{row}   {line:<{inner_w - 2}} {row}")
+                    line = word
+                else:
+                    line = f"{line} {word}".strip()
+            if line:
+                print(f"{row}   {line:<{inner_w - 2}} {row}")
     elif status == "completed":
-        print(f"{row} {'Step completed successfully!':<{inner_w}} {row}")
+        # Show reinforcement from the answer key step if available
+        reinforcement = ""
+        if steps_list and step_index < len(steps_list):
+            reinforcement = steps_list[step_index].get("reinforcement", "")
+        if reinforcement:
+            print(f"{row} {'Reinforcement:':<{inner_w}} {row}")
+            words = reinforcement.split()
+            line = ""
+            for word in words:
+                if len(line) + len(word) + 1 > inner_w - 2:
+                    print(f"{row}   {line:<{inner_w - 2}} {row}")
+                    line = word
+                else:
+                    line = f"{line} {word}".strip()
+            if line:
+                print(f"{row}   {line:<{inner_w - 2}} {row}")
+        else:
+            print(f"{row} {'Step completed successfully!':<{inner_w}} {row}")
     elif status == "working":
         print(f"{row} {'Still working on this step...':<{inner_w}} {row}")
     elif status == "idle":
@@ -345,7 +380,7 @@ def print_eval_result(
     print(mid)
     print(f"{row} {'Steps completed: ' + str(steps_completed):<{inner_w}} {row}")
 
-    # Show accumulated latex (truncated)
+    # Show accumulated latex (truncated to one line for readability)
     latex_preview = accumulated_latex.replace("\n", " ").strip()
     label = "Student work: "
     avail = inner_w - len(label)
@@ -508,6 +543,7 @@ def handle_command(
     steps_list: list[dict],
     accumulated_latex: list[str],
     verbose: bool,
+    scenario_steps: list[dict] | None = None,
 ) -> tuple[int, bool]:
     """Handle a / command. Returns (new_step_index, should_continue).
 
@@ -579,7 +615,7 @@ def handle_command(
 
             try:
                 response = call_tutor_evaluate(server, token, doc_id, question_number, part_label, current_si)
-                print_eval_result(response, current_si, total_steps, latex_so_far, verbose)
+                print_eval_result(response, current_si, total_steps, latex_so_far, verbose, scenario_steps)
                 advance = response.get("steps_completed", 1)
                 current_si += advance
             except Exception as e:
@@ -656,6 +692,7 @@ def run_interactive_loop(
                     steps_list=steps_list,
                     accumulated_latex=accumulated_latex,
                     verbose=verbose,
+                    scenario_steps=steps_list,
                 )
                 if not should_continue:
                     break
@@ -676,7 +713,7 @@ def run_interactive_loop(
                 print(f"  [error] Eval failed: {e}")
                 continue
 
-            print_eval_result(response, step_index, total_steps, latex_so_far, verbose)
+            print_eval_result(response, step_index, total_steps, latex_so_far, verbose, steps_list)
 
             # Auto-advance on completion
             status = response.get("status", "")

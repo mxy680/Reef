@@ -238,7 +238,7 @@ Students don't always follow the expected steps in order. They might:
 This is FINE. If their work is mathematically correct and reaches the result of one or more steps, mark those steps as completed.
 
 ## Output fields
-- progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly).
+- progress: 0.0 (nothing relevant to this step yet) to 1.0 (step fully completed correctly). When status is "mistake", progress should reflect how much CORRECT work exists before the error — typically 0.3-0.7, never 1.0.
 - status:
   - "idle" — no work related to this step yet
   - "working" — partial work that is correct so far (even if far from complete)
@@ -252,7 +252,7 @@ This is FINE. If their work is mathematically correct and reaches the result of 
   - EXCEPTION: If the history shows you already asked about the SAME mistake, escalate: question → hint → direct correction.
 - mistake_speech: ONLY when status is "mistake". Same question for TTS. NO LaTeX, NO math. One sentence max. Null otherwise.
 - reinforcement_speech: ONLY when status is "completed". NO math, plain English. One short sentence. Null otherwise. Just celebrate — do NOT ask questions like "why did that work?" Save questions for mistakes only.
-- steps_completed: How many steps the student completed at once, starting from the current step. Default 1. If the student's work also covers subsequent steps, set to the total number of steps completed. Example: evaluating Step 1, student wrote work covering Steps 1 through 3 → steps_completed = 3.
+- steps_completed: How many steps the student completed at once, starting from the current step. Default 1. IMPORTANT: If the student wrote work that also satisfies subsequent steps, you MUST set this higher. Example: evaluating Step 1 of 3, student wrote complete work for Steps 1, 2, and 3 → steps_completed = 3. Check each subsequent step's expected work against the student's LaTeX — if it is present and correct, count it.
 
 Mark "completed" if the student's work achieves the mathematical result of the expected step — it does NOT need to match the exact format or notation. If prior steps are completed, the student's work will contain their prior work too — don't penalize for that.
 
