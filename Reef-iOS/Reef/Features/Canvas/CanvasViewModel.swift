@@ -1471,6 +1471,8 @@ final class CanvasViewModel {
                                 var drawing = self.drawingManager.drawing(for: self.currentPageIndex)
                                 drawing.strokes.append(pkStroke)
                                 self.drawingManager.setDrawing(drawing, for: self.currentPageIndex)
+                                // Push to the live PKCanvasView so it renders immediately
+                                self.drawingManager.activeCanvasView?.drawing = drawing
                                 try? await Task.sleep(for: .milliseconds(120))
                             }
                         }
