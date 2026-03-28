@@ -162,9 +162,9 @@ struct CanvasInfoStrip: View {
             divider
 
             #if DEBUG
-            // Simulation play button — opens WebSocket for Claude to inject strokes
+            // Simulation play button — starts polling + writes active state to DB
             Button {
-                Task { await viewModel.toggleSimulationWebSocket() }
+                Task { await viewModel.toggleSimulation() }
             } label: {
                 Image(systemName: viewModel.isSimWsConnected ? "stop.circle.fill" : "play.circle.fill")
                     .resizable()

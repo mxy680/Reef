@@ -1404,11 +1404,17 @@ final class CanvasViewModel {
     // MARK: - Simulation WebSocket
 
     #if DEBUG
-    func toggleSimulationWebSocket() async {
+    func toggleSimulation() async {
         if isSimWsConnected {
             simPollTask?.cancel()
             simPollTask = nil
             isSimWsConnected = false
+            // Clear simulation state from DB
+            try? await supabase
+                .from("simulation_state")
+                .delete()
+                .eq("user_id", value: (try? await supabase.auth.session.user.id.uuidString) ?? "")
+                .execute()
             print("[sim-poll] Stopped")
             return
         }
@@ -1418,8 +1424,21 @@ final class CanvasViewModel {
             return
         }
 
+        // Write current state to DB so Claude knows what we're looking at
+        let stateRow: [String: String] = [
+            "user_id": userId,
+            "document_id": document.id,
+            "question_label": activeQuestionLabel ?? "Q1a",
+            "step_index": "\(currentTutorStepIndex)",
+            "total_steps": "\(tutorStepCount)",
+        ]
+        try? await supabase
+            .from("simulation_state")
+            .upsert(stateRow, onConflict: "user_id")
+            .execute()
+        print("[sim-poll] Wrote state: doc=\(document.id) label=\(activeQuestionLabel ?? "Q1a") step=\(currentTutorStepIndex)/\(tutorStepCount)")
+
         isSimWsConnected = true
-        // Set timestamp to NOW so we only pick up new inserts
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         lastSimStrokeTimestamp = isoFormatter.string(from: Date())

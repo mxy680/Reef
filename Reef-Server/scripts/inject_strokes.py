@@ -52,9 +52,9 @@ def supabase_headers() -> dict[str, str]:
 
 
 def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
-                  origin_x: float, origin_y: float) -> bool:
+                  origin_x: float, origin_y: float, font_size: float = 14.0) -> bool:
     """Convert LaTeX to strokes and insert into simulation_strokes table."""
-    strokes = latex_to_strokes(latex, origin_x=origin_x, origin_y=origin_y, jitter=False)
+    strokes = latex_to_strokes(latex, origin_x=origin_x, origin_y=origin_y, font_size=font_size, jitter=False)
     url = ENV.get("SUPABASE_URL", "")
 
     resp = httpx.post(
@@ -78,6 +78,18 @@ def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
     else:
         print(f"  ✗ Supabase error {resp.status_code}: {resp.text[:200]}")
         return False
+
+
+def get_simulation_state(user_id: str) -> dict | None:
+    """Read the simulation_state row to know what the user is viewing."""
+    url = ENV.get("SUPABASE_URL", "")
+    resp = httpx.get(
+        f"{url}/rest/v1/simulation_state?user_id=eq.{user_id}&select=*",
+        headers=supabase_headers(), timeout=5,
+    )
+    if resp.status_code == 200 and resp.json():
+        return resp.json()[0]
+    return None
 
 
 def get_question_region(doc_id: str, question_number: int, part_label: str | None) -> tuple[float, float]:
@@ -166,11 +178,22 @@ def main():
     question_label = args.question_label
     steps: list[dict] = []
     y_pos = args.y
+    doc_id = args.doc_id
 
-    if args.doc_id:
-        question_label, steps, y_pos = show_doc_context(args.doc_id)
-        if args.y == 150.0:  # user didn't override
+    # Auto-detect from simulation_state if no --doc-id provided
+    if not doc_id:
+        state = get_simulation_state(args.user_id)
+        if state:
+            doc_id = state["document_id"]
+            question_label = state["question_label"]
+            print(f"  Auto-detected: doc={doc_id[:12]}... label={question_label} step={state['step_index']}/{state['total_steps']}")
+
+    if doc_id:
+        question_label, steps, y_pos = show_doc_context(doc_id)
+        if args.y == 150.0:
             args.y = y_pos
+        if not args.doc_id:
+            args.doc_id = doc_id
 
     if args.latex:
         print(f"  Injecting: {args.latex}")
