@@ -160,9 +160,9 @@ final class CanvasViewModel {
     var showExportPreview: Bool = false
     weak var containerView: CanvasContainerView?
 
-    // Simulation WebSocket
+    // Simulation realtime subscription
     var isSimWsConnected: Bool = false
-    private var simWsTask: Task<Void, Never>?
+    private var simRealtimeChannel: RealtimeChannelV2?
 
     // MARK: - Popover State
 
@@ -1405,87 +1405,79 @@ final class CanvasViewModel {
     #if DEBUG
     func toggleSimulationWebSocket() async {
         if isSimWsConnected {
-            simWsTask?.cancel()
-            simWsTask = nil
+            // Unsubscribe
+            if let channel = simRealtimeChannel {
+                await supabase.realtimeV2.removeChannel(channel)
+            }
+            simRealtimeChannel = nil
             isSimWsConnected = false
-            print("[sim-ws] Disconnected")
+            print("[sim-rt] Unsubscribed")
             return
         }
 
-        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
-              let token = try? await supabase.auth.session.accessToken else {
-            print("[sim-ws] No server URL or token")
+        guard let userId = try? await supabase.auth.session.user.id.uuidString else {
+            print("[sim-rt] No auth session")
             return
         }
-
-        let wsURL = serverURL
-            .replacingOccurrences(of: "https://", with: "wss://")
-            .replacingOccurrences(of: "http://", with: "ws://")
-        guard let url = URL(string: "\(wsURL)/ws?token=\(token)") else { return }
 
         isSimWsConnected = true
-        print("[sim-ws] Connecting to \(wsURL)/ws...")
+        print("[sim-rt] Subscribing to simulation_strokes for \(userId)...")
 
-        simWsTask = Task { [weak self] in
-            let session = URLSession(configuration: .default)
-            let wsTask = session.webSocketTask(with: url)
-            wsTask.resume()
+        let channel = supabase.realtimeV2.channel("simulation-strokes")
 
-            defer {
-                wsTask.cancel(with: .normalClosure, reason: nil)
-                Task { @MainActor in self?.isSimWsConnected = false }
-            }
+        let insertions = channel.postgresChange(InsertAction.self, table: "simulation_strokes")
 
-            while !Task.isCancelled {
-                do {
-                    let message = try await wsTask.receive()
-                    guard let self else { return }
-                    switch message {
-                    case .string(let text):
-                        guard let data = text.data(using: .utf8),
-                              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                              let type = json["type"] as? String else { continue }
+        simRealtimeChannel = channel
+        await channel.subscribe()
+        print("[sim-rt] Subscribed ✓")
 
-                        if type == "simulation_strokes" {
-                            guard let strokesRaw = json["strokes"] as? [[String: [Double]]] else { continue }
-                            let latex = json["latex"] as? String ?? ""
-                            print("[sim-ws] Received \(strokesRaw.count) strokes: \(latex.prefix(50))")
+        // Listen for inserts in a background task
+        Task { [weak self] in
+            for await insert in insertions {
+                guard let self else { return }
+                let record = insert.record
 
-                            // Scale strokes to canvas — server coords are ~50-400 range,
-                            // canvas is PDF-sized. Scale 2x to be visible.
-                            let scale: Double = 2.0
-                            let ink = PKInk(.pen, color: .black)
-                            for strokeDict in strokesRaw {
-                                guard let xs = strokeDict["x"], let ys = strokeDict["y"],
-                                      !xs.isEmpty, xs.count == ys.count else { continue }
-                                let points = zip(xs, ys).enumerated().map { idx, pair in
-                                    PKStrokePoint(
-                                        location: CGPoint(x: pair.0 * scale, y: pair.1 * scale),
-                                        timeOffset: TimeInterval(idx) * 0.01,
-                                        size: CGSize(width: 3, height: 3),
-                                        opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
-                                    )
-                                }
-                                let path = PKStrokePath(controlPoints: points, creationDate: Date())
-                                let pkStroke = PKStroke(ink: ink, path: path)
-                                var drawing = self.drawingManager.drawing(for: self.currentPageIndex)
-                                drawing.strokes.append(pkStroke)
-                                self.drawingManager.setDrawing(drawing, for: self.currentPageIndex)
-                                // Push to the live PKCanvasView so it renders immediately
-                                self.drawingManager.activeCanvasView?.drawing = drawing
-                                try? await Task.sleep(for: .milliseconds(120))
-                            }
-                        }
-                    case .data:
-                        break
-                    @unknown default:
-                        break
+                // Filter to this user
+                guard let recordUserId = try? record["user_id"]?.stringValue,
+                      recordUserId == userId else { continue }
+
+                // Parse strokes from the JSON column
+                guard let strokesJSON = try? record["strokes"]?.arrayValue else {
+                    print("[sim-rt] No strokes in record")
+                    continue
+                }
+
+                let latex = (try? record["latex"]?.stringValue) ?? ""
+                print("[sim-rt] Received \(strokesJSON.count) strokes: \(latex.prefix(50))")
+
+                let scale: Double = 2.0
+                let ink = PKInk(.pen, color: .black)
+
+                for strokeVal in strokesJSON {
+                    guard let strokeDict = try? strokeVal.objectValue,
+                          let xVals = try? strokeDict["x"]?.arrayValue,
+                          let yVals = try? strokeDict["y"]?.arrayValue,
+                          !xVals.isEmpty, xVals.count == yVals.count else { continue }
+
+                    let points = zip(xVals, yVals).enumerated().compactMap { idx, pair -> PKStrokePoint? in
+                        guard let x = try? pair.0.doubleValue,
+                              let y = try? pair.1.doubleValue else { return nil }
+                        return PKStrokePoint(
+                            location: CGPoint(x: x * scale, y: y * scale),
+                            timeOffset: TimeInterval(idx) * 0.01,
+                            size: CGSize(width: 3, height: 3),
+                            opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
+                        )
                     }
-                } catch {
-                    if !Task.isCancelled {
-                        print("[sim-ws] Error: \(error)")
-                    }
-                    break
+                    guard !points.isEmpty else { continue }
+
+                    let path = PKStrokePath(controlPoints: points, creationDate: Date())
+                    let pkStroke = PKStroke(ink: ink, path: path)
+                    var drawing = self.drawingManager.drawing(for: self.currentPageIndex)
+                    drawing.strokes.append(pkStroke)
+                    self.drawingManager.setDrawing(drawing, for: self.currentPageIndex)
+                    self.drawingManager.activeCanvasView?.drawing = drawing
+                    try? await Task.sleep(for: .milliseconds(100))
                 }
             }
         }
