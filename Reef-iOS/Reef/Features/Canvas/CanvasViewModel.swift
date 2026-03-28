@@ -160,9 +160,10 @@ final class CanvasViewModel {
     var showExportPreview: Bool = false
     weak var containerView: CanvasContainerView?
 
-    // Simulation realtime subscription
+    // Simulation polling
     var isSimWsConnected: Bool = false
-    private var simRealtimeChannel: RealtimeChannelV2?
+    private var simPollTask: Task<Void, Never>?
+    private var lastSimStrokeId: String = ""
 
     // MARK: - Popover State
 
@@ -1405,81 +1406,96 @@ final class CanvasViewModel {
     #if DEBUG
     func toggleSimulationWebSocket() async {
         if isSimWsConnected {
-            // Unsubscribe
-            if let channel = simRealtimeChannel {
-                await supabase.realtimeV2.removeChannel(channel)
-            }
-            simRealtimeChannel = nil
+            simPollTask?.cancel()
+            simPollTask = nil
             isSimWsConnected = false
-            print("[sim-rt] Unsubscribed")
+            print("[sim-poll] Stopped")
             return
         }
 
         guard let userId = try? await supabase.auth.session.user.id.uuidString else {
-            print("[sim-rt] No auth session")
+            print("[sim-poll] No auth session")
             return
         }
 
         isSimWsConnected = true
-        print("[sim-rt] Subscribing to simulation_strokes for \(userId)...")
+        lastSimStrokeId = ""
+        print("[sim-poll] Polling simulation_strokes for \(userId)...")
 
-        let channel = supabase.realtimeV2.channel("simulation-strokes")
+        simPollTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard let self, !Task.isCancelled else { return }
 
-        let insertions = channel.postgresChange(InsertAction.self, table: "simulation_strokes")
-
-        simRealtimeChannel = channel
-        await channel.subscribe()
-        print("[sim-rt] Subscribed ✓")
-
-        // Listen for inserts in a background task
-        Task { [weak self] in
-            for await insert in insertions {
-                guard let self else { return }
-                let record = insert.record
-
-                // Filter to this user
-                guard let recordUserId = try? record["user_id"]?.stringValue,
-                      recordUserId == userId else { continue }
-
-                // Parse strokes from the JSON column
-                guard let strokesJSON = try? record["strokes"]?.arrayValue else {
-                    print("[sim-rt] No strokes in record")
-                    continue
-                }
-
-                let latex = (try? record["latex"]?.stringValue) ?? ""
-                print("[sim-rt] Received \(strokesJSON.count) strokes: \(latex.prefix(50))")
-
-                let scale: Double = 2.0
-                let ink = PKInk(.pen, color: .black)
-
-                for strokeVal in strokesJSON {
-                    guard let strokeDict = try? strokeVal.objectValue,
-                          let xVals = try? strokeDict["x"]?.arrayValue,
-                          let yVals = try? strokeDict["y"]?.arrayValue,
-                          !xVals.isEmpty, xVals.count == yVals.count else { continue }
-
-                    let points = zip(xVals, yVals).enumerated().compactMap { idx, pair -> PKStrokePoint? in
-                        guard let x = try? pair.0.doubleValue,
-                              let y = try? pair.1.doubleValue else { return nil }
-                        return PKStrokePoint(
-                            location: CGPoint(x: x * scale, y: y * scale),
-                            timeOffset: TimeInterval(idx) * 0.01,
-                            size: CGSize(width: 3, height: 3),
-                            opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
-                        )
+                // Query for new rows since last seen ID
+                do {
+                    let rows: [SimulationStrokeRow]
+                    if self.lastSimStrokeId.isEmpty {
+                        // First poll — get latest to set cursor
+                        rows = try await supabase
+                            .from("simulation_strokes")
+                            .select()
+                            .eq("user_id", value: userId)
+                            .order("created_at", ascending: false)
+                            .limit(1)
+                            .execute().value
+                        if let last = rows.first {
+                            self.lastSimStrokeId = last.id
+                        }
+                        continue
+                    } else {
+                        rows = try await supabase
+                            .from("simulation_strokes")
+                            .select()
+                            .eq("user_id", value: userId)
+                            .greaterThan("id", value: self.lastSimStrokeId)
+                            .order("created_at", ascending: true)
+                            .execute().value
                     }
-                    guard !points.isEmpty else { continue }
 
-                    let path = PKStrokePath(controlPoints: points, creationDate: Date())
-                    let pkStroke = PKStroke(ink: ink, path: path)
-                    var drawing = self.drawingManager.drawing(for: self.currentPageIndex)
-                    drawing.strokes.append(pkStroke)
-                    self.drawingManager.setDrawing(drawing, for: self.currentPageIndex)
-                    self.drawingManager.activeCanvasView?.drawing = drawing
-                    try? await Task.sleep(for: .milliseconds(100))
+                    for row in rows {
+                        self.lastSimStrokeId = row.id
+                        print("[sim-poll] New strokes: \(row.latex.prefix(40)) (\(row.strokes.count) strokes)")
+
+                        let scale: Double = 2.0
+                        let ink = PKInk(.pen, color: .black)
+
+                        for strokeDict in row.strokes {
+                            guard !strokeDict.x.isEmpty, strokeDict.x.count == strokeDict.y.count else { continue }
+                            let points = zip(strokeDict.x, strokeDict.y).enumerated().map { idx, pair in
+                                PKStrokePoint(
+                                    location: CGPoint(x: pair.0 * scale, y: pair.1 * scale),
+                                    timeOffset: TimeInterval(idx) * 0.01,
+                                    size: CGSize(width: 3, height: 3),
+                                    opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
+                                )
+                            }
+                            let path = PKStrokePath(controlPoints: points, creationDate: Date())
+                            let pkStroke = PKStroke(ink: ink, path: path)
+                            var drawing = self.drawingManager.drawing(for: self.currentPageIndex)
+                            drawing.strokes.append(pkStroke)
+                            self.drawingManager.setDrawing(drawing, for: self.currentPageIndex)
+                            self.drawingManager.activeCanvasView?.drawing = drawing
+                            try? await Task.sleep(for: .milliseconds(100))
+                        }
+                    }
+                } catch {
+                    print("[sim-poll] Error: \(error)")
                 }
             }
+        }
+    }
+    #endif
+
+    #if DEBUG
+    private struct SimulationStrokeRow: Decodable {
+        let id: String
+        let latex: String
+        let strokes: [StrokeData]
+
+        struct StrokeData: Decodable {
+            let x: [Double]
+            let y: [Double]
         }
     }
     #endif
