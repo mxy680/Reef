@@ -27,8 +27,7 @@ final class HandwritingTranscriptionService {
     private(set) var expiresAt: Date?
     private var generation: Int = 0
     private(set) var pollingTask: Task<Void, Never>?
-    private var lastStrokeCount: Int = 0
-    private var lastStrokeBoundsHash: Int = 0
+    private let chunkCache = ChunkedTranscriptionCache()
 
     private static let sessionTTL: TimeInterval = 300
     private static let pollInterval: Duration = .milliseconds(400)
@@ -63,62 +62,85 @@ final class HandwritingTranscriptionService {
             return
         }
 
-        // Send all strokes on the page — the LLM handles cumulative work across steps
         let relevantStrokes = drawing.strokes
 
         guard !relevantStrokes.isEmpty else {
             if !latexResult.isEmpty {
                 latexResult = ""
                 rawLatexResult = ""
+                chunkCache.reset()
             }
-            lastStrokeCount = 0
-            lastStrokeBoundsHash = 0
             return
         }
 
-        let boundsHash = relevantStrokes.enumerated().reduce(0) { hash, pair in
-            let (i, stroke) = pair
-            let b = stroke.renderBounds
-            return hash &+ (b.origin.x.hashValue &* (i &+ 1))
-                        &+ (b.origin.y.hashValue &* (i &+ 2))
-                        &+ (b.size.width.hashValue &* (i &+ 3))
-                        &+ (b.size.height.hashValue &* (i &+ 4))
-        }
-
-        guard relevantStrokes.count != lastStrokeCount || boundsHash != lastStrokeBoundsHash else {
+        let (dirty, totalChunks) = chunkCache.computeDirtyChunks(strokes: relevantStrokes)
+        chunkCache.pruneChunksAbove(totalChunks - 1)
+        guard !dirty.isEmpty else {
             if pollLogCounter % 25 == 0 { print("[hw-poll] no change: \(relevantStrokes.count) strokes") }
             return
         }
-        print("[hw-poll] CHANGED: \(lastStrokeCount)→\(relevantStrokes.count) strokes, transcribing...")
-
-        lastStrokeCount = relevantStrokes.count
-        lastStrokeBoundsHash = boundsHash
+        print("[hw-poll] CHANGED: dirty chunks \(dirty.sorted()), totalChunks=\(totalChunks), transcribing...")
 
         generation += 1
-        Task { [weak self, relevantStrokes] in
-            await self?.performTranscription(strokes: relevantStrokes)
+        Task { [weak self, generation] in
+            await self?.performChunkedTranscription(
+                strokes: relevantStrokes,
+                dirtyChunks: dirty,
+                totalChunks: totalChunks,
+                myGeneration: generation
+            )
         }
     }
 
 
-    // MARK: - Clustered Transcription
+    // MARK: - Chunked Transcription
 
-    private func performTranscription(strokes: [PKStroke]) async {
-        let myGeneration = generation
-
+    private func performChunkedTranscription(
+        strokes: [PKStroke],
+        dirtyChunks: Set<Int>,
+        totalChunks: Int,
+        myGeneration: Int
+    ) async {
         isTranscribing = true
         errorMessage = nil
 
-        // Extract payloads on main actor (PKStroke is not Sendable)
-        let payloads = extractPayloads(from: strokes)
+        // Extract payloads for each dirty chunk on the main actor before spawning tasks
+        // (PKStroke is not Sendable and cannot cross actor boundaries)
+        struct ChunkWork: Sendable {
+            let index: Int
+            let fingerprint: Int
+            let payloads: [StrokePayload]
+        }
 
-        // Transcribe all strokes in one call
-        let result = await transcribePayloads(payloads)
+        let chunkWork: [ChunkWork] = dirtyChunks.sorted().compactMap { chunkIndex in
+            let start = chunkIndex * ChunkedTranscriptionCache.chunkSize
+            let end = min(start + ChunkedTranscriptionCache.chunkSize, strokes.count)
+            let fp = chunkCache.fingerprint(for: strokes[start..<end])
+            let payloads = extractPayloads(from: Array(strokes[start..<end]))
+            return ChunkWork(index: chunkIndex, fingerprint: fp, payloads: payloads)
+        }
+
+        // Transcribe dirty chunks in parallel using only Sendable data
+        await withTaskGroup(of: (Int, Int, String, String)?.self) { group in
+            for work in chunkWork {
+                group.addTask { [weak self] in
+                    guard let self else { return nil }
+                    guard let result = await self.transcribePayloads(work.payloads) else { return nil }
+                    return (work.index, work.fingerprint, result.display, result.raw)
+                }
+            }
+
+            for await result in group {
+                guard generation == myGeneration else { return }
+                if let (idx, fp, display, raw) = result {
+                    chunkCache.store(chunkIndex: idx, fingerprint: fp, display: display, raw: raw)
+                }
+            }
+        }
 
         guard generation == myGeneration else { return }
 
-        let display = result?.display ?? ""
-        let raw = result?.raw ?? ""
+        let (display, raw) = chunkCache.concatenatedResult(totalChunks: totalChunks)
 
         let oldLatex = latexResult
         let oldRaw = rawLatexResult
@@ -126,7 +148,6 @@ final class HandwritingTranscriptionService {
         rawLatexResult = raw
         if (display != oldLatex || raw != oldRaw), !display.isEmpty {
             onLatexChanged?(display)
-            // Write to Supabase (fire-and-forget)
             writeToSupabase(display: display, raw: raw)
         }
 
@@ -285,8 +306,7 @@ final class HandwritingTranscriptionService {
         expiresAt = nil
         isTranscribing = false
         errorMessage = nil
-        lastStrokeCount = 0
-        lastStrokeBoundsHash = 0
+        chunkCache.reset()
     }
 
     func reset() {
