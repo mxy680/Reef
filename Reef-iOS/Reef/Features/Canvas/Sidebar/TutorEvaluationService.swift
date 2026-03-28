@@ -112,21 +112,13 @@ final class TutorEvaluationService {
                 chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
             }
 
-            // Play TTS audio
+            // Play TTS audio (non-blocking — audio plays in background)
             if voiceEnabled, let audioBase64 = response.speechAudio,
                let audioData = Data(base64Encoded: audioBase64) {
                 playAudio(audioData)
-                // Wait for audio to finish
-                while isTutorSpeaking {
-                    try? await Task.sleep(for: .milliseconds(100))
-                }
-                try? await Task.sleep(for: .milliseconds(200))
             }
 
-            // Auto-mic removed — user taps mic manually if they want to respond
-
-            // Set status and fire step advancement AFTER TTS finishes
-            // This ensures .onChange observers see the final state
+            // Set status and fire step advancement immediately
             status = response.status
             if response.status == "completed" {
                 onStepCompleted?(response.stepsCompleted)
