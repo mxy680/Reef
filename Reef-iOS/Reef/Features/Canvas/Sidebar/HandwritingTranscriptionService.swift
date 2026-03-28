@@ -73,6 +73,15 @@ final class HandwritingTranscriptionService {
             return
         }
 
+        // If session expired, reset chunk cache so all chunks are re-transcribed
+        if let expires = expiresAt, Date() >= expires {
+            print("[hw-poll] Session expired, resetting chunk cache for re-transcription")
+            chunkCache.reset()
+            appToken = nil
+            sessionId = nil
+            expiresAt = nil
+        }
+
         let (dirty, totalChunks) = chunkCache.computeDirtyChunks(strokes: relevantStrokes)
         chunkCache.pruneChunksAbove(totalChunks - 1)
         guard !dirty.isEmpty else {
@@ -244,6 +253,15 @@ final class HandwritingTranscriptionService {
             return (token, sid)
         }
 
+        // Session expired or never existed — reset chunk cache so all strokes
+        // get re-transcribed with the new session (otherwise dirty detection
+        // sees no changes and transcription silently stops)
+        let wasRenewal = sessionId != nil
+        if wasRenewal {
+            print("[hw-session] Session expired, resetting chunk cache")
+            chunkCache.reset()
+        }
+
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
               let url = URL(string: "\(serverURL)/ai/strokes-session") else {
             throw URLError(.badURL)
@@ -292,6 +310,10 @@ final class HandwritingTranscriptionService {
             sessionStart = nil
             appToken = nil
             expiresAt = nil
+            // Reset chunk cache so next poll re-transcribes everything
+            // (without this, dirty detection sees no changes and transcription stops)
+            chunkCache.reset()
+            print("[hw-session] Session expired, chunk cache reset")
         }
     }
 
