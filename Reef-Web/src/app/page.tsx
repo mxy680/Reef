@@ -335,9 +335,9 @@ export default function Home() {
               <div className="step-card step-card-accent" style={{ backgroundImage: "url('/step-tutor.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
               <div className="step-text">
                 <span className="step-badge">Step 2</span>
-                <h3 className="step-heading">SOLVE WITH AI BY YOUR SIDE</h3>
+                <h3 className="step-heading">SOLVE WITH A TUTOR BY YOUR SIDE</h3>
                 <p className="step-body">
-                  Open a homework and start writing with Apple Pencil, just like you would on paper. Reef&rsquo;s AI reads your handwriting in real time, understands the math and science behind it, and talks to you about your work out loud. It guides you through mistakes, asks follow-up questions, and nudges you in the right direction.
+                  Open a question and start solving with Apple Pencil, just like you would on paper. Reef&rsquo;s AI tutor reads your handwriting in real time, understands the math and science behind it, and talks to you about your work out loud. It catches mistakes as you make them, asks follow-up questions to deepen your understanding, and nudges you toward the answer without giving it away.
                 </p>
               </div>
             </div>
