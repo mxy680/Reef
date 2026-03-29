@@ -154,6 +154,56 @@ final class TutorEvaluationService {
         chatMessages.removeAll()
     }
 
+    // MARK: - Process Eval Response (called directly from CanvasViewModel.fireEval)
+
+    func processEvalResponse(
+        progress: Double,
+        status: String,
+        mistakeExplanation: String?,
+        stepsCompleted: Int,
+        speechAudio: String?,
+        speechText: String?
+    ) async {
+        let wasInMistake = previousStatus == "mistake"
+        stepProgress = progress
+        previousStatus = status
+        self.mistakeExplanation = mistakeExplanation
+        evalCount += 1
+
+        // Mistake recovery
+        if wasInMistake && status == "working" {
+            let phrase = recoveryPhrases.randomElement() ?? "There you go."
+            chatMessages.append(TutorChatMessage(role: .reinforcement, latex: phrase, timestamp: Date()))
+            if voiceEnabled { await speakPhrase(phrase) }
+        }
+
+        // Track mistakes for confidence check
+        if status == "mistake" {
+            madeMistakeOnCurrentStep = true
+        }
+
+        // Show speech text in chat
+        if let speechText, !speechText.isEmpty {
+            let role: TutorChatMessage.Role = status == "mistake" ? .error : .reinforcement
+            if chatMessages.last?.latex != speechText {
+                chatMessages.append(TutorChatMessage(role: role, latex: speechText, timestamp: Date()))
+            }
+        }
+
+        // Confidence check after struggled step completion
+        if status == "completed" && !isDemo && madeMistakeOnCurrentStep {
+            chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
+        }
+
+        // Play TTS audio
+        if voiceEnabled, let audioBase64 = speechAudio,
+           let audioData = Data(base64Encoded: audioBase64) {
+            playAudio(audioData)
+        }
+
+        self.status = status
+    }
+
     // MARK: - Network (Eval)
 
     private struct EvalResponse: Decodable {

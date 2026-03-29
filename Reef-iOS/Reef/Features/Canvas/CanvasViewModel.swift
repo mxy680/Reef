@@ -148,10 +148,9 @@ final class CanvasViewModel {
     private var micSilenceTimer: Task<Void, Never>?
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
-    let handwritingService = HandwritingTranscriptionService()
+    let realtimeService = CanvasRealtimeService()
     let tutorEvalService = TutorEvaluationService()
     private var evalDebounceTask: Task<Void, Never>?
-    private var transcriptionDebounceTask: Task<Void, Never>?
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -160,12 +159,6 @@ final class CanvasViewModel {
     var exportedPDFURL: URL?
     var showExportPreview: Bool = false
     weak var containerView: CanvasContainerView?
-
-    // Simulation polling
-    var isSimWsConnected: Bool = false
-    private var simPollTask: Task<Void, Never>?
-    private var lastSimStrokeTimestamp: String = ""
-    private var lastSimChatTimestamp: String = ""
 
     // MARK: - Popover State
 
@@ -312,51 +305,31 @@ final class CanvasViewModel {
         updatePendingReinforcement()
     }
 
-    /// Called when the user stops drawing. Debounces transcription (500ms) and eval (1500ms).
-    /// Pass `forPage` to override which page's drawing is transcribed (used by simulation for cross-page strokes).
+    /// Called when the user stops drawing. Writes strokes to DB and debounces eval (1500ms).
+    /// Pass `forPage` to override which page's drawing is used.
     func onDrawingChanged(forPage pageOverride: Int? = nil) {
         guard showSidebar || tutorModeOn else { return }
-
-        // Update the drawing snapshot for transcription
         let page = pageOverride ?? currentPageIndex
-        handwritingService.currentDrawing = drawingWithoutShapes(for: page)
-        handwritingService.currentRegions = activeSubquestionRegions()
+        let drawing = drawingWithoutShapes(for: page)
+        let strokes = CanvasRealtimeService.extractStrokePayloads(from: drawing)
 
-        // 500ms after last stroke: transcribe
-        transcriptionDebounceTask?.cancel()
-        let txId = UUID()
-        transcriptionDebounceTask = Task { [weak self, txId] in
-            await self?.safeSleep(milliseconds: 500)
-            guard let self, self.transcriptionDebounceTask != nil else { return }
-            print("[debounce] Transcription triggered (500ms)")
-            self.handwritingService.transcribeCurrentDrawing()
+        // Write strokes to DB (Realtime will push to other clients)
+        Task {
+            await realtimeService.writeStrokes(
+                documentId: document.id,
+                questionLabel: activeQuestionLabel ?? "Q1a",
+                pageIndex: page,
+                strokes: strokes
+            )
         }
 
-        // 1500ms after last stroke: fire eval (if tutor mode)
-        // Waits for any in-flight transcription to finish first
+        // 1500ms debounce for eval
         guard tutorModeOn, tutorStepCount > 0 else { return }
         evalDebounceTask?.cancel()
         evalDebounceTask = Task { [weak self] in
             await self?.safeSleep(milliseconds: 1500)
             guard let self, self.evalDebounceTask != nil else { return }
-            // Wait for transcription to finish (up to 5s)
-            var waited = 0
-            while self.handwritingService.isTranscribing && waited < 50 {
-                await self.safeSleep(milliseconds: 100)
-                waited += 1
-            }
-            guard self.evalDebounceTask != nil else { return }
-            let (qNum, partLabel) = self.parseQuestionLabel()
-            guard qNum > 0 else { return }
-            print("[debounce] Eval triggered (1500ms+\(waited*100)ms wait): step=\(self.currentTutorStepIndex)/\(self.tutorStepCount)")
-            await self.tutorEvalService.runEval(
-                latex: self.handwritingService.rawLatexResult,
-                documentId: self.document.id,
-                questionNumber: qNum,
-                partLabel: partLabel,
-                stepIndex: self.currentTutorStepIndex,
-                studentImage: self.captureActiveQuestionImage()
-            )
+            await self.fireEval()
         }
     }
 
@@ -365,7 +338,7 @@ final class CanvasViewModel {
         loadAnswerKeysTask?.cancel()
         stepSpeechTask?.cancel()
         evalDebounceTask?.cancel()
-        transcriptionDebounceTask?.cancel()
+        realtimeService.unsubscribe()
     }
 
     /// Sleep without participating in cooperative task cancellation.
@@ -380,6 +353,92 @@ final class CanvasViewModel {
 
     func stopAllAudio() {
         tutorEvalService.stopAudio()
+    }
+
+    // MARK: - Eval
+
+    private func fireEval() async {
+        let (qNum, partLabel) = parseQuestionLabel()
+        guard qNum > 0 else { return }
+
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/tutor-evaluate") else { return }
+        guard let token = try? await supabase.auth.session.accessToken else { return }
+
+        struct EvalRequest: Encodable {
+            let documentId: String
+            let questionNumber: Int
+            let partLabel: String?
+            let stepIndex: Int
+            let isDemo: Bool
+            let studentImage: String?
+
+            enum CodingKeys: String, CodingKey {
+                case documentId = "document_id"
+                case questionNumber = "question_number"
+                case partLabel = "part_label"
+                case stepIndex = "step_index"
+                case isDemo = "is_demo"
+                case studentImage = "student_image"
+            }
+        }
+
+        let body = EvalRequest(
+            documentId: document.id,
+            questionNumber: qNum,
+            partLabel: partLabel,
+            stepIndex: currentTutorStepIndex,
+            isDemo: tutorEvalService.isDemo,
+            studentImage: captureActiveQuestionImage()
+        )
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONEncoder().encode(body)
+
+        // The response will be written to chat_history by the server,
+        // and Realtime will push it to us. But we also process the response
+        // directly for immediate UI update.
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
+
+            struct EvalResponse: Decodable {
+                let progress: Double
+                let status: String
+                let mistakeExplanation: String?
+                let stepsCompleted: Int
+                let speechAudio: String?
+                let speechText: String?
+
+                enum CodingKeys: String, CodingKey {
+                    case progress, status
+                    case mistakeExplanation = "mistake_explanation"
+                    case stepsCompleted = "steps_completed"
+                    case speechAudio = "speech_audio"
+                    case speechText = "speech_text"
+                }
+            }
+
+            let evalResponse = try JSONDecoder().decode(EvalResponse.self, from: data)
+            await tutorEvalService.processEvalResponse(
+                progress: evalResponse.progress,
+                status: evalResponse.status,
+                mistakeExplanation: evalResponse.mistakeExplanation,
+                stepsCompleted: evalResponse.stepsCompleted,
+                speechAudio: evalResponse.speechAudio,
+                speechText: evalResponse.speechText
+            )
+
+            if evalResponse.status == "completed" {
+                advanceTutorSteps(count: evalResponse.stepsCompleted)
+            }
+        } catch {
+            print("[eval] Failed: \(error)")
+        }
     }
 
     func loadAnswerKeys(forceLoad: Bool = false) async {
@@ -418,12 +477,8 @@ final class CanvasViewModel {
             showSidebar = true
             restoreTutorStateForLabel(label)
 
-            // Auto-start simulation when document opens
-            #if DEBUG
-            if !isSimWsConnected {
-                await startSimulation()
-            }
-            #endif
+            // Subscribe to Realtime for strokes + chat sync
+            await realtimeService.subscribe(documentId: document.id)
         }
     }
 
@@ -440,17 +495,9 @@ final class CanvasViewModel {
         let loaded = CanvasStorageService.load(documentId: document.id)
         self.savedState = loaded
 
-        // Wire transcription service to write to Supabase
-        handwritingService.documentId = document.id
-        handwritingService.questionLabel = "Q1a"  // default, updated when question changes
         self.savedTutorProgress = loaded?.tutorProgress
 
         tutorEvalService.voiceEnabled = tutorVoiceEnabled
-
-        tutorEvalService.onStepCompleted = { [weak self] stepsCompleted in
-            guard let self, stepsCompleted >= 1 else { return }
-            self.advanceTutorSteps(count: stepsCompleted)
-        }
 
         tutorEvalService.onMistakeSpoken = { [weak self] in
             guard let self, self.tutorVoiceEnabled, !self.isMicOn else { return }
@@ -466,8 +513,55 @@ final class CanvasViewModel {
             }
         }
 
-        // onLatexChanged is still used for Supabase writes (handled inside the service)
-        // Eval is now triggered by drawing changes, not transcription changes
+        // Wire Realtime stroke sync
+        realtimeService.onStrokesReceived = { [weak self] row in
+            guard let self else { return }
+            let page = row.pageIndex
+            guard let container = self.containerView, page < container.canvasViews.count else { return }
+
+            let ink = PKInk(.pen, color: .black)
+            let scale: Double = 2.0
+            var newStrokes: [PKStroke] = []
+
+            for strokeData in row.strokes {
+                guard !strokeData.x.isEmpty, strokeData.x.count == strokeData.y.count else { continue }
+                let points = zip(strokeData.x, strokeData.y).enumerated().map { idx, pair in
+                    PKStrokePoint(
+                        location: CGPoint(x: pair.0 * scale, y: pair.1 * scale),
+                        timeOffset: TimeInterval(idx) * 0.01,
+                        size: CGSize(width: 3, height: 3),
+                        opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
+                    )
+                }
+                let path = PKStrokePath(controlPoints: points, creationDate: Date())
+                newStrokes.append(PKStroke(ink: ink, path: path))
+            }
+
+            // Append to existing drawing (don't replace)
+            var drawing = self.drawingManager.drawing(for: page)
+            for stroke in newStrokes {
+                drawing.strokes.append(stroke)
+            }
+
+            let savedCallback = self.drawingManager.onDrawingChanged
+            self.drawingManager.onDrawingChanged = nil
+            self.drawingManager.setDrawing(drawing, for: page)
+            container.canvasViews[page].drawing = drawing
+            self.drawingManager.onDrawingChanged = savedCallback
+        }
+
+        // Wire Realtime chat sync
+        realtimeService.onChatMessageReceived = { [weak self] row in
+            guard let self else { return }
+            guard row.questionLabel == self.activeQuestionLabel else { return }
+            guard let role = TutorChatMessage.Role(rawValue: row.role) else { return }
+            // Skip if we already have this message (from direct eval response)
+            if !self.tutorEvalService.chatMessages.contains(where: { $0.latex == row.text && $0.role == role }) {
+                self.tutorEvalService.chatMessages.append(
+                    TutorChatMessage(role: role, latex: row.text, timestamp: Date())
+                )
+            }
+        }
 
         loadPDFTask = Task { await loadPDF() }
         loadAnswerKeysTask = Task { await loadAnswerKeys() }
@@ -589,9 +683,7 @@ final class CanvasViewModel {
             // Cancel any in-flight evaluation so stale results don't corrupt the new question
             tutorEvalService.resetForNextStep()
 
-            handwritingService.latexResult = ""
             activeQuestionLabel = newLabel
-            handwritingService.questionLabel = newLabel
 
             // Restore incoming question's tutor state
             if let label = newLabel {
@@ -617,7 +709,7 @@ final class CanvasViewModel {
                 status: tutorEvalService.status,
                 mistakeExplanation: tutorEvalService.mistakeExplanation
             ),
-            lastTranscription: handwritingService.latexResult,
+            lastTranscription: "",
             chatMessages: savedMessages.isEmpty ? nil : savedMessages
         )
     }
@@ -652,9 +744,6 @@ final class CanvasViewModel {
             tutorEvalService.chatMessages.removeAll()
         }
 
-        if !state.lastTranscription.isEmpty {
-            handwritingService.latexResult = state.lastTranscription
-        }
     }
 
     /// Returns only the active SUBquestion's regions for stroke filtering.
@@ -821,24 +910,12 @@ final class CanvasViewModel {
             tutorEvalService.status = "completed"
         } else if stepsToAdvance > 0 {
             // Fire eval for the new step — the student's work is already on canvas
-            // but transcription won't change, so onLatexChanged won't trigger
-            let latex = handwritingService.rawLatexResult
-            guard !latex.isEmpty else { return }
             evalDebounceTask?.cancel()
             evalDebounceTask = Task { [weak self] in
                 await self?.safeSleep(milliseconds: 1000)
                 guard let self, self.evalDebounceTask != nil else { return }
-                let (qNum, partLabel) = self.parseQuestionLabel()
-                guard qNum > 0 else { return }
                 print("[step-advance] FIRING eval for new step \(self.currentTutorStepIndex)")
-                await self.tutorEvalService.runEval(
-                    latex: latex,
-                    documentId: self.document.id,
-                    questionNumber: qNum,
-                    partLabel: partLabel,
-                    stepIndex: self.currentTutorStepIndex,
-                    studentImage: self.captureActiveQuestionImage()
-                )
+                await self.fireEval()
             }
         }
     }
@@ -926,13 +1003,9 @@ final class CanvasViewModel {
 
         // Reset tutor state for the new question
         activeQuestionLabel = nextLabel
-        handwritingService.questionLabel = nextLabel
-        transcriptionDebounceTask?.cancel()
         evalDebounceTask?.cancel()
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
-        handwritingService.latexResult = ""
-        handwritingService.resetSession()
         restoreTutorStateForLabel(nextLabel)
 
         return pageRange[0] // scroll to the question's start page
@@ -952,13 +1025,9 @@ final class CanvasViewModel {
         }
 
         activeQuestionLabel = prevLabel
-        handwritingService.questionLabel = prevLabel
-        transcriptionDebounceTask?.cancel()
         evalDebounceTask?.cancel()
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
-        handwritingService.latexResult = ""
-        handwritingService.resetSession()
         restoreTutorStateForLabel(prevLabel)
     }
 
@@ -998,8 +1067,6 @@ final class CanvasViewModel {
         // Reset tutor state for this question
         currentTutorStepIndex = 0
         tutorEvalService.reset()
-        handwritingService.latexResult = ""
-        handwritingService.resetSession()
 
         // Clear saved progress for all subquestions of this question
         if savedTutorProgress != nil {
@@ -1010,14 +1077,9 @@ final class CanvasViewModel {
         clearShapeStrokes()
         saveCanvasState()
 
-        // Clear simulation data from Supabase (strokes, student_work, chat_history)
+        // Clear canvas strokes from Supabase
         Task {
-            guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
-            let docId = document.id
-            try? await supabase.from("simulation_strokes").delete().eq("user_id", value: userId).execute()
-            try? await supabase.from("student_work").delete().eq("user_id", value: userId).eq("document_id", value: docId).eq("question_label", value: label).execute()
-            try? await supabase.from("chat_history").delete().eq("user_id", value: userId).eq("document_id", value: docId).eq("question_label", value: label).execute()
-            print("[reset] Cleared simulation_strokes, student_work, chat_history for \(label)")
+            await realtimeService.clearStrokes(documentId: document.id, questionLabel: label)
         }
     }
 
@@ -1277,7 +1339,7 @@ final class CanvasViewModel {
             questionNumber: qNum,
             partLabel: partLabel.isEmpty ? nil : partLabel,
             stepIndex: currentTutorStepIndex,
-            studentLatex: handwritingService.latexResult,
+            studentLatex: "",
             studentImage: captureActiveQuestionImage()
         )
     }
@@ -1350,8 +1412,6 @@ final class CanvasViewModel {
         clearShapeStrokes()
         currentTutorStepIndex = 0
         tutorEvalService.reset()
-        handwritingService.latexResult = ""
-        handwritingService.resetSession()
         savedTutorProgress = nil
 
         saveCanvasState()
@@ -1398,7 +1458,7 @@ final class CanvasViewModel {
                     status: tutorEvalService.status,
                     mistakeExplanation: tutorEvalService.mistakeExplanation
                 ),
-                lastTranscription: handwritingService.latexResult,
+                lastTranscription: "",
                 chatMessages: savedMessages.isEmpty ? nil : savedMessages
             )
         }
@@ -1469,304 +1529,4 @@ final class CanvasViewModel {
         overlaySettings.type != .none
     }
 
-    // MARK: - Simulation WebSocket
-
-    #if DEBUG
-    func startSimulation() async {
-        guard !isSimWsConnected else { return }
-
-        guard let userId = try? await supabase.auth.session.user.id.uuidString else {
-            print("[sim-poll] No auth session")
-            return
-        }
-
-        // Write current state to DB so Claude knows what we're looking at
-        let stateRow: [String: String] = [
-            "user_id": userId,
-            "document_id": document.id,
-            "question_label": activeQuestionLabel ?? "Q1a",
-            "step_index": "\(currentTutorStepIndex)",
-            "total_steps": "\(tutorStepCount)",
-        ]
-        try? await supabase
-            .from("simulation_state")
-            .upsert(stateRow, onConflict: "user_id")
-            .execute()
-        print("[sim-poll] Auto-started: doc=\(document.id) label=\(activeQuestionLabel ?? "Q1a") step=\(currentTutorStepIndex)/\(tutorStepCount)")
-
-        isSimWsConnected = true
-        handwritingService.resetSession()
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        lastSimStrokeTimestamp = isoFormatter.string(from: Date().addingTimeInterval(-30))
-        lastSimChatTimestamp = isoFormatter.string(from: Date().addingTimeInterval(-30))
-        print("[sim-poll] Polling simulation_strokes for \(userId) since \(lastSimStrokeTimestamp)")
-
-        simPollTask = Task { [weak self] in
-            var pollCount = 0
-            var running = true
-            while running {
-                // Use withCheckedContinuation + DispatchQueue to avoid cooperative cancellation
-                // (Task.sleep sets Task.isCancelled which kills the loop)
-                await withCheckedContinuation { cont in
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { cont.resume() }
-                }
-                guard let self else { return }
-
-                // Wrap entire poll iteration in do/catch so the task never dies
-                do { try await self.simPollIteration(userId: userId, pollCount: &pollCount) }
-                catch { print("[sim-poll] ERROR (recovered): \(error)") }
-
-                // Only stop when explicitly cancelled via stopSimulation()
-                if !self.isSimWsConnected { running = false }
-            }
-            print("[sim-poll] Task ended")
-        }
-    }
-
-    /// Single iteration of the sim poll loop. Extracted so errors are catchable.
-    private func simPollIteration(userId: String, pollCount: inout Int) async throws {
-                // Every 2s, write tutor state back to simulation_state for CLI monitoring
-                pollCount += 1
-                if pollCount % 4 == 0 {
-                    let stateUpdate: [String: String] = [
-                        "user_id": userId,
-                        "document_id": self.document.id,
-                        "question_label": self.activeQuestionLabel ?? "Q1a",
-                        "step_index": "\(self.currentTutorStepIndex)",
-                        "total_steps": "\(self.tutorStepCount)",
-                        "eval_status": self.tutorEvalService.status,
-                        "eval_progress": String(format: "%.2f", self.tutorEvalService.stepProgress),
-                        "is_evaluating": "\(self.tutorEvalService.isEvaluating)",
-                        "eval_count": "\(self.tutorEvalService.evalCount)",
-                    ]
-                    try? await supabase
-                        .from("simulation_state")
-                        .upsert(stateUpdate, onConflict: "user_id")
-                        .execute()
-
-                    // Check for pending commands from CLI
-                    let stateRows: [[String: String]]? = try? await supabase
-                        .from("simulation_state")
-                        .select("pending_command")
-                        .eq("user_id", value: userId)
-                        .execute().value
-                    if let cmd = stateRows?.first?["pending_command"], !cmd.isEmpty {
-                        print("[sim-cmd] Processing: \(cmd)")
-                        // Clear the command immediately
-                        try? await supabase
-                            .from("simulation_state")
-                            .update(["pending_command": ""])
-                            .eq("user_id", value: userId)
-                            .execute()
-
-                        switch cmd {
-                        case "next_question":
-                            _ = self.skipToNextQuestion()
-                        case "reset_question":
-                            self.resetCurrentQuestion()
-                        default:
-                            if cmd.hasPrefix("goto:") {
-                                let target = String(cmd.dropFirst(5))
-                                let labels = self.allQuestionLabels
-                                if let idx = labels.firstIndex(of: target) {
-                                    // Navigate with bounded iterations to prevent infinite loop
-                                    for _ in 0..<labels.count {
-                                        guard self.activeQuestionLabel != target else { break }
-                                        if let currentIdx = labels.firstIndex(of: self.activeQuestionLabel ?? ""),
-                                           currentIdx < idx {
-                                            if self.skipToNextQuestion() == nil { break }
-                                        } else {
-                                            self.goToPreviousQuestion()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        print("[sim-cmd] Done: \(cmd)")
-                    }
-
-                    // Poll chat_history for new messages (from /chat endpoint)
-                    if let label = self.activeQuestionLabel {
-                        struct ChatRow: Decodable {
-                            let role: String
-                            let text: String
-                            let createdAt: String
-                            enum CodingKeys: String, CodingKey {
-                                case role, text
-                                case createdAt = "created_at"
-                            }
-                        }
-                        let chatRows: [ChatRow] = (try? await supabase
-                            .from("chat_history")
-                            .select("role,text,created_at")
-                            .eq("user_id", value: userId)
-                            .eq("document_id", value: self.document.id)
-                            .eq("question_label", value: label)
-                            .greaterThan("created_at", value: self.lastSimChatTimestamp)
-                            .order("created_at", ascending: true)
-                            .execute().value) ?? []
-
-                        if !chatRows.isEmpty {
-                            let newMessages = chatRows.compactMap { row -> TutorChatMessage? in
-                                guard let role = TutorChatMessage.Role(rawValue: row.role) else { return nil }
-                                return TutorChatMessage(role: role, latex: row.text, timestamp: Date())
-                            }
-                            self.tutorEvalService.appendRemoteMessages(newMessages)
-                            self.lastSimChatTimestamp = chatRows.last!.createdAt
-                            print("[sim-poll] Added \(newMessages.count) chat messages from DB")
-                        }
-                    }
-                }
-
-                do {
-                    let rows: [SimulationStrokeRow] = try await supabase
-                        .from("simulation_strokes")
-                        .select("id,latex,strokes,created_at,page_index,question_label")
-                        .eq("user_id", value: userId)
-                        .greaterThan("created_at", value: self.lastSimStrokeTimestamp)
-                        .order("created_at", ascending: true)
-                        .execute().value
-
-                    for row in rows {
-                        self.lastSimStrokeTimestamp = row.createdAt
-                        let strokeCount = row.strokes.count
-                        let pointCount = row.strokes.reduce(0) { $0 + $1.x.count }
-                        print("[sim-poll] ===== NEW ROW =====")
-                        print("[sim-poll] latex: \(row.latex.prefix(50))")
-                        let targetPage = row.pageIndex ?? self.currentPageIndex
-                        print("[sim-poll] strokes: \(strokeCount), points: \(pointCount)")
-                        print("[sim-poll] targetPage: \(targetPage) (currentPage: \(self.currentPageIndex))")
-                        print("[sim-poll] drawing strokes before: \(self.drawingManager.drawing(for: targetPage).strokes.count)")
-
-                        let scale: Double = 2.0
-                        let ink = PKInk(.pen, color: .black)
-
-                        for (i, strokeDict) in row.strokes.enumerated() {
-                            guard !strokeDict.x.isEmpty, strokeDict.x.count == strokeDict.y.count else {
-                                print("[sim-poll] Skipping stroke \(i): empty or mismatched")
-                                continue
-                            }
-                            let minX = strokeDict.x.min() ?? 0
-                            let maxX = strokeDict.x.max() ?? 0
-                            let minY = strokeDict.y.min() ?? 0
-                            let maxY = strokeDict.y.max() ?? 0
-                            print("[sim-poll] Stroke \(i): \(strokeDict.x.count) pts, x[\(String(format: "%.0f", minX*scale))-\(String(format: "%.0f", maxX*scale))], y[\(String(format: "%.0f", minY*scale))-\(String(format: "%.0f", maxY*scale))]")
-
-                            let points = zip(strokeDict.x, strokeDict.y).enumerated().map { idx, pair in
-                                PKStrokePoint(
-                                    location: CGPoint(x: pair.0 * scale, y: pair.1 * scale),
-                                    timeOffset: TimeInterval(idx) * 0.01,
-                                    size: CGSize(width: 3, height: 3),
-                                    opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
-                                )
-                            }
-                            let path = PKStrokePath(controlPoints: points, creationDate: Date())
-                            let pkStroke = PKStroke(ink: ink, path: path)
-
-                            var drawing = self.drawingManager.drawing(for: targetPage)
-                            drawing.strokes.append(pkStroke)
-                            self.drawingManager.setDrawing(drawing, for: targetPage)
-
-                            // Force the PKCanvasView to update — use containerView's canvas array
-                            if let container = self.containerView,
-                               targetPage < container.canvasViews.count {
-                                container.canvasViews[targetPage].drawing = drawing
-                                print("[sim-poll] Updated canvasView[\(targetPage)] (now \(drawing.strokes.count) strokes)")
-                            } else {
-                                print("[sim-poll] WARNING: no canvasView for page \(targetPage) — container=\(self.containerView != nil), views=\(self.containerView?.canvasViews.count ?? 0)")
-                            }
-
-                            try? await Task.sleep(for: .milliseconds(100))
-                        }
-
-                        print("[sim-poll] drawing strokes after: \(self.drawingManager.drawing(for: targetPage).strokes.count)")
-
-                        // Directly transcribe and eval (bypass debounce for simulation)
-                        self.handwritingService.currentDrawing = self.drawingWithoutShapes(for: targetPage)
-                        self.handwritingService.currentRegions = self.activeSubquestionRegions()
-                        // Set questionLabel from the stroke row so transcription writes to the correct question
-                        if let label = row.questionLabel {
-                            self.handwritingService.questionLabel = label
-                        }
-                        self.handwritingService.transcribeCurrentDrawing()
-
-                        // Wait for transcription Task to start (it's fire-and-forget internally)
-                        try? await Task.sleep(for: .milliseconds(300))
-
-                        // Then wait for it to finish (up to 10s)
-                        var txWait = 0
-                        while self.handwritingService.isTranscribing && txWait < 100 {
-                            try? await Task.sleep(for: .milliseconds(100))
-                            txWait += 1
-                        }
-                        print("[sim-poll] Transcription waited \(300 + txWait*100)ms, latex=\(self.handwritingService.rawLatexResult.suffix(40))")
-
-                        // Fire eval directly
-                        let latex = self.handwritingService.rawLatexResult
-                        if !latex.isEmpty && self.tutorModeOn && self.tutorStepCount > 0 {
-                            let (qNum, partLabel) = self.parseQuestionLabel()
-                            if qNum > 0 {
-                                print("[sim-poll] Direct eval: step=\(self.currentTutorStepIndex) latex=\(latex.prefix(40))")
-                                await self.tutorEvalService.runEval(
-                                    latex: latex,
-                                    documentId: self.document.id,
-                                    questionNumber: qNum,
-                                    partLabel: partLabel,
-                                    stepIndex: self.currentTutorStepIndex,
-                                    studentImage: self.captureActiveQuestionImage()
-                                )
-                            }
-                        }
-
-                        print("[sim-poll] ===== DONE =====")
-                    }
-                } catch {
-                    print("[sim-poll] Stroke fetch error: \(error)")
-                }
-    }
-
-    func stopSimulation() async {
-        simPollTask?.cancel()
-        simPollTask = nil
-        isSimWsConnected = false
-        try? await supabase
-            .from("simulation_state")
-            .delete()
-            .eq("user_id", value: (try? await supabase.auth.session.user.id.uuidString) ?? "")
-            .execute()
-        print("[sim-poll] Stopped")
-    }
-
-    func toggleSimulation() async {
-        if isSimWsConnected {
-            await stopSimulation()
-        } else {
-            await startSimulation()
-        }
-    }
-    #endif
-
-    #if DEBUG
-    private struct SimulationStrokeRow: Decodable {
-        let id: String
-        let latex: String
-        let strokes: [StrokeData]
-        let createdAt: String
-        let pageIndex: Int?
-        let questionLabel: String?
-
-        struct StrokeData: Decodable {
-            let x: [Double]
-            let y: [Double]
-        }
-
-        enum CodingKeys: String, CodingKey {
-            case id, latex, strokes
-            case createdAt = "created_at"
-            case pageIndex = "page_index"
-            case questionLabel = "question_label"
-        }
-    }
-    #endif
 }

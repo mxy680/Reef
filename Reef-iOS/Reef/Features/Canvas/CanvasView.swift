@@ -163,9 +163,7 @@ struct CanvasView: View {
                     .background(Color.black.opacity(0.8))
 
                     ScrollView {
-                        Text(viewModel.handwritingService.rawLatexResult.isEmpty
-                             ? (viewModel.handwritingService.latexResult.isEmpty ? "No strokes yet." : viewModel.handwritingService.latexResult)
-                             : viewModel.handwritingService.rawLatexResult)
+                        Text(viewModel.tutorEvalService.lastDebugPrompt ?? "No debug prompt available.")
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(.green)
                             .padding(8)
@@ -312,7 +310,6 @@ struct CanvasView: View {
         }
         .onDisappear {
             viewModel.stopAllAudio()
-            viewModel.handwritingService.stopPolling()
             viewModel.cancelAllTasks()
             autoSaveTask?.cancel()
         }

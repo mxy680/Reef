@@ -11,7 +11,6 @@ struct CanvasSidebarView: View {
     private var tutorStatus: String {
         if viewModel.tutorEvalService.isSendingChat { return "writing" }
         if viewModel.tutorEvalService.isEvaluating { return "thinking" }
-        if viewModel.handwritingService.isTranscribing { return "reading" }
         return "idle"
     }
 
