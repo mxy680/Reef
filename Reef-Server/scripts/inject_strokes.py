@@ -155,7 +155,7 @@ def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
 
     # Upsert (one row per question)
     resp = httpx.post(
-        f"{url}/rest/v1/canvas_strokes",
+        f"{url}/rest/v1/canvas_strokes?on_conflict=user_id,document_id,question_label",
         headers={**supabase_headers(), "Prefer": "resolution=merge-duplicates"},
         json={
             "user_id": user_id,
