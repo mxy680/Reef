@@ -221,7 +221,6 @@ async def _fetch_and_transcribe_strokes(
                 "document_id": f"eq.{document_id}",
                 "question_label": f"eq.{question_label}",
                 "select": "strokes",
-                "order": "created_at.asc",
             },
             headers=headers,
         )
