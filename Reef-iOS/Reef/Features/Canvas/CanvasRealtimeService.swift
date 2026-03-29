@@ -2,90 +2,91 @@ import SwiftUI
 import PencilKit
 @preconcurrency import Supabase
 
+/// Syncs canvas strokes and chat messages with Supabase via 1-second polling.
+/// No Realtime, no WebSocket — just simple GET requests.
 @Observable
 @MainActor
-final class CanvasRealtimeService {
+final class CanvasSyncService {
     var onStrokesUpdated: ((CanvasStrokeRow) -> Void)?
     var onStrokesDeleted: (() -> Void)?
     var onChatMessageReceived: ((ChatMessageRow) -> Void)?
 
-    /// Timestamp of last local write — Realtime updates within 2s are our own echo
+    /// Last known stroke hash per question — skip updates if unchanged
+    private var lastStrokeHash: [String: Int] = [:]
+    /// Last known chat count — only fetch new messages
+    private var lastChatCount: Int = 0
+    /// Timestamp of last local write — skip poll results within 2s
     private var lastLocalWriteTime: Date?
 
-    private(set) var channel: RealtimeChannelV2?
+    private(set) var pollTimer: Timer?
 
-    // MARK: - Subscribe (callback-based API from docs)
+    // MARK: - Start / Stop Polling
 
-    func subscribe(documentId: String) async {
-        unsubscribe()
+    func startPolling(documentId: String) {
+        stopPolling()
+        print("[Sync] Starting 1s poll for doc=\(documentId.prefix(12))")
 
-        await supabase.realtimeV2.connect()
-
-        // Single channel for all subscriptions
-        let ch = supabase.realtimeV2.channel("canvas-\(documentId)")
-        channel = ch
-
-        // Strokes: listen for ALL changes (insert, update, delete)
-        ch.onPostgresChange(
-            AnyAction.self,
-            schema: "public",
-            table: "canvas_strokes"
-        ) { [weak self] action in
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-
-                // Skip own writes
+                // Skip if we just wrote locally
                 if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 {
                     return
                 }
-
-                switch action {
-                case .insert(let insert):
-                    print("[Realtime] Stroke INSERT")
-                    if let row = try? insert.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder()) {
-                        self.onStrokesUpdated?(row)
-                    }
-                case .update(let update):
-                    print("[Realtime] Stroke UPDATE")
-                    if let row = try? update.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder()) {
-                        self.onStrokesUpdated?(row)
-                    }
-                case .delete:
-                    print("[Realtime] Stroke DELETE")
-                    self.onStrokesDeleted?()
-                }
+                await self.pollForChanges(documentId: documentId)
             }
-        }
-
-        // Chat: listen for inserts
-        ch.onPostgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "chat_history",
-            filter: "document_id=eq.\(documentId)"
-        ) { [weak self] insert in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                if let row = try? insert.decodeRecord(as: ChatMessageRow.self, decoder: JSONDecoder()) {
-                    print("[Realtime] Chat: [\(row.role)] \(row.text.prefix(40))")
-                    self.onChatMessageReceived?(row)
-                }
-            }
-        }
-
-        do {
-            try await ch.subscribeWithError()
-            print("[Realtime] Channel subscribed for doc=\(documentId.prefix(12))")
-        } catch {
-            print("[Realtime] Subscribe FAILED: \(error)")
         }
     }
 
-    func unsubscribe() {
-        let ch = channel
-        channel = nil
-        Task {
-            if let ch { await supabase.realtimeV2.removeChannel(ch) }
+    func stopPolling() {
+        pollTimer?.invalidate()
+        pollTimer = nil
+        lastStrokeHash = [:]
+        lastChatCount = 0
+    }
+
+    // MARK: - Poll
+
+    private func pollForChanges(documentId: String) async {
+        guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
+
+        // Poll strokes
+        let rows: [CanvasStrokeRow] = (try? await supabase
+            .from("canvas_strokes")
+            .select("question_label,page_index,strokes,updated_at")
+            .eq("user_id", value: userId)
+            .eq("document_id", value: documentId)
+            .execute().value) ?? []
+
+        for row in rows {
+            let hash = row.strokes.count  // Simple change detection
+            if lastStrokeHash[row.questionLabel] != hash {
+                lastStrokeHash[row.questionLabel] = hash
+                onStrokesUpdated?(row)
+            }
+        }
+
+        // If we had rows before but now don't, something was deleted
+        if rows.isEmpty && !lastStrokeHash.isEmpty {
+            lastStrokeHash = [:]
+            onStrokesDeleted?()
+        }
+
+        // Poll chat
+        let chats: [ChatMessageRow] = (try? await supabase
+            .from("chat_history")
+            .select("role,text,question_label")
+            .eq("user_id", value: userId)
+            .eq("document_id", value: documentId)
+            .order("created_at", ascending: true)
+            .execute().value) ?? []
+
+        if chats.count > lastChatCount {
+            // New messages — deliver only the new ones
+            for chat in chats.dropFirst(lastChatCount) {
+                onChatMessageReceived?(chat)
+            }
+            lastChatCount = chats.count
         }
     }
 
@@ -100,6 +101,8 @@ final class CanvasRealtimeService {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
 
         lastLocalWriteTime = Date()
+        // Update local hash so we don't re-render our own write
+        lastStrokeHash[questionLabel] = strokes.count
 
         let row: [String: AnyJSON] = [
             "user_id": .string(userId),
@@ -125,18 +128,26 @@ final class CanvasRealtimeService {
     func loadStrokes(documentId: String) async -> [CanvasStrokeRow] {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return [] }
 
-        return (try? await supabase
+        let rows: [CanvasStrokeRow] = (try? await supabase
             .from("canvas_strokes")
             .select()
             .eq("user_id", value: userId)
             .eq("document_id", value: documentId)
             .execute().value) ?? []
+
+        // Initialize hash so we don't trigger updates for existing data
+        for row in rows {
+            lastStrokeHash[row.questionLabel] = row.strokes.count
+        }
+
+        return rows
     }
 
     // MARK: - Clear
 
     func clearStrokes(documentId: String, questionLabel: String) async {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
+        lastStrokeHash.removeValue(forKey: questionLabel)
         try? await supabase
             .from("canvas_strokes")
             .delete()
@@ -168,6 +179,7 @@ struct CanvasStrokeRow: Decodable {
     let questionLabel: String
     let pageIndex: Int
     let strokes: [StrokeData]
+    let updatedAt: String?
 
     struct StrokeData: Decodable {
         let x: [Double]
@@ -178,6 +190,7 @@ struct CanvasStrokeRow: Decodable {
         case questionLabel = "question_label"
         case pageIndex = "page_index"
         case strokes
+        case updatedAt = "updated_at"
     }
 }
 

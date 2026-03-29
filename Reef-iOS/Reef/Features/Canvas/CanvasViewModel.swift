@@ -148,7 +148,7 @@ final class CanvasViewModel {
     private var micSilenceTimer: Task<Void, Never>?
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
-    let realtimeService = CanvasRealtimeService()
+    let syncService = CanvasSyncService()
     let tutorEvalService = TutorEvaluationService()
     private var evalDebounceWork: DispatchWorkItem?
     private var strokeWriteWork: DispatchWorkItem?
@@ -322,10 +322,10 @@ final class CanvasViewModel {
         let upsertWork = DispatchWorkItem { [weak self] in
             guard let self else { return }
             let drawing = self.drawingWithoutShapes(for: page)
-            let strokes = CanvasRealtimeService.extractStrokePayloads(from: drawing)
+            let strokes = CanvasSyncService.extractStrokePayloads(from: drawing)
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                await self.realtimeService.writeStrokes(
+                await self.syncService.writeStrokes(
                     documentId: self.document.id,
                     questionLabel: self.activeQuestionLabel ?? "Q1a",
                     pageIndex: page,
@@ -355,7 +355,7 @@ final class CanvasViewModel {
         stepSpeechTask?.cancel()
         evalDebounceWork?.cancel()
         strokeWriteWork?.cancel()
-        realtimeService.unsubscribe()
+        syncService.stopPolling()
     }
 
     /// Sleep without participating in cooperative task cancellation.
@@ -493,8 +493,8 @@ final class CanvasViewModel {
 
     func loadAnswerKeys(forceLoad: Bool = false) async {
         // Always subscribe to Realtime on first call (regardless of reconstruction state)
-        if realtimeService.channel == nil {
-            await realtimeService.subscribe(documentId: document.id)
+        if syncService.pollTimer == nil {
+            syncService.startPolling(documentId: document.id)
         }
 
         guard isReconstructed || forceLoad else {
@@ -567,7 +567,7 @@ final class CanvasViewModel {
         }
 
         // Wire Realtime stroke sync — REPLACE canvas with external strokes (from simulator)
-        realtimeService.onStrokesUpdated = { [weak self] row in
+        syncService.onStrokesUpdated = { [weak self] row in
             guard let self else { return }
             let page = row.pageIndex
             guard let container = self.containerView, page < container.canvasViews.count else { return }
@@ -598,7 +598,7 @@ final class CanvasViewModel {
         }
 
         // Wire Realtime stroke delete — clear canvas
-        realtimeService.onStrokesDeleted = { [weak self] in
+        syncService.onStrokesDeleted = { [weak self] in
             guard let self, let container = self.containerView else { return }
             print("[Realtime] Clearing all canvas pages")
             self.isApplyingRemoteStrokes = true
@@ -610,7 +610,7 @@ final class CanvasViewModel {
         }
 
         // Wire Realtime chat sync
-        realtimeService.onChatMessageReceived = { [weak self] row in
+        syncService.onChatMessageReceived = { [weak self] row in
             guard let self else { return }
             guard row.questionLabel == self.activeQuestionLabel else { return }
             guard let role = TutorChatMessage.Role(rawValue: row.role) else { return }
@@ -1142,7 +1142,7 @@ final class CanvasViewModel {
 
         // Clear canvas strokes from Supabase
         Task {
-            await realtimeService.clearStrokes(documentId: document.id, questionLabel: label)
+            await syncService.clearStrokes(documentId: document.id, questionLabel: label)
         }
     }
 
