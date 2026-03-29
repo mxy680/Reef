@@ -338,12 +338,15 @@ async def _download_images(urls: list[str]) -> list[bytes]:
     return images
 
 
-class TranscribeRequest(BaseModel):
+from pydantic import BaseModel as _BaseModel
+
+
+class TranscribeRequest(_BaseModel):
     document_id: str
     question_label: str
 
 
-class TranscribeResponse(BaseModel):
+class TranscribeResponse(_BaseModel):
     latex: str
 
 
