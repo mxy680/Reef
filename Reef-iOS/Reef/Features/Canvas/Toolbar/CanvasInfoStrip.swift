@@ -161,19 +161,7 @@ struct CanvasInfoStrip: View {
 
             divider
 
-            #if DEBUG
-            // Simulation play button — starts polling + writes active state to DB
-            Button {
-                Task { await viewModel.toggleSimulation() }
-            } label: {
-                Image(systemName: viewModel.isSimWsConnected ? "stop.circle.fill" : "play.circle.fill")
-                    .resizable()
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(viewModel.isSimWsConnected ? .red : .green)
-            }
-            .buttonStyle(.plain)
-            .padding(.trailing, 4)
-            #endif
+            // Simulation auto-starts when document opens (no manual button needed)
 
             // Tutor mode toggle
             HStack(spacing: 8) {

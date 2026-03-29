@@ -395,6 +395,13 @@ final class CanvasViewModel {
             tutorModeOn = true
             showSidebar = true
             restoreTutorStateForLabel(label)
+
+            // Auto-start simulation when document opens
+            #if DEBUG
+            if !isSimWsConnected {
+                await startSimulation()
+            }
+            #endif
         }
     }
 
@@ -1426,20 +1433,8 @@ final class CanvasViewModel {
     // MARK: - Simulation WebSocket
 
     #if DEBUG
-    func toggleSimulation() async {
-        if isSimWsConnected {
-            simPollTask?.cancel()
-            simPollTask = nil
-            isSimWsConnected = false
-            // Clear simulation state from DB
-            try? await supabase
-                .from("simulation_state")
-                .delete()
-                .eq("user_id", value: (try? await supabase.auth.session.user.id.uuidString) ?? "")
-                .execute()
-            print("[sim-poll] Stopped")
-            return
-        }
+    func startSimulation() async {
+        guard !isSimWsConnected else { return }
 
         guard let userId = try? await supabase.auth.session.user.id.uuidString else {
             print("[sim-poll] No auth session")
@@ -1458,10 +1453,9 @@ final class CanvasViewModel {
             .from("simulation_state")
             .upsert(stateRow, onConflict: "user_id")
             .execute()
-        print("[sim-poll] Wrote state: doc=\(document.id) label=\(activeQuestionLabel ?? "Q1a") step=\(currentTutorStepIndex)/\(tutorStepCount)")
+        print("[sim-poll] Auto-started: doc=\(document.id) label=\(activeQuestionLabel ?? "Q1a") step=\(currentTutorStepIndex)/\(tutorStepCount)")
 
         isSimWsConnected = true
-        // Reset transcription session so chunk cache is cleared and all strokes get re-processed
         handwritingService.resetSession()
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -1568,6 +1562,26 @@ final class CanvasViewModel {
                     print("[sim-poll] Error: \(error)")
                 }
             }
+        }
+    }
+
+    func stopSimulation() async {
+        simPollTask?.cancel()
+        simPollTask = nil
+        isSimWsConnected = false
+        try? await supabase
+            .from("simulation_state")
+            .delete()
+            .eq("user_id", value: (try? await supabase.auth.session.user.id.uuidString) ?? "")
+            .execute()
+        print("[sim-poll] Stopped")
+    }
+
+    func toggleSimulation() async {
+        if isSimWsConnected {
+            await stopSimulation()
+        } else {
+            await startSimulation()
         }
     }
     #endif
