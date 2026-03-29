@@ -604,7 +604,7 @@ async def tutor_evaluate(
     # Generate TTS for mistakes or reinforcements
     speech_audio = None
     speech_text = evaluation.mistake_speech or evaluation.reinforcement_speech
-    if settings.groq_api_key and speech_text:
+    if (settings.elevenlabs_api_key or settings.groq_api_key) and speech_text:
         try:
             speech_audio = await _generate_tts(speech_text[:500])
         except Exception as e:
@@ -826,7 +826,7 @@ async def tutor_chat(
 
     # Generate TTS audio via Groq
     speech_audio = None
-    if settings.groq_api_key and output.speech:
+    if (settings.elevenlabs_api_key or settings.groq_api_key) and output.speech:
         try:
             speech_audio = await _generate_tts(output.speech[:500])
         except Exception as e:
