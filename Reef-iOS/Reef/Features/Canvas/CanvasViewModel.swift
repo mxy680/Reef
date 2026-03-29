@@ -347,6 +347,20 @@ final class CanvasViewModel {
         }
         strokeWriteWork = txWork
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: txWork)
+
+        // 1500ms after last stroke: fire tutor eval
+        if tutorModeOn {
+            evalDebounceWork?.cancel()
+            let evalWork = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                Task { @MainActor [weak self] in
+                    guard let self, self.tutorModeOn else { return }
+                    await self.fireEval()
+                }
+            }
+            evalDebounceWork = evalWork
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500), execute: evalWork)
+        }
     }
 
     func cancelAllTasks() {
