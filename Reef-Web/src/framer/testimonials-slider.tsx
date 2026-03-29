@@ -1676,7 +1676,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 											widthType: true,
 										}}
 										slots={[
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-1xz8y1v-container"}
 													data-framer-name={"1"}
@@ -1705,7 +1705,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-1mgw9x8-container"}
 													data-framer-name={"2"}
@@ -1734,7 +1734,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-phuuet-container"}
 													data-framer-name={"3"}
@@ -1763,7 +1763,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card7-container"}
 													data-framer-name={"7"}
@@ -1792,7 +1792,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card8-container"}
 													data-framer-name={"8"}
@@ -1821,7 +1821,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card9-container"}
 													data-framer-name={"9"}
@@ -1850,7 +1850,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card10-container"}
 													data-framer-name={"10"}
@@ -1931,7 +1931,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 											widthType: true,
 										}}
 										slots={[
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-2004l3-container"}
 													data-framer-name={"4"}
@@ -1960,7 +1960,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-nyr1sv-container"}
 													data-framer-name={"5"}
@@ -1989,7 +1989,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-t6ayg-container"}
 													data-framer-name={"6"}
@@ -2018,7 +2018,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card7-container"}
 													data-framer-name={"7"}
@@ -2047,7 +2047,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card8-container"}
 													data-framer-name={"8"}
@@ -2076,7 +2076,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card9-container"}
 													data-framer-name={"9"}
@@ -2105,7 +2105,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card10-container"}
 													data-framer-name={"10"}
@@ -2222,7 +2222,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 											showProgressDots: false,
 										}}
 										slots={[
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-1xz8y1v-container"}
 													data-framer-name={"1"}
@@ -2251,7 +2251,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-1mgw9x8-container"}
 													data-framer-name={"2"}
@@ -2280,7 +2280,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-phuuet-container"}
 													data-framer-name={"3"}
@@ -2309,7 +2309,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-2004l3-container"}
 													data-framer-name={"4"}
@@ -2338,7 +2338,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-nyr1sv-container"}
 													data-framer-name={"5"}
@@ -2367,7 +2367,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-t6ayg-container"}
 													data-framer-name={"6"}
@@ -2396,7 +2396,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card7-container"}
 													data-framer-name={"7"}
@@ -2425,7 +2425,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card8-container"}
 													data-framer-name={"8"}
@@ -2454,7 +2454,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card9-container"}
 													data-framer-name={"9"}
@@ -2483,7 +2483,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
-											<ComponentViewportProvider height={250} width={"292px"}>
+											<ComponentViewportProvider height={310} width={"292px"}>
 												<SmartComponentScopedContainer
 													className={"framer-card10-container"}
 													data-framer-name={"10"}
@@ -2540,8 +2540,8 @@ var css = [
 	"@supports (aspect-ratio: 1) { body { --framer-aspect-ratio-supported: auto; } }",
 	".framer-xISKZ.framer-1vkysp3, .framer-xISKZ .framer-1vkysp3 { display: block; }",
 	".framer-xISKZ.framer-1y64d0d { align-content: center; align-items: center; display: flex; flex-direction: column; flex-wrap: nowrap; gap: 20px; height: min-content; justify-content: center; overflow: visible; padding: 0px; position: relative; width: 100vw; }",
-	".framer-xISKZ .framer-na4i6d-container, .framer-xISKZ .framer-1un43oa-container, .framer-xISKZ .framer-a52vve-container { flex: none; height: 250px; position: relative; width: 100%; }",
-	".framer-xISKZ .framer-1xz8y1v-container, .framer-xISKZ .framer-1mgw9x8-container, .framer-xISKZ .framer-phuuet-container, .framer-xISKZ .framer-2004l3-container, .framer-xISKZ .framer-nyr1sv-container, .framer-xISKZ .framer-t6ayg-container { height: 250px; position: relative; width: 292px; }",
+	".framer-xISKZ .framer-na4i6d-container, .framer-xISKZ .framer-1un43oa-container, .framer-xISKZ .framer-a52vve-container { flex: none; height: 310px; position: relative; width: 100%; }",
+	".framer-xISKZ .framer-1xz8y1v-container, .framer-xISKZ .framer-1mgw9x8-container, .framer-xISKZ .framer-phuuet-container, .framer-xISKZ .framer-2004l3-container, .framer-xISKZ .framer-nyr1sv-container, .framer-xISKZ .framer-t6ayg-container { height: 310px; position: relative; width: 292px; }",
 	".framer-xISKZ.framer-v-1eka7vo.framer-1y64d0d { width: 100vw; }",
 	".framer-xISKZ.framer-v-nnukfl.framer-1y64d0d { width: 100vw; }",
 ];
