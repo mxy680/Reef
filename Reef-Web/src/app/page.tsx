@@ -295,7 +295,7 @@ export default function Home() {
         <div className="section-inner">
           <div className="section-header">
             <Badge fEv2mISRr="TESTIMONIALS" style={{ backgroundColor: "var(--color-accent)" }} />
-            <h2 className="section-heading">BETA TESTERS SAID IT BEST</h2>
+            <h2 className="section-heading">OUR BETA TESTERS SAID IT BEST</h2>
             <p className="section-subtitle">
               They signed up to find bugs. They stayed because it worked.
             </p>
