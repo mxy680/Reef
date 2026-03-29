@@ -1493,13 +1493,21 @@ final class CanvasViewModel {
 
         simPollTask = Task { [weak self] in
             var pollCount = 0
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(500))
+            var running = true
+            while running {
+                // Use withCheckedContinuation + DispatchQueue to avoid cooperative cancellation
+                // (Task.sleep sets Task.isCancelled which kills the loop)
+                await withCheckedContinuation { cont in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { cont.resume() }
+                }
                 guard let self else { return }
 
                 // Wrap entire poll iteration in do/catch so the task never dies
                 do { try await self.simPollIteration(userId: userId, pollCount: &pollCount) }
                 catch { print("[sim-poll] ERROR (recovered): \(error)") }
+
+                // Only stop when explicitly cancelled via stopSimulation()
+                if !self.isSimWsConnected { running = false }
             }
             print("[sim-poll] Task ended")
         }
