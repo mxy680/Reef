@@ -308,6 +308,13 @@ export default function Home() {
       {/* 6. How It Works Section */}
       <section id="how-it-work-1" className="page-section">
         <div className="section-inner">
+          <div className="section-header">
+            <Badge fEv2mISRr="HOW IT WORKS" style={{ backgroundColor: "var(--color-surface)" }} />
+            <h2 className="section-heading">FROM UPLOAD TO MASTERY IN THREE STEPS</h2>
+            <p className="section-subtitle">
+              No setup, no learning curve. Drop in your homework and start solving with an AI tutor by your side.
+            </p>
+          </div>
           <div className="how-it-works-steps">
             {/* Step 1: text left, image card right */}
             <div className="how-it-works-step">
