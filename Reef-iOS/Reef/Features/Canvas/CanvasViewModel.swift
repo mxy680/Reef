@@ -1628,12 +1628,16 @@ final class CanvasViewModel {
                         self.handwritingService.currentRegions = self.activeSubquestionRegions()
                         self.handwritingService.transcribeCurrentDrawing()
 
-                        // Wait for transcription to finish (up to 5s)
+                        // Wait for transcription Task to start (it's fire-and-forget internally)
+                        try? await Task.sleep(for: .milliseconds(300))
+
+                        // Then wait for it to finish (up to 10s)
                         var txWait = 0
-                        while self.handwritingService.isTranscribing && txWait < 50 {
+                        while self.handwritingService.isTranscribing && txWait < 100 {
                             try? await Task.sleep(for: .milliseconds(100))
                             txWait += 1
                         }
+                        print("[sim-poll] Transcription waited \(300 + txWait*100)ms, latex=\(self.handwritingService.rawLatexResult.suffix(40))")
 
                         // Fire eval directly
                         let latex = self.handwritingService.rawLatexResult
