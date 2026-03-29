@@ -838,6 +838,24 @@ async def tutor_chat(
     return TutorChatResponse(reply=output.reply, speech_audio=speech_audio, answer_key_updated=answer_key_updated)
 
 
+class TTSRequest(_BaseModel):
+    text: str
+
+
+class TTSResponse(_BaseModel):
+    speech_audio: str | None = None
+
+
+@router.post("/tts", response_model=TTSResponse)
+async def generate_tts_endpoint(
+    body: TTSRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Generate TTS audio for given text."""
+    audio = await _generate_tts(body.text[:500])
+    return TTSResponse(speech_audio=audio)
+
+
 async def _generate_tts(text: str) -> str | None:
     """Generate TTS audio via Groq with Supabase caching."""
     # Reuse the cached TTS pipeline from demo_problem

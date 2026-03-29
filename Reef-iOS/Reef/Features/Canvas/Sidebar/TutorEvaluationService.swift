@@ -321,7 +321,7 @@ final class TutorEvaluationService {
 
     private func speakPhrase(_ phrase: String) async {
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
-              let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+              let url = URL(string: "\(serverURL)/ai/tts"),
               let token = try? await supabase.auth.session.accessToken else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
