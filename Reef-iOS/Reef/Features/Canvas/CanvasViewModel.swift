@@ -1622,7 +1622,7 @@ final class CanvasViewModel {
                 do {
                     let rows: [SimulationStrokeRow] = try await supabase
                         .from("simulation_strokes")
-                        .select()
+                        .select("id,latex,strokes,created_at,page_index,question_label")
                         .eq("user_id", value: userId)
                         .greaterThan("created_at", value: self.lastSimStrokeTimestamp)
                         .order("created_at", ascending: true)
