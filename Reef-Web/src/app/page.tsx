@@ -259,8 +259,8 @@ export default function Home() {
             <div className="features-cards-row">
               <FeaturesCard
                 variant="Single"
-                headline="ONE APP. ALL YOUR STUFF."
-                subline="PDFs, slides, notes, photos. Stop losing homework in your Downloads folder."
+                headline="PICK YOUR TUTOR"
+                subline="Choose from different AI tutors, each with their own teaching style and voice. Take the quiz to find your match. It's like a personality test, but useful."
                 background="rgb(255, 255, 255)"
               />
               <FeaturesCard
@@ -280,8 +280,8 @@ export default function Home() {
               />
               <FeaturesCard
                 variant="Single"
-                headline="BUILT FOR APPLE PENCIL"
-                subline="Pressure sensitivity, palm rejection, the works. Feels like paper, except your paper never had an AI tutor built in."
+                headline="MY REEF"
+                subline="Study more, unlock sea creatures, grow your reef. It's basically an aquarium you earn by doing homework. Your mom would be so proud."
                 background="rgb(255, 255, 255)"
               />
             </div>
