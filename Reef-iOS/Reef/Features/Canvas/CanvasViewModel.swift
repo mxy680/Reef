@@ -915,9 +915,12 @@ final class CanvasViewModel {
         // Reset tutor state for the new question
         activeQuestionLabel = nextLabel
         handwritingService.questionLabel = nextLabel
+        transcriptionDebounceTask?.cancel()
+        evalDebounceTask?.cancel()
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
         handwritingService.latexResult = ""
+        handwritingService.resetSession()
         restoreTutorStateForLabel(nextLabel)
 
         return pageRange[0] // scroll to the question's start page
@@ -938,9 +941,12 @@ final class CanvasViewModel {
 
         activeQuestionLabel = prevLabel
         handwritingService.questionLabel = prevLabel
+        transcriptionDebounceTask?.cancel()
+        evalDebounceTask?.cancel()
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
         handwritingService.latexResult = ""
+        handwritingService.resetSession()
         restoreTutorStateForLabel(prevLabel)
     }
 
@@ -1626,6 +1632,10 @@ final class CanvasViewModel {
                         // Directly transcribe and eval (bypass debounce for simulation)
                         self.handwritingService.currentDrawing = self.drawingWithoutShapes(for: targetPage)
                         self.handwritingService.currentRegions = self.activeSubquestionRegions()
+                        // Set questionLabel from the stroke row so transcription writes to the correct question
+                        if let label = row.questionLabel {
+                            self.handwritingService.questionLabel = label
+                        }
                         self.handwritingService.transcribeCurrentDrawing()
 
                         // Wait for transcription Task to start (it's fire-and-forget internally)
@@ -1691,6 +1701,7 @@ final class CanvasViewModel {
         let strokes: [StrokeData]
         let createdAt: String
         let pageIndex: Int?
+        let questionLabel: String?
 
         struct StrokeData: Decodable {
             let x: [Double]
@@ -1701,6 +1712,7 @@ final class CanvasViewModel {
             case id, latex, strokes
             case createdAt = "created_at"
             case pageIndex = "page_index"
+            case questionLabel = "question_label"
         }
     }
     #endif
