@@ -297,7 +297,7 @@ export default function Home() {
             <Badge fEv2mISRr="TESTIMONIALS" style={{ backgroundColor: "var(--color-accent)" }} />
             <h2 className="section-heading">DON&rsquo;T JUST TAKE OUR WORD FOR IT THOUGH</h2>
             <p className="section-subtitle">
-              They signed up to find bugs. They stayed because it worked.
+              They came for the free beta. They stayed for the tutor.
             </p>
           </div>
           <div className="full-bleed">
