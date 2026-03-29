@@ -332,7 +332,7 @@ export default function Home() {
 
             {/* Step 2: image card left, text right */}
             <div className="how-it-works-step">
-              <div className="step-card step-card-accent" />
+              <div className="step-card step-card-accent" style={{ backgroundImage: "url('/step-tutor.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
               <div className="step-text">
                 <span className="step-badge">Step 2</span>
                 <h3 className="step-heading">SOLVE WITH AI BY YOUR SIDE</h3>
