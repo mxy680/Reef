@@ -12,127 +12,81 @@ final class CanvasRealtimeService {
     /// Timestamp of last local write — Realtime updates within 2s are our own echo
     private var lastLocalWriteTime: Date?
 
-    private var strokesChannel: RealtimeChannelV2?
-    private var chatChannel: RealtimeChannelV2?
-    private var strokeListenTask: Task<Void, Never>?
-    private var chatListenTask: Task<Void, Never>?
+    private var channel: RealtimeChannelV2?
 
-    // MARK: - Subscribe (matches Supabase SDK test pattern)
+    // MARK: - Subscribe (callback-based API from docs)
 
     func subscribe(documentId: String) async {
         unsubscribe()
 
         await supabase.realtimeV2.connect()
 
-        // Create channels
-        let sChannel = supabase.realtimeV2.channel("strokes-\(documentId)")
-        let cChannel = supabase.realtimeV2.channel("chat-\(documentId)")
-        strokesChannel = sChannel
-        chatChannel = cChannel
+        // Single channel for all subscriptions
+        let ch = supabase.realtimeV2.channel("canvas-\(documentId)")
+        channel = ch
 
-        // Get the async streams
-        let strokeChanges = await sChannel.postgresChange(
+        // Strokes: listen for ALL changes (insert, update, delete)
+        ch.onPostgresChange(
             AnyAction.self,
             schema: "public",
             table: "canvas_strokes"
-        )
-        let chatChanges = await cChannel.postgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "chat_history",
-            filter: .eq("document_id", value: documentId)
-        )
-
-        // Start consuming BEFORE subscribing (matches SDK test pattern)
-        strokeListenTask = Task { [weak self] in
-            for await change in strokeChanges {
+        ) { [weak self] action in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
 
                 // Skip own writes
                 if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 {
-                    continue
+                    return
                 }
 
-                switch change {
-                case .insert(let action):
+                switch action {
+                case .insert(let insert):
                     print("[Realtime] Stroke INSERT")
-                    self.decodeAndDeliverStroke(action)
-                case .update(let action):
+                    if let row = try? insert.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder()) {
+                        self.onStrokesUpdated?(row)
+                    }
+                case .update(let update):
                     print("[Realtime] Stroke UPDATE")
-                    self.decodeAndDeliverStroke(action)
+                    if let row = try? update.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder()) {
+                        self.onStrokesUpdated?(row)
+                    }
                 case .delete:
-                    print("[Realtime] Strokes DELETE")
+                    print("[Realtime] Stroke DELETE")
                     self.onStrokesDeleted?()
                 }
             }
-            print("[Realtime] Stroke listen loop ended")
         }
 
-        chatListenTask = Task { [weak self] in
-            for await change in chatChanges {
+        // Chat: listen for inserts
+        ch.onPostgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "chat_history",
+            filter: "document_id=eq.\(documentId)"
+        ) { [weak self] insert in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
-                do {
-                    let row = try change.decodeRecord(as: ChatMessageRow.self, decoder: JSONDecoder())
+                if let row = try? insert.decodeRecord(as: ChatMessageRow.self, decoder: JSONDecoder()) {
                     print("[Realtime] Chat: [\(row.role)] \(row.text.prefix(40))")
                     self.onChatMessageReceived?(row)
-                } catch {
-                    print("[Realtime] Chat decode error: \(error)")
                 }
             }
-            print("[Realtime] Chat listen loop ended")
-        }
-
-        // NOW subscribe (after consumers are waiting)
-        do {
-            try await sChannel.subscribeWithError()
-            print("[Realtime] Strokes channel subscribed")
-        } catch {
-            print("[Realtime] Strokes subscribe FAILED: \(error)")
         }
 
         do {
-            try await cChannel.subscribeWithError()
-            print("[Realtime] Chat channel subscribed")
+            try await ch.subscribeWithError()
+            print("[Realtime] Channel subscribed for doc=\(documentId.prefix(12))")
         } catch {
-            print("[Realtime] Chat subscribe FAILED: \(error)")
-        }
-
-        print("[Realtime] Subscribed for doc=\(documentId.prefix(12))")
-    }
-
-    private func decodeAndDeliverStroke(_ action: InsertAction) {
-        do {
-            let row = try action.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
-            print("[Realtime] Stroke: \(row.questionLabel) page=\(row.pageIndex) strokes=\(row.strokes.count)")
-            onStrokesUpdated?(row)
-        } catch {
-            print("[Realtime] Stroke decode error: \(error)")
-        }
-    }
-
-    private func decodeAndDeliverStroke(_ action: UpdateAction) {
-        do {
-            let row = try action.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
-            print("[Realtime] Stroke: \(row.questionLabel) page=\(row.pageIndex) strokes=\(row.strokes.count)")
-            onStrokesUpdated?(row)
-        } catch {
-            print("[Realtime] Stroke decode error: \(error)")
+            print("[Realtime] Subscribe FAILED: \(error)")
         }
     }
 
     func unsubscribe() {
-        strokeListenTask?.cancel()
-        chatListenTask?.cancel()
-        strokeListenTask = nil
-        chatListenTask = nil
-        let sc = strokesChannel
-        let cc = chatChannel
+        let ch = channel
+        channel = nil
         Task {
-            await sc?.unsubscribe()
-            await cc?.unsubscribe()
+            if let ch { await supabase.realtimeV2.removeChannel(ch) }
         }
-        strokesChannel = nil
-        chatChannel = nil
     }
 
     // MARK: - Write Strokes (UPSERT — one row per question)
