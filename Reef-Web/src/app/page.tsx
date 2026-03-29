@@ -313,9 +313,9 @@ export default function Home() {
             <div className="how-it-works-step">
               <div className="step-text">
                 <span className="step-badge">Step 1</span>
-                <h3 className="step-heading">UPLOAD YOUR MATERIALS</h3>
+                <h3 className="step-heading">UPLOAD YOUR ASSIGNMENTS</h3>
                 <p className="step-body">
-                  Drop in your syllabus, lecture slides, homework PDFs, or photos of handwritten notes. Reef organizes everything by course and topic so you never lose track of what you need to study. Answer keys are extracted automatically so the AI can check your work.
+                  Drop in your homework PDFs and Reef intelligently autospaces each question, giving you plenty of room to solve it with Apple Pencil. Answer keys are also generated for every question and given to your AI tutor as a reference so it can check your work in real time.
                 </p>
               </div>
               <div className="step-card step-card-surface" style={{ backgroundImage: "url('/step-upload.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
