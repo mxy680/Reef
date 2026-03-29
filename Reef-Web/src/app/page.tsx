@@ -245,7 +245,7 @@ export default function Home() {
               <FeaturesCard
                 variant="Double"
                 headline="A TUTOR THAT ACTUALLY TALKS TO YOU"
-                subline="Not a chatbot. Reef watches your handwriting, listens to you think out loud, and jumps in when you're about to go off the rails. Like office hours, except it's 3 AM and you're in your pajamas."
+                subline="Not a chatbot. Reef watches your handwriting, listens to you think out loud, and jumps in when you're about to go off the rails. It catches mistakes the moment you make them, asks follow-up questions to make sure you actually get it, and nudges you toward the answer without just handing it over. Like office hours, except it's 3 AM and you're in your pajamas."
                 background="var(--color-surface)"
               />
               <FeaturesCard
@@ -266,7 +266,7 @@ export default function Home() {
               <FeaturesCard
                 variant="Double"
                 headline="ANALYTICS THAT HIT DIFFERENT"
-                subline="See exactly what you know and what you're pretending to know. Track study time, mastery by topic, and streaks. It's like Spotify Wrapped but for your GPA."
+                subline="See exactly what you know and what you're pretending to know. Track study time, mastery by topic, and streaks. Every question you solve gets graded automatically, so you get real data on where you're strong and where you need to lock in. It's like Spotify Wrapped but for your GPA."
                 background="var(--color-accent)"
               />
             </div>
@@ -275,7 +275,7 @@ export default function Home() {
               <FeaturesCard
                 variant="Double"
                 headline="HOMEWORK, BUT MAKE IT DIGITAL"
-                subline="Upload a PDF and Reef reformats the whole thing — questions, figures, equations, all of it. Autospaced so you can actually solve it on iPad instead of printing it out like it's 2004."
+                subline="Upload a PDF and Reef reformats the whole thing — questions, figures, equations, all of it. Each question gets its own page with plenty of room to solve it. Answer keys are generated automatically so the tutor can check your work in real time. No more printing, no more squinting at blurry scans. It's 2026."
                 background="var(--color-primary)"
               />
               <FeaturesCard
