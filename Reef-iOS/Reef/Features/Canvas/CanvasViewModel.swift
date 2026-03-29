@@ -634,8 +634,10 @@ final class CanvasViewModel {
                     TutorChatMessage(role: role, latex: row.text, timestamp: Date())
                 )
                 // Play TTS for tutor replies received via polling (e.g., from simulator)
+                // Use speechText (no math notation) if available, fall back to text
                 if role == .answer && self.tutorEvalService.voiceEnabled {
-                    Task { await self.tutorEvalService.speakText(row.text) }
+                    let ttsText = (row.speechText?.isEmpty == false) ? row.speechText! : row.text
+                    Task { await self.tutorEvalService.speakText(ttsText) }
                 }
             }
         }

@@ -88,7 +88,7 @@ final class CanvasSyncService {
         // Poll chat
         let chats: [ChatMessageRow] = (try? await supabase
             .from("chat_history")
-            .select("role,text,question_label")
+            .select("role,text,question_label,speech_text")
             .eq("user_id", value: userId)
             .eq("document_id", value: documentId)
             .order("created_at", ascending: true)
@@ -221,9 +221,11 @@ struct ChatMessageRow: Decodable {
     let role: String
     let text: String
     let questionLabel: String
+    let speechText: String?
 
     enum CodingKeys: String, CodingKey {
         case role, text
         case questionLabel = "question_label"
+        case speechText = "speech_text"
     }
 }

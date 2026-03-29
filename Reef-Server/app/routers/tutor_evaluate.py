@@ -154,7 +154,7 @@ async def _fetch_chat_history(document_id: str, question_label: str, user_id: st
     return rows
 
 
-async def _append_chat(user_id: str, document_id: str, question_label: str, role: str, text: str) -> None:
+async def _append_chat(user_id: str, document_id: str, question_label: str, role: str, text: str, speech_text: str = "") -> None:
     """Insert a chat message. Fire-and-forget safe."""
     url = f"{settings.supabase_url}/rest/v1/chat_history"
     row = {
@@ -163,6 +163,7 @@ async def _append_chat(user_id: str, document_id: str, question_label: str, role
         "question_label": question_label,
         "role": role,
         "text": text,
+        "speech_text": speech_text,
     }
     try:
         async with httpx.AsyncClient(timeout=5) as client:
@@ -808,7 +809,7 @@ async def tutor_chat(
 
     # Write chat messages to DB (fire-and-forget)
     asyncio.create_task(_append_chat(user.id, body.document_id, chat_question_label, "student", body.user_message))
-    asyncio.create_task(_append_chat(user.id, body.document_id, chat_question_label, "answer", output.reply))
+    asyncio.create_task(_append_chat(user.id, body.document_id, chat_question_label, "answer", output.reply, speech_text=output.speech))
 
     # If the LLM detected a problem data correction, regenerate the answer key
     answer_key_updated = False
