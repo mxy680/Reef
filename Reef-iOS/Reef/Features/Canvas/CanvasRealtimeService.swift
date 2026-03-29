@@ -10,6 +10,10 @@ final class CanvasSyncService {
     var onStrokesUpdated: ((CanvasStrokeRow) -> Void)?
     var onStrokesDeleted: (() -> Void)?
     var onChatMessageReceived: ((ChatMessageRow) -> Void)?
+    var onTutorStateChanged: ((CanvasStrokeRow) -> Void)?
+
+    /// Last seen tutor status per question — only fire callback on change
+    private var lastTutorStatus: [String: String] = [:]
 
     /// Last known stroke hash per question — skip updates if unchanged
     private var lastStrokeHash: [String: Int] = [:]
@@ -50,10 +54,10 @@ final class CanvasSyncService {
     private func pollForChanges(documentId: String) async {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
 
-        // Poll strokes
+        // Poll strokes + tutor state
         let rows: [CanvasStrokeRow] = (try? await supabase
             .from("canvas_strokes")
-            .select("question_label,page_index,strokes,updated_at")
+            .select("question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed")
             .eq("user_id", value: userId)
             .eq("document_id", value: documentId)
             .execute().value) ?? []
@@ -63,6 +67,15 @@ final class CanvasSyncService {
             if lastStrokeHash[row.questionLabel] != hash {
                 lastStrokeHash[row.questionLabel] = hash
                 onStrokesUpdated?(row)
+            }
+
+            // Detect tutor state changes
+            let statusKey = "\(row.tutorStatus ?? "idle")_\(row.tutorProgress ?? 0)"
+            if lastTutorStatus[row.questionLabel] != statusKey {
+                lastTutorStatus[row.questionLabel] = statusKey
+                if row.tutorStatus != nil && row.tutorStatus != "idle" {
+                    onTutorStateChanged?(row)
+                }
             }
         }
 
@@ -180,6 +193,10 @@ struct CanvasStrokeRow: Decodable {
     let pageIndex: Int
     let strokes: [StrokeData]
     let updatedAt: String?
+    let tutorProgress: Double?
+    let tutorStatus: String?
+    let tutorStep: Int?
+    let tutorStepsCompleted: Int?
 
     struct StrokeData: Decodable {
         let x: [Double]
@@ -191,6 +208,10 @@ struct CanvasStrokeRow: Decodable {
         case pageIndex = "page_index"
         case strokes
         case updatedAt = "updated_at"
+        case tutorProgress = "tutor_progress"
+        case tutorStatus = "tutor_status"
+        case tutorStep = "tutor_step"
+        case tutorStepsCompleted = "tutor_steps_completed"
     }
 }
 

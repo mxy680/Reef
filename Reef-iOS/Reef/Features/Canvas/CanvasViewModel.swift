@@ -636,6 +636,24 @@ final class CanvasViewModel {
             }
         }
 
+        // Wire tutor state changes from polling (progress, step advancement)
+        syncService.onTutorStateChanged = { [weak self] row in
+            guard let self else { return }
+            guard row.questionLabel == self.activeQuestionLabel else { return }
+            let progress = row.tutorProgress ?? 0
+            let status = row.tutorStatus ?? "idle"
+            let stepsCompleted = row.tutorStepsCompleted ?? 1
+
+            // Update progress bar
+            self.tutorEvalService.stepProgress = progress
+            self.tutorEvalService.status = status
+
+            // Advance step if completed
+            if status == "completed" {
+                self.advanceTutorSteps(count: stepsCompleted)
+            }
+        }
+
         loadPDFTask = Task { await loadPDF() }
         loadAnswerKeysTask = Task { await loadAnswerKeys() }
     }

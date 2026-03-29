@@ -304,6 +304,24 @@ async def _upsert_student_work(
         log.warning(f"[student-work] Failed to upsert latex: {e}")
 
 
+async def _update_tutor_state(
+    document_id: str, question_label: str, user_id: str,
+    progress: float, status: str, step_index: int, steps_completed: int,
+) -> None:
+    """Write tutor eval state to canvas_strokes for iOS polling. Fire-and-forget safe."""
+    url = f"{settings.supabase_url}/rest/v1/canvas_strokes?user_id=eq.{user_id}&document_id=eq.{document_id}&question_label=eq.{question_label}"
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.patch(url, json={
+                "tutor_progress": progress,
+                "tutor_status": status,
+                "tutor_step": step_index,
+                "tutor_steps_completed": steps_completed,
+            }, headers=_supabase_headers())
+    except Exception as e:
+        log.warning(f"[tutor-state] Failed to update: {e}")
+
+
 async def _download_images(urls: list[str]) -> list[bytes]:
     """Download figure images from signed Supabase storage URLs."""
     if not urls:
@@ -591,6 +609,15 @@ async def tutor_evaluate(
             speech_audio = await _generate_tts(speech_text[:500])
         except Exception as e:
             log.warning(f"[tutor-eval] TTS failed: {e}")
+
+    # Write tutor state to canvas_strokes so iOS polling can pick it up
+    asyncio.create_task(_update_tutor_state(
+        body.document_id, question_label, user.id,
+        progress=evaluation.progress,
+        status=evaluation.status,
+        step_index=body.step_index,
+        steps_completed=capped_steps,
+    ))
 
     return TutorEvaluateResponse(
         progress=evaluation.progress,
