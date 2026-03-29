@@ -1701,7 +1701,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I used to screenshot my homework and paste it into ChatGPT. Reef just lets me write on it directly and the tutor talks to me while I solve. Way less unhinged.",
+															"I used to screenshot my homework, paste it into ChatGPT, then copy the answer back onto paper. I was basically a human printer. Reef ended that era.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1730,7 +1730,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"The analytics dashboard lowkey changed my life. I thought I understood thermodynamics until Reef showed me I was guessing on 60% of the problems.",
+															"The analytics page is brutal in the best way. I thought I was cooked for thermo. Turns out I was right. But at least now I know exactly where I\u2019m cooked.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1759,7 +1759,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"My tutor caught a sign error three lines into a problem that would\u2019ve wrecked my entire solution. I didn\u2019t even ask for help. It just knew.",
+															"The tutor said \u2018are you sure about that negative sign?\u2019 and I literally heard my GPA being saved in real time. This app has better instincts than me.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1788,7 +1788,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I opened Reef at 11 PM to do one problem and accidentally did the whole assignment. I don\u2019t know what happened but I\u2019m not complaining.",
+															"Opened Reef to do one problem before bed. Accidentally did the whole assignment. It\u2019s 3 AM now. I\u2019m not even mad. I\u2019m just confused.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1817,7 +1817,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My handwriting is genuinely terrible and Reef still reads it. I\u2019m convinced it\u2019s more patient than any TA I\u2019ve ever had.",
+															"My handwriting looks like a seismograph during an earthquake. Reef read it anyway. If this app can understand me, it can understand anyone.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1846,7 +1846,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"The tutor asked me why I divided by zero and I had no good answer. Neither did my professor when I told him about this app.",
+															"The tutor goes \u2018why did you divide by zero?\u2019 and I sat there in silence for a full ten seconds. It\u2019s the accountability partner I didn\u2019t know I needed.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1875,7 +1875,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My study group dissolved after everyone got Reef. We don\u2019t need each other anymore. It\u2019s beautiful and a little sad.",
+															"My study group dissolved because everyone got Reef. We don\u2019t need each other anymore. Friendships ended. GPAs thrived.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1956,7 +1956,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"I uploaded my orgo homework and it autospaced everything perfectly. I literally gasped. No more printing PDFs like a caveman.",
+															"Uploaded my orgo problem set and it formatted every single question with space to solve. I audibly gasped. My roommate thought something was wrong.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1985,7 +1985,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"Reef is the reason I passed Calc III. The voice tutor walked me through triple integrals at midnight and didn\u2019t judge me once.",
+															"Reef talked me through triple integrals at 2 AM and didn\u2019t judge me once. My professor could never. 10/10 bedside manner.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2014,7 +2014,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"I showed my reef to my roommate and now she won\u2019t give my iPad back. We might need a family plan.",
+															"My roommate borrowed my iPad to \u2018try Reef for one question.\u2019 That was three hours ago. I\u2019m typing this from my phone. Send help.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2043,7 +2043,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I opened Reef at 11 PM to do one problem and accidentally did the whole assignment. I don\u2019t know what happened but I\u2019m not complaining.",
+															"Opened Reef to do one problem before bed. Accidentally did the whole assignment. It\u2019s 3 AM now. I\u2019m not even mad. I\u2019m just confused.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2072,7 +2072,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My handwriting is genuinely terrible and Reef still reads it. I\u2019m convinced it\u2019s more patient than any TA I\u2019ve ever had.",
+															"My handwriting looks like a seismograph during an earthquake. Reef read it anyway. If this app can understand me, it can understand anyone.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2101,7 +2101,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"The tutor asked me why I divided by zero and I had no good answer. Neither did my professor when I told him about this app.",
+															"The tutor goes \u2018why did you divide by zero?\u2019 and I sat there in silence for a full ten seconds. It\u2019s the accountability partner I didn\u2019t know I needed.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2130,7 +2130,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My study group dissolved after everyone got Reef. We don\u2019t need each other anymore. It\u2019s beautiful and a little sad.",
+															"My study group dissolved because everyone got Reef. We don\u2019t need each other anymore. Friendships ended. GPAs thrived.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2247,7 +2247,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I used to screenshot my homework and paste it into ChatGPT. Reef just lets me write on it directly and the tutor talks to me while I solve. Way less unhinged.",
+															"I used to screenshot my homework, paste it into ChatGPT, then copy the answer back onto paper. I was basically a human printer. Reef ended that era.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2276,7 +2276,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"The analytics dashboard lowkey changed my life. I thought I understood thermodynamics until Reef showed me I was guessing on 60% of the problems.",
+															"The analytics page is brutal in the best way. I thought I was cooked for thermo. Turns out I was right. But at least now I know exactly where I\u2019m cooked.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2305,7 +2305,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"My tutor caught a sign error three lines into a problem that would\u2019ve wrecked my entire solution. I didn\u2019t even ask for help. It just knew.",
+															"The tutor said \u2018are you sure about that negative sign?\u2019 and I literally heard my GPA being saved in real time. This app has better instincts than me.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2334,7 +2334,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"I uploaded my orgo homework and it autospaced everything perfectly. I literally gasped. No more printing PDFs like a caveman.",
+															"Uploaded my orgo problem set and it formatted every single question with space to solve. I audibly gasped. My roommate thought something was wrong.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2363,7 +2363,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"Reef is the reason I passed Calc III. The voice tutor walked me through triple integrals at midnight and didn\u2019t judge me once.",
+															"Reef talked me through triple integrals at 2 AM and didn\u2019t judge me once. My professor could never. 10/10 bedside manner.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2392,7 +2392,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"I showed my reef to my roommate and now she won\u2019t give my iPad back. We might need a family plan.",
+															"My roommate borrowed my iPad to \u2018try Reef for one question.\u2019 That was three hours ago. I\u2019m typing this from my phone. Send help.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2421,7 +2421,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I opened Reef at 11 PM to do one problem and accidentally did the whole assignment. I don\u2019t know what happened but I\u2019m not complaining.",
+															"Opened Reef to do one problem before bed. Accidentally did the whole assignment. It\u2019s 3 AM now. I\u2019m not even mad. I\u2019m just confused.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2450,7 +2450,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My handwriting is genuinely terrible and Reef still reads it. I\u2019m convinced it\u2019s more patient than any TA I\u2019ve ever had.",
+															"My handwriting looks like a seismograph during an earthquake. Reef read it anyway. If this app can understand me, it can understand anyone.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2479,7 +2479,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"The tutor asked me why I divided by zero and I had no good answer. Neither did my professor when I told him about this app.",
+															"The tutor goes \u2018why did you divide by zero?\u2019 and I sat there in silence for a full ten seconds. It\u2019s the accountability partner I didn\u2019t know I needed.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2508,7 +2508,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My study group dissolved after everyone got Reef. We don\u2019t need each other anymore. It\u2019s beautiful and a little sad.",
+															"My study group dissolved because everyone got Reef. We don\u2019t need each other anymore. Friendships ended. GPAs thrived.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
