@@ -1937,6 +1937,180 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card13-container"}
+													data-framer-name={"13"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card13-container"}
+													name={"13"}
+													nodeId={"card13"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Chris P.",
+														id: "card13",
+														layoutId: "card13",
+														name: "13",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"my professor asked how i solved that problem so fast and i panicked and said \u2018i just studied.\u2019 technically not a lie",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card14-container"}
+													data-framer-name={"14"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card14-container"}
+													name={"14"}
+													nodeId={"card14"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Maya R.",
+														id: "card14",
+														layoutId: "card14",
+														name: "14",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"the tutor doesn\u2019t give you the answer it just keeps asking questions until you figure it out yourself. annoying. effective. 5 stars.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card15-container"}
+													data-framer-name={"15"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card15-container"}
+													name={"15"}
+													nodeId={"card15"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Liam D.",
+														id: "card15",
+														layoutId: "card15",
+														name: "15",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"i\u2019ve been using chatgpt for hw and learning nothing. reef actually makes me think. unfortunately.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card16-container"}
+													data-framer-name={"16"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card16-container"}
+													name={"16"}
+													nodeId={"card16"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Zara N.",
+														id: "card16",
+														layoutId: "card16",
+														name: "16",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"it auto-generated the answer key for my entire problem set in like 10 seconds. what was i even doing before this",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card17-container"}
+													data-framer-name={"17"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card17-container"}
+													name={"17"}
+													nodeId={"card17"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Ben S.",
+														id: "card17",
+														layoutId: "card17",
+														name: "17",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"my reef has 4 fish in it now. i\u2019m not studying for grades anymore i\u2019m studying for the fish",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card18-container"}
+													data-framer-name={"18"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card18-container"}
+													name={"18"}
+													nodeId={"card18"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Hannah L.",
+														id: "card18",
+														layoutId: "card18",
+														name: "18",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"i switched tutors three times before i found one that matched my vibe. this app gets me",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
 										]}
 										speed={25}
 										style={{
@@ -2247,6 +2421,180 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														width: "100%",
 														XAmUHmTtB:
 															"i showed my mom and she said \u2018where was this when i was in school.\u2019 ma\u2019am you studied history",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card13-container"}
+													data-framer-name={"13"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card13-container"}
+													name={"13"}
+													nodeId={"card13"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Chris P.",
+														id: "card13",
+														layoutId: "card13",
+														name: "13",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"my professor asked how i solved that problem so fast and i panicked and said \u2018i just studied.\u2019 technically not a lie",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card14-container"}
+													data-framer-name={"14"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card14-container"}
+													name={"14"}
+													nodeId={"card14"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Maya R.",
+														id: "card14",
+														layoutId: "card14",
+														name: "14",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"the tutor doesn\u2019t give you the answer it just keeps asking questions until you figure it out yourself. annoying. effective. 5 stars.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card15-container"}
+													data-framer-name={"15"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card15-container"}
+													name={"15"}
+													nodeId={"card15"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Liam D.",
+														id: "card15",
+														layoutId: "card15",
+														name: "15",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"i\u2019ve been using chatgpt for hw and learning nothing. reef actually makes me think. unfortunately.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card16-container"}
+													data-framer-name={"16"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card16-container"}
+													name={"16"}
+													nodeId={"card16"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Zara N.",
+														id: "card16",
+														layoutId: "card16",
+														name: "16",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"it auto-generated the answer key for my entire problem set in like 10 seconds. what was i even doing before this",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card17-container"}
+													data-framer-name={"17"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card17-container"}
+													name={"17"}
+													nodeId={"card17"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Ben S.",
+														id: "card17",
+														layoutId: "card17",
+														name: "17",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"my reef has 4 fish in it now. i\u2019m not studying for grades anymore i\u2019m studying for the fish",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card18-container"}
+													data-framer-name={"18"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card18-container"}
+													name={"18"}
+													nodeId={"card18"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Hannah L.",
+														id: "card18",
+														layoutId: "card18",
+														name: "18",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"i switched tutors three times before i found one that matched my vibe. this app gets me",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2683,6 +3031,180 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														width: "100%",
 														XAmUHmTtB:
 															"i showed my mom and she said \u2018where was this when i was in school.\u2019 ma\u2019am you studied history",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card13-container"}
+													data-framer-name={"13"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card13-container"}
+													name={"13"}
+													nodeId={"card13"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Chris P.",
+														id: "card13",
+														layoutId: "card13",
+														name: "13",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"my professor asked how i solved that problem so fast and i panicked and said \u2018i just studied.\u2019 technically not a lie",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card14-container"}
+													data-framer-name={"14"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card14-container"}
+													name={"14"}
+													nodeId={"card14"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Maya R.",
+														id: "card14",
+														layoutId: "card14",
+														name: "14",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"the tutor doesn\u2019t give you the answer it just keeps asking questions until you figure it out yourself. annoying. effective. 5 stars.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card15-container"}
+													data-framer-name={"15"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card15-container"}
+													name={"15"}
+													nodeId={"card15"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Liam D.",
+														id: "card15",
+														layoutId: "card15",
+														name: "15",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"i\u2019ve been using chatgpt for hw and learning nothing. reef actually makes me think. unfortunately.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card16-container"}
+													data-framer-name={"16"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card16-container"}
+													name={"16"}
+													nodeId={"card16"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Zara N.",
+														id: "card16",
+														layoutId: "card16",
+														name: "16",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"it auto-generated the answer key for my entire problem set in like 10 seconds. what was i even doing before this",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card17-container"}
+													data-framer-name={"17"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card17-container"}
+													name={"17"}
+													nodeId={"card17"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Ben S.",
+														id: "card17",
+														layoutId: "card17",
+														name: "17",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"my reef has 4 fish in it now. i\u2019m not studying for grades anymore i\u2019m studying for the fish",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card18-container"}
+													data-framer-name={"18"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card18-container"}
+													name={"18"}
+													nodeId={"card18"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Hannah L.",
+														id: "card18",
+														layoutId: "card18",
+														name: "18",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"i switched tutors three times before i found one that matched my vibe. this app gets me",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
