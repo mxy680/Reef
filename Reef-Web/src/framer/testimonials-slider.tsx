@@ -1906,7 +1906,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 								>
 									<Ticker
 										alignment={"center"}
-										direction={"right"}
+										direction={"left"}
 										fadeOptions={{
 											fadeAlpha: 0,
 											fadeContent: false,
