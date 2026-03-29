@@ -198,8 +198,8 @@ footer.framer-1fiw38h {
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  overflow: hidden;
-  padding-bottom: 10px;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 /* Hero */
