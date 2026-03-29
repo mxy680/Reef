@@ -1906,7 +1906,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 								>
 									<Ticker
 										alignment={"center"}
-										direction={"left"}
+										direction={"right"}
 										fadeOptions={{
 											fadeAlpha: 0,
 											fadeContent: false,
@@ -1920,6 +1920,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 										id={"U_m05Wgsl"}
 										layoutId={"U_m05Wgsl"}
 										name={"Desktop"}
+										startFrom={5}
 										padding={0}
 										paddingBottom={0}
 										paddingLeft={0}
