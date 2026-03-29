@@ -9,6 +9,9 @@ final class CanvasRealtimeService {
     var onStrokesDeleted: (() -> Void)?
     var onChatMessageReceived: ((ChatMessageRow) -> Void)?
 
+    /// Set of stroke row IDs we wrote ourselves — skip these in Realtime to prevent echo loop
+    private var ownWriteIds: Set<String> = []
+
     private var strokesChannel: RealtimeChannelV2?
     private var chatChannel: RealtimeChannelV2?
     private var subscriptionTask: Task<Void, Never>?
@@ -54,6 +57,11 @@ final class CanvasRealtimeService {
                     guard let self else { return }
                     do {
                         let row = try change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
+                        // Skip our own writes to prevent feedback loop
+                        if let id = row.id, self.ownWriteIds.contains(id) {
+                            print("[Realtime] Skipping own stroke write: \(id.prefix(8))")
+                            continue
+                        }
                         print("[Realtime] Stroke received: \(row.questionLabel) page=\(row.pageIndex)")
                         self.onStrokesReceived?(row)
                     } catch {
@@ -111,7 +119,11 @@ final class CanvasRealtimeService {
     ) async {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
 
+        let rowId = UUID().uuidString
+        ownWriteIds.insert(rowId)
+
         let row: [String: AnyJSON] = [
+            "id": .string(rowId),
             "user_id": .string(userId),
             "document_id": .string(documentId),
             "question_label": .string(questionLabel),
@@ -131,6 +143,12 @@ final class CanvasRealtimeService {
             .from("canvas_strokes")
             .insert(row)
             .execute()
+
+        // Clean up after a delay (Realtime should have delivered by then)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            self?.ownWriteIds.remove(rowId)
+        }
     }
 
     // MARK: - Load Existing
