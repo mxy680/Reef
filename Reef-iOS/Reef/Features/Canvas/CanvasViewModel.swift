@@ -981,6 +981,16 @@ final class CanvasViewModel {
 
         clearShapeStrokes()
         saveCanvasState()
+
+        // Clear simulation data from Supabase (strokes, student_work, chat_history)
+        Task {
+            guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
+            let docId = document.id
+            try? await supabase.from("simulation_strokes").delete().eq("user_id", value: userId).execute()
+            try? await supabase.from("student_work").delete().eq("user_id", value: userId).eq("document_id", value: docId).eq("question_label", value: label).execute()
+            try? await supabase.from("chat_history").delete().eq("user_id", value: userId).eq("document_id", value: docId).eq("question_label", value: label).execute()
+            print("[reset] Cleared simulation_strokes, student_work, chat_history for \(label)")
+        }
     }
 
     /// Track new strokes added with the shape tool.
