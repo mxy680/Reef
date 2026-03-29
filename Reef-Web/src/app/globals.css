@@ -372,7 +372,7 @@ footer.framer-1fiw38h {
   gap: 20px;
   justify-content: center;
   flex-wrap: wrap;
-  align-items: stretch;
+  align-items: flex-start;
 }
 
 /* Override Framer's fixed widths — use flex sizing for responsive 2:1 ratio */
