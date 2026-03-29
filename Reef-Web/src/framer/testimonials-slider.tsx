@@ -1763,6 +1763,122 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card7-container"}
+													data-framer-name={"7"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card7-container"}
+													name={"7"}
+													nodeId={"card7"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Alex W.",
+														id: "card7",
+														layoutId: "card7",
+														name: "7",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"I opened Reef at 11 PM to do one problem and accidentally did the whole assignment. I don\u2019t know what happened but I\u2019m not complaining.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card8-container"}
+													data-framer-name={"8"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card8-container"}
+													name={"8"}
+													nodeId={"card8"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Nina C.",
+														id: "card8",
+														layoutId: "card8",
+														name: "8",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"My handwriting is genuinely terrible and Reef still reads it. I\u2019m convinced it\u2019s more patient than any TA I\u2019ve ever had.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card9-container"}
+													data-framer-name={"9"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card9-container"}
+													name={"9"}
+													nodeId={"card9"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Jordan H.",
+														id: "card9",
+														layoutId: "card9",
+														name: "9",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"The tutor asked me why I divided by zero and I had no good answer. Neither did my professor when I told him about this app.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card10-container"}
+													data-framer-name={"10"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card10-container"}
+													name={"10"}
+													nodeId={"card10"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Rachel B.",
+														id: "card10",
+														layoutId: "card10",
+														name: "10",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"My study group dissolved after everyone got Reef. We don\u2019t need each other anymore. It\u2019s beautiful and a little sad.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
 										]}
 										speed={25}
 										style={{
@@ -1899,6 +2015,122 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														width: "100%",
 														XAmUHmTtB:
 															"I showed my reef to my roommate and now she won\u2019t give my iPad back. We might need a family plan.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card7-container"}
+													data-framer-name={"7"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card7-container"}
+													name={"7"}
+													nodeId={"card7"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Alex W.",
+														id: "card7",
+														layoutId: "card7",
+														name: "7",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"I opened Reef at 11 PM to do one problem and accidentally did the whole assignment. I don\u2019t know what happened but I\u2019m not complaining.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card8-container"}
+													data-framer-name={"8"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card8-container"}
+													name={"8"}
+													nodeId={"card8"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Nina C.",
+														id: "card8",
+														layoutId: "card8",
+														name: "8",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"My handwriting is genuinely terrible and Reef still reads it. I\u2019m convinced it\u2019s more patient than any TA I\u2019ve ever had.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card9-container"}
+													data-framer-name={"9"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card9-container"}
+													name={"9"}
+													nodeId={"card9"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Jordan H.",
+														id: "card9",
+														layoutId: "card9",
+														name: "9",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"The tutor asked me why I divided by zero and I had no good answer. Neither did my professor when I told him about this app.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card10-container"}
+													data-framer-name={"10"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card10-container"}
+													name={"10"}
+													nodeId={"card10"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Rachel B.",
+														id: "card10",
+														layoutId: "card10",
+														name: "10",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"My study group dissolved after everyone got Reef. We don\u2019t need each other anymore. It\u2019s beautiful and a little sad.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2161,6 +2393,122 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														width: "100%",
 														XAmUHmTtB:
 															"I showed my reef to my roommate and now she won\u2019t give my iPad back. We might need a family plan.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card7-container"}
+													data-framer-name={"7"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card7-container"}
+													name={"7"}
+													nodeId={"card7"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Alex W.",
+														id: "card7",
+														layoutId: "card7",
+														name: "7",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"I opened Reef at 11 PM to do one problem and accidentally did the whole assignment. I don\u2019t know what happened but I\u2019m not complaining.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card8-container"}
+													data-framer-name={"8"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card8-container"}
+													name={"8"}
+													nodeId={"card8"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Nina C.",
+														id: "card8",
+														layoutId: "card8",
+														name: "8",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"My handwriting is genuinely terrible and Reef still reads it. I\u2019m convinced it\u2019s more patient than any TA I\u2019ve ever had.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card9-container"}
+													data-framer-name={"9"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card9-container"}
+													name={"9"}
+													nodeId={"card9"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Jordan H.",
+														id: "card9",
+														layoutId: "card9",
+														name: "9",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"The tutor asked me why I divided by zero and I had no good answer. Neither did my professor when I told him about this app.",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card10-container"}
+													data-framer-name={"10"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card10-container"}
+													name={"10"}
+													nodeId={"card10"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Rachel B.",
+														id: "card10",
+														layoutId: "card10",
+														name: "10",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"My study group dissolved after everyone got Reef. We don\u2019t need each other anymore. It\u2019s beautiful and a little sad.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
