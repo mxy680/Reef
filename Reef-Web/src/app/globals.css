@@ -882,6 +882,14 @@ html, body {
     gap: 24px;
   }
 
+  .how-it-works-step-reverse .step-card {
+    order: 2;
+  }
+
+  .how-it-works-step-reverse .step-text {
+    order: 1;
+  }
+
   .step-text {
     flex: none;
     max-width: 100%;
