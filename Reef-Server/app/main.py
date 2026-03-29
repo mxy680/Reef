@@ -6,13 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import health
 from app.routers import reconstruct_v2
 from app.routers import fit_shape
-from app.routers import transcribe
 from app.routers import bug_report
 from app.routers import transcribe_audio
 from app.routers import tutor_evaluate
 from app.routers import demo_problem
 from app.routers import generate_question
-from app.routers import websocket
 from app.config import settings
 from app.services.cancellation import get_in_flight_ids
 from app.services.progress import update_document_status
@@ -85,13 +83,7 @@ app.include_router(health.router)
 app.include_router(bug_report.router)
 app.include_router(reconstruct_v2.router)
 app.include_router(fit_shape.router)
-app.include_router(transcribe.router)
 app.include_router(transcribe_audio.router)
 app.include_router(tutor_evaluate.router)
 app.include_router(demo_problem.router)
 app.include_router(generate_question.router)
-app.include_router(websocket.router)
-
-if settings.simulation_enabled:
-    from app.routers import simulate_student
-    app.include_router(simulate_student.router)

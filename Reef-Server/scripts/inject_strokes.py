@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Inject LaTeX as handwriting strokes onto a connected iPad canvas.
 
-Writes stroke data directly to Supabase `simulation_strokes` table.
+Writes stroke data directly to Supabase `canvas_strokes` table.
 The iPad subscribes to realtime changes and renders strokes automatically.
 
 Usage:
@@ -137,12 +137,12 @@ def get_page_for_question(doc_id: str, question_label: str) -> int:
 def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
                   origin_x: float, origin_y: float, font_size: float = 14.0,
                   page_index: int = 0) -> bool:
-    """Convert LaTeX to strokes and insert into simulation_strokes table."""
+    """Convert LaTeX to strokes and insert into canvas_strokes table."""
     strokes = latex_to_strokes(latex, origin_x=origin_x, origin_y=origin_y, font_size=font_size, jitter=False)
     url = ENV.get("SUPABASE_URL", "")
 
     resp = httpx.post(
-        f"{url}/rest/v1/simulation_strokes",
+        f"{url}/rest/v1/canvas_strokes",
         headers=supabase_headers(),
         json={
             "user_id": user_id,
@@ -166,14 +166,7 @@ def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
 
 
 def get_simulation_state(user_id: str) -> dict | None:
-    """Read the simulation_state row to know what the user is viewing."""
-    url = ENV.get("SUPABASE_URL", "")
-    resp = httpx.get(
-        f"{url}/rest/v1/simulation_state?user_id=eq.{user_id}&select=*",
-        headers=supabase_headers(), timeout=5,
-    )
-    if resp.status_code == 200 and resp.json():
-        return resp.json()[0]
+    """Read state — currently not available (simulation_state table removed)."""
     return None
 
 
@@ -321,22 +314,15 @@ def reset_question(user_id: str, doc_id: str, question_label: str) -> None:
     """Clear all simulation data for a question and reset sim state."""
     url = ENV.get("SUPABASE_URL", "")
     headers = supabase_headers()
-    httpx.delete(f"{url}/rest/v1/simulation_strokes?user_id=eq.{user_id}", headers=headers, timeout=5)
+    httpx.delete(f"{url}/rest/v1/canvas_strokes?user_id=eq.{user_id}", headers=headers, timeout=5)
     httpx.delete(f"{url}/rest/v1/student_work?user_id=eq.{user_id}&document_id=eq.{doc_id}&question_label=eq.{question_label}", headers=headers, timeout=5)
     httpx.delete(f"{url}/rest/v1/chat_history?user_id=eq.{user_id}&document_id=eq.{doc_id}&question_label=eq.{question_label}", headers=headers, timeout=5)
     print(f"  Cleared strokes, student_work, chat_history for {question_label}")
 
 
 def send_command(user_id: str, command: str) -> None:
-    """Send a command to the iPad via simulation_state.pending_command."""
-    url = ENV.get("SUPABASE_URL", "")
-    httpx.patch(
-        f"{url}/rest/v1/simulation_state?user_id=eq.{user_id}",
-        headers=supabase_headers(),
-        json={"pending_command": command},
-        timeout=5,
-    )
-    print(f"  Sent command: {command}")
+    """Commands removed — simulation_state table no longer exists."""
+    print(f"  Command not available (simulation_state removed): {command}")
 
 
 def main():

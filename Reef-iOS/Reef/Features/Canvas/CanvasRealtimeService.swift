@@ -38,23 +38,23 @@ final class CanvasRealtimeService {
         try? await strokesChannel?.subscribeWithError()
         try? await chatChannel?.subscribeWithError()
 
+        let strokeStream = strokeChanges
+        let chatStream = chatChanges
         subscriptionTask = Task { [weak self] in
-            await withTaskGroup(of: Void.self) { group in
-                group.addTask {
-                    for await change in strokeChanges {
-                        guard let self else { return }
-                        if let row = try? change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder()) {
-                            await MainActor.run { self.onStrokesReceived?(row) }
-                        }
+            // Listen for stroke changes
+            Task { [weak self] in
+                for await change in strokeStream {
+                    guard let self else { return }
+                    if let row = try? change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder()) {
+                        self.onStrokesReceived?(row)
                     }
                 }
-                group.addTask {
-                    for await change in chatChanges {
-                        guard let self else { return }
-                        if let row = try? change.decodeRecord(as: ChatMessageRow.self, decoder: JSONDecoder()) {
-                            await MainActor.run { self.onChatMessageReceived?(row) }
-                        }
-                    }
+            }
+            // Listen for chat changes
+            for await change in chatStream {
+                guard let self else { return }
+                if let row = try? change.decodeRecord(as: ChatMessageRow.self, decoder: JSONDecoder()) {
+                    self.onChatMessageReceived?(row)
                 }
             }
         }
