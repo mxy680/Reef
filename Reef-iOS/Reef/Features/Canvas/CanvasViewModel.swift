@@ -1186,9 +1186,10 @@ final class CanvasViewModel {
         clearShapeStrokes()
         saveCanvasState()
 
-        // Clear canvas strokes from Supabase
+        // Clear canvas strokes + chat history from Supabase
         Task {
             await syncService.clearStrokes(documentId: document.id, questionLabel: label)
+            await syncService.clearChat(documentId: document.id, questionLabel: label)
         }
     }
 

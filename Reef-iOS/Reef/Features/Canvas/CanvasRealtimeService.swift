@@ -32,6 +32,19 @@ final class CanvasSyncService {
         stopPolling()
         print("[Sync] Starting 1s poll for doc=\(documentId.prefix(12))")
 
+        // Pre-load existing chat count so we don't TTS old messages
+        Task { @MainActor [weak self] in
+            guard let self, let userId = try? await supabase.auth.session.user.id.uuidString else { return }
+            let count: Int = (try? await supabase
+                .from("chat_history")
+                .select("id", head: true, count: .exact)
+                .eq("user_id", value: userId)
+                .eq("document_id", value: documentId)
+                .execute().count) ?? 0
+            self.lastChatCount = count
+            print("[Sync] Pre-loaded \(count) existing chat messages")
+        }
+
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -167,8 +180,21 @@ final class CanvasSyncService {
     func clearStrokes(documentId: String, questionLabel: String) async {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
         lastStrokeHash.removeValue(forKey: questionLabel)
+        lastTutorStatus.removeValue(forKey: questionLabel)
         try? await supabase
             .from("canvas_strokes")
+            .delete()
+            .eq("user_id", value: userId)
+            .eq("document_id", value: documentId)
+            .eq("question_label", value: questionLabel)
+            .execute()
+    }
+
+    func clearChat(documentId: String, questionLabel: String) async {
+        guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
+        lastChatCount = 0
+        try? await supabase
+            .from("chat_history")
             .delete()
             .eq("user_id", value: userId)
             .eq("document_id", value: documentId)
