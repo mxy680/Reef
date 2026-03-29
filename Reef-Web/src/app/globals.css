@@ -198,14 +198,6 @@ footer.framer-1fiw38h {
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  overflow-x: hidden;
-  overflow-y: visible;
-}
-
-/* Prevent testimonial card shadow/border clipping */
-.full-bleed [data-framer-name] div,
-.full-bleed [data-framer-name] > div {
-  overflow: visible !important;
 }
 
 /* Hero */

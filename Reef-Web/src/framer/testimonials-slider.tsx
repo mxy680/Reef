@@ -2549,7 +2549,7 @@ var FramermtBFcEYWT = withCSS(Component2, css, "framer-xISKZ");
 var stdin_default2 = FramermtBFcEYWT;
 FramermtBFcEYWT.displayName = "Testimonials Slider";
 FramermtBFcEYWT.defaultProps = {
-	height: 520,
+	height: 530,
 	width: 1200,
 };
 addPropertyControls2(FramermtBFcEYWT, {
