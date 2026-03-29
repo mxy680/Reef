@@ -633,6 +633,10 @@ final class CanvasViewModel {
                 self.tutorEvalService.chatMessages.append(
                     TutorChatMessage(role: role, latex: row.text, timestamp: Date())
                 )
+                // Play TTS for tutor replies received via polling (e.g., from simulator)
+                if role == .answer && self.tutorEvalService.voiceEnabled {
+                    Task { await self.tutorEvalService.speakText(row.text) }
+                }
             }
         }
 
