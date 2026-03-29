@@ -17,7 +17,7 @@ from app.models.tutor import (
 )
 from app.services.llm_client import LLMClient
 from app.services.concept_tracker import get_prior_struggles, record_struggle, resolve_struggles
-from app.services.cost_tracker import fire_cost, record_llm_cost
+from app.services.cost_tracker import fire_cost, record_llm_cost, MATHPIX_STROKES_PER_SESSION, record_cost
 from app.services.prompts import (
     TUTOR_CHAT_PROMPT, TUTOR_CHAT_SYSTEM,
     TUTOR_EVALUATE_DYNAMIC, TUTOR_EVALUATE_STATIC, TUTOR_EVALUATE_SYSTEM,
@@ -195,6 +195,130 @@ async def _fetch_student_work(document_id: str, question_label: str, user_id: st
     return (rows[0].get("latex_display", ""), rows[0].get("latex_raw", ""))
 
 
+_MATHPIX_CHUNK_SIZE = 50
+
+
+async def _fetch_and_transcribe_strokes(
+    document_id: str, question_label: str, user_id: str
+) -> str:
+    """Fetch strokes from canvas_strokes table, transcribe via Mathpix, return LaTeX.
+
+    Strokes are chunked into groups of _MATHPIX_CHUNK_SIZE and transcribed
+    sequentially. Results are concatenated with a space separator.
+    Returns an empty string if no strokes exist or Mathpix is unavailable.
+    """
+    if not settings.mathpix_app_id or not settings.mathpix_app_key:
+        log.debug("[strokes] Mathpix not configured — skipping stroke transcription")
+        return ""
+
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+    }
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(
+            f"{settings.supabase_url}/rest/v1/canvas_strokes",
+            params={
+                "user_id": f"eq.{user_id}",
+                "document_id": f"eq.{document_id}",
+                "question_label": f"eq.{question_label}",
+                "select": "strokes",
+                "order": "created_at.asc",
+            },
+            headers=headers,
+        )
+
+    if resp.status_code != 200:
+        log.warning(f"[strokes] Failed to fetch canvas_strokes: {resp.status_code}")
+        return ""
+
+    rows = resp.json()
+    if not rows:
+        return ""
+
+    # Flatten all stroke objects into one list
+    all_strokes: list[dict] = []
+    for row in rows:
+        all_strokes.extend(row.get("strokes", []))
+
+    if not all_strokes:
+        return ""
+
+    from app.services.mathpix_pool import acquire_session
+
+    try:
+        app_token, session_id, _ = await acquire_session()
+    except RuntimeError as e:
+        log.warning(f"[strokes] Could not acquire Mathpix session: {e}")
+        return ""
+
+    fire_cost(record_cost(user_id, "transcribe", "mathpix_strokes", MATHPIX_STROKES_PER_SESSION))
+
+    mathpix_headers = {"app_token": app_token, "Content-Type": "application/json"}
+    latex_parts: list[str] = []
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        for i in range(0, len(all_strokes), _MATHPIX_CHUNK_SIZE):
+            chunk = all_strokes[i : i + _MATHPIX_CHUNK_SIZE]
+            payload = {
+                "strokes": {
+                    "strokes": {
+                        "x": [s["x"] for s in chunk],
+                        "y": [s["y"] for s in chunk],
+                    }
+                },
+                "strokes_session_id": session_id,
+            }
+            try:
+                r = await client.post(
+                    "https://api.mathpix.com/v3/strokes",
+                    json=payload,
+                    headers=mathpix_headers,
+                )
+            except Exception as e:
+                log.warning(f"[strokes] Mathpix request error on chunk {i}: {e}")
+                continue
+
+            if r.status_code != 200:
+                log.warning(f"[strokes] Mathpix returned {r.status_code} on chunk {i}: {r.text[:200]}")
+                continue
+
+            data = r.json()
+            if "error" in data:
+                log.warning(f"[strokes] Mathpix error on chunk {i}: {data['error']}")
+                continue
+
+            chunk_latex = data.get("latex", data.get("text", "")).strip()
+            if chunk_latex:
+                latex_parts.append(chunk_latex)
+
+    return " ".join(latex_parts)
+
+
+async def _upsert_student_work(
+    document_id: str, question_label: str, user_id: str, latex_display: str, latex_raw: str
+) -> None:
+    """Upsert transcribed latex into the student_work table. Fire-and-forget safe."""
+    url = f"{settings.supabase_url}/rest/v1/student_work"
+    upsert_headers = {
+        **_supabase_headers(),
+        "Prefer": "resolution=merge-duplicates,return=minimal",
+    }
+    row = {
+        "user_id": user_id,
+        "document_id": document_id,
+        "question_label": question_label,
+        "latex_display": latex_display,
+        "latex_raw": latex_raw,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.post(url, json=row, headers=upsert_headers)
+    except Exception as e:
+        log.warning(f"[student-work] Failed to upsert: {e}")
+
+
 async def _download_images(urls: list[str]) -> list[bytes]:
     """Download figure images from signed Supabase storage URLs."""
     if not urls:
@@ -225,13 +349,22 @@ async def tutor_evaluate(
     # Fetch answer key (ownership verified inside)
     answer_key, question_json = await _fetch_answer_key(body.document_id, body.question_number, user.id)
 
-    # Fetch student work from database (iOS writes here on every transcription)
     question_label = f"Q{body.question_number}{body.part_label or ''}"
+
+    # Fetch and transcribe strokes directly from canvas_strokes (primary source)
+    transcribed_latex = await _fetch_and_transcribe_strokes(body.document_id, question_label, user.id)
+
+    # Fall back to student_work table (legacy iOS writes), then request body
     db_display, db_raw = await _fetch_student_work(body.document_id, question_label, user.id)
-    # Use DB value, fall back to request body for backward compat
-    student_latex = db_raw or db_display or body.student_latex
+    student_latex = transcribed_latex or db_raw or db_display or body.student_latex
     if not student_latex:
         return TutorEvaluateResponse(progress=0.0, status="idle")
+
+    # Keep student_work table in sync when we have fresh transcription
+    if transcribed_latex:
+        asyncio.create_task(_upsert_student_work(
+            body.document_id, question_label, user.id, transcribed_latex, transcribed_latex
+        ))
 
     # Resolve figure URLs from question_json (uploaded during reconstruction)
     figure_storage_urls = question_json.get("figure_storage_urls", {})
@@ -353,8 +486,9 @@ async def tutor_evaluate(
     images = await _download_images(all_figure_urls)
 
     # Build debug prompt (always included)
+    work_source = "strokes" if transcribed_latex else ("DB" if (db_raw or db_display) else "body")
     debug_prompt_text = (
-        f"=== STUDENT WORK (from {'DB' if (db_raw or db_display) else 'body'}, {question_label}) ===\n"
+        f"=== STUDENT WORK (from {work_source}, {question_label}) ===\n"
         f"{student_latex[:300]}\n\n"
         f"=== SYSTEM (cached) ===\n\n"
         + full_system
