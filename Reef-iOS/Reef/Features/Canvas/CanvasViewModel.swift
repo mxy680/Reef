@@ -331,14 +331,22 @@ final class CanvasViewModel {
         }
 
         // 1500ms after last stroke: fire eval (if tutor mode)
+        // Waits for any in-flight transcription to finish first
         guard tutorModeOn, tutorStepCount > 0 else { return }
         evalDebounceTask?.cancel()
         evalDebounceTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(1500))
             guard let self, !Task.isCancelled else { return }
+            // Wait for transcription to finish (up to 5s)
+            var waited = 0
+            while self.handwritingService.isTranscribing && waited < 50 {
+                try? await Task.sleep(for: .milliseconds(100))
+                waited += 1
+            }
+            guard !Task.isCancelled else { return }
             let (qNum, partLabel) = self.parseQuestionLabel()
             guard qNum > 0 else { return }
-            print("[debounce] Eval triggered (1500ms): step=\(self.currentTutorStepIndex)/\(self.tutorStepCount)")
+            print("[debounce] Eval triggered (1500ms+\(waited*100)ms wait): step=\(self.currentTutorStepIndex)/\(self.tutorStepCount)")
             await self.tutorEvalService.runEval(
                 latex: self.handwritingService.rawLatexResult,
                 documentId: self.document.id,
