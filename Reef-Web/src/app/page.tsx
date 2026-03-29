@@ -236,7 +236,7 @@ export default function Home() {
             <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "var(--color-surface)" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
             <p className="section-subtitle">
-              Notes, documents, AI tutoring, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.
+              We crammed notes, tutoring, and analytics into one app so you don&rsquo;t have to cram alone at 2 AM.
             </p>
           </div>
           <div className="features-cards-grid">
@@ -244,14 +244,14 @@ export default function Home() {
             <div className="features-cards-row">
               <FeaturesCard
                 variant="Double"
-                headline="PROACTIVE VOICE TUTORING"
-                subline="Talk through problems out loud. Reef listens, watches your handwriting, and responds in real-time — like a tutor sitting next to you. It even jumps in during natural pauses to nudge you in the right direction. No prompts needed."
+                headline="A TUTOR THAT ACTUALLY TALKS TO YOU"
+                subline="Not a chatbot. Reef watches your handwriting, listens to you think out loud, and jumps in when you're about to go off the rails. Like office hours, except it's 3 AM and you're in your pajamas."
                 background="var(--color-surface)"
               />
               <FeaturesCard
                 variant="Single"
-                headline="HANDWRITING RECOGNITION"
-                subline="Write math, chemistry, or prose with Apple Pencil. Reef transcribes instantly."
+                headline="READS YOUR HANDWRITING"
+                subline="Yes, even yours. Write with Apple Pencil and Reef transcribes it instantly. Math, chemistry, whatever."
                 background="rgb(255, 255, 255)"
               />
             </div>
@@ -259,14 +259,14 @@ export default function Home() {
             <div className="features-cards-row">
               <FeaturesCard
                 variant="Single"
-                headline="ALL YOUR MATERIALS IN ONE PLACE"
-                subline="Import PDFs, lecture slides, and photos. Organize by course, unit, and topic."
+                headline="ONE APP. ALL YOUR STUFF."
+                subline="PDFs, slides, notes, photos. Stop losing homework in your Downloads folder."
                 background="rgb(255, 255, 255)"
               />
               <FeaturesCard
                 variant="Double"
-                headline="ANALYTICS DASHBOARD"
-                subline="Track study time, mastery by topic, and weekly streaks. See exactly where you're strong and where you need more practice. Visualize your progress across courses, set daily study goals, and watch your streaks grow. Reef turns your effort into data so you always know where to focus next."
+                headline="ANALYTICS THAT HIT DIFFERENT"
+                subline="See exactly what you know and what you're pretending to know. Track study time, mastery by topic, and streaks. It's like Spotify Wrapped but for your GPA."
                 background="var(--color-accent)"
               />
             </div>
@@ -274,14 +274,14 @@ export default function Home() {
             <div className="features-cards-row">
               <FeaturesCard
                 variant="Double"
-                headline="HOMEWORK FORMATTING"
-                subline="Snap a photo or upload a PDF. Reef formats your homework digitally — reconstructing problems, figures, and equations so you can annotate, solve, and get step-by-step help all in one place. No more squinting at blurry scans."
+                headline="HOMEWORK, BUT MAKE IT DIGITAL"
+                subline="Upload a PDF and Reef reformats the whole thing — questions, figures, equations, all of it. Autospaced so you can actually solve it on iPad instead of printing it out like it's 2004."
                 background="var(--color-primary)"
               />
               <FeaturesCard
                 variant="Single"
                 headline="BUILT FOR APPLE PENCIL"
-                subline="Pressure sensitivity, palm rejection, and shape recognition. Feels like paper, works like magic."
+                subline="Pressure sensitivity, palm rejection, the works. Feels like paper, except your paper never had an AI tutor built in."
                 background="rgb(255, 255, 255)"
               />
             </div>
