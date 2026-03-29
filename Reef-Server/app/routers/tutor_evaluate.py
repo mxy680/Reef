@@ -338,6 +338,29 @@ async def _download_images(urls: list[str]) -> list[bytes]:
     return images
 
 
+class TranscribeRequest(BaseModel):
+    document_id: str
+    question_label: str
+
+
+class TranscribeResponse(BaseModel):
+    latex: str
+
+
+@router.post("/transcribe", response_model=TranscribeResponse)
+async def transcribe_strokes(
+    body: TranscribeRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Read strokes from canvas_strokes, transcribe via Mathpix, upsert to student_work."""
+    latex = await _fetch_and_transcribe_strokes(body.document_id, body.question_label, user.id)
+    if latex:
+        asyncio.create_task(_upsert_student_work(
+            body.document_id, body.question_label, user.id, latex, latex
+        ))
+    return TranscribeResponse(latex=latex)
+
+
 @router.post("/tutor-evaluate", response_model=TutorEvaluateResponse)
 async def tutor_evaluate(
     body: TutorEvaluateRequest,

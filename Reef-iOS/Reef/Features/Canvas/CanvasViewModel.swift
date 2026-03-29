@@ -310,20 +310,22 @@ final class CanvasViewModel {
 
     /// Called on every drawing change (fires per stroke point from PencilKit).
     /// Debounces both stroke writes (500ms) and eval (1500ms).
+    private var strokeUpsertWork: DispatchWorkItem?
+
     func onDrawingChanged(forPage pageOverride: Int? = nil) {
         guard !isApplyingRemoteStrokes else { return }
         guard showSidebar || tutorModeOn else { return }
 
         let page = pageOverride ?? currentPageIndex
 
-        // 500ms debounce for writing strokes to DB
-        strokeWriteWork?.cancel()
-        let writeWork = DispatchWorkItem { [weak self] in
+        // ~100ms debounce to detect pen lift (fires once after last point)
+        strokeUpsertWork?.cancel()
+        let upsertWork = DispatchWorkItem { [weak self] in
             guard let self else { return }
+            let drawing = self.drawingWithoutShapes(for: page)
+            let strokes = CanvasRealtimeService.extractStrokePayloads(from: drawing)
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                let drawing = self.drawingWithoutShapes(for: page)
-                let strokes = CanvasRealtimeService.extractStrokePayloads(from: drawing)
                 await self.realtimeService.writeStrokes(
                     documentId: self.document.id,
                     questionLabel: self.activeQuestionLabel ?? "Q1a",
@@ -332,21 +334,20 @@ final class CanvasViewModel {
                 )
             }
         }
-        strokeWriteWork = writeWork
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: writeWork)
+        strokeUpsertWork = upsertWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100), execute: upsertWork)
 
-        // 1500ms debounce for eval
-        guard tutorModeOn, tutorStepCount > 0 else { return }
-        evalDebounceWork?.cancel()
-        let evalWork = DispatchWorkItem { [weak self] in
+        // 500ms after last point: request transcription from server
+        strokeWriteWork?.cancel()
+        let txWork = DispatchWorkItem { [weak self] in
             guard let self else { return }
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                await self.fireEval()
+                await self.requestTranscription()
             }
         }
-        evalDebounceWork = evalWork
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500), execute: evalWork)
+        strokeWriteWork = txWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: txWork)
     }
 
     func cancelAllTasks() {
@@ -370,6 +371,39 @@ final class CanvasViewModel {
 
     func stopAllAudio() {
         tutorEvalService.stopAudio()
+    }
+
+    // MARK: - Transcription
+
+    /// Request server to transcribe strokes from canvas_strokes → student_work
+    private func requestTranscription() async {
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/transcribe") else { return }
+        guard let token = try? await supabase.auth.session.accessToken else { return }
+
+        let label = activeQuestionLabel ?? "Q1a"
+        struct TxRequest: Encodable {
+            let document_id: String
+            let question_label: String
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 15
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONEncoder().encode(TxRequest(document_id: document.id, question_label: label))
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
+            struct TxResponse: Decodable { let latex: String }
+            if let result = try? JSONDecoder().decode(TxResponse.self, from: data) {
+                print("[transcribe] \(label): \(result.latex.prefix(50))")
+            }
+        } catch {
+            print("[transcribe] Failed: \(error)")
+        }
     }
 
     // MARK: - Eval
