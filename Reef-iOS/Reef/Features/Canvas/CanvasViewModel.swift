@@ -1623,8 +1623,34 @@ final class CanvasViewModel {
 
                         print("[sim-poll] drawing strokes after: \(self.drawingManager.drawing(for: targetPage).strokes.count)")
 
-                        // Trigger transcription + eval debounce for the target page
-                        self.onDrawingChanged(forPage: targetPage)
+                        // Directly transcribe and eval (bypass debounce for simulation)
+                        self.handwritingService.currentDrawing = self.drawingWithoutShapes(for: targetPage)
+                        self.handwritingService.currentRegions = self.activeSubquestionRegions()
+                        self.handwritingService.transcribeCurrentDrawing()
+
+                        // Wait for transcription to finish (up to 5s)
+                        var txWait = 0
+                        while self.handwritingService.isTranscribing && txWait < 50 {
+                            try? await Task.sleep(for: .milliseconds(100))
+                            txWait += 1
+                        }
+
+                        // Fire eval directly
+                        let latex = self.handwritingService.rawLatexResult
+                        if !latex.isEmpty && self.tutorModeOn && self.tutorStepCount > 0 {
+                            let (qNum, partLabel) = self.parseQuestionLabel()
+                            if qNum > 0 {
+                                print("[sim-poll] Direct eval: step=\(self.currentTutorStepIndex) latex=\(latex.prefix(40))")
+                                await self.tutorEvalService.runEval(
+                                    latex: latex,
+                                    documentId: self.document.id,
+                                    questionNumber: qNum,
+                                    partLabel: partLabel,
+                                    stepIndex: self.currentTutorStepIndex,
+                                    studentImage: self.captureActiveQuestionImage()
+                                )
+                            }
+                        }
 
                         print("[sim-poll] ===== DONE =====")
                     }
