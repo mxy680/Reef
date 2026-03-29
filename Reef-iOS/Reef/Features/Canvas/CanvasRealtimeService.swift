@@ -57,7 +57,7 @@ final class CanvasSyncService {
         // Poll strokes + tutor state
         let rows: [CanvasStrokeRow] = (try? await supabase
             .from("canvas_strokes")
-            .select("question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed")
+            .select("question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed,tutor_speech_text")
             .eq("user_id", value: userId)
             .eq("document_id", value: documentId)
             .execute().value) ?? []
@@ -197,6 +197,7 @@ struct CanvasStrokeRow: Decodable {
     let tutorStatus: String?
     let tutorStep: Int?
     let tutorStepsCompleted: Int?
+    let tutorSpeechText: String?
 
     struct StrokeData: Decodable {
         let x: [Double]
@@ -212,6 +213,7 @@ struct CanvasStrokeRow: Decodable {
         case tutorStatus = "tutor_status"
         case tutorStep = "tutor_step"
         case tutorStepsCompleted = "tutor_steps_completed"
+        case tutorSpeechText = "tutor_speech_text"
     }
 }
 

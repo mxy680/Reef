@@ -314,6 +314,11 @@ final class TutorEvaluationService {
 
     // MARK: - TTS Helper
 
+    /// Public wrapper for TTS — called by CanvasViewModel when polling detects new speech
+    func speakText(_ phrase: String) async {
+        await speakPhrase(phrase)
+    }
+
     private func speakPhrase(_ phrase: String) async {
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
               let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),

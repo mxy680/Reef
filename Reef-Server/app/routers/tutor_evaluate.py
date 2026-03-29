@@ -307,6 +307,7 @@ async def _upsert_student_work(
 async def _update_tutor_state(
     document_id: str, question_label: str, user_id: str,
     progress: float, status: str, step_index: int, steps_completed: int,
+    speech_text: str = "",
 ) -> None:
     """Write tutor eval state to canvas_strokes for iOS polling. Fire-and-forget safe."""
     url = f"{settings.supabase_url}/rest/v1/canvas_strokes?user_id=eq.{user_id}&document_id=eq.{document_id}&question_label=eq.{question_label}"
@@ -317,6 +318,7 @@ async def _update_tutor_state(
                 "tutor_status": status,
                 "tutor_step": step_index,
                 "tutor_steps_completed": steps_completed,
+                "tutor_speech_text": speech_text or "",
             }, headers=_supabase_headers())
     except Exception as e:
         log.warning(f"[tutor-state] Failed to update: {e}")
@@ -617,6 +619,7 @@ async def tutor_evaluate(
         status=evaluation.status,
         step_index=body.step_index,
         steps_completed=capped_steps,
+        speech_text=speech_text or "",
     ))
 
     return TutorEvaluateResponse(

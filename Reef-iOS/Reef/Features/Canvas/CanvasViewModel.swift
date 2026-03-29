@@ -648,6 +648,14 @@ final class CanvasViewModel {
             self.tutorEvalService.stepProgress = progress
             self.tutorEvalService.status = status
 
+            // Speak TTS if there's speech text
+            if let speechText = row.tutorSpeechText, !speechText.isEmpty,
+               self.tutorEvalService.voiceEnabled {
+                Task {
+                    await self.tutorEvalService.speakText(speechText)
+                }
+            }
+
             // Advance step if completed
             if status == "completed" {
                 self.advanceTutorSteps(count: stepsCompleted)
