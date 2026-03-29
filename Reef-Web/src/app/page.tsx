@@ -357,7 +357,7 @@ export default function Home() {
                 <span className="step-badge">Step 3</span>
                 <h3 className="step-heading">TRACK YOUR MASTERY</h3>
                 <p className="step-body">
-                  After working through problems, see exactly which concepts you've mastered and which need more practice. Your analytics dashboard tracks progress across every course so you always know where to focus next.
+                  Every question you solve is graded automatically using the answer key. Your analytics dashboard breaks down performance by topic and concept, showing exactly what you&rsquo;ve mastered and what needs more work. Know where to focus before the exam, not after.
                 </p>
               </div>
               <div className="step-card step-card-blue" style={{ backgroundImage: "url('/step-mastery.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
