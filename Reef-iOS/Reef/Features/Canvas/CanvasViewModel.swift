@@ -314,7 +314,6 @@ final class CanvasViewModel {
 
     func onDrawingChanged(forPage pageOverride: Int? = nil) {
         guard !isApplyingRemoteStrokes else { return }
-        guard showSidebar || tutorModeOn else { return }
 
         let page = pageOverride ?? currentPageIndex
 
