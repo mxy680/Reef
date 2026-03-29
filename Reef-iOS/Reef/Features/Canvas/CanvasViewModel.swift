@@ -312,11 +312,13 @@ final class CanvasViewModel {
     }
 
     /// Called when the user stops drawing. Debounces transcription (500ms) and eval (1500ms).
-    func onDrawingChanged() {
+    /// Pass `forPage` to override which page's drawing is transcribed (used by simulation for cross-page strokes).
+    func onDrawingChanged(forPage pageOverride: Int? = nil) {
         guard showSidebar || tutorModeOn else { return }
 
         // Update the drawing snapshot for transcription
-        handwritingService.currentDrawing = drawingWithoutShapes(for: currentPageIndex)
+        let page = pageOverride ?? currentPageIndex
+        handwritingService.currentDrawing = drawingWithoutShapes(for: page)
         handwritingService.currentRegions = activeSubquestionRegions()
 
         // 500ms after last stroke: transcribe
@@ -1603,9 +1605,7 @@ final class CanvasViewModel {
                         print("[sim-poll] drawing strokes after: \(self.drawingManager.drawing(for: targetPage).strokes.count)")
 
                         // Trigger transcription + eval debounce for the target page
-                        self.handwritingService.currentDrawing = self.drawingWithoutShapes(for: targetPage)
-                        self.handwritingService.currentRegions = self.activeSubquestionRegions()
-                        self.onDrawingChanged()
+                        self.onDrawingChanged(forPage: targetPage)
 
                         print("[sim-poll] ===== DONE =====")
                     }
