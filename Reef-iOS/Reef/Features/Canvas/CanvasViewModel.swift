@@ -324,9 +324,10 @@ final class CanvasViewModel {
 
         // 500ms after last stroke: transcribe
         transcriptionDebounceTask?.cancel()
-        transcriptionDebounceTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(500))
-            guard let self, !Task.isCancelled else { return }
+        let txId = UUID()
+        transcriptionDebounceTask = Task { [weak self, txId] in
+            await self?.safeSleep(milliseconds: 500)
+            guard let self, self.transcriptionDebounceTask != nil else { return }
             print("[debounce] Transcription triggered (500ms)")
             self.handwritingService.transcribeCurrentDrawing()
         }
@@ -336,15 +337,15 @@ final class CanvasViewModel {
         guard tutorModeOn, tutorStepCount > 0 else { return }
         evalDebounceTask?.cancel()
         evalDebounceTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(1500))
-            guard let self, !Task.isCancelled else { return }
+            await self?.safeSleep(milliseconds: 1500)
+            guard let self, self.evalDebounceTask != nil else { return }
             // Wait for transcription to finish (up to 5s)
             var waited = 0
             while self.handwritingService.isTranscribing && waited < 50 {
-                try? await Task.sleep(for: .milliseconds(100))
+                await self.safeSleep(milliseconds: 100)
                 waited += 1
             }
-            guard !Task.isCancelled else { return }
+            guard self.evalDebounceTask != nil else { return }
             let (qNum, partLabel) = self.parseQuestionLabel()
             guard qNum > 0 else { return }
             print("[debounce] Eval triggered (1500ms+\(waited*100)ms wait): step=\(self.currentTutorStepIndex)/\(self.tutorStepCount)")
@@ -365,6 +366,16 @@ final class CanvasViewModel {
         stepSpeechTask?.cancel()
         evalDebounceTask?.cancel()
         transcriptionDebounceTask?.cancel()
+    }
+
+    /// Sleep without participating in cooperative task cancellation.
+    /// Task.sleep sets Task.isCancelled as a side effect, which kills debounce tasks.
+    private func safeSleep(milliseconds: Int) async {
+        await withCheckedContinuation { cont in
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(milliseconds)) {
+                cont.resume()
+            }
+        }
     }
 
     func stopAllAudio() {
@@ -815,8 +826,8 @@ final class CanvasViewModel {
             guard !latex.isEmpty else { return }
             evalDebounceTask?.cancel()
             evalDebounceTask = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(1))
-                guard let self, !Task.isCancelled else { return }
+                await self?.safeSleep(milliseconds: 1000)
+                guard let self, self.evalDebounceTask != nil else { return }
                 let (qNum, partLabel) = self.parseQuestionLabel()
                 guard qNum > 0 else { return }
                 print("[step-advance] FIRING eval for new step \(self.currentTutorStepIndex)")
