@@ -1486,6 +1486,47 @@ final class CanvasViewModel {
                         .from("simulation_state")
                         .upsert(stateUpdate, onConflict: "user_id")
                         .execute()
+
+                    // Check for pending commands from CLI
+                    let stateRows: [[String: String]]? = try? await supabase
+                        .from("simulation_state")
+                        .select("pending_command")
+                        .eq("user_id", value: userId)
+                        .execute().value
+                    if let cmd = stateRows?.first?["pending_command"], !cmd.isEmpty {
+                        print("[sim-cmd] Processing: \(cmd)")
+                        // Clear the command immediately
+                        try? await supabase
+                            .from("simulation_state")
+                            .update(["pending_command": ""])
+                            .eq("user_id", value: userId)
+                            .execute()
+
+                        switch cmd {
+                        case "next_question":
+                            _ = self.skipToNextQuestion()
+                        case "reset_question":
+                            self.resetCurrentQuestion()
+                        default:
+                            if cmd.hasPrefix("goto:") {
+                                let target = String(cmd.dropFirst(5))
+                                // Find and navigate to the target question
+                                let labels = self.allQuestionLabels
+                                if let idx = labels.firstIndex(of: target) {
+                                    // Navigate forward/backward to reach it
+                                    while self.activeQuestionLabel != target {
+                                        if let currentIdx = labels.firstIndex(of: self.activeQuestionLabel ?? ""),
+                                           currentIdx < idx {
+                                            _ = self.skipToNextQuestion()
+                                        } else {
+                                            self.goToPreviousQuestion()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        print("[sim-cmd] Done: \(cmd)")
+                    }
                 }
 
                 do {
@@ -1503,10 +1544,10 @@ final class CanvasViewModel {
                         let pointCount = row.strokes.reduce(0) { $0 + $1.x.count }
                         print("[sim-poll] ===== NEW ROW =====")
                         print("[sim-poll] latex: \(row.latex.prefix(50))")
+                        let targetPage = row.pageIndex ?? self.currentPageIndex
                         print("[sim-poll] strokes: \(strokeCount), points: \(pointCount)")
-                        print("[sim-poll] pageIndex: \(self.currentPageIndex)")
-                        print("[sim-poll] activeCanvasView: \(self.drawingManager.activeCanvasView != nil ? "YES" : "NIL")")
-                        print("[sim-poll] drawing strokes before: \(self.drawingManager.drawing(for: self.currentPageIndex).strokes.count)")
+                        print("[sim-poll] targetPage: \(targetPage) (currentPage: \(self.currentPageIndex))")
+                        print("[sim-poll] drawing strokes before: \(self.drawingManager.drawing(for: targetPage).strokes.count)")
 
                         let scale: Double = 2.0
                         let ink = PKInk(.pen, color: .black)
@@ -1533,27 +1574,27 @@ final class CanvasViewModel {
                             let path = PKStrokePath(controlPoints: points, creationDate: Date())
                             let pkStroke = PKStroke(ink: ink, path: path)
 
-                            var drawing = self.drawingManager.drawing(for: self.currentPageIndex)
+                            var drawing = self.drawingManager.drawing(for: targetPage)
                             drawing.strokes.append(pkStroke)
-                            self.drawingManager.setDrawing(drawing, for: self.currentPageIndex)
+                            self.drawingManager.setDrawing(drawing, for: targetPage)
 
                             // Force the PKCanvasView to update — use containerView's canvas array
-                            // (activeCanvasView is nil until user draws manually)
-                            let pageIdx = self.currentPageIndex
                             if let container = self.containerView,
-                               pageIdx < container.canvasViews.count {
-                                container.canvasViews[pageIdx].drawing = drawing
-                                print("[sim-poll] Updated canvasView[\(pageIdx)] (now \(drawing.strokes.count) strokes)")
+                               targetPage < container.canvasViews.count {
+                                container.canvasViews[targetPage].drawing = drawing
+                                print("[sim-poll] Updated canvasView[\(targetPage)] (now \(drawing.strokes.count) strokes)")
                             } else {
-                                print("[sim-poll] WARNING: no canvasView for page \(pageIdx) — container=\(self.containerView != nil), views=\(self.containerView?.canvasViews.count ?? 0)")
+                                print("[sim-poll] WARNING: no canvasView for page \(targetPage) — container=\(self.containerView != nil), views=\(self.containerView?.canvasViews.count ?? 0)")
                             }
 
                             try? await Task.sleep(for: .milliseconds(100))
                         }
 
-                        print("[sim-poll] drawing strokes after: \(self.drawingManager.drawing(for: self.currentPageIndex).strokes.count)")
+                        print("[sim-poll] drawing strokes after: \(self.drawingManager.drawing(for: targetPage).strokes.count)")
 
-                        // Trigger transcription + eval debounce (same as user drawing)
+                        // Trigger transcription + eval debounce for the target page
+                        self.handwritingService.currentDrawing = self.drawingWithoutShapes(for: targetPage)
+                        self.handwritingService.currentRegions = self.activeSubquestionRegions()
                         self.onDrawingChanged()
 
                         print("[sim-poll] ===== DONE =====")
@@ -1592,6 +1633,7 @@ final class CanvasViewModel {
         let latex: String
         let strokes: [StrokeData]
         let createdAt: String
+        let pageIndex: Int?
 
         struct StrokeData: Decodable {
             let x: [Double]
@@ -1601,6 +1643,7 @@ final class CanvasViewModel {
         enum CodingKeys: String, CodingKey {
             case id, latex, strokes
             case createdAt = "created_at"
+            case pageIndex = "page_index"
         }
     }
     #endif
