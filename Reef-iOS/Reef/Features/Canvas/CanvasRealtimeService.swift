@@ -12,7 +12,7 @@ final class CanvasRealtimeService {
     /// Timestamp of last local write — Realtime updates within 2s are our own echo
     private var lastLocalWriteTime: Date?
 
-    private var channel: RealtimeChannelV2?
+    private(set) var channel: RealtimeChannelV2?
 
     // MARK: - Subscribe (callback-based API from docs)
 

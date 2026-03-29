@@ -492,6 +492,11 @@ final class CanvasViewModel {
     }
 
     func loadAnswerKeys(forceLoad: Bool = false) async {
+        // Always subscribe to Realtime on first call (regardless of reconstruction state)
+        if realtimeService.channel == nil {
+            await realtimeService.subscribe(documentId: document.id)
+        }
+
         guard isReconstructed || forceLoad else {
             // Don't clear isLoadingAnswerKeys — loadPDF will call us again with forceLoad
             // once reconstruction completes
@@ -519,9 +524,6 @@ final class CanvasViewModel {
 
         answerKeys = result.answers
         isLoadingAnswerKeys = false
-
-        // Always subscribe to Realtime (for strokes + chat sync from simulator)
-        await realtimeService.subscribe(documentId: document.id)
 
         if !deferTutorMode && answerKeys[targetQuestion] != nil, let label = activeQuestionLabel {
             currentTutorStepIndex = 0
