@@ -1432,6 +1432,7 @@ final class CanvasViewModel {
 
     /// Send a chat message to the tutor.
     func sendTutorChat(_ message: String) {
+        syncService.lastLocalChatTime = Date()
         let label = activeQuestionLabel ?? "Q1a"
         guard label.hasPrefix("Q"), label.count >= 2 else { return }
         let numAndLabel = label.dropFirst()

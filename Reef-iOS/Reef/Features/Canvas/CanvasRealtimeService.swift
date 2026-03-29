@@ -14,6 +14,8 @@ final class CanvasSyncService {
 
     /// Last seen tutor status per question — only fire callback on change
     private var lastTutorStatus: [String: String] = [:]
+    /// Suppress polled chat messages briefly after local chat send
+    var lastLocalChatTime: Date?
 
     /// Last known stroke hash per question — skip updates if unchanged
     private var lastStrokeHash: [String: Int] = [:]
@@ -85,7 +87,11 @@ final class CanvasSyncService {
             onStrokesDeleted?()
         }
 
-        // Poll chat
+        // Poll chat (skip if we just sent a local chat — avoids duplicates)
+        if let lastChat = lastLocalChatTime, Date().timeIntervalSince(lastChat) < 5.0 {
+            return
+        }
+
         let chats: [ChatMessageRow] = (try? await supabase
             .from("chat_history")
             .select("role,text,question_label,speech_text")
