@@ -172,27 +172,24 @@ async def _append_chat(user_id: str, document_id: str, question_label: str, role
 
 
 async def _fetch_student_work(document_id: str, question_label: str, user_id: str) -> tuple[str, str]:
-    """Fetch latest student transcription from student_work table. Returns (display, raw)."""
-    headers = {
-        "apikey": settings.supabase_service_role_key,
-        "Authorization": f"Bearer {settings.supabase_service_role_key}",
-    }
-    url = f"{settings.supabase_url}/rest/v1/student_work"
+    """Fetch transcription from canvas_strokes.latex. Returns (display, raw) — both same value."""
+    url = f"{settings.supabase_url}/rest/v1/canvas_strokes"
     params = {
         "document_id": f"eq.{document_id}",
         "question_label": f"eq.{question_label}",
         "user_id": f"eq.{user_id}",
-        "select": "latex_display,latex_raw",
+        "select": "latex",
     }
     async with httpx.AsyncClient(timeout=5) as client:
-        resp = await client.get(url, params=params, headers=headers)
+        resp = await client.get(url, params=params, headers=_supabase_headers())
         if resp.status_code != 200:
             log.warning(f"[student-work] Failed to fetch: {resp.status_code}")
             return ("", "")
     rows = resp.json()
     if not rows:
         return ("", "")
-    return (rows[0].get("latex_display", ""), rows[0].get("latex_raw", ""))
+    latex = rows[0].get("latex", "")
+    return (latex, latex)
 
 
 _MATHPIX_CHUNK_SIZE = 50
@@ -299,24 +296,13 @@ async def _fetch_and_transcribe_strokes(
 async def _upsert_student_work(
     document_id: str, question_label: str, user_id: str, latex_display: str, latex_raw: str
 ) -> None:
-    """Upsert transcribed latex into the student_work table. Fire-and-forget safe."""
-    url = f"{settings.supabase_url}/rest/v1/student_work"
-    upsert_headers = {
-        **_supabase_headers(),
-        "Prefer": "resolution=merge-duplicates,return=minimal",
-    }
-    row = {
-        "user_id": user_id,
-        "document_id": document_id,
-        "question_label": question_label,
-        "latex_display": latex_display,
-        "latex_raw": latex_raw,
-    }
+    """Upsert transcription into canvas_strokes.latex. Fire-and-forget safe."""
+    url = f"{settings.supabase_url}/rest/v1/canvas_strokes?user_id=eq.{user_id}&document_id=eq.{document_id}&question_label=eq.{question_label}"
     try:
         async with httpx.AsyncClient(timeout=5) as client:
-            await client.post(url, json=row, headers=upsert_headers)
+            await client.patch(url, json={"latex": latex_display}, headers=_supabase_headers())
     except Exception as e:
-        log.warning(f"[student-work] Failed to upsert: {e}")
+        log.warning(f"[student-work] Failed to upsert latex: {e}")
 
 
 async def _download_images(urls: list[str]) -> list[bytes]:
