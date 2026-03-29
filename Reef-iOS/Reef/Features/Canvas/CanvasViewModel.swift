@@ -151,6 +151,9 @@ final class CanvasViewModel {
     let realtimeService = CanvasRealtimeService()
     let tutorEvalService = TutorEvaluationService()
     private var evalDebounceTask: Task<Void, Never>?
+    private var strokeWriteDebounceTask: Task<Void, Never>?
+    /// True while applying remote strokes from Realtime — suppresses onDrawingChanged
+    var isApplyingRemoteStrokes: Bool = false
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -305,19 +308,24 @@ final class CanvasViewModel {
         updatePendingReinforcement()
     }
 
-    /// Called when the user stops drawing. Writes strokes to DB and debounces eval (1500ms).
-    /// Pass `forPage` to override which page's drawing is used.
+    /// Called on every drawing change (fires per stroke point from PencilKit).
+    /// Debounces both stroke writes (500ms) and eval (1500ms).
     func onDrawingChanged(forPage pageOverride: Int? = nil) {
+        guard !isApplyingRemoteStrokes else { return }
         guard showSidebar || tutorModeOn else { return }
-        let page = pageOverride ?? currentPageIndex
-        let drawing = drawingWithoutShapes(for: page)
-        let strokes = CanvasRealtimeService.extractStrokePayloads(from: drawing)
 
-        // Write strokes to DB (Realtime will push to other clients)
-        Task {
-            await realtimeService.writeStrokes(
-                documentId: document.id,
-                questionLabel: activeQuestionLabel ?? "Q1a",
+        let page = pageOverride ?? currentPageIndex
+
+        // 500ms debounce for writing strokes to DB
+        strokeWriteDebounceTask?.cancel()
+        strokeWriteDebounceTask = Task { [weak self] in
+            await self?.safeSleep(milliseconds: 500)
+            guard let self, self.strokeWriteDebounceTask != nil else { return }
+            let drawing = self.drawingWithoutShapes(for: page)
+            let strokes = CanvasRealtimeService.extractStrokePayloads(from: drawing)
+            await self.realtimeService.writeStrokes(
+                documentId: self.document.id,
+                questionLabel: self.activeQuestionLabel ?? "Q1a",
                 pageIndex: page,
                 strokes: strokes
             )
@@ -338,6 +346,7 @@ final class CanvasViewModel {
         loadAnswerKeysTask?.cancel()
         stepSpeechTask?.cancel()
         evalDebounceTask?.cancel()
+        strokeWriteDebounceTask?.cancel()
         realtimeService.unsubscribe()
     }
 
@@ -543,24 +552,22 @@ final class CanvasViewModel {
                 drawing.strokes.append(stroke)
             }
 
-            let savedCallback = self.drawingManager.onDrawingChanged
-            self.drawingManager.onDrawingChanged = nil
+            self.isApplyingRemoteStrokes = true
             self.drawingManager.setDrawing(drawing, for: page)
             container.canvasViews[page].drawing = drawing
-            self.drawingManager.onDrawingChanged = savedCallback
+            self.isApplyingRemoteStrokes = false
         }
 
         // Wire Realtime stroke delete — clear canvas
         realtimeService.onStrokesDeleted = { [weak self] in
             guard let self, let container = self.containerView else { return }
             print("[Realtime] Clearing all canvas pages")
-            let savedCallback = self.drawingManager.onDrawingChanged
-            self.drawingManager.onDrawingChanged = nil
+            self.isApplyingRemoteStrokes = true
             for i in 0..<container.canvasViews.count {
                 self.drawingManager.setDrawing(PKDrawing(), for: i)
                 container.canvasViews[i].drawing = PKDrawing()
             }
-            self.drawingManager.onDrawingChanged = savedCallback
+            self.isApplyingRemoteStrokes = false
         }
 
         // Wire Realtime chat sync
