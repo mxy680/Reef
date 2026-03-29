@@ -1489,6 +1489,16 @@ final class CanvasViewModel {
                 try? await Task.sleep(for: .milliseconds(500))
                 guard let self, !Task.isCancelled else { return }
 
+                // Wrap entire poll iteration in do/catch so the task never dies
+                do { try await self.simPollIteration(userId: userId, pollCount: &pollCount) }
+                catch { print("[sim-poll] ERROR (recovered): \(error)") }
+            }
+            print("[sim-poll] Task ended")
+        }
+    }
+
+    /// Single iteration of the sim poll loop. Extracted so errors are catchable.
+    private func simPollIteration(userId: String, pollCount: inout Int) async throws {
                 // Every 2s, write tutor state back to simulation_state for CLI monitoring
                 pollCount += 1
                 if pollCount % 4 == 0 {
@@ -1531,14 +1541,14 @@ final class CanvasViewModel {
                         default:
                             if cmd.hasPrefix("goto:") {
                                 let target = String(cmd.dropFirst(5))
-                                // Find and navigate to the target question
                                 let labels = self.allQuestionLabels
                                 if let idx = labels.firstIndex(of: target) {
-                                    // Navigate forward/backward to reach it
-                                    while self.activeQuestionLabel != target {
+                                    // Navigate with bounded iterations to prevent infinite loop
+                                    for _ in 0..<labels.count {
+                                        guard self.activeQuestionLabel != target else { break }
                                         if let currentIdx = labels.firstIndex(of: self.activeQuestionLabel ?? ""),
                                            currentIdx < idx {
-                                            _ = self.skipToNextQuestion()
+                                            if self.skipToNextQuestion() == nil { break }
                                         } else {
                                             self.goToPreviousQuestion()
                                         }
@@ -1619,10 +1629,8 @@ final class CanvasViewModel {
                         print("[sim-poll] ===== DONE =====")
                     }
                 } catch {
-                    print("[sim-poll] Error: \(error)")
+                    print("[sim-poll] Stroke fetch error: \(error)")
                 }
-            }
-        }
     }
 
     func stopSimulation() async {
