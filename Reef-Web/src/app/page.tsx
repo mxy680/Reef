@@ -344,7 +344,7 @@ export default function Home() {
                 <span className="step-badge">Step 2</span>
                 <h3 className="step-heading">SOLVE WITH A TUTOR BY YOUR SIDE</h3>
                 <p className="step-body">
-                  Start solving with Apple Pencil and your tutor is right there, reading your handwriting and talking to you out loud. Wrong sign? It&rsquo;ll catch it. Confused? It&rsquo;ll ask you a question instead of just dumping the answer. It&rsquo;s like having the one friend who actually understands the material — except this one doesn&rsquo;t flake on you before the exam.
+                  Start solving with Apple Pencil and your tutor is right there, reading your handwriting and talking to you out loud. Wrong sign? It&rsquo;ll catch it. Confused? It&rsquo;ll ask you a question instead of just dumping the answer. It&rsquo;s like having the one friend who actually understands the material — except this one doesn&rsquo;t flake on you the night before finals.
                 </p>
               </div>
             </div>
