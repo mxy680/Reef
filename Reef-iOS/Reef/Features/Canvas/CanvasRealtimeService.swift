@@ -17,9 +17,12 @@ final class CanvasRealtimeService {
     func subscribe(documentId: String) async {
         unsubscribe()
 
+        // Ensure Realtime is connected
+        await supabase.realtimeV2.connect()
+
         // Subscribe to canvas_strokes changes for this document
         strokesChannel = supabase.realtimeV2.channel("strokes-\(documentId)")
-        let strokeChanges = strokesChannel!.postgresChange(
+        let strokeChanges = await strokesChannel!.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "canvas_strokes",
@@ -28,7 +31,7 @@ final class CanvasRealtimeService {
 
         // Subscribe to chat_history changes for this document
         chatChannel = supabase.realtimeV2.channel("chat-\(documentId)")
-        let chatChanges = chatChannel!.postgresChange(
+        let chatChanges = await chatChannel!.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "chat_history",
@@ -38,23 +41,29 @@ final class CanvasRealtimeService {
         try? await strokesChannel?.subscribeWithError()
         try? await chatChannel?.subscribeWithError()
 
-        let strokeStream = strokeChanges
-        let chatStream = chatChanges
         subscriptionTask = Task { [weak self] in
-            // Listen for stroke changes
+            // Listen for stroke changes in a child task
             Task { [weak self] in
-                for await change in strokeStream {
+                for await change in strokeChanges {
                     guard let self else { return }
-                    if let row = try? change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder()) {
+                    do {
+                        let row = try change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
+                        print("[Realtime] Stroke received: \(row.questionLabel) page=\(row.pageIndex)")
                         self.onStrokesReceived?(row)
+                    } catch {
+                        print("[Realtime] Stroke decode error: \(error)")
                     }
                 }
             }
             // Listen for chat changes
-            for await change in chatStream {
+            for await change in chatChanges {
                 guard let self else { return }
-                if let row = try? change.decodeRecord(as: ChatMessageRow.self, decoder: JSONDecoder()) {
+                do {
+                    let row = try change.decodeRecord(as: ChatMessageRow.self, decoder: JSONDecoder())
+                    print("[Realtime] Chat received: [\(row.role)] \(row.text.prefix(40))")
                     self.onChatMessageReceived?(row)
+                } catch {
+                    print("[Realtime] Chat decode error: \(error)")
                 }
             }
         }
@@ -158,16 +167,17 @@ final class CanvasRealtimeService {
 // MARK: - Models
 
 struct CanvasStrokeRow: Decodable {
-    let id: String
-    let userId: String
-    let documentId: String
+    let id: String?
+    let userId: String?
+    let documentId: String?
     let questionLabel: String
     let pageIndex: Int
     let strokes: [StrokeData]
-    let latex: String
-    let originX: Double
-    let originY: Double
-    let createdAt: String
+    let latex: String?
+    let originX: Double?
+    let originY: Double?
+    let createdAt: String?
+    let strokeCount: Int?
 
     struct StrokeData: Decodable {
         let x: [Double]
@@ -184,6 +194,7 @@ struct CanvasStrokeRow: Decodable {
         case originX = "origin_x"
         case originY = "origin_y"
         case createdAt = "created_at"
+        case strokeCount = "stroke_count"
     }
 }
 
