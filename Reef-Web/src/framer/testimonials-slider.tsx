@@ -1701,7 +1701,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I used to screenshot my homework, paste it into ChatGPT, then copy the answer back onto paper. I was basically a human printer. Reef ended that era.",
+															"this thing just caught a sign error i\u2019ve been staring at for 20 minutes. i\u2019m actually mad at myself",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1730,7 +1730,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"The analytics page is brutal in the best way. I thought I was cooked for thermo. Turns out I was right. But at least now I know exactly where I\u2019m cooked.",
+															"wait it reads my handwriting?? my doctor can\u2019t even read my handwriting",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1759,7 +1759,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"The tutor said \u2018are you sure about that negative sign?\u2019 and I literally heard my GPA being saved in real time. This app has better instincts than me.",
+															"i was gonna do one problem and go to bed. it\u2019s been an hour. why is this lowkey addicting",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1788,7 +1788,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"Opened Reef to do one problem before bed. Accidentally did the whole assignment. It\u2019s 3 AM now. I\u2019m not even mad. I\u2019m just confused.",
+															"my roommate saw me using it and now she wants the app. i created a monster",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1817,7 +1817,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My handwriting looks like a seismograph during an earthquake. Reef read it anyway. If this app can understand me, it can understand anyone.",
+															"it\u2019s like having a TA that actually wants to be there",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1846,7 +1846,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"The tutor goes \u2018why did you divide by zero?\u2019 and I sat there in silence for a full ten seconds. It\u2019s the accountability partner I didn\u2019t know I needed.",
+															"the voice tutor is so calm. i was spiraling over statics and it just talked me through it like it was nothing",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1875,7 +1875,65 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My study group dissolved because everyone got Reef. We don\u2019t need each other anymore. Friendships ended. GPAs thrived.",
+															"i literally said \u2018thank you\u2019 out loud to my ipad. that\u2019s where i\u2019m at",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card11-container"}
+													data-framer-name={"11"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card11-container"}
+													name={"11"}
+													nodeId={"card11"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Tyler M.",
+														id: "card11",
+														layoutId: "card11",
+														name: "11",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"ok the analytics actually called me out. i thought i was solid on circuits but apparently i\u2019m guessing on half the problems lmao",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card12-container"}
+													data-framer-name={"12"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card12-container"}
+													name={"12"}
+													nodeId={"card12"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Aisha K.",
+														id: "card12",
+														layoutId: "card12",
+														name: "12",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"i showed my mom and she said \u2018where was this when i was in school.\u2019 ma\u2019am you studied history",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1956,7 +2014,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"Uploaded my orgo problem set and it formatted every single question with space to solve. I audibly gasped. My roommate thought something was wrong.",
+															"the tutor asked me to explain my reasoning and i realized i had none. humbling but helpful",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1985,7 +2043,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"Reef talked me through triple integrals at 2 AM and didn\u2019t judge me once. My professor could never. 10/10 bedside manner.",
+															"uploaded my homework pdf and it just... formatted everything? with space to write? hello??",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2014,7 +2072,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My roommate borrowed my iPad to \u2018try Reef for one question.\u2019 That was three hours ago. I\u2019m typing this from my phone. Send help.",
+															"used reef for the first time last night. got a 92 on the quiz today. correlation is not causation but i\u2019m just saying",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2043,7 +2101,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"Opened Reef to do one problem before bed. Accidentally did the whole assignment. It\u2019s 3 AM now. I\u2019m not even mad. I\u2019m just confused.",
+															"my roommate saw me using it and now she wants the app. i created a monster",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2072,7 +2130,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My handwriting looks like a seismograph during an earthquake. Reef read it anyway. If this app can understand me, it can understand anyone.",
+															"it\u2019s like having a TA that actually wants to be there",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2101,7 +2159,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"The tutor goes \u2018why did you divide by zero?\u2019 and I sat there in silence for a full ten seconds. It\u2019s the accountability partner I didn\u2019t know I needed.",
+															"the voice tutor is so calm. i was spiraling over statics and it just talked me through it like it was nothing",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2130,7 +2188,65 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My study group dissolved because everyone got Reef. We don\u2019t need each other anymore. Friendships ended. GPAs thrived.",
+															"i literally said \u2018thank you\u2019 out loud to my ipad. that\u2019s where i\u2019m at",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card11-container"}
+													data-framer-name={"11"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card11-container"}
+													name={"11"}
+													nodeId={"card11"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Tyler M.",
+														id: "card11",
+														layoutId: "card11",
+														name: "11",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"ok the analytics actually called me out. i thought i was solid on circuits but apparently i\u2019m guessing on half the problems lmao",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card12-container"}
+													data-framer-name={"12"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card12-container"}
+													name={"12"}
+													nodeId={"card12"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Aisha K.",
+														id: "card12",
+														layoutId: "card12",
+														name: "12",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"i showed my mom and she said \u2018where was this when i was in school.\u2019 ma\u2019am you studied history",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2247,7 +2363,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I used to screenshot my homework, paste it into ChatGPT, then copy the answer back onto paper. I was basically a human printer. Reef ended that era.",
+															"this thing just caught a sign error i\u2019ve been staring at for 20 minutes. i\u2019m actually mad at myself",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2276,7 +2392,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"The analytics page is brutal in the best way. I thought I was cooked for thermo. Turns out I was right. But at least now I know exactly where I\u2019m cooked.",
+															"wait it reads my handwriting?? my doctor can\u2019t even read my handwriting",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2305,7 +2421,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"The tutor said \u2018are you sure about that negative sign?\u2019 and I literally heard my GPA being saved in real time. This app has better instincts than me.",
+															"i was gonna do one problem and go to bed. it\u2019s been an hour. why is this lowkey addicting",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2334,7 +2450,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"Uploaded my orgo problem set and it formatted every single question with space to solve. I audibly gasped. My roommate thought something was wrong.",
+															"the tutor asked me to explain my reasoning and i realized i had none. humbling but helpful",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2363,7 +2479,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"Reef talked me through triple integrals at 2 AM and didn\u2019t judge me once. My professor could never. 10/10 bedside manner.",
+															"uploaded my homework pdf and it just... formatted everything? with space to write? hello??",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2392,7 +2508,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My roommate borrowed my iPad to \u2018try Reef for one question.\u2019 That was three hours ago. I\u2019m typing this from my phone. Send help.",
+															"used reef for the first time last night. got a 92 on the quiz today. correlation is not causation but i\u2019m just saying",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2421,7 +2537,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"Opened Reef to do one problem before bed. Accidentally did the whole assignment. It\u2019s 3 AM now. I\u2019m not even mad. I\u2019m just confused.",
+															"my roommate saw me using it and now she wants the app. i created a monster",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2450,7 +2566,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My handwriting looks like a seismograph during an earthquake. Reef read it anyway. If this app can understand me, it can understand anyone.",
+															"it\u2019s like having a TA that actually wants to be there",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2479,7 +2595,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"The tutor goes \u2018why did you divide by zero?\u2019 and I sat there in silence for a full ten seconds. It\u2019s the accountability partner I didn\u2019t know I needed.",
+															"the voice tutor is so calm. i was spiraling over statics and it just talked me through it like it was nothing",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2508,7 +2624,65 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"My study group dissolved because everyone got Reef. We don\u2019t need each other anymore. Friendships ended. GPAs thrived.",
+															"i literally said \u2018thank you\u2019 out loud to my ipad. that\u2019s where i\u2019m at",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card11-container"}
+													data-framer-name={"11"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card11-container"}
+													name={"11"}
+													nodeId={"card11"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Tyler M.",
+														id: "card11",
+														layoutId: "card11",
+														name: "11",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "b26TPGj4M",
+														width: "100%",
+														XAmUHmTtB:
+															"ok the analytics actually called me out. i thought i was solid on circuits but apparently i\u2019m guessing on half the problems lmao",
+													})}
+												</SmartComponentScopedContainer>
+											</ComponentViewportProvider>,
+											<ComponentViewportProvider height={250} width={"292px"}>
+												<SmartComponentScopedContainer
+													className={"framer-card12-container"}
+													data-framer-name={"12"}
+													inComponentSlot={true}
+													layoutDependency={layoutDependency}
+													layoutId={"card12-container"}
+													name={"12"}
+													nodeId={"card12"}
+													rendersWithMotion={true}
+													scopeId={"mtBFcEYWT"}
+												>
+													{_jsx2(stdin_default, {
+														height: "100%",
+														hVNeKYaKn: "Aisha K.",
+														id: "card12",
+														layoutId: "card12",
+														name: "12",
+														style: {
+															height: "100%",
+															width: "100%",
+														},
+														variant: "cWrxg5JfH",
+														width: "100%",
+														XAmUHmTtB:
+															"i showed my mom and she said \u2018where was this when i was in school.\u2019 ma\u2019am you studied history",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
