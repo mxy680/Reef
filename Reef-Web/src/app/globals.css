@@ -190,6 +190,17 @@ footer.framer-1fiw38h {
   padding: 64px 40px;
 }
 
+/* Full-bleed breakout from section-inner */
+.full-bleed {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  overflow: hidden;
+}
+
 /* Hero */
 .hero-section {
   position: relative;

@@ -300,7 +300,9 @@ export default function Home() {
               Real students. Real reactions. Mostly unsolicited.
             </p>
           </div>
-          <TestimonialsSliderResponsive style={{ width: "100%" }} />
+          <div className="full-bleed">
+            <TestimonialsSliderResponsive style={{ width: "100%" }} />
+          </div>
         </div>
       </section>
 
