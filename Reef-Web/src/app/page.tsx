@@ -11,6 +11,7 @@ const HeaderResponsive = dynamic(() => import("../framer/header").then(m => m.de
 const FooterResponsive = dynamic(() => import("../framer/footer").then(m => m.default.Responsive), { ssr: false })
 const IntegrationsResponsive = dynamic(() => import("../framer/integrations").then(m => m.default.Responsive), { ssr: false })
 const AccordionResponsive = dynamic(() => import("../framer/accordion").then(m => m.default.Responsive), { ssr: false })
+const TestimonialsSliderResponsive = dynamic(() => import("../framer/testimonials-slider").then(m => m.default.Responsive), { ssr: false })
 
 
 export default function Home() {
@@ -289,7 +290,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. Integrations Section */}
+      {/* 5. Testimonials Section */}
+      <section className="page-section">
+        <div className="section-inner">
+          <div className="section-header">
+            <Badge fEv2mISRr="TESTIMONIALS" style={{ backgroundColor: "var(--color-accent)" }} />
+            <h2 className="section-heading">DON&rsquo;T TAKE OUR WORD FOR IT</h2>
+            <p className="section-subtitle">
+              Real students. Real reactions. Mostly unsolicited.
+            </p>
+          </div>
+          <TestimonialsSliderResponsive style={{ width: "100%" }} />
+        </div>
+      </section>
+
+      {/* 6. Integrations Section */}
       <section className="page-section">
         <div className="section-inner">
           <div className="integrations-card">

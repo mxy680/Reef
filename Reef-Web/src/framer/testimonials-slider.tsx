@@ -1690,7 +1690,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Maria Rossi",
+														hVNeKYaKn: "Josue M.",
 														id: "cOkiFZAuu",
 														layoutId: "cOkiFZAuu",
 														name: "1",
@@ -1701,7 +1701,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I launched my first course in less than a week thanks to the platform It saved me time and made everything super easy.",
+															"I used to screenshot my homework and paste it into ChatGPT. Reef just lets me write on it directly and the tutor talks to me while I solve. Way less unhinged.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1719,7 +1719,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Kevin Moretti",
+														hVNeKYaKn: "Priya S.",
 														id: "Mshosb5W4",
 														layoutId: "Mshosb5W4",
 														name: "2",
@@ -1730,7 +1730,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"Managing team training is now smooth and fully automated I don\u2019t need to chase anyone or worry about updates.",
+															"The analytics dashboard lowkey changed my life. I thought I understood thermodynamics until Reef showed me I was guessing on 60% of the problems.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1748,7 +1748,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Elena Bianchi",
+														hVNeKYaKn: "Marcus T.",
 														id: "oEogrCLTS",
 														layoutId: "oEogrCLTS",
 														name: "3",
@@ -1759,7 +1759,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I created a full academy for my students without needing a developer It was fast simple and looks professional.",
+															"My tutor caught a sign error three lines into a problem that would\u2019ve wrecked my entire solution. I didn\u2019t even ask for help. It just knew.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1829,7 +1829,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Jason Bruno",
+														hVNeKYaKn: "Emily K.",
 														id: "EmQ578SaH",
 														layoutId: "EmQ578SaH",
 														name: "4",
@@ -1840,7 +1840,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"The interface is clean and easy to use My clients enjoy the experience and I love how much control I have.",
+															"I uploaded my orgo homework and it autospaced everything perfectly. I literally gasped. No more printing PDFs like a caveman.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1858,7 +1858,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Laura Conti",
+														hVNeKYaKn: "David R.",
 														id: "xK9RbPORI",
 														layoutId: "xK9RbPORI",
 														name: "5",
@@ -1869,7 +1869,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I can finally focus on teaching instead of wasting hours on tech problems Everything just works as it should.",
+															"Reef is the reason I passed Calc III. The voice tutor walked me through triple integrals at midnight and didn\u2019t judge me once.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -1887,7 +1887,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Marco Ferrari",
+														hVNeKYaKn: "Sofia L.",
 														id: "rkGayVYGu",
 														layoutId: "rkGayVYGu",
 														name: "6",
@@ -1898,7 +1898,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"I track student progress in real time and know exactly where they need help It completely changed how I teach.",
+															"I showed my reef to my roommate and now she won\u2019t give my iPad back. We might need a family plan.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2004,7 +2004,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Maria Rossi",
+														hVNeKYaKn: "Josue M.",
 														id: "cOkiFZAuu",
 														layoutId: "cOkiFZAuu",
 														name: "1",
@@ -2015,7 +2015,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I launched my first course in less than a week thanks to the platform It saved me time and made everything super easy.",
+															"I used to screenshot my homework and paste it into ChatGPT. Reef just lets me write on it directly and the tutor talks to me while I solve. Way less unhinged.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2033,7 +2033,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Kevin Moretti",
+														hVNeKYaKn: "Priya S.",
 														id: "Mshosb5W4",
 														layoutId: "Mshosb5W4",
 														name: "2",
@@ -2044,7 +2044,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"Managing team training is now smooth and fully automated I don\u2019t need to chase anyone or worry about updates.",
+															"The analytics dashboard lowkey changed my life. I thought I understood thermodynamics until Reef showed me I was guessing on 60% of the problems.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2062,7 +2062,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Elena Bianchi",
+														hVNeKYaKn: "Marcus T.",
 														id: "oEogrCLTS",
 														layoutId: "oEogrCLTS",
 														name: "3",
@@ -2073,7 +2073,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I created a full academy for my students without needing a developer It was fast simple and looks professional.",
+															"My tutor caught a sign error three lines into a problem that would\u2019ve wrecked my entire solution. I didn\u2019t even ask for help. It just knew.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2091,7 +2091,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Jason Bruno",
+														hVNeKYaKn: "Emily K.",
 														id: "EmQ578SaH",
 														layoutId: "EmQ578SaH",
 														name: "4",
@@ -2102,7 +2102,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"The interface is clean and easy to use My clients enjoy the experience and I love how much control I have.",
+															"I uploaded my orgo homework and it autospaced everything perfectly. I literally gasped. No more printing PDFs like a caveman.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2120,7 +2120,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Laura Conti",
+														hVNeKYaKn: "David R.",
 														id: "xK9RbPORI",
 														layoutId: "xK9RbPORI",
 														name: "5",
@@ -2131,7 +2131,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "b26TPGj4M",
 														width: "100%",
 														XAmUHmTtB:
-															"I can finally focus on teaching instead of wasting hours on tech problems Everything just works as it should.",
+															"Reef is the reason I passed Calc III. The voice tutor walked me through triple integrals at midnight and didn\u2019t judge me once.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
@@ -2149,7 +2149,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												>
 													{_jsx2(stdin_default, {
 														height: "100%",
-														hVNeKYaKn: "Marco Ferrari",
+														hVNeKYaKn: "Sofia L.",
 														id: "rkGayVYGu",
 														layoutId: "rkGayVYGu",
 														name: "6",
@@ -2160,7 +2160,7 @@ var Component2 = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 														variant: "cWrxg5JfH",
 														width: "100%",
 														XAmUHmTtB:
-															"I track student progress in real time and know exactly where they need help It completely changed how I teach.",
+															"I showed my reef to my roommate and now she won\u2019t give my iPad back. We might need a family plan.",
 													})}
 												</SmartComponentScopedContainer>
 											</ComponentViewportProvider>,
