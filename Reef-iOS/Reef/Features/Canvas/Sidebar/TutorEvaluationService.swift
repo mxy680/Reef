@@ -431,6 +431,17 @@ final class TutorEvaluationService {
             isTutorSpeaking = false
         }
     }
+
+    // MARK: - Simulation Support
+
+    /// Appends messages received from the server (via sim polling) that aren't already present.
+    func appendRemoteMessages(_ messages: [TutorChatMessage]) {
+        for msg in messages {
+            if !chatMessages.contains(where: { $0.latex == msg.latex && $0.role == msg.role }) {
+                chatMessages.append(msg)
+            }
+        }
+    }
 }
 
 // MARK: - Audio Delegate

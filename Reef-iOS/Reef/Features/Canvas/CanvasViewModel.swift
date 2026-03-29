@@ -165,6 +165,7 @@ final class CanvasViewModel {
     var isSimWsConnected: Bool = false
     private var simPollTask: Task<Void, Never>?
     private var lastSimStrokeTimestamp: String = ""
+    private var lastSimChatTimestamp: String = ""
 
     // MARK: - Popover State
 
@@ -1486,14 +1487,15 @@ final class CanvasViewModel {
         handwritingService.resetSession()
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        lastSimStrokeTimestamp = isoFormatter.string(from: Date())
+        lastSimStrokeTimestamp = isoFormatter.string(from: Date().addingTimeInterval(-30))
+        lastSimChatTimestamp = isoFormatter.string(from: Date().addingTimeInterval(-30))
         print("[sim-poll] Polling simulation_strokes for \(userId) since \(lastSimStrokeTimestamp)")
 
         simPollTask = Task { [weak self] in
             var pollCount = 0
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(500))
-                guard let self, !Task.isCancelled else { return }
+                guard let self else { return }
 
                 // Wrap entire poll iteration in do/catch so the task never dies
                 do { try await self.simPollIteration(userId: userId, pollCount: &pollCount) }
@@ -1563,6 +1565,38 @@ final class CanvasViewModel {
                             }
                         }
                         print("[sim-cmd] Done: \(cmd)")
+                    }
+
+                    // Poll chat_history for new messages (from /chat endpoint)
+                    if let label = self.activeQuestionLabel {
+                        struct ChatRow: Decodable {
+                            let role: String
+                            let text: String
+                            let createdAt: String
+                            enum CodingKeys: String, CodingKey {
+                                case role, text
+                                case createdAt = "created_at"
+                            }
+                        }
+                        let chatRows: [ChatRow] = (try? await supabase
+                            .from("chat_history")
+                            .select("role,text,created_at")
+                            .eq("user_id", value: userId)
+                            .eq("document_id", value: self.document.id)
+                            .eq("question_label", value: label)
+                            .greaterThan("created_at", value: self.lastSimChatTimestamp)
+                            .order("created_at", ascending: true)
+                            .execute().value) ?? []
+
+                        if !chatRows.isEmpty {
+                            let newMessages = chatRows.compactMap { row -> TutorChatMessage? in
+                                guard let role = TutorChatMessage.Role(rawValue: row.role) else { return nil }
+                                return TutorChatMessage(role: role, latex: row.text, timestamp: Date())
+                            }
+                            self.tutorEvalService.appendRemoteMessages(newMessages)
+                            self.lastSimChatTimestamp = chatRows.last!.createdAt
+                            print("[sim-poll] Added \(newMessages.count) chat messages from DB")
+                        }
                     }
                 }
 
