@@ -202,6 +202,12 @@ footer.framer-1fiw38h {
   overflow-y: visible;
 }
 
+/* Prevent testimonial card shadow/border clipping */
+.full-bleed [data-framer-name] div,
+.full-bleed [data-framer-name] > div {
+  overflow: visible !important;
+}
+
 /* Hero */
 .hero-section {
   position: relative;
