@@ -5,12 +5,12 @@ import PencilKit
 @Observable
 @MainActor
 final class CanvasRealtimeService {
-    var onStrokesReceived: ((CanvasStrokeRow) -> Void)?
+    var onStrokesUpdated: ((CanvasStrokeRow) -> Void)?
     var onStrokesDeleted: (() -> Void)?
     var onChatMessageReceived: ((ChatMessageRow) -> Void)?
 
-    /// Set of stroke row IDs we wrote ourselves — skip these in Realtime to prevent echo loop
-    private var ownWriteIds: Set<String> = []
+    /// Timestamp of last local write — Realtime updates within 2s are our own echo
+    private var lastLocalWriteTime: Date?
 
     private var strokesChannel: RealtimeChannelV2?
     private var chatChannel: RealtimeChannelV2?
@@ -21,13 +21,12 @@ final class CanvasRealtimeService {
     func subscribe(documentId: String) async {
         unsubscribe()
 
-        // Ensure Realtime is connected
         await supabase.realtimeV2.connect()
 
-        // Subscribe to canvas_strokes changes for this document
+        // Subscribe to canvas_strokes UPDATE events (UPSERT triggers UPDATE after first insert)
         strokesChannel = supabase.realtimeV2.channel("strokes-\(documentId)")
-        let strokeInserts = await strokesChannel!.postgresChange(
-            InsertAction.self,
+        let strokeUpdates = await strokesChannel!.postgresChange(
+            UpdateAction.self,
             schema: "public",
             table: "canvas_strokes",
             filter: .eq("document_id", value: documentId)
@@ -37,10 +36,17 @@ final class CanvasRealtimeService {
             schema: "public",
             table: "canvas_strokes"
         )
+        // Also listen for INSERT (first write for a question creates the row)
+        let strokeInserts = await strokesChannel!.postgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "canvas_strokes",
+            filter: .eq("document_id", value: documentId)
+        )
 
-        // Subscribe to chat_history changes for this document
+        // Subscribe to chat_history INSERT events
         chatChannel = supabase.realtimeV2.channel("chat-\(documentId)")
-        let chatChanges = await chatChannel!.postgresChange(
+        let chatInserts = await chatChannel!.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "chat_history",
@@ -51,25 +57,35 @@ final class CanvasRealtimeService {
         try? await chatChannel?.subscribeWithError()
 
         subscriptionTask = Task { [weak self] in
-            // Listen for stroke inserts
+            // Stroke UPDATES (from simulator upserts or own echo)
             Task { [weak self] in
-                for await change in strokeInserts {
+                for await change in strokeUpdates {
                     guard let self else { return }
+                    if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 { continue }
                     do {
                         let row = try change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
-                        // Skip our own writes to prevent feedback loop
-                        if let id = row.id, self.ownWriteIds.contains(id) {
-                            print("[Realtime] Skipping own stroke write: \(id.prefix(8))")
-                            continue
-                        }
-                        print("[Realtime] Stroke received: \(row.questionLabel) page=\(row.pageIndex)")
-                        self.onStrokesReceived?(row)
+                        print("[Realtime] Stroke update: \(row.questionLabel) page=\(row.pageIndex)")
+                        self.onStrokesUpdated?(row)
                     } catch {
                         print("[Realtime] Stroke decode error: \(error)")
                     }
                 }
             }
-            // Listen for stroke deletes
+            // Stroke INSERTS (first write for a question)
+            Task { [weak self] in
+                for await change in strokeInserts {
+                    guard let self else { return }
+                    if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 { continue }
+                    do {
+                        let row = try change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
+                        print("[Realtime] Stroke insert: \(row.questionLabel) page=\(row.pageIndex)")
+                        self.onStrokesUpdated?(row)
+                    } catch {
+                        print("[Realtime] Stroke decode error: \(error)")
+                    }
+                }
+            }
+            // Stroke DELETES
             Task { [weak self] in
                 for await _ in strokeDeletes {
                     guard let self else { return }
@@ -77,12 +93,12 @@ final class CanvasRealtimeService {
                     self.onStrokesDeleted?()
                 }
             }
-            // Listen for chat changes
-            for await change in chatChanges {
+            // Chat INSERTS
+            for await change in chatInserts {
                 guard let self else { return }
                 do {
                     let row = try change.decodeRecord(as: ChatMessageRow.self, decoder: JSONDecoder())
-                    print("[Realtime] Chat received: [\(row.role)] \(row.text.prefix(40))")
+                    print("[Realtime] Chat: [\(row.role)] \(row.text.prefix(40))")
                     self.onChatMessageReceived?(row)
                 } catch {
                     print("[Realtime] Chat decode error: \(error)")
@@ -90,7 +106,7 @@ final class CanvasRealtimeService {
             }
         }
 
-        print("[Realtime] Subscribed to strokes + chat for doc=\(documentId.prefix(12))")
+        print("[Realtime] Subscribed for doc=\(documentId.prefix(12))")
     }
 
     func unsubscribe() {
@@ -106,24 +122,19 @@ final class CanvasRealtimeService {
         chatChannel = nil
     }
 
-    // MARK: - Write Strokes
+    // MARK: - Write Strokes (UPSERT — one row per question)
 
     func writeStrokes(
         documentId: String,
         questionLabel: String,
         pageIndex: Int,
-        strokes: [[String: [Double]]],
-        latex: String = "",
-        originX: Double = 30,
-        originY: Double = 150
+        strokes: [[String: [Double]]]
     ) async {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
 
-        let rowId = UUID().uuidString
-        ownWriteIds.insert(rowId)
+        lastLocalWriteTime = Date()
 
         let row: [String: AnyJSON] = [
-            "id": .string(rowId),
             "user_id": .string(userId),
             "document_id": .string(documentId),
             "question_label": .string(questionLabel),
@@ -134,21 +145,12 @@ final class CanvasRealtimeService {
                     "y": .array((stroke["y"] ?? []).map { .double($0) }),
                 ])
             }),
-            "latex": .string(latex),
-            "origin_x": .double(originX),
-            "origin_y": .double(originY),
         ]
 
         try? await supabase
             .from("canvas_strokes")
-            .insert(row)
+            .upsert(row, onConflict: "user_id,document_id,question_label")
             .execute()
-
-        // Clean up after a delay (Realtime should have delivered by then)
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(5))
-            self?.ownWriteIds.remove(rowId)
-        }
     }
 
     // MARK: - Load Existing
@@ -156,15 +158,12 @@ final class CanvasRealtimeService {
     func loadStrokes(documentId: String) async -> [CanvasStrokeRow] {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return [] }
 
-        let rows: [CanvasStrokeRow] = (try? await supabase
+        return (try? await supabase
             .from("canvas_strokes")
             .select()
             .eq("user_id", value: userId)
             .eq("document_id", value: documentId)
-            .order("created_at", ascending: true)
             .execute().value) ?? []
-
-        return rows
     }
 
     // MARK: - Clear
@@ -180,7 +179,7 @@ final class CanvasRealtimeService {
             .execute()
     }
 
-    // MARK: - Stroke Extraction Helper
+    // MARK: - Stroke Extraction
 
     static func extractStrokePayloads(from drawing: PKDrawing) -> [[String: [Double]]] {
         drawing.strokes.map { stroke in
@@ -199,17 +198,9 @@ final class CanvasRealtimeService {
 // MARK: - Models
 
 struct CanvasStrokeRow: Decodable {
-    let id: String?
-    let userId: String?
-    let documentId: String?
     let questionLabel: String
     let pageIndex: Int
     let strokes: [StrokeData]
-    let latex: String?
-    let originX: Double?
-    let originY: Double?
-    let createdAt: String?
-    let strokeCount: Int?
 
     struct StrokeData: Decodable {
         let x: [Double]
@@ -217,29 +208,19 @@ struct CanvasStrokeRow: Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id
-        case userId = "user_id"
-        case documentId = "document_id"
         case questionLabel = "question_label"
         case pageIndex = "page_index"
-        case strokes, latex
-        case originX = "origin_x"
-        case originY = "origin_y"
-        case createdAt = "created_at"
-        case strokeCount = "stroke_count"
+        case strokes
     }
 }
 
 struct ChatMessageRow: Decodable {
-    let id: String?
     let role: String
     let text: String
     let questionLabel: String
-    let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, role, text
+        case role, text
         case questionLabel = "question_label"
-        case createdAt = "created_at"
     }
 }

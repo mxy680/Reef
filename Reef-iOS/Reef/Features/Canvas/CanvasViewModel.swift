@@ -564,36 +564,31 @@ final class CanvasViewModel {
             }
         }
 
-        // Wire Realtime stroke sync
-        realtimeService.onStrokesReceived = { [weak self] row in
+        // Wire Realtime stroke sync — REPLACE canvas with external strokes (from simulator)
+        realtimeService.onStrokesUpdated = { [weak self] row in
             guard let self else { return }
             let page = row.pageIndex
             guard let container = self.containerView, page < container.canvasViews.count else { return }
 
+            // Build PKDrawing from stroke data (1:1 coordinates — no scale)
             let ink = PKInk(.pen, color: .black)
-            let scale: Double = 2.0
-            var newStrokes: [PKStroke] = []
+            var drawing = PKDrawing()
 
             for strokeData in row.strokes {
                 guard !strokeData.x.isEmpty, strokeData.x.count == strokeData.y.count else { continue }
                 let points = zip(strokeData.x, strokeData.y).enumerated().map { idx, pair in
                     PKStrokePoint(
-                        location: CGPoint(x: pair.0 * scale, y: pair.1 * scale),
+                        location: CGPoint(x: pair.0, y: pair.1),
                         timeOffset: TimeInterval(idx) * 0.01,
                         size: CGSize(width: 3, height: 3),
                         opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
                     )
                 }
                 let path = PKStrokePath(controlPoints: points, creationDate: Date())
-                newStrokes.append(PKStroke(ink: ink, path: path))
+                drawing.strokes.append(PKStroke(ink: ink, path: path))
             }
 
-            // Append to existing drawing (don't replace)
-            var drawing = self.drawingManager.drawing(for: page)
-            for stroke in newStrokes {
-                drawing.strokes.append(stroke)
-            }
-
+            // REPLACE the entire page drawing (not append)
             self.isApplyingRemoteStrokes = true
             self.drawingManager.setDrawing(drawing, for: page)
             container.canvasViews[page].drawing = drawing

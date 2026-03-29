@@ -137,28 +137,38 @@ def get_page_for_question(doc_id: str, question_label: str) -> int:
 def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
                   origin_x: float, origin_y: float, font_size: float = 14.0,
                   page_index: int = 0) -> bool:
-    """Convert LaTeX to strokes and insert into canvas_strokes table."""
-    strokes = latex_to_strokes(latex, origin_x=origin_x, origin_y=origin_y, font_size=font_size, jitter=False)
+    """Convert LaTeX to strokes and UPSERT into canvas_strokes table (read-merge-write)."""
+    new_strokes = latex_to_strokes(latex, origin_x=origin_x, origin_y=origin_y, font_size=font_size, jitter=False)
     url = ENV.get("SUPABASE_URL", "")
 
+    # Read existing strokes for this question
+    existing_strokes = []
+    resp = httpx.get(
+        f"{url}/rest/v1/canvas_strokes?user_id=eq.{user_id}&document_id=eq.{doc_id}&question_label=eq.{question_label}&select=strokes",
+        headers=supabase_headers(), timeout=5,
+    )
+    if resp.status_code == 200 and resp.json():
+        existing_strokes = resp.json()[0].get("strokes", [])
+
+    # Merge: existing + new
+    merged = existing_strokes + new_strokes
+
+    # Upsert (one row per question)
     resp = httpx.post(
         f"{url}/rest/v1/canvas_strokes",
-        headers=supabase_headers(),
+        headers={**supabase_headers(), "Prefer": "resolution=merge-duplicates"},
         json={
             "user_id": user_id,
             "document_id": doc_id,
             "question_label": question_label,
-            "strokes": strokes,
-            "latex": latex,
-            "origin_x": origin_x,
-            "origin_y": origin_y,
+            "strokes": merged,
             "page_index": page_index,
         },
         timeout=5,
     )
 
     if resp.status_code in (200, 201):
-        print(f"  ✓ Sent {len(strokes)} strokes (page {page_index}): {latex[:50]}")
+        print(f"  ✓ Sent {len(new_strokes)} strokes (page {page_index}, total {len(merged)}): {latex[:50]}")
         return True
     else:
         print(f"  ✗ Supabase error {resp.status_code}: {resp.text[:200]}")
