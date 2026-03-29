@@ -188,32 +188,74 @@ def get_question_region(doc_id: str, question_number: int, part_label: str | Non
     return 60.0, 400.0
 
 
-def show_doc_context(doc_id: str) -> tuple[str, list[dict], float]:
-    """Fetch and display question + answer key. Returns (question_label, steps, y_start)."""
+def get_all_question_labels(doc_id: str) -> list[str]:
+    """Return ordered list of all question labels (e.g. ['Q1a', 'Q1b', 'Q2a', ...])."""
     url = ENV.get("SUPABASE_URL", "")
     resp = httpx.get(
-        f"{url}/rest/v1/answer_keys?document_id=eq.{doc_id}&select=answer_text,question_json",
+        f"{url}/rest/v1/answer_keys?document_id=eq.{doc_id}&select=question_number,answer_text&order=question_number",
         headers=supabase_headers(), timeout=5,
     )
     if resp.status_code != 200 or not resp.json():
+        return []
+    labels = []
+    for row in resp.json():
+        ak = json.loads(row["answer_text"]) if isinstance(row["answer_text"], str) else row["answer_text"]
+        q_num = row["question_number"]
+        for part in ak.get("parts", []):
+            labels.append(f"Q{q_num}{part.get('label', '')}")
+        if not ak.get("parts"):
+            labels.append(f"Q{q_num}")
+    return labels
+
+
+def show_doc_context(doc_id: str, target_label: str | None = None) -> tuple[str, list[dict], float]:
+    """Fetch and display question + answer key. Returns (question_label, steps, y_start).
+    If target_label is given (e.g. 'Q2a'), show that specific part."""
+    url = ENV.get("SUPABASE_URL", "")
+
+    # Parse target label to find question number + part
+    target_qnum = None
+    target_part = None
+    if target_label and target_label.startswith("Q"):
+        rest = target_label[1:]
+        num_str = ""
+        for ch in rest:
+            if ch.isdigit():
+                num_str += ch
+            else:
+                break
+        target_qnum = int(num_str) if num_str else None
+        target_part = rest[len(num_str):] or None
+
+    query = f"{url}/rest/v1/answer_keys?document_id=eq.{doc_id}&select=answer_text,question_json"
+    if target_qnum:
+        query += f"&question_number=eq.{target_qnum}"
+    resp = httpx.get(query, headers=supabase_headers(), timeout=5)
+    if resp.status_code != 200 or not resp.json():
         print(f"  No answer key found for {doc_id}")
-        return "Q1a", [], 150.0
+        return target_label or "Q1a", [], 150.0
 
     row = resp.json()[0]
-    q_json = row.get("question_json", {})
-    if isinstance(q_json, str):
-        q_json = json.loads(q_json)
-    ak = row.get("answer_text", "")
-    if isinstance(ak, str):
-        ak = json.loads(ak)
+    q_json = json.loads(row.get("question_json", "{}")) if isinstance(row.get("question_json"), str) else row.get("question_json", {})
+    ak = json.loads(row["answer_text"]) if isinstance(row["answer_text"], str) else row["answer_text"]
 
     q_num = q_json.get("number", ak.get("question_number", 1))
     parts = ak.get("parts", [])
-    part_label = parts[0].get("label", "a") if parts else ""
-    question_label = f"Q{q_num}{part_label}"
-    steps = parts[0].get("steps", []) if parts else ak.get("steps", [])
 
-    # Get the Y position for this subquestion
+    # Find the target part
+    chosen_part = None
+    if target_part:
+        for p in parts:
+            if p.get("label") == target_part:
+                chosen_part = p
+                break
+    if not chosen_part and parts:
+        chosen_part = parts[0]
+
+    part_label = chosen_part.get("label", "") if chosen_part else ""
+    question_label = f"Q{q_num}{part_label}"
+    steps = chosen_part.get("steps", []) if chosen_part else ak.get("steps", [])
+
     y_start, y_end = get_question_region(doc_id, q_num, part_label if part_label else None)
 
     print(f"\n  Document: {doc_id}")
@@ -225,10 +267,40 @@ def show_doc_context(doc_id: str) -> tuple[str, list[dict], float]:
         print(f"      Work: {s.get('work', '')[:55]}")
     print()
 
-    # Position strokes at the answer space start (after question text)
     origin_y = y_start + 10
     print(f"  Answer space: y={y_start:.0f} to {y_end:.0f} → stroke origin Y: {origin_y:.0f}")
     return question_label, steps, origin_y
+
+
+def reset_question(user_id: str, doc_id: str, question_label: str) -> None:
+    """Clear all simulation data for a question and reset sim state."""
+    url = ENV.get("SUPABASE_URL", "")
+    headers = supabase_headers()
+    httpx.delete(f"{url}/rest/v1/simulation_strokes?user_id=eq.{user_id}", headers=headers, timeout=5)
+    httpx.delete(f"{url}/rest/v1/student_work?user_id=eq.{user_id}&document_id=eq.{doc_id}&question_label=eq.{question_label}", headers=headers, timeout=5)
+    httpx.delete(f"{url}/rest/v1/chat_history?user_id=eq.{user_id}&document_id=eq.{doc_id}&question_label=eq.{question_label}", headers=headers, timeout=5)
+    print(f"  Cleared strokes, student_work, chat_history for {question_label}")
+
+
+def navigate_to_question(user_id: str, doc_id: str, question_label: str) -> None:
+    """Update simulation_state to point to a different question."""
+    url = ENV.get("SUPABASE_URL", "")
+    httpx.post(
+        f"{url}/rest/v1/simulation_state",
+        headers={**supabase_headers(), "Prefer": "resolution=merge-duplicates"},
+        json={
+            "user_id": user_id,
+            "document_id": doc_id,
+            "question_label": question_label,
+            "step_index": "0",
+            "total_steps": "0",
+            "eval_status": "idle",
+            "eval_progress": "0.00",
+            "eval_count": "0",
+        },
+        timeout=5,
+    )
+    print(f"  Navigated to {question_label}")
 
 
 def main():
@@ -255,7 +327,7 @@ def main():
             print(f"  Auto-detected: doc={doc_id[:12]}... label={question_label} step={state['step_index']}/{state['total_steps']}")
 
     if doc_id:
-        question_label, steps, y_pos = show_doc_context(doc_id)
+        question_label, steps, y_pos = show_doc_context(doc_id, question_label)
         if args.y == 150.0:
             args.y = y_pos
         if not args.doc_id:
@@ -299,11 +371,54 @@ def main():
                 if reply:
                     print(f"  Tutor: {reply}")
                 continue
+            if latex == "/restart":
+                reset_question(args.user_id, args.doc_id, question_label)
+                y = args.y
+                print(f"  Restarted {question_label}. Y reset to {y:.0f}")
+                continue
+            if latex == "/next":
+                all_labels = get_all_question_labels(args.doc_id)
+                try:
+                    idx = all_labels.index(question_label)
+                    if idx + 1 < len(all_labels):
+                        next_label = all_labels[idx + 1]
+                        reset_question(args.user_id, args.doc_id, question_label)
+                        question_label = next_label
+                        navigate_to_question(args.user_id, args.doc_id, question_label)
+                        question_label, steps, y_pos = show_doc_context(args.doc_id, question_label)
+                        y = y_pos
+                        args.y = y_pos
+                    else:
+                        print("  Already on the last question!")
+                except ValueError:
+                    print(f"  Current label {question_label} not found in: {all_labels}")
+                continue
+            if latex.startswith("/goto "):
+                target = latex[6:].strip().upper()
+                if not target.startswith("Q"):
+                    target = "Q" + target
+                reset_question(args.user_id, args.doc_id, question_label)
+                question_label = target
+                navigate_to_question(args.user_id, args.doc_id, question_label)
+                question_label, steps, y_pos = show_doc_context(args.doc_id, question_label)
+                y = y_pos
+                args.y = y_pos
+                continue
+            if latex == "/list":
+                all_labels = get_all_question_labels(args.doc_id)
+                for lbl in all_labels:
+                    marker = " ←" if lbl == question_label else ""
+                    print(f"  {lbl}{marker}")
+                continue
             if latex == "/help":
                 print("  Commands:")
                 print("    /status         — show tutor eval state")
                 print("    /chat <msg>     — ask the tutor a question")
                 print("    /correct <N>    — inject correct work for step N")
+                print("    /restart        — clear current question and start over")
+                print("    /next           — go to next question/part")
+                print("    /goto Q2a       — jump to a specific question")
+                print("    /list           — list all questions")
                 print("    /help           — show this help")
                 print("    /quit           — exit")
                 print("    <latex>         — inject LaTeX as strokes")
