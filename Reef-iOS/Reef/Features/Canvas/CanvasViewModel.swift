@@ -150,8 +150,8 @@ final class CanvasViewModel {
     let calculatorViewModel = CalculatorViewModel()
     let realtimeService = CanvasRealtimeService()
     let tutorEvalService = TutorEvaluationService()
-    private var evalDebounceTask: Task<Void, Never>?
-    private var strokeWriteDebounceTask: Task<Void, Never>?
+    private var evalDebounceWork: DispatchWorkItem?
+    private var strokeWriteWork: DispatchWorkItem?
     /// True while applying remote strokes from Realtime — suppresses onDrawingChanged
     var isApplyingRemoteStrokes: Bool = false
     var showClearConfirmation: Bool = false
@@ -317,36 +317,44 @@ final class CanvasViewModel {
         let page = pageOverride ?? currentPageIndex
 
         // 500ms debounce for writing strokes to DB
-        strokeWriteDebounceTask?.cancel()
-        strokeWriteDebounceTask = Task { [weak self] in
-            await self?.safeSleep(milliseconds: 500)
-            guard let self, self.strokeWriteDebounceTask != nil else { return }
-            let drawing = self.drawingWithoutShapes(for: page)
-            let strokes = CanvasRealtimeService.extractStrokePayloads(from: drawing)
-            await self.realtimeService.writeStrokes(
-                documentId: self.document.id,
-                questionLabel: self.activeQuestionLabel ?? "Q1a",
-                pageIndex: page,
-                strokes: strokes
-            )
+        strokeWriteWork?.cancel()
+        let writeWork = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let drawing = self.drawingWithoutShapes(for: page)
+                let strokes = CanvasRealtimeService.extractStrokePayloads(from: drawing)
+                await self.realtimeService.writeStrokes(
+                    documentId: self.document.id,
+                    questionLabel: self.activeQuestionLabel ?? "Q1a",
+                    pageIndex: page,
+                    strokes: strokes
+                )
+            }
         }
+        strokeWriteWork = writeWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: writeWork)
 
         // 1500ms debounce for eval
         guard tutorModeOn, tutorStepCount > 0 else { return }
-        evalDebounceTask?.cancel()
-        evalDebounceTask = Task { [weak self] in
-            await self?.safeSleep(milliseconds: 1500)
-            guard let self, self.evalDebounceTask != nil else { return }
-            await self.fireEval()
+        evalDebounceWork?.cancel()
+        let evalWork = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.fireEval()
+            }
         }
+        evalDebounceWork = evalWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500), execute: evalWork)
     }
 
     func cancelAllTasks() {
         loadPDFTask?.cancel()
         loadAnswerKeysTask?.cancel()
         stepSpeechTask?.cancel()
-        evalDebounceTask?.cancel()
-        strokeWriteDebounceTask?.cancel()
+        evalDebounceWork?.cancel()
+        strokeWriteWork?.cancel()
         realtimeService.unsubscribe()
     }
 
@@ -930,13 +938,17 @@ final class CanvasViewModel {
             tutorEvalService.status = "completed"
         } else if stepsToAdvance > 0 {
             // Fire eval for the new step — the student's work is already on canvas
-            evalDebounceTask?.cancel()
-            evalDebounceTask = Task { [weak self] in
-                await self?.safeSleep(milliseconds: 1000)
-                guard let self, self.evalDebounceTask != nil else { return }
-                print("[step-advance] FIRING eval for new step \(self.currentTutorStepIndex)")
-                await self.fireEval()
+            evalDebounceWork?.cancel()
+            let advanceWork = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    print("[step-advance] FIRING eval for new step \(self.currentTutorStepIndex)")
+                    await self.fireEval()
+                }
             }
+            evalDebounceWork = advanceWork
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1000), execute: advanceWork)
         }
     }
 
@@ -1023,7 +1035,7 @@ final class CanvasViewModel {
 
         // Reset tutor state for the new question
         activeQuestionLabel = nextLabel
-        evalDebounceTask?.cancel()
+        evalDebounceWork?.cancel()
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
         restoreTutorStateForLabel(nextLabel)
@@ -1045,7 +1057,7 @@ final class CanvasViewModel {
         }
 
         activeQuestionLabel = prevLabel
-        evalDebounceTask?.cancel()
+        evalDebounceWork?.cancel()
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
         restoreTutorStateForLabel(prevLabel)
