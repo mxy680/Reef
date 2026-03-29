@@ -519,6 +519,10 @@ final class CanvasViewModel {
 
         answerKeys = result.answers
         isLoadingAnswerKeys = false
+
+        // Always subscribe to Realtime (for strokes + chat sync from simulator)
+        await realtimeService.subscribe(documentId: document.id)
+
         if !deferTutorMode && answerKeys[targetQuestion] != nil, let label = activeQuestionLabel {
             currentTutorStepIndex = 0
             tutorEvalService.resetForNextStep()
@@ -526,9 +530,6 @@ final class CanvasViewModel {
             tutorModeOn = true
             showSidebar = true
             restoreTutorStateForLabel(label)
-
-            // Subscribe to Realtime for strokes + chat sync
-            await realtimeService.subscribe(documentId: document.id)
         }
     }
 

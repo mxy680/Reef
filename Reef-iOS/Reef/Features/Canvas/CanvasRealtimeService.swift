@@ -25,23 +25,10 @@ final class CanvasRealtimeService {
 
         // Subscribe to canvas_strokes UPDATE events (UPSERT triggers UPDATE after first insert)
         strokesChannel = supabase.realtimeV2.channel("strokes-\(documentId)")
-        let strokeUpdates = await strokesChannel!.postgresChange(
-            UpdateAction.self,
-            schema: "public",
-            table: "canvas_strokes",
-            filter: .eq("document_id", value: documentId)
-        )
-        let strokeDeletes = await strokesChannel!.postgresChange(
-            DeleteAction.self,
+        let strokeChanges = await strokesChannel!.postgresChange(
+            AnyAction.self,
             schema: "public",
             table: "canvas_strokes"
-        )
-        // Also listen for INSERT (first write for a question creates the row)
-        let strokeInserts = await strokesChannel!.postgresChange(
-            InsertAction.self,
-            schema: "public",
-            table: "canvas_strokes",
-            filter: .eq("document_id", value: documentId)
         )
 
         // Subscribe to chat_history INSERT events
@@ -53,44 +40,36 @@ final class CanvasRealtimeService {
             filter: .eq("document_id", value: documentId)
         )
 
-        try? await strokesChannel?.subscribeWithError()
+        do {
+            try await strokesChannel?.subscribeWithError()
+            print("[Realtime] Strokes channel subscribed OK")
+        } catch {
+            print("[Realtime] Strokes channel subscribe FAILED: \(error)")
+        }
         try? await chatChannel?.subscribeWithError()
 
         subscriptionTask = Task { [weak self] in
-            // Stroke UPDATES (from simulator upserts or own echo)
+            // All canvas_strokes changes (INSERT, UPDATE, DELETE)
             Task { [weak self] in
-                for await change in strokeUpdates {
+                for await change in strokeChanges {
                     guard let self else { return }
-                    if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 { continue }
-                    do {
-                        let row = try change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
-                        print("[Realtime] Stroke update: \(row.questionLabel) page=\(row.pageIndex)")
-                        self.onStrokesUpdated?(row)
-                    } catch {
-                        print("[Realtime] Stroke decode error: \(error)")
+
+                    // Skip own writes (within 2s of last local write)
+                    if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 {
+                        continue
                     }
-                }
-            }
-            // Stroke INSERTS (first write for a question)
-            Task { [weak self] in
-                for await change in strokeInserts {
-                    guard let self else { return }
-                    if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 { continue }
-                    do {
-                        let row = try change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
-                        print("[Realtime] Stroke insert: \(row.questionLabel) page=\(row.pageIndex)")
-                        self.onStrokesUpdated?(row)
-                    } catch {
-                        print("[Realtime] Stroke decode error: \(error)")
+
+                    switch change {
+                    case .insert(let action):
+                        print("[Realtime] Stroke INSERT")
+                        self.decodeAndDeliverStroke(action)
+                    case .update(let action):
+                        print("[Realtime] Stroke UPDATE")
+                        self.decodeAndDeliverStroke(action)
+                    case .delete:
+                        print("[Realtime] Strokes DELETE")
+                        self.onStrokesDeleted?()
                     }
-                }
-            }
-            // Stroke DELETES
-            Task { [weak self] in
-                for await _ in strokeDeletes {
-                    guard let self else { return }
-                    print("[Realtime] Strokes deleted")
-                    self.onStrokesDeleted?()
                 }
             }
             // Chat INSERTS
@@ -107,6 +86,26 @@ final class CanvasRealtimeService {
         }
 
         print("[Realtime] Subscribed for doc=\(documentId.prefix(12))")
+    }
+
+    private func decodeAndDeliverStroke(_ action: InsertAction) {
+        do {
+            let row = try action.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
+            print("[Realtime] Stroke: \(row.questionLabel) page=\(row.pageIndex) strokes=\(row.strokes.count)")
+            onStrokesUpdated?(row)
+        } catch {
+            print("[Realtime] Stroke decode error: \(error)")
+        }
+    }
+
+    private func decodeAndDeliverStroke(_ action: UpdateAction) {
+        do {
+            let row = try action.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
+            print("[Realtime] Stroke: \(row.questionLabel) page=\(row.pageIndex) strokes=\(row.strokes.count)")
+            onStrokesUpdated?(row)
+        } catch {
+            print("[Realtime] Stroke decode error: \(error)")
+        }
     }
 
     func unsubscribe() {
