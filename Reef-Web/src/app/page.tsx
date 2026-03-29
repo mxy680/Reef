@@ -322,7 +322,7 @@ export default function Home() {
                 <span className="step-badge">Step 1</span>
                 <h3 className="step-heading">UPLOAD YOUR ASSIGNMENTS</h3>
                 <p className="step-body">
-                  Drop in your homework PDFs and Reef intelligently autospaces each question, giving you plenty of room to solve it with Apple Pencil. Answer keys are also generated for every question and given to your AI tutor as a reference so it can check your work in real time.
+                  Drop in a homework PDF and Reef does the thing your printer never could — it autospaces every question so you actually have room to work. Answer keys get generated automatically and handed to your AI tutor, because unlike your group chat, it actually reads them.
                 </p>
               </div>
               <div className="step-card step-card-surface" style={{ backgroundImage: "url('/step-upload.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
@@ -344,7 +344,7 @@ export default function Home() {
                 <span className="step-badge">Step 2</span>
                 <h3 className="step-heading">SOLVE WITH A TUTOR BY YOUR SIDE</h3>
                 <p className="step-body">
-                  Open a question and start solving with Apple Pencil, just like you would on paper. Reef&rsquo;s AI tutor reads your handwriting in real time, understands the math and science behind it, and talks to you about your work out loud. It catches mistakes as you make them, asks follow-up questions to deepen your understanding, and nudges you toward the answer without giving it away.
+                  Start solving with Apple Pencil and your tutor is right there, reading your handwriting and talking to you out loud. Wrong sign? It&rsquo;ll catch it. Confused? It&rsquo;ll ask you a question instead of just dumping the answer. It&rsquo;s like having the one friend who actually understands the material — except this one doesn&rsquo;t flake on you before the exam.
                 </p>
               </div>
             </div>
@@ -364,7 +364,7 @@ export default function Home() {
                 <span className="step-badge">Step 3</span>
                 <h3 className="step-heading">TRACK YOUR MASTERY</h3>
                 <p className="step-body">
-                  Every question you solve is graded automatically using the answer key. Your analytics dashboard breaks down performance by topic and concept, so you always know exactly what you&rsquo;ve mastered and where to focus before the exam.
+                  Every question gets graded automatically, so you can stop lying to yourself about how ready you are. Your dashboard breaks it all down by topic — what you&rsquo;ve actually mastered, what you&rsquo;re guessing on, and what you should probably look at again before you walk into that exam room.
                 </p>
               </div>
               <div className="step-card step-card-blue" style={{ backgroundImage: "url('/step-mastery.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
