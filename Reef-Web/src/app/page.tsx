@@ -146,7 +146,7 @@ export default function Home() {
       <section className="page-section hero-section">
         <div className="section-inner">
           <div className="hero-content">
-            <Badge fEv2mISRr="BUILT FOR IPAD" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="BUILT FOR IPAD" style={{ backgroundColor: "var(--color-surface)" }} />
             <h1 className="hero-heading">Stay afloat this finals season.</h1>
             <p className="hero-subtitle">
               Stop switching apps. Stop waiting for office hours. Get real-time help the moment you need it.
@@ -200,7 +200,7 @@ export default function Home() {
       <section className="page-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "var(--color-surface)" }} />
+            <Badge fEv2mISRr="THE PROBLEM" style={{ backgroundColor: "var(--color-accent)" }} />
             <h2 className="section-heading">STUDYING SHOULDN&rsquo;T FEEL THIS BROKEN</h2>
             <p className="section-subtitle">
               Every night, millions of students get stuck on practice problems with no one to help. They bounce between apps, lose focus, and give up before they actually learn.
@@ -233,7 +233,7 @@ export default function Home() {
       <section id="benefits" className="page-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="FEATURES" style={{ backgroundColor: "var(--color-surface)" }} />
             <h2 className="section-heading">EVERYTHING YOU NEED IN ONE STUDY APP</h2>
             <p className="section-subtitle">
               Notes, documents, AI tutoring, and progress tracking all live inside one app. No more jumping between five tools to get through a problem set.
@@ -295,7 +295,7 @@ export default function Home() {
           <div className="integrations-card">
             <IntegrationsResponsive style={{ width: "100%" }} />
             <div className="integrations-text">
-              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "var(--color-surface)" }} />
+              <Badge fEv2mISRr="BUILT FOR STEM" style={{ backgroundColor: "var(--color-accent)" }} />
               <h2 className="section-heading">WORKS ACROSS EVERY SUBJECT YOU&rsquo;RE TAKING</h2>
               <p className="section-subtitle">
                 From calculus to organic chemistry to circuit analysis, Reef understands the notation and concepts across your STEM courses.
@@ -309,7 +309,7 @@ export default function Home() {
       <section id="how-it-work-1" className="page-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="HOW IT WORKS" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="HOW IT WORKS" style={{ backgroundColor: "var(--color-surface)" }} />
             <h2 className="section-heading">FROM UPLOAD TO MASTERY IN THREE STEPS</h2>
             <p className="section-subtitle">
               No setup, no learning curve. Drop in your homework and start solving with an AI tutor by your side.
@@ -377,7 +377,7 @@ export default function Home() {
       <section className="page-section pricing-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "var(--color-surface)" }} />
+            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "var(--color-accent)" }} />
             <h2 className="section-heading">Free while we&rsquo;re in beta.</h2>
             <p className="section-subtitle">
               Everything is free right now. When we launch, you&rsquo;ll be able to choose a plan that fits how you study.
@@ -428,7 +428,7 @@ export default function Home() {
       <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "var(--color-surface)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
@@ -440,7 +440,7 @@ export default function Home() {
       <section className="page-section cta-section">
         <div className="section-inner">
           <div className="cta-card">
-            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "var(--color-surface)" }} />
+            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "var(--color-accent)" }} />
             <h2 className="cta-heading">STAY IN THE LOOP</h2>
             <p className="cta-subtitle">
               Get early access, product updates, and study tips delivered straight to your inbox.
