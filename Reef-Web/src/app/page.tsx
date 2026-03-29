@@ -266,7 +266,7 @@ export default function Home() {
               <FeaturesCard
                 variant="Double"
                 headline="ANALYTICS THAT HIT DIFFERENT"
-                subline="See exactly what you know and what you're pretending to know. Track study time, mastery by topic, and streaks. Every question you solve gets graded automatically, so you get real data on where you're strong and where you need to lock in. It's like Spotify Wrapped but for your GPA."
+                subline="See exactly what you know and what you're pretending to know. Track study time, mastery by topic, and streaks. Every question you solve gets graded automatically, so you get real data on where you're strong and where you need to lock in. Watch your progress across every course, set study goals, and finally have proof that you did, in fact, study. It's like Spotify Wrapped but for your GPA."
                 background="var(--color-accent)"
               />
             </div>
@@ -281,7 +281,7 @@ export default function Home() {
               <FeaturesCard
                 variant="Single"
                 headline="MY REEF"
-                subline="Study more, unlock sea creatures, grow your reef. It's basically an aquarium you earn by doing homework. Your mom would be so proud."
+                subline="Study more, unlock sea creatures, grow your reef. It's basically an aquarium you earn by doing homework."
                 background="rgb(255, 255, 255)"
               />
             </div>
