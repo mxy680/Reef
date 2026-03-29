@@ -808,7 +808,8 @@ async def tutor_chat(
               metadata={"document_id": body.document_id, "question": body.question_number}))
 
     # Write chat messages to DB (fire-and-forget)
-    asyncio.create_task(_append_chat(user.id, body.document_id, chat_question_label, "student", body.user_message))
+    # Write student message first (await), then answer, so ordering is preserved
+    await _append_chat(user.id, body.document_id, chat_question_label, "student", body.user_message)
     asyncio.create_task(_append_chat(user.id, body.document_id, chat_question_label, "answer", output.reply, speech_text=output.speech))
 
     # If the LLM detected a problem data correction, regenerate the answer key
