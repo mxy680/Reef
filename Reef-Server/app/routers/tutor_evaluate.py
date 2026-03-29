@@ -565,9 +565,25 @@ async def tutor_chat(
     if chat_history_source:
         lines = []
         for msg in chat_history_source[-10:]:
-            label = "Student" if msg["role"] == "student" else "Tutor"
+            label = {
+                "student": "Student",
+                "error": "Tutor (flagged a mistake)",
+                "reinforcement": "Tutor (confirmed step correct)",
+                "answer": "Tutor (chat reply)",
+            }.get(msg["role"], msg["role"])
             lines.append(f"<<<{label.upper()}_MSG>>>\n{msg['text']}\n<<</{label.upper()}_MSG>>>")
         history_text = "\n".join(lines)
+
+    # Extract recent eval feedback (last 5 error/reinforcement entries) as ground-truth context
+    eval_entries = [m for m in chat_history_source if m["role"] in ("error", "reinforcement")][-5:]
+    if eval_entries:
+        eval_lines = []
+        for msg in eval_entries:
+            label = "Flagged mistake" if msg["role"] == "error" else "Confirmed correct"
+            eval_lines.append(f"- [{label}]: {msg['text']}")
+        recent_eval_feedback = "\n".join(eval_lines)
+    else:
+        recent_eval_feedback = "(none)"
 
     prompt = TUTOR_CHAT_PROMPT.format(
         question_text=f"Question {answer_key.question_number}",
@@ -576,6 +592,7 @@ async def tutor_chat(
         student_work=delimited_student_work,
         conversation_history=history_text or "(no prior conversation)",
         user_message=delimited_user_message,
+        recent_eval_feedback=recent_eval_feedback,
     )
 
     # Include student drawing if provided
