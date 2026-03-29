@@ -379,9 +379,9 @@ final class CanvasViewModel {
         isLoadingAnswerKeys = true
         let repo = SupabaseAnswerKeyRepository()
 
-        // Always start on Q1a
+        // Restore saved question or default to Q1a
         if activeQuestionLabel == nil {
-            activeQuestionLabel = "Q1a"
+            activeQuestionLabel = savedState?.activeQuestionLabel ?? "Q1a"
         }
         let targetQuestion = activeQuestionNumber
 
@@ -1392,7 +1392,8 @@ final class CanvasViewModel {
             overlaySettings: overlaySettings,
             currentPageIndex: currentPageIndex,
             drawingDataByPage: drawingData,
-            tutorProgress: tutorState.isEmpty ? nil : tutorState
+            tutorProgress: tutorState.isEmpty ? nil : tutorState,
+            activeQuestionLabel: activeQuestionLabel
         )
 
         Task.detached {

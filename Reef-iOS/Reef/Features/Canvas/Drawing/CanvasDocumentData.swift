@@ -12,6 +12,8 @@ struct CanvasDocumentData: Codable {
     let drawingDataByPage: [String: Data]
     /// Tutor progress per question/subquestion. Key format: "Q1a", "Q2b", etc.
     let tutorProgress: [String: TutorStepState]?
+    /// Last active question label so we resume where the user left off.
+    let activeQuestionLabel: String?
 }
 
 // MARK: - Tutor Step State (persisted per question/subquestion)
