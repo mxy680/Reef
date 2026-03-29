@@ -377,7 +377,7 @@ export default function Home() {
       <section className="page-section pricing-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="PRICING" style={{ backgroundColor: "var(--color-surface)" }} />
             <h2 className="section-heading">Free while we&rsquo;re in beta.</h2>
             <p className="section-subtitle">
               Everything is free right now. When we launch, you&rsquo;ll be able to choose a plan that fits how you study.
@@ -428,7 +428,7 @@ export default function Home() {
       <section id="faq" className="page-section faq-section">
         <div className="section-inner">
           <div className="section-header">
-            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "var(--color-surface)" }} />
+            <Badge fEv2mISRr="FAQ" style={{ backgroundColor: "var(--color-accent)" }} />
             <h2 className="section-heading">Common questions answered clearly</h2>
             <p className="section-subtitle">Everything you need to know before diving in.</p>
           </div>
@@ -440,7 +440,7 @@ export default function Home() {
       <section className="page-section cta-section">
         <div className="section-inner">
           <div className="cta-card">
-            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "var(--color-accent)" }} />
+            <Badge fEv2mISRr="NEWSLETTER" style={{ backgroundColor: "var(--color-surface)" }} />
             <h2 className="cta-heading">STAY IN THE LOOP</h2>
             <p className="cta-subtitle">
               Get early access, product updates, and study tips delivered straight to your inbox.
