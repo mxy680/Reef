@@ -550,6 +550,19 @@ final class CanvasViewModel {
             self.drawingManager.onDrawingChanged = savedCallback
         }
 
+        // Wire Realtime stroke delete — clear canvas
+        realtimeService.onStrokesDeleted = { [weak self] in
+            guard let self, let container = self.containerView else { return }
+            print("[Realtime] Clearing all canvas pages")
+            let savedCallback = self.drawingManager.onDrawingChanged
+            self.drawingManager.onDrawingChanged = nil
+            for i in 0..<container.canvasViews.count {
+                self.drawingManager.setDrawing(PKDrawing(), for: i)
+                container.canvasViews[i].drawing = PKDrawing()
+            }
+            self.drawingManager.onDrawingChanged = savedCallback
+        }
+
         // Wire Realtime chat sync
         realtimeService.onChatMessageReceived = { [weak self] row in
             guard let self else { return }

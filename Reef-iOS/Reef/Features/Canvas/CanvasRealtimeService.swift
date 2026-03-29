@@ -6,6 +6,7 @@ import PencilKit
 @MainActor
 final class CanvasRealtimeService {
     var onStrokesReceived: ((CanvasStrokeRow) -> Void)?
+    var onStrokesDeleted: (() -> Void)?
     var onChatMessageReceived: ((ChatMessageRow) -> Void)?
 
     private var strokesChannel: RealtimeChannelV2?
@@ -22,11 +23,16 @@ final class CanvasRealtimeService {
 
         // Subscribe to canvas_strokes changes for this document
         strokesChannel = supabase.realtimeV2.channel("strokes-\(documentId)")
-        let strokeChanges = await strokesChannel!.postgresChange(
+        let strokeInserts = await strokesChannel!.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "canvas_strokes",
             filter: .eq("document_id", value: documentId)
+        )
+        let strokeDeletes = await strokesChannel!.postgresChange(
+            DeleteAction.self,
+            schema: "public",
+            table: "canvas_strokes"
         )
 
         // Subscribe to chat_history changes for this document
@@ -42,9 +48,9 @@ final class CanvasRealtimeService {
         try? await chatChannel?.subscribeWithError()
 
         subscriptionTask = Task { [weak self] in
-            // Listen for stroke changes in a child task
+            // Listen for stroke inserts
             Task { [weak self] in
-                for await change in strokeChanges {
+                for await change in strokeInserts {
                     guard let self else { return }
                     do {
                         let row = try change.decodeRecord(as: CanvasStrokeRow.self, decoder: JSONDecoder())
@@ -53,6 +59,14 @@ final class CanvasRealtimeService {
                     } catch {
                         print("[Realtime] Stroke decode error: \(error)")
                     }
+                }
+            }
+            // Listen for stroke deletes
+            Task { [weak self] in
+                for await _ in strokeDeletes {
+                    guard let self else { return }
+                    print("[Realtime] Strokes deleted")
+                    self.onStrokesDeleted?()
                 }
             }
             // Listen for chat changes
