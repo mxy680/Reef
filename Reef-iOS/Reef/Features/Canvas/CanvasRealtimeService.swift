@@ -11,6 +11,9 @@ final class CanvasSyncService {
     var onStrokesDeleted: (() -> Void)?
     var onChatMessageReceived: ((ChatMessageRow) -> Void)?
     var onTutorStateChanged: ((CanvasStrokeRow) -> Void)?
+    #if DEBUG
+    var onChunkBboxesUpdated: (([[Double]]) -> Void)?
+    #endif
 
     /// Last seen tutor status per question — only fire callback on change
     private var lastTutorStatus: [String: String] = [:]
@@ -72,9 +75,14 @@ final class CanvasSyncService {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
 
         // Poll strokes + tutor state
+        #if DEBUG
+        let selectColumns = "question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed,tutor_speech_text,transcription_chunks"
+        #else
+        let selectColumns = "question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed,tutor_speech_text"
+        #endif
         let rows: [CanvasStrokeRow] = (try? await supabase
             .from("canvas_strokes")
-            .select("question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed,tutor_speech_text")
+            .select(selectColumns)
             .eq("user_id", value: userId)
             .eq("document_id", value: documentId)
             .execute().value) ?? []
@@ -94,6 +102,14 @@ final class CanvasSyncService {
                     onTutorStateChanged?(row)
                 }
             }
+
+            #if DEBUG
+            // Deliver chunk bboxes for debug overlay
+            if let chunks = row.transcriptionChunks {
+                let bboxes = chunks.compactMap { $0.bbox }
+                onChunkBboxesUpdated?(bboxes)
+            }
+            #endif
         }
 
         // If we had rows before but now don't, something was deleted
@@ -222,6 +238,12 @@ final class CanvasSyncService {
 
 // MARK: - Models
 
+struct ChunkInfo: Decodable {
+    let bbox: [Double]?
+    let fingerprint: String?
+    let latex: String?
+}
+
 struct CanvasStrokeRow: Decodable {
     let questionLabel: String
     let pageIndex: Int
@@ -232,6 +254,9 @@ struct CanvasStrokeRow: Decodable {
     let tutorStep: Int?
     let tutorStepsCompleted: Int?
     let tutorSpeechText: String?
+    #if DEBUG
+    let transcriptionChunks: [ChunkInfo]?
+    #endif
 
     struct StrokeData: Decodable {
         let x: [Double]
@@ -248,6 +273,9 @@ struct CanvasStrokeRow: Decodable {
         case tutorStep = "tutor_step"
         case tutorStepsCompleted = "tutor_steps_completed"
         case tutorSpeechText = "tutor_speech_text"
+        #if DEBUG
+        case transcriptionChunks = "transcription_chunks"
+        #endif
     }
 }
 

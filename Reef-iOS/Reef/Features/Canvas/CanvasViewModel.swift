@@ -206,6 +206,11 @@ final class CanvasViewModel {
     var showDebugPrompt: Bool = false
     var debugTapCount: Int = 0
     var debugTapResetTask: Task<Void, Never>?
+    #if DEBUG
+    /// Bounding boxes of transcription clusters in PencilKit coordinate space.
+    /// Each element is [min_x, min_y, max_x, max_y].
+    var chunkBboxes: [[Double]] = []
+    #endif
     var hintMidX: CGFloat = 0
     var revealMidX: CGFloat = 0
 
@@ -672,6 +677,13 @@ final class CanvasViewModel {
                 self.advanceTutorSteps(count: stepsCompleted)
             }
         }
+
+        #if DEBUG
+        syncService.onChunkBboxesUpdated = { [weak self] bboxes in
+            guard let self else { return }
+            self.chunkBboxes = bboxes
+        }
+        #endif
 
         loadPDFTask = Task { await loadPDF() }
         loadAnswerKeysTask = Task { await loadAnswerKeys() }

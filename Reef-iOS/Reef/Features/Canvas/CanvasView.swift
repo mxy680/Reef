@@ -139,6 +139,15 @@ struct CanvasView: View {
                 .zIndex(50)
             }
 
+            // Debug chunk bbox overlay — shows spatial clustering regions from server
+            #if DEBUG
+            if !viewModel.chunkBboxes.isEmpty {
+                ChunkBboxOverlay(bboxes: viewModel.chunkBboxes)
+                    .allowsHitTesting(false)
+                    .zIndex(55)
+            }
+            #endif
+
             // Debug prompt panel
             if viewModel.showDebugPrompt {
                 VStack(alignment: .leading, spacing: 0) {
@@ -332,6 +341,38 @@ struct CanvasView: View {
         }
     }
 }
+
+// MARK: - Debug Chunk Bbox Overlay
+
+#if DEBUG
+/// Renders red bordered rectangles at the cluster bounding box positions.
+/// Bboxes are in PencilKit coordinate space (same as stroke x/y values), so they
+/// render 1:1 on the canvas without any coordinate transformation.
+/// Each bbox is [min_x, min_y, max_x, max_y].
+private struct ChunkBboxOverlay: View {
+    let bboxes: [[Double]]
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                ForEach(Array(bboxes.enumerated()), id: \.offset) { _, bbox in
+                    if bbox.count == 4 {
+                        let minX = CGFloat(bbox[0])
+                        let minY = CGFloat(bbox[1])
+                        let width = CGFloat(bbox[2]) - minX
+                        let height = CGFloat(bbox[3]) - minY
+                        Rectangle()
+                            .stroke(Color.red, lineWidth: 2)
+                            .frame(width: max(width, 1), height: max(height, 1))
+                            .offset(x: minX, y: minY)
+                    }
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+        }
+    }
+}
+#endif
 
 // MARK: - Share Sheet
 

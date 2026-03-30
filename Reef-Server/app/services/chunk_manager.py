@@ -1,62 +1,100 @@
-"""Semantic chunked transcription manager.
-
-Splits handwriting strokes into semantic chunks, caches transcription results
-per chunk fingerprint, and merges/seals chunks based on LaTeX completeness.
-
-This avoids re-transcribing unchanged strokes on every evaluation call.
-"""
+"""Spatial clustering for chunked transcription."""
 
 import asyncio
 import hashlib
 import json
 import logging
-from collections.abc import Awaitable, Callable
-from dataclasses import asdict, dataclass
-
-from app.services.latex_completeness import is_semantically_complete
+import math
+from dataclasses import dataclass
+from typing import Awaitable, Callable
 
 log = logging.getLogger(__name__)
 
-INITIAL_CHUNK_SIZE = 20
-MAX_CHUNK_SIZE = 60
+DISTANCE_THRESHOLD = 50.0  # points (~0.5 inch)
 
 
-@dataclass
-class ChunkMeta:
-    start_index: int
-    end_index: int
-    fingerprint: str
-    latex: str
-    sealed: bool
+def _stroke_bbox(stroke: dict) -> tuple[float, float, float, float]:
+    """Return (min_x, min_y, max_x, max_y) for a stroke."""
+    xs, ys = stroke.get("x", []), stroke.get("y", [])
+    if not xs or not ys:
+        return (0, 0, 0, 0)
+    return (min(xs), min(ys), max(xs), max(ys))
 
-    def to_dict(self) -> dict:
-        return asdict(self)
 
-    @classmethod
-    def from_dict(cls, d: dict) -> "ChunkMeta":
-        return cls(
-            start_index=d["start_index"],
-            end_index=d["end_index"],
-            fingerprint=d["fingerprint"],
-            latex=d.get("latex", ""),
-            sealed=d.get("sealed", False),
-        )
+def _bbox_distance(a: tuple, b: tuple) -> float:
+    """Minimum distance between two axis-aligned bounding boxes. 0 if overlapping."""
+    gap_x = max(0, a[0] - b[2], b[0] - a[2])
+    gap_y = max(0, a[1] - b[3], b[1] - a[3])
+    return math.sqrt(gap_x * gap_x + gap_y * gap_y)
+
+
+def _union_bbox(a: tuple, b: tuple) -> tuple:
+    return (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
 
 
 def _fingerprint_strokes(strokes: list[dict]) -> str:
-    """Produce a 16-char MD5 hex fingerprint for a list of stroke dicts."""
     canonical = json.dumps(
-        [
-            {
-                "x": [round(v, 2) for v in s["x"]],
-                "y": [round(v, 2) for v in s["y"]],
-            }
-            for s in strokes
-        ],
-        sort_keys=True,
-        separators=(",", ":"),
+        [{"x": [round(v, 2) for v in s["x"]], "y": [round(v, 2) for v in s["y"]]} for s in strokes],
+        sort_keys=True, separators=(",", ":")
     )
     return hashlib.md5(canonical.encode()).hexdigest()[:16]
+
+
+@dataclass
+class Cluster:
+    stroke_indices: list[int]
+    bbox: tuple[float, float, float, float]
+
+    def add_stroke(self, index: int, stroke_bbox: tuple):
+        self.stroke_indices.append(index)
+        self.bbox = _union_bbox(self.bbox, stroke_bbox)
+
+
+def _cluster_strokes(all_strokes: list[dict]) -> list[Cluster]:
+    """Group strokes into spatial clusters based on bounding box proximity."""
+    clusters: list[Cluster] = []
+
+    for i, stroke in enumerate(all_strokes):
+        bbox = _stroke_bbox(stroke)
+        if bbox == (0, 0, 0, 0):
+            continue
+
+        # Find nearest cluster
+        best_cluster = None
+        best_dist = float("inf")
+        for cluster in clusters:
+            d = _bbox_distance(bbox, cluster.bbox)
+            if d < best_dist:
+                best_dist = d
+                best_cluster = cluster
+
+        if best_cluster is not None and best_dist <= DISTANCE_THRESHOLD:
+            best_cluster.add_stroke(i, bbox)
+        else:
+            clusters.append(Cluster(stroke_indices=[i], bbox=bbox))
+
+    # Merge pass: merge clusters that are now within threshold
+    merged = True
+    while merged:
+        merged = False
+        i = 0
+        while i < len(clusters):
+            j = i + 1
+            while j < len(clusters):
+                if _bbox_distance(clusters[i].bbox, clusters[j].bbox) <= DISTANCE_THRESHOLD:
+                    # Merge j into i
+                    clusters[i].stroke_indices.extend(clusters[j].stroke_indices)
+                    clusters[i].bbox = _union_bbox(clusters[i].bbox, clusters[j].bbox)
+                    clusters.pop(j)
+                    merged = True
+                else:
+                    j += 1
+            i += 1
+
+    # Sort clusters in reading order: top-to-bottom, then left-to-right
+    clusters.sort(key=lambda c: (c.bbox[1], c.bbox[0]))
+
+    return clusters
 
 
 async def transcribe_with_chunks(
@@ -67,160 +105,68 @@ async def transcribe_with_chunks(
     persisted_chunks: list[dict] | None,
     transcribe_fn: Callable[[list[dict]], Awaitable[str]],
 ) -> tuple[str, list[dict]]:
-    """Transcribe strokes using semantic chunking with caching.
-
-    Args:
-        all_strokes: Complete list of strokes for the question.
-        user_id: User identifier (for logging).
-        document_id: Document identifier (for logging).
-        question_label: Question label (for logging).
-        persisted_chunks: Previously saved chunk metadata from the database.
-        transcribe_fn: Async callable that takes a list of strokes and returns LaTeX.
-
-    Returns:
-        A tuple of (combined_latex, updated_chunks_as_dicts).
-    """
+    """Cluster strokes spatially, fingerprint each cluster, only re-transcribe dirty ones."""
     if not all_strokes:
         return ("", [])
 
-    total = len(all_strokes)
-
-    # --- Reconstruct chunks from persisted data ---
-    chunks: list[ChunkMeta] = []
+    # Build fingerprint -> latex cache from persisted data
+    cache: dict[str, str] = {}
     if persisted_chunks:
-        for d in persisted_chunks:
-            chunk = ChunkMeta.from_dict(d)
-            # Discard chunks whose boundaries exceed available strokes
-            if chunk.start_index >= total:
-                break
-            # Truncate end_index if it exceeds total
-            if chunk.end_index > total:
-                chunk = ChunkMeta(
-                    start_index=chunk.start_index,
-                    end_index=total,
-                    fingerprint=chunk.fingerprint,
-                    latex=chunk.latex,
-                    sealed=False,  # boundary changed, unseal
-                )
-            chunks.append(chunk)
+        for entry in persisted_chunks:
+            fp = entry.get("fingerprint", "")
+            latex = entry.get("latex", "")
+            if fp and latex:
+                cache[fp] = latex
 
-    # --- Validate sealed chunks (fingerprint check) ---
-    for i, chunk in enumerate(chunks):
-        if not chunk.sealed:
-            continue
-        stroke_slice = all_strokes[chunk.start_index : chunk.end_index]
-        current_fp = _fingerprint_strokes(stroke_slice)
-        if current_fp == chunk.fingerprint:
-            # Unchanged — keep cached latex
-            continue
-        # Strokes changed — re-transcribe
-        log.debug(
-            f"[chunks] {question_label} chunk[{i}] fingerprint changed, re-transcribing"
-        )
-        new_latex = await transcribe_fn(stroke_slice)
-        complete = is_semantically_complete(new_latex)
-        chunks[i] = ChunkMeta(
-            start_index=chunk.start_index,
-            end_index=chunk.end_index,
-            fingerprint=current_fp,
-            latex=new_latex,
-            sealed=complete,
-        )
+    # Cluster all strokes from scratch
+    clusters = _cluster_strokes(all_strokes)
 
-    # --- Cover new strokes beyond last chunk ---
-    last_covered = chunks[-1].end_index if chunks else 0
+    # Fingerprint each cluster and check cache
+    dirty_indices: list[int] = []
+    cluster_fps: list[str] = []
+    cluster_latex: list[str] = [""] * len(clusters)
+    cluster_bboxes: list[tuple] = []
 
-    i = last_covered
-    while i < total:
-        chunk_end = min(i + INITIAL_CHUNK_SIZE, total)
-        stroke_slice = all_strokes[i:chunk_end]
-        fp = _fingerprint_strokes(stroke_slice)
-        size = chunk_end - i
+    for idx, cluster in enumerate(clusters):
+        strokes = [all_strokes[i] for i in cluster.stroke_indices]
+        fp = _fingerprint_strokes(strokes)
+        cluster_fps.append(fp)
+        cluster_bboxes.append(cluster.bbox)
 
-        # The last chunk with fewer than INITIAL_CHUNK_SIZE strokes stays unsealed (active)
-        is_last_partial = chunk_end == total and size < INITIAL_CHUNK_SIZE
+        if fp in cache:
+            cluster_latex[idx] = cache[fp]
+        else:
+            dirty_indices.append(idx)
 
-        new_latex = await transcribe_fn(stroke_slice)
-        complete = (not is_last_partial) and (is_semantically_complete(new_latex) or size >= MAX_CHUNK_SIZE)
-        chunks.append(
-            ChunkMeta(
-                start_index=i,
-                end_index=chunk_end,
-                fingerprint=fp,
-                latex=new_latex,
-                sealed=complete,
-            )
-        )
-        i = chunk_end
+    cached_count = len(clusters) - len(dirty_indices)
+    log.info(f"[chunks] {question_label}: {len(clusters)} clusters, {cached_count} cached, {len(dirty_indices)} dirty")
 
-    # --- Merge adjacent unsealed chunks ---
-    # Run after all chunks (persisted + new) are present so new incomplete
-    # chunks are merged with any preceding unsealed persisted chunks.
-    merged_any = True
-    while merged_any:
-        merged_any = False
-        new_chunks: list[ChunkMeta] = []
-        i = 0
-        while i < len(chunks):
-            if i + 1 < len(chunks) and not chunks[i].sealed and not chunks[i + 1].sealed:
-                # Merge the two unsealed chunks
-                merged_start = chunks[i].start_index
-                merged_end = chunks[i + 1].end_index
-                stroke_slice = all_strokes[merged_start:merged_end]
-                size = merged_end - merged_start
-                fp = _fingerprint_strokes(stroke_slice)
-                new_latex = await transcribe_fn(stroke_slice)
-                # Is this the partial last chunk?
-                is_last_partial = merged_end == total and size < MAX_CHUNK_SIZE and size < INITIAL_CHUNK_SIZE * 2
-                complete = (not is_last_partial) and (is_semantically_complete(new_latex) or size >= MAX_CHUNK_SIZE)
-                new_chunks.append(
-                    ChunkMeta(
-                        start_index=merged_start,
-                        end_index=merged_end,
-                        fingerprint=fp,
-                        latex=new_latex,
-                        sealed=complete,
-                    )
-                )
-                i += 2
-                merged_any = True
-            else:
-                new_chunks.append(chunks[i])
-                i += 1
-        chunks = new_chunks
+    # Transcribe dirty clusters concurrently
+    if dirty_indices:
+        async def _transcribe_one(idx: int) -> tuple[int, str]:
+            strokes = [all_strokes[i] for i in clusters[idx].stroke_indices]
+            latex = await transcribe_fn(strokes)
+            return (idx, latex)
 
-    # --- Force-seal any chunk that reaches MAX_CHUNK_SIZE ---
-    for i, chunk in enumerate(chunks):
-        if (chunk.end_index - chunk.start_index) >= MAX_CHUNK_SIZE and not chunk.sealed:
-            chunks[i] = ChunkMeta(
-                start_index=chunk.start_index,
-                end_index=chunk.end_index,
-                fingerprint=chunk.fingerprint,
-                latex=chunk.latex,
-                sealed=True,
-            )
+        results = await asyncio.gather(*[_transcribe_one(i) for i in dirty_indices])
+        for idx, latex in results:
+            cluster_latex[idx] = latex
 
-    # --- Summary logging ---
-    sealed_count = sum(1 for c in chunks if c.sealed)
-    dirty_count = sum(
-        1 for c in chunks
-        if not c.sealed and c.start_index < last_covered
-    )
-    new_count = sum(
-        1 for c in chunks
-        if c.start_index >= last_covered
-    )
-    log.info(
-        f"[chunks] {question_label}: {sealed_count} sealed, {dirty_count} dirty, {new_count} new"
-    )
+    # Build persisted chunks (fingerprint + latex + bbox for debug)
+    updated_chunks = []
+    for idx, cluster in enumerate(clusters):
+        updated_chunks.append({
+            "fingerprint": cluster_fps[idx],
+            "latex": cluster_latex[idx],
+            "bbox": list(cluster_bboxes[idx]),
+        })
 
-    final_latex = " ".join(c.latex for c in chunks if c.latex.strip())
-    return (final_latex, [c.to_dict() for c in chunks])
+    # Concatenate in reading order
+    final_latex = " ".join(latex for latex in cluster_latex if latex)
+
+    return (final_latex, updated_chunks)
 
 
 def clear_cache_for_question(user_id: str, document_id: str, question_label: str) -> None:
-    """No-op placeholder — chunking state lives in the database, not in-process memory.
-
-    This function exists as a hook for future in-process caching layers.
-    """
-    log.debug(f"[chunks] cache clear requested for {question_label} (user={user_id}, doc={document_id})")
+    """No-op: cache is now persisted in DB, not in-memory."""
+    pass
