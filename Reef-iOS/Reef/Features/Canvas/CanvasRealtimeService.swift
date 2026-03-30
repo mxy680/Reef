@@ -14,6 +14,8 @@ final class CanvasSyncService {
 
     /// Last seen tutor status per question — only fire callback on change
     private var lastTutorStatus: [String: String] = [:]
+    /// Suppress polled TTS after local eval fires
+    var lastLocalEvalTime: Date?
     /// Suppress polled chat messages briefly after local chat send
     var lastLocalChatTime: Date?
 

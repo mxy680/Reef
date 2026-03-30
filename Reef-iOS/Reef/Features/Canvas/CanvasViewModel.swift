@@ -424,6 +424,7 @@ final class CanvasViewModel {
     // MARK: - Eval
 
     private func fireEval() async {
+        syncService.lastLocalEvalTime = Date()
         let (qNum, partLabel) = parseQuestionLabel()
         guard qNum > 0 else { return }
 
@@ -656,9 +657,11 @@ final class CanvasViewModel {
             self.tutorEvalService.stepProgress = progress
             self.tutorEvalService.status = status
 
-            // Speak TTS if there's speech text
+            // Speak TTS if there's speech text (only from external sources like simulator)
+            // Skip if we just fired an eval locally — processEvalResponse already played the audio
             if let speechText = row.tutorSpeechText, !speechText.isEmpty,
-               self.tutorEvalService.voiceEnabled {
+               self.tutorEvalService.voiceEnabled,
+               self.syncService.lastLocalEvalTime == nil || Date().timeIntervalSince(self.syncService.lastLocalEvalTime!) > 10.0 {
                 Task {
                     await self.tutorEvalService.speakText(speechText)
                 }
