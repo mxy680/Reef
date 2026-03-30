@@ -1192,7 +1192,8 @@ final class CanvasViewModel {
         restoreTutorStateForLabel(prevLabel)
     }
 
-    /// Reset all work for the current question: erase strokes on its pages and reset tutor progress.
+    /// Reset all work for the current question: erase strokes on its pages, clear all DB rows
+    /// (strokes + chat) for every sub-question, and reset tutor progress.
     func resetCurrentQuestion() {
         guard let container = containerView else { return }
 
@@ -1210,11 +1211,14 @@ final class CanvasViewModel {
         let pageRange = qPages[qNum - 1]
         guard pageRange.count >= 2 else { return }
 
+        // Collect all sub-question labels for this question (Q1a, Q1b, Q1c, ...)
+        let prefix = "Q\(qNum)"
+        let subLabels = allQuestionLabels.filter { $0.hasPrefix(prefix) }
+
         // Clear strokes on question's pages (original indices → actual indices accounting for added pages)
         let savedCallback = drawingManager.onDrawingChanged
         drawingManager.onDrawingChanged = nil
         for origPageIdx in pageRange[0]...pageRange[1] {
-            // Map original page index to actual page index (accounting for blank pages inserted before it)
             let addedBefore = addedPageIndices.filter { $0 <= origPageIdx }.count
             let actualPageIdx = origPageIdx + addedBefore
             if actualPageIdx < container.canvasViews.count {
@@ -1225,23 +1229,27 @@ final class CanvasViewModel {
         drawingManager.onDrawingChanged = savedCallback
         drawingManager.onDrawingChanged?()
 
+        // Cancel pending debounce work so stale transcription/eval doesn't fire
+        strokeUpsertWork?.cancel()
+        strokeWriteWork?.cancel()
+        evalDebounceWork?.cancel()
+
         // Reset tutor state for this question
         currentTutorStepIndex = 0
         tutorEvalService.reset()
 
-        // Clear saved progress for all subquestions of this question
+        // Clear saved progress for all sub-questions
         if savedTutorProgress != nil {
-            let prefix = "Q\(qNum)"
             savedTutorProgress = savedTutorProgress?.filter { !$0.key.hasPrefix(prefix) }
         }
 
         clearShapeStrokes()
         saveCanvasState()
 
-        // Clear canvas strokes + chat history from Supabase
+        // Clear canvas strokes + chat history from Supabase for ALL sub-questions
         Task {
-            await syncService.clearStrokes(documentId: document.id, questionLabel: label)
-            await syncService.clearChat(documentId: document.id, questionLabel: label)
+            await syncService.clearStrokesForQuestion(documentId: document.id, questionLabels: subLabels)
+            await syncService.clearChatForQuestion(documentId: document.id, questionLabels: subLabels)
         }
     }
 

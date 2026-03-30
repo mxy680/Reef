@@ -208,6 +208,13 @@ final class CanvasSyncService {
             .execute()
     }
 
+    /// Clear strokes for all sub-questions of a question (e.g. Q1a, Q1b, Q1c).
+    func clearStrokesForQuestion(documentId: String, questionLabels: [String]) async {
+        for label in questionLabels {
+            await clearStrokes(documentId: documentId, questionLabel: label)
+        }
+    }
+
     func clearChat(documentId: String, questionLabel: String) async {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
         lastChatCount = 0
@@ -218,6 +225,13 @@ final class CanvasSyncService {
             .eq("document_id", value: documentId)
             .eq("question_label", value: questionLabel)
             .execute()
+    }
+
+    /// Clear chat for all sub-questions of a question.
+    func clearChatForQuestion(documentId: String, questionLabels: [String]) async {
+        for label in questionLabels {
+            await clearChat(documentId: documentId, questionLabel: label)
+        }
     }
 
     // MARK: - Stroke Extraction
