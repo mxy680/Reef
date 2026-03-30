@@ -16,6 +16,11 @@ struct TutorDemoStep: View {
     @State private var isThinkingReaction = false
     @State private var currentStep: Int = 0
     @State private var showWalkthrough = false
+    @State private var ttsFinishedForStep = false
+    @State private var toolUsedForStep = false
+    @State private var autoAdvanceTask: Task<Void, Never>?
+
+    private static let autoSteps: Set<Int> = [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13]
 
     private let introDisplay = "Alright, quick intro. I'm your AI tutor. I watch everything you write in real time — yes, even the messy parts. I'll walk you through problems, give hints when you're stuck, and celebrate when you nail it. No office hours line, no awkward eye contact. Dive in — the reef's got you covered."
 
@@ -106,8 +111,18 @@ struct TutorDemoStep: View {
                 triggerDrawingReaction()
             }
         }
-        // Step-specific setup + TTS-only auto-continue
+        // Step-specific setup + auto-continue flags
         .onChange(of: currentStep) { _, step in
+            // Reset auto-advance flags for new step
+            ttsFinishedForStep = false
+            toolUsedForStep = false
+            autoAdvanceTask?.cancel()
+
+            // Text-only mode: TTS condition immediately met
+            if !voiceMode && Self.autoSteps.contains(step) {
+                ttsFinishedForStep = true
+            }
+
             // Enable tutor toggle when reaching step 9
             if step == 9 { canvasVM?.deferTutorMode = false }
             // Enable sidebar when tutor is toggled on via Next Step on step 9
@@ -129,12 +144,53 @@ struct TutorDemoStep: View {
                 }
             }
         }
-        // Tutor toggle tapped on step 9 — setup sidebar
+        // TTS finished → mark condition for auto-advance
+        .onChange(of: canvasVM?.tutorEvalService.isTutorSpeaking) { old, new in
+            guard old == true, new == false,
+                  Self.autoSteps.contains(currentStep) else { return }
+            ttsFinishedForStep = true
+            tryAutoAdvance()
+        }
+        // Tool usage observers for auto-advance
+        .onChange(of: canvasVM?.selectedTool) { _, tool in
+            guard let tool, Self.autoSteps.contains(currentStep) else { return }
+            let match = switch currentStep {
+                case 1: tool == .highlighter
+                case 2: tool == .eraser
+                case 3: tool == .shapes
+                case 4: tool == .lasso
+                case 5: tool == .handDraw
+                default: false
+            }
+            if match { toolUsedForStep = true; tryAutoAdvance() }
+        }
+        .onChange(of: canvasVM?.showRuler) { _, isOn in
+            guard isOn == true, currentStep == 6 else { return }
+            toolUsedForStep = true; tryAutoAdvance()
+        }
+        .onChange(of: canvasVM?.showCalculator) { _, isOn in
+            guard isOn == true, currentStep == 7 else { return }
+            toolUsedForStep = true; tryAutoAdvance()
+        }
+        .onChange(of: canvasVM?.overlaySettings.type) { _, _ in
+            guard currentStep == 8 else { return }
+            toolUsedForStep = true; tryAutoAdvance()
+        }
+        .onChange(of: canvasVM?.showHintPopover) { _, isOn in
+            guard isOn == true, currentStep == 12 else { return }
+            toolUsedForStep = true; tryAutoAdvance()
+        }
+        .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
+            guard isOn == true, currentStep == 13 else { return }
+            toolUsedForStep = true; tryAutoAdvance()
+        }
+        // Tutor toggle tapped on step 9 — setup sidebar + auto-advance
         .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
             guard isOn == true, showWalkthrough, currentStep == 9,
                   let vm = canvasVM else { return }
             vm.showSidebar = true
             if vm.activeQuestionLabel == nil { vm.activeQuestionLabel = "Q1a" }
+            toolUsedForStep = true; tryAutoAdvance()
         }
         // Problem solved — auto-advance walkthrough and continue onboarding
         .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
@@ -355,11 +411,29 @@ struct TutorDemoStep: View {
             stepSpeechTask = Task { @MainActor in
                 let audio = await fetchTTSAudio(text: walkthroughSpeech[nextStep])
                 guard !Task.isCancelled else { return }
-                if let audio { canvasVM?.tutorEvalService.playAudio(audio) }
+                if let audio {
+                    canvasVM?.tutorEvalService.playAudio(audio)
+                } else if Self.autoSteps.contains(nextStep) {
+                    // TTS failed — don't block auto-advance
+                    ttsFinishedForStep = true
+                }
                 withAnimation { currentStep = nextStep }
             }
         } else {
             withAnimation { currentStep = nextStep }
+        }
+    }
+
+    // MARK: - Auto-Advance
+
+    private func tryAutoAdvance() {
+        guard ttsFinishedForStep, toolUsedForStep else { return }
+        autoAdvanceTask?.cancel()
+        autoAdvanceTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(750))
+            guard !Task.isCancelled else { return }
+            stopTTS()
+            advanceStep()
         }
     }
 
