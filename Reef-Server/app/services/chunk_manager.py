@@ -10,7 +10,10 @@ from typing import Awaitable, Callable
 
 log = logging.getLogger(__name__)
 
-DISTANCE_THRESHOLD = 50.0  # points (~0.5 inch)
+# Thresholds for cluster joining
+HORIZONTAL_GAP = 30.0   # max horizontal gap to join (continuing a line to the right)
+VERTICAL_OVERLAP = 0.5   # fraction of vertical overlap needed for horizontal join
+INSIDE_MARGIN = 10.0     # margin for "inside the bbox" check
 
 
 def _stroke_bbox(stroke: dict) -> tuple[float, float, float, float]:
@@ -21,15 +24,57 @@ def _stroke_bbox(stroke: dict) -> tuple[float, float, float, float]:
     return (min(xs), min(ys), max(xs), max(ys))
 
 
-def _bbox_distance(a: tuple, b: tuple) -> float:
-    """Minimum distance between two axis-aligned bounding boxes. 0 if overlapping."""
-    gap_x = max(0, a[0] - b[2], b[0] - a[2])
-    gap_y = max(0, a[1] - b[3], b[1] - a[3])
-    return math.sqrt(gap_x * gap_x + gap_y * gap_y)
-
-
 def _union_bbox(a: tuple, b: tuple) -> tuple:
     return (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
+
+
+def _vertical_overlap_fraction(a: tuple, b: tuple) -> float:
+    """Fraction of the smaller bbox's height that overlaps vertically with the other."""
+    overlap_top = max(a[1], b[1])
+    overlap_bottom = min(a[3], b[3])
+    overlap = max(0, overlap_bottom - overlap_top)
+    height_a = a[3] - a[1]
+    height_b = b[3] - b[1]
+    min_height = min(height_a, height_b)
+    if min_height <= 0:
+        return 0
+    return overlap / min_height
+
+
+def _should_join(stroke_bbox: tuple, cluster_bbox: tuple) -> bool:
+    """Decide if a stroke should join an existing cluster.
+
+    A stroke joins a cluster if:
+    1. It's inside the cluster bbox (with margin) — adding to existing work
+    2. It's close horizontally AND overlaps vertically — continuing a line left-to-right
+    """
+    sb = stroke_bbox
+    cb = cluster_bbox
+
+    # Check if stroke is inside cluster bbox (with margin)
+    if (sb[0] >= cb[0] - INSIDE_MARGIN and sb[2] <= cb[2] + INSIDE_MARGIN and
+        sb[1] >= cb[1] - INSIDE_MARGIN and sb[3] <= cb[3] + INSIDE_MARGIN):
+        return True
+
+    # Check if stroke overlaps cluster bbox vertically or horizontally (touching/overlapping)
+    h_gap = max(0, sb[0] - cb[2], cb[0] - sb[2])
+    v_gap = max(0, sb[1] - cb[3], cb[1] - sb[3])
+
+    if h_gap == 0 and v_gap == 0:
+        # Bboxes overlap — always join
+        return True
+
+    # Close horizontally + significant vertical overlap → continuing a line
+    if h_gap <= HORIZONTAL_GAP and v_gap == 0:
+        overlap = _vertical_overlap_fraction(sb, cb)
+        if overlap >= VERTICAL_OVERLAP:
+            return True
+
+    # Close vertically (subscript/superscript) + horizontally overlapping
+    if v_gap <= HORIZONTAL_GAP and h_gap == 0:
+        return True
+
+    return False
 
 
 def _fingerprint_strokes(strokes: list[dict]) -> str:
@@ -51,7 +96,7 @@ class Cluster:
 
 
 def _cluster_strokes(all_strokes: list[dict]) -> list[Cluster]:
-    """Group strokes into spatial clusters based on bounding box proximity."""
+    """Group strokes into spatial clusters based on proximity and writing direction."""
     clusters: list[Cluster] = []
 
     for i, stroke in enumerate(all_strokes):
@@ -59,21 +104,19 @@ def _cluster_strokes(all_strokes: list[dict]) -> list[Cluster]:
         if bbox == (0, 0, 0, 0):
             continue
 
-        # Find nearest cluster
+        # Find the best cluster to join
         best_cluster = None
-        best_dist = float("inf")
         for cluster in clusters:
-            d = _bbox_distance(bbox, cluster.bbox)
-            if d < best_dist:
-                best_dist = d
+            if _should_join(bbox, cluster.bbox):
                 best_cluster = cluster
+                break  # join the first matching cluster
 
-        if best_cluster is not None and best_dist <= DISTANCE_THRESHOLD:
+        if best_cluster is not None:
             best_cluster.add_stroke(i, bbox)
         else:
             clusters.append(Cluster(stroke_indices=[i], bbox=bbox))
 
-    # Merge pass: merge clusters that are now within threshold
+    # Merge pass: merge clusters that should join after expansion
     merged = True
     while merged:
         merged = False
@@ -81,8 +124,7 @@ def _cluster_strokes(all_strokes: list[dict]) -> list[Cluster]:
         while i < len(clusters):
             j = i + 1
             while j < len(clusters):
-                if _bbox_distance(clusters[i].bbox, clusters[j].bbox) <= DISTANCE_THRESHOLD:
-                    # Merge j into i
+                if _should_join(clusters[i].bbox, clusters[j].bbox) or _should_join(clusters[j].bbox, clusters[i].bbox):
                     clusters[i].stroke_indices.extend(clusters[j].stroke_indices)
                     clusters[i].bbox = _union_bbox(clusters[i].bbox, clusters[j].bbox)
                     clusters.pop(j)
