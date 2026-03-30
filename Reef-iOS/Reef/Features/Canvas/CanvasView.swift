@@ -139,14 +139,8 @@ struct CanvasView: View {
                 .zIndex(50)
             }
 
-            // Debug chunk bbox overlay — shows spatial clustering regions from server
-            #if DEBUG
-            if !viewModel.chunkBboxes.isEmpty {
-                ChunkBboxOverlay(bboxes: viewModel.chunkBboxes)
-                    .allowsHitTesting(false)
-                    .zIndex(55)
-            }
-            #endif
+            // Debug chunk bboxes are drawn via CAShapeLayer on the container view
+            // (see CanvasViewModel.updateChunkBboxOverlay)
 
             // Debug prompt panel
             if viewModel.showDebugPrompt {
