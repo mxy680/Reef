@@ -348,8 +348,10 @@ final class CanvasViewModel {
         strokeWriteWork = txWork
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: txWork)
 
-        // 1500ms after last stroke: fire tutor eval
+        // After last stroke: fire tutor eval
+        // Use longer delay (5s) if in mistake state to give student time to fix
         if tutorModeOn {
+            let delay = tutorEvalService.status == "mistake" ? 5000 : 1500
             evalDebounceWork?.cancel()
             let evalWork = DispatchWorkItem { [weak self] in
                 guard let self else { return }
@@ -359,7 +361,7 @@ final class CanvasViewModel {
                 }
             }
             evalDebounceWork = evalWork
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1500), execute: evalWork)
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delay), execute: evalWork)
         }
     }
 

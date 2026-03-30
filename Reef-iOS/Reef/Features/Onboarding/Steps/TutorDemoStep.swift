@@ -152,14 +152,14 @@ struct TutorDemoStep: View {
             tryAutoAdvance()
         }
         // Tool usage observers for auto-advance
-        .onChange(of: canvasVM?.selectedTool) { _, tool in
-            guard let tool, Self.autoSteps.contains(currentStep) else { return }
+        .onChange(of: canvasVM?.selectedTool) { old, new in
+            guard let new, old != new, Self.autoSteps.contains(currentStep) else { return }
             let match = switch currentStep {
-                case 1: tool == .highlighter
-                case 2: tool == .eraser
-                case 3: tool == .shapes
-                case 4: tool == .lasso
-                case 5: tool == .handDraw
+                case 1: new == .highlighter
+                case 2: new == .eraser
+                case 3: new == .shapes
+                case 4: new == .lasso
+                case 5: new == .handDraw
                 default: false
             }
             if match { toolUsedForStep = true; tryAutoAdvance() }
