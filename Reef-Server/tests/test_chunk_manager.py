@@ -23,31 +23,38 @@ class TestStrokeBbox:
 
 class TestShouldJoin:
     def test_overlapping_bboxes(self):
-        assert _should_join((10, 100, 30, 110), (20, 100, 40, 110)) is True
+        stroke = _make_stroke((10, 30), (100, 110))
+        assert _should_join(stroke, (20, 100, 40, 110)) is True
 
     def test_inside_bbox(self):
         # Stroke inside cluster bbox
-        assert _should_join((15, 102, 25, 108), (10, 100, 30, 110)) is True
+        stroke = _make_stroke((15, 25), (102, 108))
+        assert _should_join(stroke, (10, 100, 30, 110)) is True
 
     def test_close_horizontal_same_line(self):
         # Stroke to the right, overlapping vertically (continuing a line)
-        assert _should_join((55, 100, 75, 110), (10, 100, 50, 110)) is True
+        stroke = _make_stroke((55, 75), (100, 110))
+        assert _should_join(stroke, (10, 100, 50, 110)) is True
 
     def test_far_horizontal(self):
         # Too far right — should NOT join
-        assert _should_join((200, 100, 220, 110), (10, 100, 50, 110)) is False
+        stroke = _make_stroke((200, 220), (100, 110))
+        assert _should_join(stroke, (10, 100, 50, 110)) is False
 
     def test_different_line_below(self):
         # Below with no vertical overlap — should NOT join
-        assert _should_join((10, 200, 30, 210), (10, 100, 50, 110)) is False
+        stroke = _make_stroke((10, 30), (200, 210))
+        assert _should_join(stroke, (10, 100, 50, 110)) is False
 
     def test_subscript_close_vertical(self):
         # Slightly below but horizontally overlapping (subscript)
-        assert _should_join((20, 112, 30, 125), (10, 100, 50, 110)) is True
+        stroke = _make_stroke((20, 30), (112, 125))
+        assert _should_join(stroke, (10, 100, 50, 110)) is True
 
     def test_far_below_same_x(self):
         # Way below — should NOT join even at same x
-        assert _should_join((10, 300, 30, 310), (10, 100, 50, 110)) is False
+        stroke = _make_stroke((10, 30), (300, 310))
+        assert _should_join(stroke, (10, 100, 50, 110)) is False
 
 
 class TestClusterStrokes:
