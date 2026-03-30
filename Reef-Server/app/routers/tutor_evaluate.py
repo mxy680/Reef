@@ -193,7 +193,23 @@ async def _fetch_student_work(document_id: str, question_label: str, user_id: st
     return (latex, latex)
 
 
-_MATHPIX_CHUNK_SIZE = 50
+async def _persist_chunks(
+    user_id: str, document_id: str, question_label: str, chunks_json: list[dict]
+) -> None:
+    """Persist updated chunk metadata to canvas_strokes.transcription_chunks. Fire-and-forget safe."""
+    url = (
+        f"{settings.supabase_url}/rest/v1/canvas_strokes"
+        f"?user_id=eq.{user_id}&document_id=eq.{document_id}&question_label=eq.{question_label}"
+    )
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.patch(
+                url,
+                json={"transcription_chunks": chunks_json},
+                headers=_supabase_headers(),
+            )
+    except Exception as e:
+        log.warning(f"[chunks] Failed to persist chunks for {question_label}: {e}")
 
 
 async def _fetch_and_transcribe_strokes(
@@ -201,9 +217,9 @@ async def _fetch_and_transcribe_strokes(
 ) -> str:
     """Fetch strokes from canvas_strokes table, transcribe via Mathpix, return LaTeX.
 
-    Strokes are chunked into groups of _MATHPIX_CHUNK_SIZE and transcribed
-    sequentially. Results are concatenated with a space separator.
-    Returns an empty string if no strokes exist or Mathpix is unavailable.
+    Uses semantic chunking to cache previously transcribed regions and only
+    re-transcribe changed or new strokes. Returns an empty string if no strokes
+    exist or Mathpix is unavailable.
     """
     if not settings.mathpix_app_id or not settings.mathpix_app_key:
         log.debug("[strokes] Mathpix not configured — skipping stroke transcription")
@@ -221,7 +237,7 @@ async def _fetch_and_transcribe_strokes(
                 "user_id": f"eq.{user_id}",
                 "document_id": f"eq.{document_id}",
                 "question_label": f"eq.{question_label}",
-                "select": "strokes",
+                "select": "strokes,transcription_chunks",
             },
             headers=headers,
         )
@@ -236,8 +252,11 @@ async def _fetch_and_transcribe_strokes(
 
     # Flatten all stroke objects into one list
     all_strokes: list[dict] = []
+    persisted_chunks: list[dict] | None = None
     for row in rows:
         all_strokes.extend(row.get("strokes", []))
+        if persisted_chunks is None and row.get("transcription_chunks"):
+            persisted_chunks = row["transcription_chunks"]
 
     if not all_strokes:
         return ""
@@ -253,44 +272,57 @@ async def _fetch_and_transcribe_strokes(
     fire_cost(record_cost(user_id, "transcribe", "mathpix_strokes", MATHPIX_STROKES_PER_SESSION))
 
     mathpix_headers = {"app_token": app_token, "Content-Type": "application/json"}
-    latex_parts: list[str] = []
 
-    async with httpx.AsyncClient(timeout=15) as client:
-        for i in range(0, len(all_strokes), _MATHPIX_CHUNK_SIZE):
-            chunk = all_strokes[i : i + _MATHPIX_CHUNK_SIZE]
-            payload = {
+    async def _transcribe_stroke_slice(strokes: list[dict]) -> str:
+        """Call Mathpix for a single slice of strokes. Returns LaTeX or empty string."""
+        payload = {
+            "strokes": {
                 "strokes": {
-                    "strokes": {
-                        "x": [s["x"] for s in chunk],
-                        "y": [s["y"] for s in chunk],
-                    }
-                },
-                "strokes_session_id": session_id,
-            }
-            try:
+                    "x": [s["x"] for s in strokes],
+                    "y": [s["y"] for s in strokes],
+                }
+            },
+            "strokes_session_id": session_id,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
                 r = await client.post(
                     "https://api.mathpix.com/v3/strokes",
                     json=payload,
                     headers=mathpix_headers,
                 )
-            except Exception as e:
-                log.warning(f"[strokes] Mathpix request error on chunk {i}: {e}")
-                continue
+        except Exception as e:
+            log.warning(f"[strokes] Mathpix request error: {e}")
+            return ""
 
-            if r.status_code != 200:
-                log.warning(f"[strokes] Mathpix returned {r.status_code} on chunk {i}: {r.text[:200]}")
-                continue
+        if r.status_code != 200:
+            log.warning(f"[strokes] Mathpix returned {r.status_code}: {r.text[:200]}")
+            return ""
 
-            data = r.json()
-            if "error" in data:
-                log.warning(f"[strokes] Mathpix error on chunk {i}: {data['error']}")
-                continue
+        data = r.json()
+        if "error" in data:
+            log.warning(f"[strokes] Mathpix error: {data['error']}")
+            return ""
 
-            chunk_latex = data.get("latex", data.get("text", "")).strip()
-            if chunk_latex:
-                latex_parts.append(chunk_latex)
+        return data.get("latex", data.get("text", "")).strip()
 
-    return " ".join(latex_parts)
+    from app.services.chunk_manager import transcribe_with_chunks
+
+    final_latex, updated_chunks = await transcribe_with_chunks(
+        all_strokes=all_strokes,
+        user_id=user_id,
+        document_id=document_id,
+        question_label=question_label,
+        persisted_chunks=persisted_chunks,
+        transcribe_fn=_transcribe_stroke_slice,
+    )
+
+    # Fire-and-forget: persist updated chunks back to DB
+    asyncio.create_task(
+        _persist_chunks(user_id, document_id, question_label, updated_chunks)
+    )
+
+    return final_latex
 
 
 async def _upsert_student_work(
