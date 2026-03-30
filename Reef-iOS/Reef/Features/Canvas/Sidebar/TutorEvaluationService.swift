@@ -182,9 +182,14 @@ final class TutorEvaluationService {
             madeMistakeOnCurrentStep = true
         }
 
-        // Show speech text in chat
-        if let speechText, !speechText.isEmpty {
-            let role: TutorChatMessage.Role = status == "mistake" ? .error : .reinforcement
+        // Show mistake explanation or reinforcement in chat (formatted LaTeX version)
+        // The verbal speech_text is only used for TTS, not displayed
+        if status == "mistake", let explanation = mistakeExplanation, !explanation.isEmpty {
+            if chatMessages.last?.latex != explanation {
+                chatMessages.append(TutorChatMessage(role: .error, latex: explanation, timestamp: Date()))
+            }
+        } else if let speechText, !speechText.isEmpty, status != "mistake" {
+            let role: TutorChatMessage.Role = .reinforcement
             if chatMessages.last?.latex != speechText {
                 chatMessages.append(TutorChatMessage(role: role, latex: speechText, timestamp: Date()))
             }
@@ -195,7 +200,7 @@ final class TutorEvaluationService {
             chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
         }
 
-        // Play TTS audio
+        // Play TTS audio (verbal version — no math notation)
         if voiceEnabled, let audioBase64 = speechAudio,
            let audioData = Data(base64Encoded: audioBase64) {
             playAudio(audioData)
