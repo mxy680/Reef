@@ -1234,6 +1234,12 @@ final class CanvasViewModel {
         strokeWriteWork?.cancel()
         evalDebounceWork?.cancel()
 
+        // Clear debug bbox overlay
+        #if DEBUG
+        chunkBboxes = []
+        updateChunkBboxOverlay()
+        #endif
+
         // Reset tutor state for this question
         currentTutorStepIndex = 0
         tutorEvalService.reset()
