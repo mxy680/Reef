@@ -14,7 +14,7 @@ struct FavoriteTopicStep: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "What kind of problems do you want help with?",
+            title: "What Topic Keeps You Up at Night?",
             subtitle: "We'll tailor your experience around this.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },

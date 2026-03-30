@@ -37,15 +37,12 @@ final class OnboardingViewModel {
             .courses,
             .favoriteTopic,
             .studyGoal,
-            .goalValidation,
             .painPoints,
             .learningStyle,
             .dailyGoal,
             .tutorDemo,
-            .generatingPlan,
             .planPreview,
             .signUp,
-            .paywall,
             .referral,
         ])
 

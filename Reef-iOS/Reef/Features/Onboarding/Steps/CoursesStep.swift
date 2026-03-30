@@ -9,7 +9,7 @@ struct CoursesStep: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "What are we working with?",
+            title: "What Are You Taking This Semester?",
             subtitle: "Go ahead, select them all. We've seen worse schedules.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },

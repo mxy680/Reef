@@ -64,10 +64,10 @@ enum StudentType: String, Codable, Sendable, CaseIterable {
 
     var displayLabel: String {
         switch self {
-        case .highSchool: "High schooler"
-        case .college: "College student"
-        case .graduate: "Grad student"
-        case .other: "Something else entirely"
+        case .highSchool: "High Schooler"
+        case .college: "College Student"
+        case .graduate: "Grad Student"
+        case .other: "Something Else Entirely"
         }
     }
 }
@@ -98,10 +98,10 @@ enum StudyGoal: String, Codable, Sendable, CaseIterable {
 
     var displayLabel: String {
         switch self {
-        case .aceExams: "Walk into an exam and not panic"
-        case .understand: "Stop nodding along in lecture"
-        case .saveTime: "Have a social life again"
-        case .boostGPA: "Fix what last semester did to me"
+        case .aceExams: "Walk Into Exams Without Panicking"
+        case .understand: "Actually Understand the Material"
+        case .saveTime: "Stop Spending Forever on Homework"
+        case .boostGPA: "Recover From Last Semester"
         }
     }
 
@@ -125,12 +125,12 @@ enum PainPoint: String, Codable, Sendable, CaseIterable {
 
     var displayLabel: String {
         switch self {
-        case .procrastination: "Procrastination (it's a lifestyle)"
-        case .confusingMaterial: "Nothing makes sense"
-        case .noOneToAsk: "No help when I need it"
-        case .testAnxiety: "Tests freak me out"
-        case .cantRetain: "Goldfish memory"
-        case .timeManagement: "Not enough hours in the day"
+        case .procrastination: "Procrastination Is My Entire Personality"
+        case .confusingMaterial: "The Material Genuinely Doesn't Make Sense"
+        case .noOneToAsk: "Office Hours? In This Economy?"
+        case .testAnxiety: "I Know It Until the Test Hits"
+        case .cantRetain: "I Forget Everything 5 Minutes Later"
+        case .timeManagement: "Not Enough Hours in the Day"
         }
     }
 }
@@ -143,10 +143,10 @@ enum LearningStyle: String, Codable, Sendable, CaseIterable {
 
     var displayLabel: String {
         switch self {
-        case .visual: "I need a YouTube video for everything"
-        case .auditory: "If someone explains it I get it instantly"
-        case .handson: "I don't get it until I try it myself"
-        case .reading: "I'm a 'read the textbook at 3am' person"
+        case .visual: "Show Me, Don't Tell Me"
+        case .auditory: "Just Explain It and I'll Get It"
+        case .handson: "I Have to Try It Myself"
+        case .reading: "Give Me the Textbook, I'll Figure It Out"
         }
     }
 
@@ -177,10 +177,10 @@ enum DailyGoalOption: Int, Codable, Sendable, CaseIterable {
 
     var subtitle: String {
         switch self {
-        case .thirty: "shorter than a Reels spiral"
-        case .sixty: "your mom would be proud"
-        case .threeHours: "someone's got a midterm"
-        case .twelve: "you good?"
+        case .thirty: "Quick dive"
+        case .sixty: "Solid session"
+        case .threeHours: "Deep dive"
+        case .twelve: "You're in the deep end"
         }
     }
 }
@@ -195,10 +195,10 @@ enum ReferralSource: String, Codable, Sendable, CaseIterable {
     var displayLabel: String {
         switch self {
         case .social: "TikTok / Instagram"
-        case .friend: "A friend (they have good taste)"
-        case .teacherSchool: "Teacher or school"
-        case .mark: "Mark"
-        case .other: "Honestly don't remember"
+        case .friend: "A Friend Told Me"
+        case .teacherSchool: "Teacher or School"
+        case .mark: "Mark Told Me to Download This"
+        case .other: "Don't Remember"
         }
     }
 }

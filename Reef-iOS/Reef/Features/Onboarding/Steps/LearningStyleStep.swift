@@ -8,7 +8,7 @@ struct LearningStyleStep: View {
         let colors = theme.colors
 
         OnboardingStepShell(
-            title: "What works for your brain?",
+            title: "How Do You Learn Best?",
             subtitle: "Spoiler: we do all of them.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },

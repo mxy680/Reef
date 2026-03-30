@@ -5,8 +5,8 @@ struct MajorStep: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "What flavor of homework?",
-            subtitle: "Pick all that apply — we won't judge your schedule.",
+            title: "What Are You Studying?",
+            subtitle: "Pick all that apply.",
             canAdvance: viewModel.canAdvance,
             onBack: { viewModel.goBack() },
             onForward: { viewModel.goNext() }
