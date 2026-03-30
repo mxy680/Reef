@@ -399,7 +399,7 @@ struct TutorDemoStep: View {
     /// Fetch TTS audio data without playing it.
     private func fetchTTSAudio(text: String) async -> Data? {
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
-              let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+              let url = URL(string: "\(serverURL)/ai/tts"),
               let token = try? await supabase.auth.session.accessToken else { return nil }
 
         var request = URLRequest(url: url)
@@ -438,7 +438,7 @@ struct TutorDemoStep: View {
         guard voiceMode else { return }
         introTask = Task { @MainActor in
             guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
-                  let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+                  let url = URL(string: "\(serverURL)/ai/tts"),
                   let token = try? await supabase.auth.session.accessToken else { return }
 
             var request = URLRequest(url: url)
@@ -490,25 +490,89 @@ struct TutorDemoStep: View {
 
     // MARK: - Loading View
 
+    @State private var loadingMessageIndex = 0
+    @State private var isPulsing = false
+
+    private let loadingMessages = [
+        "Picking a problem just for you...",
+        "Matching it to your courses...",
+        "Making sure it's not too easy...",
+        "Almost ready to dive in...",
+    ]
+
     private var loadingView: some View {
         let colors = theme.colors
-        return VStack(spacing: 20) {
-            if demoService.isGenerating {
-                ProgressView()
-                    .tint(colors.text)
-                Text("Generating a problem for you...")
-                    .font(.epilogue(16, weight: .medium))
-                    .foregroundStyle(colors.textMuted)
-            } else if let error = demoService.error {
-                Text(error)
-                    .font(.epilogue(14, weight: .medium))
-                    .foregroundStyle(colors.textMuted)
-                ReefButton("Try again", size: .compact, action: {
-                    demoService.error = nil
-                    generateDemo()
-                })
+        return GeometryReader { geo in
+            VStack(spacing: 24) {
+                if demoService.isGenerating {
+                    // Pulsing reef icon
+                    ZStack {
+                        Circle()
+                            .fill(ReefColors.primary.opacity(isPulsing ? 0.2 : 0.08))
+                            .frame(width: 100, height: 100)
+                            .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: isPulsing)
+
+                        Image(systemName: "water.waves")
+                            .font(.system(size: 40, weight: .medium))
+                            .foregroundStyle(ReefColors.primary)
+                            .scaleEffect(isPulsing ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: isPulsing)
+                    }
+
+                    // Rotating message
+                    Text(loadingMessages[loadingMessageIndex])
+                        .font(.epilogue(18, weight: .bold))
+                        .tracking(-0.04 * 18)
+                        .foregroundStyle(colors.text)
+                        .multilineTextAlignment(.center)
+                        .frame(height: 50)
+                        .id(loadingMessageIndex)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.3), value: loadingMessageIndex)
+
+                    // Subtle dots loader
+                    HStack(spacing: 6) {
+                        ForEach(0..<3) { i in
+                            Circle()
+                                .fill(ReefColors.primary)
+                                .frame(width: 8, height: 8)
+                                .opacity(isPulsing ? (i == (loadingMessageIndex % 3) ? 1.0 : 0.3) : 0.3)
+                                .animation(.easeInOut(duration: 0.5).delay(Double(i) * 0.15), value: loadingMessageIndex)
+                        }
+                    }
+                } else if let error = demoService.error {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(colors.textMuted)
+
+                    Text(error)
+                        .font(.epilogue(14, weight: .medium))
+                        .foregroundStyle(colors.textMuted)
+                        .multilineTextAlignment(.center)
+
+                    ReefButton("Try Again", size: .compact, action: {
+                        demoService.error = nil
+                        generateDemo()
+                    })
+                }
+            }
+            .padding(32)
+            .frame(maxWidth: 400)
+            .background(colors.card)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(colors.border, lineWidth: 2))
+            .background(RoundedRectangle(cornerRadius: 20).fill(colors.shadow).offset(x: 5, y: 5))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .onAppear {
+            isPulsing = true
+            // Rotate messages every 2s
+            for i in 1..<loadingMessages.count {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(Double(i) * 2.0))
+                    loadingMessageIndex = i
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
