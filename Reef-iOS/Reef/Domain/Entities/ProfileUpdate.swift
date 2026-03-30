@@ -6,6 +6,13 @@ struct ProfileUpdate: Sendable {
     var grade: String?
     var subjects: [String]?
     var referralSource: String?
+    var major: String?
+    var studyGoal: String?
+    var painPoints: [String]?
+    var learningStyle: String?
+    var favoriteTopic: String?
+    var referralCode: String?
+    var referredBy: String?
     var onboardingCompleted: Bool?
     var settings: UserSettings?
 }

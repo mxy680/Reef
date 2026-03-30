@@ -7,6 +7,7 @@ struct CanvasDrawingBar: View {
     @Bindable var viewModel: CanvasViewModel
     var drawingManager: CanvasDrawingManager
     var onScrollToPage: ((Int) -> Void)?
+    // walkthroughStep removed — glow always false
 
     /// The single toolbar teal.
     static let barColor = Color(hex: 0x4E8A97)
@@ -60,41 +61,41 @@ struct CanvasDrawingBar: View {
 
             divider
 
-            // Canvas tools: ruler, calculator, add page, page settings
+            // Canvas tools: ruler, calculator, page settings
             HStack(alignment: .center, spacing: 0) {
-                toolbarButton(icon: "canvas.ruler_new", active: viewModel.showRuler) {
+                toolbarButton(icon: "canvas.ruler_new", active: viewModel.showRuler, glow: false) {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showRuler.toggle()
+                        let wasOn = viewModel.showRuler
+                        viewModel.showCalculator = false
+                        viewModel.showPageSettings = false
+                        viewModel.showRuler = !wasOn
                     }
                 }
 
-                toolbarButton(icon: "canvas.calculator", active: viewModel.showCalculator) {
+                toolbarButton(icon: "canvas.calculator", active: viewModel.showCalculator, glow: false) {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showCalculator.toggle()
+                        let wasOn = viewModel.showCalculator
+                        viewModel.showRuler = false
+                        viewModel.showPageSettings = false
+                        viewModel.showCalculator = !wasOn
                     }
                 }
 
-                toolbarButton(icon: "canvas.add_blank_page", active: viewModel.showPageControls) {
+                toolbarButton(icon: "canvas.page_settings_new", active: viewModel.showPageSettings, glow: false) {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showPageControls.toggle()
-                        if viewModel.showPageControls { viewModel.showPageSettings = false }
-                    }
-                }
-
-                toolbarButton(icon: "canvas.page_settings_new", active: viewModel.showPageSettings) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showPageSettings.toggle()
-                        if viewModel.showPageSettings { viewModel.showPageControls = false }
+                        let wasOn = viewModel.showPageSettings
+                        viewModel.showRuler = false
+                        viewModel.showCalculator = false
+                        viewModel.showPageControls = false
+                        viewModel.showPageSettings = !wasOn
                     }
                 }
             }
 
             Spacer()
 
-            // Tool settings — shown when pen, highlighter, eraser is selected, or page controls active
-            if viewModel.showPageControls {
-                pageControlsSection
-            } else if viewModel.showPageSettings {
+            // Tool settings — shown when pen, highlighter, eraser is selected, or page settings active
+            if viewModel.showPageSettings {
                 pageSettingsSection
             } else if viewModel.selectedTool == .pen || viewModel.selectedTool == .highlighter || viewModel.selectedTool == .shapes {
                 penSettingsSection
@@ -113,7 +114,8 @@ struct CanvasDrawingBar: View {
                 // Mic toggle
                 toolbarButton(
                     icon: viewModel.isMicOn ? "canvas.mic_on" : "canvas.mic_off",
-                    active: viewModel.isMicOn
+                    active: viewModel.isMicOn,
+                    glow: false
                 ) {
                     viewModel.toggleMic()
                 }
@@ -182,10 +184,10 @@ struct CanvasDrawingBar: View {
                         .foregroundColor(.white.opacity(0.8))
                         .frame(width: 38, height: 48)
                         .contentShape(Rectangle())
-                }
+                                        }
                 .buttonStyle(.plain)
 
-                toolbarButton(icon: "canvas.export", yOffset: -1) {
+                toolbarButton(icon: "canvas.export", yOffset: -1, glow: false) {
                     viewModel.exportDocument()
                 }
                 .opacity(viewModel.isExporting ? 0.3 : 1.0)
@@ -193,7 +195,8 @@ struct CanvasDrawingBar: View {
 
                 toolbarButton(
                     icon: viewModel.showSidebar ? "canvas.sidebar_close" : "canvas.sidebar_open",
-                    active: viewModel.showSidebar
+                    active: viewModel.showSidebar,
+                    glow: false
                 ) {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         viewModel.showSidebar.toggle()
@@ -202,7 +205,7 @@ struct CanvasDrawingBar: View {
                 .opacity(viewModel.tutorModeOn ? 1.0 : 0.3)
                 .disabled(!viewModel.tutorModeOn)
             }
-            .padding(.trailing, 4)
+            .padding(.trailing, 14)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 48)
@@ -380,103 +383,6 @@ struct CanvasDrawingBar: View {
 
     // MARK: - Page Controls Section
 
-    private var pageControlsSection: some View {
-        HStack(alignment: .center, spacing: 8) {
-            // Page X of Y with prev/next navigation
-            HStack(spacing: 4) {
-                Button {
-                    let newIndex = viewModel.currentPageIndex - 1
-                    viewModel.currentPageIndex = newIndex
-                    onScrollToPage?(newIndex)
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(viewModel.currentPageIndex > 0 ? 0.8 : 0.3))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.currentPageIndex <= 0)
-
-                Text("Page \(viewModel.currentPageIndex + 1) of \(viewModel.pageCount)")
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.9))
-                    .fixedSize()
-
-                Button {
-                    let newIndex = viewModel.currentPageIndex + 1
-                    viewModel.currentPageIndex = newIndex
-                    onScrollToPage?(newIndex)
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(viewModel.currentPageIndex < viewModel.pageCount - 1 ? 0.8 : 0.3))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.currentPageIndex >= viewModel.pageCount - 1)
-            }
-
-            divider
-
-            // Add page actions
-            HStack(spacing: 4) {
-                SettingsPill(
-                    label: "Add After",
-                    isSelected: false,
-                    horizontalPadding: 10
-                ) {
-                    viewModel.addBlankPageAfterCurrent(drawingManager: drawingManager)
-                }
-                .scaleEffect(0.85)
-
-                SettingsPill(
-                    label: "Add to End",
-                    isSelected: false,
-                    horizontalPadding: 10
-                ) {
-                    viewModel.addBlankPageAtEnd(drawingManager: drawingManager)
-                }
-                .scaleEffect(0.85)
-            }
-
-            divider
-
-            // Delete page — red tinted label via overlay
-            deletePagePill
-        }
-        .transition(.opacity)
-    }
-
-    private var deletePagePill: some View {
-        let canDelete = viewModel.pageCount > 1
-        return Button {
-            viewModel.deleteCurrentPage(drawingManager: drawingManager)
-        } label: {
-            Text("Delete Page")
-                .font(.epilogue(12, weight: .bold))
-                .tracking(-0.04 * 12)
-                .foregroundColor(Color(red: 0.85, green: 0.20, blue: 0.20))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(Color.white)
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule().stroke(Color(red: 0.85, green: 0.20, blue: 0.20), lineWidth: 1.5)
-                )
-                .background(
-                    Capsule()
-                        .fill(Color.black.opacity(0.25))
-                        .offset(x: 3, y: 3)
-                )
-        }
-        .buttonStyle(.plain)
-        .scaleEffect(0.85)
-        .opacity(canDelete ? 1 : 0.4)
-        .disabled(!canDelete)
-    }
-
     private var clearAllPill: some View {
         Button {
             viewModel.showClearConfirmation = true
@@ -617,7 +523,24 @@ struct CanvasDrawingBar: View {
 
     private func drawingToolButton(_ tool: CanvasToolType) -> some View {
         let isSelected = viewModel.selectedTool == tool
+        let glowActive = false
         return Button {
+            // Hidden debug toggle: tap pen 5 times rapidly while already selected
+            if tool == .pen && isSelected {
+                viewModel.debugTapCount += 1
+                viewModel.debugTapResetTask?.cancel()
+                viewModel.debugTapResetTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    viewModel.debugTapCount = 0
+                }
+                if viewModel.debugTapCount >= 5 {
+                    viewModel.debugTapCount = 0
+                    withAnimation(.spring(duration: 0.2)) {
+                        viewModel.showDebugPrompt.toggle()
+                    }
+                }
+            }
             viewModel.selectedTool = tool
             viewModel.showPageControls = false
             viewModel.showPageSettings = false
@@ -630,7 +553,7 @@ struct CanvasDrawingBar: View {
                 .foregroundColor(.white.opacity(isSelected ? 1 : 0.5))
                 .frame(width: 38, height: 48)
                 .contentShape(Rectangle())
-        }
+                        }
         .buttonStyle(.plain)
     }
 
@@ -647,6 +570,7 @@ struct CanvasDrawingBar: View {
         icon: String,
         active: Bool = false,
         yOffset: CGFloat = 0,
+        glow: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -659,7 +583,7 @@ struct CanvasDrawingBar: View {
                 .foregroundColor(.white.opacity(active ? 1 : 0.8))
                 .frame(width: 38, height: 48)
                 .contentShape(Rectangle())
-        }
+                        }
         .buttonStyle(.plain)
     }
 

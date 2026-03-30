@@ -9,6 +9,7 @@ final class DocumentsViewModel {
     var loadError: String?
     var toastMessage: String?
 
+    var showGenerateQuestion = false
     var deleteTarget: Document?
     var renameTarget: Document?
     var detailsTarget: Document?
@@ -166,7 +167,7 @@ final class DocumentsViewModel {
     func downloadDocument(_ doc: Document) async {
         guard doc.status == .completed else { return }
         do {
-            let url = try await repo.getDownloadURL(doc.id)
+            let url = try await repo.getDownloadURL(doc.id, preferOutput: true)
             await UIApplication.shared.open(url)
         } catch {
             showToast("Failed to download")

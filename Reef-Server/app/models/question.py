@@ -17,10 +17,10 @@ class Part(BaseModel):
     figures: list[str] = Field(default_factory=list, description="Figure filenames for this part")
     parts: list[Part] = Field(default_factory=list, description="Recursive subparts")
     answer_space_cm: float = Field(
-        default=3.0,
-        description="Vertical answer space in cm (0-6). Ignored if subparts present.",
+        default=10.0,
+        description="Vertical answer space in cm (default 10). Ignored if subparts present.",
         ge=0,
-        le=6,
+        le=25,
     )
 
 
@@ -38,10 +38,10 @@ class Question(BaseModel):
     figures: list[str] = Field(default_factory=list, description="Figure filenames for the stem")
     parts: list[Part] = Field(default_factory=list, description="Parts (a, b, c, ...). Empty for simple questions.")
     answer_space_cm: float = Field(
-        default=3.0,
-        description="Vertical answer space in cm (0-6). Ignored if parts present.",
+        default=8.0,
+        description="Vertical answer space in cm. Ignored if parts present.",
         ge=0,
-        le=6,
+        le=25,
     )
 
 

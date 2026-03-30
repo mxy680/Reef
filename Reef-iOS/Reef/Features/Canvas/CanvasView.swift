@@ -6,6 +6,7 @@ import Combine
 
 struct CanvasView: View {
     @Bindable var viewModel: CanvasViewModel
+    // walkthroughStep removed
     let onDismiss: () -> Void
 
     @State private var scrollToPageIndex: Int? = nil
@@ -19,12 +20,26 @@ struct CanvasView: View {
             (viewModel.isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
                 .ignoresSafeArea()
 
+            if !viewModel.isReady {
+                // Loading screen — wait for PDF + answer keys
+                CanvasLoadingView(
+                    isLoadingAnswerKeys: viewModel.isLoadingAnswerKeys,
+                    documentName: viewModel.document.displayName,
+                    onClose: {
+                        viewModel.stopAllAudio()
+                        viewModel.cancelAllTasks()
+                        onDismiss()
+                    }
+                )
+            } else {
+
             VStack(spacing: 0) {
                 // Toolbar — always full width
                 VStack(spacing: 0) {
                     CanvasInfoStrip(
                         viewModel: viewModel,
                         onClose: {
+                            viewModel.stopAllAudio()
                             viewModel.saveCanvasState()
                             onDismiss()
                         }
@@ -51,6 +66,7 @@ struct CanvasView: View {
                     }
                     .ignoresSafeArea(edges: .top)
                 )
+                .ignoresSafeArea(edges: .horizontal)
                 .zIndex(2)
 
                 // Canvas + Sidebar — sidebar only pushes the canvas area
@@ -66,6 +82,7 @@ struct CanvasView: View {
                         overlaySpacing: viewModel.overlaySettings.spacing,
                         overlayOpacity: viewModel.overlaySettings.opacity,
                         pageVersion: viewModel.pageVersion,
+                        rulerActive: viewModel.showRuler,
                         scrollToPageIndex: scrollToPageIndex,
                         onCanvasTouchBegan: {
                             viewModel.dismissAllPopovers()
@@ -92,10 +109,7 @@ struct CanvasView: View {
                     if viewModel.showSidebar {
                         CanvasSidebarView(
                             isDarkMode: viewModel.isDarkMode,
-                            transcriptionService: viewModel.handwritingService,
-                            tutorEvalService: viewModel.tutorEvalService,
-                            tutorModeOn: viewModel.tutorModeOn,
-                            activeQuestionLabel: viewModel.activeQuestionLabel,
+                            viewModel: viewModel,
                             onSendChat: { message in
                                 viewModel.sendTutorChat(message)
                             }
@@ -105,14 +119,10 @@ struct CanvasView: View {
                     }
                 }
                 .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.showSidebar)
-                .ignoresSafeArea(edges: .bottom)
+                .ignoresSafeArea(edges: [.bottom, .horizontal])
             }
 
-            // Ruler overlay
-            if viewModel.showRuler {
-                CanvasRulerOverlayView(isDarkMode: viewModel.isDarkMode)
-                    .transition(.opacity)
-            }
+            // Ruler is handled natively by PKCanvasView.isRulerActive
 
             // Calculator overlay (floating, no backdrop)
             if viewModel.showCalculator {
@@ -129,42 +139,52 @@ struct CanvasView: View {
                 .zIndex(50)
             }
 
-            // Tutor overlays — kept alive to cache KaTeX WKWebView content
-            if let step = viewModel.currentHintStep {
-                TutorHintCard(
-                    hintText: step.explanation,
-                    stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
-                    isDarkMode: viewModel.isDarkMode,
-                    onClose: {
-                        withAnimation(.spring(duration: 0.2)) {
-                            viewModel.showHintPopover = false
-                        }
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 100)
-                .padding(.trailing, 16)
-                .opacity(viewModel.showHintPopover ? 1 : 0)
-                .allowsHitTesting(viewModel.showHintPopover)
-                .zIndex(51)
+            // Debug chunk bboxes are drawn via CAShapeLayer on the container view
+            // (see CanvasViewModel.updateChunkBboxOverlay)
 
-                TutorRevealCard(
-                    workText: step.work,
-                    stepLabel: "Step \(viewModel.currentTutorStepIndex + 1)",
-                    isDarkMode: viewModel.isDarkMode,
-                    onClose: {
-                        withAnimation(.spring(duration: 0.2)) {
-                            viewModel.showRevealPopover = false
+            // Debug prompt panel
+            if viewModel.showDebugPrompt {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Text("LLM Prompt Debug")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Button {
+                            withAnimation(.spring(duration: 0.2)) {
+                                viewModel.showDebugPrompt = false
+                            }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.6))
                         }
+                        .buttonStyle(.plain)
                     }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.8))
+
+                    ScrollView {
+                        Text(viewModel.tutorEvalService.lastDebugPrompt ?? "No debug prompt available.")
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(.green)
+                            .padding(8)
+                            .textSelection(.enabled)
+                    }
+                    .background(Color.black.opacity(0.9))
+                }
+                .frame(width: 420, height: 500)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green.opacity(0.3), lineWidth: 1))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(.top, 100)
-                .padding(.trailing, 16)
-                .opacity(viewModel.showRevealPopover ? 1 : 0)
-                .allowsHitTesting(viewModel.showRevealPopover)
-                .zIndex(52)
+                .padding(.leading, 8)
+                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .zIndex(60)
             }
+
+            // Hint/reveal now shown inline in sidebar — popovers removed
 
             // Bug report popup
             if viewModel.showBugReport {
@@ -240,6 +260,7 @@ struct CanvasView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
                 .zIndex(200)
             }
+        } // end else (isReady)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
@@ -248,8 +269,8 @@ struct CanvasView: View {
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
         .animation(.spring(duration: 0.25), value: viewModel.showExportPreview)
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
-        .animation(.spring(duration: 0.2), value: viewModel.showHintPopover)
-        .animation(.spring(duration: 0.2), value: viewModel.showRevealPopover)
+        .animation(.spring(duration: 0.2), value: viewModel.showDebugPrompt)
+        // Hint/reveal animations handled in sidebar
         .alert("Clear Everything?", isPresented: $viewModel.showClearConfirmation) {
             Button("Clear All", role: .destructive) {
                 viewModel.clearAllStrokes()
@@ -283,16 +304,17 @@ struct CanvasView: View {
                     viewModel.markShapeStrokes(in: drawing)
                 }
 
-                // Live transcription — send filtered drawing (no shape strokes)
-                if viewModel.showSidebar || viewModel.tutorModeOn {
-                    let filtered = viewModel.drawingWithoutShapes(for: viewModel.currentPageIndex)
-                    let regions = viewModel.activeSubquestionRegions()
-                    viewModel.handwritingService.onDrawingChanged(
-                        drawing: filtered,
-                        activeRegions: regions
-                    )
-                }
+                // Debounce transcription (500ms) and eval (1500ms) from drawing changes
+                viewModel.onDrawingChanged()
             }
+        }
+        .onChange(of: viewModel.tutorModeOn) { _, _ in
+            // Transcription/eval now triggered by drawing changes, not polling
+        }
+        .onDisappear {
+            viewModel.stopAllAudio()
+            viewModel.cancelAllTasks()
+            autoSaveTask?.cancel()
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             viewModel.tickStudyTimer()
@@ -314,6 +336,38 @@ struct CanvasView: View {
     }
 }
 
+// MARK: - Debug Chunk Bbox Overlay
+
+#if DEBUG
+/// Renders red bordered rectangles at the cluster bounding box positions.
+/// Bboxes are in PencilKit coordinate space (same as stroke x/y values), so they
+/// render 1:1 on the canvas without any coordinate transformation.
+/// Each bbox is [min_x, min_y, max_x, max_y].
+private struct ChunkBboxOverlay: View {
+    let bboxes: [[Double]]
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                ForEach(Array(bboxes.enumerated()), id: \.offset) { _, bbox in
+                    if bbox.count == 4 {
+                        let minX = CGFloat(bbox[0])
+                        let minY = CGFloat(bbox[1])
+                        let width = CGFloat(bbox[2]) - minX
+                        let height = CGFloat(bbox[3]) - minY
+                        Rectangle()
+                            .stroke(Color.red, lineWidth: 2)
+                            .frame(width: max(width, 1), height: max(height, 1))
+                            .offset(x: minX, y: minY)
+                    }
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+        }
+    }
+}
+#endif
+
 // MARK: - Share Sheet
 
 private struct ShareSheet: UIViewControllerRepresentable {
@@ -325,3 +379,4 @@ private struct ShareSheet: UIViewControllerRepresentable {
 
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
+

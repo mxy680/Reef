@@ -3,132 +3,146 @@ import SwiftUI
 struct CanvasSidebarView: View {
     @Environment(ReefTheme.self) private var theme
     var isDarkMode: Bool
-    var transcriptionService: HandwritingTranscriptionService
-    var tutorEvalService: TutorEvaluationService
-    var tutorModeOn: Bool
-    var activeQuestionLabel: String?
+    @Bindable var viewModel: CanvasViewModel
     var onSendChat: ((String) -> Void)?
 
     @State private var chatInput: String = ""
 
+    private var tutorStatus: String {
+        if viewModel.tutorEvalService.isSendingChat { return "writing" }
+        if viewModel.tutorEvalService.isEvaluating { return "thinking" }
+        return "idle"
+    }
+
     var body: some View {
-        // Use canvas isDarkMode, not the global theme — canvas has its own toggle
         let colors = ReefThemeColors(isDarkMode: isDarkMode)
 
         HStack(spacing: 0) {
-            // Leading separator
             Rectangle()
                 .fill(isDarkMode ? Color.white.opacity(0.15) : Color.black.opacity(0.2))
                 .frame(width: 1)
 
-            GeometryReader { geo in
-                VStack(alignment: .leading, spacing: 0) {
-                    // === Top 1/3: Transcription ===
-                    VStack(alignment: .leading, spacing: 0) {
-                        transcriptionHeader(colors: colors)
+            VStack(alignment: .leading, spacing: 0) {
+                // === Collapsible Hint/Answer Panels ===
+                if viewModel.tutorModeOn, viewModel.currentHintStep != nil {
+                    hintAnswerSection(colors: colors)
+                }
 
-                        Rectangle()
-                            .fill(colors.divider)
-                            .frame(height: 0.5)
+                // === Tutor Chat (takes remaining space) ===
+                if viewModel.tutorModeOn {
+                    Rectangle()
+                        .fill(colors.divider)
+                        .frame(height: 1)
 
-                        transcriptionContent(colors: colors)
-                    }
-                    .frame(height: tutorModeOn ? geo.size.height / 3 : geo.size.height)
-
-                    // === Bottom 2/3: Tutor Chat ===
-                    if tutorModeOn {
-                        Rectangle()
-                            .fill(colors.divider)
-                            .frame(height: 1)
-
-                        tutorChatSection(colors: colors)
-                            .frame(maxHeight: .infinity)
-                    }
+                    tutorChatSection(colors: colors)
+                        .frame(maxHeight: .infinity)
                 }
             }
             .background(isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
         }
-        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            transcriptionService.tickTimer()
-        }
     }
 
-    // MARK: - Transcription Header
+    // MARK: - Hint / Answer Section
 
     @ViewBuilder
-    private func transcriptionHeader(colors: ReefThemeColors) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "text.viewfinder")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(colors.textSecondary)
-            Text("Transcription")
-                .font(.epilogue(13, weight: .black))
-                .tracking(-0.04 * 13)
-                .foregroundStyle(colors.text)
-
-            if let label = activeQuestionLabel {
-                Text("·")
-                    .font(.epilogue(13, weight: .black))
-                    .foregroundStyle(colors.textMuted)
-                Text(label)
-                    .font(.epilogue(13, weight: .black))
-                    .tracking(-0.04 * 13)
-                    .foregroundStyle(ReefColors.primary)
+    private func hintAnswerSection(colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Hint panel
+            collapsiblePanel(
+                title: "Hint",
+                icon: "lightbulb.fill",
+                isExpanded: viewModel.showHintPopover,
+                accentColor: Color(hex: 0xF5A623),
+                colors: colors
+            ) {
+                withAnimation(.spring(duration: 0.2)) {
+                    viewModel.showHintPopover.toggle()
+                }
+            } content: {
+                if let step = viewModel.currentHintStep {
+                    MathText(
+                        text: step.explanation,
+                        fontSize: 13,
+                        color: colors.text
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                }
             }
 
-            Spacer()
+            Rectangle()
+                .fill(colors.divider)
+                .frame(height: 0.5)
 
-            if transcriptionService.isTranscribing {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .scaleEffect(0.7)
-                    .tint(ReefColors.primary)
+            // Answer panel
+            collapsiblePanel(
+                title: "Full Solution",
+                icon: "eye.fill",
+                isExpanded: viewModel.showRevealPopover,
+                accentColor: ReefColors.primary,
+                colors: colors
+            ) {
+                withAnimation(.spring(duration: 0.2)) {
+                    viewModel.showRevealPopover.toggle()
+                }
+            } content: {
+                if let step = viewModel.currentHintStep {
+                    ScrollView {
+                        MathText(
+                            text: step.work,
+                            fontSize: 13,
+                            color: colors.text
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 12)
+                    }
+                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .animation(.spring(duration: 0.25), value: viewModel.showHintPopover)
+        .animation(.spring(duration: 0.25), value: viewModel.showRevealPopover)
     }
 
-    // MARK: - Transcription Content
-
     @ViewBuilder
-    private func transcriptionContent(colors: ReefThemeColors) -> some View {
-        if !transcriptionService.latexResult.isEmpty {
-            ScrollView {
-                MathText(
-                    text: transcriptionService.latexResult,
-                    fontSize: 14,
-                    color: colors.text
-                )
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private func collapsiblePanel(
+        title: String,
+        icon: String,
+        isExpanded: Bool,
+        accentColor: Color,
+        colors: ReefThemeColors,
+        toggle: @escaping () -> Void,
+        @ViewBuilder content: () -> some View
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header — tappable
+            Button(action: toggle) {
+                HStack(spacing: 6) {
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(ReefColors.primary)
+                        .frame(width: 16, alignment: .center)
+
+                    Text(title)
+                        .font(.epilogue(13, weight: .black))
+                        .tracking(-0.04 * 13)
+                        .foregroundStyle(colors.text)
+
+                    Spacer()
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(colors.textMuted)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if transcriptionService.isTranscribing {
-            VStack(spacing: 8) {
-                ProgressView()
-                    .tint(ReefColors.primary)
-                Text("Transcribing...")
-                    .font(.epilogue(12, weight: .medium))
-                    .foregroundStyle(colors.textMuted)
+            .buttonStyle(.plain)
+
+            // Content — collapsible
+            if isExpanded {
+                content()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let error = transcriptionService.errorMessage {
-            Text(error)
-                .font(.epilogue(12, weight: .medium))
-                .foregroundStyle(Color(hex: 0xE57373))
-                .padding(12)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        } else {
-            VStack(spacing: 6) {
-                Image(systemName: "pencil.tip")
-                    .font(.system(size: 20))
-                    .foregroundStyle(colors.textMuted)
-                Text("Start writing")
-                    .font(.epilogue(12, weight: .medium))
-                    .foregroundStyle(colors.textMuted)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -141,7 +155,8 @@ struct CanvasSidebarView: View {
             HStack(spacing: 6) {
                 Image(systemName: "brain.head.profile")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(colors.textSecondary)
+                    .foregroundStyle(ReefColors.primary)
+                    .frame(width: 16, alignment: .center)
                 Text("Tutor")
                     .font(.epilogue(13, weight: .black))
                     .tracking(-0.04 * 13)
@@ -149,18 +164,14 @@ struct CanvasSidebarView: View {
 
                 Spacer()
 
-                if tutorEvalService.isEvaluating {
-                    HStack(spacing: 4) {
+                HStack(spacing: 4) {
+                    if tutorStatus != "idle" {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .scaleEffect(0.6)
                             .tint(ReefColors.primary)
-                        Text("thinking")
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(colors.textMuted)
                     }
-                } else {
-                    Text("idle")
+                    Text(tutorStatus)
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
                         .foregroundStyle(colors.textMuted)
                 }
@@ -176,8 +187,7 @@ struct CanvasSidebarView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
-                        if tutorEvalService.chatMessages.isEmpty {
-                            // Empty state
+                        if viewModel.tutorEvalService.chatMessages.isEmpty {
                             VStack(spacing: 8) {
                                 Text("Your work and feedback will appear here")
                                     .font(.epilogue(12, weight: .medium))
@@ -187,7 +197,7 @@ struct CanvasSidebarView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.top, 24)
                         } else {
-                            ForEach(tutorEvalService.chatMessages) { message in
+                            ForEach(viewModel.tutorEvalService.chatMessages) { message in
                                 chatBubble(message: message, colors: colors)
                                     .id(message.id)
                             }
@@ -197,12 +207,12 @@ struct CanvasSidebarView: View {
                     .padding(.vertical, 10)
                 }
                 .onAppear {
-                    if let last = tutorEvalService.chatMessages.last {
+                    if let last = viewModel.tutorEvalService.chatMessages.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
-                .onChange(of: tutorEvalService.chatMessages.count) { _, _ in
-                    if let last = tutorEvalService.chatMessages.last {
+                .onChange(of: viewModel.tutorEvalService.chatMessages.count) { _, _ in
+                    if let last = viewModel.tutorEvalService.chatMessages.last {
                         withAnimation(.easeOut(duration: 0.2)) {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
@@ -233,7 +243,7 @@ struct CanvasSidebarView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .disabled(chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || tutorEvalService.isSendingChat)
+                .disabled(chatInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.tutorEvalService.isSendingChat)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -259,11 +269,17 @@ struct CanvasSidebarView: View {
             return ("checkmark.circle.fill", "Nice", Color(hex: 0x81C784))
         case .answer:
             return ("brain.head.profile", "Tutor", ReefColors.primary)
+        case .confidenceCheck:
+            return ("gauge.with.needle.fill", "Check-in", ReefColors.primary)
         }
     }
 
     @ViewBuilder
     private func chatBubble(message: TutorChatMessage, colors: ReefThemeColors) -> some View {
+        if message.role == .confidenceCheck {
+            confidenceCheckBubble(message: message, colors: colors)
+        } else {
+
         let isStudent = message.role == .student
         let config = bubbleConfig(for: message.role)
 
@@ -300,5 +316,100 @@ struct CanvasSidebarView: View {
 
             if !isStudent { Spacer(minLength: 24) }
         }
+        } // end else (not confidenceCheck)
+    }
+
+    // MARK: - Confidence Check Bubble
+
+    @ViewBuilder
+    private func confidenceCheckBubble(message: TutorChatMessage, colors: ReefThemeColors) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 4) {
+                Image(systemName: "gauge.with.needle.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                Text("Check-in")
+                    .font(.system(size: 10, weight: .bold))
+            }
+            .foregroundStyle(ReefColors.primary)
+
+            Text(message.latex)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(colors.text)
+
+            if let response = message.confidenceResponse {
+                // Already answered
+                HStack(spacing: 6) {
+                    Image(systemName: response == "solid" ? "checkmark.circle.fill" : response == "okay" ? "minus.circle.fill" : "exclamationmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(response == "solid" ? Color(hex: 0x81C784) : response == "okay" ? ReefColors.primary : Color(hex: 0xF5A623))
+                    Text(response.capitalized)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(colors.textMuted)
+                }
+            } else {
+                // Show pills
+                HStack(spacing: 8) {
+                    ForEach(["shaky", "okay", "solid"], id: \.self) { level in
+                        Button {
+                            respondToConfidence(messageId: message.id, response: level)
+                        } label: {
+                            Text(level.capitalized)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(colors.text)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(colors.card)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(colors.border, lineWidth: 1.5))
+                                .background(Capsule().fill(colors.shadow).offset(x: 2, y: 2))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(ReefColors.primary.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(ReefColors.primary.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    private func respondToConfidence(messageId: UUID, response: String) {
+        if let idx = viewModel.tutorEvalService.chatMessages.firstIndex(where: { $0.id == messageId }) {
+            viewModel.tutorEvalService.chatMessages[idx].confidenceResponse = response
+
+            // Store in Supabase
+            let hadMistake = viewModel.tutorEvalService.chatMessages[0..<idx].contains { $0.role == .error }
+            Task {
+                await storeConfidenceLog(
+                    documentId: viewModel.document.id,
+                    questionNumber: viewModel.activeQuestionNumber,
+                    stepIndex: viewModel.currentTutorStepIndex,
+                    confidence: response,
+                    hadMistake: hadMistake
+                )
+            }
+        }
+    }
+
+    private nonisolated func storeConfidenceLog(documentId: String, questionNumber: Int, stepIndex: Int, confidence: String, hadMistake: Bool) async {
+        guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
+        _ = try? await supabase
+            .from("confidence_logs")
+            .insert([
+                "user_id": userId,
+                "document_id": documentId,
+                "question_number": "\(questionNumber)",
+                "step_index": "\(stepIndex)",
+                "confidence": confidence,
+                "had_mistake": hadMistake ? "true" : "false",
+            ] as [String: String])
+            .execute()
     }
 }

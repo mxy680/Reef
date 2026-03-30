@@ -138,17 +138,6 @@ struct AuthView: View {
                                 }
                                 .fadeUp(index: 6)
 
-                                #if DEBUG
-                                Button {
-                                    authManager.devLogin()
-                                } label: {
-                                    Text("Dev Login")
-                                        .font(.epilogue(12, weight: .semiBold))
-                                        .tracking(-0.04 * 12)
-                                        .foregroundStyle(ReefColors.primary)
-                                }
-                                .padding(.top, 16)
-                                #endif
                             }
                         }
                     }

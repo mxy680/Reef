@@ -29,6 +29,13 @@ struct SupabaseProfileRepository: ProfileRepository {
         if let v = update.grade { payload["grade"] = .string(v) }
         if let v = update.subjects { payload["subjects"] = .array(v.map { .string($0) }) }
         if let v = update.referralSource { payload["referral_source"] = .string(v) }
+        if let v = update.major { payload["major"] = .string(v) }
+        if let v = update.studyGoal { payload["study_goal"] = .string(v) }
+        if let v = update.painPoints { payload["pain_points"] = .array(v.map { .string($0) }) }
+        if let v = update.learningStyle { payload["learning_style"] = .string(v) }
+        if let v = update.favoriteTopic { payload["favorite_topic"] = .string(v) }
+        if let v = update.referralCode { payload["referral_code"] = .string(v) }
+        if let v = update.referredBy { payload["referred_by"] = .string(v) }
         if let v = update.onboardingCompleted { payload["onboarding_completed"] = .bool(v) }
         if let settings = update.settings {
             payload["settings"] = try encodeToAnyJSON(settings)

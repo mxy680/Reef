@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     mathpix_app_key: str = ""
     groq_api_key: str = ""
     deepinfra_api_key: str = ""
+    elevenlabs_api_key: str = ""
+    reef_inference_url: str = "https://inference.studyreef.com"
+    reef_inference_token: str = ""
+
+    # Simulation
+    simulation_enabled: bool = True
+    cartesia_api_key: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

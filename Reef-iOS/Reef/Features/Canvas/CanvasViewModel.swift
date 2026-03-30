@@ -15,8 +15,11 @@ final class CanvasViewModel {
     // MARK: - PDF
 
     var pdfDocument: PDFDocument
-    var isLoadingPDF: Bool = false
+    var isLoadingPDF: Bool = true  // Set true synchronously — loadPDF task clears it
     var pdfError: String?
+    private var loadPDFTask: Task<Void, Never>?
+    private var loadAnswerKeysTask: Task<Void, Never>?
+    private var stepSpeechTask: Task<Void, Never>?
 
     // MARK: - Tool State
 
@@ -145,8 +148,12 @@ final class CanvasViewModel {
     private var micSilenceTimer: Task<Void, Never>?
     var showCalculator: Bool = false
     let calculatorViewModel = CalculatorViewModel()
-    let handwritingService = HandwritingTranscriptionService()
+    let syncService = CanvasSyncService()
     let tutorEvalService = TutorEvaluationService()
+    private var evalDebounceWork: DispatchWorkItem?
+    private var strokeWriteWork: DispatchWorkItem?
+    /// True while applying remote strokes from Realtime — suppresses onDrawingChanged
+    var isApplyingRemoteStrokes: Bool = false
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -189,16 +196,61 @@ final class CanvasViewModel {
     // MARK: - Tutor State
 
     var tutorModeOn: Bool = false
+    /// When true, tutor mode won't auto-enable on answer key load (walkthrough controls it)
+    var deferTutorMode: Bool = false
     var currentTutorStepIndex: Int = 0
     var currentQuestionIndex: Int = 0
     var showHintPopover: Bool = false
     var showRevealPopover: Bool = false
+    var tutorVoiceEnabled: Bool = true  // Whether tutor speaks out loud (vs chat-only)
+    var showDebugPrompt: Bool = false
+    var debugTapCount: Int = 0
+    var debugTapResetTask: Task<Void, Never>?
+    #if DEBUG
+    /// Bounding boxes of transcription clusters in PencilKit coordinate space.
+    /// Each element is [min_x, min_y, max_x, max_y].
+    var chunkBboxes: [[Double]] = []
+    private var bboxOverlayLayer: CAShapeLayer?
+
+    func updateChunkBboxOverlay() {
+        // Remove old overlay
+        bboxOverlayLayer?.removeFromSuperlayer()
+        bboxOverlayLayer = nil
+
+        guard let container = containerView,
+              currentPageIndex < container.canvasViews.count else { return }
+        let canvasView = container.canvasViews[currentPageIndex]
+
+        let layer = CAShapeLayer()
+        layer.name = "chunkBboxDebug"
+        let path = CGMutablePath()
+
+        for bbox in chunkBboxes {
+            guard bbox.count == 4 else { continue }
+            let rect = CGRect(
+                x: bbox[0], y: bbox[1],
+                width: bbox[2] - bbox[0],
+                height: bbox[3] - bbox[1]
+            )
+            path.addRect(rect)
+        }
+
+        layer.path = path
+        layer.strokeColor = UIColor.red.cgColor
+        layer.fillColor = UIColor.red.withAlphaComponent(0.05).cgColor
+        layer.lineWidth = 2
+        layer.zPosition = 1000
+
+        canvasView.layer.addSublayer(layer)
+        bboxOverlayLayer = layer
+    }
+    #endif
     var hintMidX: CGFloat = 0
     var revealMidX: CGFloat = 0
 
     // Answer key data
     var answerKeys: [Int: QuestionAnswer] = [:]
-    var isLoadingAnswerKeys: Bool = false
+    var isLoadingAnswerKeys: Bool = true
     private var savedTutorProgress: [String: TutorStepState]?
 
     /// Whether this document has been reconstructed (has answer keys available)
@@ -206,8 +258,13 @@ final class CanvasViewModel {
         document.problemCount != nil && (document.problemCount ?? 0) > 0
     }
 
+    /// True when both PDF and answer keys are loaded
+    var isReady: Bool {
+        !isLoadingPDF && !isLoadingAnswerKeys
+    }
+
     /// Derives question number and part label from activeQuestionLabel.
-    private var activeQuestionNumber: Int {
+    var activeQuestionNumber: Int {
         guard let label = activeQuestionLabel, label.hasPrefix("Q") else { return 1 }
         var numStr = ""
         for ch in label.dropFirst() {
@@ -264,24 +321,273 @@ final class CanvasViewModel {
         guard tutorStepCount > 0 else { return 0 }
         let completedSteps = Double(currentTutorStepIndex)
         let intraStepProgress = tutorEvalService.stepProgress
+
+        // If we're on the last step and it's completed, show 100%
+        if currentTutorStepIndex == tutorStepCount - 1 && tutorEvalService.status == "completed" {
+            return 1.0
+        }
+
         return (completedSteps + intraStepProgress) / Double(tutorStepCount)
     }
 
-    func loadAnswerKeys() async {
-        guard isReconstructed else { return }
+    var canSkipStep: Bool { currentTutorStepIndex < tutorStepCount - 1 }
+    var canGoBackStep: Bool { currentTutorStepIndex > 0 }
+
+    func skipCurrentStep() {
+        guard canSkipStep else { return }
+        tutorEvalService.resetForNextStep()
+        currentTutorStepIndex += 1
+        updatePendingReinforcement()
+    }
+
+    func goToPreviousStep() {
+        guard canGoBackStep else { return }
+        tutorEvalService.resetForNextStep()
+        currentTutorStepIndex -= 1
+        updatePendingReinforcement()
+    }
+
+    /// Called on every drawing change (fires per stroke point from PencilKit).
+    /// Debounces both stroke writes (500ms) and eval (1500ms).
+    private var strokeUpsertWork: DispatchWorkItem?
+
+    func onDrawingChanged(forPage pageOverride: Int? = nil) {
+        guard !isApplyingRemoteStrokes else { return }
+
+        let page = pageOverride ?? currentPageIndex
+
+        // ~100ms debounce to detect pen lift (fires once after last point)
+        strokeUpsertWork?.cancel()
+        let upsertWork = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            let drawing = self.drawingWithoutShapes(for: page)
+            let strokes = CanvasSyncService.extractStrokePayloads(from: drawing)
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.syncService.writeStrokes(
+                    documentId: self.document.id,
+                    questionLabel: self.activeQuestionLabel ?? "Q1a",
+                    pageIndex: page,
+                    strokes: strokes
+                )
+            }
+        }
+        strokeUpsertWork = upsertWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100), execute: upsertWork)
+
+        // 500ms after last point: request transcription from server
+        strokeWriteWork?.cancel()
+        let txWork = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.requestTranscription()
+            }
+        }
+        strokeWriteWork = txWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: txWork)
+
+        // After last stroke: fire tutor eval
+        // Use longer delay (5s) if in mistake state to give student time to fix
+        if tutorModeOn {
+            let delay = tutorEvalService.status == "mistake" ? 5000 : 1500
+            evalDebounceWork?.cancel()
+            let evalWork = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                Task { @MainActor [weak self] in
+                    guard let self, self.tutorModeOn else { return }
+                    await self.fireEval()
+                }
+            }
+            evalDebounceWork = evalWork
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delay), execute: evalWork)
+        }
+    }
+
+    func cancelAllTasks() {
+        loadPDFTask?.cancel()
+        loadAnswerKeysTask?.cancel()
+        stepSpeechTask?.cancel()
+        evalDebounceWork?.cancel()
+        strokeWriteWork?.cancel()
+        syncService.stopPolling()
+    }
+
+    /// Sleep without participating in cooperative task cancellation.
+    /// Task.sleep sets Task.isCancelled as a side effect, which kills debounce tasks.
+    private func safeSleep(milliseconds: Int) async {
+        await withCheckedContinuation { cont in
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(milliseconds)) {
+                cont.resume()
+            }
+        }
+    }
+
+    func stopAllAudio() {
+        tutorEvalService.stopAudio()
+    }
+
+    // MARK: - Transcription
+
+    /// Request server to transcribe strokes from canvas_strokes → student_work
+    private func requestTranscription() async {
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/transcribe") else { return }
+        guard let token = try? await supabase.auth.session.accessToken else { return }
+
+        let label = activeQuestionLabel ?? "Q1a"
+        struct TxRequest: Encodable {
+            let document_id: String
+            let question_label: String
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 15
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONEncoder().encode(TxRequest(document_id: document.id, question_label: label))
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
+            struct TxResponse: Decodable { let latex: String }
+            if let result = try? JSONDecoder().decode(TxResponse.self, from: data) {
+                print("[transcribe] \(label): \(result.latex.prefix(50))")
+            }
+        } catch {
+            print("[transcribe] Failed: \(error)")
+        }
+    }
+
+    // MARK: - Eval
+
+    private func fireEval() async {
+        syncService.lastLocalEvalTime = Date()
+        let (qNum, partLabel) = parseQuestionLabel()
+        guard qNum > 0 else { return }
+
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/tutor-evaluate") else { return }
+        guard let token = try? await supabase.auth.session.accessToken else { return }
+
+        struct EvalRequest: Encodable {
+            let documentId: String
+            let questionNumber: Int
+            let partLabel: String?
+            let stepIndex: Int
+            let isDemo: Bool
+            let studentImage: String?
+
+            enum CodingKeys: String, CodingKey {
+                case documentId = "document_id"
+                case questionNumber = "question_number"
+                case partLabel = "part_label"
+                case stepIndex = "step_index"
+                case isDemo = "is_demo"
+                case studentImage = "student_image"
+            }
+        }
+
+        let body = EvalRequest(
+            documentId: document.id,
+            questionNumber: qNum,
+            partLabel: partLabel,
+            stepIndex: currentTutorStepIndex,
+            isDemo: tutorEvalService.isDemo,
+            studentImage: captureActiveQuestionImage()
+        )
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONEncoder().encode(body)
+
+        // The response will be written to chat_history by the server,
+        // and Realtime will push it to us. But we also process the response
+        // directly for immediate UI update.
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
+
+            struct EvalResponse: Decodable {
+                let progress: Double
+                let status: String
+                let mistakeExplanation: String?
+                let stepsCompleted: Int
+                let speechAudio: String?
+                let speechText: String?
+
+                enum CodingKeys: String, CodingKey {
+                    case progress, status
+                    case mistakeExplanation = "mistake_explanation"
+                    case stepsCompleted = "steps_completed"
+                    case speechAudio = "speech_audio"
+                    case speechText = "speech_text"
+                }
+            }
+
+            let evalResponse = try JSONDecoder().decode(EvalResponse.self, from: data)
+            await tutorEvalService.processEvalResponse(
+                progress: evalResponse.progress,
+                status: evalResponse.status,
+                mistakeExplanation: evalResponse.mistakeExplanation,
+                stepsCompleted: evalResponse.stepsCompleted,
+                speechAudio: evalResponse.speechAudio,
+                speechText: evalResponse.speechText
+            )
+
+            if evalResponse.status == "completed" {
+                advanceTutorSteps(count: evalResponse.stepsCompleted)
+            }
+        } catch {
+            print("[eval] Failed: \(error)")
+        }
+    }
+
+    func loadAnswerKeys(forceLoad: Bool = false) async {
+        // Always subscribe to Realtime on first call (regardless of reconstruction state)
+        if syncService.pollTimer == nil {
+            syncService.startPolling(documentId: document.id)
+        }
+
+        guard isReconstructed || forceLoad else {
+            // Don't clear isLoadingAnswerKeys — loadPDF will call us again with forceLoad
+            // once reconstruction completes
+            return
+        }
         isLoadingAnswerKeys = true
         let repo = SupabaseAnswerKeyRepository()
-        let result = await repo.fetchAnswerKeys(documentId: document.id)
+
+        // Restore saved question or default to Q1a
+        if activeQuestionLabel == nil {
+            activeQuestionLabel = savedState?.activeQuestionLabel ?? "Q1a"
+        }
+        let targetQuestion = activeQuestionNumber
+
+        // Poll every 5s for up to 5 minutes — wait until Q1's key specifically exists
+        var attempts = 0
+        var result = await repo.fetchAnswerKeys(documentId: document.id)
+        while result.answers[targetQuestion] == nil && attempts < 60 && !Task.isCancelled {
+            attempts += 1
+            answerKeys = result.answers
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+            result = await repo.fetchAnswerKeys(documentId: document.id)
+        }
+
         answerKeys = result.answers
         isLoadingAnswerKeys = false
-        tutorModeOn = !answerKeys.isEmpty
-        if tutorModeOn {
-            showSidebar = true
-            if activeQuestionLabel == nil {
-                activeQuestionLabel = "Q1a"
-            }
-            restoreTutorStateForLabel(activeQuestionLabel!)
+
+        if !deferTutorMode && answerKeys[targetQuestion] != nil, let label = activeQuestionLabel {
+            currentTutorStepIndex = 0
+            tutorEvalService.resetForNextStep()
             updatePendingReinforcement()
+            tutorModeOn = true
+            showSidebar = true
+            restoreTutorStateForLabel(label)
         }
     }
 
@@ -297,20 +603,125 @@ final class CanvasViewModel {
         self.pdfDocument = MockCanvasData.blankPDF()
         let loaded = CanvasStorageService.load(documentId: document.id)
         self.savedState = loaded
+
         self.savedTutorProgress = loaded?.tutorProgress
 
-        tutorEvalService.onStepCompleted = { [weak self] in
-            guard let self else { return }
-            self.advanceTutorStep()
+        tutorEvalService.voiceEnabled = tutorVoiceEnabled
+
+        tutorEvalService.onMistakeSpoken = { [weak self] in
+            guard let self, self.tutorVoiceEnabled, !self.isMicOn else { return }
+            self.toggleMic()
         }
 
-        handwritingService.onLatexChanged = { [weak self] _ in
+        tutorEvalService.onAnswerKeyUpdated = { [weak self] in
             guard let self else { return }
-            self.triggerTutorEvaluation()
+            self.loadAnswerKeysTask?.cancel()
+            self.loadAnswerKeysTask = Task { @MainActor in
+                await self.loadAnswerKeys()
+                // loadAnswerKeys handles state restoration internally
+            }
         }
 
-        Task { await loadPDF() }
-        Task { await loadAnswerKeys() }
+        // Wire Realtime stroke sync — REPLACE canvas with external strokes (from simulator)
+        syncService.onStrokesUpdated = { [weak self] row in
+            guard let self else { return }
+            let page = row.pageIndex
+            guard let container = self.containerView, page < container.canvasViews.count else { return }
+
+            // Build PKDrawing from stroke data (1:1 coordinates — no scale)
+            let ink = PKInk(.pen, color: .black)
+            var drawing = PKDrawing()
+
+            for strokeData in row.strokes {
+                guard !strokeData.x.isEmpty, strokeData.x.count == strokeData.y.count else { continue }
+                let points = zip(strokeData.x, strokeData.y).enumerated().map { idx, pair in
+                    PKStrokePoint(
+                        location: CGPoint(x: pair.0, y: pair.1),
+                        timeOffset: TimeInterval(idx) * 0.01,
+                        size: CGSize(width: 3, height: 3),
+                        opacity: 1, force: 0.5, azimuth: 0, altitude: .pi / 4
+                    )
+                }
+                let path = PKStrokePath(controlPoints: points, creationDate: Date())
+                drawing.strokes.append(PKStroke(ink: ink, path: path))
+            }
+
+            // REPLACE the entire page drawing (not append)
+            self.isApplyingRemoteStrokes = true
+            self.drawingManager.setDrawing(drawing, for: page)
+            container.canvasViews[page].drawing = drawing
+            self.isApplyingRemoteStrokes = false
+        }
+
+        // Wire Realtime stroke delete — clear canvas
+        syncService.onStrokesDeleted = { [weak self] in
+            guard let self, let container = self.containerView else { return }
+            print("[Realtime] Clearing all canvas pages")
+            self.isApplyingRemoteStrokes = true
+            for i in 0..<container.canvasViews.count {
+                self.drawingManager.setDrawing(PKDrawing(), for: i)
+                container.canvasViews[i].drawing = PKDrawing()
+            }
+            self.isApplyingRemoteStrokes = false
+        }
+
+        // Wire Realtime chat sync
+        syncService.onChatMessageReceived = { [weak self] row in
+            guard let self else { return }
+            guard row.questionLabel == self.activeQuestionLabel else { return }
+            guard let role = TutorChatMessage.Role(rawValue: row.role) else { return }
+            // Skip if we already have this message (from direct eval response)
+            if !self.tutorEvalService.chatMessages.contains(where: { $0.latex == row.text && $0.role == role }) {
+                self.tutorEvalService.chatMessages.append(
+                    TutorChatMessage(role: role, latex: row.text, timestamp: Date())
+                )
+                // Play TTS for tutor replies received via polling (e.g., from simulator)
+                // Use speechText (no math notation) if available, fall back to text
+                if role == .answer && self.tutorEvalService.voiceEnabled {
+                    let ttsText = (row.speechText?.isEmpty == false) ? row.speechText! : row.text
+                    Task { await self.tutorEvalService.speakText(ttsText) }
+                }
+            }
+        }
+
+        // Wire tutor state changes from polling (progress, step advancement)
+        syncService.onTutorStateChanged = { [weak self] row in
+            guard let self else { return }
+            guard row.questionLabel == self.activeQuestionLabel else { return }
+            let progress = row.tutorProgress ?? 0
+            let status = row.tutorStatus ?? "idle"
+            let stepsCompleted = row.tutorStepsCompleted ?? 1
+
+            // Update progress bar
+            self.tutorEvalService.stepProgress = progress
+            self.tutorEvalService.status = status
+
+            // Speak TTS if there's speech text (only from external sources like simulator)
+            // Skip if we just fired an eval locally — processEvalResponse already played the audio
+            if let speechText = row.tutorSpeechText, !speechText.isEmpty,
+               self.tutorEvalService.voiceEnabled,
+               self.syncService.lastLocalEvalTime == nil || Date().timeIntervalSince(self.syncService.lastLocalEvalTime!) > 10.0 {
+                Task {
+                    await self.tutorEvalService.speakText(speechText)
+                }
+            }
+
+            // Advance step if completed
+            if status == "completed" {
+                self.advanceTutorSteps(count: stepsCompleted)
+            }
+        }
+
+        #if DEBUG
+        syncService.onChunkBboxesUpdated = { [weak self] bboxes in
+            guard let self else { return }
+            self.chunkBboxes = bboxes
+            self.updateChunkBboxOverlay()
+        }
+        #endif
+
+        loadPDFTask = Task { await loadPDF() }
+        loadAnswerKeysTask = Task { await loadAnswerKeys() }
     }
 
     private static let pdfSession: URLSession = {
@@ -321,11 +732,29 @@ final class CanvasViewModel {
     }()
 
     private func loadPDF() async {
+
         isLoadingPDF = true
         pdfError = nil
         do {
             let repo = SupabaseDocumentRepository()
-            let signedURL = try await repo.getDownloadURL(document.id)
+
+            // If document is still processing, poll until completed (up to 5 min)
+            var isReconstructedDoc = document.status == .completed && (document.problemCount ?? 0) > 0
+            if document.status == .processing {
+                var attempts = 0
+                while attempts < 60 && !Task.isCancelled {
+                    attempts += 1
+                    try? await Task.sleep(for: .seconds(5))
+                    if let updated = try? await repo.getDocument(document.id),
+                       updated.status != .processing {
+                        isReconstructedDoc = updated.status == .completed && (updated.problemCount ?? 0) > 0
+                        break
+                    }
+                }
+            }
+
+            // Only fetch output.pdf if reconstruction completed successfully
+            let signedURL = try await repo.getDownloadURL(document.id, preferOutput: isReconstructedDoc)
             let (data, _) = try await Self.pdfSession.data(from: signedURL)
             guard let pdf = PDFDocument(data: data) else {
                 pdfError = "Unable to open PDF"
@@ -370,8 +799,19 @@ final class CanvasViewModel {
             // Single pageVersion bump AFTER all state is restored
             // so setupPages reads the restored drawings
             pageVersion += 1
+
+            // If document finished reconstruction, kick off answer key loading
+            // (the initial loadAnswerKeys() may have skipped because isReconstructed was false at init)
+            if isReconstructedDoc && answerKeys.isEmpty {
+                loadAnswerKeysTask?.cancel()
+                loadAnswerKeysTask = Task { await loadAnswerKeys(forceLoad: true) }
+            } else if !isReconstructedDoc {
+                // No reconstruction = no answer keys to wait for — unblock the canvas
+                isLoadingAnswerKeys = false
+            }
         } catch {
             pdfError = "Failed to download document"
+            isLoadingAnswerKeys = false  // Unblock canvas to show error
         }
         isLoadingPDF = false
     }
@@ -390,14 +830,16 @@ final class CanvasViewModel {
             questionPages: document.questionPages
         )
 
-        // On question change: save current state, restore new question's state
+        // On question change: save current state, cancel in-flight eval, restore new question's state
         if newLabel != activeQuestionLabel {
             // Save outgoing question's tutor state
             if let oldLabel = activeQuestionLabel, tutorModeOn {
                 saveTutorStateForLabel(oldLabel)
             }
 
-            handwritingService.latexResult = ""
+            // Cancel any in-flight evaluation so stale results don't corrupt the new question
+            tutorEvalService.resetForNextStep()
+
             activeQuestionLabel = newLabel
 
             // Restore incoming question's tutor state
@@ -424,7 +866,7 @@ final class CanvasViewModel {
                 status: tutorEvalService.status,
                 mistakeExplanation: tutorEvalService.mistakeExplanation
             ),
-            lastTranscription: handwritingService.latexResult,
+            lastTranscription: "",
             chatMessages: savedMessages.isEmpty ? nil : savedMessages
         )
     }
@@ -459,9 +901,6 @@ final class CanvasViewModel {
             tutorEvalService.chatMessages.removeAll()
         }
 
-        if !state.lastTranscription.isEmpty {
-            handwritingService.latexResult = state.lastTranscription
-        }
     }
 
     /// Returns only the active SUBquestion's regions for stroke filtering.
@@ -561,12 +1000,89 @@ final class CanvasViewModel {
         }
     }
 
+    /// Speak the current step description via TTS (only if voice enabled).
+    func speakCurrentStepDescription() {
+        guard tutorVoiceEnabled else { return }
+        guard currentTutorStepIndex < currentSteps.count else { return }
+        let step = currentSteps[currentTutorStepIndex]
+        // Use tutor_speech if available (LLM-generated, plain English), fall back to description
+        let speech = step.tutorSpeech?.isEmpty == false
+            ? step.tutorSpeech!
+            : "Next up: " + step.description
+
+        stepSpeechTask?.cancel()
+        stepSpeechTask = Task { [weak self] in
+            guard let self,
+                  let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+                  let url = URL(string: "\(serverURL)/ai/walkthrough-tts"),
+                  let token = try? await supabase.auth.session.accessToken else { return }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 15
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": speech])
+
+            guard !Task.isCancelled else { return }
+
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+
+            guard !Task.isCancelled else { return }
+
+            struct TTSResponse: Decodable {
+                let speechAudio: String?
+                enum CodingKeys: String, CodingKey { case speechAudio = "speech_audio" }
+            }
+
+            guard let result = try? JSONDecoder().decode(TTSResponse.self, from: data),
+                  let audioBase64 = result.speechAudio,
+                  let audioData = Data(base64Encoded: audioBase64) else { return }
+
+            self.tutorEvalService.playAudio(audioData)
+        }
+    }
+
+    /// Advance by multiple steps at once (handles step skipping).
+    /// Shows reinforcement for each skipped step before advancing.
+    func advanceTutorSteps(count: Int) {
+        let remaining = tutorStepCount - currentTutorStepIndex
+        let stepsToAdvance = min(count, remaining)
+
+        for _ in 0..<stepsToAdvance {
+            // Only advance — reinforcement is handled by TutorEvaluationService
+            // (shows only the most recent one, not stacked)
+            if currentTutorStepIndex < tutorStepCount - 1 {
+                currentTutorStepIndex += 1
+                tutorEvalService.resetForNextStep()
+                updatePendingReinforcement()
+            }
+        }
+
+        // If we completed all steps, mark as done (don't reset — let status stay "completed")
+        if currentTutorStepIndex >= tutorStepCount - 1 && stepsToAdvance >= remaining {
+            stepSpeechTask?.cancel()
+            tutorEvalService.stepProgress = 1.0
+            tutorEvalService.status = "completed"
+        } else if stepsToAdvance > 0 {
+            // Fire eval for the new step — the student's work is already on canvas
+            evalDebounceWork?.cancel()
+            let advanceWork = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    print("[step-advance] FIRING eval for new step \(self.currentTutorStepIndex)")
+                    await self.fireEval()
+                }
+            }
+            evalDebounceWork = advanceWork
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(1000), execute: advanceWork)
+        }
+    }
+
     func advanceTutorStep() {
-        guard currentTutorStepIndex < tutorStepCount - 1 else { return }
-        currentTutorStepIndex += 1
-        // Don't dismiss hint/reveal — user closes them manually via X button
-        tutorEvalService.resetForNextStep()
-        updatePendingReinforcement()
+        advanceTutorSteps(count: 1)
     }
 
     func resetTutorSteps() {
@@ -648,9 +1164,9 @@ final class CanvasViewModel {
 
         // Reset tutor state for the new question
         activeQuestionLabel = nextLabel
+        evalDebounceWork?.cancel()
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
-        handwritingService.latexResult = ""
         restoreTutorStateForLabel(nextLabel)
 
         return pageRange[0] // scroll to the question's start page
@@ -670,13 +1186,14 @@ final class CanvasViewModel {
         }
 
         activeQuestionLabel = prevLabel
+        evalDebounceWork?.cancel()
         currentTutorStepIndex = 0
         tutorEvalService.resetForNextStep()
-        handwritingService.latexResult = ""
         restoreTutorStateForLabel(prevLabel)
     }
 
-    /// Reset all work for the current question: erase strokes on its pages and reset tutor progress.
+    /// Reset all work for the current question: erase strokes on its pages, clear all DB rows
+    /// (strokes + chat) for every sub-question, and reset tutor progress.
     func resetCurrentQuestion() {
         guard let container = containerView else { return }
 
@@ -694,11 +1211,14 @@ final class CanvasViewModel {
         let pageRange = qPages[qNum - 1]
         guard pageRange.count >= 2 else { return }
 
+        // Collect all sub-question labels for this question (Q1a, Q1b, Q1c, ...)
+        let prefix = "Q\(qNum)"
+        let subLabels = allQuestionLabels.filter { $0.hasPrefix(prefix) }
+
         // Clear strokes on question's pages (original indices → actual indices accounting for added pages)
         let savedCallback = drawingManager.onDrawingChanged
         drawingManager.onDrawingChanged = nil
         for origPageIdx in pageRange[0]...pageRange[1] {
-            // Map original page index to actual page index (accounting for blank pages inserted before it)
             let addedBefore = addedPageIndices.filter { $0 <= origPageIdx }.count
             let actualPageIdx = origPageIdx + addedBefore
             if actualPageIdx < container.canvasViews.count {
@@ -709,20 +1229,34 @@ final class CanvasViewModel {
         drawingManager.onDrawingChanged = savedCallback
         drawingManager.onDrawingChanged?()
 
+        // Cancel pending debounce work so stale transcription/eval doesn't fire
+        strokeUpsertWork?.cancel()
+        strokeWriteWork?.cancel()
+        evalDebounceWork?.cancel()
+
+        // Clear debug bbox overlay
+        #if DEBUG
+        chunkBboxes = []
+        updateChunkBboxOverlay()
+        #endif
+
         // Reset tutor state for this question
         currentTutorStepIndex = 0
         tutorEvalService.reset()
-        handwritingService.latexResult = ""
-        handwritingService.resetSession()
 
-        // Clear saved progress for all subquestions of this question
+        // Clear saved progress for all sub-questions
         if savedTutorProgress != nil {
-            let prefix = "Q\(qNum)"
             savedTutorProgress = savedTutorProgress?.filter { !$0.key.hasPrefix(prefix) }
         }
 
         clearShapeStrokes()
         saveCanvasState()
+
+        // Clear canvas strokes + chat history from Supabase for ALL sub-questions
+        Task {
+            await syncService.clearStrokesForQuestion(documentId: document.id, questionLabels: subLabels)
+            await syncService.clearChatForQuestion(documentId: document.id, questionLabels: subLabels)
+        }
     }
 
     /// Track new strokes added with the shape tool.
@@ -869,15 +1403,54 @@ final class CanvasViewModel {
                 AVNumberOfChannelsKey: 1,
                 AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue,
             ])
+            recorder.isMeteringEnabled = true
             recorder.record()
             audioRecorder = recorder
             isMicOn = true
 
-            // Auto-stop after 10s silence
+            // Voice activity detection: poll audio levels to auto-stop
             micSilenceTimer = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(10))
-                guard let self, !Task.isCancelled, self.isMicOn else { return }
-                self.toggleMic()
+                var speechDetected = false
+                var silenceStart: Date?
+                let speechThreshold: Float = -25  // dB — above this = speech
+                let noSpeechTimeout: TimeInterval = 2.0
+                let endOfSpeechTimeout: TimeInterval = 1.5
+                var logCounter = 0
+
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    guard let self, !Task.isCancelled, self.isMicOn,
+                          let rec = self.audioRecorder else { return }
+
+                    rec.updateMeters()
+                    let level = rec.averagePower(forChannel: 0)
+
+                    // Log every 500ms for debugging
+                    logCounter += 1
+                    if logCounter % 5 == 0 {
+                        print("[mic-vad] level=\(String(format: "%.1f", level))dB speech=\(speechDetected) silence=\(silenceStart != nil)")
+                    }
+
+                    if level > speechThreshold {
+                        // Speech detected
+                        speechDetected = true
+                        silenceStart = nil
+                    } else if speechDetected {
+                        // Had speech, now silent — start counting
+                        if silenceStart == nil { silenceStart = Date() }
+                        if Date().timeIntervalSince(silenceStart!) >= endOfSpeechTimeout {
+                            self.toggleMic()
+                            return
+                        }
+                    } else {
+                        // Never detected speech — timeout after 2s
+                        if silenceStart == nil { silenceStart = Date() }
+                        if Date().timeIntervalSince(silenceStart!) >= noSpeechTimeout {
+                            self.toggleMic()
+                            return
+                        }
+                    }
+                }
             }
         } catch {
             isMicOn = false
@@ -926,6 +1499,7 @@ final class CanvasViewModel {
 
     /// Send a chat message to the tutor.
     func sendTutorChat(_ message: String) {
+        syncService.lastLocalChatTime = Date()
         let label = activeQuestionLabel ?? "Q1a"
         guard label.hasPrefix("Q"), label.count >= 2 else { return }
         let numAndLabel = label.dropFirst()
@@ -942,43 +1516,38 @@ final class CanvasViewModel {
             questionNumber: qNum,
             partLabel: partLabel.isEmpty ? nil : partLabel,
             stepIndex: currentTutorStepIndex,
-            studentLatex: handwritingService.latexResult,
+            studentLatex: "",
             studentImage: captureActiveQuestionImage()
         )
     }
 
-    /// Trigger AI evaluation of the current student work.
-    func triggerTutorEvaluation() {
-        guard tutorModeOn,
-              !handwritingService.latexResult.isEmpty else {
-            return
-        }
+    /// Normalize LaTeX for comparison: strip delimiters, whitespace, common wrappers.
+    private func normalizeLatex(_ latex: String) -> String {
+        var s = latex
+        // Strip display math delimiters
+        s = s.replacingOccurrences(of: "$$", with: "")
+        s = s.replacingOccurrences(of: "\\[", with: "")
+        s = s.replacingOccurrences(of: "\\]", with: "")
+        s = s.replacingOccurrences(of: "\\(", with: "")
+        s = s.replacingOccurrences(of: "\\)", with: "")
+        s = s.replacingOccurrences(of: "$", with: "")
+        // Strip whitespace
+        s = s.replacingOccurrences(of: " ", with: "")
+        s = s.replacingOccurrences(of: "\n", with: "")
+        s = s.replacingOccurrences(of: "\t", with: "")
+        return s.lowercased()
+    }
 
-        // If no active question label, use Q1a as default for reconstructed docs
-        let label = activeQuestionLabel ?? "Q1a"
-
-        // Parse "Q2a" → questionNumber=2, partLabel="a"
-        guard label.hasPrefix("Q"), label.count >= 2 else { return }
+    /// Parse activeQuestionLabel "Q2a" → (questionNumber: 2, partLabel: "a")
+    func parseQuestionLabel() -> (Int, String?) {
+        guard let label = activeQuestionLabel, label.hasPrefix("Q"), label.count >= 2 else { return (0, nil) }
         let numAndLabel = label.dropFirst()
         var numStr = ""
-        var partLabel = ""
+        var partStr = ""
         for ch in numAndLabel {
-            if ch.isNumber {
-                numStr.append(ch)
-            } else {
-                partLabel.append(ch)
-            }
+            if ch.isNumber { numStr.append(ch) } else { partStr.append(ch) }
         }
-        guard let qNum = Int(numStr) else { return }
-
-        tutorEvalService.evaluate(
-            latex: handwritingService.latexResult,
-            documentId: document.id,
-            questionNumber: qNum,
-            partLabel: partLabel.isEmpty ? nil : partLabel,
-            stepIndex: currentTutorStepIndex,
-            studentImage: captureActiveQuestionImage()
-        )
+        return (Int(numStr) ?? 0, partStr.isEmpty ? nil : partStr)
     }
 
     // MARK: - Page Mutations
@@ -989,6 +1558,7 @@ final class CanvasViewModel {
         pdfDocument.insert(blank, at: insertIndex)
         drawingManager.shiftDrawingsForInsert(at: insertIndex)
         addedPageIndices.append(insertIndex)
+        containerView?.skipDrawingSaveOnRebuild = true
         pageVersion += 1
     }
 
@@ -1000,6 +1570,7 @@ final class CanvasViewModel {
         // Shift any tracked added indices that are >= insertIndex
         addedPageIndices = addedPageIndices.map { $0 >= insertIndex ? $0 + 1 : $0 }
         addedPageIndices.append(insertIndex)
+        containerView?.skipDrawingSaveOnRebuild = true
         pageVersion += 1
     }
 
@@ -1018,8 +1589,6 @@ final class CanvasViewModel {
         clearShapeStrokes()
         currentTutorStepIndex = 0
         tutorEvalService.reset()
-        handwritingService.latexResult = ""
-        handwritingService.resetSession()
         savedTutorProgress = nil
 
         saveCanvasState()
@@ -1036,6 +1605,7 @@ final class CanvasViewModel {
         if currentPageIndex >= pdfDocument.pageCount {
             currentPageIndex = pdfDocument.pageCount - 1
         }
+        containerView?.skipDrawingSaveOnRebuild = true
         pageVersion += 1
     }
 
@@ -1065,7 +1635,7 @@ final class CanvasViewModel {
                     status: tutorEvalService.status,
                     mistakeExplanation: tutorEvalService.mistakeExplanation
                 ),
-                lastTranscription: handwritingService.latexResult,
+                lastTranscription: "",
                 chatMessages: savedMessages.isEmpty ? nil : savedMessages
             )
         }
@@ -1077,7 +1647,8 @@ final class CanvasViewModel {
             overlaySettings: overlaySettings,
             currentPageIndex: currentPageIndex,
             drawingDataByPage: drawingData,
-            tutorProgress: tutorState.isEmpty ? nil : tutorState
+            tutorProgress: tutorState.isEmpty ? nil : tutorState,
+            activeQuestionLabel: activeQuestionLabel
         )
 
         Task.detached {
@@ -1109,7 +1680,9 @@ final class CanvasViewModel {
             return PDFPage()
         }
 
-        let page = PDFPage(image: UIImage(cgImage: cgImage))!
+        guard let page = PDFPage(image: UIImage(cgImage: cgImage)) else {
+            return PDFPage()
+        }
         page.setBounds(CGRect(origin: .zero, size: size), for: .mediaBox)
         return page
     }
@@ -1132,4 +1705,5 @@ final class CanvasViewModel {
     var hasActiveOverlay: Bool {
         overlaySettings.type != .none
     }
+
 }

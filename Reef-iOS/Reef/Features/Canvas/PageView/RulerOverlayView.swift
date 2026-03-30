@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CanvasRulerOverlayView: View {
     var isDarkMode: Bool = false
+    var onGeometryChanged: ((_ center: CGPoint, _ angle: CGFloat, _ scale: CGFloat) -> Void)?
 
     private let baseWidth: CGFloat = 600
     private let baseHeight: CGFloat = 56
@@ -35,10 +36,12 @@ struct CanvasRulerOverlayView: View {
                     if initialPosition == nil {
                         position = center
                         initialPosition = center
+                        reportGeometry()
                     }
                 }
         }
-        .allowsHitTesting(true)
+        // Only the ruler body itself accepts touches (via .contentShape on rulerBody)
+        // The rest of the GeometryReader is transparent to all touches
     }
 
     // MARK: - Theme Colors
@@ -134,31 +137,59 @@ struct CanvasRulerOverlayView: View {
 
     // MARK: - Gestures
 
+    private func reportGeometry() {
+        onGeometryChanged?(position, rotation.radians, scale)
+    }
+
     private var dragGesture: some Gesture {
         DragGesture()
-            .onChanged { value in dragOffset = value.translation }
+            .onChanged { value in
+                dragOffset = value.translation
+                onGeometryChanged?(
+                    CGPoint(x: position.x + value.translation.width, y: position.y + value.translation.height),
+                    (rotation + rotationDelta).radians,
+                    scale * scaleDelta
+                )
+            }
             .onEnded { value in
                 position.x += value.translation.width
                 position.y += value.translation.height
                 dragOffset = .zero
+                reportGeometry()
             }
     }
 
     private var rotationGesture: some Gesture {
         RotationGesture()
-            .onChanged { angle in rotationDelta = angle }
+            .onChanged { angle in
+                rotationDelta = angle
+                onGeometryChanged?(
+                    CGPoint(x: position.x + dragOffset.width, y: position.y + dragOffset.height),
+                    (rotation + angle).radians,
+                    scale * scaleDelta
+                )
+            }
             .onEnded { angle in
                 rotation = rotation + angle
                 rotationDelta = .zero
+                reportGeometry()
             }
     }
 
     private var magnificationGesture: some Gesture {
         MagnifyGesture()
-            .onChanged { value in scaleDelta = value.magnification }
+            .onChanged { value in
+                scaleDelta = value.magnification
+                onGeometryChanged?(
+                    CGPoint(x: position.x + dragOffset.width, y: position.y + dragOffset.height),
+                    (rotation + rotationDelta).radians,
+                    scale * value.magnification
+                )
+            }
             .onEnded { value in
                 scale = max(0.5, min(scale * value.magnification, 3.0))
                 scaleDelta = 1.0
+                reportGeometry()
             }
     }
 }

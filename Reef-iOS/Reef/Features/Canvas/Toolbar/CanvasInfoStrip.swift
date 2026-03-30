@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CanvasInfoStrip: View {
     @Bindable var viewModel: CanvasViewModel
+    // walkthroughStep removed
 
     let onClose: () -> Void
 
@@ -64,58 +65,81 @@ struct CanvasInfoStrip: View {
             if viewModel.tutorModeOn {
                 divider
 
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.7))
+                if viewModel.tutorStepCount > 0 {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        if let label = viewModel.activeQuestionLabel {
+                            Text(label)
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.9))
 
-                    Text(LaTeXToUnicode.convert(viewModel.currentTutorStepLabel))
-                        .font(.epilogue(11, weight: .medium))
-                        .tracking(-0.04 * 11)
-                        .foregroundColor(.white.opacity(0.85))
-                        .lineLimit(1)
+                            Text("·")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white.opacity(0.35))
+                        }
+
+                        Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.7))
+
+                        Text(LaTeXToUnicode.convert(viewModel.currentTutorStepLabel))
+                            .font(.epilogue(11, weight: .medium))
+                            .tracking(-0.04 * 11)
+                            .foregroundColor(.white.opacity(0.85))
+                            .lineLimit(1)
+                    }
+                    .transition(.opacity)
+                } else {
+                    Text("Generating answer key for tutor...")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .transition(.opacity)
                 }
-                .transition(.opacity)
             }
 
             Spacer(minLength: 8)
 
+            // "Generating tutor..." centered in toolbar while answer keys load
+            if viewModel.isLoadingAnswerKeys && viewModel.answerKeys.isEmpty {
+                Text("Generating answer key for tutor — hang tight...")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
+                    .transition(.opacity)
+
+                Spacer(minLength: 8)
+            }
+
             if viewModel.tutorModeOn {
-                // Tutor mode: progress bar | hint + reveal
-                HStack(spacing: 4) {
-                    HStack(spacing: 4) {
-                        progressBar(progress: viewModel.tutorProgress)
-
-                        Text("\(Int(viewModel.tutorProgress * 100))%")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.55))
-                    }
-
-                    divider
-
+                // Tutor mode: back | progress bar | skip
+                HStack(spacing: 6) {
                     Button {
-                        viewModel.showHintPopover.toggle()
-                        if viewModel.showHintPopover { viewModel.showRevealPopover = false }
+                        viewModel.goToPreviousStep()
                     } label: {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(viewModel.showHintPopover ? 1 : 0.8))
-                            .frame(width: 24, height: 24)
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(viewModel.canGoBackStep ? 0.8 : 0.25))
+                            .frame(width: 20, height: 20)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .disabled(!viewModel.canGoBackStep)
+
+                    progressBar(progress: viewModel.tutorProgress)
+
+                    Text("\(Int(viewModel.tutorProgress * 100))%")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.55))
 
                     Button {
-                        viewModel.showRevealPopover.toggle()
-                        if viewModel.showRevealPopover { viewModel.showHintPopover = false }
+                        viewModel.skipCurrentStep()
                     } label: {
-                        Image(systemName: "eye.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.8))
-                            .frame(width: 24, height: 24)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(viewModel.canSkipStep ? 0.8 : 0.25))
+                            .frame(width: 20, height: 20)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .disabled(!viewModel.canSkipStep)
                 }
                 .transition(.opacity)
             } else {
@@ -137,6 +161,8 @@ struct CanvasInfoStrip: View {
 
             divider
 
+            // Simulation auto-starts when document opens (no manual button needed)
+
             // Tutor mode toggle
             HStack(spacing: 8) {
                 Image(viewModel.tutorModeOn ? "canvas.tutor_on" : "canvas.tutor_off")
@@ -144,16 +170,14 @@ struct CanvasInfoStrip: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 20, height: 20)
-                    .foregroundColor(.white.opacity(viewModel.isReconstructed ? 1 : 0.4))
+                    .foregroundColor(.white.opacity(!viewModel.answerKeys.isEmpty ? 1 : 0.4))
 
-                if viewModel.isReconstructed {
+                if !viewModel.answerKeys.isEmpty {
                     ReefToggle(isOn: Binding(
                         get: { viewModel.tutorModeOn },
                         set: { newValue in
                             viewModel.tutorModeOn = newValue
-                            if !newValue {
-                                viewModel.showSidebar = false
-                            }
+                            viewModel.showSidebar = newValue
                         }
                     ), size: .compact)
                 } else {
@@ -162,7 +186,8 @@ struct CanvasInfoStrip: View {
                         .opacity(0.5)
                 }
             }
-            .padding(.trailing, 10)
+            .padding(.trailing, 18)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.answerKeys.isEmpty)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)

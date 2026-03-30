@@ -8,7 +8,7 @@ protocol DocumentRepository: Sendable {
     func duplicateDocument(_ id: String) async throws -> Document
     func moveDocumentToCourse(_ id: String, courseId: String?) async throws
     func retryDocument(_ id: String) async throws
-    func getDownloadURL(_ id: String) async throws -> URL
+    func getDownloadURL(_ id: String, preferOutput: Bool) async throws -> URL
     func getShareURL(_ id: String) async throws -> URL
     func getThumbnailURLs(_ ids: [String]) async throws -> [String: URL]
 }

@@ -29,6 +29,7 @@ from app.services.cancellation import (
     register as cancel_register,
 )
 from app.services.latex_compiler import LaTeXCompiler
+from app.services.cost_tracker import fire_cost, record_cost, record_llm_cost, MATHPIX_PDF_PER_PAGE
 from app.services.llm_client import LLMClient, LLMResult
 from app.services.mathpix import MathpixClient, replace_urls_with_filenames
 from app.services.progress import update_document_status, update_progress
@@ -67,7 +68,9 @@ class PipelineCosts:
     _llm_cost_dollars: float = 0.0
 
     MODEL_RATES: dict = field(default_factory=lambda: {
+        "deepseek/deepseek-r1": (0.55 / 1_000_000, 2.19 / 1_000_000),
         "deepseek/deepseek-v3.2": (0.25 / 1_000_000, 0.40 / 1_000_000),
+        "google/gemini-2.5-flash": (0.15 / 1_000_000, 0.60 / 1_000_000),
         "google/gemini-3-flash-preview": (0.50 / 1_000_000, 3.00 / 1_000_000),
         "google/gemini-3.1-pro-preview": (1.25 / 1_000_000, 10.00 / 1_000_000),
     })
@@ -125,7 +128,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
 
     try:
         await update_document_status(document_id, status="processing")
-        await update_progress(document_id, "Starting Mathpix pipeline...")
+        await update_progress(document_id, "Reading your homework...")
 
         # ---------------------------------------------------------------
         # Stage 1: Download source PDF
@@ -140,7 +143,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         doc.close()
         costs.mathpix_pages = num_pages
 
-        await update_progress(document_id, "PDF downloaded, sending to Mathpix...")
+        await update_progress(document_id, "Scanning for math...")
 
         # ---------------------------------------------------------------
         # Stage 2: Mathpix OCR
@@ -150,27 +153,32 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             app_key=settings.mathpix_app_key,
         )
         mmd_text, mathpix_images, url_map = await mathpix.process_pdf(pdf_bytes)
+        fire_cost(record_cost(user_id, "reconstruct", "mathpix_pdf", num_pages * MATHPIX_PDF_PER_PAGE,
+                  metadata={"document_id": document_id, "pages": num_pages}))
 
         if is_cancelled(document_id):
             return
 
-        await update_progress(
-            document_id,
-            f"Mathpix OCR complete ({len(mmd_text)} chars, "
-            f"{len(mathpix_images)} images). Parsing questions...",
-        )
+        # Upload Mathpix figure images to Supabase storage for later use in eval
+        figure_url_map: dict[str, str] = {}
+        if mathpix_images:
+            from app.services.storage import upload_question_figure
+            upload_tasks = [
+                upload_question_figure(document_id, fname, img_bytes)
+                for fname, img_bytes in mathpix_images.items()
+            ]
+            results = await asyncio.gather(*upload_tasks, return_exceptions=True)
+            for fname, result in zip(mathpix_images.keys(), results):
+                if isinstance(result, str):
+                    figure_url_map[fname] = result
+                else:
+                    logger.warning(f"  [v2] Failed to upload figure {fname}: {result}")
+
+        await update_progress(document_id, "Breaking apart problems...")
 
         # ---------------------------------------------------------------
-        # Stage 3: LLM parse MMD -> Questions
+        # Stage 3: LLM parse MMD -> Questions (Gemini 2.5 Flash via OpenRouter)
         # ---------------------------------------------------------------
-        llm_client = LLMClient(
-            api_key=settings.openrouter_api_key,
-            model="deepseek/deepseek-v3.2",
-            base_url="https://openrouter.ai/api/v1",
-        )
-        # DeepSeek doesn't support strict JSON schema via OpenRouter —
-        # skip straight to json_object mode to avoid schema echo bugs.
-        llm_client._strict_json_supported = False
 
         # Replace CDN URLs with local filenames so the LLM sees them inline
         cleaned_mmd = replace_urls_with_filenames(mmd_text, url_map)
@@ -179,16 +187,34 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         parse_prompt = PARSE_MMD_PROMPT
         parse_prompt += (
             f"\n\n## Output JSON Schema\n"
-            f"Return a JSON object matching this schema:\n```json\n{schema_json}\n```\n"
+            f"Return ONLY a valid JSON object matching this schema. No markdown, no explanation, no code fences.\n"
+            f"```json\n{schema_json}\n```\n"
             f"\n\n## MMD Content\n```\n{cleaned_mmd}\n```"
         )
 
+        parse_llm = LLMClient(
+            api_key=settings.openrouter_api_key,
+            model="google/gemini-3-flash-preview",
+            base_url="https://openrouter.ai/api/v1",
+        )
         parse_result = await asyncio.to_thread(
-            llm_client.generate,
+            parse_llm.generate,
             prompt=parse_prompt,
             response_schema=QuestionBatch.model_json_schema(),
+            timeout=120.0,
         )
-        costs.add(parse_result, model=llm_client.model)
+        costs.add(parse_result, model=parse_llm.model)
+        fire_cost(record_llm_cost(user_id, "reconstruct", parse_llm.model,
+                  parse_result.input_tokens, parse_result.output_tokens,
+                  metadata={"document_id": document_id, "stage": "parse_mmd"}))
+        logger.info(f"  [v2] {document_id}: question extraction via Gemini Flash")
+
+        # LLM client for LaTeX fix loop (use inference API if available)
+        llm_client = LLMClient(
+            api_key=settings.openrouter_api_key,
+            model="google/gemini-3-flash-preview",
+            base_url="https://openrouter.ai/api/v1",
+        )
 
         batch = QuestionBatch.model_validate_json(parse_result.content)
         questions = batch.questions
@@ -213,10 +239,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         if is_cancelled(document_id):
             return
 
-        await update_progress(
-            document_id,
-            f"Compiling {len(questions)} questions to LaTeX...",
-        )
+        await update_progress(document_id, f"Typesetting {len(questions)} questions...")
 
         # ---------------------------------------------------------------
         # Stage 4: Compile LaTeX for each question (parallelized)
@@ -235,6 +258,19 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             label = f"Problem {question.number}"
             latex = question_to_latex(question)
             question_dict = question.model_dump()
+
+            # Inject figure storage URLs into question_dict for eval endpoint
+            q_fig_storage = {}
+            all_q_figs = set(question.figures)
+            for part in question.parts:
+                all_q_figs.update(part.figures)
+                for sub in part.parts:
+                    all_q_figs.update(sub.figures)
+            for fig in all_q_figs:
+                if fig in figure_url_map:
+                    q_fig_storage[fig] = figure_url_map[fig]
+            if q_fig_storage:
+                question_dict["figure_storage_urls"] = q_fig_storage
 
             # Only include images actually referenced by this question
             q_figures = set(question.figures)
@@ -272,7 +308,11 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
                                 llm_client.generate, prompt=fix_prompt
                             )
                             costs.add(fix_llm, model=llm_client.model)
-                            latex = _sanitize_text(fix_llm.content)
+                            fix_content = fix_llm.content
+                            # Strip code fences if present
+                            fix_content = re.sub(r"^```(?:latex|tex)?\s*\n?", "", fix_content.strip())
+                            fix_content = re.sub(r"\n?```\s*$", "", fix_content)
+                            latex = _sanitize_text(fix_content)
                             # Strip hallucinated figures from fix
                             latex = _strip_invalid_figures(latex, valid_figures)
                         except Exception as e2:
@@ -307,7 +347,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         # ---------------------------------------------------------------
         # Stage 5: Merge PDFs, extract regions, and upload
         # ---------------------------------------------------------------
-        await update_progress(document_id, "Merging and uploading PDF...")
+        await update_progress(document_id, "Almost there, wrapping up...")
 
         merged = fitz.open()
         question_pages: list[list[int]] = []
@@ -348,7 +388,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         ]
         if answer_questions:
             task = asyncio.create_task(
-                _generate_answer_keys_safe(document_id, answer_questions)
+                _generate_answer_keys_safe(document_id, answer_questions, mathpix_images, user_id=user_id)
             )
             _background_tasks.add(task)
             task.add_done_callback(_background_tasks.discard)
@@ -417,11 +457,14 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
 
 
 async def _generate_answer_keys_safe(
-    document_id: str, questions: list[tuple[int, dict]],
+    document_id: str,
+    questions: list[tuple[int, dict]],
+    mathpix_images: dict[str, bytes] | None = None,
+    user_id: str | None = None,
 ) -> None:
     """Wrapper that catches all exceptions so fire-and-forget never leaks."""
     try:
-        await generate_answer_keys(document_id, questions)
+        await generate_answer_keys(document_id, questions, image_data=mathpix_images, user_id=user_id)
     except Exception as e:
         logger.error(f"  [v2-answer-key] Top-level failure for {document_id}: {e}")
 

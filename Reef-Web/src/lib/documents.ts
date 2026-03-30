@@ -97,10 +97,14 @@ export async function uploadDocument(file: File, thumbnail?: Blob, courseId?: st
 
   // 4. Fire-and-forget: trigger server-side reconstruction
   const { data: { session } } = await supabase.auth.getSession()
-  fetch("/api/documents/process", {
+  const serverUrl = process.env.NEXT_PUBLIC_REEF_SERVER_URL || process.env.REEF_SERVER_URL || "https://api.studyreef.com"
+  fetch(`${serverUrl}/ai/v2/reconstruct-document`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ documentId: document.id, userId: user.id, accessToken: session?.access_token }),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${session?.access_token}`,
+    },
+    body: JSON.stringify({ document_id: document.id }),
   }).catch(() => {}) // non-critical — status stays "processing" until server finishes
 
   return document

@@ -31,6 +31,10 @@ struct AppRouter: View {
         GeometryReader { proxy in
             let shortSide = min(proxy.size.width, proxy.size.height)
             ZStack {
+                // Prevent gray flash during screen transitions
+                theme.colors.background
+                    .ignoresSafeArea()
+
                 switch currentScreen {
                 case .loading:
                     splashView
@@ -43,7 +47,7 @@ struct AppRouter: View {
                         .accessibilityIdentifier("screen.auth")
 
                 case .onboarding:
-                    placeholderOnboarding
+                    OnboardingFlowView()
                         .transition(.opacity)
                         .accessibilityIdentifier("screen.onboarding")
 
@@ -75,21 +79,6 @@ struct AppRouter: View {
 
                 ProgressView()
                     .tint(ReefColors.primary)
-            }
-        }
-    }
-
-    // MARK: - Placeholders
-
-    private var placeholderOnboarding: some View {
-        ZStack {
-            theme.colors.background
-                .ignoresSafeArea()
-            VStack(spacing: 16) {
-                Text("Onboarding")
-                    .reefHeading()
-                Text("Complete your profile to continue")
-                    .reefBody()
             }
         }
     }

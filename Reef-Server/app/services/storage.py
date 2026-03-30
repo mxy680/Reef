@@ -19,6 +19,26 @@ async def download_document_pdf(user_id: str, document_id: str) -> bytes:
         return resp.content
 
 
+async def upload_question_figure(
+    document_id: str, filename: str, image_bytes: bytes
+) -> str:
+    """Upload a question figure to ``{docId}/figures/{filename}`` and return the storage URL."""
+    path = f"{document_id}/figures/{filename}"
+    url = f"{settings.supabase_url}/storage/v1/object/documents/{path}"
+    # Detect content type from extension
+    ct = "image/jpeg" if filename.lower().endswith((".jpg", ".jpeg")) else "image/png"
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        "Content-Type": ct,
+        "x-upsert": "true",
+    }
+    async with httpx.AsyncClient() as client:
+        resp = await client.put(url, content=image_bytes, headers=headers, timeout=30)
+        resp.raise_for_status()
+    return url
+
+
 async def upload_document_pdf(
     user_id: str, document_id: str, pdf_bytes: bytes
 ) -> None:

@@ -8,17 +8,18 @@ struct TutorChatMessage: Identifiable {
     let role: Role
     let latex: String
     let timestamp: Date
+    var confidenceResponse: String? = nil
 
     enum Role: String {
-        case student        // student's transcribed work or typed question
-        case error          // tutor detected a mistake
-        case reinforcement  // tutor celebrates step completion
-        case answer         // tutor responds to a user question
+        case student
+        case error
+        case reinforcement
+        case answer
+        case confidenceCheck
     }
 }
 
 /// Evaluates student handwriting against the answer key in real time.
-/// Debounces requests by 1.5s and discards stale responses via a generation counter.
 @Observable
 @MainActor
 final class TutorEvaluationService {
@@ -28,26 +29,32 @@ final class TutorEvaluationService {
     var status: String = "idle"
     var mistakeExplanation: String?
     var isEvaluating: Bool = false
+    private var madeMistakeOnCurrentStep: Bool = false
     var chatMessages: [TutorChatMessage] = []
+    var voiceEnabled: Bool = true
+    var isDemo: Bool = false
 
-    /// Fires when the model marks the current step as "completed".
-    var onStepCompleted: (() -> Void)?
-
-    /// Reinforcement text for the current step (from answer key).
+    var onStepCompleted: ((Int) -> Void)?
+    var onMistakeSpoken: (() -> Void)?
     var pendingReinforcement: String?
+    var onAnswerKeyUpdated: (() -> Void)?
+
+    var lastDebugPrompt: String?
+    var evalCount: Int = 0
 
     // MARK: - Private
 
-    private var generation: Int = 0
-    private var evaluateTask: Task<Void, Never>?
-    private var lastEvaluatedLatex: String = ""
+    private var previousStatus: String = "idle"
 
-    private static let debounceInterval: Duration = .milliseconds(1500)
+    private let recoveryPhrases = [
+        "There you go.", "That's it, keep going.", "Nice fix.",
+        "You got it.", "That's the one.", "Good catch.",
+    ]
 
-    // MARK: - Evaluate
+    // MARK: - Evaluate (async, no Task spawning)
 
-    /// Trigger an evaluation. Debounces by 1.5s. Skips if latex is unchanged.
-    func evaluate(
+    /// Call the server and process the response. Awaitable — caller controls timing.
+    func runEval(
         latex: String,
         documentId: String,
         questionNumber: Int,
@@ -55,107 +62,188 @@ final class TutorEvaluationService {
         stepIndex: Int,
         figureURLs: [String] = [],
         studentImage: String? = nil
-    ) {
-        // Skip if latex hasn't changed since last eval
-        guard !latex.isEmpty, latex != lastEvaluatedLatex else {
+    ) async {
+        guard !latex.isEmpty else {
+            print("[runEval] SKIPPED: empty latex")
             return
         }
 
-        // Cancel any pending debounce and restart with new latex
-        evaluateTask?.cancel()
-        generation += 1
-        let myGeneration = generation
+        print("[runEval] START: step=\(stepIndex) latex=\(latex.prefix(50))")
+        isEvaluating = true
+        defer {
+            isEvaluating = false
+            print("[runEval] END")
+        }
 
-        evaluateTask = Task { [weak self] in
-            // Debounce
-            try? await Task.sleep(for: Self.debounceInterval)
-            guard let self, !Task.isCancelled, self.generation == myGeneration else {
-                await MainActor.run { self?.evaluateTask = nil }
-                return
+        do {
+            let response = try await callServer(
+                latex: latex,
+                documentId: documentId,
+                questionNumber: questionNumber,
+                partLabel: partLabel,
+                stepIndex: stepIndex,
+                figureURLs: figureURLs,
+                studentImage: studentImage
+            )
+
+            print("[runEval] RESPONSE: status=\(response.status) progress=\(response.progress) steps=\(response.stepsCompleted) speech=\(response.speechText?.prefix(40) ?? "nil")")
+            let wasInMistake = previousStatus == "mistake"
+            stepProgress = response.progress
+            previousStatus = response.status
+            mistakeExplanation = response.mistakeExplanation
+            lastDebugPrompt = response.debugPrompt
+            evalCount += 1
+
+            // Mistake recovery
+            if wasInMistake && response.status == "working" {
+                let phrase = recoveryPhrases.randomElement() ?? "There you go."
+                chatMessages.append(TutorChatMessage(role: .reinforcement, latex: phrase, timestamp: Date()))
+                if voiceEnabled { await speakPhrase(phrase) }
             }
 
-            self.isEvaluating = true
-            defer {
-                self.isEvaluating = false
-                self.evaluateTask = nil
+            // Track mistakes for confidence check
+            if response.status == "mistake" {
+                madeMistakeOnCurrentStep = true
             }
 
-            do {
-                let response = try await self.callServer(
-                    latex: latex,
-                    documentId: documentId,
-                    questionNumber: questionNumber,
-                    partLabel: partLabel,
-                    stepIndex: stepIndex,
-                    figureURLs: figureURLs,
-                    studentImage: studentImage
-                )
-
-                guard self.generation == myGeneration else { return }
-
-                self.stepProgress = response.progress
-                self.status = response.status
-                self.mistakeExplanation = response.mistakeExplanation
-                self.lastEvaluatedLatex = latex
-
-                // Add chat messages for mistakes
-                if let mistake = response.mistakeExplanation, response.status == "mistake" {
-                    let now = Date()
-                    self.chatMessages.append(TutorChatMessage(
-                        role: .student, latex: latex, timestamp: now
-                    ))
-                    self.chatMessages.append(TutorChatMessage(
-                        role: .error, latex: mistake, timestamp: now
-                    ))
+            // Show speech text in chat — exactly what the tutor says verbally
+            // This is the single source of truth for all tutor feedback display
+            if let speechText = response.speechText, !speechText.isEmpty {
+                let role: TutorChatMessage.Role = response.status == "mistake" ? .error : .reinforcement
+                if chatMessages.last?.latex != speechText {
+                    chatMessages.append(TutorChatMessage(role: role, latex: speechText, timestamp: Date()))
                 }
-
-                // Step completed — show reinforcement then advance
-                if response.status == "completed" {
-                    if let reinforcement = self.pendingReinforcement, !reinforcement.isEmpty {
-                        self.chatMessages.append(TutorChatMessage(
-                            role: .reinforcement, latex: reinforcement, timestamp: Date()
-                        ))
-                    }
-                    self.onStepCompleted?()
-                }
-            } catch {
-                guard !Task.isCancelled, self.generation == myGeneration else { return }
-                print("[TutorEvalSvc] Evaluation failed: \(error)")
             }
+
+            // Confidence check after struggled step completion
+            if response.status == "completed" && !isDemo && madeMistakeOnCurrentStep {
+                chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
+            }
+
+            // Play TTS audio (non-blocking — audio plays in background)
+            if voiceEnabled, let audioBase64 = response.speechAudio,
+               let audioData = Data(base64Encoded: audioBase64) {
+                playAudio(audioData)
+            }
+
+            // Set status and fire step advancement immediately
+            status = response.status
+            if response.status == "completed" {
+                onStepCompleted?(response.stepsCompleted)
+            }
+        } catch {
+            print("[TutorEvalSvc] Evaluation failed: \(error)")
         }
     }
 
     // MARK: - Reset
 
-    /// Reset for a new step (keeps chat history).
     func resetForNextStep() {
-        evaluateTask?.cancel()
-        evaluateTask = nil
-        generation += 1
         stepProgress = 0.0
         status = "idle"
+        previousStatus = "idle"
         mistakeExplanation = nil
         isEvaluating = false
-        lastEvaluatedLatex = ""
+        madeMistakeOnCurrentStep = false
     }
 
-    /// Full reset (tutor mode toggled off or question changed).
     func reset() {
         resetForNextStep()
+        chatTask?.cancel()
+        chatTask = nil
         chatMessages.removeAll()
     }
 
-    // MARK: - Network
+    // MARK: - Process Eval Response (called directly from CanvasViewModel.fireEval)
+
+    func processEvalResponse(
+        progress: Double,
+        status: String,
+        mistakeExplanation: String?,
+        stepsCompleted: Int,
+        speechAudio: String?,
+        speechText: String?
+    ) async {
+        let wasInMistake = previousStatus == "mistake"
+        stepProgress = progress
+        previousStatus = status
+        self.mistakeExplanation = mistakeExplanation
+        evalCount += 1
+
+        // Mistake recovery
+        if wasInMistake && status == "working" {
+            let phrase = recoveryPhrases.randomElement() ?? "There you go."
+            chatMessages.append(TutorChatMessage(role: .reinforcement, latex: phrase, timestamp: Date()))
+            if voiceEnabled { await speakPhrase(phrase) }
+        }
+
+        // Track mistakes for confidence check
+        if status == "mistake" {
+            madeMistakeOnCurrentStep = true
+        }
+
+        // Show mistake explanation or reinforcement in chat (formatted LaTeX version)
+        // The verbal speech_text is only used for TTS, not displayed
+        if status == "mistake", let explanation = mistakeExplanation, !explanation.isEmpty {
+            if chatMessages.last?.latex != explanation {
+                chatMessages.append(TutorChatMessage(role: .error, latex: explanation, timestamp: Date()))
+            }
+        } else if let speechText, !speechText.isEmpty, status != "mistake" {
+            let role: TutorChatMessage.Role = .reinforcement
+            if chatMessages.last?.latex != speechText {
+                chatMessages.append(TutorChatMessage(role: role, latex: speechText, timestamp: Date()))
+            }
+        }
+
+        // Confidence check after struggled step completion
+        if status == "completed" && !isDemo && madeMistakeOnCurrentStep {
+            chatMessages.append(TutorChatMessage(role: .confidenceCheck, latex: "How confident are you in that step?", timestamp: Date()))
+        }
+
+        // Play TTS audio (verbal version — no math notation)
+        if voiceEnabled, let audioBase64 = speechAudio,
+           let audioData = Data(base64Encoded: audioBase64) {
+            playAudio(audioData)
+        }
+
+        self.status = status
+    }
+
+    // MARK: - Network (Eval)
 
     private struct EvalResponse: Decodable {
         let progress: Double
         let status: String
         let mistakeExplanation: String?
+        let stepsCompleted: Int
+        let speechAudio: String?
+        let speechText: String?
+        let debugPrompt: String?
 
         enum CodingKeys: String, CodingKey {
             case progress, status
             case mistakeExplanation = "mistake_explanation"
+            case stepsCompleted = "steps_completed"
+            case speechAudio = "speech_audio"
+            case speechText = "speech_text"
+            case debugPrompt = "debug_prompt"
         }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            progress = try container.decode(Double.self, forKey: .progress)
+            status = try container.decode(String.self, forKey: .status)
+            mistakeExplanation = try container.decodeIfPresent(String.self, forKey: .mistakeExplanation)
+            stepsCompleted = try container.decodeIfPresent(Int.self, forKey: .stepsCompleted) ?? 1
+            speechAudio = try container.decodeIfPresent(String.self, forKey: .speechAudio)
+            speechText = try container.decodeIfPresent(String.self, forKey: .speechText)
+            debugPrompt = try container.decodeIfPresent(String.self, forKey: .debugPrompt)
+        }
+    }
+
+    private struct HistoryEntry: Encodable {
+        let role: String
+        let text: String
     }
 
     private struct EvalRequest: Encodable {
@@ -166,6 +254,8 @@ final class TutorEvaluationService {
         let studentLatex: String
         let figureUrls: [String]
         let studentImage: String?
+        let history: [HistoryEntry]
+        let isDemo: Bool
 
         enum CodingKeys: String, CodingKey {
             case documentId = "document_id"
@@ -175,6 +265,8 @@ final class TutorEvaluationService {
             case studentLatex = "student_latex"
             case figureUrls = "figure_urls"
             case studentImage = "student_image"
+            case history
+            case isDemo = "is_demo"
         }
     }
 
@@ -194,6 +286,10 @@ final class TutorEvaluationService {
 
         let authSession = try await supabase.auth.session
 
+        let historyEntries = chatMessages.suffix(15).map { msg in
+            HistoryEntry(role: msg.role.rawValue, text: msg.latex)
+        }
+
         let body = EvalRequest(
             documentId: documentId,
             questionNumber: questionNumber,
@@ -201,18 +297,19 @@ final class TutorEvaluationService {
             stepIndex: stepIndex,
             studentLatex: latex,
             figureUrls: figureURLs,
-            studentImage: studentImage
+            studentImage: studentImage,
+            history: historyEntries,
+            isDemo: isDemo
         )
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 60
+        request.timeoutInterval = 30
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONEncoder().encode(body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
-
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
@@ -220,11 +317,37 @@ final class TutorEvaluationService {
         return try JSONDecoder().decode(EvalResponse.self, from: data)
     }
 
+    // MARK: - TTS Helper
+
+    /// Public wrapper for TTS — called by CanvasViewModel when polling detects new speech
+    func speakText(_ phrase: String) async {
+        await speakPhrase(phrase)
+    }
+
+    private func speakPhrase(_ phrase: String) async {
+        guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
+              let url = URL(string: "\(serverURL)/ai/tts"),
+              let token = try? await supabase.auth.session.accessToken else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 10
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: ["text": phrase])
+        guard let (data, resp) = try? await URLSession.shared.data(for: request),
+              let http = resp as? HTTPURLResponse, http.statusCode == 200 else { return }
+        struct TTSResp: Decodable { let speechAudio: String?; enum CodingKeys: String, CodingKey { case speechAudio = "speech_audio" } }
+        guard let result = try? JSONDecoder().decode(TTSResp.self, from: data),
+              let b64 = result.speechAudio,
+              let audioData = Data(base64Encoded: b64) else { return }
+        playAudio(audioData)
+    }
+
     // MARK: - Chat
 
     var isSendingChat: Bool = false
+    private var chatTask: Task<Void, Never>?
 
-    /// Send a user question to the tutor and get a reply.
     func sendChat(
         message: String,
         documentId: String,
@@ -238,34 +361,23 @@ final class TutorEvaluationService {
         guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
         let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Add user message immediately
-        chatMessages.append(TutorChatMessage(
-            role: .student, latex: trimmed, timestamp: Date()
-        ))
-
+        chatMessages.append(TutorChatMessage(role: .student, latex: trimmed, timestamp: Date()))
         isSendingChat = true
 
-        Task { [weak self] in
+        chatTask = Task { [weak self] in
             guard let self else { return }
             do {
                 let response = try await self.callChatServer(
-                    message: trimmed,
-                    documentId: documentId,
-                    questionNumber: questionNumber,
-                    partLabel: partLabel,
-                    stepIndex: stepIndex,
-                    studentLatex: studentLatex,
-                    studentImage: studentImage
+                    message: trimmed, documentId: documentId, questionNumber: questionNumber,
+                    partLabel: partLabel, stepIndex: stepIndex,
+                    studentLatex: studentLatex, studentImage: studentImage
                 )
-                self.chatMessages.append(TutorChatMessage(
-                    role: .answer, latex: response.reply, timestamp: Date()
-                ))
-                // Play TTS audio if available
-                if let audioBase64 = response.speechAudio,
+                self.chatMessages.append(TutorChatMessage(role: .answer, latex: response.reply, timestamp: Date()))
+                if self.voiceEnabled, let audioBase64 = response.speechAudio,
                    let audioData = Data(base64Encoded: audioBase64) {
                     self.playAudio(audioData)
                 }
+                if response.answerKeyUpdated { self.onAnswerKeyUpdated?() }
             } catch {
                 self.chatMessages.append(TutorChatMessage(
                     role: .answer, latex: "Couldn't reach the tutor right now. Try again in a moment.", timestamp: Date()
@@ -275,11 +387,6 @@ final class TutorEvaluationService {
         }
     }
 
-    private struct HistoryMessage: Encodable {
-        let role: String
-        let text: String
-    }
-
     private struct ChatRequest: Encodable {
         let documentId: String
         let questionNumber: Int
@@ -287,7 +394,7 @@ final class TutorEvaluationService {
         let stepIndex: Int
         let studentLatex: String
         let userMessage: String
-        let history: [HistoryMessage]
+        let history: [HistoryEntry]
         let studentImage: String?
 
         enum CodingKeys: String, CodingKey {
@@ -305,20 +412,18 @@ final class TutorEvaluationService {
     private struct ChatResponse: Decodable {
         let reply: String
         let speechAudio: String?
+        let answerKeyUpdated: Bool
 
         enum CodingKeys: String, CodingKey {
             case reply
             case speechAudio = "speech_audio"
+            case answerKeyUpdated = "answer_key_updated"
         }
     }
 
     private func callChatServer(
-        message: String,
-        documentId: String,
-        questionNumber: Int,
-        partLabel: String?,
-        stepIndex: Int,
-        studentLatex: String,
+        message: String, documentId: String, questionNumber: Int,
+        partLabel: String?, stepIndex: Int, studentLatex: String,
         studentImage: String? = nil
     ) async throws -> ChatResponse {
         guard let serverURL = Bundle.main.object(forInfoDictionaryKey: "REEF_SERVER_URL") as? String,
@@ -327,26 +432,20 @@ final class TutorEvaluationService {
         }
 
         let authSession = try await supabase.auth.session
-
-        // Send last 10 messages as history
         let historyMessages = chatMessages.suffix(10).map { msg in
-            HistoryMessage(role: msg.role.rawValue, text: msg.latex)
+            HistoryEntry(role: msg.role.rawValue, text: msg.latex)
         }
 
         let body = ChatRequest(
-            documentId: documentId,
-            questionNumber: questionNumber,
-            partLabel: partLabel,
-            stepIndex: stepIndex,
-            studentLatex: studentLatex,
-            userMessage: message,
-            history: historyMessages,
-            studentImage: studentImage
+            documentId: documentId, questionNumber: questionNumber,
+            partLabel: partLabel, stepIndex: stepIndex,
+            studentLatex: studentLatex, userMessage: message,
+            history: historyMessages, studentImage: studentImage
         )
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 60
+        request.timeoutInterval = 30
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(authSession.accessToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONEncoder().encode(body)
@@ -361,18 +460,57 @@ final class TutorEvaluationService {
 
     // MARK: - Audio Playback
 
+    var isTutorSpeaking: Bool = false
     private var audioPlayer: AVAudioPlayer?
+    private var audioDelegate: AudioFinishDelegate?
 
-    private func playAudio(_ data: Data) {
+    func stopAudio() {
+        audioPlayer?.stop()
+        audioPlayer = nil
+        isTutorSpeaking = false
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    func playAudio(_ data: Data) {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default)
             try session.setActive(true)
 
-            audioPlayer = try AVAudioPlayer(data: data)
-            audioPlayer?.play()
+            let player = try AVAudioPlayer(data: data)
+            let delegate = AudioFinishDelegate { [weak self] in
+                Task { @MainActor in self?.isTutorSpeaking = false }
+            }
+            player.delegate = delegate
+            audioDelegate = delegate
+            audioPlayer = player
+            isTutorSpeaking = true
+            player.play()
         } catch {
             print("[TutorEval] Audio playback failed: \(error)")
+            isTutorSpeaking = false
         }
+    }
+
+    // MARK: - Simulation Support
+
+    /// Appends messages received from the server (via sim polling) that aren't already present.
+    func appendRemoteMessages(_ messages: [TutorChatMessage]) {
+        for msg in messages {
+            if !chatMessages.contains(where: { $0.latex == msg.latex && $0.role == msg.role }) {
+                chatMessages.append(msg)
+            }
+        }
+    }
+}
+
+// MARK: - Audio Delegate
+
+private final class AudioFinishDelegate: NSObject, AVAudioPlayerDelegate {
+    let onFinish: () -> Void
+    init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        onFinish()
     }
 }

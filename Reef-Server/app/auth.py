@@ -61,7 +61,7 @@ async def get_current_user(
         and settings.environment == "development"
         and credentials.credentials == "dev"
     ):
-        return AuthenticatedUser(sub="dev-user", email="dev@localhost", role="authenticated")
+        return AuthenticatedUser(sub="a24e261a-313b-450a-88c5-7653e2ece357", email="dev@localhost", role="authenticated")
     return verify_token(credentials.credentials)
 
 

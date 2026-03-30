@@ -63,12 +63,7 @@ final class AuthManager {
             session = try await supabase.auth.session
             await checkOnboarding()
         } catch {
-            #if DEBUG
-            // No saved session — auto-bypass in debug builds
-            devLogin()
-            #else
             session = nil
-            #endif
         }
     }
 
@@ -208,7 +203,7 @@ final class AuthManager {
         profile = Profile(
             id: "dev-user",
             displayName: "Dev User",
-            email: "markshteyn1@gmail.com",
+            email: "dev@example.com",
             subjects: [],
             onboardingCompleted: true
         )
