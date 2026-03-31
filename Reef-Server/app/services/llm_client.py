@@ -1,19 +1,19 @@
 """Thin wrapper for OpenAI-compatible APIs (OpenRouter, etc.)."""
 
+import asyncio
 import base64
 import copy
 import logging
 import os
 import re
-import time
 from dataclasses import dataclass
 
 from openai import (
     APIConnectionError,
     APITimeoutError,
+    AsyncOpenAI,
     BadRequestError,
     InternalServerError,
-    OpenAI,
     RateLimitError,
 )
 
@@ -79,7 +79,7 @@ class LLMClient:
         kwargs: dict = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
-        self.client = OpenAI(**kwargs)
+        self.client = AsyncOpenAI(**kwargs)
         self.model = model
         self._strict_json_supported: bool | None = None  # auto-detect on first call
 
@@ -99,7 +99,7 @@ class LLMClient:
         # Fallback: json_object mode (model must be prompted to return JSON)
         return {"type": "json_object"}
 
-    def generate(
+    async def generate(
         self,
         prompt: str,
         images: list[bytes] | None = None,
@@ -137,7 +137,7 @@ class LLMClient:
         last_exc: Exception | None = None
         for attempt in range(1, max_retries + 1):
             try:
-                response = self.client.chat.completions.create(**kwargs)
+                response = await self.client.chat.completions.create(**kwargs)
                 usage = response.usage
                 if self._strict_json_supported is None and response_schema is not None:
                     self._strict_json_supported = True
@@ -173,7 +173,7 @@ class LLMClient:
                         f"LLM attempt {attempt}/{max_retries} failed "
                         f"({type(e).__name__}): {e}. Retrying in {delay}s..."
                     )
-                    time.sleep(delay)
+                    await asyncio.sleep(delay)
                 else:
                     logger.error(f"LLM call failed after {max_retries} attempts: {e}")
         raise last_exc  # type: ignore[misc]

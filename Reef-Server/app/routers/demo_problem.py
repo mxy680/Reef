@@ -7,11 +7,11 @@ import hashlib
 import logging
 import uuid
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 from app.models.answer_key import QuestionAnswer
 from app.models.demo import (
     DemoChatRequest, DemoChatResponse,
@@ -118,8 +118,7 @@ async def demo_problem(body: DemoProblemRequest, user: AuthenticatedUser = Depen
         base_url="https://openrouter.ai/api/v1",
     )
 
-    result = await asyncio.to_thread(
-        llm.generate,
+    result = await llm.generate(
         prompt=prompt,
         system_prompt=DEMO_PROBLEM_SYSTEM,
         response_schema=DemoProblem.model_json_schema(),
@@ -176,8 +175,7 @@ async def demo_chat(body: DemoChatRequest, user: AuthenticatedUser = Depends(get
         base_url="https://openrouter.ai/api/v1",
     )
 
-    result = await asyncio.to_thread(
-        llm.generate,
+    result = await llm.generate(
         prompt=prompt,
         system_prompt=DEMO_CHAT_SYSTEM,
         response_schema=TutorChatLLMOutput.model_json_schema(),
@@ -242,8 +240,7 @@ async def _demo_document_impl(body: DemoDocumentRequest, user: AuthenticatedUser
         base_url="https://openrouter.ai/api/v1",
     )
 
-    result = await asyncio.to_thread(
-        llm.generate,
+    result = await llm.generate(
         prompt=prompt,
         system_prompt=DEMO_PROBLEM_SYSTEM,
         response_schema=DemoProblem.model_json_schema(),
@@ -291,63 +288,63 @@ async def _demo_document_impl(body: DemoDocumentRequest, user: AuthenticatedUser
         "Content-Type": "application/json",
     }
 
-    async with httpx.AsyncClient(timeout=15) as client:
-        # Insert document row
-        resp = await client.post(
-            f"{settings.supabase_url}/rest/v1/documents",
-            headers=headers,
-            json=doc_row,
-        )
-        if resp.status_code not in (200, 201):
-            log.error(f"[demo-document] Failed to insert document: {resp.status_code} {resp.text[:200]}")
-            if "foreign key" in resp.text.lower() or "23503" in resp.text:
-                raise HTTPException(status_code=401, detail="User account not found. Please sign out and sign back in.")
-            raise HTTPException(status_code=500, detail="Failed to create document record")
+    client = get_http()
+    # Insert document row
+    resp = await client.post(
+        f"{settings.supabase_url}/rest/v1/documents",
+        headers=headers,
+        json=doc_row,
+    )
+    if resp.status_code not in (200, 201):
+        log.error(f"[demo-document] Failed to insert document: {resp.status_code} {resp.text[:200]}")
+        if "foreign key" in resp.text.lower() or "23503" in resp.text:
+            raise HTTPException(status_code=401, detail="User account not found. Please sign out and sign back in.")
+        raise HTTPException(status_code=500, detail="Failed to create document record")
 
-        # Upload PDF to storage
-        storage_headers = {
-            "apikey": settings.supabase_service_role_key,
-            "Authorization": f"Bearer {settings.supabase_service_role_key}",
-            "Content-Type": "application/pdf",
-        }
-        storage_path = f"{user.id}/{doc_id}/original.pdf"
-        resp = await client.post(
-            f"{settings.supabase_url}/storage/v1/object/documents/{storage_path}",
-            headers=storage_headers,
-            content=pdf_bytes,
-        )
-        if resp.status_code not in (200, 201):
-            log.error(f"[demo-document] Failed to upload PDF: {resp.status_code} {resp.text[:200]}")
-            raise HTTPException(status_code=500, detail="Failed to upload PDF")
+    # Upload PDF to storage
+    storage_headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        "Content-Type": "application/pdf",
+    }
+    storage_path = f"{user.id}/{doc_id}/original.pdf"
+    resp = await client.post(
+        f"{settings.supabase_url}/storage/v1/object/documents/{storage_path}",
+        headers=storage_headers,
+        content=pdf_bytes,
+    )
+    if resp.status_code not in (200, 201):
+        log.error(f"[demo-document] Failed to upload PDF: {resp.status_code} {resp.text[:200]}")
+        raise HTTPException(status_code=500, detail="Failed to upload PDF")
 
-        # 7. Create answer key record
-        # Wrap steps in a part "a" so iOS tutor can resolve via activeQuestionLabel "Q1a"
-        from app.models.answer_key import PartAnswer
-        answer_key = QuestionAnswer(
-            question_number=1,
-            parts=[PartAnswer(
-                label="a",
-                steps=problem.steps,
-                final_answer=problem.final_answer,
-            )],
-        )
-        answer_key_row = {
-            "document_id": doc_id,
-            "question_number": 1,
-            "answer_text": answer_key.model_dump_json(),
-            "question_json": question.model_dump(),
-            "model": TUTOR_MODEL,
-            "input_tokens": result.input_tokens,
-            "output_tokens": result.output_tokens,
-        }
-        resp = await client.post(
-            f"{settings.supabase_url}/rest/v1/answer_keys",
-            headers=headers,
-            json=answer_key_row,
-        )
-        if resp.status_code not in (200, 201):
-            log.error(f"[demo-document] Failed to insert answer key: {resp.status_code} {resp.text[:200]}")
-            raise HTTPException(status_code=500, detail="Failed to create answer key record")
+    # 7. Create answer key record
+    # Wrap steps in a part "a" so iOS tutor can resolve via activeQuestionLabel "Q1a"
+    from app.models.answer_key import PartAnswer
+    answer_key = QuestionAnswer(
+        question_number=1,
+        parts=[PartAnswer(
+            label="a",
+            steps=problem.steps,
+            final_answer=problem.final_answer,
+        )],
+    )
+    answer_key_row = {
+        "document_id": doc_id,
+        "question_number": 1,
+        "answer_text": answer_key.model_dump_json(),
+        "question_json": question.model_dump(),
+        "model": TUTOR_MODEL,
+        "input_tokens": result.input_tokens,
+        "output_tokens": result.output_tokens,
+    }
+    resp = await client.post(
+        f"{settings.supabase_url}/rest/v1/answer_keys",
+        headers=headers,
+        json=answer_key_row,
+    )
+    if resp.status_code not in (200, 201):
+        log.error(f"[demo-document] Failed to insert answer key: {resp.status_code} {resp.text[:200]}")
+        raise HTTPException(status_code=500, detail="Failed to create answer key record")
 
     # 8. Return summary
     log.info(f"[demo-document] Success: doc_id={doc_id} topic='{body.topic}'")
@@ -384,8 +381,7 @@ async def walkthrough_react(
 
     from app.models.demo import WalkthroughReactLLMOutput
 
-    result = await asyncio.to_thread(
-        llm.generate,
+    result = await llm.generate(
         prompt="Look at this image of what a student just drew on their iPad. Give a very short reaction. ONE sentence max. Be specific about what you see.\n\nIMPORTANT: Only be sarcastic if they barely drew anything (a single line, a dot, a basic circle, a scribble). If they drew something recognizable and fun (a smiley face, an animal, a person, a flower, a house, etc.), be genuinely positive and specific about it.",
         system_prompt="You are a chill college TA reacting to a doodle. ONE short sentence only. Be specific about what you see.\n\nIf minimal effort (line, dot, scribble, basic circle): be playfully sarcastic. Examples: 'A line. Groundbreaking.' / 'Bold of you to call that a circle.'\n\nIf actual effort (smiley, animal, person, word, drawing): be genuinely positive. Examples: 'OK that smiley is actually adorable.' / 'A cat! Respect.' / 'That's actually pretty good, not gonna lie.'",
         images=images,
@@ -459,12 +455,12 @@ async def _get_tts_cache(cache_key: str) -> str | None:
         "Authorization": f"Bearer {settings.supabase_service_role_key}",
     }
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            resp = await client.get(
-                f"{settings.supabase_url}/rest/v1/tts_cache",
-                headers=headers,
-                params={"cache_key": f"eq.{cache_key}", "select": "audio_base64", "limit": "1"},
-            )
+        client = get_http()
+        resp = await client.get(
+            f"{settings.supabase_url}/rest/v1/tts_cache",
+            headers=headers,
+            params={"cache_key": f"eq.{cache_key}", "select": "audio_base64", "limit": "1"},
+        )
         if resp.status_code == 200:
             rows = resp.json()
             if rows:
@@ -487,19 +483,19 @@ async def _set_tts_cache(cache_key: str, text: str, audio_base64: str) -> None:
         "Prefer": "resolution=ignore-duplicates",
     }
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            await client.post(
-                f"{settings.supabase_url}/rest/v1/tts_cache",
-                headers=headers,
-                json={
-                    "cache_key": cache_key,
-                    "text_input": text[:500],
-                    "audio_base64": audio_base64,
-                    "voice": TTS_VOICE,
-                    "model": TTS_MODEL,
-                    "speed": TTS_SPEED,
-                },
-            )
+        client = get_http()
+        await client.post(
+            f"{settings.supabase_url}/rest/v1/tts_cache",
+            headers=headers,
+            json={
+                "cache_key": cache_key,
+                "text_input": text[:500],
+                "audio_base64": audio_base64,
+                "voice": TTS_VOICE,
+                "model": TTS_MODEL,
+                "speed": TTS_SPEED,
+            },
+        )
         log.info(f"[tts] Cached audio for key {cache_key[:12]}...")
     except Exception as e:
         log.warning(f"[tts] Cache write failed: {e}")
@@ -522,18 +518,19 @@ async def _generate_tts(text: str) -> str | None:
     # Primary: ElevenLabs
     if settings.elevenlabs_api_key:
         try:
-            async with httpx.AsyncClient(timeout=15) as client:
-                resp = await client.post(
-                    f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVEN_VOICE_ID}",
-                    headers={
-                        "xi-api-key": settings.elevenlabs_api_key,
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "text": text,
-                        "model_id": ELEVEN_MODEL,
-                    },
-                )
+            client = get_http()
+            resp = await client.post(
+                f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVEN_VOICE_ID}",
+                headers={
+                    "xi-api-key": settings.elevenlabs_api_key,
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "text": text,
+                    "model_id": ELEVEN_MODEL,
+                },
+                timeout=15,
+            )
             if resp.status_code == 200:
                 # ElevenLabs returns MP3 — iOS AVAudioPlayer handles it natively
                 audio_base64 = base64.b64encode(resp.content).decode()
@@ -546,18 +543,19 @@ async def _generate_tts(text: str) -> str | None:
     # Fallback: Groq
     if audio_base64 is None and settings.groq_api_key:
         try:
-            async with httpx.AsyncClient(timeout=15) as client:
-                resp = await client.post(
-                    "https://api.groq.com/openai/v1/audio/speech",
-                    headers={"Authorization": f"Bearer {settings.groq_api_key}"},
-                    json={
-                        "model": TTS_MODEL,
-                        "input": text,
-                        "voice": TTS_VOICE,
-                        "response_format": "wav",
-                        "speed": TTS_SPEED,
-                    },
-                )
+            client = get_http()
+            resp = await client.post(
+                "https://api.groq.com/openai/v1/audio/speech",
+                headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                json={
+                    "model": TTS_MODEL,
+                    "input": text,
+                    "voice": TTS_VOICE,
+                    "response_format": "wav",
+                    "speed": TTS_SPEED,
+                },
+                timeout=15,
+            )
             if resp.status_code == 200:
                 audio_base64 = base64.b64encode(resp.content).decode()
                 log.info(f"[tts] Groq fallback OK ({len(resp.content)} bytes)")

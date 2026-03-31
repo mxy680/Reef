@@ -80,8 +80,7 @@ async def generate_student_work(
         base_url="https://openrouter.ai/api/v1",
     )
 
-    result = await asyncio.to_thread(
-        llm.generate,
+    result = await llm.generate(
         prompt=prompt,
         system_prompt=system,
         timeout=15.0,

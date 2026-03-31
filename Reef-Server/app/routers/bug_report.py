@@ -2,12 +2,12 @@
 
 import logging
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 
 log = logging.getLogger(__name__)
 
@@ -35,17 +35,17 @@ async def submit_bug_report(
         "question_label": body.question_label,
     }
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.post(
-            f"{settings.supabase_url}/rest/v1/bug_reports",
-            json=payload,
-            headers={
-                "apikey": settings.supabase_service_role_key,
-                "Authorization": f"Bearer {settings.supabase_service_role_key}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal",
-            },
-        )
+    client = get_http()
+    resp = await client.post(
+        f"{settings.supabase_url}/rest/v1/bug_reports",
+        json=payload,
+        headers={
+            "apikey": settings.supabase_service_role_key,
+            "Authorization": f"Bearer {settings.supabase_service_role_key}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+        },
+    )
 
     if resp.status_code not in (200, 201):
         log.warning(f"[bug-report] Insert failed: {resp.status_code} {resp.text[:200]}")

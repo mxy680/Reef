@@ -1,8 +1,7 @@
 """Supabase Storage helpers — download/upload document PDFs via REST."""
 
-import httpx
-
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 
 
 async def download_document_pdf(user_id: str, document_id: str) -> bytes:
@@ -13,10 +12,10 @@ async def download_document_pdf(user_id: str, document_id: str) -> bytes:
         "apikey": settings.supabase_service_role_key,
         "Authorization": f"Bearer {settings.supabase_service_role_key}",
     }
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(url, headers=headers, timeout=60)
-        resp.raise_for_status()
-        return resp.content
+    client = get_http()
+    resp = await client.get(url, headers=headers, timeout=60)
+    resp.raise_for_status()
+    return resp.content
 
 
 async def upload_question_figure(
@@ -33,9 +32,9 @@ async def upload_question_figure(
         "Content-Type": ct,
         "x-upsert": "true",
     }
-    async with httpx.AsyncClient() as client:
-        resp = await client.put(url, content=image_bytes, headers=headers, timeout=30)
-        resp.raise_for_status()
+    client = get_http()
+    resp = await client.put(url, content=image_bytes, headers=headers, timeout=30)
+    resp.raise_for_status()
     return url
 
 
@@ -51,6 +50,6 @@ async def upload_document_pdf(
         "Content-Type": "application/pdf",
         "x-upsert": "true",
     }
-    async with httpx.AsyncClient() as client:
-        resp = await client.put(url, content=pdf_bytes, headers=headers, timeout=120)
-        resp.raise_for_status()
+    client = get_http()
+    resp = await client.put(url, content=pdf_bytes, headers=headers, timeout=120)
+    resp.raise_for_status()

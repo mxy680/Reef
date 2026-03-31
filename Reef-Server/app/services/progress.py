@@ -3,9 +3,8 @@
 import asyncio
 import logging
 
-import httpx
-
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +25,8 @@ async def update_progress(document_id: str, message: str | None):
             "Content-Type": "application/json",
             "Prefer": "return=minimal",
         }
-        async with httpx.AsyncClient() as client:
-            await client.patch(url, json={"status_message": message}, headers=headers)
+        client = get_http()
+        await client.patch(url, json={"status_message": message}, headers=headers)
     except Exception as e:
         print(f"  [progress] Failed to update status_message: {e}")
 
@@ -99,9 +98,9 @@ async def update_document_status(
 
     for attempt in range(1, max_attempts + 1):
         try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.patch(url, json=payload, headers=headers, timeout=10)
-                resp.raise_for_status()
+            client = get_http()
+            resp = await client.patch(url, json=payload, headers=headers, timeout=10)
+            resp.raise_for_status()
             return
         except Exception as e:
             if attempt < max_attempts:

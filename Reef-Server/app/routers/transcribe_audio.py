@@ -2,11 +2,11 @@
 
 import logging
 
-import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 
 log = logging.getLogger(__name__)
 
@@ -31,13 +31,14 @@ async def transcribe_audio(
         raise HTTPException(status_code=413, detail="Audio file too large")
 
     # Call Groq Whisper API
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(
-            "https://api.groq.com/openai/v1/audio/transcriptions",
-            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
-            files={"file": (file.filename or "audio.m4a", audio_data, file.content_type or "audio/m4a")},
-            data={"model": "whisper-large-v3", "language": "en"},
-        )
+    client = get_http()
+    resp = await client.post(
+        "https://api.groq.com/openai/v1/audio/transcriptions",
+        headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+        files={"file": (file.filename or "audio.m4a", audio_data, file.content_type or "audio/m4a")},
+        data={"model": "whisper-large-v3", "language": "en"},
+        timeout=30,
+    )
 
     if resp.status_code != 200:
         log.warning(f"Groq Whisper API returned {resp.status_code}: {resp.text[:200]}")

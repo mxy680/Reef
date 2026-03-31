@@ -4,11 +4,11 @@ import asyncio
 import logging
 import uuid
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 from app.models.answer_key import QuestionAnswer, PartAnswer
 from app.models.demo import DemoProblem
 from app.models.generate_question import GenerateQuestionRequest, GenerateQuestionResponse
@@ -110,8 +110,7 @@ async def _generate_question_impl(
         base_url="https://openrouter.ai/api/v1",
     )
 
-    result = await asyncio.to_thread(
-        llm.generate,
+    result = await llm.generate(
         prompt=prompt,
         system_prompt=system_prompt,
         response_schema=DemoProblem.model_json_schema(),
@@ -159,73 +158,73 @@ async def _generate_question_impl(
         "Content-Type": "application/json",
     }
 
-    async with httpx.AsyncClient(timeout=15) as client:
-        # Insert document row
-        resp = await client.post(
-            f"{settings.supabase_url}/rest/v1/documents",
-            headers=headers,
-            json=doc_row,
+    client = get_http()
+    # Insert document row
+    resp = await client.post(
+        f"{settings.supabase_url}/rest/v1/documents",
+        headers=headers,
+        json=doc_row,
+    )
+    if resp.status_code not in (200, 201):
+        log.error(
+            f"[generate-question] Failed to insert document: "
+            f"{resp.status_code} {resp.text[:200]}"
         )
-        if resp.status_code not in (200, 201):
-            log.error(
-                f"[generate-question] Failed to insert document: "
-                f"{resp.status_code} {resp.text[:200]}"
+        if "foreign key" in resp.text.lower() or "23503" in resp.text:
+            raise HTTPException(
+                status_code=401,
+                detail="User account not found. Please sign out and sign back in.",
             )
-            if "foreign key" in resp.text.lower() or "23503" in resp.text:
-                raise HTTPException(
-                    status_code=401,
-                    detail="User account not found. Please sign out and sign back in.",
-                )
-            raise HTTPException(status_code=500, detail="Failed to create document record")
+        raise HTTPException(status_code=500, detail="Failed to create document record")
 
-        # Upload PDF to storage
-        storage_headers = {
-            "apikey": settings.supabase_service_role_key,
-            "Authorization": f"Bearer {settings.supabase_service_role_key}",
-            "Content-Type": "application/pdf",
-        }
-        storage_path = f"{user.id}/{doc_id}/original.pdf"
-        resp = await client.post(
-            f"{settings.supabase_url}/storage/v1/object/documents/{storage_path}",
-            headers=storage_headers,
-            content=pdf_bytes,
+    # Upload PDF to storage
+    storage_headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        "Content-Type": "application/pdf",
+    }
+    storage_path = f"{user.id}/{doc_id}/original.pdf"
+    resp = await client.post(
+        f"{settings.supabase_url}/storage/v1/object/documents/{storage_path}",
+        headers=storage_headers,
+        content=pdf_bytes,
+    )
+    if resp.status_code not in (200, 201):
+        log.error(
+            f"[generate-question] Failed to upload PDF: "
+            f"{resp.status_code} {resp.text[:200]}"
         )
-        if resp.status_code not in (200, 201):
-            log.error(
-                f"[generate-question] Failed to upload PDF: "
-                f"{resp.status_code} {resp.text[:200]}"
-            )
-            raise HTTPException(status_code=500, detail="Failed to upload PDF")
+        raise HTTPException(status_code=500, detail="Failed to upload PDF")
 
-        # 6. Insert answer key row
-        answer_key = QuestionAnswer(
-            question_number=1,
-            parts=[PartAnswer(
-                label="a",
-                steps=problem.steps,
-                final_answer=problem.final_answer,
-            )],
+    # 6. Insert answer key row
+    answer_key = QuestionAnswer(
+        question_number=1,
+        parts=[PartAnswer(
+            label="a",
+            steps=problem.steps,
+            final_answer=problem.final_answer,
+        )],
+    )
+    answer_key_row = {
+        "document_id": doc_id,
+        "question_number": 1,
+        "answer_text": answer_key.model_dump_json(),
+        "question_json": question.model_dump(),
+        "model": TUTOR_MODEL,
+        "input_tokens": result.input_tokens,
+        "output_tokens": result.output_tokens,
+    }
+    resp = await client.post(
+        f"{settings.supabase_url}/rest/v1/answer_keys",
+        headers=headers,
+        json=answer_key_row,
+    )
+    if resp.status_code not in (200, 201):
+        log.error(
+            f"[generate-question] Failed to insert answer key: "
+            f"{resp.status_code} {resp.text[:200]}"
         )
-        answer_key_row = {
-            "document_id": doc_id,
-            "question_number": 1,
-            "answer_text": answer_key.model_dump_json(),
-            "question_json": question.model_dump(),
-            "model": TUTOR_MODEL,
-            "input_tokens": result.input_tokens,
-            "output_tokens": result.output_tokens,
-        }
-        resp = await client.post(
-            f"{settings.supabase_url}/rest/v1/answer_keys",
-            headers=headers,
-            json=answer_key_row,
-        )
-        if resp.status_code not in (200, 201):
-            log.error(
-                f"[generate-question] Failed to insert answer key: "
-                f"{resp.status_code} {resp.text[:200]}"
-            )
-            raise HTTPException(status_code=500, detail="Failed to create answer key record")
+        raise HTTPException(status_code=500, detail="Failed to create answer key record")
 
     log.info(
         f"[generate-question] Success: doc_id={doc_id} "

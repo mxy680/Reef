@@ -13,9 +13,8 @@ import logging
 import time
 from dataclasses import dataclass
 
-import httpx
-
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 
 logger = logging.getLogger(__name__)
 
@@ -80,12 +79,12 @@ async def _create_session() -> PooledSession:
     if not settings.mathpix_app_key:
         raise RuntimeError("Mathpix credentials not configured")
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.post(
-            "https://api.mathpix.com/v3/app-tokens",
-            headers={"app_key": settings.mathpix_app_key},
-            json={"include_strokes_session_id": True, "expires": 300},
-        )
+    client = get_http()
+    resp = await client.post(
+        "https://api.mathpix.com/v3/app-tokens",
+        headers={"app_key": settings.mathpix_app_key},
+        json={"include_strokes_session_id": True, "expires": 300},
+    )
 
     if resp.status_code != 200:
         logger.warning(f"Mathpix app-tokens API returned {resp.status_code}: {resp.text}")

@@ -8,7 +8,7 @@ import asyncio
 import logging
 import re
 
-import httpx
+from app.services.http_pool import get_client as get_http
 
 logger = logging.getLogger(__name__)
 
@@ -97,15 +97,16 @@ class MathpixClient:
             "math_display_delimiters": ["\\[", "\\]"],
             "rm_spaces": True,
         }
-        async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(
-                url,
-                headers=self._headers,
-                files={"file": ("document.pdf", pdf_bytes, "application/pdf")},
-                data={"options_json": _json_dumps(options)},
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        client = get_http()
+        resp = await client.post(
+            url,
+            headers=self._headers,
+            files={"file": ("document.pdf", pdf_bytes, "application/pdf")},
+            data={"options_json": _json_dumps(options)},
+            timeout=60,
+        )
+        resp.raise_for_status()
+        data = resp.json()
         pdf_id = data.get("pdf_id")
         if not pdf_id:
             raise MathpixError(f"No pdf_id in response: {data}")
@@ -121,24 +122,24 @@ class MathpixClient:
     ) -> None:
         """Poll until the PDF processing completes or errors."""
         url = f"{self.API_BASE}/v3/pdf/{pdf_id}"
-        async with httpx.AsyncClient(timeout=30) as client:
-            for attempt in range(1, max_attempts + 1):
-                resp = await client.get(url, headers=self._headers)
-                resp.raise_for_status()
-                data = resp.json()
-                status = data.get("status")
+        client = get_http()
+        for attempt in range(1, max_attempts + 1):
+            resp = await client.get(url, headers=self._headers, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            status = data.get("status")
 
-                if status == "completed":
-                    logger.info(
-                        f"  [mathpix] PDF {pdf_id} completed after {attempt} polls"
-                    )
-                    return
-                if status == "error":
-                    raise MathpixError(
-                        f"Mathpix processing error: {data.get('error', data)}"
-                    )
+            if status == "completed":
+                logger.info(
+                    f"  [mathpix] PDF {pdf_id} completed after {attempt} polls"
+                )
+                return
+            if status == "error":
+                raise MathpixError(
+                    f"Mathpix processing error: {data.get('error', data)}"
+                )
 
-                await asyncio.sleep(interval)
+            await asyncio.sleep(interval)
 
         raise MathpixTimeoutError(
             f"Mathpix PDF {pdf_id} did not complete after {max_attempts} polls "
@@ -148,39 +149,40 @@ class MathpixClient:
     async def download_mmd(self, pdf_id: str) -> str:
         """Download the MMD output for a completed PDF."""
         url = f"{self.API_BASE}/v3/pdf/{pdf_id}.mmd"
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(url, headers=self._headers)
-            resp.raise_for_status()
-            return resp.text
+        client = get_http()
+        resp = await client.get(url, headers=self._headers, timeout=30)
+        resp.raise_for_status()
+        return resp.text
 
     async def download_image(self, url: str) -> bytes:
         """Fetch a single image from the Mathpix CDN."""
         # MMD sometimes contains LaTeX-escaped ampersands in URLs
         clean_url = url.replace("\\&", "&")
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(clean_url)
-            resp.raise_for_status()
-            return resp.content
+        client = get_http()
+        resp = await client.get(clean_url, timeout=30)
+        resp.raise_for_status()
+        return resp.content
 
     async def transcribe_image(self, image_base64: str) -> str:
         """Send a base64 PNG image to Mathpix and get back LaTeX."""
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                "https://api.mathpix.com/v3/text",
-                headers={
-                    **self._headers,
-                    "Content-type": "application/json",
-                },
-                json={
-                    "src": f"data:image/png;base64,{image_base64}",
-                    "formats": ["latex_styled"],
-                    "math_inline_delimiters": ["$", "$"],
-                    "math_display_delimiters": ["\\[", "\\]"],
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            return data.get("latex_styled", data.get("text", ""))
+        client = get_http()
+        resp = await client.post(
+            "https://api.mathpix.com/v3/text",
+            headers={
+                **self._headers,
+                "Content-type": "application/json",
+            },
+            json={
+                "src": f"data:image/png;base64,{image_base64}",
+                "formats": ["latex_styled"],
+                "math_inline_delimiters": ["$", "$"],
+                "math_display_delimiters": ["\\[", "\\]"],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("latex_styled", data.get("text", ""))
 
     async def process_pdf(
         self, pdf_bytes: bytes

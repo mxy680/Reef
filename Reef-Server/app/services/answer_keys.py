@@ -11,9 +11,8 @@ import asyncio
 import json
 import logging
 
-import httpx
-
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 from app.models.answer_key import PartAnswer, QuestionAnswer
 from app.services.cost_tracker import fire_cost, record_llm_cost
 from app.services.inference_client import extract_json
@@ -60,11 +59,11 @@ async def _upsert_answer_key(
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
     }
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            url, json=payload, headers=_supabase_headers(), timeout=10,
-        )
-        resp.raise_for_status()
+    client = get_http()
+    resp = await client.post(
+        url, json=payload, headers=_supabase_headers(),
+    )
+    resp.raise_for_status()
 
 
 # ---------------------------------------------------------------------------
@@ -110,8 +109,7 @@ async def _generate_single_answer(
             model=ANSWER_KEY_MODEL,
             base_url="https://openrouter.ai/api/v1",
         )
-        result = await asyncio.to_thread(
-            llm_client.generate,
+        result = await llm_client.generate(
             prompt=prompt + schema_instruction,
             images=figure_images,
             response_schema=QuestionAnswer.model_json_schema(),

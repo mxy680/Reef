@@ -5,11 +5,11 @@ import base64
 import json
 import logging
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import AuthenticatedUser, get_current_user
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 from app.models.answer_key import QuestionAnswer
 from app.models.tutor import (
     TutorChatLLMOutput, TutorChatRequest, TutorChatResponse,
@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 TUTOR_MODEL = "google/gemini-3-flash-preview"
+TUTOR_MODEL_TEXT_ONLY = "openai/gpt-oss-120b"  # Groq — fast text-only, no vision
 
 # In-memory answer key cache: (doc_id, question_number, user_id) → (QuestionAnswer, question_json, timestamp)
 # Avoids hitting Supabase on every eval for the same question.
@@ -55,28 +56,28 @@ async def _fetch_answer_key(document_id: str, question_number: int, user_id: str
         "Authorization": f"Bearer {settings.supabase_service_role_key}",
     }
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        # Verify document ownership before fetching the answer key
-        doc_url = f"{settings.supabase_url}/rest/v1/documents"
-        doc_params = {
-            "id": f"eq.{document_id}",
-            "user_id": f"eq.{user_id}",
-            "select": "id",
-        }
-        doc_resp = await client.get(doc_url, params=doc_params, headers=headers)
-        doc_resp.raise_for_status()
-        if not doc_resp.json():
-            raise HTTPException(status_code=403, detail="Access denied")
+    client = get_http()
+    # Verify document ownership before fetching the answer key
+    doc_url = f"{settings.supabase_url}/rest/v1/documents"
+    doc_params = {
+        "id": f"eq.{document_id}",
+        "user_id": f"eq.{user_id}",
+        "select": "id",
+    }
+    doc_resp = await client.get(doc_url, params=doc_params, headers=headers)
+    doc_resp.raise_for_status()
+    if not doc_resp.json():
+        raise HTTPException(status_code=403, detail="Access denied")
 
-        # Fetch the answer key
-        url = f"{settings.supabase_url}/rest/v1/answer_keys"
-        params = {
-            "document_id": f"eq.{document_id}",
-            "question_number": f"eq.{question_number}",
-            "select": "answer_text,question_json",
-        }
-        resp = await client.get(url, params=params, headers=headers)
-        resp.raise_for_status()
+    # Fetch the answer key
+    url = f"{settings.supabase_url}/rest/v1/answer_keys"
+    params = {
+        "document_id": f"eq.{document_id}",
+        "question_number": f"eq.{question_number}",
+        "select": "answer_text,question_json",
+    }
+    resp = await client.get(url, params=params, headers=headers)
+    resp.raise_for_status()
 
     rows = resp.json()
     if not rows:
@@ -145,10 +146,10 @@ async def _fetch_chat_history(document_id: str, question_label: str, user_id: st
         "order": "created_at.desc",
         "limit": "15",
     }
-    async with httpx.AsyncClient(timeout=5) as client:
-        resp = await client.get(url, params=params, headers=_supabase_headers())
-        if resp.status_code != 200:
-            return []
+    client = get_http()
+    resp = await client.get(url, params=params, headers=_supabase_headers())
+    if resp.status_code != 200:
+        return []
     rows = resp.json()
     rows.reverse()  # oldest first
     return rows
@@ -166,8 +167,8 @@ async def _append_chat(user_id: str, document_id: str, question_label: str, role
         "speech_text": speech_text,
     }
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            await client.post(url, json=row, headers=_supabase_headers())
+        client = get_http()
+        await client.post(url, json=row, headers=_supabase_headers())
     except Exception as e:
         log.warning(f"[chat-history] Failed to write: {e}")
 
@@ -181,11 +182,11 @@ async def _fetch_student_work(document_id: str, question_label: str, user_id: st
         "user_id": f"eq.{user_id}",
         "select": "latex",
     }
-    async with httpx.AsyncClient(timeout=5) as client:
-        resp = await client.get(url, params=params, headers=_supabase_headers())
-        if resp.status_code != 200:
-            log.warning(f"[student-work] Failed to fetch: {resp.status_code}")
-            return ("", "")
+    client = get_http()
+    resp = await client.get(url, params=params, headers=_supabase_headers())
+    if resp.status_code != 200:
+        log.warning(f"[student-work] Failed to fetch: {resp.status_code}")
+        return ("", "")
     rows = resp.json()
     if not rows:
         return ("", "")
@@ -202,12 +203,12 @@ async def _persist_chunks(
         f"?user_id=eq.{user_id}&document_id=eq.{document_id}&question_label=eq.{question_label}"
     )
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            await client.patch(
-                url,
-                json={"transcription_chunks": chunks_json},
-                headers=_supabase_headers(),
-            )
+        client = get_http()
+        await client.patch(
+            url,
+            json={"transcription_chunks": chunks_json},
+            headers=_supabase_headers(),
+        )
     except Exception as e:
         log.warning(f"[chunks] Failed to persist chunks for {question_label}: {e}")
 
@@ -230,17 +231,17 @@ async def _fetch_and_transcribe_strokes(
         "Authorization": f"Bearer {settings.supabase_service_role_key}",
     }
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get(
-            f"{settings.supabase_url}/rest/v1/canvas_strokes",
-            params={
-                "user_id": f"eq.{user_id}",
-                "document_id": f"eq.{document_id}",
-                "question_label": f"eq.{question_label}",
-                "select": "strokes,transcription_chunks",
-            },
-            headers=headers,
-        )
+    http_client = get_http()
+    resp = await http_client.get(
+        f"{settings.supabase_url}/rest/v1/canvas_strokes",
+        params={
+            "user_id": f"eq.{user_id}",
+            "document_id": f"eq.{document_id}",
+            "question_label": f"eq.{question_label}",
+            "select": "strokes,transcription_chunks",
+        },
+        headers=headers,
+    )
 
     if resp.status_code != 200:
         log.warning(f"[strokes] Failed to fetch canvas_strokes: {resp.status_code}")
@@ -285,12 +286,13 @@ async def _fetch_and_transcribe_strokes(
             "strokes_session_id": session_id,
         }
         try:
-            async with httpx.AsyncClient(timeout=15) as client:
-                r = await client.post(
-                    "https://api.mathpix.com/v3/strokes",
-                    json=payload,
-                    headers=mathpix_headers,
-                )
+            mathpix_client = get_http()
+            r = await mathpix_client.post(
+                "https://api.mathpix.com/v3/strokes",
+                json=payload,
+                headers=mathpix_headers,
+                timeout=15,
+            )
         except Exception as e:
             log.warning(f"[strokes] Mathpix request error: {e}")
             return ""
@@ -331,8 +333,8 @@ async def _upsert_student_work(
     """Upsert transcription into canvas_strokes.latex. Fire-and-forget safe."""
     url = f"{settings.supabase_url}/rest/v1/canvas_strokes?user_id=eq.{user_id}&document_id=eq.{document_id}&question_label=eq.{question_label}"
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            await client.patch(url, json={"latex": latex_display}, headers=_supabase_headers())
+        client = get_http()
+        await client.patch(url, json={"latex": latex_display}, headers=_supabase_headers())
     except Exception as e:
         log.warning(f"[student-work] Failed to upsert latex: {e}")
 
@@ -345,14 +347,14 @@ async def _update_tutor_state(
     """Write tutor eval state to canvas_strokes for iOS polling. Fire-and-forget safe."""
     url = f"{settings.supabase_url}/rest/v1/canvas_strokes?user_id=eq.{user_id}&document_id=eq.{document_id}&question_label=eq.{question_label}"
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            await client.patch(url, json={
-                "tutor_progress": progress,
-                "tutor_status": status,
-                "tutor_step": step_index,
-                "tutor_steps_completed": steps_completed,
-                "tutor_speech_text": speech_text or "",
-            }, headers=_supabase_headers())
+        client = get_http()
+        await client.patch(url, json={
+            "tutor_progress": progress,
+            "tutor_status": status,
+            "tutor_step": step_index,
+            "tutor_steps_completed": steps_completed,
+            "tutor_speech_text": speech_text or "",
+        }, headers=_supabase_headers())
     except Exception as e:
         log.warning(f"[tutor-state] Failed to update: {e}")
 
@@ -362,17 +364,17 @@ async def _download_images(urls: list[str]) -> list[bytes]:
     if not urls:
         return []
     images = []
-    async with httpx.AsyncClient(timeout=15) as client:
-        for url in urls[:4]:  # Cap at 4 images to limit token cost
-            if not url.startswith(settings.supabase_url):
-                log.warning(f"Rejected figure URL not from Supabase storage: {url[:80]}")
-                continue
-            try:
-                resp = await client.get(url)
-                if resp.status_code == 200:
-                    images.append(resp.content)
-            except Exception as e:
-                log.warning(f"Failed to download figure: {e}")
+    client = get_http()
+    for url in urls[:4]:  # Cap at 4 images to limit token cost
+        if not url.startswith(settings.supabase_url):
+            log.warning(f"Rejected figure URL not from Supabase storage: {url[:80]}")
+            continue
+        try:
+            resp = await client.get(url, timeout=15)
+            if resp.status_code == 200:
+                images.append(resp.content)
+        except Exception as e:
+            log.warning(f"Failed to download figure: {e}")
     return images
 
 
@@ -415,11 +417,57 @@ async def tutor_evaluate(
 
     question_label = f"Q{body.question_number}{body.part_label or ''}"
 
-    # Fetch and transcribe strokes directly from canvas_strokes (primary source)
-    transcribed_latex = await _fetch_and_transcribe_strokes(body.document_id, question_label, user.id)
+    # Resolve steps (pure computation from cached answer key)
+    steps = _resolve_steps(answer_key, body.part_label)
+    if not steps or body.step_index >= len(steps):
+        raise HTTPException(status_code=400, detail="Invalid step index")
 
-    # Fall back to student_work table (legacy iOS writes), then request body
-    db_display, db_raw = await _fetch_student_work(body.document_id, question_label, user.id)
+    current_step = steps[body.step_index]
+
+    # Resolve figure URLs from question_json (uploaded during reconstruction)
+    figure_storage_urls = question_json.get("figure_storage_urls", {})
+    all_figure_urls = list(figure_storage_urls.values()) + body.figure_urls
+
+    # Parallel fetch all independent data (strokes, student work, chat history, images, concept struggles)
+    current_concepts = current_step.concepts or []
+    if current_concepts:
+        struggles_coro = get_prior_struggles(
+            user_id=user.id,
+            document_id=body.document_id,
+            concepts=current_concepts,
+            current_question_number=body.question_number,
+        )
+        results = await asyncio.gather(
+            _fetch_and_transcribe_strokes(body.document_id, question_label, user.id),
+            _fetch_student_work(body.document_id, question_label, user.id),
+            _fetch_chat_history(body.document_id, question_label, user.id),
+            _download_images(all_figure_urls),
+            struggles_coro,
+            return_exceptions=True,
+        )
+        transcribed_latex = results[0] if not isinstance(results[0], Exception) else ""
+        db_display, db_raw = results[1] if not isinstance(results[1], Exception) else ("", "")
+        db_history = results[2] if not isinstance(results[2], Exception) else []
+        images = results[3] if not isinstance(results[3], Exception) else []
+        if isinstance(results[4], Exception):
+            log.warning(f"[tutor-eval] concept struggle query failed: {results[4]}")
+            prior_struggles = []
+        else:
+            prior_struggles = results[4]
+    else:
+        results = await asyncio.gather(
+            _fetch_and_transcribe_strokes(body.document_id, question_label, user.id),
+            _fetch_student_work(body.document_id, question_label, user.id),
+            _fetch_chat_history(body.document_id, question_label, user.id),
+            _download_images(all_figure_urls),
+            return_exceptions=True,
+        )
+        transcribed_latex = results[0] if not isinstance(results[0], Exception) else ""
+        db_display, db_raw = results[1] if not isinstance(results[1], Exception) else ("", "")
+        db_history = results[2] if not isinstance(results[2], Exception) else []
+        images = results[3] if not isinstance(results[3], Exception) else []
+        prior_struggles = []
+
     student_latex = transcribed_latex or db_raw or db_display or body.student_latex
     if not student_latex:
         return TutorEvaluateResponse(progress=0.0, status="idle")
@@ -429,16 +477,6 @@ async def tutor_evaluate(
         asyncio.create_task(_upsert_student_work(
             body.document_id, question_label, user.id, transcribed_latex, transcribed_latex
         ))
-
-    # Resolve figure URLs from question_json (uploaded during reconstruction)
-    figure_storage_urls = question_json.get("figure_storage_urls", {})
-
-    # Resolve steps for the target part
-    steps = _resolve_steps(answer_key, body.part_label)
-    if not steps or body.step_index >= len(steps):
-        raise HTTPException(status_code=400, detail="Invalid step index")
-
-    current_step = steps[body.step_index]
 
     # Build steps overview
     steps_overview = "\n".join(
@@ -466,7 +504,6 @@ async def tutor_evaluate(
         remaining_text = "(This is the final step.)"
 
     # Build tutor feedback history from DB (fall back to body.history)
-    db_history = await _fetch_chat_history(body.document_id, question_label, user.id)
     history_text = "(no prior feedback)"
     history_source = db_history if db_history else [{"role": m.role, "text": m.text} for m in (body.history or [])]
     if history_source:
@@ -516,38 +553,21 @@ async def tutor_evaluate(
         current_step_num=body.step_index + 1,
     )
 
-    # Query prior concept struggles for cross-question threading
-    current_concepts = current_step.concepts or []
-    if current_concepts:
-        try:
-            prior_struggles = await get_prior_struggles(
-                user_id=user.id,
-                document_id=body.document_id,
-                concepts=current_concepts,
-                current_question_number=body.question_number,
+    # Append prior concept struggles context to dynamic prompt if applicable
+    if prior_struggles:
+        struggle_lines = []
+        for s in prior_struggles:
+            struggle_lines.append(
+                f"- Concept '{s['concept']}': struggled in Q{s['question_number']} "
+                f"step {s['step_index'] + 1} ({s.get('mistake_count', 1)} mistake(s))"
             )
-        except Exception as e:
-            log.warning(f"[tutor-eval] concept struggle query failed: {e}")
-            prior_struggles = []
-
-        if prior_struggles:
-            struggle_lines = []
-            for s in prior_struggles:
-                struggle_lines.append(
-                    f"- Concept '{s['concept']}': struggled in Q{s['question_number']} "
-                    f"step {s['step_index'] + 1} ({s.get('mistake_count', 1)} mistake(s))"
-                )
-            dynamic_prompt += (
-                "\n\n## Prior Concept Struggles\n"
-                "The student has struggled with these concepts before in this session:\n"
-                + "\n".join(struggle_lines)
-                + "\nIf the current step involves any of these concepts, BRIEFLY reference "
-                "the prior encounter to build continuity. One sentence max."
-            )
-
-    # Collect images: server-resolved figures from question_json + client-sent + student drawing
-    all_figure_urls = list(figure_storage_urls.values()) + body.figure_urls
-    images = await _download_images(all_figure_urls)
+        dynamic_prompt += (
+            "\n\n## Prior Concept Struggles\n"
+            "The student has struggled with these concepts before in this session:\n"
+            + "\n".join(struggle_lines)
+            + "\nIf the current step involves any of these concepts, BRIEFLY reference "
+            "the prior encounter to build continuity. One sentence max."
+        )
 
     # Build debug prompt (always included)
     work_source = "strokes" if transcribed_latex else ("DB" if (db_raw or db_display) else "body")
@@ -566,15 +586,20 @@ async def tutor_evaluate(
         except Exception:
             pass
 
-    # Call LLM — static context in system message enables prompt caching
-    llm = LLMClient(
-        api_key=settings.openrouter_api_key,
-        model=TUTOR_MODEL,
-        base_url="https://openrouter.ai/api/v1",
-    )
+    # Pick model: use fast text-only model when no images are involved
+    has_images = bool(images) or bool(body.student_image)
+    if has_images:
+        model = TUTOR_MODEL
+        api_key = settings.openrouter_api_key
+        base_url = "https://openrouter.ai/api/v1"
+    else:
+        model = TUTOR_MODEL_TEXT_ONLY
+        api_key = settings.groq_api_key
+        base_url = "https://api.groq.com/openai/v1"
 
-    result = await asyncio.to_thread(
-        llm.generate,
+    llm = LLMClient(api_key=api_key, model=model, base_url=base_url)
+
+    result = await llm.generate(
         prompt=dynamic_prompt,
         system_prompt=full_system,
         images=images or None,
@@ -594,10 +619,10 @@ async def tutor_evaluate(
     log.info(
         f"[tutor-eval] Q{body.question_number} step {body.step_index + 1}: "
         f"status={evaluation.status} progress={evaluation.progress:.0%} "
-        f"steps_completed={evaluation.steps_completed} "
+        f"steps_completed={evaluation.steps_completed} model={model} "
         f"({result.input_tokens}in/{result.output_tokens}out)"
     )
-    fire_cost(record_llm_cost(user.id, "tutor_eval", TUTOR_MODEL, result.input_tokens, result.output_tokens,
+    fire_cost(record_llm_cost(user.id, "tutor_eval", model, result.input_tokens, result.output_tokens,
               metadata={"document_id": body.document_id, "question": body.question_number, "step": body.step_index}))
 
     # Fire-and-forget concept struggle tracking
@@ -694,8 +719,7 @@ async def _regenerate_answer_key(
         model="google/gemini-3-flash-preview",
         base_url="https://openrouter.ai/api/v1",
     )
-    result = await asyncio.to_thread(
-        llm.generate,
+    result = await llm.generate(
         prompt=prompt,
         response_schema=QuestionAnswer.model_json_schema(),
         timeout=120.0,
@@ -709,19 +733,19 @@ async def _regenerate_answer_key(
     # Store updated answer key
     headers = _supabase_headers()
     headers["Prefer"] = "resolution=merge-duplicates,return=minimal"
-    async with httpx.AsyncClient(timeout=10) as client:
-        await client.post(
-            f"{settings.supabase_url}/rest/v1/answer_keys",
-            headers=headers,
-            json={
-                "document_id": document_id,
-                "question_number": question_number,
-                "answer_text": new_answer.model_dump_json(),
-                "model": "deepseek-r1-correction",
-                "input_tokens": result.input_tokens,
-                "output_tokens": result.output_tokens,
-            },
-        )
+    client = get_http()
+    await client.post(
+        f"{settings.supabase_url}/rest/v1/answer_keys",
+        headers=headers,
+        json={
+            "document_id": document_id,
+            "question_number": question_number,
+            "answer_text": new_answer.model_dump_json(),
+            "model": "deepseek-r1-correction",
+            "input_tokens": result.input_tokens,
+            "output_tokens": result.output_tokens,
+        },
+    )
 
     # Invalidate memory cache
     cache_key = (document_id, question_number, user_id)
@@ -817,8 +841,7 @@ async def tutor_chat(
         base_url="https://openrouter.ai/api/v1",
     )
 
-    result = await asyncio.to_thread(
-        llm.generate,
+    result = await llm.generate(
         prompt=prompt,
         system_prompt=TUTOR_CHAT_SYSTEM,
         images=chat_images,

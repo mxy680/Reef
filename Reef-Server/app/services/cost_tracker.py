@@ -8,9 +8,8 @@ import asyncio
 import logging
 from typing import Any
 
-import httpx
-
 from app.config import settings
+from app.services.http_pool import get_client as get_http
 
 log = logging.getLogger(__name__)
 
@@ -72,8 +71,8 @@ async def record_cost(
             row["model"] = model
         if metadata:
             row["metadata"] = metadata
-        async with httpx.AsyncClient(timeout=10) as client:
-            await client.post(url, json=row, headers=_headers())
+        client = get_http()
+        await client.post(url, json=row, headers=_headers())
     except Exception as e:
         log.warning(f"[cost-tracker] Failed to record cost: {e}")
 

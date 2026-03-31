@@ -150,8 +150,7 @@ async def _validate_and_fix_field(
 
         prompt = KATEX_FIX_PROMPT.format(expression=text, error=error)
         try:
-            result = await asyncio.to_thread(
-                llm_client.generate,
+            result = await llm_client.generate(
                 prompt=prompt,
                 timeout=30.0,
             )

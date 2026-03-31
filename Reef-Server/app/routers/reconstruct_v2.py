@@ -197,8 +197,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             model="google/gemini-3-flash-preview",
             base_url="https://openrouter.ai/api/v1",
         )
-        parse_result = await asyncio.to_thread(
-            parse_llm.generate,
+        parse_result = await parse_llm.generate(
             prompt=parse_prompt,
             response_schema=QuestionBatch.model_json_schema(),
             timeout=120.0,
@@ -304,9 +303,7 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
                             fix_prompt = LATEX_FIX_PROMPT.format(
                                 latex_body=latex, error_message=str(e)[:2000]
                             )
-                            fix_llm = await asyncio.to_thread(
-                                llm_client.generate, prompt=fix_prompt
-                            )
+                            fix_llm = await llm_client.generate(prompt=fix_prompt)
                             costs.add(fix_llm, model=llm_client.model)
                             fix_content = fix_llm.content
                             # Strip code fences if present

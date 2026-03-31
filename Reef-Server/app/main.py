@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import health
@@ -13,6 +14,7 @@ from app.routers import demo_problem
 from app.routers import generate_question
 from app.config import settings
 from app.services.cancellation import get_in_flight_ids
+from app.services.http_pool import init_pool
 from app.services.progress import update_document_status
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -54,8 +56,14 @@ async def _recover_stale_documents():
 async def lifespan(app: FastAPI):
     log.info("Reef server starting")
     await _recover_stale_documents()
+    app.state.http = httpx.AsyncClient(
+        timeout=httpx.Timeout(30.0, connect=5.0),
+        limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
+    )
+    init_pool(app.state.http)
     yield
     log.info("Reef server shutting down")
+    await app.state.http.aclose()
     # Mark in-flight documents as failed
     for doc_id in get_in_flight_ids():
         try:
