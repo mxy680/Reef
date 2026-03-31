@@ -238,7 +238,7 @@ async def _fetch_and_transcribe_strokes(
             "user_id": f"eq.{user_id}",
             "document_id": f"eq.{document_id}",
             "question_label": f"eq.{question_label}",
-            "select": "strokes,transcription_chunks",
+            "select": "strokes,transcription_chunks,latex",
         },
         headers=headers,
     )
@@ -250,6 +250,11 @@ async def _fetch_and_transcribe_strokes(
     rows = resp.json()
     if not rows:
         return ""
+
+    # If latex was written directly (e.g., by simulation), use it without re-transcribing
+    direct_latex = rows[0].get("latex") if rows else None
+    if direct_latex and direct_latex.strip():
+        return direct_latex.strip()
 
     # Flatten all stroke objects into one list
     all_strokes: list[dict] = []
@@ -402,6 +407,35 @@ async def transcribe_strokes(
             body.document_id, body.question_label, user.id, latex, latex
         ))
     return TranscribeResponse(latex=latex)
+
+
+class LatexToStrokesRequest(_BaseModel):
+    latex: str
+    scale: float = 5.0
+    offset_x: float = 100.0
+    offset_y: float = 500.0
+
+class LatexToStrokesResponse(_BaseModel):
+    strokes: list[dict]
+    stroke_count: int
+
+
+@router.post("/latex-to-strokes", response_model=LatexToStrokesResponse)
+async def latex_to_strokes_endpoint(
+    body: LatexToStrokesRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Convert LaTeX to stroke coordinates via tectonic+mutool SVG rendering."""
+    from app.services.latex2strokes.svg_renderer import latex_to_svg_strokes
+
+    strokes = await asyncio.to_thread(
+        latex_to_svg_strokes,
+        body.latex,
+        scale=body.scale,
+        offset_x=body.offset_x,
+        offset_y=body.offset_y,
+    )
+    return LatexToStrokesResponse(strokes=strokes, stroke_count=len(strokes))
 
 
 @router.post("/tutor-evaluate", response_model=TutorEvaluateResponse)

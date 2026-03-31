@@ -1,0 +1,71 @@
+{
+  "student_latex": "\\delta = \\frac{W}{AE} \\left[x - \\frac{x^2}{2L}\\right]_0^L = \\frac{W}{AE} \\cdot \\frac{L}{2} = \\frac{WL}{2AE}",
+  "tutor_status": "mistake",
+  "tutor_progress": 0.4,
+  "step_index": 1,
+  "total_steps": 3,
+  "steps": [
+    "Express internal force as function of position",
+    "Set up the integration for displacement at C",
+    "Evaluate the definite integral"
+  ],
+  "question_text": "A prismatic bar $AB$ of length $L$, cross-sectional area $A$, modulus of elasticity $E$, and weight $W$ hangs vertically under its own weight (see figure).\nPart (a): Derive a formula for the downward displacement $\\delta_{C}$ of point $C$, located at distance $h$ from the lower end of the bar.",
+  "history": [
+    {
+      "status": "mistake",
+      "step": 0,
+      "progress": 0.0,
+      "says": "Check the expression you wrote \u2014 does it represent the internal axial force $N(y)$ varying with $y$?",
+      "speaks": "hmm that stress expression looks off",
+      "steps_completed": 1
+    },
+    {
+      "status": "completed",
+      "step": 0,
+      "progress": 1.0,
+      "says": "",
+      "speaks": "yep",
+      "steps_completed": 1
+    },
+    {
+      "status": "mistake",
+      "step": 1,
+      "progress": 0.3,
+      "says": "Does the internal force go to zero at the lower end where y=0?",
+      "speaks": "hmm that expression seems off",
+      "steps_completed": 1
+    },
+    {
+      "status": "mistake",
+      "step": 1,
+      "progress": 0.3,
+      "says": "What value does your force expression give at $y=0$?",
+      "speaks": "nah check that force at the bottom",
+      "steps_completed": 1
+    },
+    {
+      "status": "mistake",
+      "step": 1,
+      "progress": 0.4,
+      "says": "Does the integral you wrote represent the elongation of segment AC only?",
+      "speaks": "hmm that integral limits look off",
+      "steps_completed": 1
+    },
+    {
+      "status": "mistake",
+      "step": 1,
+      "progress": 0.2,
+      "says": "What effect does using 0 as the lower limit have on the displacement you\u2019re calculating?",
+      "speaks": "hmm check those limits again",
+      "steps_completed": 1
+    },
+    {
+      "status": "mistake",
+      "step": 1,
+      "progress": 0.4,
+      "says": "Which portion of the bar should the integral cover to obtain the displacement at point\u202fC?",
+      "speaks": "hmm check those limits again",
+      "steps_completed": 1
+    }
+  ]
+}

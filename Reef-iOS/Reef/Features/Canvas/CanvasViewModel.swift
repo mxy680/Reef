@@ -211,45 +211,7 @@ final class CanvasViewModel {
     var showDebugPrompt: Bool = false
     var debugTapCount: Int = 0
     var debugTapResetTask: Task<Void, Never>?
-    #if DEBUG
-    /// Bounding boxes of transcription clusters in PencilKit coordinate space.
-    /// Each element is [min_x, min_y, max_x, max_y].
-    var chunkBboxes: [[Double]] = []
-    private var bboxOverlayLayer: CAShapeLayer?
-
-    func updateChunkBboxOverlay() {
-        // Remove old overlay
-        bboxOverlayLayer?.removeFromSuperlayer()
-        bboxOverlayLayer = nil
-
-        guard let container = containerView,
-              currentPageIndex < container.canvasViews.count else { return }
-        let canvasView = container.canvasViews[currentPageIndex]
-
-        let layer = CAShapeLayer()
-        layer.name = "chunkBboxDebug"
-        let path = CGMutablePath()
-
-        for bbox in chunkBboxes {
-            guard bbox.count == 4 else { continue }
-            let rect = CGRect(
-                x: bbox[0], y: bbox[1],
-                width: bbox[2] - bbox[0],
-                height: bbox[3] - bbox[1]
-            )
-            path.addRect(rect)
-        }
-
-        layer.path = path
-        layer.strokeColor = UIColor.red.cgColor
-        layer.fillColor = UIColor.red.withAlphaComponent(0.05).cgColor
-        layer.lineWidth = 2
-        layer.zPosition = 1000
-
-        canvasView.layer.addSublayer(layer)
-        bboxOverlayLayer = layer
-    }
-    #endif
+    // Bbox debug overlay removed
     var hintMidX: CGFloat = 0
     var revealMidX: CGFloat = 0
 
@@ -761,13 +723,7 @@ final class CanvasViewModel {
             }
         }
 
-        #if DEBUG
-        syncService.onChunkBboxesUpdated = { [weak self] bboxes in
-            guard let self else { return }
-            self.chunkBboxes = bboxes
-            self.updateChunkBboxOverlay()
-        }
-        #endif
+        // Bbox debug overlay removed
 
         loadPDFTask = Task { await loadPDF() }
         loadAnswerKeysTask = Task { await loadAnswerKeys() }
@@ -1264,12 +1220,6 @@ final class CanvasViewModel {
         strokeUpsertWork?.cancel()
         strokeWriteWork?.cancel()
         evalDebounceWork?.cancel()
-
-        // Clear debug bbox overlay
-        #if DEBUG
-        chunkBboxes = []
-        updateChunkBboxOverlay()
-        #endif
 
         // Reset tutor state for this question
         currentTutorStepIndex = 0

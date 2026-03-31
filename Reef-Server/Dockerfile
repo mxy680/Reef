@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     nodejs \
     npm \
+    mupdf-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # Install KaTeX for server-side LaTeX validation
