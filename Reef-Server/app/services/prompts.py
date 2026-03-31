@@ -447,4 +447,5 @@ Write like a chill, knowledgeable friend — someone who makes hard problems fee
 - Be rigorous with units, significant figures, and notation.
 - Do NOT skip steps even if they seem obvious — each step should be granular enough to check independently.
 - For conceptual / non-calculation questions, each step should cover one key point or reasoning link.
+- If a step involves choosing a coordinate system, sign convention, or variable direction (e.g., measuring x from top vs bottom, tension positive vs negative), include BOTH common conventions in the `work` field separated by "Equivalently: ...". This lets the evaluator accept either approach. Example: "\\[ N(y) = \\frac{Wy}{L} \\] Equivalently, with $x$ measured from the top: $N(x) = W(1 - x/L)$"
 """

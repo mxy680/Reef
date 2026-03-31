@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
-TUTOR_MODEL = "google/gemini-3-flash-preview"
+TUTOR_MODEL = "google/gemini-2.5-flash"
 TUTOR_MODEL_TEXT_ONLY = "openai/gpt-oss-120b"  # Groq — fast text-only, no vision
 
 # In-memory answer key cache: (doc_id, question_number, user_id) → (QuestionAnswer, question_json, timestamp)
