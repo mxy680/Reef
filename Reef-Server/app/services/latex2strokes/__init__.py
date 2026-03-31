@@ -10,10 +10,19 @@ Public API:
 """
 from __future__ import annotations
 
+from .hershey_templates import hershey_strokes
 from .jitter import naturalize
 from .layout import layout
 from .parser import parse_latex
-from .templates import get_strokes
+from .templates import get_strokes as _old_get_strokes
+
+
+def _get_strokes(symbol: str, cx: float, cy: float, size: float) -> list[dict[str, list[float]]]:
+    """Get strokes for a symbol, using Hershey fonts first, old templates as fallback."""
+    strokes = hershey_strokes(symbol, cx, cy, size)
+    if strokes:
+        return strokes
+    return _old_get_strokes(symbol, cx, cy, size)
 
 
 def latex_to_strokes(
@@ -44,7 +53,7 @@ def latex_to_strokes(
 
     strokes: list[dict[str, list[float]]] = []
     for sym in placed:
-        sym_strokes = get_strokes(sym.symbol, sym.x, sym.y, sym.size)
+        sym_strokes = _get_strokes(sym.symbol, sym.x, sym.y, sym.size)
         strokes.extend(sym_strokes)
 
     if jitter and strokes:

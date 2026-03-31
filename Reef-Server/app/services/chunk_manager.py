@@ -10,7 +10,8 @@ from typing import Awaitable, Callable
 
 log = logging.getLogger(__name__)
 
-BBOX_PADDING = 5.0  # small padding around chunk bbox for point-inside checks
+BBOX_PAD_X = 50.0   # generous horizontal padding (same line of handwriting)
+BBOX_PAD_Y = 5.0    # tight vertical padding (separate lines stay separate)
 
 
 def _stroke_bbox(stroke: dict) -> tuple[float, float, float, float]:
@@ -26,12 +27,11 @@ def _union_bbox(a: tuple, b: tuple) -> tuple:
 
 
 def _should_join(stroke: dict, cluster_bbox: tuple) -> bool:
-    """A stroke joins a cluster if ANY of its points are inside the cluster's bbox (with small padding)."""
-    pad = BBOX_PADDING
-    min_x = cluster_bbox[0] - pad
-    min_y = cluster_bbox[1] - pad
-    max_x = cluster_bbox[2] + pad
-    max_y = cluster_bbox[3] + pad
+    """A stroke joins a cluster if ANY of its points are inside the cluster's bbox (with asymmetric padding)."""
+    min_x = cluster_bbox[0] - BBOX_PAD_X
+    min_y = cluster_bbox[1] - BBOX_PAD_Y
+    max_x = cluster_bbox[2] + BBOX_PAD_X
+    max_y = cluster_bbox[3] + BBOX_PAD_Y
 
     for x, y in zip(stroke.get("x", []), stroke.get("y", [])):
         if min_x <= x <= max_x and min_y <= y <= max_y:
@@ -58,10 +58,9 @@ class Cluster:
 
 
 def _bboxes_overlap(a: tuple, b: tuple) -> bool:
-    """Check if two bboxes overlap (with padding)."""
-    pad = BBOX_PADDING
-    return not (a[0] - pad > b[2] + pad or b[0] - pad > a[2] + pad or
-                a[1] - pad > b[3] + pad or b[1] - pad > a[3] + pad)
+    """Check if two bboxes overlap (with asymmetric padding)."""
+    return not (a[0] - BBOX_PAD_X > b[2] + BBOX_PAD_X or b[0] - BBOX_PAD_X > a[2] + BBOX_PAD_X or
+                a[1] - BBOX_PAD_Y > b[3] + BBOX_PAD_Y or b[1] - BBOX_PAD_Y > a[3] + BBOX_PAD_Y)
 
 
 def _cluster_strokes(all_strokes: list[dict]) -> list[Cluster]:

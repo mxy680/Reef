@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Inject LaTeX as handwriting strokes onto a connected iPad canvas.
 
-Writes stroke data directly to Supabase `canvas_strokes` table.
+Writes stroke data directly to Supabase `simulation_strokes` table.
 The iPad subscribes to realtime changes and renders strokes automatically.
 
 Usage:
@@ -92,83 +92,29 @@ def send_chat(message: str, doc_id: str, question_label: str, step_index: int) -
         return None
 
 
-def get_page_for_question(doc_id: str, question_label: str) -> int:
-    """Return the 0-based page index where a question's answer space lives."""
-    url = ENV.get("SUPABASE_URL", "")
-    resp = httpx.get(
-        f"{url}/rest/v1/documents?id=eq.{doc_id}&select=question_pages,question_regions",
-        headers=supabase_headers(), timeout=5,
-    )
-    if resp.status_code != 200 or not resp.json():
-        return 0
-    doc = resp.json()[0]
-    pages = doc.get("question_pages", [])
-    regions = doc.get("question_regions", [])
-
-    # Parse label like "Q1b" → q_num=1, part="b"
-    rest = question_label.lstrip("Q")
-    num_str = ""
-    for ch in rest:
-        if ch.isdigit():
-            num_str += ch
-        else:
-            break
-    q_num = int(num_str) if num_str else 1
-    part_label = rest[len(num_str):] or None
-
-    qi = q_num - 1
-    if qi >= len(pages) or qi >= len(regions):
-        return 0
-
-    page_range = pages[qi]  # e.g. [0, 1]
-    q_regions = regions[qi].get("regions", []) if regions[qi] else []
-
-    # Find the region matching the part label — its "page" field is relative to question pages
-    for r in q_regions:
-        if r.get("label") == part_label:
-            rel_page = r.get("page", 0)
-            if rel_page < len(page_range):
-                return page_range[rel_page]
-            return page_range[0]
-
-    return page_range[0]
-
-
 def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
-                  origin_x: float, origin_y: float, font_size: float = 14.0,
-                  page_index: int = 0) -> bool:
-    """Convert LaTeX to strokes and UPSERT into canvas_strokes table (read-merge-write)."""
-    new_strokes = latex_to_strokes(latex, origin_x=origin_x, origin_y=origin_y, font_size=font_size, jitter=False)
+                  origin_x: float, origin_y: float, font_size: float = 14.0) -> bool:
+    """Convert LaTeX to strokes and insert into simulation_strokes table."""
+    strokes = latex_to_strokes(latex, origin_x=origin_x, origin_y=origin_y, font_size=font_size, jitter=False)
     url = ENV.get("SUPABASE_URL", "")
 
-    # Read existing strokes for this question
-    existing_strokes = []
-    resp = httpx.get(
-        f"{url}/rest/v1/canvas_strokes?user_id=eq.{user_id}&document_id=eq.{doc_id}&question_label=eq.{question_label}&select=strokes",
-        headers=supabase_headers(), timeout=5,
-    )
-    if resp.status_code == 200 and resp.json():
-        existing_strokes = resp.json()[0].get("strokes", [])
-
-    # Merge: existing + new
-    merged = existing_strokes + new_strokes
-
-    # Upsert (one row per question)
     resp = httpx.post(
-        f"{url}/rest/v1/canvas_strokes?on_conflict=user_id,document_id,question_label",
-        headers={**supabase_headers(), "Prefer": "resolution=merge-duplicates"},
+        f"{url}/rest/v1/simulation_strokes",
+        headers=supabase_headers(),
         json={
             "user_id": user_id,
             "document_id": doc_id,
             "question_label": question_label,
-            "strokes": merged,
-            "page_index": page_index,
+            "strokes": strokes,
+            "latex": latex,
+            "origin_x": origin_x,
+            "origin_y": origin_y,
         },
         timeout=5,
     )
 
     if resp.status_code in (200, 201):
-        print(f"  ✓ Sent {len(new_strokes)} strokes (page {page_index}, total {len(merged)}): {latex[:50]}")
+        print(f"  ✓ Sent {len(strokes)} strokes: {latex[:50]}")
         return True
     else:
         print(f"  ✗ Supabase error {resp.status_code}: {resp.text[:200]}")
@@ -176,7 +122,14 @@ def send_strokes(latex: str, user_id: str, doc_id: str, question_label: str,
 
 
 def get_simulation_state(user_id: str) -> dict | None:
-    """Read state — currently not available (simulation_state table removed)."""
+    """Read the simulation_state row to know what the user is viewing."""
+    url = ENV.get("SUPABASE_URL", "")
+    resp = httpx.get(
+        f"{url}/rest/v1/simulation_state?user_id=eq.{user_id}&select=*",
+        headers=supabase_headers(), timeout=5,
+    )
+    if resp.status_code == 200 and resp.json():
+        return resp.json()[0]
     return None
 
 
@@ -315,24 +268,39 @@ def show_doc_context(doc_id: str, target_label: str | None = None) -> tuple[str,
     print()
 
     origin_y = y_start + 10
-    page_idx = get_page_for_question(doc_id, question_label)
-    print(f"  Answer space: y={y_start:.0f} to {y_end:.0f} → stroke origin Y: {origin_y:.0f}, page: {page_idx}")
-    return question_label, steps, origin_y, page_idx
+    print(f"  Answer space: y={y_start:.0f} to {y_end:.0f} → stroke origin Y: {origin_y:.0f}")
+    return question_label, steps, origin_y
 
 
 def reset_question(user_id: str, doc_id: str, question_label: str) -> None:
     """Clear all simulation data for a question and reset sim state."""
     url = ENV.get("SUPABASE_URL", "")
     headers = supabase_headers()
-    httpx.delete(f"{url}/rest/v1/canvas_strokes?user_id=eq.{user_id}", headers=headers, timeout=5)
+    httpx.delete(f"{url}/rest/v1/simulation_strokes?user_id=eq.{user_id}", headers=headers, timeout=5)
     httpx.delete(f"{url}/rest/v1/student_work?user_id=eq.{user_id}&document_id=eq.{doc_id}&question_label=eq.{question_label}", headers=headers, timeout=5)
     httpx.delete(f"{url}/rest/v1/chat_history?user_id=eq.{user_id}&document_id=eq.{doc_id}&question_label=eq.{question_label}", headers=headers, timeout=5)
     print(f"  Cleared strokes, student_work, chat_history for {question_label}")
 
 
-def send_command(user_id: str, command: str) -> None:
-    """Commands removed — simulation_state table no longer exists."""
-    print(f"  Command not available (simulation_state removed): {command}")
+def navigate_to_question(user_id: str, doc_id: str, question_label: str) -> None:
+    """Update simulation_state to point to a different question."""
+    url = ENV.get("SUPABASE_URL", "")
+    httpx.post(
+        f"{url}/rest/v1/simulation_state",
+        headers={**supabase_headers(), "Prefer": "resolution=merge-duplicates"},
+        json={
+            "user_id": user_id,
+            "document_id": doc_id,
+            "question_label": question_label,
+            "step_index": "0",
+            "total_steps": "0",
+            "eval_status": "idle",
+            "eval_progress": "0.00",
+            "eval_count": "0",
+        },
+        timeout=5,
+    )
+    print(f"  Navigated to {question_label}")
 
 
 def main():
@@ -349,7 +317,6 @@ def main():
     steps: list[dict] = []
     y_pos = args.y
     doc_id = args.doc_id
-    page_idx = 0
 
     # Auto-detect from simulation_state if no --doc-id provided
     if not doc_id:
@@ -360,7 +327,7 @@ def main():
             print(f"  Auto-detected: doc={doc_id[:12]}... label={question_label} step={state['step_index']}/{state['total_steps']}")
 
     if doc_id:
-        question_label, steps, y_pos, page_idx = show_doc_context(doc_id, question_label)
+        question_label, steps, y_pos = show_doc_context(doc_id, question_label)
         if args.y == 150.0:
             args.y = y_pos
         if not args.doc_id:
@@ -368,11 +335,11 @@ def main():
 
     if args.latex:
         print(f"  Injecting: {args.latex}")
-        send_strokes(args.latex, args.user_id, args.doc_id, question_label, args.x, args.y, page_index=page_idx)
+        send_strokes(args.latex, args.user_id, args.doc_id, question_label, args.x, args.y)
     else:
         # Interactive mode
         print(f"  Interactive mode. Type LaTeX to inject. /quit to exit.")
-        print(f"  User: {args.user_id}  Doc: {args.doc_id or '(none)'}  Label: {question_label}  Page: {page_idx}")
+        print(f"  User: {args.user_id}  Doc: {args.doc_id or '(none)'}  Label: {question_label}")
         y = args.y
         while True:
             try:
@@ -405,7 +372,6 @@ def main():
                     print(f"  Tutor: {reply}")
                 continue
             if latex == "/restart":
-                send_command(args.user_id, "reset_question")
                 reset_question(args.user_id, args.doc_id, question_label)
                 y = args.y
                 print(f"  Restarted {question_label}. Y reset to {y:.0f}")
@@ -416,11 +382,10 @@ def main():
                     idx = all_labels.index(question_label)
                     if idx + 1 < len(all_labels):
                         next_label = all_labels[idx + 1]
-                        send_command(args.user_id, "next_question")
-                        import time; time.sleep(1)  # wait for iPad to process
                         reset_question(args.user_id, args.doc_id, question_label)
                         question_label = next_label
-                        question_label, steps, y_pos, page_idx = show_doc_context(args.doc_id, question_label)
+                        navigate_to_question(args.user_id, args.doc_id, question_label)
+                        question_label, steps, y_pos = show_doc_context(args.doc_id, question_label)
                         y = y_pos
                         args.y = y_pos
                     else:
@@ -432,11 +397,10 @@ def main():
                 target = latex[6:].strip().upper()
                 if not target.startswith("Q"):
                     target = "Q" + target
-                send_command(args.user_id, f"goto:{target}")
-                import time; time.sleep(1)
                 reset_question(args.user_id, args.doc_id, question_label)
                 question_label = target
-                question_label, steps, y_pos, page_idx = show_doc_context(args.doc_id, question_label)
+                navigate_to_question(args.user_id, args.doc_id, question_label)
+                question_label, steps, y_pos = show_doc_context(args.doc_id, question_label)
                 y = y_pos
                 args.y = y_pos
                 continue
@@ -470,7 +434,7 @@ def main():
                     print(f"  [error] Step {parts[1]} not found")
                     continue
             print(f"  Injecting at y={y:.0f}...")
-            send_strokes(latex, args.user_id, args.doc_id, question_label, args.x, y, page_index=page_idx)
+            send_strokes(latex, args.user_id, args.doc_id, question_label, args.x, y)
             y += 50
 
 

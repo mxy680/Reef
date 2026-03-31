@@ -33,6 +33,8 @@ final class TutorEvaluationService {
     var chatMessages: [TutorChatMessage] = []
     var voiceEnabled: Bool = true
     var isDemo: Bool = false
+    /// Incremented on reset — stale async tasks compare against this to bail out
+    private var resetGeneration: Int = 0
 
     var onStepCompleted: ((Int) -> Void)?
     var onMistakeSpoken: (() -> Void)?
@@ -148,6 +150,7 @@ final class TutorEvaluationService {
     }
 
     func reset() {
+        resetGeneration += 1
         resetForNextStep()
         chatTask?.cancel()
         chatTask = nil
@@ -364,6 +367,7 @@ final class TutorEvaluationService {
         chatMessages.append(TutorChatMessage(role: .student, latex: trimmed, timestamp: Date()))
         isSendingChat = true
 
+        let generation = resetGeneration
         chatTask = Task { [weak self] in
             guard let self else { return }
             do {
@@ -372,6 +376,8 @@ final class TutorEvaluationService {
                     partLabel: partLabel, stepIndex: stepIndex,
                     studentLatex: studentLatex, studentImage: studentImage
                 )
+                // Bail if a reset happened while we were awaiting the server
+                guard self.resetGeneration == generation else { return }
                 self.chatMessages.append(TutorChatMessage(role: .answer, latex: response.reply, timestamp: Date()))
                 if self.voiceEnabled, let audioBase64 = response.speechAudio,
                    let audioData = Data(base64Encoded: audioBase64) {
@@ -379,6 +385,7 @@ final class TutorEvaluationService {
                 }
                 if response.answerKeyUpdated { self.onAnswerKeyUpdated?() }
             } catch {
+                guard self.resetGeneration == generation else { return }
                 self.chatMessages.append(TutorChatMessage(
                     role: .answer, latex: "Couldn't reach the tutor right now. Try again in a moment.", timestamp: Date()
                 ))
@@ -472,6 +479,10 @@ final class TutorEvaluationService {
     }
 
     func playAudio(_ data: Data) {
+        // Don't interrupt audio that's already playing (prevents duplicate TTS
+        // when both the eval response and the poller trigger playback).
+        if isTutorSpeaking { return }
+
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default)

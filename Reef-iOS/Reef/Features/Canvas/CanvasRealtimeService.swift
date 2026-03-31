@@ -11,6 +11,8 @@ final class CanvasSyncService {
     var onStrokesDeleted: (() -> Void)?
     var onChatMessageReceived: ((ChatMessageRow) -> Void)?
     var onTutorStateChanged: ((CanvasStrokeRow) -> Void)?
+    /// Called once on startup with all rows so the ViewModel can restore tutor step indices
+    var onInitialTutorStateLoaded: (([CanvasStrokeRow]) -> Void)?
     #if DEBUG
     var onChunkBboxesUpdated: (([[Double]]) -> Void)?
     #endif
@@ -19,13 +21,17 @@ final class CanvasSyncService {
     private var lastTutorStatus: [String: String] = [:]
     /// Suppress polled TTS after local eval fires
     var lastLocalEvalTime: Date?
+    /// True while loading existing chat history on startup — suppresses TTS in the callback
+    var isLoadingHistory = false
+    /// True while a chat delete is in flight — suppresses poller from re-delivering stale rows
+    private var isClearingChat = false
     /// Suppress polled chat messages briefly after local chat send
     var lastLocalChatTime: Date?
 
     /// Last known stroke hash per question — skip updates if unchanged
     private var lastStrokeHash: [String: Int] = [:]
-    /// Last known chat count — only fetch new messages
-    private var lastChatCount: Int = 0
+    /// Last known chat count per question label — only deliver new messages
+    private var lastChatCount: [String: Int] = [:]
     /// Timestamp of last local write — skip poll results within 2s
     private var lastLocalWriteTime: Date?
 
@@ -37,27 +43,55 @@ final class CanvasSyncService {
         stopPolling()
         print("[Sync] Starting 1s poll for doc=\(documentId.prefix(12))")
 
-        // Pre-load existing chat count so we don't TTS old messages
+        // Load existing chat messages so sidebar shows prior history,
+        // then start the poll timer only AFTER preload completes (avoids races).
         Task { @MainActor [weak self] in
             guard let self, let userId = try? await supabase.auth.session.user.id.uuidString else { return }
-            let count: Int = (try? await supabase
+            let chats: [ChatMessageRow] = (try? await supabase
                 .from("chat_history")
-                .select("id", head: true, count: .exact)
+                .select("role,text,question_label,speech_text")
                 .eq("user_id", value: userId)
                 .eq("document_id", value: documentId)
-                .execute().count) ?? 0
-            self.lastChatCount = count
-            print("[Sync] Pre-loaded \(count) existing chat messages")
-        }
+                .order("created_at", ascending: true)
+                .execute().value) ?? []
+            // Set per-label counts so the poller only delivers NEW messages
+            for chat in chats {
+                self.lastChatCount[chat.questionLabel, default: 0] += 1
+            }
+            // Deliver existing messages to the UI (without TTS — they're old)
+            self.isLoadingHistory = true
+            for chat in chats {
+                self.onChatMessageReceived?(chat)
+            }
+            self.isLoadingHistory = false
+            print("[Sync] Pre-loaded \(chats.count) existing chat messages")
 
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                // Skip if we just wrote locally
-                if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 {
-                    return
+            // Load tutor state (step index, progress, status) from canvas_strokes
+            let selectCols = "question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed,tutor_speech_text"
+            let rows: [CanvasStrokeRow] = (try? await supabase
+                .from("canvas_strokes")
+                .select(selectCols)
+                .eq("user_id", value: userId)
+                .eq("document_id", value: documentId)
+                .execute().value) ?? []
+            // Seed poller hashes so the first tick doesn't re-deliver these
+            for row in rows {
+                self.lastStrokeHash[row.questionLabel] = row.strokes.count
+                let statusKey = "\(row.tutorStatus ?? "idle")_\(row.tutorProgress ?? 0)"
+                self.lastTutorStatus[row.questionLabel] = statusKey
+            }
+            self.onInitialTutorStateLoaded?(rows)
+            print("[Sync] Pre-loaded tutor state for \(rows.count) questions")
+
+            // Start the timer only after initial load is complete
+            self.pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    if let lastWrite = self.lastLocalWriteTime, Date().timeIntervalSince(lastWrite) < 2.0 {
+                        return
+                    }
+                    await self.pollForChanges(documentId: documentId)
                 }
-                await self.pollForChanges(documentId: documentId)
             }
         }
     }
@@ -66,7 +100,7 @@ final class CanvasSyncService {
         pollTimer?.invalidate()
         pollTimer = nil
         lastStrokeHash = [:]
-        lastChatCount = 0
+        lastChatCount = [:]
     }
 
     // MARK: - Poll
@@ -91,7 +125,12 @@ final class CanvasSyncService {
             let hash = row.strokes.count  // Simple change detection
             if lastStrokeHash[row.questionLabel] != hash {
                 lastStrokeHash[row.questionLabel] = hash
-                onStrokesUpdated?(row)
+                // Only replace canvas if we haven't written locally recently —
+                // external sources (simulation, another device) can push strokes.
+                let isExternalWrite = lastLocalWriteTime == nil || Date().timeIntervalSince(lastLocalWriteTime!) > 5.0
+                if isExternalWrite {
+                    onStrokesUpdated?(row)
+                }
             }
 
             // Detect tutor state changes
@@ -118,7 +157,8 @@ final class CanvasSyncService {
             onStrokesDeleted?()
         }
 
-        // Poll chat (skip if we just sent a local chat — avoids duplicates)
+        // Poll chat — skip if clearing or just sent a local chat
+        if isClearingChat { return }
         if let lastChat = lastLocalChatTime, Date().timeIntervalSince(lastChat) < 5.0 {
             return
         }
@@ -131,12 +171,16 @@ final class CanvasSyncService {
             .order("created_at", ascending: true)
             .execute().value) ?? []
 
-        if chats.count > lastChatCount {
-            // New messages — deliver only the new ones
-            for chat in chats.dropFirst(lastChatCount) {
-                onChatMessageReceived?(chat)
+        // Group by question label and only deliver new messages per label
+        let grouped = Dictionary(grouping: chats, by: \.questionLabel)
+        for (label, labelChats) in grouped {
+            let known = lastChatCount[label, default: 0]
+            if labelChats.count > known {
+                for chat in labelChats.dropFirst(known) {
+                    onChatMessageReceived?(chat)
+                }
+                lastChatCount[label] = labelChats.count
             }
-            lastChatCount = chats.count
         }
     }
 
@@ -216,19 +260,32 @@ final class CanvasSyncService {
     }
 
     func clearChat(documentId: String, questionLabel: String) async {
-        guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
-        lastChatCount = 0
-        try? await supabase
-            .from("chat_history")
-            .delete()
-            .eq("user_id", value: userId)
-            .eq("document_id", value: documentId)
-            .eq("question_label", value: questionLabel)
-            .execute()
+        guard let userId = try? await supabase.auth.session.user.id.uuidString else {
+            print("[Sync] clearChat FAILED — no userId")
+            return
+        }
+        print("[Sync] clearChat: deleting chat for label=\(questionLabel) doc=\(documentId.prefix(12)) user=\(userId.prefix(8))")
+        do {
+            try await supabase
+                .from("chat_history")
+                .delete()
+                .eq("user_id", value: userId)
+                .eq("document_id", value: documentId)
+                .eq("question_label", value: questionLabel)
+                .execute()
+            print("[Sync] clearChat: SUCCESS for label=\(questionLabel)")
+        } catch {
+            print("[Sync] clearChat: ERROR for label=\(questionLabel): \(error)")
+        }
+        lastChatCount.removeValue(forKey: questionLabel)
     }
 
     /// Clear chat for all sub-questions of a question.
+    /// `isClearingChat` suppresses the poller from re-delivering stale rows during the deletes.
     func clearChatForQuestion(documentId: String, questionLabels: [String]) async {
+        guard !questionLabels.isEmpty else { return }
+        isClearingChat = true
+        defer { isClearingChat = false }
         for label in questionLabels {
             await clearChat(documentId: documentId, questionLabel: label)
         }

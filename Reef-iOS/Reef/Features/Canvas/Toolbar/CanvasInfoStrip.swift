@@ -161,7 +161,21 @@ struct CanvasInfoStrip: View {
 
             divider
 
-            // Simulation auto-starts when document opens (no manual button needed)
+            #if targetEnvironment(simulator)
+            // Pan/Draw toggle for simulator (no Apple Pencil)
+            Button {
+                viewModel.simulatorPanMode.toggle()
+            } label: {
+                Image(systemName: viewModel.simulatorPanMode ? "hand.raised.fill" : "pencil.tip")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(viewModel.simulatorPanMode ? .yellow : .white.opacity(0.7))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            divider
+            #endif
 
             // Tutor mode toggle
             HStack(spacing: 8) {

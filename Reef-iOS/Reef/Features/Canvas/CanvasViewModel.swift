@@ -60,12 +60,17 @@ final class CanvasViewModel {
         )
     }
 
+    /// When true on the simulator, touch input pans instead of drawing.
+    #if targetEnvironment(simulator)
+    var simulatorPanMode = false
+    #endif
+
     var activeDrawingPolicy: PKCanvasViewDrawingPolicy {
         // The iOS Simulator does not support Apple Pencil input. Using `.anyInput` allows
         // touch/mouse drawing during development so the canvas is testable without real hardware.
         // On device, only Pencil input is accepted (unless the hand-draw tool is active).
         #if targetEnvironment(simulator)
-        return .anyInput
+        return simulatorPanMode ? .pencilOnly : .anyInput
         #else
         return selectedTool == .handDraw ? .anyInput : .pencilOnly
         #endif
@@ -375,7 +380,7 @@ final class CanvasViewModel {
         strokeUpsertWork = upsertWork
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100), execute: upsertWork)
 
-        // 500ms after last point: request transcription from server
+        // 250ms after last point: request transcription from server
         strokeWriteWork?.cancel()
         let txWork = DispatchWorkItem { [weak self] in
             guard let self else { return }
@@ -385,12 +390,12 @@ final class CanvasViewModel {
             }
         }
         strokeWriteWork = txWork
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: txWork)
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(250), execute: txWork)
 
         // After last stroke: fire tutor eval
         // Use longer delay (5s) if in mistake state to give student time to fix
         if tutorModeOn {
-            let delay = tutorEvalService.status == "mistake" ? 5000 : 1500
+            let delay = tutorEvalService.status == "mistake" ? 5000 : 900
             evalDebounceWork?.cancel()
             let evalWork = DispatchWorkItem { [weak self] in
                 guard let self else { return }
@@ -561,9 +566,24 @@ final class CanvasViewModel {
         isLoadingAnswerKeys = true
         let repo = SupabaseAnswerKeyRepository()
 
-        // Restore saved question or default to Q1a
+        // Restore active question from Supabase (most recently updated stroke row)
         if activeQuestionLabel == nil {
-            activeQuestionLabel = savedState?.activeQuestionLabel ?? "Q1a"
+            if let userId = try? await supabase.auth.session.user.id.uuidString {
+                struct LabelRow: Decodable { let questionLabel: String
+                    enum CodingKeys: String, CodingKey { case questionLabel = "question_label" }
+                }
+                let row: LabelRow? = try? await supabase
+                    .from("canvas_strokes")
+                    .select("question_label")
+                    .eq("user_id", value: userId)
+                    .eq("document_id", value: document.id)
+                    .order("updated_at", ascending: false)
+                    .limit(1)
+                    .single()
+                    .execute().value
+                activeQuestionLabel = row?.questionLabel
+            }
+            if activeQuestionLabel == nil { activeQuestionLabel = "Q1a" }
         }
         let targetQuestion = activeQuestionNumber
 
@@ -604,7 +624,8 @@ final class CanvasViewModel {
         let loaded = CanvasStorageService.load(documentId: document.id)
         self.savedState = loaded
 
-        self.savedTutorProgress = loaded?.tutorProgress
+        // Tutor state is loaded from Supabase, not local storage
+        self.savedTutorProgress = nil
 
         tutorEvalService.voiceEnabled = tutorVoiceEnabled
 
@@ -620,6 +641,34 @@ final class CanvasViewModel {
                 await self.loadAnswerKeys()
                 // loadAnswerKeys handles state restoration internally
             }
+        }
+
+        // Restore tutor state from Supabase on initial load
+        syncService.onInitialTutorStateLoaded = { [weak self] rows in
+            guard let self else { return }
+            for row in rows {
+                let step = row.tutorStep ?? 0
+                let progress = row.tutorProgress ?? 0
+                let status = row.tutorStatus ?? "idle"
+                // Cache in-memory for question switching
+                self.savedTutorProgress?[row.questionLabel] = TutorStepState(
+                    currentStepIndex: step,
+                    stepEvaluation: StepEvaluation(
+                        progress: progress,
+                        status: status,
+                        mistakeExplanation: nil
+                    ),
+                    lastTranscription: "",
+                    chatMessages: nil
+                )
+                // Apply to current question immediately
+                if row.questionLabel == self.activeQuestionLabel {
+                    self.currentTutorStepIndex = min(step, max(0, self.tutorStepCount - 1))
+                    self.tutorEvalService.stepProgress = progress
+                    self.tutorEvalService.status = status
+                }
+            }
+            if self.savedTutorProgress == nil { self.savedTutorProgress = [:] }
         }
 
         // Wire Realtime stroke sync — REPLACE canvas with external strokes (from simulator)
@@ -676,8 +725,8 @@ final class CanvasViewModel {
                     TutorChatMessage(role: role, latex: row.text, timestamp: Date())
                 )
                 // Play TTS for tutor replies received via polling (e.g., from simulator)
-                // Use speechText (no math notation) if available, fall back to text
-                if role == .answer && self.tutorEvalService.voiceEnabled {
+                // Skip TTS during initial history load — those are old messages
+                if role == .answer && self.tutorEvalService.voiceEnabled && !self.syncService.isLoadingHistory {
                     let ttsText = (row.speechText?.isEmpty == false) ? row.speechText! : row.text
                     Task { await self.tutorEvalService.speakText(ttsText) }
                 }
@@ -852,13 +901,6 @@ final class CanvasViewModel {
     /// Save current tutor state into the in-memory cache for a given label.
     private func saveTutorStateForLabel(_ label: String) {
         if savedTutorProgress == nil { savedTutorProgress = [:] }
-        let savedMessages = tutorEvalService.chatMessages.map { msg in
-            SavedChatMessage(
-                role: msg.role.rawValue,
-                latex: msg.latex,
-                timestamp: msg.timestamp
-            )
-        }
         savedTutorProgress?[label] = TutorStepState(
             currentStepIndex: currentTutorStepIndex,
             stepEvaluation: StepEvaluation(
@@ -867,7 +909,7 @@ final class CanvasViewModel {
                 mistakeExplanation: tutorEvalService.mistakeExplanation
             ),
             lastTranscription: "",
-            chatMessages: savedMessages.isEmpty ? nil : savedMessages
+            chatMessages: nil  // Chat is sourced from DB, not local storage
         )
     }
 
@@ -888,18 +930,7 @@ final class CanvasViewModel {
             tutorEvalService.mistakeExplanation = eval.mistakeExplanation
         }
 
-        // Restore chat messages
-        if let saved = state.chatMessages, !saved.isEmpty {
-            tutorEvalService.chatMessages = saved.map { msg in
-                TutorChatMessage(
-                    role: TutorChatMessage.Role(rawValue: msg.role) ?? .answer,
-                    latex: msg.latex,
-                    timestamp: msg.timestamp
-                )
-            }
-        } else {
-            tutorEvalService.chatMessages.removeAll()
-        }
+        // Chat messages are loaded from the DB via polling preload — don't restore from local storage
 
     }
 
@@ -1252,10 +1283,17 @@ final class CanvasViewModel {
         clearShapeStrokes()
         saveCanvasState()
 
-        // Clear canvas strokes + chat history from Supabase for ALL sub-questions
+        // Clear canvas strokes + chat history from Supabase for ALL sub-questions.
+        // Clear chat twice: once immediately, then again after 3s to catch any
+        // server-side writes from in-flight eval requests that land after the first clear.
+        print("[Reset] Clearing DB for labels=\(subLabels) doc=\(document.id.prefix(12))")
         Task {
             await syncService.clearStrokesForQuestion(documentId: document.id, questionLabels: subLabels)
             await syncService.clearChatForQuestion(documentId: document.id, questionLabels: subLabels)
+            print("[Reset] First DB clear complete, waiting 3s for in-flight evals...")
+            try? await Task.sleep(for: .seconds(3))
+            await syncService.clearChatForQuestion(documentId: document.id, questionLabels: subLabels)
+            print("[Reset] Second DB clear complete")
         }
     }
 
@@ -1618,28 +1656,7 @@ final class CanvasViewModel {
 
         print("[CanvasVM] Saving: \(drawingData.count) drawings, \(drawingData.values.map(\.count).reduce(0,+)) bytes total")
 
-        // Build tutor progress snapshot
-        var tutorState: [String: TutorStepState] = savedTutorProgress ?? [:]
-        if tutorModeOn, let label = activeQuestionLabel {
-            let savedMessages = tutorEvalService.chatMessages.map { msg in
-                SavedChatMessage(
-                    role: msg.role.rawValue,
-                    latex: msg.latex,
-                    timestamp: msg.timestamp
-                )
-            }
-            tutorState[label] = TutorStepState(
-                currentStepIndex: currentTutorStepIndex,
-                stepEvaluation: StepEvaluation(
-                    progress: tutorEvalService.stepProgress,
-                    status: tutorEvalService.status,
-                    mistakeExplanation: tutorEvalService.mistakeExplanation
-                ),
-                lastTranscription: "",
-                chatMessages: savedMessages.isEmpty ? nil : savedMessages
-            )
-        }
-
+        // Tutor state + active question live in Supabase — not persisted locally.
         let state = CanvasDocumentData(
             documentId: document.id,
             originalPageCount: originalPageCount,
@@ -1647,8 +1664,8 @@ final class CanvasViewModel {
             overlaySettings: overlaySettings,
             currentPageIndex: currentPageIndex,
             drawingDataByPage: drawingData,
-            tutorProgress: tutorState.isEmpty ? nil : tutorState,
-            activeQuestionLabel: activeQuestionLabel
+            tutorProgress: nil,
+            activeQuestionLabel: nil
         )
 
         Task.detached {

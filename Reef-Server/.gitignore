@@ -8,3 +8,4 @@ dist/
 test_input.pdf
 test_output/
 test_v2_pipeline.py
+supabase/.temp/

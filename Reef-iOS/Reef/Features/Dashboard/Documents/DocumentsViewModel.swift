@@ -136,6 +136,12 @@ final class DocumentsViewModel {
             try await repo.deleteDocument(doc.id)
             documents.removeAll { $0.id == doc.id }
             thumbnailURLs.removeValue(forKey: doc.id)
+            // Clean up all local storage for this document
+            try? CanvasStorageService.delete(documentId: doc.id)
+            // Clean up legacy tutor progress files (old canvas code)
+            let legacyProgress = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("tutor_progress/\(doc.id).json")
+            try? FileManager.default.removeItem(at: legacyProgress)
             showToast("Document deleted")
             deleteTarget = nil
         } catch {
