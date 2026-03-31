@@ -1,22 +1,39 @@
 {
-  "student_latex": "\\delta = \\frac{W}{AE} \\left[x - \\frac{x^2}{2L}\\right]_0^L = \\frac{W}{AE} \\cdot \\frac{L}{2} = \\frac{WL}{2AE}",
-  "tutor_status": "mistake",
-  "tutor_progress": 0.4,
-  "step_index": 1,
-  "total_steps": 3,
+  "student_latex": "\\sigma = 184.4 / 0.017 = 10847 \\text{ psi}",
+  "tutor_status": "completed",
+  "tutor_progress": 1.0,
+  "step_index": 3,
+  "total_steps": 4,
   "steps": [
-    "Express internal force as function of position",
-    "Set up the integration for displacement at C",
-    "Evaluate the definite integral"
+    "Calculate the total moment about the hinge",
+    "Find the vertical force component in the cables",
+    "Determine the total tensile force in each cable",
+    "Calculate the normal stress in the cable"
   ],
-  "question_text": "A prismatic bar $AB$ of length $L$, cross-sectional area $A$, modulus of elasticity $E$, and weight $W$ hangs vertically under its own weight (see figure).\nPart (a): Derive a formula for the downward displacement $\\delta_{C}$ of point $C$, located at distance $h$ from the lower end of the bar.",
+  "question_text": "A pickup truck tailgate supports a crate ($W_{C}=150$ lb), as shown in the figure. The tailgate weighs $W_{T}=60$ lb and is supported by two cables (only one is shown in the figure). Each cable has an effective cross-sectional area $A_{e}=0.017$ in.$^{2}$.\nPart (a): Find the tensile force $T$ and normal stress $\\sigma$ in each cable.",
   "history": [
     {
       "status": "mistake",
       "step": 0,
       "progress": 0.0,
-      "says": "Check the expression you wrote \u2014 does it represent the internal axial force $N(y)$ varying with $y$?",
-      "speaks": "hmm that stress expression looks off",
+      "says": "Does the $T = 150 + 60$ you wrote represent a moment, or should each weight be multiplied by its distance $d_C$ and $d_T$?",
+      "speaks": "nah check that moment sum",
+      "steps_completed": 1
+    },
+    {
+      "status": "mistake",
+      "step": 0,
+      "progress": 0.4,
+      "says": "Which weight\u2019s contribution is missing from \\(\\sum M = (150)(18) = 2700\\) ?",
+      "speaks": "hmm check that tailgate moment",
+      "steps_completed": 1
+    },
+    {
+      "status": "mistake",
+      "step": 0,
+      "progress": 0.4,
+      "says": "Which distance should multiply the $60\\,$lb weight in the moment sum?",
+      "speaks": "nah check that distance again",
       "steps_completed": 1
     },
     {
@@ -24,47 +41,55 @@
       "step": 0,
       "progress": 1.0,
       "says": "",
-      "speaks": "yep",
-      "steps_completed": 1
-    },
-    {
-      "status": "mistake",
-      "step": 1,
-      "progress": 0.3,
-      "says": "Does the internal force go to zero at the lower end where y=0?",
-      "speaks": "hmm that expression seems off",
-      "steps_completed": 1
-    },
-    {
-      "status": "mistake",
-      "step": 1,
-      "progress": 0.3,
-      "says": "What value does your force expression give at $y=0$?",
-      "speaks": "nah check that force at the bottom",
+      "speaks": "real",
       "steps_completed": 1
     },
     {
       "status": "mistake",
       "step": 1,
       "progress": 0.4,
-      "says": "Does the integral you wrote represent the elongation of segment AC only?",
-      "speaks": "hmm that integral limits look off",
+      "says": "How many vertical components from the cables should be included in the moment balance?",
+      "speaks": "hmm check that count again",
+      "steps_completed": 1
+    },
+    {
+      "status": "completed",
+      "step": 1,
+      "progress": 1.0,
+      "says": "",
+      "speaks": "fine",
       "steps_completed": 1
     },
     {
       "status": "mistake",
-      "step": 1,
-      "progress": 0.2,
-      "says": "What effect does using 0 as the lower limit have on the displacement you\u2019re calculating?",
-      "speaks": "hmm check those limits again",
+      "step": 2,
+      "progress": 0.6,
+      "says": "Which trigonometric ratio gives the opposite side over the hypotenuse in this triangle?",
+      "speaks": "hmm that trig seems off",
+      "steps_completed": 1
+    },
+    {
+      "status": "completed",
+      "step": 2,
+      "progress": 1.0,
+      "says": "",
+      "speaks": "ok yes",
       "steps_completed": 1
     },
     {
       "status": "mistake",
-      "step": 1,
-      "progress": 0.4,
-      "says": "Which portion of the bar should the integral cover to obtain the displacement at point\u202fC?",
-      "speaks": "hmm check those limits again",
+      "step": 3,
+      "progress": 0.5,
+      "says": "Check the cross\u2011sectional area \u2014 should it be $0.017$ instead of $0.17$?",
+      "speaks": "hmm that area looks off",
+      "steps_completed": 1
+    },
+    {
+      "status": "completed",
+      "step": 3,
+      "progress": 1.0,
+      "says": "",
+      "speaks": "mhm",
       "steps_completed": 1
     }
   ]
