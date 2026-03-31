@@ -80,8 +80,8 @@ async def _generate_single_answer(
 ) -> None:
     """Generate and store the answer for one question. Never raises."""
     try:
-        prompt = ANSWER_KEY_PROMPT.format(
-            question_json=json.dumps(question_dict, indent=2),
+        prompt = ANSWER_KEY_PROMPT.replace(
+            "{question_json}", json.dumps(question_dict, indent=2),
         )
 
         if figure_images:
