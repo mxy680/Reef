@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# System deps for PyMuPDF, tectonic, and Node.js (for KaTeX validation)
+# System deps for PyMuPDF and tectonic
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libfontconfig1 \
     libfreetype6 \
@@ -10,13 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfribidi0 \
     libglib2.0-0 \
     curl \
-    nodejs \
-    npm \
     mupdf-tools \
     && rm -rf /var/lib/apt/lists/*
-
-# Install KaTeX for server-side LaTeX validation
-RUN npm install -g katex@0.16.21
 
 # Install tectonic LaTeX compiler
 RUN curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh \

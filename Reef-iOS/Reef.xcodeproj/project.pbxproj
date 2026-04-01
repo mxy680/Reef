@@ -19,8 +19,6 @@
 		1040571EEA06DD01EC7E1776 /* ToolSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE035BAF0664E7DC94AFD77F /* ToolSettingsPopover.swift */; };
 		114AD1A2B9668044DDDAFD7E /* EraserSettingsPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B5973EB0C19F379FCC7F2D /* EraserSettingsPopover.swift */; };
 		11E74EB9CAA26F3776EE774D /* CourseRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD8763733BAAB023C8D2CFF /* CourseRepository.swift */; };
-		DC31B62573F444088AECABB8 /* TutorEvaluationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorEvaluationService.swift; sourceTree = "<group>"; };
-		642BAEA75512457AA28EED5F /* TutorEvaluationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC31B62573F444088AECABB8 /* TutorEvaluationService.swift */; };
 		17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E71983B4F8D2BEC3910A45E /* GoogleIcon.swift */; };
 		1851666EDD5700E210B5FE9F /* RulerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029895EBF64BA43E3B438CBE /* RulerOverlayView.swift */; };
 		1BAD8BD9673755ECB28CD6EC /* ProfileDropdownMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF315A5A3CD60C6CBCD997E /* ProfileDropdownMenu.swift */; };
@@ -93,14 +91,12 @@
 		C1D2E3F4A5B6C7D8E9F0A1B2 /* CanvasLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* CanvasLoadingView.swift */; };
 		B810EB60F5595D898E981F20 /* NotificationDropdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4689C58CCB86B7C32D03AA /* NotificationDropdownTests.swift */; };
 		B8CD553E58BC1E97CB314D85 /* DeleteCoursePopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD4957A8822E66C3898DFD6 /* DeleteCoursePopup.swift */; };
-		B9285897F3873C770BF858E7 /* CanvasSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85288EB05437D44A3FEC547F /* CanvasSidebarView.swift */; };
 		BA0D8850AA60F67BD31A9008 /* DocumentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A80790E56F45AD11C42C6AE /* DocumentsViewModel.swift */; };
 		BA13FB6B1A663195074470FE /* ReefBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC89D92C9819BFC2E70F4BD /* ReefBadge.swift */; };
 		BD86A46358438D7E29C4251F /* SettingsProfileTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540FA017DB5B558F980C778C /* SettingsProfileTab.swift */; };
 		BDEF8CB0B1BDF475A9B404C0 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67343B23E7351C02A36771E0 /* Document.swift */; };
 		BE34AD54F16F85B938302FE7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F68AC1C3432E326DB646676 /* Assets.xcassets */; };
 		C1054E0C1419242A566A1EA9 /* PopoverCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF40F4A25F5204FEDAF3FC4 /* PopoverCard.swift */; };
-		C2282EFF92805C99DFB9EB65 /* TutorRevealCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675863D5C0BC2BCF0D2688B6 /* TutorRevealCard.swift */; };
 		CC5E34E6955F3B11D1F9EAEE /* SupabaseDocumentRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0F1AFE64D2E5F951871142 /* SupabaseDocumentRepository.swift */; };
 		CDE7FCB4A7A95CA3F7018D5D /* DashboardTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313CACE22D5819885170769 /* DashboardTab.swift */; };
 		CE1CEFE6CF36DA785BB586EA /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADCC5EDF667251F329B6F2A /* Profile.swift */; };
@@ -137,7 +133,6 @@
 		F318C137C0FE80E01717FD90 /* ReefTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BCE4900CD1562F72FAC77A /* ReefTheme.swift */; };
 		F485DD27CAB43B9B7FB32B36 /* ReefUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B48811F63C33857241E52D /* ReefUITestCase.swift */; };
 		F5DD1BC1EFC10CD8E368CC81 /* DashboardHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F6BA74028EDA58067FF47C /* DashboardHeader.swift */; };
-		F89AFF1A6BAE7356534BD758 /* TutorHintCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49104137905EEABC8CE3056 /* TutorHintCard.swift */; };
 		F979B442814B7471F31DCA1B /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B14B10AB75BC4F714166B0 /* AppleSignInCoordinator.swift */; };
 		FC2A3704CF2F9C01A9965208 /* CanvasContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D489D93195D1EB0460BB6162 /* CanvasContainerView.swift */; };
 		FDD5BDA76B374BE31525ABF1 /* DashboardSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4742404ABF6C1505BEE9BA09 /* DashboardSidebar.swift */; };
@@ -238,7 +233,6 @@
 		634D3EA1C3292511D10D5A3B /* EditCoursePopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCoursePopup.swift; sourceTree = "<group>"; };
 		64BCA06641FCCA06780192E3 /* CanvasStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasStorageService.swift; sourceTree = "<group>"; };
 		67343B23E7351C02A36771E0 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
-		675863D5C0BC2BCF0D2688B6 /* TutorRevealCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorRevealCard.swift; sourceTree = "<group>"; };
 		6B1625043D9BE3B466B4EF85 /* DeleteConfirmPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteConfirmPopup.swift; sourceTree = "<group>"; };
 		710438B44E81F30B67C50D57 /* DraggableCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggableCard.swift; sourceTree = "<group>"; };
 		7960E8B43CA0F0FEE04F0BA4 /* CanvasDocumentData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDocumentData.swift; sourceTree = "<group>"; };
@@ -249,7 +243,6 @@
 		82315CD65E53D1BAD137A91C /* ReefColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReefColors.swift; sourceTree = "<group>"; };
 		8342C69F3700A9310BE6514E /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
 		837EF10AE734D9E16B28F190 /* ProfileUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUpdate.swift; sourceTree = "<group>"; };
-		85288EB05437D44A3FEC547F /* CanvasSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSidebarView.swift; sourceTree = "<group>"; };
 		87EC19536891CBB9AFED3E07 /* CoursesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoursesViewModel.swift; sourceTree = "<group>"; };
 		88C0707187B735021AB1D0D9 /* DocumentSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSkeletonView.swift; sourceTree = "<group>"; };
 		8A01A72D1889843ADC7EACB3 /* SupabaseUsageStatsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseUsageStatsRepository.swift; sourceTree = "<group>"; };
@@ -265,7 +258,6 @@
 		A187D2FEFCCCE67BF83BA0A4 /* TutorHintPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorHintPopover.swift; sourceTree = "<group>"; };
 		A2B027C742233E2E12B4D878 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		A37FCABDB72CEC9F68DABAD5 /* ProfileDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDTO.swift; sourceTree = "<group>"; };
-		A49104137905EEABC8CE3056 /* TutorHintCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorHintCard.swift; sourceTree = "<group>"; };
 		A5BB319AF6A63003068A3D85 /* AnswerKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerKey.swift; sourceTree = "<group>"; };
 		A5F2D019882BDFA54D431F92 /* CalculatorHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorHistoryView.swift; sourceTree = "<group>"; };
 		A965EEABECDE87D79AF04DC7 /* SupabaseProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseProfileRepository.swift; sourceTree = "<group>"; };
@@ -375,9 +367,7 @@
 		0A1391E830274A537EE690A4 /* TutorOverlay */ = {
 			isa = PBXGroup;
 			children = (
-				A49104137905EEABC8CE3056 /* TutorHintCard.swift */,
-				675863D5C0BC2BCF0D2688B6 /* TutorRevealCard.swift */,
-			);
+				);
 			path = TutorOverlay;
 			sourceTree = "<group>";
 		};
@@ -519,9 +509,7 @@
 		53DD15FA05A897032D0FD98E /* Sidebar */ = {
 			isa = PBXGroup;
 			children = (
-				85288EB05437D44A3FEC547F /* CanvasSidebarView.swift */,
-				DC31B62573F444088AECABB8 /* TutorEvaluationService.swift */,
-			);
+				);
 			path = Sidebar;
 			sourceTree = "<group>";
 		};
@@ -965,7 +953,6 @@
 				D2A232A617B5D22378A2ED14 /* CanvasExportService.swift in Sources */,
 				D440C1F64F4138D89CE9DD4A /* CanvasInfoStrip.swift in Sources */,
 				DE00728ECAC1B16052739324 /* CanvasPageView.swift in Sources */,
-				B9285897F3873C770BF858E7 /* CanvasSidebarView.swift in Sources */,
 				22657CCF5B44EF6A1C62E8E4 /* CanvasStorageService.swift in Sources */,
 				8BAFDDD832027A77304D968D /* CanvasTool.swift in Sources */,
 				5AF7C170E44057E00878FD76 /* CanvasToolbarButton.swift in Sources */,
@@ -1006,7 +993,6 @@
 				114AD1A2B9668044DDDAFD7E /* EraserSettingsPopover.swift in Sources */,
 				616DA14DB392B614F530E097 /* ExportPreviewView.swift in Sources */,
 				17B5127CBE0FA6E9B9EEF6E3 /* GoogleIcon.swift in Sources */,
-				642BAEA75512457AA28EED5F /* TutorEvaluationService.swift in Sources */,
 				903339E4247C9C8EBCE24624 /* KaTeXView.swift in Sources */,
 				E6DD16240CF1B56A193E21F4 /* MathText.swift in Sources */,
 				1CB456FFE88241459BDD2565 /* LaTeXToUnicode.swift in Sources */,
@@ -1056,9 +1042,7 @@
 				B2BDFCF83E6EC8C87F30B67B /* SupabaseUsageStatsRepository.swift in Sources */,
 				E14DAD60A5888D8471C9133D /* TierLimits.swift in Sources */,
 				1040571EEA06DD01EC7E1776 /* ToolSettingsPopover.swift in Sources */,
-				F89AFF1A6BAE7356534BD758 /* TutorHintCard.swift in Sources */,
 				D02A375FA6515DB534171C08 /* TutorHintPopover.swift in Sources */,
-				C2282EFF92805C99DFB9EB65 /* TutorRevealCard.swift in Sources */,
 				5BC086AEA978BDB34E39257A /* UsageStats.swift in Sources */,
 				6A2431650F553626C581166E /* UsageStatsRepository.swift in Sources */,
 				363D0A041F425FBA2FA20E54 /* UserSettings.swift in Sources */,

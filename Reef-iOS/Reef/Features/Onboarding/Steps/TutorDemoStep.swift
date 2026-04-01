@@ -123,33 +123,7 @@ struct TutorDemoStep: View {
                 ttsFinishedForStep = true
             }
 
-            // Enable tutor toggle when reaching step 9
-            if step == 9 { canvasVM?.deferTutorMode = false }
-            // Enable sidebar when tutor is toggled on via Next Step on step 9
-            if step == 10, let vm = canvasVM, vm.tutorModeOn {
-                vm.showSidebar = true
-                if vm.activeQuestionLabel == nil { vm.activeQuestionLabel = "Q1a" }
-            }
-            // Steps 10 (step description) and 11 (progress bar): auto-continue after TTS
-            if step == 10 || step == 11 {
-                drawingReactionTask?.cancel()
-                drawingReactionTask = Task { @MainActor in
-                    while canvasVM?.tutorEvalService.isTutorSpeaking == true {
-                        try? await Task.sleep(for: .milliseconds(200))
-                    }
-                    try? await Task.sleep(for: .milliseconds(500))
-                    guard !Task.isCancelled else { return }
-                    stopTTS()
-                    advanceStep()
-                }
-            }
-        }
-        // TTS finished → mark condition for auto-advance
-        .onChange(of: canvasVM?.tutorEvalService.isTutorSpeaking) { old, new in
-            guard old == true, new == false,
-                  Self.autoSteps.contains(currentStep) else { return }
-            ttsFinishedForStep = true
-            tryAutoAdvance()
+            // (tutor-specific step setup removed)
         }
         // Tool usage observers for auto-advance
         .onChange(of: canvasVM?.selectedTool) { old, new in
@@ -175,41 +149,6 @@ struct TutorDemoStep: View {
         .onChange(of: canvasVM?.overlaySettings.type) { _, _ in
             guard currentStep == 8 else { return }
             toolUsedForStep = true; tryAutoAdvance()
-        }
-        .onChange(of: canvasVM?.showHintPopover) { _, isOn in
-            guard isOn == true, currentStep == 12 else { return }
-            toolUsedForStep = true; tryAutoAdvance()
-        }
-        .onChange(of: canvasVM?.showRevealPopover) { _, isOn in
-            guard isOn == true, currentStep == 13 else { return }
-            toolUsedForStep = true; tryAutoAdvance()
-        }
-        // Tutor toggle tapped on step 9 — setup sidebar + auto-advance
-        .onChange(of: canvasVM?.tutorModeOn) { _, isOn in
-            guard isOn == true, showWalkthrough, currentStep == 9,
-                  let vm = canvasVM else { return }
-            vm.showSidebar = true
-            if vm.activeQuestionLabel == nil { vm.activeQuestionLabel = "Q1a" }
-            toolUsedForStep = true; tryAutoAdvance()
-        }
-        // Problem solved — auto-advance walkthrough and continue onboarding
-        .onChange(of: canvasVM?.tutorEvalService.status) { _, status in
-            guard status == "completed", showWalkthrough, currentStep == 14,
-                  let vm = canvasVM,
-                  vm.tutorStepCount > 0,
-                  vm.currentTutorStepIndex >= vm.tutorStepCount - 1 else { return }
-            // Wait for TTS to finish, then exit
-            drawingReactionTask?.cancel()
-            drawingReactionTask = Task { @MainActor in
-                // Wait for tutor reinforcement TTS
-                while vm.tutorEvalService.isTutorSpeaking {
-                    try? await Task.sleep(for: .milliseconds(200))
-                }
-                try? await Task.sleep(for: .seconds(2))
-                guard !Task.isCancelled else { return }
-                Task { await viewModel.deleteDemoDocument() }
-                viewModel.goNext()
-            }
         }
     }
 
@@ -288,7 +227,6 @@ struct TutorDemoStep: View {
                     stepSpeechTask = Task { @MainActor in
                         let audio = await fetchTTSAudio(text: walkthroughSpeech[0])
                         guard !Task.isCancelled else { return }
-                        if let audio { canvasVM?.tutorEvalService.playAudio(audio) }
                         withAnimation { showWalkthrough = true }
                     }
                 } else {
@@ -378,23 +316,7 @@ struct TutorDemoStep: View {
         drawingReactionTask?.cancel()
         withAnimation { isThinkingReaction = true }
         drawingReactionTask = Task { @MainActor in
-            let image = vm.captureActiveQuestionImage()
-            let reaction: String? = if let image { await fetchDrawingReaction(imageBase64: image) } else { nil }
-            drawingReaction = reaction
-
-            // Fetch TTS for reaction + step 1, start playing, THEN show popup
-            if let reaction, voiceMode {
-                let combined = "\(reaction) \(walkthroughSpeech[1])"
-                let audio = await fetchTTSAudio(text: combined)
-                if let audio { canvasVM?.tutorEvalService.playAudio(audio) }
-                withAnimation { isThinkingReaction = false; currentStep = 1 }
-            } else if voiceMode {
-                let audio = await fetchTTSAudio(text: walkthroughSpeech[1])
-                if let audio { canvasVM?.tutorEvalService.playAudio(audio) }
-                withAnimation { isThinkingReaction = false; currentStep = 1 }
-            } else {
-                withAnimation { isThinkingReaction = false; currentStep = 1 }
-            }
+            withAnimation { isThinkingReaction = false; currentStep = 1 }
         }
     }
 
@@ -411,9 +333,7 @@ struct TutorDemoStep: View {
             stepSpeechTask = Task { @MainActor in
                 let audio = await fetchTTSAudio(text: walkthroughSpeech[nextStep])
                 guard !Task.isCancelled else { return }
-                if let audio {
-                    canvasVM?.tutorEvalService.playAudio(audio)
-                } else if Self.autoSteps.contains(nextStep) {
+                if audio == nil, Self.autoSteps.contains(nextStep) {
                     // TTS failed — don't block auto-advance
                     ttsFinishedForStep = true
                 }
@@ -502,7 +422,6 @@ struct TutorDemoStep: View {
         introTask?.cancel()
         stepSpeechTask?.cancel()
         drawingReactionTask?.cancel()
-        canvasVM?.tutorEvalService.stopAudio()
     }
 
 
@@ -536,7 +455,7 @@ struct TutorDemoStep: View {
                   let audioBase64 = result.speechAudio,
                   let audioData = Data(base64Encoded: audioBase64) else { return }
 
-            canvasVM?.tutorEvalService.playAudio(audioData)
+            // Audio playback removed (tutorEvalService deleted)
         }
     }
 
@@ -555,8 +474,6 @@ struct TutorDemoStep: View {
             if let doc = demoService.demoDocument {
                 viewModel.demoDocumentId = doc.id
                 let vm = CanvasViewModel(document: doc)
-                vm.deferTutorMode = true  // tutor off and disabled
-                vm.tutorEvalService.isDemo = true
                 canvasVM = vm
             }
         }

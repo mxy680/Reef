@@ -2,33 +2,16 @@ import SwiftUI
 import PencilKit
 @preconcurrency import Supabase
 
-/// Syncs canvas strokes and chat messages with Supabase via 1-second polling.
+/// Syncs canvas strokes with Supabase via 1-second polling.
 /// No Realtime, no WebSocket — just simple GET requests.
 @Observable
 @MainActor
 final class CanvasSyncService {
     var onStrokesUpdated: ((CanvasStrokeRow) -> Void)?
     var onStrokesDeleted: (() -> Void)?
-    var onChatMessageReceived: ((ChatMessageRow) -> Void)?
-    var onTutorStateChanged: ((CanvasStrokeRow) -> Void)?
-    /// Called once on startup with all rows so the ViewModel can restore tutor step indices
-    var onInitialTutorStateLoaded: (([CanvasStrokeRow]) -> Void)?
-
-    /// Last seen tutor status per question — only fire callback on change
-    private var lastTutorStatus: [String: String] = [:]
-    /// Suppress polled TTS after local eval fires
-    var lastLocalEvalTime: Date?
-    /// True while loading existing chat history on startup — suppresses TTS in the callback
-    var isLoadingHistory = false
-    /// True while a chat delete is in flight — suppresses poller from re-delivering stale rows
-    private var isClearingChat = false
-    /// Suppress polled chat messages briefly after local chat send
-    var lastLocalChatTime: Date?
 
     /// Last known stroke hash per question — skip updates if unchanged
     private var lastStrokeHash: [String: Int] = [:]
-    /// Last known chat count per question label — only deliver new messages
-    private var lastChatCount: [String: Int] = [:]
     /// Timestamp of last local write — skip poll results within 2s
     private var lastLocalWriteTime: Date?
 
@@ -40,45 +23,20 @@ final class CanvasSyncService {
         stopPolling()
         print("[Sync] Starting 1s poll for doc=\(documentId.prefix(12))")
 
-        // Load existing chat messages so sidebar shows prior history,
-        // then start the poll timer only AFTER preload completes (avoids races).
         Task { @MainActor [weak self] in
             guard let self, let userId = try? await supabase.auth.session.user.id.uuidString else { return }
-            let chats: [ChatMessageRow] = (try? await supabase
-                .from("chat_history")
-                .select("role,text,question_label,speech_text")
-                .eq("user_id", value: userId)
-                .eq("document_id", value: documentId)
-                .order("created_at", ascending: true)
-                .execute().value) ?? []
-            // Set per-label counts so the poller only delivers NEW messages
-            for chat in chats {
-                self.lastChatCount[chat.questionLabel, default: 0] += 1
-            }
-            // Deliver existing messages to the UI (without TTS — they're old)
-            self.isLoadingHistory = true
-            for chat in chats {
-                self.onChatMessageReceived?(chat)
-            }
-            self.isLoadingHistory = false
-            print("[Sync] Pre-loaded \(chats.count) existing chat messages")
 
-            // Load tutor state (step index, progress, status) from canvas_strokes
-            let selectCols = "question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed,tutor_speech_text"
+            // Seed poller hashes from existing rows so the first tick doesn't re-deliver them
+            let selectCols = "question_label,page_index,strokes,updated_at"
             let rows: [CanvasStrokeRow] = (try? await supabase
                 .from("canvas_strokes")
                 .select(selectCols)
                 .eq("user_id", value: userId)
                 .eq("document_id", value: documentId)
                 .execute().value) ?? []
-            // Seed poller hashes so the first tick doesn't re-deliver these
             for row in rows {
                 self.lastStrokeHash[row.questionLabel] = row.strokes.count
-                let statusKey = "\(row.tutorStatus ?? "idle")_\(row.tutorProgress ?? 0)"
-                self.lastTutorStatus[row.questionLabel] = statusKey
             }
-            self.onInitialTutorStateLoaded?(rows)
-            print("[Sync] Pre-loaded tutor state for \(rows.count) questions")
 
             // Start the timer only after initial load is complete
             self.pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -97,7 +55,6 @@ final class CanvasSyncService {
         pollTimer?.invalidate()
         pollTimer = nil
         lastStrokeHash = [:]
-        lastChatCount = [:]
     }
 
     // MARK: - Poll
@@ -105,8 +62,7 @@ final class CanvasSyncService {
     private func pollForChanges(documentId: String) async {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
 
-        // Poll strokes + tutor state
-        let selectColumns = "question_label,page_index,strokes,updated_at,tutor_progress,tutor_status,tutor_step,tutor_steps_completed,tutor_speech_text"
+        let selectColumns = "question_label,page_index,strokes,updated_at"
         let rows: [CanvasStrokeRow] = (try? await supabase
             .from("canvas_strokes")
             .select(selectColumns)
@@ -115,7 +71,7 @@ final class CanvasSyncService {
             .execute().value) ?? []
 
         for row in rows {
-            let hash = row.strokes.count  // Simple change detection
+            let hash = row.strokes.count
             if lastStrokeHash[row.questionLabel] != hash {
                 lastStrokeHash[row.questionLabel] = hash
                 // Only replace canvas if we haven't written locally recently —
@@ -125,48 +81,12 @@ final class CanvasSyncService {
                     onStrokesUpdated?(row)
                 }
             }
-
-            // Detect tutor state changes
-            let statusKey = "\(row.tutorStatus ?? "idle")_\(row.tutorProgress ?? 0)"
-            if lastTutorStatus[row.questionLabel] != statusKey {
-                lastTutorStatus[row.questionLabel] = statusKey
-                if row.tutorStatus != nil && row.tutorStatus != "idle" {
-                    onTutorStateChanged?(row)
-                }
-            }
-
         }
 
         // If we had rows before but now don't, something was deleted
         if rows.isEmpty && !lastStrokeHash.isEmpty {
             lastStrokeHash = [:]
             onStrokesDeleted?()
-        }
-
-        // Poll chat — skip if clearing or just sent a local chat
-        if isClearingChat { return }
-        if let lastChat = lastLocalChatTime, Date().timeIntervalSince(lastChat) < 5.0 {
-            return
-        }
-
-        let chats: [ChatMessageRow] = (try? await supabase
-            .from("chat_history")
-            .select("role,text,question_label,speech_text")
-            .eq("user_id", value: userId)
-            .eq("document_id", value: documentId)
-            .order("created_at", ascending: true)
-            .execute().value) ?? []
-
-        // Group by question label and only deliver new messages per label
-        let grouped = Dictionary(grouping: chats, by: \.questionLabel)
-        for (label, labelChats) in grouped {
-            let known = lastChatCount[label, default: 0]
-            if labelChats.count > known {
-                for chat in labelChats.dropFirst(known) {
-                    onChatMessageReceived?(chat)
-                }
-                lastChatCount[label] = labelChats.count
-            }
         }
     }
 
@@ -228,7 +148,6 @@ final class CanvasSyncService {
     func clearStrokes(documentId: String, questionLabel: String) async {
         guard let userId = try? await supabase.auth.session.user.id.uuidString else { return }
         lastStrokeHash.removeValue(forKey: questionLabel)
-        lastTutorStatus.removeValue(forKey: questionLabel)
         try? await supabase
             .from("canvas_strokes")
             .delete()
@@ -242,38 +161,6 @@ final class CanvasSyncService {
     func clearStrokesForQuestion(documentId: String, questionLabels: [String]) async {
         for label in questionLabels {
             await clearStrokes(documentId: documentId, questionLabel: label)
-        }
-    }
-
-    func clearChat(documentId: String, questionLabel: String) async {
-        guard let userId = try? await supabase.auth.session.user.id.uuidString else {
-            print("[Sync] clearChat FAILED — no userId")
-            return
-        }
-        print("[Sync] clearChat: deleting chat for label=\(questionLabel) doc=\(documentId.prefix(12)) user=\(userId.prefix(8))")
-        do {
-            try await supabase
-                .from("chat_history")
-                .delete()
-                .eq("user_id", value: userId)
-                .eq("document_id", value: documentId)
-                .eq("question_label", value: questionLabel)
-                .execute()
-            print("[Sync] clearChat: SUCCESS for label=\(questionLabel)")
-        } catch {
-            print("[Sync] clearChat: ERROR for label=\(questionLabel): \(error)")
-        }
-        lastChatCount.removeValue(forKey: questionLabel)
-    }
-
-    /// Clear chat for all sub-questions of a question.
-    /// `isClearingChat` suppresses the poller from re-delivering stale rows during the deletes.
-    func clearChatForQuestion(documentId: String, questionLabels: [String]) async {
-        guard !questionLabels.isEmpty else { return }
-        isClearingChat = true
-        defer { isClearingChat = false }
-        for label in questionLabels {
-            await clearChat(documentId: documentId, questionLabel: label)
         }
     }
 
@@ -295,17 +182,11 @@ final class CanvasSyncService {
 
 // MARK: - Models
 
-
 struct CanvasStrokeRow: Decodable {
     let questionLabel: String
     let pageIndex: Int
     let strokes: [StrokeData]
     let updatedAt: String?
-    let tutorProgress: Double?
-    let tutorStatus: String?
-    let tutorStep: Int?
-    let tutorStepsCompleted: Int?
-    let tutorSpeechText: String?
 
     struct StrokeData: Decodable {
         let x: [Double]
@@ -317,23 +198,5 @@ struct CanvasStrokeRow: Decodable {
         case pageIndex = "page_index"
         case strokes
         case updatedAt = "updated_at"
-        case tutorProgress = "tutor_progress"
-        case tutorStatus = "tutor_status"
-        case tutorStep = "tutor_step"
-        case tutorStepsCompleted = "tutor_steps_completed"
-        case tutorSpeechText = "tutor_speech_text"
-    }
-}
-
-struct ChatMessageRow: Decodable {
-    let role: String
-    let text: String
-    let questionLabel: String
-    let speechText: String?
-
-    enum CodingKeys: String, CodingKey {
-        case role, text
-        case questionLabel = "question_label"
-        case speechText = "speech_text"
     }
 }

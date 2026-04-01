@@ -4,7 +4,6 @@ import SwiftUI
 
 struct CanvasInfoStrip: View {
     @Bindable var viewModel: CanvasViewModel
-    // walkthroughStep removed
 
     let onClose: () -> Void
 
@@ -61,107 +60,26 @@ struct CanvasInfoStrip: View {
                 }
             }
 
-            // Step hint — tutor mode only
-            if viewModel.tutorModeOn {
-                divider
-
-                if viewModel.tutorStepCount > 0 {
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        if let label = viewModel.activeQuestionLabel {
-                            Text(label)
-                                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.9))
-
-                            Text("·")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white.opacity(0.35))
-                        }
-
-                        Text("Step \(viewModel.currentTutorStepIndex + 1)/\(viewModel.tutorStepCount):")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.7))
-
-                        Text(LaTeXToUnicode.convert(viewModel.currentTutorStepLabel))
-                            .font(.epilogue(11, weight: .medium))
-                            .tracking(-0.04 * 11)
-                            .foregroundColor(.white.opacity(0.85))
-                            .lineLimit(1)
-                    }
-                    .transition(.opacity)
-                } else {
-                    Text("Generating answer key for tutor...")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.white.opacity(0.5))
-                        .transition(.opacity)
-                }
-            }
-
             Spacer(minLength: 8)
 
-            // "Generating tutor..." centered in toolbar while answer keys load
-            if viewModel.isLoadingAnswerKeys && viewModel.answerKeys.isEmpty {
-                Text("Generating answer key for tutor — hang tight...")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
-                    .transition(.opacity)
+            // Battery
+            HStack(spacing: 3) {
+                Image(viewModel.batteryIconName)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 18, height: 18)
+                    .foregroundColor(.white.opacity(0.55))
 
-                Spacer(minLength: 8)
+                Text("\(viewModel.batteryPercentage)%")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.55))
             }
-
-            if viewModel.tutorModeOn {
-                // Tutor mode: back | progress bar | skip
-                HStack(spacing: 6) {
-                    Button {
-                        viewModel.goToPreviousStep()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white.opacity(viewModel.canGoBackStep ? 0.8 : 0.25))
-                            .frame(width: 20, height: 20)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!viewModel.canGoBackStep)
-
-                    progressBar(progress: viewModel.tutorProgress)
-
-                    Text("\(Int(viewModel.tutorProgress * 100))%")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.55))
-
-                    Button {
-                        viewModel.skipCurrentStep()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white.opacity(viewModel.canSkipStep ? 0.8 : 0.25))
-                            .frame(width: 20, height: 20)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!viewModel.canSkipStep)
-                }
-                .transition(.opacity)
-            } else {
-                // Normal mode: battery
-                HStack(spacing: 3) {
-                    Image(viewModel.batteryIconName)
-                        .renderingMode(.template)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 18, height: 18)
-                        .foregroundColor(.white.opacity(0.55))
-
-                    Text("\(viewModel.batteryPercentage)%")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.55))
-                }
-                .transition(.opacity)
-            }
-
-            divider
+            .padding(.trailing, 18)
 
             #if targetEnvironment(simulator)
+            divider
+
             // Pan/Draw toggle for simulator (no Apple Pencil)
             Button {
                 viewModel.simulatorPanMode.toggle()
@@ -173,35 +91,8 @@ struct CanvasInfoStrip: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-
-            divider
+            .padding(.trailing, 6)
             #endif
-
-            // Tutor mode toggle
-            HStack(spacing: 8) {
-                Image(viewModel.tutorModeOn ? "canvas.tutor_on" : "canvas.tutor_off")
-                    .renderingMode(.template)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(.white.opacity(!viewModel.answerKeys.isEmpty ? 1 : 0.4))
-
-                if !viewModel.answerKeys.isEmpty {
-                    ReefToggle(isOn: Binding(
-                        get: { viewModel.tutorModeOn },
-                        set: { newValue in
-                            viewModel.tutorModeOn = newValue
-                            viewModel.showSidebar = newValue
-                        }
-                    ), size: .compact)
-                } else {
-                    ReefToggle(isOn: .constant(false), size: .compact)
-                        .disabled(true)
-                        .opacity(0.5)
-                }
-            }
-            .padding(.trailing, 18)
-            .animation(.easeInOut(duration: 0.3), value: viewModel.answerKeys.isEmpty)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 40)
@@ -211,54 +102,6 @@ struct CanvasInfoStrip: View {
                 Color.black.opacity(viewModel.isDarkMode ? 0.3 : 0.18)
             }
         )
-        .animation(.easeInOut(duration: 0.25), value: viewModel.tutorModeOn)
-    }
-
-    // MARK: - 3D Progress Bar
-
-    private func progressBar(progress: Double) -> some View {
-        let barHeight: CGFloat = 12
-        let cornerRadius: CGFloat = 4
-        let shadowOffset: CGFloat = 1.5
-
-        return ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color.black.opacity(0.3))
-                .offset(x: shadowOffset, y: shadowOffset)
-
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color.black.opacity(0.2))
-
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(progressFillColor(for: progress))
-                    .frame(width: max(barHeight, geo.size.width * progress))
-            }
-
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.15), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(height: barHeight / 2)
-
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
-        }
-        .frame(width: 80, height: barHeight)
-    }
-
-    private func progressFillColor(for progress: Double) -> Color {
-        if progress < 0.5 {
-            return .white.opacity(0.85)
-        } else if progress < 0.8 {
-            return ReefColors.accent
-        } else {
-            return Color(hex: 0x81C784)
-        }
     }
 
     // MARK: - Helpers

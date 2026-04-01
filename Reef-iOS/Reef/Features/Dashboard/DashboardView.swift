@@ -316,30 +316,15 @@ struct DashboardView: View {
     // MARK: - Tutor Mode Dialog
 
     private func openOrAskTutorMode(_ doc: Document) {
-        switch savedPreference {
-        case "voice": openDocument(doc, tutorMode: true, voiceEnabled: true)
-        case "text":  openDocument(doc, tutorMode: true, voiceEnabled: false)
-        case "none":  openDocument(doc, tutorMode: false, voiceEnabled: false)
-        default:      pendingDocument = doc; dontAskAgain = false
-        }
+        openDocument(doc)
     }
 
     private func selectTutorMode(_ preference: String, doc: Document) {
-        if dontAskAgain { savedPreference = preference }
-        switch preference {
-        case "voice": openDocument(doc, tutorMode: true, voiceEnabled: true)
-        case "text":  openDocument(doc, tutorMode: true, voiceEnabled: false)
-        default:      openDocument(doc, tutorMode: false, voiceEnabled: false)
-        }
+        openDocument(doc)
     }
 
-    private func openDocument(_ doc: Document, tutorMode: Bool, voiceEnabled: Bool) {
+    private func openDocument(_ doc: Document, tutorMode: Bool = false, voiceEnabled: Bool = false) {
         let vm = CanvasViewModel(document: doc)
-        if !tutorMode {
-            vm.deferTutorMode = true  // Prevents auto-enabling tutor
-        }
-        vm.tutorVoiceEnabled = voiceEnabled
-        vm.tutorEvalService.voiceEnabled = voiceEnabled
         canvasVM = vm
         withAnimation(.easeInOut(duration: 0.3)) {
             canvasDocument = doc

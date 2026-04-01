@@ -111,55 +111,6 @@ struct CanvasDrawingBar: View {
 
             // Right-side controls
             HStack(alignment: .center, spacing: 0) {
-                // Mic toggle
-                toolbarButton(
-                    icon: viewModel.isMicOn ? "canvas.mic_on" : "canvas.mic_off",
-                    active: viewModel.isMicOn,
-                    glow: false
-                ) {
-                    viewModel.toggleMic()
-                }
-
-                // Tutor: prev/next question + reset
-                if viewModel.tutorModeOn {
-                    divider
-
-                    Button {
-                        viewModel.goToPreviousQuestion()
-                    } label: {
-                        Image(systemName: "backward.fill")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white.opacity(viewModel.canGoToPreviousQuestion ? 0.8 : 0.3))
-                            .frame(width: 38, height: 48)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!viewModel.canGoToPreviousQuestion)
-
-                    Button {
-                        _ = viewModel.skipToNextQuestion()
-                    } label: {
-                        Image(systemName: "forward.fill")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white.opacity(viewModel.canSkipToNextQuestion ? 0.8 : 0.3))
-                            .frame(width: 38, height: 48)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!viewModel.canSkipToNextQuestion)
-
-                    Button {
-                        viewModel.showResetQuestionConfirmation = true
-                    } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
-                            .frame(width: 38, height: 48)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-
                 divider
 
                 // Dark mode toggle
@@ -192,18 +143,6 @@ struct CanvasDrawingBar: View {
                 }
                 .opacity(viewModel.isExporting ? 0.3 : 1.0)
                 .disabled(viewModel.isExporting)
-
-                toolbarButton(
-                    icon: viewModel.showSidebar ? "canvas.sidebar_close" : "canvas.sidebar_open",
-                    active: viewModel.showSidebar,
-                    glow: false
-                ) {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.showSidebar.toggle()
-                    }
-                }
-                .opacity(viewModel.tutorModeOn ? 1.0 : 0.3)
-                .disabled(!viewModel.tutorModeOn)
             }
             .padding(.trailing, 14)
         }
@@ -523,24 +462,7 @@ struct CanvasDrawingBar: View {
 
     private func drawingToolButton(_ tool: CanvasToolType) -> some View {
         let isSelected = viewModel.selectedTool == tool
-        let glowActive = false
         return Button {
-            // Hidden debug toggle: tap pen 5 times rapidly while already selected
-            if tool == .pen && isSelected {
-                viewModel.debugTapCount += 1
-                viewModel.debugTapResetTask?.cancel()
-                viewModel.debugTapResetTask = Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(2))
-                    guard !Task.isCancelled else { return }
-                    viewModel.debugTapCount = 0
-                }
-                if viewModel.debugTapCount >= 5 {
-                    viewModel.debugTapCount = 0
-                    withAnimation(.spring(duration: 0.2)) {
-                        viewModel.showDebugPrompt.toggle()
-                    }
-                }
-            }
             viewModel.selectedTool = tool
             viewModel.showPageControls = false
             viewModel.showPageSettings = false

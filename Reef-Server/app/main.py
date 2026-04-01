@@ -8,10 +8,6 @@ from app.routers import health
 from app.routers import reconstruct_v2
 from app.routers import fit_shape
 from app.routers import bug_report
-from app.routers import transcribe_audio
-from app.routers import tutor_evaluate
-from app.routers import demo_problem
-from app.routers import generate_question
 from app.config import settings
 from app.services.cancellation import get_in_flight_ids
 from app.services.http_pool import init_pool
@@ -91,7 +87,3 @@ app.include_router(health.router)
 app.include_router(bug_report.router)
 app.include_router(reconstruct_v2.router)
 app.include_router(fit_shape.router)
-app.include_router(transcribe_audio.router)
-app.include_router(tutor_evaluate.router)
-app.include_router(demo_problem.router)
-app.include_router(generate_question.router)

@@ -29,7 +29,6 @@ from app.services.cancellation import (
     register as cancel_register,
 )
 from app.services.latex_compiler import LaTeXCompiler
-from app.services.cost_tracker import fire_cost, record_cost, record_llm_cost, MATHPIX_PDF_PER_PAGE
 from app.services.llm_client import LLMClient, LLMResult
 from app.services.mathpix import MathpixClient, replace_urls_with_filenames
 from app.services.progress import update_document_status, update_progress
@@ -155,8 +154,6 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             app_key=settings.mathpix_app_key,
         )
         mmd_text, mathpix_images, url_map = await mathpix.process_pdf(pdf_bytes)
-        fire_cost(record_cost(user_id, "reconstruct", "mathpix_pdf", num_pages * MATHPIX_PDF_PER_PAGE,
-                  metadata={"document_id": document_id, "pages": num_pages}))
 
         if is_cancelled(document_id):
             return
@@ -205,9 +202,6 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
             timeout=120.0,
         )
         costs.add(parse_result, model=parse_llm.model)
-        fire_cost(record_llm_cost(user_id, "reconstruct", parse_llm.model,
-                  parse_result.input_tokens, parse_result.output_tokens,
-                  metadata={"document_id": document_id, "stage": "parse_mmd"}))
         logger.info(f"  [v2] {document_id}: question extraction via Gemini Flash")
 
         # LLM client for LaTeX fix loop (use inference API if available)

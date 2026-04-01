@@ -6,7 +6,6 @@ import Combine
 
 struct CanvasView: View {
     @Bindable var viewModel: CanvasViewModel
-    // walkthroughStep removed
     let onDismiss: () -> Void
 
     @State private var scrollToPageIndex: Int? = nil
@@ -20,22 +19,17 @@ struct CanvasView: View {
             (viewModel.isDarkMode ? ReefColors.CanvasDark.background : Color(hex: 0xF8F0E6))
                 .ignoresSafeArea()
 
-            if !viewModel.isReady {
-                // Loading screen — wait for PDF + answer keys
+            if viewModel.isLoadingPDF {
+                // Loading screen — wait for PDF
                 CanvasLoadingView(
-                    isLoadingAnswerKeys: viewModel.isLoadingAnswerKeys,
-                    answerKeyFailed: viewModel.answerKeyFailed,
+                    isLoadingAnswerKeys: false,
+                    answerKeyFailed: false,
                     documentName: viewModel.document.displayName,
                     onClose: {
-                        viewModel.stopAllAudio()
                         viewModel.cancelAllTasks()
                         onDismiss()
                     },
-                    onRetry: {
-                        viewModel.answerKeyFailed = false
-                        viewModel.isLoadingAnswerKeys = true
-                        viewModel.loadAnswerKeysTask = Task { await viewModel.loadAnswerKeys(forceLoad: true) }
-                    }
+                    onRetry: nil
                 )
             } else {
 
@@ -45,7 +39,6 @@ struct CanvasView: View {
                     CanvasInfoStrip(
                         viewModel: viewModel,
                         onClose: {
-                            viewModel.stopAllAudio()
                             viewModel.saveCanvasState()
                             onDismiss()
                         }
@@ -75,60 +68,43 @@ struct CanvasView: View {
                 .ignoresSafeArea(edges: .horizontal)
                 .zIndex(2)
 
-                // Canvas + Sidebar — sidebar only pushes the canvas area
-                HStack(spacing: 0) {
-                    CanvasPageView(
-                        pdfDocument: viewModel.pdfDocument,
-                        drawingManager: viewModel.drawingManager,
-                        currentTool: viewModel.activePKTool,
-                        drawingPolicy: viewModel.activeDrawingPolicy,
-                        selectedToolType: viewModel.selectedTool,
-                        darkMode: viewModel.isDarkMode,
-                        overlayType: viewModel.overlaySettings.type,
-                        overlaySpacing: viewModel.overlaySettings.spacing,
-                        overlayOpacity: viewModel.overlaySettings.opacity,
-                        pageVersion: viewModel.pageVersion,
-                        rulerActive: viewModel.showRuler,
-                        scrollToPageIndex: scrollToPageIndex,
-                        onCanvasTouchBegan: {
-                            viewModel.dismissAllPopovers()
-                            scrollToPageIndex = nil
-                        },
-                        onZoomChanged: { scale in
-                            viewModel.zoomScale = scale
-                        },
-                        onStrokePositionChanged: { pageIndex, yPosition in
-                            viewModel.updateActiveQuestion(pageIndex: pageIndex, yPosition: yPosition)
-                        },
-                        onContainerCreated: { container in
-                            viewModel.containerView = container
-                        }
-                    )
-                    .onChange(of: scrollToPageIndex) { _, newValue in
-                        if newValue != nil {
-                            DispatchQueue.main.async {
-                                scrollToPageIndex = nil
-                            }
-                        }
+                // Canvas
+                CanvasPageView(
+                    pdfDocument: viewModel.pdfDocument,
+                    drawingManager: viewModel.drawingManager,
+                    currentTool: viewModel.activePKTool,
+                    drawingPolicy: viewModel.activeDrawingPolicy,
+                    selectedToolType: viewModel.selectedTool,
+                    darkMode: viewModel.isDarkMode,
+                    overlayType: viewModel.overlaySettings.type,
+                    overlaySpacing: viewModel.overlaySettings.spacing,
+                    overlayOpacity: viewModel.overlaySettings.opacity,
+                    pageVersion: viewModel.pageVersion,
+                    rulerActive: viewModel.showRuler,
+                    scrollToPageIndex: scrollToPageIndex,
+                    onCanvasTouchBegan: {
+                        viewModel.dismissAllPopovers()
+                        scrollToPageIndex = nil
+                    },
+                    onZoomChanged: { scale in
+                        viewModel.zoomScale = scale
+                    },
+                    onStrokePositionChanged: { pageIndex, yPosition in
+                        viewModel.updateActiveQuestion(pageIndex: pageIndex, yPosition: yPosition)
+                    },
+                    onContainerCreated: { container in
+                        viewModel.containerView = container
                     }
-
-                    if viewModel.showSidebar {
-                        CanvasSidebarView(
-                            isDarkMode: viewModel.isDarkMode,
-                            viewModel: viewModel,
-                            onSendChat: { message in
-                                viewModel.sendTutorChat(message)
-                            }
-                        )
-                        .frame(width: metrics.canvasSidebarWidth)
-                        .transition(.move(edge: .trailing))
+                )
+                .onChange(of: scrollToPageIndex) { _, newValue in
+                    if newValue != nil {
+                        DispatchQueue.main.async {
+                            scrollToPageIndex = nil
+                        }
                     }
                 }
-                .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.showSidebar)
                 .ignoresSafeArea(edges: [.bottom, .horizontal])
             }
-
-            // Ruler is handled natively by PKCanvasView.isRulerActive
 
             // Calculator overlay (floating, no backdrop)
             if viewModel.showCalculator {
@@ -144,53 +120,6 @@ struct CanvasView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
                 .zIndex(50)
             }
-
-            // Debug chunk bboxes are drawn via CAShapeLayer on the container view
-            // (see CanvasViewModel.updateChunkBboxOverlay)
-
-            // Debug prompt panel
-            if viewModel.showDebugPrompt {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text("LLM Prompt Debug")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white)
-                        Spacer()
-                        Button {
-                            withAnimation(.spring(duration: 0.2)) {
-                                viewModel.showDebugPrompt = false
-                            }
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.6))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.8))
-
-                    ScrollView {
-                        Text(viewModel.tutorEvalService.lastDebugPrompt ?? "No debug prompt available.")
-                            .font(.system(size: 9, design: .monospaced))
-                            .foregroundStyle(.green)
-                            .padding(8)
-                            .textSelection(.enabled)
-                    }
-                    .background(Color.black.opacity(0.9))
-                }
-                .frame(width: 420, height: 500)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green.opacity(0.3), lineWidth: 1))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 100)
-                .padding(.leading, 8)
-                .transition(.scale(scale: 0.95).combined(with: .opacity))
-                .zIndex(60)
-            }
-
-            // Hint/reveal now shown inline in sidebar — popovers removed
 
             // Bug report popup
             if viewModel.showBugReport {
@@ -266,7 +195,7 @@ struct CanvasView: View {
                 .transition(.scale(scale: 0.95).combined(with: .opacity))
                 .zIndex(200)
             }
-        } // end else (isReady)
+        } // end else (isLoadingPDF)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
@@ -275,15 +204,13 @@ struct CanvasView: View {
         .animation(.spring(duration: 0.2), value: viewModel.showAddColor)
         .animation(.spring(duration: 0.25), value: viewModel.showExportPreview)
         .animation(.spring(duration: 0.2), value: viewModel.showCalculator)
-        .animation(.spring(duration: 0.2), value: viewModel.showDebugPrompt)
-        // Hint/reveal animations handled in sidebar
         .alert("Clear Everything?", isPresented: $viewModel.showClearConfirmation) {
             Button("Clear All", role: .destructive) {
                 viewModel.clearAllStrokes()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will erase all drawings, tutor progress, and chat history for every question. This cannot be undone.")
+            Text("This will erase all drawings for every question. This cannot be undone.")
         }
         .alert("Reset This Question?", isPresented: $viewModel.showResetQuestionConfirmation) {
             Button("Reset", role: .destructive) {
@@ -291,7 +218,7 @@ struct CanvasView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will erase all strokes and tutor progress for this question.")
+            Text("This will erase all strokes for this question.")
         }
         .onAppear {
             viewModel.startBatteryMonitoring()
@@ -310,15 +237,10 @@ struct CanvasView: View {
                     viewModel.markShapeStrokes(in: drawing)
                 }
 
-                // Debounce transcription (500ms) and eval (1500ms) from drawing changes
                 viewModel.onDrawingChanged()
             }
         }
-        .onChange(of: viewModel.tutorModeOn) { _, _ in
-            // Transcription/eval now triggered by drawing changes, not polling
-        }
         .onDisappear {
-            viewModel.stopAllAudio()
             viewModel.cancelAllTasks()
             autoSaveTask?.cancel()
         }
@@ -342,38 +264,6 @@ struct CanvasView: View {
     }
 }
 
-// MARK: - Debug Chunk Bbox Overlay
-
-#if DEBUG
-/// Renders red bordered rectangles at the cluster bounding box positions.
-/// Bboxes are in PencilKit coordinate space (same as stroke x/y values), so they
-/// render 1:1 on the canvas without any coordinate transformation.
-/// Each bbox is [min_x, min_y, max_x, max_y].
-private struct ChunkBboxOverlay: View {
-    let bboxes: [[Double]]
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .topLeading) {
-                ForEach(Array(bboxes.enumerated()), id: \.offset) { _, bbox in
-                    if bbox.count == 4 {
-                        let minX = CGFloat(bbox[0])
-                        let minY = CGFloat(bbox[1])
-                        let width = CGFloat(bbox[2]) - minX
-                        let height = CGFloat(bbox[3]) - minY
-                        Rectangle()
-                            .stroke(Color.red, lineWidth: 2)
-                            .frame(width: max(width, 1), height: max(height, 1))
-                            .offset(x: minX, y: minY)
-                    }
-                }
-            }
-            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
-        }
-    }
-}
-#endif
-
 // MARK: - Share Sheet
 
 private struct ShareSheet: UIViewControllerRepresentable {
@@ -385,4 +275,3 @@ private struct ShareSheet: UIViewControllerRepresentable {
 
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
-

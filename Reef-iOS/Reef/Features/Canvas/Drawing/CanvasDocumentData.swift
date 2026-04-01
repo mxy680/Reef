@@ -10,32 +10,19 @@ struct CanvasDocumentData: Codable {
     let currentPageIndex: Int
     /// Per-page PKDrawing binary data. String key because JSON doesn't support Int keys.
     let drawingDataByPage: [String: Data]
-    /// Tutor progress per question/subquestion. Key format: "Q1a", "Q2b", etc.
-    let tutorProgress: [String: TutorStepState]?
+    /// Unused — kept for backward-compat with existing saved data.
+    let tutorProgress: [String: AnyCodable]?
     /// Last active question label so we resume where the user left off.
     let activeQuestionLabel: String?
 }
 
-// MARK: - Tutor Step State (persisted per question/subquestion)
-
-/// Saved state for a single question/subquestion's tutor progress.
-struct TutorStepState: Codable {
-    let currentStepIndex: Int
-    let stepEvaluation: StepEvaluation?
-    let lastTranscription: String
-    let chatMessages: [SavedChatMessage]?
-}
-
-/// Persisted chat message.
-struct SavedChatMessage: Codable {
-    let role: String  // "student", "error", "reinforcement", or "answer"
-    let latex: String
-    let timestamp: Date
-}
-
-/// Saved evaluation result for a single step.
-struct StepEvaluation: Codable {
-    let progress: Double
-    let status: String
-    let mistakeExplanation: String?
+/// Opaque codable wrapper for backward-compatible decoding of obsolete fields.
+struct AnyCodable: Codable {
+    init(from decoder: Decoder) throws {
+        _ = try? decoder.singleValueContainer()
+    }
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encodeNil()
+    }
 }

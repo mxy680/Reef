@@ -14,9 +14,7 @@ import logging
 from app.config import settings
 from app.services.http_pool import get_client as get_http
 from app.models.answer_key import PartAnswer, QuestionAnswer
-from app.services.cost_tracker import fire_cost, record_llm_cost
 from app.services.inference_client import extract_json
-from app.services.katex_validator import validate_and_fix_answer_key
 from app.services.llm_client import LLMClient
 from app.services.prompts import ANSWER_KEY_PROMPT
 
@@ -124,9 +122,6 @@ async def _generate_single_answer(
             raise
         input_tokens = result.input_tokens
         output_tokens = result.output_tokens
-        if user_id:
-            fire_cost(record_llm_cost(user_id, "answer_key", ANSWER_KEY_MODEL, input_tokens, output_tokens,
-                      metadata={"document_id": document_id, "question": question_number}))
 
         # Normalize: every question must have parts. If the LLM put steps
         # at the top level (no parts), wrap them into a single part "a".
