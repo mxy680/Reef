@@ -18,7 +18,7 @@ final class CanvasViewModel {
     var isLoadingPDF: Bool = true  // Set true synchronously — loadPDF task clears it
     var pdfError: String?
     private var loadPDFTask: Task<Void, Never>?
-    private var loadAnswerKeysTask: Task<Void, Never>?
+    var loadAnswerKeysTask: Task<Void, Never>?
     private var stepSpeechTask: Task<Void, Never>?
 
     // MARK: - Tool State
@@ -218,6 +218,7 @@ final class CanvasViewModel {
     // Answer key data
     var answerKeys: [Int: QuestionAnswer] = [:]
     var isLoadingAnswerKeys: Bool = true
+    var answerKeyFailed: Bool = false
     private var savedTutorProgress: [String: TutorStepState]?
 
     /// Whether this document has been reconstructed (has answer keys available)
@@ -562,6 +563,12 @@ final class CanvasViewModel {
 
         answerKeys = result.answers
         isLoadingAnswerKeys = false
+
+        if answerKeys[targetQuestion] == nil {
+            // 5 minutes elapsed with no answer key — show failure state
+            answerKeyFailed = true
+            return
+        }
 
         if !deferTutorMode && answerKeys[targetQuestion] != nil, let label = activeQuestionLabel {
             currentTutorStepIndex = 0

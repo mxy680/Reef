@@ -24,11 +24,17 @@ struct CanvasView: View {
                 // Loading screen — wait for PDF + answer keys
                 CanvasLoadingView(
                     isLoadingAnswerKeys: viewModel.isLoadingAnswerKeys,
+                    answerKeyFailed: viewModel.answerKeyFailed,
                     documentName: viewModel.document.displayName,
                     onClose: {
                         viewModel.stopAllAudio()
                         viewModel.cancelAllTasks()
                         onDismiss()
+                    },
+                    onRetry: {
+                        viewModel.answerKeyFailed = false
+                        viewModel.isLoadingAnswerKeys = true
+                        viewModel.loadAnswerKeysTask = Task { await viewModel.loadAnswerKeys(forceLoad: true) }
                     }
                 )
             } else {

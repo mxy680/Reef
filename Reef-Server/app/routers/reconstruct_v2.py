@@ -137,10 +137,12 @@ async def _run_pipeline(*, document_id: str, user_id: str) -> None:
         if not pdf_bytes:
             raise RuntimeError("Could not download source PDF")
 
-        # Count pages for metadata
+        # Count pages and enforce limit
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         num_pages = len(doc)
         doc.close()
+        if num_pages > 20:
+            raise RuntimeError(f"Document has {num_pages} pages (max 20). Upload a shorter document.")
         costs.mathpix_pages = num_pages
 
         await update_progress(document_id, "Scanning for math...")

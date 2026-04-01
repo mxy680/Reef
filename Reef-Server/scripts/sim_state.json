@@ -16,24 +16,24 @@
       "status": "mistake",
       "step": 0,
       "progress": 0.0,
-      "says": "Check whether using \\(\\sum F = T - 150 - 60 = 0\\) addresses the moment about the hinge you need?",
-      "speaks": "wait that's a force sum",
-      "steps_completed": 1
-    },
-    {
-      "status": "working",
-      "step": 0,
-      "progress": 0.5,
-      "says": "",
-      "speaks": "",
+      "says": "Check whether summing forces is enough here \u2014 should you be taking moments about the hinge instead of just $T = 210$?",
+      "speaks": "no because that force balance is off",
       "steps_completed": 1
     },
     {
       "status": "mistake",
       "step": 0,
-      "progress": 0.3,
-      "says": "Check the distance used for the tailgate weight \u2014 is it $18\\text{ in}$ as you wrote, or the given $14\\text{ in}$?",
-      "speaks": "nah check that distance again",
+      "progress": 0.4,
+      "says": "You wrote $2700\\,$lb\u00b7in \u2014 which part of the load does that represent, and what\u2019s missing from the moment sum?",
+      "speaks": "no because that tailgate term is missing",
+      "steps_completed": 1
+    },
+    {
+      "status": "mistake",
+      "step": 0,
+      "progress": 0.5,
+      "says": "What distance should be used for the tailgate weight in the moment sum?",
+      "speaks": "no because that distance looks off",
       "steps_completed": 1
     },
     {
@@ -41,15 +41,15 @@
       "step": 0,
       "progress": 1.0,
       "says": "",
-      "speaks": "looks good indeed",
+      "speaks": "lowkey clean",
       "steps_completed": 1
     },
     {
       "status": "mistake",
       "step": 1,
       "progress": 0.5,
-      "says": "Does the left\u2011hand side account for the two cable forces?",
-      "speaks": "nah check that factor again",
+      "says": "Check the factor of 2 in the moment balance \u2014 should it be $2T_y\\cdot16=3540$?",
+      "speaks": "no because that factor doesn't look right",
       "steps_completed": 1
     },
     {
@@ -57,15 +57,15 @@
       "step": 1,
       "progress": 1.0,
       "says": "",
-      "speaks": "ok yes",
+      "speaks": "ok wait that's actually right",
       "steps_completed": 1
     },
     {
       "status": "mistake",
       "step": 2,
-      "progress": 0.5,
-      "says": "Is \\cos(36.87\u00b0) the correct ratio for the vertical component of tension?",
-      "speaks": "hmm that trig seems off",
+      "progress": 0.6,
+      "says": "Check which trigonometric function relates the vertical component to the total tension \u2014 is it sine or cosine?",
+      "speaks": "no because that trig is off",
       "steps_completed": 1
     },
     {
@@ -73,15 +73,15 @@
       "step": 2,
       "progress": 1.0,
       "says": "",
-      "speaks": "mhm",
+      "speaks": "there you go",
       "steps_completed": 1
     },
     {
       "status": "mistake",
       "step": 3,
-      "progress": 0.5,
-      "says": "Does the 0.17 you divided by correspond to the given $A_e = 0.017\\,$in\u00b2?",
-      "speaks": "wait that area looks off",
+      "progress": 0.4,
+      "says": "Check the denominator you used \u2014 does it match the given area $A_e$?",
+      "speaks": "no because that denominator looks off",
       "steps_completed": 1
     },
     {
@@ -89,7 +89,7 @@
       "step": 3,
       "progress": 1.0,
       "says": "",
-      "speaks": "looks solid indeed",
+      "speaks": "see that's what I'm saying",
       "steps_completed": 1
     }
   ]

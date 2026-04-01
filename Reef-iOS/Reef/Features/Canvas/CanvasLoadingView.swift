@@ -2,8 +2,10 @@ import SwiftUI
 
 struct CanvasLoadingView: View {
     let isLoadingAnswerKeys: Bool
+    let answerKeyFailed: Bool
     let documentName: String
     var onClose: (() -> Void)?
+    var onRetry: (() -> Void)?
 
     @State private var isPulsing = false
     @State private var dotCount = 0
@@ -48,43 +50,83 @@ struct CanvasLoadingView: View {
                 .zIndex(1)
             }
 
-        VStack(spacing: 28) {
-            // Animated icon
-            ZStack {
-                // Outer pulse ring
-                Circle()
-                    .stroke(ReefColors.primary.opacity(isPulsing ? 0.15 : 0.05), lineWidth: 2)
-                    .frame(width: 100, height: 100)
-                    .scaleEffect(isPulsing ? 1.2 : 1.0)
+        if answerKeyFailed {
+            // Failure state
+            VStack(spacing: 20) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 36, weight: .medium))
+                    .foregroundStyle(.orange)
 
-                // Inner circle
-                Circle()
-                    .fill(ReefColors.primary.opacity(0.1))
-                    .frame(width: 72, height: 72)
-
-                // Icon
-                Image(systemName: isLoadingAnswerKeys ? "brain.head.profile" : "doc.text")
-                    .font(.system(size: 28, weight: .medium))
-                    .foregroundStyle(ReefColors.primary)
-                    .scaleEffect(isPulsing ? 1.05 : 0.95)
-            }
-
-            VStack(spacing: 8) {
-                Text(currentMessage + dots)
+                Text("Couldn't generate solutions")
                     .font(.epilogue(16, weight: .bold))
                     .tracking(-0.04 * 16)
                     .foregroundStyle(.primary.opacity(0.7))
-                    .contentTransition(.numericText())
-                    .animation(.easeInOut(duration: 0.3), value: messageIndex)
 
-                if isLoadingAnswerKeys {
-                    Text("This takes a minute for complex problems")
-                        .font(.system(size: 12, weight: .medium))
+                Text("This can happen with complex or unusual problems. You can still use the canvas without the tutor.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 300)
+
+                HStack(spacing: 12) {
+                    if let onRetry {
+                        Button("Retry") {
+                            onRetry()
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(ReefColors.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+
+                    if let onClose {
+                        Button("Continue without tutor") {
+                            onClose()
+                        }
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.secondary)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            VStack(spacing: 28) {
+                // Animated icon
+                ZStack {
+                    Circle()
+                        .stroke(ReefColors.primary.opacity(isPulsing ? 0.15 : 0.05), lineWidth: 2)
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(isPulsing ? 1.2 : 1.0)
+
+                    Circle()
+                        .fill(ReefColors.primary.opacity(0.1))
+                        .frame(width: 72, height: 72)
+
+                    Image(systemName: isLoadingAnswerKeys ? "brain.head.profile" : "doc.text")
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundStyle(ReefColors.primary)
+                        .scaleEffect(isPulsing ? 1.05 : 0.95)
+                }
+
+                VStack(spacing: 8) {
+                    Text(currentMessage + dots)
+                        .font(.epilogue(16, weight: .bold))
+                        .tracking(-0.04 * 16)
+                        .foregroundStyle(.primary.opacity(0.7))
+                        .contentTransition(.numericText())
+                        .animation(.easeInOut(duration: 0.3), value: messageIndex)
+
+                    if isLoadingAnswerKeys {
+                        Text("This takes a minute for complex problems")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         } // end ZStack
         .onAppear {
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
