@@ -149,6 +149,57 @@ final class CanvasViewModel {
     private var strokeUpsertWork: DispatchWorkItem?
     /// True while applying remote strokes from Realtime — suppresses onDrawingChanged
     var isApplyingRemoteStrokes: Bool = false
+    // MARK: - Tutor Mode
+
+    var tutorModeOn: Bool = false
+    var showSidebar: Bool = false
+    var answerKeys: [Int: QuestionAnswer] = [:]
+    var isLoadingAnswerKeys: Bool = true
+    var currentTutorStepIndex: Int = 0
+    var showHintPanel: Bool = false
+    var showSolutionPanel: Bool = false
+
+    /// Steps for the current question/part from the answer key
+    var currentSteps: [AnswerKeyStep] {
+        let qn = activeQuestionNumber
+        guard let ak = answerKeys[qn] else { return [] }
+        // Parse part label from activeQuestionLabel
+        let pl: String
+        if let label = activeQuestionLabel, label.count > 1 {
+            var numStr = ""
+            for ch in label.dropFirst() {
+                if ch.isNumber { numStr.append(ch) } else { break }
+            }
+            pl = String(label.dropFirst(1 + numStr.count))
+        } else {
+            pl = "a"
+        }
+        // Find matching part
+        if let part = ak.parts.first(where: { $0.label == pl }) {
+            return part.steps
+        }
+        return ak.steps
+    }
+
+    var currentHintStep: AnswerKeyStep? {
+        guard currentTutorStepIndex < currentSteps.count else { return nil }
+        return currentSteps[currentTutorStepIndex]
+    }
+
+    var tutorStepCount: Int { currentSteps.count }
+
+    func loadAnswerKeys() async {
+        isLoadingAnswerKeys = true
+        let repo = SupabaseAnswerKeyRepository()
+        let result = await repo.fetchAnswerKeys(documentId: document.id)
+        answerKeys = result.answers
+        isLoadingAnswerKeys = false
+        if answerKeys[activeQuestionNumber] != nil {
+            tutorModeOn = true
+            showSidebar = true
+        }
+    }
+
     var showClearConfirmation: Bool = false
     var showResetQuestionConfirmation: Bool = false
     var showBugReport: Bool = false
@@ -348,6 +399,9 @@ final class CanvasViewModel {
             if activeQuestionLabel == nil {
                 activeQuestionLabel = restoredQuestionLabel ?? "Q1a"
             }
+
+            // Load answer keys for tutor sidebar
+            await loadAnswerKeys()
         } catch {
             pdfError = "Failed to download document"
         }

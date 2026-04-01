@@ -75,6 +75,31 @@ struct CanvasInfoStrip: View {
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundColor(.white.opacity(0.55))
             }
+            divider
+
+            // Tutor mode toggle
+            HStack(spacing: 8) {
+                Image(systemName: viewModel.tutorModeOn ? "graduationcap.fill" : "graduationcap")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(.white.opacity(!viewModel.answerKeys.isEmpty ? 1 : 0.4))
+
+                if !viewModel.answerKeys.isEmpty {
+                    ReefToggle(isOn: Binding(
+                        get: { viewModel.tutorModeOn },
+                        set: { newValue in
+                            viewModel.tutorModeOn = newValue
+                            viewModel.showSidebar = newValue
+                        }
+                    ), size: .compact)
+                } else {
+                    ReefToggle(isOn: .constant(false), size: .compact)
+                        .disabled(true)
+                        .opacity(0.5)
+                }
+            }
             .padding(.trailing, 18)
 
             #if targetEnvironment(simulator)

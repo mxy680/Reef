@@ -68,7 +68,8 @@ struct CanvasView: View {
                 .ignoresSafeArea(edges: .horizontal)
                 .zIndex(2)
 
-                // Canvas
+                // Canvas + Sidebar
+                HStack(spacing: 0) {
                 CanvasPageView(
                     pdfDocument: viewModel.pdfDocument,
                     drawingManager: viewModel.drawingManager,
@@ -104,6 +105,12 @@ struct CanvasView: View {
                     }
                 }
                 .ignoresSafeArea(edges: [.bottom, .horizontal])
+
+                if viewModel.showSidebar {
+                    CanvasSidebarView(isDarkMode: viewModel.isDarkMode, viewModel: viewModel)
+                        .transition(.move(edge: .trailing))
+                }
+                } // end HStack
             }
 
             // Calculator overlay (floating, no backdrop)
