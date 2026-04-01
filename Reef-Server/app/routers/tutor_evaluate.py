@@ -30,8 +30,33 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 TUTOR_MODEL = "google/gemini-2.5-flash"
 TUTOR_MODEL_TEXT_ONLY = "openai/gpt-oss-120b"  # Groq — fast text-only, no vision
 
-# Per-key lock to prevent concurrent transcription of the same question
+# Per-key lock to prevent concurrent transcription of the same question.
+# Bounded: evict unlocked entries when dict exceeds 200 keys.
 _transcription_locks: dict[tuple, asyncio.Lock] = {}
+
+def _get_transcription_lock(key: tuple) -> asyncio.Lock:
+    """Get or create a per-key lock, evicting stale entries if dict is too large."""
+    if key not in _transcription_locks:
+        # Evict unlocked entries if we have too many keys
+        if len(_transcription_locks) > 200:
+            to_remove = [k for k, v in _transcription_locks.items() if not v.locked()]
+            for k in to_remove[:100]:  # remove up to 100 at a time
+                del _transcription_locks[k]
+        _transcription_locks[key] = asyncio.Lock()
+    return _transcription_locks[key]
+
+# Prompt delimiter strings that must be stripped from user-controlled content
+_PROMPT_DELIMITERS = (
+    "<<<STUDENT_WORK_START>>>", "<<<STUDENT_WORK_END>>>",
+    "<<<STEPS_START>>>", "<<<STEPS_END>>>",
+    "<<<EXPECTED_WORK_START>>>", "<<<EXPECTED_WORK_END>>>",
+)
+
+def _sanitize_for_prompt(text: str) -> str:
+    """Strip prompt-control delimiters from user-supplied content to prevent injection."""
+    for d in _PROMPT_DELIMITERS:
+        text = text.replace(d, "")
+    return text
 
 # In-memory answer key cache: (doc_id, question_number, user_id) → (QuestionAnswer, question_json, timestamp)
 # Avoids hitting Supabase on every eval for the same question.
@@ -231,9 +256,7 @@ async def _fetch_and_transcribe_strokes(
     """
     # Acquire per-key lock to prevent concurrent transcription of same question
     key = (user_id, document_id, question_label)
-    if key not in _transcription_locks:
-        _transcription_locks[key] = asyncio.Lock()
-    async with _transcription_locks[key]:
+    async with _get_transcription_lock(key):
         return await _fetch_and_transcribe_strokes_inner(document_id, question_label, user_id)
 
 
@@ -538,7 +561,8 @@ async def tutor_evaluate(
         for i, s in enumerate(steps)
     )
 
-    # Wrap student input in delimiters to prevent prompt injection
+    # Sanitize and wrap student input in delimiters to prevent prompt injection
+    student_latex = _sanitize_for_prompt(student_latex)
     delimited_student_work = (
         "<<<STUDENT_WORK_START>>>\n"
         + student_latex
@@ -564,7 +588,7 @@ async def tutor_evaluate(
         lines = []
         for msg in history_source[-15:]:
             label = {"student": "Student", "error": "Tutor (mistake)", "reinforcement": "Tutor (encouragement)", "answer": "Tutor (chat)"}.get(msg["role"], msg["role"])
-            lines.append(f"<<<{label}>>>\n{msg['text']}\n<<</{label}>>>")
+            lines.append(f"<<<{label}>>>\n{_sanitize_for_prompt(msg['text'][:1000])}\n<<</{label}>>>")
         history_text = "\n".join(lines)
 
     # Build actual question text from question_json
@@ -641,15 +665,20 @@ async def tutor_evaluate(
             pass
 
     # Pick model: use fast text-only model when no images are involved
-    has_images = bool(images) or bool(body.student_image)
+    has_images = bool(images)  # only True if images were successfully decoded
     if has_images:
         model = TUTOR_MODEL
         api_key = settings.openrouter_api_key
         base_url = "https://openrouter.ai/api/v1"
-    else:
+    elif settings.groq_api_key:
         model = TUTOR_MODEL_TEXT_ONLY
         api_key = settings.groq_api_key
         base_url = "https://api.groq.com/openai/v1"
+    else:
+        # Fall back to OpenRouter when Groq is not configured
+        model = TUTOR_MODEL
+        api_key = settings.openrouter_api_key
+        base_url = "https://openrouter.ai/api/v1"
 
     llm = LLMClient(api_key=api_key, model=model, base_url=base_url)
 
@@ -661,7 +690,11 @@ async def tutor_evaluate(
         timeout=30.0,
     )
 
-    evaluation = TutorEvaluation.model_validate_json(result.content)
+    try:
+        evaluation = TutorEvaluation.model_validate_json(result.content)
+    except Exception as e:
+        log.error(f"[tutor-eval] Failed to parse LLM response: {e}\ncontent={result.content[:300]}")
+        raise HTTPException(status_code=502, detail="Tutor evaluation failed — please retry")
 
     # Validate mistake explanation LaTeX if present
     if evaluation.mistake_explanation:
@@ -741,7 +774,7 @@ async def tutor_evaluate(
         steps_completed=capped_steps,
         speech_audio=speech_audio,
         speech_text=speech_text,
-        debug_prompt=debug_prompt_text,
+        debug_prompt=debug_prompt_text if settings.environment == "development" else None,
     )
 
 
@@ -831,7 +864,7 @@ async def tutor_chat(
     # Fetch student work from DB (same as eval endpoint)
     chat_question_label = f"Q{body.question_number}{body.part_label or ''}"
     chat_db_display, chat_db_raw = await _fetch_student_work(body.document_id, chat_question_label, user.id)
-    chat_student_latex = chat_db_raw or chat_db_display or body.student_latex or "(no work yet)"
+    chat_student_latex = _sanitize_for_prompt(chat_db_raw or chat_db_display or body.student_latex or "(no work yet)")
 
     delimited_student_work = (
         "<<<STUDENT_WORK_START>>>\n"
@@ -840,7 +873,7 @@ async def tutor_chat(
     )
     delimited_user_message = (
         "<<<USER_MESSAGE_START>>>\n"
-        + body.user_message
+        + _sanitize_for_prompt(body.user_message)
         + "\n<<<USER_MESSAGE_END>>>"
     )
 
