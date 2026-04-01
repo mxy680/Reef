@@ -42,7 +42,7 @@ def _validate_katex_expression(expr: str) -> str | None:
         return "Expression too long for validation"
     try:
         result = subprocess.run(
-            ["npx", "katex"],
+            ["katex"],
             input=expr,
             capture_output=True, text=True, timeout=5,
         )

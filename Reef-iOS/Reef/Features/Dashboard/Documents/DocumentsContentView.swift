@@ -86,61 +86,48 @@ struct DocumentsContentView: View {
             Spacer()
 
             if !viewModel.isLoading && !viewModel.documents.isEmpty {
-                HStack(spacing: 10) {
-                    generateButton
-                    uploadButton
-                }
+                newButton
             }
         }
     }
 
-    // MARK: - Upload Button
+    // MARK: - New Button (Upload or Generate)
 
-    private var uploadButton: some View {
+    private var newButton: some View {
         let colors = theme.colors
-        return HStack(spacing: 8) {
-            Image(systemName: "arrow.up.doc")
-                .font(.system(size: 14, weight: .bold))
-            Text("Upload")
-                .font(.epilogue(14, weight: .bold))
-                .tracking(-0.04 * 14)
-        }
-        .foregroundStyle(ReefColors.white)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .background(ReefColors.primary)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .reef3DPush(
-            cornerRadius: 10,
-            borderColor: colors.border,
-            shadowColor: colors.shadow
-        ) {
-            viewModel.showFilePicker = true
-        }
-    }
-
-    // MARK: - Generate Button
-
-    private var generateButton: some View {
-        let colors = theme.colors
-        return HStack(spacing: 8) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 14, weight: .bold))
-            Text("Generate")
-                .font(.epilogue(14, weight: .bold))
-                .tracking(-0.04 * 14)
-        }
-        .foregroundStyle(colors.text)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .background(colors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .reef3DPush(
-            cornerRadius: 10,
-            borderColor: colors.border,
-            shadowColor: colors.shadow
-        ) {
-            viewModel.showGenerateQuestion = true
+        return Menu {
+            Button {
+                viewModel.showFilePicker = true
+            } label: {
+                Label("Upload PDF", systemImage: "arrow.up.doc")
+            }
+            Button {
+                viewModel.showGenerateQuestion = true
+            } label: {
+                Label("Generate Problem", systemImage: "sparkles")
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .bold))
+                Text("New")
+                    .font(.epilogue(14, weight: .bold))
+                    .tracking(-0.04 * 14)
+            }
+            .foregroundStyle(ReefColors.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background(ReefColors.primary)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(colors.border, lineWidth: 2)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(colors.shadow)
+                    .offset(x: 3, y: 3)
+            )
         }
     }
 
@@ -156,60 +143,45 @@ struct DocumentsContentView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: metrics.gridRowSpacing) {
 
-                    // Upload placeholder card — dashed border, no 3D
-                    VStack(spacing: 8) {
-                        Image(systemName: "arrow.up.doc")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Upload")
-                            .font(.epilogue(14, weight: .semiBold))
-                            .tracking(-0.04 * 14)
+                    // New document placeholder card — dashed border, menu on tap
+                    Menu {
+                        Button {
+                            viewModel.showFilePicker = true
+                        } label: {
+                            Label("Upload PDF", systemImage: "arrow.up.doc")
+                        }
+                        Button {
+                            viewModel.showGenerateQuestion = true
+                        } label: {
+                            Label("Generate Problem", systemImage: "sparkles")
+                        }
+                    } label: {
+                        VStack(spacing: 8) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .semibold))
+                            Text("New")
+                                .font(.epilogue(14, weight: .semiBold))
+                                .tracking(-0.04 * 14)
+                        }
+                        .foregroundStyle(colors.textMuted)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(height: cardHeight)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                                .foregroundStyle(colors.textDisabled)
+                        )
                     }
-                    .foregroundStyle(colors.textMuted)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .frame(height: cardHeight)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
-                            .foregroundStyle(colors.textDisabled)
-                    )
                     .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        viewModel.showFilePicker = true
-                    }
                     .accessibilityAddTraits(.isButton)
                     .fadeUp(index: 0)
-
-                    // Generate placeholder card — dashed border, no 3D
-                    VStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Generate")
-                            .font(.epilogue(14, weight: .semiBold))
-                            .tracking(-0.04 * 14)
-                    }
-                    .foregroundStyle(colors.textMuted)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .frame(height: cardHeight)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
-                            .foregroundStyle(colors.textDisabled)
-                    )
-                    .compositingGroup()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        viewModel.showGenerateQuestion = true
-                    }
-                    .accessibilityAddTraits(.isButton)
-                    .fadeUp(index: 1)
 
                     // Document cards
                     ForEach(Array(viewModel.documents.enumerated()), id: \.element.id) { index, doc in
                         DocumentCardView(
                             document: doc,
                             thumbnailURL: viewModel.thumbnailURLs[doc.id],
-                            index: index + 1,
+                            index: index,
                             cardHeight: cardHeight
                         ) { action in
                             handleAction(action, doc: doc)

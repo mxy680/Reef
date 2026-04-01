@@ -142,8 +142,9 @@ async def _generate_single_answer(
                 )],
             )
 
-        # Validate LaTeX and fix KaTeX rendering errors
-        answer = await validate_and_fix_answer_key(answer, llm_client)
+        # Skip KaTeX validation — adds ~60s per document and Gemini 2.5 Flash
+        # rarely produces invalid LaTeX. If a rare expression fails, KaTeX on
+        # the client will just show the raw text.
 
         await _upsert_answer_key(
             document_id=document_id,
