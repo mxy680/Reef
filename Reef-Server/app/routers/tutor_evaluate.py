@@ -30,6 +30,9 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 TUTOR_MODEL = "google/gemini-2.5-flash"
 TUTOR_MODEL_TEXT_ONLY = "openai/gpt-oss-120b"  # Groq — fast text-only, no vision
 
+# Per-key lock to prevent concurrent transcription of the same question
+_transcription_locks: dict[tuple, asyncio.Lock] = {}
+
 # In-memory answer key cache: (doc_id, question_number, user_id) → (QuestionAnswer, question_json, timestamp)
 # Avoids hitting Supabase on every eval for the same question.
 # Entries expire after 10 minutes. User-scoped to prevent cross-user leaks.
@@ -215,16 +218,32 @@ async def _persist_chunks(
 
 async def _fetch_and_transcribe_strokes(
     document_id: str, question_label: str, user_id: str
-) -> str:
-    """Fetch strokes from canvas_strokes table, transcribe via Mathpix, return LaTeX.
+) -> tuple[str, bool]:
+    """Fetch strokes from canvas_strokes table, transcribe via Mathpix, return (LaTeX, attempted).
 
-    Uses semantic chunking to cache previously transcribed regions and only
-    re-transcribe changed or new strokes. Returns an empty string if no strokes
-    exist or Mathpix is unavailable.
+    Returns (latex, True) if transcription was attempted (even if result is empty).
+    Returns (latex, False) if transcription was skipped (Mathpix unavailable, no strokes, etc.).
+    This distinction matters for the fallback chain: if attempted+empty, the student erased
+    their work; if not attempted, fall back to DB.
+
+    Uses a per-key lock to prevent concurrent transcription of the same question,
+    which would cause stale-write races on the latex column.
     """
+    # Acquire per-key lock to prevent concurrent transcription of same question
+    key = (user_id, document_id, question_label)
+    if key not in _transcription_locks:
+        _transcription_locks[key] = asyncio.Lock()
+    async with _transcription_locks[key]:
+        return await _fetch_and_transcribe_strokes_inner(document_id, question_label, user_id)
+
+
+async def _fetch_and_transcribe_strokes_inner(
+    document_id: str, question_label: str, user_id: str
+) -> tuple[str, bool]:
+    """Inner implementation — always called under the per-key lock."""
     if not settings.mathpix_app_id or not settings.mathpix_app_key:
         log.debug("[strokes] Mathpix not configured — skipping stroke transcription")
-        return ""
+        return ("", False)
 
     headers = {
         "apikey": settings.supabase_service_role_key,
@@ -245,27 +264,22 @@ async def _fetch_and_transcribe_strokes(
 
     if resp.status_code != 200:
         log.warning(f"[strokes] Failed to fetch canvas_strokes: {resp.status_code}")
-        return ""
+        return ("", False)
 
     rows = resp.json()
     if not rows:
-        return ""
+        return ("", False)
 
-    # If latex was written directly (e.g., by simulation), use it without re-transcribing
-    direct_latex = rows[0].get("latex") if rows else None
-    if direct_latex and direct_latex.strip():
-        return direct_latex.strip()
-
-    # Flatten all stroke objects into one list
+    # Flatten all stroke objects and merge all persisted chunks across rows
     all_strokes: list[dict] = []
-    persisted_chunks: list[dict] | None = None
+    all_persisted_chunks: list[dict] = []
     for row in rows:
         all_strokes.extend(row.get("strokes", []))
-        if persisted_chunks is None and row.get("transcription_chunks"):
-            persisted_chunks = row["transcription_chunks"]
+        all_persisted_chunks.extend(row.get("transcription_chunks") or [])
+    persisted_chunks = all_persisted_chunks or None
 
     if not all_strokes:
-        return ""
+        return ("", False)
 
     from app.services.mathpix_pool import acquire_session
 
@@ -273,7 +287,7 @@ async def _fetch_and_transcribe_strokes(
         app_token, session_id, _ = await acquire_session()
     except RuntimeError as e:
         log.warning(f"[strokes] Could not acquire Mathpix session: {e}")
-        return ""
+        return ("", False)
 
     fire_cost(record_cost(user_id, "transcribe", "mathpix_strokes", MATHPIX_STROKES_PER_SESSION))
 
@@ -329,7 +343,7 @@ async def _fetch_and_transcribe_strokes(
         _persist_chunks(user_id, document_id, question_label, updated_chunks)
     )
 
-    return final_latex
+    return (final_latex, True)  # attempted=True: Mathpix was called
 
 
 async def _upsert_student_work(
@@ -401,7 +415,7 @@ async def transcribe_strokes(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     """Read strokes from canvas_strokes, transcribe via Mathpix, upsert to student_work."""
-    latex = await _fetch_and_transcribe_strokes(body.document_id, body.question_label, user.id)
+    latex, _attempted = await _fetch_and_transcribe_strokes(body.document_id, body.question_label, user.id)
     if latex:
         asyncio.create_task(_upsert_student_work(
             body.document_id, body.question_label, user.id, latex, latex
@@ -479,7 +493,7 @@ async def tutor_evaluate(
             struggles_coro,
             return_exceptions=True,
         )
-        transcribed_latex = results[0] if not isinstance(results[0], Exception) else ""
+        transcription_result = results[0] if not isinstance(results[0], Exception) else ("", False)
         db_display, db_raw = results[1] if not isinstance(results[1], Exception) else ("", "")
         db_history = results[2] if not isinstance(results[2], Exception) else []
         images = results[3] if not isinstance(results[3], Exception) else []
@@ -496,13 +510,19 @@ async def tutor_evaluate(
             _download_images(all_figure_urls),
             return_exceptions=True,
         )
-        transcribed_latex = results[0] if not isinstance(results[0], Exception) else ""
+        transcription_result = results[0] if not isinstance(results[0], Exception) else ("", False)
         db_display, db_raw = results[1] if not isinstance(results[1], Exception) else ("", "")
         db_history = results[2] if not isinstance(results[2], Exception) else []
         images = results[3] if not isinstance(results[3], Exception) else []
         prior_struggles = []
 
-    student_latex = transcribed_latex or db_raw or db_display or body.student_latex
+    transcribed_latex, transcription_attempted = transcription_result
+    # If transcription was attempted (even if empty), use it directly — don't fall back
+    # to stale DB values. Only fall back to DB if transcription was skipped entirely.
+    if transcription_attempted:
+        student_latex = transcribed_latex or body.student_latex
+    else:
+        student_latex = db_raw or db_display or body.student_latex
     if not student_latex:
         return TutorEvaluateResponse(progress=0.0, status="idle")
 
