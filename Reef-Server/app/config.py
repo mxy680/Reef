@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     mathpix_app_id: str = ""
     mathpix_app_key: str = ""
     groq_api_key: str = ""
+    cerebras_api_key: str = ""
+    fireworks_api_key: str = ""
     deepinfra_api_key: str = ""
     elevenlabs_api_key: str = ""
     reef_inference_url: str = "https://inference.studyreef.com"

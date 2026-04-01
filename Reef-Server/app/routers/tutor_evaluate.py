@@ -27,8 +27,7 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
-TUTOR_MODEL = "google/gemini-2.5-flash"
-TUTOR_MODEL_TEXT_ONLY = "openai/gpt-oss-120b"  # Groq — fast text-only, no vision
+TUTOR_MODEL = "google/gemini-2.5-flash"  # OpenRouter — vision + text, $1.50/M, reliable eval
 
 # Per-key lock to prevent concurrent transcription of the same question.
 # Bounded: evict unlocked entries when dict exceeds 200 keys.
@@ -664,21 +663,11 @@ async def tutor_evaluate(
         except Exception:
             pass
 
-    # Pick model: use fast text-only model when no images are involved
-    has_images = bool(images)  # only True if images were successfully decoded
-    if has_images:
-        model = TUTOR_MODEL
-        api_key = settings.openrouter_api_key
-        base_url = "https://openrouter.ai/api/v1"
-    elif settings.groq_api_key:
-        model = TUTOR_MODEL_TEXT_ONLY
-        api_key = settings.groq_api_key
-        base_url = "https://api.groq.com/openai/v1"
-    else:
-        # Fall back to OpenRouter when Groq is not configured
-        model = TUTOR_MODEL
-        api_key = settings.openrouter_api_key
-        base_url = "https://openrouter.ai/api/v1"
+    # Always use Grok 4.20 via OpenRouter (vision + text)
+    has_images = bool(images)
+    model = TUTOR_MODEL
+    api_key = settings.openrouter_api_key
+    base_url = "https://openrouter.ai/api/v1"
 
     llm = LLMClient(api_key=api_key, model=model, base_url=base_url)
 
